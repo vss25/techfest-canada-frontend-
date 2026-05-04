@@ -26,13 +26,9 @@ import ScrollToTop from "./components/ScrollToTop";
 import Awards from "./pages/Awards";
 import KycForm from "./pages/KycForm";
 import Volunteer from "./pages/Volunteer";
-import partners2026 from "./pages/partners2026";
+import Partners2026 from "./pages/partners2026";
 
 /* ================= SYSTEM THEME DETECTOR ================= */
-
-
-
-
 function applySystemTheme() {
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   const theme = prefersDark ? "dark" : "light";
@@ -90,7 +86,7 @@ function App() {
         <Route path="/awards" element={<Awards />} />
         <Route path="/kyc" element={<KycForm />} />
         <Route path="/volunteer" element={<Volunteer />} />
-        <Route path="/institutions-involved" element={<InstitutionsInvolved />} />
+        <Route path="/partners2026" element={<Partners2026 />} />
       </Routes>
       <TicketBar />
     </BrowserRouter>

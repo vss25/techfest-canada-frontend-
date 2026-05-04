@@ -1,9 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import imageUrlBuilder from "@sanity/image-url";
-import { client } from "../utils/sanity";
-
-const builder = imageUrlBuilder(client);
-const urlFor = (source) => builder.image(source);
+import { client, urlFor } from "../utils/sanity";
 
 
 const INSTITUTIONS_QUERY = `

@@ -5,7 +5,7 @@ import Footer from "../components/Footer";
 import PartnerMarquee from "../components/PartnerMarquee";
 
 /* ══════════════════════════════════════════════════════════
-   ANIMATED SECTION WRAPPER
+   ANIMATED SECTION WRAPPER 
    ══════════════════════════════════════════════════════════ */
 function FadeInSection({ children, delay }) {
   var ref = useRef(null);

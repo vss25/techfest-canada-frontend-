@@ -7,7 +7,7 @@ const PARTNERS_DROPDOWN = [
   { label: "Sponsor", path: "/sponsor" },
   { label: "Exhibit", path: "/exhibit" },
   { label: "KYC Form", path: "/kyc" },
-  { label: "Institutions Involved", path: "/institutions-involved" }
+  { label: "2026 Partners", path: "/partners2026" }
 ];
 
 const MORE_DROPDOWN = [

@@ -27,6 +27,7 @@ import Awards from "./pages/Awards";
 import KycForm from "./pages/KycForm";
 import Volunteer from "./pages/Volunteer";
 import Partners2026 from "./pages/partners2026";
+import Organizers from "./pages/Organizers";
 
 /* ================= SYSTEM THEME DETECTOR ================= */
 function applySystemTheme() {
@@ -87,6 +88,7 @@ function App() {
         <Route path="/kyc" element={<KycForm />} />
         <Route path="/volunteer" element={<Volunteer />} />
         <Route path="/partners2026" element={<Partners2026 />} />
+        <Route path="/organizers" element={<Organizers />} />
       </Routes>
       <TicketBar />
     </BrowserRouter>

@@ -67,7 +67,7 @@ var CATEGORIES = [
 /* ═══════════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════════ */
-export default function InstitutionsInvolved() {
+export default function Partners2026() {
   var s = useState(false); var dark = s[0]; var setDark = s[1];
   useEffect(function () {
     setDark(document.body.classList.contains("dark-mode"));
@@ -83,12 +83,9 @@ export default function InstitutionsInvolved() {
   var accent = dark ? "#b99eff" : "#7a3fd1";
   var orange = dark ? "#f5a623" : "#d98a14";
   var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.10)";
-  var sectionBg = dark ? "rgba(255,255,255,0.02)" : "rgba(122,63,209,0.02)";
-  var cardBg = dark ? "rgba(255,255,255,0.03)" : "#ffffff";
-  var cardBorder = dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
-  var placeholderBg = dark ? "rgba(255,255,255,0.04)" : "rgba(122,63,209,0.04)";
-  var placeholderBorder = dark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.08)";
-  var placeholderText = dark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.10)";
+
+  // Gradient string — recomputed when theme changes, fed into CSS variables
+  var gradient = "linear-gradient(135deg, " + accent + ", " + orange + ")";
 
   return (
     <>
@@ -101,24 +98,127 @@ export default function InstitutionsInvolved() {
           0% { transform: translateX(-50%); }
           100% { transform: translateX(0); }
         }
+
+        /* ─────────────────────────────────────────────────────
+           GRADIENT TEXT — defined once as a real CSS class so it
+           survives React re-renders on theme toggle. The actual
+           gradient comes from a CSS variable set inline, so it
+           still updates correctly when dark mode changes.
+           ───────────────────────────────────────────────────── */
+        .tfc-gradient-text {
+          background-image: var(--tfc-gradient);
+          background-clip: text;
+          -webkit-background-clip: text;
+          color: transparent;
+          -webkit-text-fill-color: transparent;
+          /* Safari/iOS sometimes drops the clip on repaint — this nudges
+             it to redraw cleanly */
+          -webkit-text-stroke: 1px transparent;
+          display: inline-block;
+        }
+
+        /* ─────────────────────────────────────────────────────
+           AURORA — animated dancing lights (from FirstTimers)
+           ───────────────────────────────────────────────────── */
+        :root {
+          --aurora-white: #ffffff;
+          --aurora-black: #06020f;
+          --aurora-transparent: transparent;
+          --aurora-purple: #7a3fd1;
+          --aurora-violet: #9b57e8;
+          --aurora-lilac: #c4a0f5;
+          --aurora-orange: #f5a623;
+          --aurora-amber: #f7c15e;
+        }
+        @keyframes tfc-aurora {
+          from { background-position: 50% 50%, 50% 50%; }
+          to   { background-position: 350% 50%, 350% 50%; }
+        }
+        .tfc-aurora-layer {
+          position: absolute; inset: -10px; pointer-events: none;
+          will-change: transform;
+          background-size: 300%, 200%;
+          background-position: 50% 50%;
+          filter: blur(10px);
+          opacity: 0.50;
+        }
+        .tfc-aurora-layer--dark {
+          background-image:
+            repeating-linear-gradient(100deg, var(--aurora-black) 0%, var(--aurora-black) 7%, var(--aurora-transparent) 10%, var(--aurora-transparent) 12%, var(--aurora-black) 16%),
+            repeating-linear-gradient(100deg, var(--aurora-purple) 10%, var(--aurora-lilac) 15%, var(--aurora-orange) 20%, var(--aurora-amber) 25%, var(--aurora-violet) 30%);
+          mask-image: radial-gradient(ellipse at 100% 0%, black 10%, var(--aurora-transparent) 70%);
+          -webkit-mask-image: radial-gradient(ellipse at 100% 0%, black 10%, var(--aurora-transparent) 70%);
+        }
+        .tfc-aurora-layer--dark::after {
+          content: ""; position: absolute; inset: 0;
+          background-image:
+            repeating-linear-gradient(100deg, var(--aurora-black) 0%, var(--aurora-black) 7%, var(--aurora-transparent) 10%, var(--aurora-transparent) 12%, var(--aurora-black) 16%),
+            repeating-linear-gradient(100deg, var(--aurora-purple) 10%, var(--aurora-lilac) 15%, var(--aurora-orange) 20%, var(--aurora-amber) 25%, var(--aurora-violet) 30%);
+          background-size: 200%, 100%;
+          background-attachment: fixed;
+          animation: tfc-aurora 60s linear infinite;
+          mix-blend-mode: difference;
+        }
+        .tfc-aurora-layer--light {
+          background-image:
+            repeating-linear-gradient(100deg, var(--aurora-white) 0%, var(--aurora-white) 7%, var(--aurora-transparent) 10%, var(--aurora-transparent) 12%, var(--aurora-white) 16%),
+            repeating-linear-gradient(100deg, var(--aurora-purple) 10%, var(--aurora-lilac) 15%, var(--aurora-orange) 20%, var(--aurora-amber) 25%, var(--aurora-violet) 30%);
+          opacity: 0.35; filter: blur(12px);
+          mask-image: radial-gradient(ellipse at 100% 0%, black 10%, var(--aurora-transparent) 70%);
+          -webkit-mask-image: radial-gradient(ellipse at 100% 0%, black 10%, var(--aurora-transparent) 70%);
+        }
+        .tfc-aurora-layer--light::after {
+          content: ""; position: absolute; inset: 0;
+          background-image:
+            repeating-linear-gradient(100deg, var(--aurora-white) 0%, var(--aurora-white) 7%, var(--aurora-transparent) 10%, var(--aurora-transparent) 12%, var(--aurora-white) 16%),
+            repeating-linear-gradient(100deg, var(--aurora-purple) 10%, var(--aurora-lilac) 15%, var(--aurora-orange) 20%, var(--aurora-amber) 25%, var(--aurora-violet) 30%);
+          background-size: 200%, 100%;
+          background-attachment: fixed;
+          animation: tfc-aurora 60s linear infinite;
+          mix-blend-mode: difference;
+        }
       `}</style>
 
       <Navbar />
-      <div style={{ minHeight: "100vh", background: bg, color: textMain }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: bg,
+          color: textMain,
+          // expose the gradient to CSS classes via a custom property
+          ["--tfc-gradient"]: gradient,
+        }}
+      >
 
-        {/* ─── HERO ─── */}
+        {/* ─── HERO (with aurora) ─── */}
         <section style={{
           position: "relative",
           padding: "clamp(120px, 16vw, 160px) 5% clamp(50px, 8vw, 80px)",
+          overflow: "hidden",
           background: dark
             ? "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.12) 0%, transparent 70%)"
             : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.06) 0%, transparent 70%)",
         }}>
-          <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
+          {/* Aurora background layer — purely decorative, sits behind everything */}
+          <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+            <div className={dark ? "tfc-aurora-layer tfc-aurora-layer--dark" : "tfc-aurora-layer tfc-aurora-layer--light"} />
+          </div>
+
+          {/* Soft radial mask for depth — fades aurora into page bg at edges */}
+          <div style={{
+            position: "absolute", inset: 0, pointerEvents: "none",
+            background: dark
+              ? "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 30%, #06020f 100%)"
+              : "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 30%, #ffffff 100%)",
+          }} />
+
+          {/* Hero content — sits above aurora */}
+          <div style={{ position: "relative", zIndex: 2, maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
               <div style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 700, fontSize: "0.6rem", letterSpacing: "3px", textTransform: "uppercase", color: orange, marginBottom: 18 }}>THE TECH FESTIVAL CANADA 2026</div>
               <h1 style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.2rem)", letterSpacing: "-1px", lineHeight: 1.1, marginBottom: 20 }}>
-                Institutions<br /><span style={{ background: "linear-gradient(135deg, " + accent + ", " + orange + ")", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Involved</span>
+                Institutions<br />
+                <span className="tfc-gradient-text">Involved</span>
               </h1>
               <p style={{ fontSize: "1rem", color: textMuted, lineHeight: 1.75, maxWidth: 620, margin: "0 auto" }}>
                 The Tech Festival Canada is supported by a growing network of government bodies, industry associations, academic institutions, enterprise partners, and international trade organisations. Together, we're building Canada's definitive technology platform.
@@ -142,7 +242,16 @@ export default function InstitutionsInvolved() {
               ].map(function (s) {
                 return (
                   <div key={s.label} style={{ textAlign: "center" }}>
-                    <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 900, background: "linear-gradient(135deg, " + accent + ", " + orange + ")", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{s.val}</div>
+                    <div
+                      className="tfc-gradient-text"
+                      style={{
+                        fontFamily: "'Orbitron', sans-serif",
+                        fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
+                        fontWeight: 900,
+                      }}
+                    >
+                      {s.val}
+                    </div>
                     <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.58rem", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: textDim, marginTop: 4 }}>{s.label}</div>
                   </div>
                 );

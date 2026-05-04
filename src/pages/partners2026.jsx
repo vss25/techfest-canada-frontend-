@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import PartnerMarquee from "../components/PartnerMarquee";
 import PartnerGrid from "../components/PartnerGrid";
 
 /* ══════════════════════════════════════════════════════════
@@ -90,15 +89,6 @@ export default function Partners2026() {
   return (
     <>
       <style>{`
-        @keyframes marqueeLeft {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        @keyframes marqueeRight {
-          0% { transform: translateX(-50%); }
-          100% { transform: translateX(0); }
-        }
-
         /* GRADIENT TEXT — class-based so it survives theme toggle re-renders */
         .tfc-gradient-text {
           background-image: var(--tfc-gradient);
@@ -214,9 +204,6 @@ export default function Partners2026() {
           </div>
         </section>
 
-        {/* ─── TOP MARQUEE — ambient "all partners" scroll ─── */}
-        <PartnerMarquee dark={dark} title="Our Partners & Supporters" category="partnersAndSupporters" />
-
         {/* ─── STATS ROW ─── */}
         <FadeInSection delay={0.1}>
           <section style={{ padding: "48px 5%", maxWidth: 900, margin: "0 auto" }}>
@@ -248,7 +235,7 @@ export default function Partners2026() {
         </FadeInSection>
 
         {/* ─── PARTNER CATEGORY GRIDS — static logo grid per category ─── */}
-        <section style={{ padding: "0 0 80px" }}>
+        <section style={{ padding: "32px 0 80px" }}>
           {CATEGORIES.map(function (cat, catIdx) {
             return (
               <FadeInSection key={cat.sanityCategory} delay={catIdx * 0.08}>
@@ -267,9 +254,6 @@ export default function Partners2026() {
             );
           })}
         </section>
-
-        {/* ─── BOTTOM MARQUEE — ambient "more joining" scroll ─── */}
-        <PartnerMarquee dark={dark} title="And many more joining" category="other" />
 
         {/* ─── CTA SECTION ─── */}
         <FadeInSection delay={0.1}>

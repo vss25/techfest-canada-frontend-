@@ -2,44 +2,11 @@ import { useEffect, useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import PartnerMarquee from "../components/PartnerMarquee";
 
-/* ═══════════════════════════════════════════════════════════
-   LOGO MARQUEE — same pattern as SpeakerMarquee
-   Pulls from Sanity CMS via the "institution" type.
-   For now renders placeholders until CMS is populated.
-   ═══════════════════════════════════════════════════════════ */
-function LogoMarquee({ dark, title, direction }) {
-  var dir = direction || "left";
-  var placeholders = Array.from({ length: 12 }, function (_, i) { return i; });
-  var borderCol = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
-  var logoBg = dark ? "rgba(255,255,255,0.04)" : "rgba(122,63,209,0.03)";
-  var textDim = dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.10)";
-
-  return (
-    <div style={{ overflow: "hidden", padding: "0 0", borderTop: "1px solid " + borderCol, borderBottom: "1px solid " + borderCol }}>
-      {title && (
-        <div style={{ textAlign: "center", padding: "24px 0 0" }}>
-          <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.55rem", fontWeight: 700, letterSpacing: "2.5px", textTransform: "uppercase", color: dark ? "rgba(255,255,255,0.25)" : "rgba(13,5,32,0.30)" }}>{title}</span>
-        </div>
-      )}
-      <div style={{ position: "relative", height: 90, display: "flex", alignItems: "center" }}>
-        <div style={{ display: "flex", gap: 32, animation: dir === "left" ? "marqueeLeft 40s linear infinite" : "marqueeRight 40s linear infinite", width: "max-content" }}>
-          {[...placeholders, ...placeholders].map(function (_, i) {
-            return (
-              <div key={i} style={{ width: 140, height: 56, borderRadius: 10, background: logoBg, border: "1px solid " + borderCol, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.45rem", fontWeight: 700, letterSpacing: "1px", color: textDim, textTransform: "uppercase" }}>Logo</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════
    ANIMATED SECTION WRAPPER
-   ═══════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════ */
 function FadeInSection({ children, delay }) {
   var ref = useRef(null);
   var inView = useInView(ref, { once: true, margin: "-60px" });
@@ -55,39 +22,45 @@ function FadeInSection({ children, delay }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   CATEGORY SECTIONS
-   ═══════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════
+   CATEGORY SECTIONS — maps to Sanity category values
+   ══════════════════════════════════════════════════════════ */
 var CATEGORIES = [
   {
     title: "Government Partners",
     subtitle: "Federal, provincial, and municipal bodies supporting innovation and trade in Canada.",
     icon: "🏛️",
+    sanityCategory: "governmentPartners",
   },
   {
-    title: "Industry Associations",
+    title: "Industry Associates",
     subtitle: "National associations and alliances across technology, cybersecurity, and critical infrastructure.",
     icon: "🤝",
+    sanityCategory: "industryAssociates",
   },
   {
     title: "Academic & Research Institutions",
     subtitle: "Leading universities, research labs, and innovation centres driving deep tech in Canada.",
     icon: "🎓",
+    sanityCategory: "academicResearchInstitutions",
   },
   {
     title: "Corporate & Enterprise Partners",
     subtitle: "Enterprise technology companies, hyperscalers, and systems integrators powering the ecosystem.",
     icon: "🏢",
+    sanityCategory: "corporateEnterprisePartners",
   },
   {
     title: "Startup & Ecosystem Partners",
     subtitle: "Accelerators, incubators, and ecosystem builders nurturing Canada's next generation of startups.",
     icon: "🚀",
+    sanityCategory: "startupEcosystemPartners",
   },
   {
     title: "International Trade Bodies",
     subtitle: "Foreign trade commissions, consulates, and international chambers supporting cross-border tech collaboration.",
     icon: "🌍",
+    sanityCategory: "internationalTradeBodies",
   },
 ];
 
@@ -119,16 +92,16 @@ export default function InstitutionsInvolved() {
 
   return (
     <>
-      <style>{"\
-        @keyframes marqueeLeft {\
-          0% { transform: translateX(0); }\
-          100% { transform: translateX(-50%); }\
-        }\
-        @keyframes marqueeRight {\
-          0% { transform: translateX(-50%); }\
-          100% { transform: translateX(0); }\
-        }\
-      "}</style>
+      <style>{`
+        @keyframes marqueeLeft {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes marqueeRight {
+          0% { transform: translateX(-50%); }
+          100% { transform: translateX(0); }
+        }
+      `}</style>
 
       <Navbar />
       <div style={{ minHeight: "100vh", background: bg, color: textMain }}>
@@ -155,7 +128,7 @@ export default function InstitutionsInvolved() {
         </section>
 
         {/* ─── MARQUEE ROW 1 ─── */}
-        <LogoMarquee dark={dark} title="Our Partners & Supporters" direction="left" />
+        <PartnerMarquee dark={dark} title="Our Partners & Supporters" category="partnersAndSupporters" />
 
         {/* ─── STATS ROW ─── */}
         <FadeInSection delay={0.1}>
@@ -178,51 +151,21 @@ export default function InstitutionsInvolved() {
           </section>
         </FadeInSection>
 
-        {/* ─── CATEGORY SECTIONS WITH 3×3 GRIDS ─── */}
-        <section style={{ padding: "0 5% 80px", maxWidth: 1100, margin: "0 auto" }}>
+        {/* ─── PARTNER CATEGORY MARQUEES ─── */}
+        <section style={{ padding: "0 0 80px" }}>
           {CATEGORIES.map(function (cat, catIdx) {
             return (
-              <FadeInSection key={cat.title} delay={catIdx * 0.08}>
-                <div style={{ marginBottom: 56 }}>
+              <FadeInSection key={cat.sanityCategory} delay={catIdx * 0.08}>
+                <div style={{ marginBottom: 0 }}>
                   {/* Category header */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "0 5%", marginBottom: 10 }}>
                     <span style={{ fontSize: "1.5rem" }}>{cat.icon}</span>
                     <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "1.15rem", letterSpacing: "-0.3px", margin: 0 }}>{cat.title}</h2>
                   </div>
-                  <p style={{ fontSize: "0.88rem", color: textMuted, lineHeight: 1.6, marginBottom: 24, maxWidth: 600 }}>{cat.subtitle}</p>
+                  <p style={{ fontSize: "0.88rem", color: textMuted, lineHeight: 1.6, marginBottom: 24, padding: "0 5%", maxWidth: 600 }}>{cat.subtitle}</p>
 
-                  {/* 3×3 Logo grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
-                    {Array.from({ length: 9 }, function (_, i) {
-                      return (
-                        <motion.div
-                          key={cat.title + "-" + i}
-                          whileHover={{ scale: 1.03, borderColor: accent }}
-                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                          style={{
-                            aspectRatio: "16/9",
-                            borderRadius: 14,
-                            background: placeholderBg,
-                            border: "1.5px solid " + placeholderBorder,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "default",
-                            transition: "border-color 0.2s ease",
-                          }}
-                        >
-                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={placeholderText} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                              <circle cx="8.5" cy="8.5" r="1.5" />
-                              <polyline points="21 15 16 10 5 21" />
-                            </svg>
-                            <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.4rem", fontWeight: 700, letterSpacing: "1.5px", color: placeholderText, textTransform: "uppercase" }}>Coming Soon</span>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
+                  {/* Sanity-powered marquee for this category */}
+                  <PartnerMarquee dark={dark} title={cat.title} category={cat.sanityCategory} />
                 </div>
               </FadeInSection>
             );
@@ -230,7 +173,7 @@ export default function InstitutionsInvolved() {
         </section>
 
         {/* ─── MARQUEE ROW 2 ─── */}
-        <LogoMarquee dark={dark} title="And many more joining" direction="right" />
+        <PartnerMarquee dark={dark} title="And many more joining" category="other" />
 
         {/* ─── CTA SECTION ─── */}
         <FadeInSection delay={0.1}>

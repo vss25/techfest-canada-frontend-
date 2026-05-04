@@ -8,40 +8,45 @@ const client = createClient({
   useCdn: false,
 });
 
-const institutions = [
+const partners = [
   {
-    _type: "institutionMarquee",
+    _type: "partner",
     name: "University of Toronto",
+    category: "academicResearchInstitutions",
     url: "https://www.utoronto.ca",
     order: 1,
     active: true,
   },
   {
-    _type: "institutionMarquee",
+    _type: "partner",
     name: "University of Waterloo",
+    category: "academicResearchInstitutions",
     url: "https://uwaterloo.ca",
     order: 2,
     active: true,
   },
   {
-    _type: "institutionMarquee",
+    _type: "partner",
     name: "McGill University",
+    category: "academicResearchInstitutions",
     url: "https://www.mcgill.ca",
     order: 3,
     active: true,
   },
   {
-    _type: "institutionMarquee",
-    name: "University of British Columbia",
-    url: "https://www.ubc.ca",
-    order: 4,
+    _type: "partner",
+    name: "Department of Innovation",
+    category: "governmentPartners",
+    url: "https://www.canada.ca",
+    order: 1,
     active: true,
   },
   {
-    _type: "institutionMarquee",
-    name: "University of Alberta",
-    url: "https://www.ualberta.ca",
-    order: 5,
+    _type: "partner",
+    name: "Sample Corporate Partner",
+    category: "corporateEnterprisePartners",
+    url: "https://example.com",
+    order: 1,
     active: true,
   },
 ];
@@ -52,11 +57,11 @@ async function seed() {
     process.exit(1);
   }
 
-  console.log(`Seeding ${institutions.length} institutions...`);
+  console.log(`Seeding ${partners.length} partners...`);
 
-  for (const institution of institutions) {
-    const result = await client.create(institution);
-    console.log(`Created: ${institution.name} (ID: ${result._id})`);
+  for (const partner of partners) {
+    const result = await client.create(partner);
+    console.log(`Created: ${partner.name} (ID: ${result._id})`);
   }
 
   console.log("Seeding complete!");

@@ -1,16 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { client, urlFor } from "../utils/sanity";
 
-
-const INSTITUTIONS_QUERY = `
-  *[_type == "institutionMarquee" && active == true] | order(order asc) {
-    _id,
-    name,
-    logo,
-    url
-  }
-`;
-
 const EMPTY_CELLS = Array.from({ length: 10 }, (_, idx) => ({
   _id: `empty-${idx}`,
   name: "",
@@ -18,32 +8,38 @@ const EMPTY_CELLS = Array.from({ length: 10 }, (_, idx) => ({
   url: "",
 }));
 
-export default function InstitutionMarquee({ dark, title }) {
-  const [institutions, setInstitutions] = useState([]);
+export default function PartnerMarquee({ category, title, dark }) {
+  const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const query = `*[_type == "partner" && category == "${category}" && active == true] | order(order asc) {
+      _id,
+      name,
+      logo,
+      url
+    }`;
+
     client
-      .fetch(INSTITUTIONS_QUERY)
+      .fetch(query)
       .then((data) => {
-        setInstitutions(Array.isArray(data) ? data : []);
+        setPartners(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(() => {
-        setInstitutions([]);
+        setPartners([]);
         setLoading(false);
       });
-  }, []);
+  }, [category]);
 
   const bg = dark ? "#0c0816" : "rgba(122,63,209,0.02)";
   const border = dark ? "rgba(155,135,245,0.08)" : "rgba(122,63,209,0.08)";
   const fade = dark ? "#0c0816" : "#ffffff";
-  const displayTitle = title || "Institutions involved";
 
   const marqueeItems = useMemo(() => {
-    const source = institutions.length > 0 ? institutions : EMPTY_CELLS;
+    const source = partners.length > 0 ? partners : EMPTY_CELLS;
     return [...source, ...source];
-  }, [institutions]);
+  }, [partners]);
 
   return (
     <section
@@ -57,22 +53,22 @@ export default function InstitutionMarquee({ dark, title }) {
       }}
     >
       <style>{`
-        @keyframes institutions-marquee-scroll {
+        @keyframes partner-marquee-scroll {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
-        .institutions-marquee-track {
+        .partner-marquee-track {
           display: flex;
           align-items: center;
           width: max-content;
-          animation: institutions-marquee-scroll 32s linear infinite;
+          animation: partner-marquee-scroll 32s linear infinite;
           gap: 12px;
           padding: 4px 8px;
         }
         @media (hover: hover) and (pointer: fine) {
-          .institutions-marquee-track:hover { animation-play-state: paused; }
+          .partner-marquee-track:hover { animation-play-state: paused; }
         }
-        .institutions-marquee-item {
+        .partner-marquee-item {
           display: flex;
           align-items: center;
           justify-content: center;
@@ -87,12 +83,12 @@ export default function InstitutionMarquee({ dark, title }) {
           transition: box-shadow 0.25s ease, transform 0.25s ease;
         }
         @media (hover: hover) and (pointer: fine) {
-          .institutions-marquee-item:hover {
+          .partner-marquee-item:hover {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(155,135,245,0.3);
             transform: translateY(-2px);
           }
         }
-        .institutions-marquee-item img {
+        .partner-marquee-item img {
           height: 36px;
           width: auto;
           max-width: 160px;
@@ -112,7 +108,7 @@ export default function InstitutionMarquee({ dark, title }) {
           color: dark ? "rgba(200,185,255,0.75)" : "rgba(13,5,32,0.65)",
         }}
       >
-        {loading ? "Loading institutions..." : displayTitle}
+        {loading ? "Loading..." : title}
       </div>
 
       <div style={{ position: "relative" }}>
@@ -141,22 +137,22 @@ export default function InstitutionMarquee({ dark, title }) {
           }}
         />
 
-        <div className="institutions-marquee-track">
-          {marqueeItems.map((institution, i) => {
-            const hasLogo = !!institution.logo;
-            const logoUrl = hasLogo ? urlFor(institution.logo).height(80).auto("format").url() : null;
+        <div className="partner-marquee-track">
+          {marqueeItems.map((partner, i) => {
+            const hasLogo = !!partner.logo;
+            const logoUrl = hasLogo ? urlFor(partner.logo).height(80).auto("format").url() : null;
             const imgNode = hasLogo ? (
-              <img src={logoUrl} alt={institution.name || "Institution logo"} loading="lazy" />
+              <img src={logoUrl} alt={partner.name || "Partner logo"} loading="lazy" />
             ) : null;
 
             return (
-              <div key={`${institution._id}-${i}`} className="institutions-marquee-item">
-                {institution.url && imgNode ? (
+              <div key={`${partner._id}-${i}`} className="partner-marquee-item">
+                {partner.url && imgNode ? (
                   <a
-                    href={institution.url}
+                    href={partner.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={institution.name || "Institution"}
+                    aria-label={partner.name || "Partner"}
                     style={{ display: "flex", alignItems: "center" }}
                   >
                     {imgNode}

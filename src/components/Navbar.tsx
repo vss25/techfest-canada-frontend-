@@ -12,7 +12,8 @@ const PARTNERS_DROPDOWN = [
 
 const MORE_DROPDOWN = [
   { label: "Venue", path: "/venue" },
-  { label: "Volunteer", path: "/volunteer" }
+  { label: "Volunteer", path: "/volunteer" },
+  { label: "Organizers", path: "/organizers" }
 ];
 
 

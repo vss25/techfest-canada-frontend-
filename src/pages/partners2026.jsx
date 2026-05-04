@@ -3,9 +3,10 @@ import { motion, useInView } from "framer-motion";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PartnerMarquee from "../components/PartnerMarquee";
+import PartnerGrid from "../components/PartnerGrid";
 
 /* ══════════════════════════════════════════════════════════
-   ANIMATED SECTION WRAPPER 
+   ANIMATED SECTION WRAPPER
    ══════════════════════════════════════════════════════════ */
 function FadeInSection({ children, delay }) {
   var ref = useRef(null);
@@ -84,7 +85,6 @@ export default function Partners2026() {
   var orange = dark ? "#f5a623" : "#d98a14";
   var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.10)";
 
-  // Gradient string — recomputed when theme changes, fed into CSS variables
   var gradient = "linear-gradient(135deg, " + accent + ", " + orange + ")";
 
   return (
@@ -99,27 +99,18 @@ export default function Partners2026() {
           100% { transform: translateX(0); }
         }
 
-        /* ─────────────────────────────────────────────────────
-           GRADIENT TEXT — defined once as a real CSS class so it
-           survives React re-renders on theme toggle. The actual
-           gradient comes from a CSS variable set inline, so it
-           still updates correctly when dark mode changes.
-           ───────────────────────────────────────────────────── */
+        /* GRADIENT TEXT — class-based so it survives theme toggle re-renders */
         .tfc-gradient-text {
           background-image: var(--tfc-gradient);
           background-clip: text;
           -webkit-background-clip: text;
           color: transparent;
           -webkit-text-fill-color: transparent;
-          /* Safari/iOS sometimes drops the clip on repaint — this nudges
-             it to redraw cleanly */
           -webkit-text-stroke: 1px transparent;
           display: inline-block;
         }
 
-        /* ─────────────────────────────────────────────────────
-           AURORA — animated dancing lights (from FirstTimers)
-           ───────────────────────────────────────────────────── */
+        /* AURORA — animated dancing lights */
         :root {
           --aurora-white: #ffffff;
           --aurora-black: #06020f;
@@ -185,7 +176,6 @@ export default function Partners2026() {
           minHeight: "100vh",
           background: bg,
           color: textMain,
-          // expose the gradient to CSS classes via a custom property
           ["--tfc-gradient"]: gradient,
         }}
       >
@@ -199,12 +189,10 @@ export default function Partners2026() {
             ? "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.12) 0%, transparent 70%)"
             : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.06) 0%, transparent 70%)",
         }}>
-          {/* Aurora background layer — purely decorative, sits behind everything */}
           <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
             <div className={dark ? "tfc-aurora-layer tfc-aurora-layer--dark" : "tfc-aurora-layer tfc-aurora-layer--light"} />
           </div>
 
-          {/* Soft radial mask for depth — fades aurora into page bg at edges */}
           <div style={{
             position: "absolute", inset: 0, pointerEvents: "none",
             background: dark
@@ -212,7 +200,6 @@ export default function Partners2026() {
               : "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 30%, #ffffff 100%)",
           }} />
 
-          {/* Hero content — sits above aurora */}
           <div style={{ position: "relative", zIndex: 2, maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
               <div style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 700, fontSize: "0.6rem", letterSpacing: "3px", textTransform: "uppercase", color: orange, marginBottom: 18 }}>THE TECH FESTIVAL CANADA 2026</div>
@@ -227,7 +214,7 @@ export default function Partners2026() {
           </div>
         </section>
 
-        {/* ─── MARQUEE ROW 1 ─── */}
+        {/* ─── TOP MARQUEE — ambient "all partners" scroll ─── */}
         <PartnerMarquee dark={dark} title="Our Partners & Supporters" category="partnersAndSupporters" />
 
         {/* ─── STATS ROW ─── */}
@@ -260,12 +247,12 @@ export default function Partners2026() {
           </section>
         </FadeInSection>
 
-        {/* ─── PARTNER CATEGORY MARQUEES ─── */}
+        {/* ─── PARTNER CATEGORY GRIDS — static logo grid per category ─── */}
         <section style={{ padding: "0 0 80px" }}>
           {CATEGORIES.map(function (cat, catIdx) {
             return (
               <FadeInSection key={cat.sanityCategory} delay={catIdx * 0.08}>
-                <div style={{ marginBottom: 0 }}>
+                <div style={{ marginBottom: 56 }}>
                   {/* Category header */}
                   <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "0 5%", marginBottom: 10 }}>
                     <span style={{ fontSize: "1.5rem" }}>{cat.icon}</span>
@@ -273,15 +260,15 @@ export default function Partners2026() {
                   </div>
                   <p style={{ fontSize: "0.88rem", color: textMuted, lineHeight: 1.6, marginBottom: 24, padding: "0 5%", maxWidth: 600 }}>{cat.subtitle}</p>
 
-                  {/* Sanity-powered marquee for this category */}
-                  <PartnerMarquee dark={dark} title={cat.title} category={cat.sanityCategory} />
+                  {/* Sanity-powered grid for this category */}
+                  <PartnerGrid dark={dark} category={cat.sanityCategory} />
                 </div>
               </FadeInSection>
             );
           })}
         </section>
 
-        {/* ─── MARQUEE ROW 2 ─── */}
+        {/* ─── BOTTOM MARQUEE — ambient "more joining" scroll ─── */}
         <PartnerMarquee dark={dark} title="And many more joining" category="other" />
 
         {/* ─── CTA SECTION ─── */}

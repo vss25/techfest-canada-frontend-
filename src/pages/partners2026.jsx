@@ -145,6 +145,9 @@ export default function Partners2026() {
       <style>{`
         /* ─────────────────────────────────────────────
            BRAND GRADIENT TEXT (same as "Involved")
+           Display defaults to inline-block but can be
+           overridden via inline style for headings that
+           need to be full-width and centered.
            ───────────────────────────────────────────── */
         .tfc-grad-text {
           background-image: var(--tfc-gradient);
@@ -154,6 +157,10 @@ export default function Partners2026() {
           -webkit-text-fill-color: transparent;
           -webkit-text-stroke: 1px transparent;
           display: inline-block;
+        }
+        .tfc-grad-text.tfc-grad-block {
+          display: block;
+          width: 100%;
         }
 
         /* ─────────────────────────────────────────────
@@ -662,7 +669,7 @@ function CategoryBlock({ category, dark, accent, textMuted, textDim }) {
           delay: 0.1,
           ease: EASE_OUT_EXPO,
         }}
-        className="tfc-grad-text"
+        className="tfc-grad-text tfc-grad-block"
         style={{
           fontFamily: "'Orbitron', sans-serif",
           fontWeight: 900,

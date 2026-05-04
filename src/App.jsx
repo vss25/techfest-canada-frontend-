@@ -26,7 +26,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import Awards from "./pages/Awards";
 import KycForm from "./pages/KycForm";
 import Volunteer from "./pages/Volunteer";
-import InstitutionsInvolved from "./pages/InstitutionsInvolved";
+import partners2026 from "./pages/partners2026";
 
 /* ================= SYSTEM THEME DETECTOR ================= */
 

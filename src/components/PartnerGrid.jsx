@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { client, urlFor } from "../utils/sanity";
 
@@ -88,13 +88,16 @@ export default function PartnerGrid({ category, dark, accent }) {
         @media (max-width: 900px) {
           .partner-grid-wrap {
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 14px;
+            gap: 12px;
+            padding: 12px 4% 0;
           }
         }
-        @media (max-width: 540px) {
+        @media (max-width: 480px) {
           .partner-grid-wrap {
-            grid-template-columns: 1fr;
-            gap: 12px;
+            /* Keep 2 columns on phones — 1 column wastes too much space */
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            padding: 12px 4% 0;
           }
         }
 
@@ -155,13 +158,25 @@ export default function PartnerGrid({ category, dark, accent }) {
           }
         }
 
-        @media (max-width: 540px) {
+        /* ─── MOBILE TILE SIZING ─── */
+        @media (max-width: 900px) {
           .partner-tile {
-            height: 110px;
-            padding: 20px 24px;
+            height: 92px;
+            padding: 14px 16px;
+            border-radius: 14px;
           }
           .partner-tile img {
-            max-height: 56px;
+            max-height: 44px;
+          }
+        }
+        @media (max-width: 480px) {
+          .partner-tile {
+            height: 80px;
+            padding: 12px 14px;
+            border-radius: 12px;
+          }
+          .partner-tile img {
+            max-height: 38px;
           }
         }
       `}</style>

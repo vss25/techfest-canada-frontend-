@@ -37,14 +37,19 @@ export default function PartnerGrid({ category, dark, emptyMessage }) {
       });
   }, [category]);
 
-  const tileBg = dark ? "#ffffff" : "#ffffff";
-  const tileBorder = dark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.10)";
+  // Tile styling — purple outline in BOTH modes for visual consistency.
+  // Dark mode gets a slightly stronger purple so it reads against the
+  // deeper shadow underneath.
+  const tileBg = "#ffffff";
+  const tileBorder = dark
+    ? "rgba(155,135,245,0.35)"  // purple, slightly stronger so it shows on dark bg
+    : "rgba(122,63,209,0.18)";  // purple, gentle on white bg
   const tileShadow = dark
     ? "0 2px 12px rgba(0,0,0,0.35)"
     : "0 2px 10px rgba(122,63,209,0.08)";
   const tileShadowHover = dark
-    ? "0 6px 24px rgba(0,0,0,0.55), 0 0 0 1px rgba(155,135,245,0.3)"
-    : "0 6px 22px rgba(122,63,209,0.18), 0 0 0 1px rgba(122,63,209,0.25)";
+    ? "0 6px 24px rgba(0,0,0,0.55), 0 0 0 1px rgba(155,135,245,0.55)"
+    : "0 6px 22px rgba(122,63,209,0.18), 0 0 0 1px rgba(122,63,209,0.35)";
   const mutedText = dark ? "rgba(200,185,255,0.55)" : "rgba(13,5,32,0.45)";
 
   if (loading) {

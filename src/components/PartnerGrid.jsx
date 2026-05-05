@@ -5,21 +5,38 @@ import { client, urlFor } from "../utils/sanity";
 /**
  * PartnerGrid — premium edition
  * -----------------------------
- * Same Sanity contract as before. Renders partners as a clean 3-column grid
- * (collapses to 2 on tablet, 1 on mobile) with cinematic tile materials:
- * mouse-following sheen, depth shadows, and a smooth hover lift.
+ * Renders Sanity "partner" documents as a clean 3-column grid with
+ * cinematic tile materials.
+ *
+ * Props:
+ *   - category (string)  — Sanity category to filter by. Omit or pass
+ *                          "all" to fetch ALL active partners regardless
+ *                          of category.
+ *   - dark     (boolean) — theme flag
+ *   - accent   (string)  — accent color for hover ring
  */
 export default function PartnerGrid({ category, dark, accent }) {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const query = `*[_type == "partner" && category == "${category}" && active == true] | order(order asc) {
-      _id,
-      name,
-      logo,
-      url
-    }`;
+    // If no category (or "all"), pull every active partner.
+    // Otherwise filter by the specific category — preserves existing behavior.
+    const fetchAll = !category || category === "all";
+
+    const query = fetchAll
+      ? `*[_type == "partner" && active == true] | order(order asc) {
+          _id,
+          name,
+          logo,
+          url
+        }`
+      : `*[_type == "partner" && category == "${category}" && active == true] | order(order asc) {
+          _id,
+          name,
+          logo,
+          url
+        }`;
 
     client
       .fetch(query)
@@ -94,7 +111,6 @@ export default function PartnerGrid({ category, dark, accent }) {
         }
         @media (max-width: 480px) {
           .partner-grid-wrap {
-            /* Keep 2 columns on phones — 1 column wastes too much space */
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 10px;
             padding: 12px 4% 0;
@@ -117,7 +133,6 @@ export default function PartnerGrid({ category, dark, accent }) {
                       box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* Mouse-following sheen — premium card material */
         .partner-tile::before {
           content: "";
           position: absolute;
@@ -158,7 +173,6 @@ export default function PartnerGrid({ category, dark, accent }) {
           }
         }
 
-        /* ─── MOBILE TILE SIZING ─── */
         @media (max-width: 900px) {
           .partner-tile {
             height: 92px;
@@ -188,7 +202,6 @@ export default function PartnerGrid({ category, dark, accent }) {
             ? urlFor(partner.logo).height(140).auto("format").url()
             : null;
 
-          // Premium depth shadow — multi-layer for tactile feel
           const baseShadow = dark
             ? "0 4px 14px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.6), 0 0 0 1px rgba(155,135,245,0.3)"
             : "0 4px 14px rgba(122,63,209,0.08), 0 1px 2px rgba(122,63,209,0.04), inset 0 1px 1px rgba(255,255,255,0.9), 0 0 0 1px rgba(122,63,209,0.15)";
@@ -255,7 +268,7 @@ export default function PartnerGrid({ category, dark, accent }) {
               viewport={{ once: true, margin: "-40px" }}
               transition={{
                 duration: 0.7,
-                delay: i * 0.06,
+                delay: Math.min(i * 0.04, 0.6),
                 ease: [0.22, 1, 0.36, 1],
               }}
               style={{ boxShadow: baseShadow }}

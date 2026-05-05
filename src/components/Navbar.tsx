@@ -4,11 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import AuthModal from "./AuthModal";
 
 const PARTNERS_DROPDOWN = [
-  { label: "2026 Partners", path: "/partners2026" }
+  { label: "2026 Partners", path: "/partners2026" },
   { label: "Sponsor", path: "/sponsor" },
   { label: "Exhibit", path: "/exhibit" },
   { label: "KYC Form", path: "/kyc" },
-
 ];
 
 const MORE_DROPDOWN = [

@@ -5,50 +5,13 @@ import Footer from "../components/Footer";
 import PartnerGrid from "../components/PartnerGrid";
 
 /* ══════════════════════════════════════════════════════════
-   CATEGORY SECTIONS — Sanity contract preserved
-   ══════════════════════════════════════════════════════════ */
-var CATEGORIES = [
-  {
-    title: "Government Partners",
-    subtitle: "Federal, provincial, and municipal bodies supporting innovation and trade in Canada.",
-    sanityCategory: "governmentPartners",
-  },
-  {
-    title: "Industry Associates",
-    subtitle: "National associations and alliances across technology, cybersecurity, and critical infrastructure.",
-    sanityCategory: "industryAssociates",
-  },
-  {
-    title: "Academic & Research Institutions",
-    subtitle: "Leading universities, research labs, and innovation centres driving deep tech in Canada.",
-    sanityCategory: "academicResearchInstitutions",
-  },
-  {
-    title: "Corporate & Enterprise Partners",
-    subtitle: "Enterprise technology companies, hyperscalers, and systems integrators powering the ecosystem.",
-    sanityCategory: "corporateEnterprisePartners",
-  },
-  {
-    title: "Startup & Ecosystem Partners",
-    subtitle: "Accelerators, incubators, and ecosystem builders nurturing Canada's next generation of startups.",
-    sanityCategory: "startupEcosystemPartners",
-  },
-  {
-    title: "International Trade Bodies",
-    subtitle: "Foreign trade commissions, consulates, and international chambers supporting cross-border tech collaboration.",
-    sanityCategory: "internationalTradeBodies",
-  },
-];
-
-/* ══════════════════════════════════════════════════════════
    ANIMATION PRESETS — brand-launch easing
    ══════════════════════════════════════════════════════════ */
 var EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
 var EASE_OUT_QUART = [0.22, 1, 0.36, 1];
 
 /* ══════════════════════════════════════════════════════════
-   REVEAL TEXT — clip-path wipe + blur entrance
-   "Unleashed" headline reveal, like a brand launch
+   REVEAL TEXT — clip-path wipe + blur entrance (scroll-triggered)
    ══════════════════════════════════════════════════════════ */
 function RevealText({ children, delay, as, className, style }) {
   var Tag = motion[as || "div"];
@@ -81,7 +44,39 @@ function RevealText({ children, delay, as, className, style }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   SOFT FADE — for body text and supporting elements
+   HERO REVEAL — same animation, plays on mount (mobile-safe)
+   ══════════════════════════════════════════════════════════ */
+function HeroReveal({ children, delay, as, className, style }) {
+  var Tag = motion[as || "div"];
+  return (
+    <Tag
+      initial={{
+        opacity: 0,
+        y: 50,
+        filter: "blur(16px)",
+        clipPath: "inset(0 100% 0 0)",
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        clipPath: "inset(0 0% 0 0)",
+      }}
+      transition={{
+        duration: 1.4,
+        delay: delay || 0,
+        ease: EASE_OUT_EXPO,
+      }}
+      className={className}
+      style={style}
+    >
+      {children}
+    </Tag>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   SOFT FADE — scroll-triggered
    ══════════════════════════════════════════════════════════ */
 function SoftReveal({ children, delay, className, style, as }) {
   var Tag = motion[as || "div"];
@@ -90,6 +85,28 @@ function SoftReveal({ children, delay, className, style, as }) {
       initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
       whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       viewport={{ once: true, margin: "-60px" }}
+      transition={{
+        duration: 1.0,
+        delay: delay || 0,
+        ease: EASE_OUT_QUART,
+      }}
+      className={className}
+      style={style}
+    >
+      {children}
+    </Tag>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   HERO SOFT — soft fade, plays on mount (mobile-safe)
+   ══════════════════════════════════════════════════════════ */
+function HeroSoft({ children, delay, className, style, as }) {
+  var Tag = motion[as || "div"];
+  return (
+    <Tag
+      initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       transition={{
         duration: 1.0,
         delay: delay || 0,
@@ -120,7 +137,6 @@ export default function Partners2026() {
     return function () { obs.disconnect(); };
   }, []);
 
-  // Hero parallax
   var heroRef = useRef(null);
   var scrollData = useScroll({
     target: heroRef,
@@ -137,18 +153,11 @@ export default function Partners2026() {
   var orange = dark ? "#f5a623" : "#d98a14";
   var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.10)";
 
-  // Gradient passed to category headings — same one "Involved" uses
   var brandGradient = "linear-gradient(135deg, " + accent + ", " + orange + ")";
 
   return (
     <>
       <style>{`
-        /* ─────────────────────────────────────────────
-           BRAND GRADIENT TEXT (same as "Involved")
-           Display defaults to inline-block but can be
-           overridden via inline style for headings that
-           need to be full-width and centered.
-           ───────────────────────────────────────────── */
         .tfc-grad-text {
           background-image: var(--tfc-gradient);
           background-clip: text;
@@ -163,11 +172,6 @@ export default function Partners2026() {
           width: 100%;
         }
 
-        /* ─────────────────────────────────────────────
-           SILVER MATTE TEXT — premium depth treatment
-           Light mode: dark gradient with subtle drop shadow
-           Dark mode: white-to-silver gradient with glow
-           ───────────────────────────────────────────── */
         .tfc-silver-text {
           background: var(--tfc-silver-gradient);
           -webkit-background-clip: text;
@@ -179,9 +183,6 @@ export default function Partners2026() {
           display: inline-block;
         }
 
-        /* ─────────────────────────────────────────────
-           FILM GRAIN — subtle texture overlay on hero
-           ───────────────────────────────────────────── */
         .tfc-film-grain {
           position: absolute;
           inset: 0;
@@ -194,9 +195,6 @@ export default function Partners2026() {
           background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)"/></svg>');
         }
 
-        /* ─────────────────────────────────────────────
-           SUBTLE GRID BACKDROP on hero
-           ───────────────────────────────────────────── */
         .tfc-grid-backdrop {
           position: absolute;
           inset: 0;
@@ -210,9 +208,6 @@ export default function Partners2026() {
           opacity: 0.5;
         }
 
-        /* ─────────────────────────────────────────────
-           AURORA — kept from previous version
-           ───────────────────────────────────────────── */
         :root {
           --aurora-white: #ffffff;
           --aurora-black: #06020f;
@@ -271,9 +266,6 @@ export default function Partners2026() {
           mix-blend-mode: difference;
         }
 
-        /* ─────────────────────────────────────────────
-           SECTION DIVIDER — soft glow line
-           ───────────────────────────────────────────── */
         .tfc-divider {
           height: 1px;
           width: 100%;
@@ -301,9 +293,7 @@ export default function Partners2026() {
         }}
       >
 
-        {/* ═══════════════════════════════════════════════════
-            HERO — cinematic brand-launch reveal
-            ═══════════════════════════════════════════════════ */}
+        {/* ═══════════════ HERO ═══════════════ */}
         <section
           ref={heroRef}
           style={{
@@ -319,15 +309,12 @@ export default function Partners2026() {
               : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.07) 0%, transparent 70%)",
           }}
         >
-          {/* Grid backdrop */}
           <div className="tfc-grid-backdrop" />
 
-          {/* Aurora */}
           <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
             <div className={dark ? "tfc-aurora-layer tfc-aurora-layer--dark" : "tfc-aurora-layer tfc-aurora-layer--light"} />
           </div>
 
-          {/* Radial vignette to fade aurora at edges */}
           <div style={{
             position: "absolute", inset: 0, pointerEvents: "none",
             background: dark
@@ -335,10 +322,8 @@ export default function Partners2026() {
               : "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 30%, #ffffff 100%)",
           }} />
 
-          {/* Film grain */}
           <div className="tfc-film-grain" />
 
-          {/* Hero content */}
           <motion.div
             style={{
               y: heroY,
@@ -350,7 +335,7 @@ export default function Partners2026() {
               textAlign: "center",
             }}
           >
-            <SoftReveal delay={0.1}>
+            <HeroSoft delay={0.1}>
               <div
                 style={{
                   fontFamily: "'Orbitron', sans-serif",
@@ -364,7 +349,7 @@ export default function Partners2026() {
               >
                 The Tech Festival Canada 2026
               </div>
-            </SoftReveal>
+            </HeroSoft>
 
             <h1
               style={{
@@ -376,15 +361,15 @@ export default function Partners2026() {
                 marginBottom: 32,
               }}
             >
-              <RevealText as="span" delay={0.3} className="tfc-silver-text" style={{ display: "block" }}>
+              <HeroReveal as="span" delay={0.3} className="tfc-silver-text" style={{ display: "block" }}>
                 Institutions
-              </RevealText>
-              <RevealText as="span" delay={0.55} className="tfc-grad-text" style={{ display: "block" }}>
+              </HeroReveal>
+              <HeroReveal as="span" delay={0.55} className="tfc-grad-text" style={{ display: "block" }}>
                 Involved
-              </RevealText>
+              </HeroReveal>
             </h1>
 
-            <SoftReveal delay={0.95}>
+            <HeroSoft delay={0.95}>
               <p
                 style={{
                   fontSize: "clamp(1rem, 1.6vw, 1.2rem)",
@@ -398,9 +383,9 @@ export default function Partners2026() {
               >
                 The Tech Festival Canada is supported by a growing network of government bodies, industry associations, academic institutions, enterprise partners, and international trade organisations. Together, we're building Canada's definitive technology platform.
               </p>
-            </SoftReveal>
+            </HeroSoft>
 
-            <SoftReveal delay={1.2}>
+            <HeroSoft delay={1.2}>
               <motion.div
                 animate={{ y: [0, 8, 0] }}
                 transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
@@ -418,13 +403,11 @@ export default function Partners2026() {
                 <div style={{ fontSize: "1.2rem", marginBottom: 4 }}>↓</div>
                 Discover Our Network
               </motion.div>
-            </SoftReveal>
+            </HeroSoft>
           </motion.div>
         </section>
 
-        {/* ═══════════════════════════════════════════════════
-            STATS — cinematic counters
-            ═══════════════════════════════════════════════════ */}
+        {/* ═══════════════ STATS ═══════════════ */}
         <section style={{ padding: "80px 5% 40px", maxWidth: 1100, margin: "0 auto" }}>
           <div
             style={{
@@ -436,9 +419,9 @@ export default function Partners2026() {
           >
             {[
               { val: "25+", label: "Partners" },
-              { val: "6", label: "Categories" },
               { val: "10+", label: "Countries" },
               { val: "5", label: "Tech Pillars" },
+              { val: "2", label: "Days" },
             ].map(function (stat, i) {
               return (
                 <motion.div
@@ -484,27 +467,69 @@ export default function Partners2026() {
           </div>
         </section>
 
-        {/* ═══════════════════════════════════════════════════
-            CATEGORY SECTIONS — each one is a brand reveal
-            ═══════════════════════════════════════════════════ */}
+        {/* ═══════════════ ATTENDING INSTITUTIONS GRID ═══════════════ */}
         <section style={{ padding: "60px 0 100px" }}>
-          {CATEGORIES.map(function (cat, catIdx) {
-            return (
-              <CategoryBlock
-                key={cat.sanityCategory}
-                category={cat}
-                dark={dark}
-                accent={accent}
-                textMuted={textMuted}
-                textDim={textDim}
-              />
-            );
-          })}
+          <SoftReveal>
+            <div
+              style={{
+                textAlign: "center",
+                fontFamily: "'Orbitron', sans-serif",
+                fontSize: "0.6rem",
+                fontWeight: 700,
+                letterSpacing: "3px",
+                textTransform: "uppercase",
+                color: textDim,
+                marginBottom: 16,
+              }}
+            >
+              The Network
+            </div>
+          </SoftReveal>
+
+          <RevealText
+            as="h2"
+            delay={0.1}
+            className="tfc-grad-text tfc-grad-block"
+            style={{
+              fontFamily: "'Orbitron', sans-serif",
+              fontWeight: 900,
+              fontSize: "clamp(1.8rem, 4vw, 2.6rem)",
+              letterSpacing: "-0.5px",
+              lineHeight: 1.15,
+              textAlign: "center",
+              margin: "0 auto 18px",
+              padding: "0 5%",
+              maxWidth: 900,
+            }}
+          >
+            Attending Institutions
+          </RevealText>
+
+          <SoftReveal delay={0.4}>
+            <p
+              style={{
+                fontSize: "clamp(0.95rem, 1.4vw, 1.1rem)",
+                color: textMuted,
+                lineHeight: 1.7,
+                maxWidth: 640,
+                margin: "0 auto 36px",
+                padding: "0 5%",
+                textAlign: "center",
+              }}
+            >
+              Government bodies, industry associations, academic institutions, enterprises, startups, and international trade organisations — all in one room.
+            </p>
+          </SoftReveal>
+
+          <SoftReveal delay={0.6}>
+            <div className="tfc-divider" style={{ marginBottom: 48 }} />
+          </SoftReveal>
+
+          {/* Single grid pulling EVERY active partner from Sanity */}
+          <PartnerGrid dark={dark} accent={accent} />
         </section>
 
-        {/* ═══════════════════════════════════════════════════
-            CTA — premium close
-            ═══════════════════════════════════════════════════ */}
+        {/* ═══════════════ CTA ═══════════════ */}
         <section style={{ padding: "60px 5% 100px", maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
           <SoftReveal>
             <div
@@ -553,7 +578,7 @@ export default function Partners2026() {
                   color: textMuted,
                   lineHeight: 1.75,
                   maxWidth: 500,
-                  margin: "0 auto 32px",
+                  margin: "0 auto 28px",
                   textAlign: "center",
                 }}
               >
@@ -614,110 +639,5 @@ export default function Partners2026() {
         <Footer />
       </div>
     </>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════
-   CATEGORY BLOCK — title + subtitle + grid, all centered
-   Each title gets the brand gradient (same as "Involved")
-   ══════════════════════════════════════════════════════════ */
-function CategoryBlock({ category, dark, accent, textMuted, textDim }) {
-  var ref = useRef(null);
-  var inView = useInView(ref, { once: true, margin: "-100px" });
-
-  return (
-    <div ref={ref} style={{ marginBottom: 96 }}>
-      {/* Eyebrow tag */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={inView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.8, ease: EASE_OUT_QUART }}
-        style={{
-          textAlign: "center",
-          fontFamily: "'Orbitron', sans-serif",
-          fontSize: "0.58rem",
-          fontWeight: 700,
-          letterSpacing: "3px",
-          textTransform: "uppercase",
-          color: textDim,
-          marginBottom: 16,
-        }}
-      >
-        Category
-      </motion.div>
-
-      {/* Brand-gradient heading — clip-path reveal */}
-      <motion.h2
-        initial={{
-          opacity: 0,
-          y: 40,
-          filter: "blur(12px)",
-          clipPath: "inset(0 100% 0 0)",
-        }}
-        animate={
-          inView
-            ? {
-                opacity: 1,
-                y: 0,
-                filter: "blur(0px)",
-                clipPath: "inset(0 0% 0 0)",
-              }
-            : {}
-        }
-        transition={{
-          duration: 1.3,
-          delay: 0.1,
-          ease: EASE_OUT_EXPO,
-        }}
-        className="tfc-grad-text tfc-grad-block"
-        style={{
-          fontFamily: "'Orbitron', sans-serif",
-          fontWeight: 900,
-          fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)",
-          letterSpacing: "-0.5px",
-          lineHeight: 1.15,
-          textAlign: "center",
-          margin: "0 auto 18px",
-          padding: "0 5%",
-          maxWidth: 900,
-        }}
-      >
-        {category.title}
-      </motion.h2>
-
-      {/* Subtitle — soft fade */}
-      <motion.p
-        initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
-        animate={inView ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
-        transition={{
-          duration: 1.0,
-          delay: 0.4,
-          ease: EASE_OUT_QUART,
-        }}
-        style={{
-          fontSize: "clamp(0.9rem, 1.3vw, 1rem)",
-          color: textMuted,
-          lineHeight: 1.7,
-          maxWidth: 600,
-          margin: "0 auto 36px",
-          padding: "0 5%",
-          textAlign: "center",
-        }}
-      >
-        {category.subtitle}
-      </motion.p>
-
-      {/* Divider line */}
-      <motion.div
-        initial={{ scaleX: 0, opacity: 0 }}
-        animate={inView ? { scaleX: 1, opacity: 1 } : {}}
-        transition={{ duration: 1.0, delay: 0.6, ease: EASE_OUT_QUART }}
-        className="tfc-divider"
-        style={{ marginBottom: 36, transformOrigin: "center" }}
-      />
-
-      {/* Grid — Sanity-powered */}
-      <PartnerGrid dark={dark} category={category.sanityCategory} accent={accent} />
-    </div>
   );
 }

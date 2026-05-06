@@ -130,12 +130,26 @@ export default function Navbar() {
   return (
     <>
       <style>{`
-        .tfc-navbar-wrap { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; width: 100%; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
-        .tfc-nav-container { display: flex; align-items: center; justify-content: space-between; height: 72px; max-width: 1400px; margin: 0 auto; padding: 0 2%; gap: 12px; }
+        /* ── NAVBAR — locked to top, never scrolls away ── */
+        .tfc-navbar-wrap {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          z-index: 9999 !important;
+          width: 100% !important;
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          will-change: transform;
+        }
+        .tfc-nav-container { display: flex; align-items: center; justify-content: space-between; height: 84px; max-width: 1400px; margin: 0 auto; padding: 0 2%; gap: 12px; }
         .tfc-nav-left { flex-shrink: 0; display: flex; align-items: center; }
         .tfc-nav-center { flex: 1; display: flex; justify-content: center; align-items: center; min-width: 0; overflow: visible; }
         .tfc-nav-right { flex-shrink: 0; display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
-        .tfc-nav-logo { height: 42px; width: auto; max-width: 160px; object-fit: contain; display: block; }
+
+        /* ── LOGO — significantly larger ── */
+        .tfc-nav-logo { height: 58px; width: auto; max-width: 200px; object-fit: contain; display: block; }
+
         .tfc-nav-link { font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 11px; border-radius: 999px; text-decoration: none; transition: background 0.2s ease, color 0.2s ease; white-space: nowrap; line-height: 1; display: flex; align-items: center; height: 32px; }
         .tfc-nav-link:hover { background: rgba(122,63,209,0.10); }
         .tfc-nav-link.active { background: rgba(122,63,209,0.14); }
@@ -151,18 +165,20 @@ export default function Navbar() {
         .tfc-desktop-ticket { display: inline-flex !important; }
         .tfc-desktop-nav { display: flex; }
 
+        /* ── TABLET ── */
         @media (max-width: 1280px) {
           .tfc-desktop-nav { display: none !important; }
           .tfc-hamburger { display: flex !important; }
           .tfc-nav-center { display: none !important; }
-          .tfc-nav-logo { height: 46px !important; max-width: 170px !important; }
+          .tfc-nav-logo { height: 62px !important; max-width: 215px !important; }
           .tfc-desktop-ticket { display: inline-flex !important; }
           .tfc-mobile-ticket { display: none !important; }
         }
 
+        /* ── MOBILE ── */
         @media (max-width: 640px) {
-          .tfc-nav-container { height: auto !important; padding: 12px 3% !important; }
-          .tfc-nav-logo { height: 38px !important; max-width: 130px !important; }
+          .tfc-nav-container { height: auto !important; min-height: 76px !important; padding: 14px 3% !important; }
+          .tfc-nav-logo { height: 52px !important; max-width: 180px !important; }
           .tfc-mobile-ticket { display: inline-flex !important; padding: 9px 16px !important; font-size: 0.6rem !important; }
           .tfc-desktop-ticket { display: none !important; }
           .tfc-brochure-btn { display: none !important; }
@@ -246,7 +262,7 @@ export default function Navbar() {
         <AnimatePresence>
           {mobileOpen && (
             <motion.div initial={{ opacity: 0, y: -15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.2 }}
-              style={{ position: "absolute", top: "100%", left: 0, width: "100%", height: "calc(100vh - 72px)", overflowY: "auto", background: mobileBg, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid " + border }}
+              style={{ position: "absolute", top: "100%", left: 0, width: "100%", height: "calc(100vh - 76px)", overflowY: "auto", background: mobileBg, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid " + border }}
             >
               <div style={{ padding: "20px 24px 80px", display: "flex", flexDirection: "column", gap: 4 }}>
                 {navItems.map((item) => {

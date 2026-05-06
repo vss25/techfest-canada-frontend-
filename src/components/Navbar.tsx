@@ -77,6 +77,12 @@ export default function Navbar() {
   const dropBorder = dark ? "rgba(155,135,245,0.18)" : "rgba(122,63,209,0.14)";
   const mobileBg = dark ? "rgba(10,5,24,0.95)" : "rgba(255,255,255,0.95)";
 
+  // Monochrome theme toggle colors
+  const themeBtnBg = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
+  const themeBtnBorder = dark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.14)";
+  const themeBtnHoverBg = dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)";
+  const themeBtnIcon = dark ? "#ffffff" : "#0d0520";
+
   const navItems = [
     { label: "HOME", path: "/" },
     { label: "FIRST TIMERS", path: "/first-timers" },
@@ -127,6 +133,58 @@ export default function Navbar() {
     </AnimatePresence>
   );
 
+  // Custom monochrome theme toggle — clean SVG sun/moon, no color
+  const ThemeToggle = () => (
+    <button
+      onClick={toggleTheme}
+      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+      className="tfc-theme-toggle"
+      style={{
+        background: themeBtnBg,
+        border: "1px solid " + themeBtnBorder,
+        color: themeBtnIcon,
+      }}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {dark ? (
+          <motion.svg
+            key="sun"
+            initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
+            animate={{ rotate: 0, opacity: 1, scale: 1 }}
+            exit={{ rotate: 90, opacity: 0, scale: 0.6 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            width="20" height="20" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2" />
+            <path d="M12 20v2" />
+            <path d="m4.93 4.93 1.41 1.41" />
+            <path d="m17.66 17.66 1.41 1.41" />
+            <path d="M2 12h2" />
+            <path d="M20 12h2" />
+            <path d="m6.34 17.66-1.41 1.41" />
+            <path d="m19.07 4.93-1.41 1.41" />
+          </motion.svg>
+        ) : (
+          <motion.svg
+            key="moon"
+            initial={{ rotate: 90, opacity: 0, scale: 0.6 }}
+            animate={{ rotate: 0, opacity: 1, scale: 1 }}
+            exit={{ rotate: -90, opacity: 0, scale: 0.6 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            width="20" height="20" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </motion.svg>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+
   return (
     <>
       <style>{`
@@ -142,13 +200,31 @@ export default function Navbar() {
           -webkit-backdrop-filter: blur(18px);
           will-change: transform;
         }
-        .tfc-nav-container { display: flex; align-items: center; justify-content: space-between; height: 84px; max-width: 1400px; margin: 0 auto; padding: 0 2%; gap: 12px; }
+
+        /* ── CONTAINER — significantly taller for a bigger logo ── */
+        .tfc-nav-container {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          height: 110px;
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 2%;
+          gap: 12px;
+        }
+
         .tfc-nav-left { flex-shrink: 0; display: flex; align-items: center; }
         .tfc-nav-center { flex: 1; display: flex; justify-content: center; align-items: center; min-width: 0; overflow: visible; }
-        .tfc-nav-right { flex-shrink: 0; display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+        .tfc-nav-right { flex-shrink: 0; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
 
-        /* ── LOGO — significantly larger ── */
-        .tfc-nav-logo { height: 58px; width: auto; max-width: 200px; object-fit: contain; display: block; }
+        /* ── LOGO — large and prominent ── */
+        .tfc-nav-logo {
+          height: 82px;
+          width: auto;
+          max-width: 280px;
+          object-fit: contain;
+          display: block;
+        }
 
         .tfc-nav-link { font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 11px; border-radius: 999px; text-decoration: none; transition: background 0.2s ease, color 0.2s ease; white-space: nowrap; line-height: 1; display: flex; align-items: center; height: 32px; }
         .tfc-nav-link:hover { background: rgba(122,63,209,0.10); }
@@ -156,11 +232,40 @@ export default function Navbar() {
         .tfc-drop-btn { font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 11px; border-radius: 999px; white-space: nowrap; display: flex; align-items: center; gap: 5px; background: none; border: none; cursor: pointer; transition: background 0.2s ease; line-height: 1; height: 32px; margin: 0; }
         .tfc-drop-btn:hover { background: rgba(122,63,209,0.10); }
         .tfc-drop-btn.active { background: rgba(122,63,209,0.14); }
+
+        /* ── HAMBURGER ── */
         .tfc-hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 6px; }
         .tfc-hamburger span { display: block; width: 22px; height: 2px; border-radius: 2px; transition: all 0.25s ease; }
         .tfc-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
         .tfc-hamburger.open span:nth-child(2) { opacity: 0; }
         .tfc-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        /* ── MONOCHROME THEME TOGGLE ── */
+        .tfc-theme-toggle {
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          padding: 0;
+          flex-shrink: 0;
+          transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+          overflow: hidden;
+          position: relative;
+        }
+        .tfc-theme-toggle:hover {
+          background: ${themeBtnHoverBg} !important;
+          transform: translateY(-1px);
+        }
+        .tfc-theme-toggle:active {
+          transform: translateY(0);
+        }
+        .tfc-theme-toggle svg {
+          position: absolute;
+        }
+
         .tfc-mobile-ticket { display: none !important; }
         .tfc-desktop-ticket { display: inline-flex !important; }
         .tfc-desktop-nav { display: flex; }
@@ -170,18 +275,24 @@ export default function Navbar() {
           .tfc-desktop-nav { display: none !important; }
           .tfc-hamburger { display: flex !important; }
           .tfc-nav-center { display: none !important; }
-          .tfc-nav-logo { height: 62px !important; max-width: 215px !important; }
+          .tfc-nav-container { height: 108px; }
+          .tfc-nav-logo { height: 84px !important; max-width: 290px !important; }
           .tfc-desktop-ticket { display: inline-flex !important; }
           .tfc-mobile-ticket { display: none !important; }
         }
 
         /* ── MOBILE ── */
         @media (max-width: 640px) {
-          .tfc-nav-container { height: auto !important; min-height: 76px !important; padding: 14px 3% !important; }
-          .tfc-nav-logo { height: 52px !important; max-width: 180px !important; }
+          .tfc-nav-container { height: auto !important; min-height: 92px !important; padding: 14px 3% !important; gap: 8px !important; }
+          .tfc-nav-logo { height: 68px !important; max-width: 220px !important; }
           .tfc-mobile-ticket { display: inline-flex !important; padding: 9px 16px !important; font-size: 0.6rem !important; }
           .tfc-desktop-ticket { display: none !important; }
           .tfc-brochure-btn { display: none !important; }
+          .tfc-theme-toggle { width: 38px; height: 38px; }
+        }
+
+        @media (max-width: 380px) {
+          .tfc-nav-logo { height: 60px !important; max-width: 180px !important; }
         }
       `}</style>
 
@@ -245,9 +356,7 @@ export default function Navbar() {
               style={{ alignItems: "center", gap: 8, padding: "9px 20px", borderRadius: 999, fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none", transition: "all 0.2s ease" }}
             >TICKETS</Link>
 
-            <button onClick={toggleTheme} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem", padding: "4px", lineHeight: 1 }} aria-label="Toggle theme">
-              {dark ? "☀️" : "🌙"}
-            </button>
+            <ThemeToggle />
 
             <button className={"tfc-hamburger" + (mobileOpen ? " open" : "")} onClick={() => setMobileOpen(!mobileOpen)} aria-label="Menu">
               <span style={{ background: textMain }} />
@@ -262,7 +371,7 @@ export default function Navbar() {
         <AnimatePresence>
           {mobileOpen && (
             <motion.div initial={{ opacity: 0, y: -15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.2 }}
-              style={{ position: "absolute", top: "100%", left: 0, width: "100%", height: "calc(100vh - 76px)", overflowY: "auto", background: mobileBg, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid " + border }}
+              style={{ position: "absolute", top: "100%", left: 0, width: "100%", height: "calc(100vh - 92px)", overflowY: "auto", background: mobileBg, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid " + border }}
             >
               <div style={{ padding: "20px 24px 80px", display: "flex", flexDirection: "column", gap: 4 }}>
                 {navItems.map((item) => {

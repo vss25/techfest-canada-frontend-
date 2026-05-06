@@ -10,27 +10,18 @@ var EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
 var EASE_OUT_QUART = [0.22, 1, 0.36, 1];
 
 /* ══════════════════════════════════════════════════════════
-   REVEAL TEXT — clip-path wipe + blur entrance
+   REVEAL TEXT — opacity + blur entrance (no clip-path)
+   This guarantees text shows on mobile even if useInView is flaky
    ══════════════════════════════════════════════════════════ */
 function RevealText({ children, delay, as, className, style }) {
   var Tag = motion[as || "div"];
   return (
     <Tag
-      initial={{
-        opacity: 0,
-        y: 50,
-        filter: "blur(16px)",
-        clipPath: "inset(0 100% 0 0)",
-      }}
-      whileInView={{
-        opacity: 1,
-        y: 0,
-        filter: "blur(0px)",
-        clipPath: "inset(0 0% 0 0)",
-      }}
-      viewport={{ once: true, margin: "-80px" }}
+      initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      viewport={{ once: true, amount: 0.15, margin: "0px 0px -10% 0px" }}
       transition={{
-        duration: 1.4,
+        duration: 1.0,
         delay: delay || 0,
         ease: EASE_OUT_EXPO,
       }}
@@ -51,7 +42,7 @@ function SoftReveal({ children, delay, className, style, as }) {
     <Tag
       initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
       whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, margin: "-60px" }}
+      viewport={{ once: true, amount: 0.15, margin: "0px 0px -10% 0px" }}
       transition={{
         duration: 1.0,
         delay: delay || 0,
@@ -642,7 +633,7 @@ export default function Organizers() {
                   key={sector}
                   initial={{ opacity: 0, scale: 0.85, y: 16 }}
                   whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-40px" }}
+                  viewport={{ once: true, amount: 0.2 }}
                   transition={{
                     duration: 0.7,
                     delay: i * 0.06,
@@ -916,7 +907,7 @@ export default function Organizers() {
    ══════════════════════════════════════════════════════════ */
 function ServiceCard({ service, index, textMain, textMuted, accent }) {
   var ref = useRef(null);
-  var inView = useInView(ref, { once: true, margin: "-60px" });
+  var inView = useInView(ref, { once: true, amount: 0.15 });
 
   var onMove = function (e) {
     var rect = e.currentTarget.getBoundingClientRect();

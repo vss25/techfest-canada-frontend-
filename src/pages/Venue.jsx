@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion";
-import Navbar from "../components/Navbar.tsx";
+import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 // Use local images if available, fallback to real Westin-style hotel photos

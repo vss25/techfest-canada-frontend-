@@ -189,7 +189,7 @@ export default function Home() {
           </motion.div>
         </motion.div>
 
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 160, zIndex: 4, background: "linear-gradient(to bottom, transparent, " + bg + ")", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, zIndex: 4, background: "linear-gradient(to bottom, transparent, " + bg + ")", pointerEvents: "none" }} />
       </section>
 
       {/* HERO LOWER */}

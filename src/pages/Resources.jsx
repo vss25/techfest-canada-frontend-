@@ -24,7 +24,6 @@ export default function FirstTimers() {
   const border    = isDark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.18)";
   const textMain  = isDark ? "#ffffff"                : "#0f0520";
   const textMuted = isDark ? "rgba(200,180,255,0.8)"  : "rgba(60,30,110,0.85)";
-  const accent    = isDark ? "#b99eff"                : "#7a3fd1";
 
   return (
     <div style={{ background: bg, minHeight: "100vh", color: textMain, overflowX: "hidden" }}>
@@ -40,7 +39,6 @@ export default function FirstTimers() {
           .ft-bottom-cta-grid { min-height: auto !important; }
         }
 
-        /* ──── AURORA ──── */
         :root {
           --aurora-white: #ffffff;
           --aurora-black: #06020f;
@@ -102,18 +100,16 @@ export default function FirstTimers() {
 
       <Navbar />
 
-      {/* ═══════════ HERO — Aurora Background ═══════════ */}
+      {/* ═══════════ HERO ═══════════ */}
       <section ref={heroRef} style={{
         position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
         overflow: "hidden", minHeight: "100vh",
         background: isDark ? "#06020f" : "#f4f0ff",
       }}>
-        {/* Aurora layer */}
         <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
           <div className={isDark ? "ft-aurora-layer ft-aurora-layer--dark" : "ft-aurora-layer ft-aurora-layer--light"} />
         </div>
 
-        {/* Radial mask for depth */}
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
           background: isDark
@@ -121,7 +117,6 @@ export default function FirstTimers() {
             : "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 20%, #f4f0ff 100%)",
         }} />
 
-        {/* Content */}
         <motion.div style={{
           y: heroY, opacity: heroOpacity,
           position: "relative", zIndex: 10,
@@ -136,7 +131,6 @@ export default function FirstTimers() {
             transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}
           >
-            {/* Heading */}
             <h1 style={{
               fontFamily: "'Orbitron', sans-serif",
               fontSize: "clamp(2.5rem, 7vw, 5rem)",
@@ -150,7 +144,6 @@ export default function FirstTimers() {
               }}>The Tech Festival Canada</span>
             </h1>
 
-            {/* Subtitle */}
             <p style={{
               fontSize: "clamp(1.1rem, 2vw, 1.3rem)",
               color: textMuted, lineHeight: 1.7,
@@ -159,7 +152,6 @@ export default function FirstTimers() {
               If this is your first time, here is what to expect and how to get the most value from the experience. This is built for outcomes: clearer decisions, faster partnerships, and real momentum after the event.
             </p>
 
-            {/* Scroll cue */}
             <motion.div
               animate={{ y: [0, 8, 0] }}
               transition={{ repeat: Infinity, duration: 1.8 }}
@@ -173,7 +165,7 @@ export default function FirstTimers() {
       </section>
 
       {/* ═══════════ ROW 1 — THE CONFERENCE ═══════════ */}
-      <ContentRow isDark={isDark} textMain={textMain} border={border}
+      <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
         reverse={false}
         image="/ft-conference.jpg" imageAlt="Keynote presentation showing five tech pillars and applied sectors"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
@@ -213,7 +205,7 @@ export default function FirstTimers() {
       </ContentRow>
 
       {/* ═══════════ ROW 2 — THE EXPO ═══════════ */}
-      <ContentRow isDark={isDark} textMain={textMain} border={border}
+      <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
         reverse={true} hasBg={true}
         image="/ft-expo.jpg" imageAlt="The Tech Festival Canada expo and networking floor"
         cta={{ label: "Partner With Us", href: "/sponsor" }}
@@ -227,7 +219,7 @@ export default function FirstTimers() {
       </ContentRow>
 
       {/* ═══════════ ROW 3 — AWARDS NIGHT ═══════════ */}
-      <ContentRow isDark={isDark} textMain={textMain} border={border}
+      <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
         reverse={false}
         image="/ft-awards.jpg" imageAlt="Canada Tech Titans Awards Night ceremony"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
@@ -241,7 +233,7 @@ export default function FirstTimers() {
       </ContentRow>
 
       {/* ═══════════ ROW 4 — CxO BREAKFAST ═══════════ */}
-      <ContentRow isDark={isDark} textMain={textMain} border={border}
+      <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
         reverse={true} hasBg={true}
         image="/ft-breakfast.jpg" imageAlt="CxO Breakfast with senior leaders"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
@@ -255,7 +247,7 @@ export default function FirstTimers() {
       </ContentRow>
 
       {/* ═══════════ ROW 5 — GALA DINNER ═══════════ */}
-      <ContentRow isDark={isDark} textMain={textMain} border={border}
+      <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
         reverse={false}
         image="/ft-gala.jpg" imageAlt="Gala Dinner and Networking Reception"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
@@ -269,7 +261,7 @@ export default function FirstTimers() {
       </ContentRow>
 
       {/* ═══════════ ROW 6 — CONSULTATION CLINIC ═══════════ */}
-      <ContentRow isDark={isDark} textMain={textMain} border={border}
+      <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
         reverse={true} hasBg={true}
         image="/ft-clinic.jpg" imageAlt="Consultation Clinic at The Tech Festival Canada"
         cta={{ label: "Partner With Us", href: "/sponsor" }}
@@ -287,25 +279,55 @@ export default function FirstTimers() {
         <motion.div
           initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}
           className="ft-bottom-cta-grid"
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderRadius: 28, overflow: "hidden", border: `1px solid ${border}`, background: cardBg, minHeight: 400 }}
+          style={{
+            display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0,
+            borderRadius: 28, overflow: "hidden",
+            border: `1px solid ${border}`, background: cardBg, minHeight: 400,
+          }}
         >
-          <div style={{ position: "relative", background: isDark ? "#120a22" : "#ede8f7", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", minHeight: 300 }}>
-            <img src={isDark ? "/Tech_Festival_Canada_Logo_Dark_Transparent.png" : "/logo-white.png"} alt="The Tech Festival Canada"
-              style={{ width: "65%", maxWidth: 300, height: "auto", objectFit: "contain", filter: isDark ? "drop-shadow(0 0 40px rgba(122,63,209,0.25))" : "drop-shadow(0 8px 24px rgba(122,63,209,0.12))" }} />
-            <div style={{ position: "absolute", width: "70%", height: "70%", borderRadius: "50%", background: isDark ? "radial-gradient(circle, rgba(122,63,209,0.15) 0%, transparent 70%)" : "radial-gradient(circle, rgba(122,63,209,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+          {/* Logo panel */}
+          <div style={{
+            position: "relative",
+            background: isDark ? "#120a22" : "#ede8f7",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            overflow: "hidden", minHeight: 300,
+          }}>
+            <img
+              src="/Tech_Festival_Canada_Logo_Dark_Transparent.png"
+              alt="The Tech Festival Canada"
+              style={{
+                width: "65%", maxWidth: 300, height: "auto", objectFit: "contain",
+                filter: isDark
+                  ? "drop-shadow(0 0 40px rgba(122,63,209,0.25))"
+                  : "invert(1) drop-shadow(0 8px 24px rgba(122,63,209,0.18))",
+              }}
+            />
+            <div style={{
+              position: "absolute", width: "70%", height: "70%", borderRadius: "50%",
+              background: isDark
+                ? "radial-gradient(circle, rgba(122,63,209,0.15) 0%, transparent 70%)"
+                : "radial-gradient(circle, rgba(122,63,209,0.08) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }} />
           </div>
+
+          {/* Text panel */}
           <div style={{ padding: "clamp(40px, 6vw, 64px)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.6rem, 3vw, 2.4rem)", fontWeight: 900, lineHeight: 1.2, marginBottom: 20, color: textMain }}>
+            <h2 style={{
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
+              fontWeight: 900, lineHeight: 1.2, marginBottom: 20, color: textMain,
+            }}>
               Ready to <GradientSpan>show up prepared?</GradientSpan>
             </h2>
             <p style={{ color: textMuted, lineHeight: 1.7, fontSize: "1.1rem", marginBottom: 36, maxWidth: 480 }}>
               Secure your seat at The Westin Harbour Castle, Toronto on October 26–27, 2026. Spaces are limited — this is not a conference you attend passively.
             </p>
             <div className="ft-cta-row" style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-              <motion.a href="/tickets" className="btn-primary" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} style={{borderRadius: 14}}>
+              <motion.a href="/tickets" className="btn-primary" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} style={{ borderRadius: 14 }}>
                 Get Your Tickets
               </motion.a>
-              <motion.a href="/sponsor" className="btn-outline" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} style={{borderRadius: 14}}>
+              <motion.a href="/sponsor" className="btn-outline" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} style={{ borderRadius: 14 }}>
                 Partner With Us
               </motion.a>
             </div>
@@ -374,11 +396,9 @@ function ListBlock({ textMain, items }) {
    CONTENT ROW — alternating text + image
    ═══════════════════════════════════════════════════════ */
 
-function ContentRow({ isDark, textMain, border, reverse, hasBg, image, imageAlt, cta, children }) {
+function ContentRow({ isDark, textMain, textMuted, border, reverse, hasBg, image, imageAlt, cta, children }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
-  
-  // Choose button style based on the label text (like the original logic)
   const isPrimary = cta.label === "Get Your Pass";
 
   return (
@@ -406,7 +426,7 @@ function ContentRow({ isDark, textMain, border, reverse, hasBg, image, imageAlt,
           <motion.a
             href={cta.href}
             className={isPrimary ? "btn-primary" : "btn-outline"}
-            whileHover={{ scale: 1.04 }} 
+            whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.97 }}
             style={{ marginTop: 16, borderRadius: 14 }}
           >
@@ -430,7 +450,9 @@ function ContentRow({ isDark, textMain, border, reverse, hasBg, image, imageAlt,
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", minHeight: 400 }} />
             <div style={{
               position: "absolute", inset: 0,
-              background: isDark ? "linear-gradient(to top, rgba(7,3,15,0.3) 0%, transparent 40%)" : "linear-gradient(to top, rgba(244,240,255,0.15) 0%, transparent 40%)",
+              background: isDark
+                ? "linear-gradient(to top, rgba(7,3,15,0.3) 0%, transparent 40%)"
+                : "linear-gradient(to top, rgba(244,240,255,0.15) 0%, transparent 40%)",
               pointerEvents: "none",
             }} />
           </div>

@@ -162,8 +162,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 1 — THE CONFERENCE ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={false}
-        image="/ft-conference.jpg" imageAlt="Keynote presentation showing five tech pillars and applied sectors"
+        reverse={false} image="/ft-conference.jpg" imageAlt="Keynote presentation showing five tech pillars and applied sectors"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
         <h2 style={headingStyle(textMain)}>The <GradientSpan>Conference</GradientSpan></h2>
@@ -179,9 +178,7 @@ export default function FirstTimers() {
           "Robotics and Intelligent Infrastructure",
         ]} />
         <SubHeading textMain={textMain}>5 Applied Sectors</SubHeading>
-        <p style={paraStyle(textMuted)}>
-          We bring these conversations into the sectors where the demand is urgent and budgets are real:
-        </p>
+        <p style={paraStyle(textMuted)}>We bring these conversations into the sectors where the demand is urgent and budgets are real:</p>
         <ListBlock textMain={textMain} items={[
           "Energy and Utilities",
           "Healthcare and Life Sciences",
@@ -197,8 +194,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 2 — THE EXPO ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={true} hasBg={true}
-        image="/ft-expo.jpg" imageAlt="The Tech Festival Canada expo and networking floor"
+        reverse={true} hasBg={true} image="/ft-expo.jpg" imageAlt="The Tech Festival Canada expo and networking floor"
         cta={{ label: "Partner With Us", href: "/sponsor" }}
       >
         <h2 style={headingStyle(textMain)}>The <GradientSpan>Expo</GradientSpan></h2>
@@ -209,8 +205,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 3 — AWARDS NIGHT ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={false}
-        image="/ft-awards.jpg" imageAlt="Canada Tech Titans Awards Night ceremony"
+        reverse={false} image="/ft-awards.jpg" imageAlt="Canada Tech Titans Awards Night ceremony"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
         <h2 style={headingStyle(textMain)}>Awards <GradientSpan>Night</GradientSpan></h2>
@@ -221,8 +216,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 4 — CxO BREAKFAST ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={true} hasBg={true}
-        image="/ft-breakfast.jpg" imageAlt="CxO Breakfast with senior leaders"
+        reverse={true} hasBg={true} image="/ft-breakfast.jpg" imageAlt="CxO Breakfast with senior leaders"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
         <h2 style={headingStyle(textMain)}>CxO <GradientSpan>Breakfast</GradientSpan></h2>
@@ -233,8 +227,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 5 — GALA DINNER ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={false}
-        image="/ft-gala.jpg" imageAlt="Gala Dinner and Networking Reception"
+        reverse={false} image="/ft-gala.jpg" imageAlt="Gala Dinner and Networking Reception"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
         <h2 style={headingStyle(textMain)}>Gala Dinner and <GradientSpan>Networking Reception</GradientSpan></h2>
@@ -245,8 +238,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 6 — CONSULTATION CLINIC ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={true} hasBg={true}
-        image="/ft-clinic.jpg" imageAlt="Consultation Clinic at The Tech Festival Canada"
+        reverse={true} hasBg={true} image="/ft-clinic.jpg" imageAlt="Consultation Clinic at The Tech Festival Canada"
         cta={{ label: "Partner With Us", href: "/sponsor" }}
       >
         <h2 style={headingStyle(textMain)}>Consultation <GradientSpan>Clinic</GradientSpan></h2>
@@ -266,30 +258,24 @@ export default function FirstTimers() {
             border: `1px solid ${border}`, background: cardBg, minHeight: 400,
           }}
         >
-          {/* Logo panel */}
+          {/* Logo panel — always dark so the logo is always visible */}
           <div style={{
             position: "relative",
-            background: isDark ? "#120a22" : "#ede8f7",
+            background: "#120a22",
             display: "flex", alignItems: "center", justifyContent: "center",
             overflow: "hidden", minHeight: 300,
           }}>
             <img
-              src={isDark
-                ? "/Tech_Festival_Canada_Logo_Dark_Transparent.png"
-                : "/Tech_Festival_Canada_Logo_Light_Transparent.png"}
+              src="/Tech_Festival_Canada_Logo_Dark_Transparent.png"
               alt="The Tech Festival Canada"
               style={{
                 width: "65%", maxWidth: 300, height: "auto", objectFit: "contain",
-                filter: isDark
-                  ? "drop-shadow(0 0 40px rgba(122,63,209,0.25))"
-                  : "drop-shadow(0 8px 24px rgba(122,63,209,0.12))",
+                filter: "drop-shadow(0 0 40px rgba(122,63,209,0.25))",
               }}
             />
             <div style={{
               position: "absolute", width: "70%", height: "70%", borderRadius: "50%",
-              background: isDark
-                ? "radial-gradient(circle, rgba(122,63,209,0.15) 0%, transparent 70%)"
-                : "radial-gradient(circle, rgba(122,63,209,0.08) 0%, transparent 70%)",
+              background: "radial-gradient(circle, rgba(122,63,209,0.15) 0%, transparent 70%)",
               pointerEvents: "none",
             }} />
           </div>

@@ -168,13 +168,13 @@ export default function Home() {
 
       <Navbar />
 
-      {/* HERO UPPER */}
-      <section style={{ position: "relative", overflow: "hidden", background: bg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      {/* HERO UPPER — always dark regardless of theme */}
+      <section style={{ position: "relative", overflow: "hidden", background: "#06020f", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
         <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden" }}>
           <video autoPlay muted loop playsInline style={{ position: "absolute", top: "50%", left: "50%", minWidth: "100%", minHeight: "100%", width: "auto", height: "auto", transform: "translate(-50%, -50%)", objectFit: "cover" }}>
             <source src="/hero-bg.mp4" type="video/mp4" />
           </video>
-          <div style={{ position: "absolute", inset: 0, background: dark ? "rgba(6,2,15,0.65)" : "rgba(244,240,255,0.45)" }} />
+          <div style={{ position: "absolute", inset: 0, background: "rgba(6,2,15,0.65)" }} />
         </div>
 
         <motion.div variants={containerVariants} initial="hidden" animate="visible"
@@ -182,14 +182,14 @@ export default function Home() {
         >
           <motion.div variants={itemBlur} style={{ marginBottom: "2.2rem" }}>
             <img
-              src={dark ? "/Tech_Festival_Canada_Logo_Dark_Transparent.png" : "/Tech_Festival_Canada_Logo_Light_Transparent.webp"}
+              src="/Tech_Festival_Canada_Logo_Dark_Transparent.png"
               alt="The Tech Festival Canada"
-              style={{ width: "100%", maxWidth: 980, height: "auto", objectFit: "contain", filter: dark ? "drop-shadow(0 0 50px rgba(155,135,245,0.22))" : "drop-shadow(0 10px 28px rgba(122,63,209,0.12))" }}
+              style={{ width: "100%", maxWidth: 980, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 50px rgba(155,135,245,0.22))" }}
             />
           </motion.div>
         </motion.div>
 
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 120, zIndex: 4, background: "linear-gradient(to bottom, transparent, " + bg + ")", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 160, zIndex: 4, background: "linear-gradient(to bottom, transparent, " + bg + ")", pointerEvents: "none" }} />
       </section>
 
       {/* HERO LOWER */}

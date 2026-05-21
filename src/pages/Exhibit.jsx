@@ -68,10 +68,6 @@ const BOOTH_TIERS = [
   }
 ];
 
-/* ═══════════════════════════════════════════════════════
-   BOOTH IMAGE GALLERY — auto-rotating with dot controls
-   ═══════════════════════════════════════════════════════ */
-
 function BoothGallery({ images, isDark, border, cardBg }) {
   const [active, setActive] = useState(0);
   const intervalRef = useRef(null);
@@ -96,19 +92,14 @@ function BoothGallery({ images, isDark, border, cardBg }) {
   return (
     <div style={{
       borderRadius: 24, overflow: "hidden", aspectRatio: "4/3",
-      border: "1px solid " + border, background: cardBg,
-      position: "relative"
+      border: "1px solid " + border, background: cardBg, position: "relative"
     }}>
       <AnimatePresence mode="sync">
         {images.map(function (src, i) {
           return i === active ? (
             <motion.img
-              key={src}
-              src={src}
-              alt={"Booth view " + (i + 1)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              key={src} src={src} alt={"Booth view " + (i + 1)}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.7 }}
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 2 }}
               onError={function (e) { e.target.style.display = "none"; }}
@@ -117,7 +108,6 @@ function BoothGallery({ images, isDark, border, cardBg }) {
         })}
       </AnimatePresence>
 
-      {/* For reference only label */}
       <div style={{
         position: "absolute", top: 12, left: 12, zIndex: 5,
         background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)",
@@ -127,32 +117,22 @@ function BoothGallery({ images, isDark, border, cardBg }) {
         color: "rgba(255,255,255,0.65)", pointerEvents: "none",
       }}>For reference only</div>
 
-      {/* Dot navigation */}
       <div style={{
         position: "absolute", bottom: 14, left: 0, right: 0, zIndex: 5,
         display: "flex", justifyContent: "center", gap: 8,
       }}>
         {images.map(function (_, i) {
           return (
-            <button
-              key={i}
-              onClick={function () { handleDot(i); }}
-              style={{
-                width: i === active ? 22 : 8,
-                height: 8,
-                borderRadius: 999,
-                border: "none",
-                cursor: "pointer",
-                background: i === active ? "#f5a623" : "rgba(255,255,255,0.45)",
-                transition: "all 0.3s ease",
-                padding: 0,
-              }}
-            />
+            <button key={i} onClick={function () { handleDot(i); }} style={{
+              width: i === active ? 22 : 8, height: 8, borderRadius: 999,
+              border: "none", cursor: "pointer",
+              background: i === active ? "#f5a623" : "rgba(255,255,255,0.45)",
+              transition: "all 0.3s ease", padding: 0,
+            }} />
           );
         })}
       </div>
 
-      {/* Subtle gradient overlay at bottom for dot readability */}
       <div style={{
         position: "absolute", bottom: 0, left: 0, right: 0, height: 60, zIndex: 3,
         background: "linear-gradient(to top, rgba(0,0,0,0.35), transparent)",
@@ -209,8 +189,6 @@ export default function Exhibit() {
           .cta-row { flex-direction: column !important; align-items: stretch !important; }
           .cta-row a { width: 100% !important; text-align: center !important; justify-content: center !important; }
         }
-        
-        /* AURORA BACKGROUND */
         :root {
           --aurora-white: #ffffff;
           --aurora-black: #06020f;
@@ -249,18 +227,16 @@ export default function Exhibit() {
 
       <Navbar />
 
-      {/* ═══════════ HERO SECTION ═══════════ */}
+      {/* ═══════════ HERO ═══════════ */}
       <section style={{
         position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
         overflow: "hidden", background: isDark ? "#06020f" : "#f4f0ff",
         paddingTop: "clamp(120px, 15vw, 160px)", paddingBottom: "20px"
       }}>
-        {/* Background photo */}
         <img src="/exhibit-hero-bg.png" alt="" style={{
           position: "absolute", inset: 0, width: "100%", height: "100%",
           objectFit: "cover", objectPosition: "center",
-          opacity: isDark ? 0.18 : 0.12,
-          pointerEvents: "none", zIndex: 0,
+          opacity: isDark ? 0.18 : 0.12, pointerEvents: "none", zIndex: 0,
         }} />
         <div style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 1 }}>
           <div className={isDark ? "aurora-layer aurora-layer--dark" : "aurora-layer aurora-layer--light"} />
@@ -271,15 +247,9 @@ export default function Exhibit() {
             ? "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 20%, #06020f 100%)"
             : "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 20%, #f4f0ff 100%)",
         }} />
-
-        <motion.div style={{
-          position: "relative", zIndex: 10, textAlign: "center", padding: "0 5%",
-          maxWidth: 900, margin: "0 auto"
-        }}
-          initial={{ opacity: 0, y: 30 }} 
-          whileInView={{ opacity: 1, y: 0 }} 
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
+        <motion.div
+          style={{ position: "relative", zIndex: 10, textAlign: "center", padding: "0 5%", maxWidth: 900, margin: "0 auto" }}
+          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}
         >
           <h1 style={{
             fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(3rem, 7vw, 5rem)",
@@ -291,21 +261,15 @@ export default function Exhibit() {
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             }}>With Us</span>
           </h1>
-          <p style={{
-            fontSize: "clamp(1.1rem, 2vw, 1.3rem)", color: textMuted, lineHeight: 1.7,
-            maxWidth: 780, margin: "0 auto", fontWeight: 500
-          }}>
+          <p style={{ fontSize: "clamp(1.1rem, 2vw, 1.3rem)", color: textMuted, lineHeight: 1.7, maxWidth: 780, margin: "0 auto", fontWeight: 500 }}>
             Put your brand at the centre of Canada's most important technology conversations.
           </p>
         </motion.div>
       </section>
 
-      {/* ═══════════ INTRO TEXT ═══════════ */}
-      <motion.section 
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
-        transition={{ duration: 0.8 }}
+      {/* ═══════════ INTRO ═══════════ */}
+      <motion.section
+        initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.8 }}
         style={{ padding: "20px 5% 80px", maxWidth: 1000, margin: "0 auto", position: "relative", zIndex: 10 }}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 24, fontSize: "1.1rem", color: textMuted, lineHeight: 1.8, textAlign: "justify" }}>
@@ -318,14 +282,9 @@ export default function Exhibit() {
       {/* ═══════════ BOOTH TIERS ═══════════ */}
       <div style={{ paddingBottom: "80px" }}>
         {BOOTH_TIERS.map((tier, index) => (
-          <BoothRow 
-            key={tier.id} 
-            tier={tier} 
-            isDark={isDark} 
-            textMain={textMain} 
-            textMuted={textMuted} 
-            border={border} 
-            cardBg={cardBg}
+          <BoothRow
+            key={tier.id} tier={tier} isDark={isDark}
+            textMain={textMain} textMuted={textMuted} border={border} cardBg={cardBg}
             index={index}
             onOpenModal={() => setSelectedBooth(tier)}
             onPurchase={() => handlePurchaseBooth(tier.id)}
@@ -352,11 +311,21 @@ export default function Exhibit() {
           className="bottom-cta-grid"
           style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderRadius: 28, overflow: "hidden", border: "1px solid " + border, background: cardBg, minHeight: 400 }}
         >
-          <div style={{ position: "relative", background: isDark ? "#120a22" : "#ede8f7", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", minHeight: 300 }}>
-            <img src={isDark ? "/Tech_Festival_Canada_Logo_Dark_Transparent.png" : "/white.mode.png"} alt="The Tech Festival Canada"
-              style={{ width: "65%", maxWidth: 300, height: "auto", objectFit: "contain", filter: isDark ? "drop-shadow(0 0 40px rgba(122,63,209,0.25))" : "drop-shadow(0 8px 24px rgba(122,63,209,0.12))" }} />
-            <div style={{ position: "absolute", width: "70%", height: "70%", borderRadius: "50%", background: isDark ? "radial-gradient(circle, rgba(122,63,209,0.15) 0%, transparent 70%)" : "radial-gradient(circle, rgba(122,63,209,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+          {/* Logo panel — always dark */}
+          <div style={{
+            position: "relative", background: "#120a22",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            overflow: "hidden", minHeight: 300,
+          }}>
+            <img
+              src="/Tech_Festival_Canada_Logo_Dark_Transparent.png"
+              alt="The Tech Festival Canada"
+              style={{ width: "65%", maxWidth: 300, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 40px rgba(122,63,209,0.25))" }}
+            />
+            <div style={{ position: "absolute", width: "70%", height: "70%", borderRadius: "50%", background: "radial-gradient(circle, rgba(122,63,209,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
           </div>
+
+          {/* Text panel */}
           <div style={{ padding: "clamp(40px, 6vw, 64px)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
             <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.6rem, 3vw, 2.4rem)", fontWeight: 900, lineHeight: 1.2, marginBottom: 20, color: textMain }}>
               Ready to <GradientSpan>secure your space?</GradientSpan>
@@ -379,13 +348,10 @@ export default function Exhibit() {
       {/* ═══════════ ENQUIRE MODAL ═══════════ */}
       <AnimatePresence>
         {selectedBooth && (
-          <EnquireModal 
-            booth={selectedBooth} 
-            onClose={() => setSelectedBooth(null)} 
-            isDark={isDark} 
-            textMain={textMain} 
-            border={border}
-            cardBg={cardBg}
+          <EnquireModal
+            booth={selectedBooth}
+            onClose={() => setSelectedBooth(null)}
+            isDark={isDark} textMain={textMain} border={border} cardBg={cardBg}
           />
         )}
       </AnimatePresence>
@@ -396,7 +362,7 @@ export default function Exhibit() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   BOOTH ROW COMPONENT
+   BOOTH ROW
    ═══════════════════════════════════════════════════════ */
 
 function BoothRow({ tier, isDark, textMain, textMuted, border, cardBg, index, onOpenModal, onPurchase }) {
@@ -414,23 +380,16 @@ function BoothRow({ tier, isDark, textMain, textMuted, border, cardBg, index, on
         display: "grid", gridTemplateColumns: "1fr 1fr",
         gap: "clamp(40px, 6vw, 80px)", alignItems: "center",
       }}>
-        
-        {/* LEFT: REVOLVING GALLERY */}
         <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ type: "spring", bounce: 0.2, duration: 1.2 }}
+          initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-50px" }} transition={{ type: "spring", bounce: 0.2, duration: 1.2 }}
         >
           <BoothGallery images={tier.images} isDark={isDark} border={border} cardBg={cardBg} />
         </motion.div>
 
-        {/* RIGHT: TEXT CONTENT */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ type: "spring", bounce: 0.2, duration: 1.2, delay: 0.2 }}
+          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }} transition={{ type: "spring", bounce: 0.2, duration: 1.2, delay: 0.2 }}
           style={{ display: "flex", flexDirection: "column" }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16, marginBottom: 16 }}>
@@ -443,18 +402,14 @@ function BoothRow({ tier, isDark, textMain, textMuted, border, cardBg, index, on
             </div>
           </div>
 
-          <p style={{ fontSize: "1.2rem", fontWeight: 700, color: textMain, marginBottom: 24, lineHeight: 1.5 }}>
-            {tier.tagline}
-          </p>
+          <p style={{ fontSize: "1.2rem", fontWeight: 700, color: textMain, marginBottom: 24, lineHeight: 1.5 }}>{tier.tagline}</p>
 
           <div style={{ fontSize: "1.05rem", color: textMuted, lineHeight: 1.7, marginBottom: 32, textAlign: "justify", whiteSpace: "pre-line" }}>
             {tier.description}
           </div>
 
           <div style={{ background: cardBg, border: "1px solid " + border, borderRadius: 16, padding: "24px 32px" }}>
-            <h3 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "1.1rem", fontWeight: 800, color: textMain, marginBottom: 20 }}>
-              Why this works
-            </h3>
+            <h3 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "1.1rem", fontWeight: 800, color: textMain, marginBottom: 20 }}>Why this works</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {tier.whyItWorks.map((point, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
@@ -464,81 +419,57 @@ function BoothRow({ tier, isDark, textMain, textMuted, border, cardBg, index, on
               ))}
             </div>
           </div>
-          
-          {/* BUY NOW BUTTON — primary */}
+
           <motion.button
             className="btn-primary"
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
             onClick={onPurchase}
-            style={{
-              display: "inline-block", textAlign: "center", marginTop: 32, padding: "16px 32px", borderRadius: 12, border: "none", cursor: "pointer",
-              fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.95rem", letterSpacing: "1px", textTransform: "uppercase"
-            }}
+            style={{ display: "inline-block", textAlign: "center", marginTop: 32, padding: "16px 32px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.95rem", letterSpacing: "1px", textTransform: "uppercase" }}
           >
             Buy Now
           </motion.button>
 
-          <motion.button 
-            onClick={() => setSelectedBooth(tier)}
+          <motion.button
+            onClick={onOpenModal}
             className="btn-outline"
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            style={{
-              display: "inline-block", textAlign: "center", marginTop: 12, padding: "14px 32px", borderRadius: 12,
-              background: "transparent", cursor: "pointer",
-              fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.82rem", letterSpacing: "1px", textTransform: "uppercase",
-              border: "1.5px solid " + (isDark ? "rgba(155,135,245,0.25)" : "rgba(122,63,209,0.20)"),
-              color: isDark ? "rgba(185,158,255,0.75)" : "#7a3fd1",
-              transition: "all 0.2s ease",
-            }}
+            style={{ display: "inline-block", textAlign: "center", marginTop: 12, padding: "14px 32px", borderRadius: 12, background: "transparent", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.82rem", letterSpacing: "1px", textTransform: "uppercase", border: "1.5px solid " + (isDark ? "rgba(155,135,245,0.25)" : "rgba(122,63,209,0.20)"), color: isDark ? "rgba(185,158,255,0.75)" : "#7a3fd1", transition: "all 0.2s ease" }}
           >
             Enquire Now
           </motion.button>
-
         </motion.div>
-
       </div>
     </section>
   );
 }
 
 /* ═══════════════════════════════════════════════════════
-   ENQUIRE MODAL COMPONENT
+   ENQUIRE MODAL
    ═══════════════════════════════════════════════════════ */
 
 function EnquireModal({ booth, onClose, isDark, textMain, border }) {
   const [status, setStatus] = useState("");
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    message: ""
-  });
+  const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", message: "" });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus("Sending...");
-
     try {
       const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          service_id:  "service_gy3fvru",
-          template_id: "template_ufqzzep",
-          user_id:     "gZgYZtLCXPVgUsVj_",
+          service_id: "service_gy3fvru", template_id: "template_ufqzzep", user_id: "gZgYZtLCXPVgUsVj_",
           template_params: {
-            to_email:   "baldeep@thetechfestival.com",
-            from_name:  `${formData.firstName} ${formData.lastName}`,
+            to_email: "baldeep@thetechfestival.com",
+            from_name: `${formData.firstName} ${formData.lastName}`,
             from_email: formData.email,
-            message:    `[Booth Enquiry: ${booth.title} — ${booth.specs}]\n\n${formData.message || "No additional message."}`,
+            message: `[Booth Enquiry: ${booth.title} — ${booth.specs}]\n\n${formData.message || "No additional message."}`,
           },
         }),
       });
-
       if (res.ok || res.status === 200) {
         setStatus("Success! We will be in touch shortly.");
         setTimeout(() => { onClose(); }, 2500);
@@ -554,7 +485,7 @@ function EnquireModal({ booth, onClose, isDark, textMain, border }) {
     width: "100%", padding: "12px 16px", borderRadius: "8px",
     background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
     border: "1px solid " + border, color: textMain, fontSize: "0.95rem",
-    outline: "none", marginBottom: "16px"
+    outline: "none", marginBottom: "16px", boxSizing: "border-box",
   };
 
   return (
@@ -562,19 +493,28 @@ function EnquireModal({ booth, onClose, isDark, textMain, border }) {
       position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center",
       background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", padding: "24px"
     }}>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        style={{
-          background: isDark ? "#120a22" : "#ffffff", width: "100%", maxWidth: "500px", borderRadius: "20px",
-          padding: "32px", position: "relative", border: "1px solid " + border, boxShadow: "0 20px 40px rgba(0,0,0,0.4)"
-        }}
+        style={{ background: isDark ? "#120a22" : "#ffffff", width: "100%", maxWidth: "500px", borderRadius: "20px", padding: "32px", position: "relative", border: "1px solid " + border, boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}
       >
-        <button onClick={onClose} style={{
-          position: "absolute", top: "20px", right: "24px", background: "transparent", border: "none",
-          color: textMain, fontSize: "1.5rem", cursor: "pointer", opacity: 0.6
-        }}>✕</button>
+        {/* X button — always visible */}
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute", top: "16px", right: "16px",
+            width: 32, height: 32, borderRadius: "50%",
+            background: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+            border: isDark ? "1px solid rgba(255,255,255,0.18)" : "1px solid rgba(0,0,0,0.12)",
+            color: isDark ? "#ffffff" : "#0f0520",
+            fontSize: "1.1rem", lineHeight: 1, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "background 0.2s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.15)"}
+          onMouseLeave={e => e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)"}
+        >✕</button>
 
-        <h3 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "1.4rem", fontWeight: 800, color: textMain, marginBottom: "8px" }}>
+        <h3 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "1.4rem", fontWeight: 800, color: textMain, marginBottom: "8px", paddingRight: 40 }}>
           Enquire about <GradientSpan>{booth.specs}</GradientSpan>
         </h3>
         <p style={{ fontSize: "0.9rem", color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)", marginBottom: "24px" }}>
@@ -587,15 +527,18 @@ function EnquireModal({ booth, onClose, isDark, textMain, border }) {
             <input type="text" name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} required style={inputStyle} />
           </div>
           <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleChange} required style={inputStyle} />
-          
-          <textarea name="message" placeholder="Optional: Tell us a bit about your goals" rows="4" value={formData.message} onChange={handleChange} style={{...inputStyle, resize: "none"}}></textarea>
-
-          <button type="submit" disabled={status === "Sending..."} style={{
-            width: "100%", padding: "14px", borderRadius: "10px", border: "none", cursor: status === "Sending..." ? "not-allowed" : "pointer",
-            fontFamily: "'Orbitron', sans-serif", fontWeight: 700, fontSize: "0.9rem", textTransform: "uppercase", letterSpacing: "1px",
-            background: status === "Success! We will be in touch shortly." ? "#2e9e54" : "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "#ffffff",
-            opacity: status === "Sending..." ? 0.7 : 1
-          }}>
+          <textarea name="message" placeholder="Optional: Tell us a bit about your goals" rows="4" value={formData.message} onChange={handleChange} style={{ ...inputStyle, resize: "none" }} />
+          <button
+            type="submit" disabled={status === "Sending..."}
+            style={{
+              width: "100%", padding: "14px", borderRadius: "10px", border: "none",
+              cursor: status === "Sending..." ? "not-allowed" : "pointer",
+              fontFamily: "'Orbitron', sans-serif", fontWeight: 700, fontSize: "0.9rem",
+              textTransform: "uppercase", letterSpacing: "1px",
+              background: status === "Success! We will be in touch shortly." ? "#2e9e54" : "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              color: "#ffffff", opacity: status === "Sending..." ? 0.7 : 1,
+            }}
+          >
             {status || "Submit Enquiry"}
           </button>
         </form>
@@ -603,10 +546,6 @@ function EnquireModal({ booth, onClose, isDark, textMain, border }) {
     </div>
   );
 }
-
-/* ═══════════════════════════════════════════════════════
-   SHARED HELPERS
-   ═══════════════════════════════════════════════════════ */
 
 function GradientSpan({ children }) {
   return (

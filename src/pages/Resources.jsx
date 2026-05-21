@@ -109,14 +109,12 @@ export default function FirstTimers() {
         <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
           <div className={isDark ? "ft-aurora-layer ft-aurora-layer--dark" : "ft-aurora-layer ft-aurora-layer--light"} />
         </div>
-
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
           background: isDark
             ? "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 20%, #06020f 100%)"
             : "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 20%, #f4f0ff 100%)",
         }} />
-
         <motion.div style={{
           y: heroY, opacity: heroOpacity,
           position: "relative", zIndex: 10,
@@ -143,7 +141,6 @@ export default function FirstTimers() {
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
               }}>The Tech Festival Canada</span>
             </h1>
-
             <p style={{
               fontSize: "clamp(1.1rem, 2vw, 1.3rem)",
               color: textMuted, lineHeight: 1.7,
@@ -151,7 +148,6 @@ export default function FirstTimers() {
             }}>
               If this is your first time, here is what to expect and how to get the most value from the experience. This is built for outcomes: clearer decisions, faster partnerships, and real momentum after the event.
             </p>
-
             <motion.div
               animate={{ y: [0, 8, 0] }}
               transition={{ repeat: Infinity, duration: 1.8 }}
@@ -170,13 +166,10 @@ export default function FirstTimers() {
         image="/ft-conference.jpg" imageAlt="Keynote presentation showing five tech pillars and applied sectors"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
-        <h2 style={headingStyle(textMain)}>
-          The <GradientSpan>Conference</GradientSpan>
-        </h2>
+        <h2 style={headingStyle(textMain)}>The <GradientSpan>Conference</GradientSpan></h2>
         <p style={paraStyle(textMuted)}>
           Our conference is curated around five tech pillars and the real world sectors where they are being adopted. Every session is designed to unpack opportunities, challenges, and practical solutions you can take back to your organization.
         </p>
-
         <SubHeading textMain={textMain}>5 Tech Pillars</SubHeading>
         <ListBlock textMain={textMain} items={[
           "Artificial Intelligence and Generative AI",
@@ -185,7 +178,6 @@ export default function FirstTimers() {
           "Cybersecurity and Digital Trust",
           "Robotics and Intelligent Infrastructure",
         ]} />
-
         <SubHeading textMain={textMain}>5 Applied Sectors</SubHeading>
         <p style={paraStyle(textMuted)}>
           We bring these conversations into the sectors where the demand is urgent and budgets are real:
@@ -197,7 +189,6 @@ export default function FirstTimers() {
           "Financial Services and Insurance",
           "Supply Chain, Manufacturing, and Critical Infrastructure",
         ]} />
-
         <SubHeading textMain={textMain}>Where Pillars Meet Sectors</SubHeading>
         <p style={paraStyle(textMuted)}>
           This is where the magic happens. You will see how each pillar translates into real use cases inside each sector, who is buying, what procurement looks like, and what it takes to implement successfully. The goal is to connect solution providers with decision makers who need outcomes, so conversations can move from interest to pilots to partnerships and contracts.
@@ -210,9 +201,7 @@ export default function FirstTimers() {
         image="/ft-expo.jpg" imageAlt="The Tech Festival Canada expo and networking floor"
         cta={{ label: "Partner With Us", href: "/sponsor" }}
       >
-        <h2 style={headingStyle(textMain)}>
-          The <GradientSpan>Expo</GradientSpan>
-        </h2>
+        <h2 style={headingStyle(textMain)}>The <GradientSpan>Expo</GradientSpan></h2>
         <p style={paraStyle(textMuted)}>
           The Expo is where technology comes alive. Companies from across Canada and around the world showcase products, platforms, and solutions. Expect demos, live conversations with builders, and a front row view of what is being deployed now, not someday.
         </p>
@@ -224,9 +213,7 @@ export default function FirstTimers() {
         image="/ft-awards.jpg" imageAlt="Canada Tech Titans Awards Night ceremony"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
-        <h2 style={headingStyle(textMain)}>
-          Awards <GradientSpan>Night</GradientSpan>
-        </h2>
+        <h2 style={headingStyle(textMain)}>Awards <GradientSpan>Night</GradientSpan></h2>
         <p style={paraStyle(textMuted)}>
           Our Awards Night celebrates the Tech Titans of Canada. We recognize the innovators, builders, researchers, and leaders who are shaping the future and delivering real impact across the country.
         </p>
@@ -238,9 +225,7 @@ export default function FirstTimers() {
         image="/ft-breakfast.jpg" imageAlt="CxO Breakfast with senior leaders"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
-        <h2 style={headingStyle(textMain)}>
-          CxO <GradientSpan>Breakfast</GradientSpan>
-        </h2>
+        <h2 style={headingStyle(textMain)}>CxO <GradientSpan>Breakfast</GradientSpan></h2>
         <p style={paraStyle(textMuted)}>
           An exclusive invitation only breakfast for CxOs and senior leaders. This is where business happens in a quieter, higher trust setting. Think strategic conversations, peer connections, and deal making over breakfast.
         </p>
@@ -252,9 +237,7 @@ export default function FirstTimers() {
         image="/ft-gala.jpg" imageAlt="Gala Dinner and Networking Reception"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
-        <h2 style={headingStyle(textMain)}>
-          Gala Dinner and <GradientSpan>Networking Reception</GradientSpan>
-        </h2>
+        <h2 style={headingStyle(textMain)}>Gala Dinner and <GradientSpan>Networking Reception</GradientSpan></h2>
         <p style={paraStyle(textMuted)}>
           A premium evening to deepen relationships with speakers, exhibitors, partners, and senior attendees. If you want stronger connections, this is where they form.
         </p>
@@ -266,9 +249,7 @@ export default function FirstTimers() {
         image="/ft-clinic.jpg" imageAlt="Consultation Clinic at The Tech Festival Canada"
         cta={{ label: "Partner With Us", href: "/sponsor" }}
       >
-        <h2 style={headingStyle(textMain)}>
-          Consultation <GradientSpan>Clinic</GradientSpan>
-        </h2>
+        <h2 style={headingStyle(textMain)}>Consultation <GradientSpan>Clinic</GradientSpan></h2>
         <p style={paraStyle(textMuted)}>
           In collaboration with government bodies, associations, and academic institutes, our Consultation Clinic helps you move forward with clarity. Whether you are looking for guidance on funding, programs, partnerships, talent, standards, research support, or market entry, you will find credible direction and next steps.
         </p>
@@ -293,13 +274,15 @@ export default function FirstTimers() {
             overflow: "hidden", minHeight: 300,
           }}>
             <img
-              src="/Tech_Festival_Canada_Logo_Dark_Transparent.png"
+              src={isDark
+                ? "/Tech_Festival_Canada_Logo_Dark_Transparent.png"
+                : "/Tech_Festival_Canada_Logo_Light_Transparent.png"}
               alt="The Tech Festival Canada"
               style={{
                 width: "65%", maxWidth: 300, height: "auto", objectFit: "contain",
                 filter: isDark
                   ? "drop-shadow(0 0 40px rgba(122,63,209,0.25))"
-                  : "invert(1) drop-shadow(0 8px 24px rgba(122,63,209,0.18))",
+                  : "drop-shadow(0 8px 24px rgba(122,63,209,0.12))",
               }}
             />
             <div style={{
@@ -414,7 +397,6 @@ function ContentRow({ isDark, textMain, textMuted, border, reverse, hasBg, image
         gap: "clamp(40px, 6vw, 80px)", alignItems: "center",
         direction: reverse ? "rtl" : "ltr",
       }}>
-        {/* TEXT */}
         <motion.div
           initial={{ opacity: 0, y: 28 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -422,7 +404,6 @@ function ContentRow({ isDark, textMain, textMuted, border, reverse, hasBg, image
           style={{ direction: "ltr" }}
         >
           {children}
-
           <motion.a
             href={cta.href}
             className={isPrimary ? "btn-primary" : "btn-outline"}
@@ -434,7 +415,6 @@ function ContentRow({ isDark, textMain, textMuted, border, reverse, hasBg, image
           </motion.a>
         </motion.div>
 
-        {/* IMAGE */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={isInView ? { opacity: 1, scale: 1 } : {}}

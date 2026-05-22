@@ -167,6 +167,18 @@ function QuestionnaireModal({ dark, tierLabel, onClose, onSubmit }) {
 
   useEffect(() => { const t = setTimeout(() => { if (firstInputRef.current) firstInputRef.current.focus(); }, 120); return () => clearTimeout(t); }, [step]);
 
+  // ESC key closes modal + lock background scroll while open
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.68)";
   const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)";
@@ -215,17 +227,25 @@ function QuestionnaireModal({ dark, tierLabel, onClose, onSubmit }) {
   const stepSubtitles = ["Personal & professional details", "Topics, objectives & agreements"];
 
   return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:9998, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px", background:"rgba(0,0,0,0.78)", backdropFilter:"blur(12px)" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width:"100%", maxWidth:580, maxHeight:"92vh", display:"flex", flexDirection:"column", background:modalBg, borderRadius:24, border: dark?"1px solid rgba(255,255,255,0.10)":"1px solid rgba(122,63,209,0.14)", boxShadow: dark?"0 28px 80px rgba(0,0,0,0.6)":"0 28px 80px rgba(122,63,209,0.15)", overflow:"hidden" }}>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:100000, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px", background:"rgba(0,0,0,0.78)", backdropFilter:"blur(12px)" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width:"100%", maxWidth:580, maxHeight:"92vh", display:"flex", flexDirection:"column", background:modalBg, borderRadius:24, border: dark?"1px solid rgba(255,255,255,0.10)":"1px solid rgba(122,63,209,0.14)", boxShadow: dark?"0 28px 80px rgba(0,0,0,0.6)":"0 28px 80px rgba(122,63,209,0.15)", overflow:"hidden", position:"relative" }}>
+
+        {/* Floating close button — always visible, sits above content */}
+        <button onClick={onClose} aria-label="Close" style={{ position:"absolute", top:14, right:14, zIndex:5, width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", background: dark?"rgba(255,255,255,0.08)":"rgba(13,5,32,0.06)", border: dark?"1px solid rgba(255,255,255,0.12)":"1px solid rgba(13,5,32,0.08)", borderRadius:"50%", cursor:"pointer", color:textMain, transition:"background 0.15s, transform 0.15s" }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = dark?"rgba(255,255,255,0.14)":"rgba(13,5,32,0.10)"; e.currentTarget.style.transform = "scale(1.05)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = dark?"rgba(255,255,255,0.08)":"rgba(13,5,32,0.06)"; e.currentTarget.style.transform = "scale(1)"; }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
 
         <div style={{ padding:"24px 28px 0", flexShrink:0 }}>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:6 }}>
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:6, paddingRight:40 }}>
             <div>
               <div style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.58rem", fontWeight:700, letterSpacing:"1.8px", textTransform:"uppercase", color:"#f5a623", marginBottom:4 }}>{tierLabel} Pass</div>
               <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"1.05rem", color:textMain, margin:0, lineHeight:1.2 }}>{stepTitles[step-1]}</h2>
               <p style={{ fontSize:"0.68rem", color:textMuted, margin:"4px 0 0", letterSpacing:"0.3px" }}>{stepSubtitles[step-1]}</p>
             </div>
-            <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:textMuted, fontSize:"1.4rem", lineHeight:1, padding:"4px 8px", flexShrink:0, marginTop:2 }} aria-label="Close">&times;</button>
           </div>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", margin:"14px 0 6px" }}>
             <span style={{ fontSize:"0.60rem", color: dark?"rgba(255,255,255,0.30)":"rgba(13,5,32,0.30)", fontWeight:600, letterSpacing:"0.5px" }}>Step {step} of {TOTAL_STEPS}</span>
@@ -395,7 +415,7 @@ export default function Tickets() {
         </div>
         {questionnaireOpen && <QuestionnaireModal dark={dark} tierLabel={pendingLabel} onClose={() => setQuestionnaireOpen(false)} onSubmit={handlePurchase} />}
         {showSuccessModal && (
-          <div style={{ position:"fixed", top:0, left:0, width:"100%", height:"100%", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", background:"rgba(0,0,0,0.8)", backdropFilter:"blur(10px)" }}>
+          <div style={{ position:"fixed", top:0, left:0, width:"100%", height:"100%", zIndex:100001, display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", background:"rgba(0,0,0,0.8)", backdropFilter:"blur(10px)" }}>
             <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"24px", width:"100%", maxWidth:"420px", background: dark?"#120a22":"#ffffff", padding:"40px 32px", borderRadius:"24px", border: dark?"1px solid rgba(255,255,255,0.1)":"1px solid rgba(122,63,209,0.1)" }}>
               <div style={{ textAlign:"center", color:textMain }}>
                 <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"2rem", margin:"0 0 12px 0", color:"#f5a623" }}>Thank You!</h2>

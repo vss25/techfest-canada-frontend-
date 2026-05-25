@@ -872,39 +872,6 @@ export default function Speakers() {
           </div>
         </main>
 
-        {/* ADVISORY COUNCIL */}
-        <section style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem 4rem" }}>
-          <div style={{
-            padding: "2.8rem 2.4rem", borderRadius: "10px",
-            border: "1px solid " + border,
-            background: dark ? "rgba(255,255,255,0.04)" : "#fff",
-            boxShadow: !dark ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
-            textAlign: "center",
-          }}>
-            <span style={{
-              display: "inline-block",
-              padding: "0.28rem 0.8rem", borderRadius: "5px",
-              fontFamily: "'Orbitron', sans-serif",
-              fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              background: accent + "1c", color: accent,
-              border: "1px solid " + accent + "38", marginBottom: "1.2rem",
-            }}>
-              Coming Soon
-            </span>
-            <h2 style={{
-              fontFamily: "'Orbitron', sans-serif",
-              fontSize: "clamp(1.4rem, 4vw, 2rem)", fontWeight: 800,
-              letterSpacing: "-0.3px", marginBottom: "0.7rem", color: text,
-            }}>
-              Advisory Council
-            </h2>
-            <p style={{ fontSize: "0.95rem", color: secondary, maxWidth: 500, margin: "0 auto", lineHeight: 1.7 }}>
-              Our distinguished advisory council will be announced soon. Industry veterans and thought leaders guiding TTFC's vision.
-            </p>
-          </div>
-        </section>
-
         {/* APPLY TO SPEAK */}
         <ApplyToSpeak
           dark={dark} border={border} accent={accent}

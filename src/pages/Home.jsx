@@ -5,9 +5,14 @@ import { useEffect, useState, useRef } from "react";
 import InquiryModal from "../components/InquiryModal";
 import PostPurchaseModal from "../components/PostPurchaseModal";
 import OnboardingSurvey from "../components/OnboardingSurvey";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, AnimatePresence } from "framer-motion";
 import SponsorMarquee from "../components/SponsorMarquee";
 import NewsletterBar from "../components/NewsletterBar";
+import {
+  InteractiveGlobe,
+  TECH_PILLARS,
+  APPLIED_SECTORS,
+} from "../components/InteractiveGlobe";
 
 var containerVariants = {
   hidden: {},
@@ -120,6 +125,541 @@ function CTAReveal(props) {
   );
 }
 
+// ────────────────────────────────────────────────────────────────────────
+// FrameworkAccordion — one expandable card per pillar / sector
+// ────────────────────────────────────────────────────────────────────────
+function FrameworkAccordion(props) {
+  var item        = props.item;
+  var index       = props.index;
+  var type        = props.type;          // "pillar" | "sector"
+  var open        = props.open;
+  var onToggle    = props.onToggle;
+  var dark        = props.dark;
+  var elementRef  = props.elementRef;    // for scroll-into-view
+
+  var isPillar = type === "pillar";
+  var accent   = isPillar ? "#f5a623" : (dark ? "#b99eff" : "#7a3fd1");
+  var accentSoft = isPillar
+    ? "rgba(245,166,35,0.10)"
+    : (dark ? "rgba(185,158,255,0.10)" : "rgba(122,63,209,0.08)");
+  var bgCard = dark ? "rgba(255,255,255,0.03)" : "rgba(13,5,32,0.025)";
+  var bgCardOpen = dark ? "rgba(255,255,255,0.05)" : "rgba(13,5,32,0.04)";
+  var border = dark ? "rgba(255,255,255,0.08)" : "rgba(13,5,32,0.08)";
+  var borderOpen = isPillar
+    ? "rgba(245,166,35,0.45)"
+    : (dark ? "rgba(185,158,255,0.45)" : "rgba(122,63,209,0.4)");
+  var textMain = dark ? "#ffffff" : "#0d0520";
+  var textMid  = dark ? "rgba(255,255,255,0.72)" : "rgba(13,5,32,0.7)";
+  var prefix   = isPillar ? "P" : "S";
+  var num      = String(index + 1).padStart(2, "0");
+
+  return (
+    <motion.div
+      ref={elementRef}
+      layout
+      style={{
+        border: "1px solid " + (open ? borderOpen : border),
+        background: open ? bgCardOpen : bgCard,
+        borderRadius: 14,
+        overflow: "hidden",
+        marginBottom: 12,
+        boxShadow: open
+          ? (isPillar
+              ? "0 10px 40px -18px rgba(245,166,35,0.35)"
+              : "0 10px 40px -18px rgba(122,63,209,0.35)")
+          : "none",
+        transition: "background 0.25s ease, border-color 0.25s ease, box-shadow 0.3s ease",
+      }}
+    >
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        style={{
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          padding: "18px 20px",
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          cursor: "pointer",
+          textAlign: "left",
+          color: textMain,
+        }}
+      >
+        {/* Number badge */}
+        <div
+          style={{
+            flexShrink: 0,
+            width: 44,
+            height: 44,
+            borderRadius: 10,
+            background: accentSoft,
+            border: "1px solid " + (open ? borderOpen : border),
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "'Orbitron', monospace",
+            fontWeight: 800,
+            fontSize: "0.78rem",
+            color: accent,
+            letterSpacing: "0.5px",
+          }}
+        >
+          {prefix}{num}
+        </div>
+
+        {/* Title block */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "0.7rem",
+              letterSpacing: "1.6px",
+              textTransform: "uppercase",
+              color: accent,
+              marginBottom: 4,
+              opacity: 0.9,
+            }}
+          >
+            {item.shortLabel}
+          </div>
+          <div
+            style={{
+              fontWeight: 700,
+              fontSize: "clamp(0.95rem, 1.5vw, 1.05rem)",
+              lineHeight: 1.35,
+              color: textMain,
+            }}
+          >
+            {item.title}
+          </div>
+        </div>
+
+        {/* Chevron */}
+        <motion.div
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.25 }}
+          style={{
+            flexShrink: 0,
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: accent,
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </motion.div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{ padding: "0 20px 22px 80px" }}>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  display: "grid",
+                  gap: 10,
+                }}
+              >
+                {item.subsections.map(function (sub, i) {
+                  return (
+                    <motion.li
+                      key={i}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05, duration: 0.3 }}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 12,
+                        fontSize: "0.95rem",
+                        lineHeight: 1.5,
+                        color: textMid,
+                      }}
+                    >
+                      <span
+                        style={{
+                          flexShrink: 0,
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          background: accent,
+                          marginTop: 9,
+                          boxShadow: "0 0 8px " + accent,
+                        }}
+                      />
+                      <span>{sub}</span>
+                    </motion.li>
+                  );
+                })}
+              </ul>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// FrameworkSection — globe + tabs + accordions
+// ────────────────────────────────────────────────────────────────────────
+function FrameworkSection(props) {
+  var dark     = props.dark;
+  var textMain = props.textMain;
+  var textMid  = props.textMid;
+  var accent   = props.accent;
+
+  var tabState     = useState("pillars");   var tab        = tabState[0];    var setTab        = tabState[1];
+  var openState    = useState(null);        var openId     = openState[0];   var setOpenId     = openState[1];
+  var selectedState= useState(null);        var selectedId = selectedState[0]; var setSelectedId = selectedState[1];
+
+  var sectionRef = useRef(null);
+  var sectionInView = useInView(sectionRef, { once: true, margin: "-100px" });
+  var itemRefs = useRef({});
+
+  function selectNode(id) {
+    var isPillar = TECH_PILLARS.some(function (p) { return p.id === id; });
+    var nextTab  = isPillar ? "pillars" : "sectors";
+    setTab(nextTab);
+    setOpenId(id);
+    setSelectedId(id);
+
+    // Scroll into view after AnimatePresence tab transition settles
+    setTimeout(function () {
+      var el = itemRefs.current[id];
+      if (el && el.scrollIntoView) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 380);
+  }
+
+  function toggleOpen(id) {
+    var next = openId === id ? null : id;
+    setOpenId(next);
+    setSelectedId(next);
+  }
+
+  var items = tab === "pillars" ? TECH_PILLARS : APPLIED_SECTORS;
+  var sectionBg     = dark ? "#06020f" : "#ffffff";
+  var panelBg       = dark ? "rgba(255,255,255,0.02)" : "rgba(13,5,32,0.015)";
+  var panelBorder   = dark ? "rgba(255,255,255,0.08)" : "rgba(13,5,32,0.08)";
+  var tabInactiveBg = dark ? "rgba(255,255,255,0.04)" : "rgba(13,5,32,0.04)";
+  var tabInactiveColor = dark ? "rgba(255,255,255,0.55)" : "rgba(13,5,32,0.55)";
+
+  return (
+    <section
+      ref={sectionRef}
+      id="framework"
+      style={{
+        position: "relative",
+        background: sectionBg,
+        padding: "7rem 5% 8rem",
+        borderTop: "1px solid " + panelBorder,
+      }}
+    >
+      {/* Atmospheric backdrop */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(60% 50% at 50% 10%, " +
+            (dark ? "rgba(122,63,209,0.10)" : "rgba(122,63,209,0.05)") +
+            ", transparent 70%)",
+        }}
+      />
+
+      <div style={{ position: "relative", maxWidth: 1320, margin: "0 auto" }}>
+
+        {/* ── Section eyebrow / heading / subhead ─────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={sectionInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 1, ease: "easeOut" }}
+          style={{ textAlign: "center", marginBottom: "3.5rem" }}
+        >
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "8px 18px",
+              borderRadius: 999,
+              background: dark ? "rgba(245,166,35,0.10)" : "rgba(245,166,35,0.12)",
+              border: "1px solid rgba(245,166,35,0.35)",
+              fontFamily: "'Orbitron', monospace",
+              fontSize: "0.7rem",
+              letterSpacing: "2px",
+              textTransform: "uppercase",
+              color: "var(--brand-orange, #f5a623)",
+              fontWeight: 700,
+              marginBottom: 22,
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--brand-orange, #f5a623)", boxShadow: "0 0 10px #f5a623" }} />
+            The Innovation Framework
+          </div>
+
+          <h2
+            style={{
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "clamp(1.9rem, 4.5vw, 3.6rem)",
+              fontWeight: 900,
+              lineHeight: 1.1,
+              letterSpacing: "-1px",
+              color: textMain,
+              marginBottom: 22,
+            }}
+          >
+            From <span style={{ color: accent }}>Innovation</span>{" "}
+            to <span style={{ color: "var(--brand-orange, #f5a623)" }}>Impact</span>.
+          </h2>
+
+          <p
+            style={{
+              fontSize: "clamp(1.05rem, 1.6vw, 1.25rem)",
+              fontWeight: 500,
+              lineHeight: 1.6,
+              color: textMid,
+              maxWidth: 780,
+              margin: "0 auto 14px",
+            }}
+          >
+            Where core technologies converge with real-world transformation.
+          </p>
+
+          <p
+            style={{
+              fontSize: "0.98rem",
+              lineHeight: 1.75,
+              color: textMid,
+              maxWidth: 820,
+              margin: "0 auto",
+              opacity: 0.85,
+            }}
+          >
+            Nine deep-tech pillars, eleven applied sectors. Tap any node on the globe — or any
+            card below — to expand the focus areas TTFC 2026 will host on stage, in the matrix
+            sessions, and across the deal-making floor.
+          </p>
+        </motion.div>
+
+        {/* ── Two-column: Globe (sticky) + Accordion list ─────────────── */}
+        <div
+          className="framework-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.1fr)",
+            gap: "3.5rem",
+            alignItems: "flex-start",
+          }}
+        >
+          {/* LEFT: Globe panel */}
+          <div className="framework-globe-col" style={{ position: "sticky", top: 100 }}>
+            <div
+              style={{
+                position: "relative",
+                background: panelBg,
+                border: "1px solid " + panelBorder,
+                borderRadius: 24,
+                padding: "2rem 1.5rem",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "radial-gradient(50% 50% at 50% 50%, " +
+                    (dark ? "rgba(122,63,209,0.08)" : "rgba(122,63,209,0.04)") +
+                    ", transparent 70%)",
+                  pointerEvents: "none",
+                }}
+              />
+              <InteractiveGlobe
+                size={Math.min(520, 520)}
+                isDarkMode={dark}
+                selectedId={selectedId}
+                onNodeClick={selectNode}
+              />
+
+              {/* Legend */}
+              <div
+                style={{
+                  position: "relative",
+                  marginTop: 18,
+                  display: "flex",
+                  gap: 24,
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  fontSize: "0.78rem",
+                  color: textMid,
+                  fontFamily: "'Orbitron', monospace",
+                  letterSpacing: "1px",
+                  textTransform: "uppercase",
+                }}
+              >
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <span
+                    style={{
+                      width: 10, height: 10, borderRadius: "50%",
+                      background: "radial-gradient(circle, #ffe678, #f5a623)",
+                      boxShadow: "0 0 10px rgba(245,166,35,0.6)",
+                    }}
+                  />
+                  9 Tech Pillars
+                </span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <span
+                    style={{
+                      width: 10, height: 10, borderRadius: "50%",
+                      background: "radial-gradient(circle, #d2aaff, #8c50e6)",
+                      boxShadow: "0 0 10px rgba(140,80,230,0.6)",
+                    }}
+                  />
+                  11 Applied Sectors
+                </span>
+              </div>
+
+              <div
+                style={{
+                  position: "relative",
+                  marginTop: 10,
+                  fontSize: "0.72rem",
+                  color: textMid,
+                  opacity: 0.65,
+                  textAlign: "center",
+                }}
+              >
+                Drag to rotate · Click any node to expand
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Tabs + Accordion list */}
+          <div className="framework-list-col">
+            {/* Tabs */}
+            <div
+              role="tablist"
+              style={{
+                display: "inline-flex",
+                padding: 4,
+                borderRadius: 14,
+                background: tabInactiveBg,
+                border: "1px solid " + panelBorder,
+                marginBottom: 22,
+                gap: 4,
+              }}
+            >
+              {[
+                { id: "pillars", label: "9 Tech Pillars", count: TECH_PILLARS.length, color: "var(--brand-orange, #f5a623)" },
+                { id: "sectors", label: "11 Applied Sectors", count: APPLIED_SECTORS.length, color: accent },
+              ].map(function (t) {
+                var active = tab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    role="tab"
+                    aria-selected={active}
+                    onClick={function () { setTab(t.id); }}
+                    style={{
+                      position: "relative",
+                      padding: "10px 18px",
+                      borderRadius: 10,
+                      border: "none",
+                      cursor: "pointer",
+                      background: active
+                        ? (dark ? "rgba(13,5,32,0.6)" : "rgba(255,255,255,1)")
+                        : "transparent",
+                      color: active ? textMain : tabInactiveColor,
+                      fontFamily: "'Orbitron', sans-serif",
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      letterSpacing: "1px",
+                      textTransform: "uppercase",
+                      transition: "all 0.2s ease",
+                      boxShadow: active
+                        ? (dark ? "0 2px 12px rgba(0,0,0,0.4)" : "0 2px 12px rgba(13,5,32,0.06)")
+                        : "none",
+                    }}
+                  >
+                    <span style={{ color: active ? t.color : "inherit" }}>{t.count}</span>{" "}
+                    {t.label.replace(/^\d+\s+/, "")}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Accordion list */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={tab}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25 }}
+              >
+                {items.map(function (item, i) {
+                  return (
+                    <FrameworkAccordion
+                      key={item.id}
+                      item={item}
+                      index={i}
+                      type={tab === "pillars" ? "pillar" : "sector"}
+                      open={openId === item.id}
+                      onToggle={function () { toggleOpen(item.id); }}
+                      dark={dark}
+                      elementRef={function (el) { itemRefs.current[item.id] = el; }}
+                    />
+                  );
+                })}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @media (max-width: 980px) {
+          .framework-grid {
+            grid-template-columns: 1fr !important;
+            gap: 2.5rem !important;
+          }
+          .framework-globe-col {
+            position: relative !important;
+            top: 0 !important;
+          }
+        }
+      `}</style>
+    </section>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// HOME PAGE
+// ────────────────────────────────────────────────────────────────────────
 export default function Home() {
   var s1 = useState(false); var inquiryOpen = s1[0];        var setInquiryOpen = s1[1];
   var s2 = useState(false); var surveyOpen = s2[0];         var setSurveyOpen = s2[1];
@@ -205,6 +745,9 @@ export default function Home() {
           <CTAReveal dark={dark} textMain={textMain} accent={accent} />
         </div>
       </section>
+
+      {/* INNOVATION FRAMEWORK — 9 Pillars × 11 Sectors */}
+      <FrameworkSection dark={dark} textMain={textMain} textMid={textMid} accent={accent} />
 
       {/* ABOUT */}
       <div id="about-section" style={{ background: bg }}>

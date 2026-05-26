@@ -8,7 +8,7 @@ import OnboardingSurvey from "../components/OnboardingSurvey";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import SponsorMarquee from "../components/SponsorMarquee";
 import NewsletterBar from "../components/NewsletterBar";
-import { InteractiveGlobe } from "../components/InteractiveGlobe";
+import { InteractiveGlobe } from "../components/ui/interactive-globe";
 
 // ────────────────────────────────────────────────────────────────────────
 // TTFC INNOVATION FRAMEWORK DATA — inlined here so this page builds

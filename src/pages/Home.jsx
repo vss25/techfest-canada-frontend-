@@ -90,7 +90,7 @@ function SubtitleReveal(props) {
       Canada's first-of-its-kind, deal-making platform where
       innovators, buyers, and policymakers turn emerging tech into real partnerships,
       pilots, and contracts, not just conversations. Expect a never-seen-before concentration of
-      senior decision-makers from enterprise and critical sectors, alongside government,
+      senior decision-makers from enterprise and  critical sectors, alongside government,
       associations, media, and leading research institutions.
     </motion.p>
   );

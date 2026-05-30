@@ -703,13 +703,16 @@ function ConvergenceSection({ dark }) {
         </div>
 
         {/* COLLISION */}
+        <div style={{ padding: "0 5%" }}>
         <motion.div
           ref={collisionRef}
           initial={{ opacity: 0, scale: 0.96 }}
           animate={collisionInView ? { opacity: 1, scale: 1 } : {}}
           transition={{ type: "spring", damping: 22, stiffness: 90, delay: 0.1 }}
           style={{
-            maxWidth: 820, margin: "0 auto",
+            maxWidth: 820,
+            marginLeft: "auto",
+            marginRight: "auto",
             textAlign: "center",
             padding: "clamp(40px, 6vw, 72px) clamp(28px, 5vw, 56px)",
             borderRadius: 28,
@@ -718,7 +721,6 @@ function ConvergenceSection({ dark }) {
               : "linear-gradient(135deg, rgba(122,63,209,0.10), rgba(245,166,35,0.06))",
             border: dark ? "1px solid rgba(122,63,209,0.30)" : "1px solid rgba(122,63,209,0.18)",
             boxShadow: dark ? "0 16px 64px rgba(122,63,209,0.20)" : "0 16px 64px rgba(122,63,209,0.10)",
-            margin: "0 5%",
           }}
         >
           <div style={{
@@ -752,6 +754,7 @@ function ConvergenceSection({ dark }) {
             Where AI collides with policy. Where quantum collides with finance. Where defense collides with sustainability. Where ideas don't just meet — they collide, react, and produce something the world hasn't seen yet.
           </p>
         </motion.div>
+        </div>
 
       </div>
     </section>

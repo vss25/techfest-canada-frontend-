@@ -94,159 +94,271 @@ function CTAReveal(props) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CONVERGENCE TIMELINE — scroll-triggered story
+   EXPANDED INNOVATION FRAMEWORK
+   9 Tech Pillars + 11 Applied Sectors
    ═══════════════════════════════════════════════════════════ */
 
-var TIMELINE_STEPS = [
+var TECH_PILLARS = [
   {
     num: "01",
-    icon: "🔀",
-    title: "The Convergence is Real",
-    headline: "Technology is no longer siloed.",
-    body: "AI, cybersecurity, quantum, data infrastructure, and governance are converging into interconnected systems. Our expanded pillars reflect this reality — and position TTFC at the forefront of that convergence.",
+    title: "Artificial and Augmented Intelligence, and Autonomous Systems",
+    items: [
+      "Generative AI and foundation models",
+      "Enterprise AI deployment and governance",
+      "Autonomous decision systems",
+      "Human-AI collaboration",
+      "Ethical AI and trust frameworks",
+    ],
     accent: "#b99eff",
   },
   {
     num: "02",
-    icon: "🌐",
-    title: "From Conference to Strategic Platform",
-    headline: "Where technology meets policy.",
-    body: "By introducing AI Governance & Compliance and expanding into aerospace, disaster resilience, and strategic procurement, we move beyond a traditional tech conference into a platform where ideas become real-world implementation.",
-    accent: "#f5a623",
-  },
-  {
-    num: "03",
-    icon: "🎯",
-    title: "Relevance for Enterprise, Government & Investors",
-    headline: "Where the funding is going.",
-    body: "Our expanded applied sectors — smart cities, green tech, aerospace, emergency resilience, public sector procurement — align directly with where global capital, policy attention, and large-scale adoption are happening right now.",
-    accent: "#e91e8c",
-  },
-  {
-    num: "04",
-    icon: "🤝",
-    title: "Unlocking Partnership Opportunities",
-    headline: "Sponsors mapped to outcomes.",
-    body: "A broader, clearly-defined framework lets us map sponsors directly to both core technologies and industry applications. Better alignment, clearer value, stronger long-term partnerships.",
+    title: "Quantum Technologies",
+    items: [
+      "Quantum computing hardware and algorithms",
+      "Quantum communications and encryption",
+      "Post-quantum cryptography",
+      "Quantum sensing and detection",
+      "Commercialization pathways",
+    ],
     accent: "#56b3f5",
   },
   {
+    num: "03",
+    title: "Cybersecurity and Digital Trust",
+    items: [
+      "Zero trust architectures",
+      "Threat intelligence and cyber defense",
+      "Identity and access management",
+      "Critical infrastructure protection",
+      "AI-driven cyber defense",
+    ],
+    accent: "#f57eb3",
+  },
+  {
+    num: "04",
+    title: "Robotics and Intelligent Automation",
+    items: [
+      "Industrial robotics",
+      "Autonomous vehicles and drones",
+      "Smart manufacturing systems",
+      "Robotic process automation",
+      "Human-machine interfaces",
+    ],
+    accent: "#f5a623",
+  },
+  {
     num: "05",
-    icon: "🛡️",
-    title: "Leadership in Trust & Governance",
-    headline: "Capability isn't the question. Trust is.",
-    body: "As AI adoption accelerates globally, the defining issue is no longer capability alone — it's trust. By addressing governance, ethics, certification, and compliance, we position TTFC as a leader in shaping responsible innovation.",
+    title: "Sustainability and Clean Technology",
+    items: [
+      "Carbon capture and climate tech",
+      "Smart energy systems",
+      "ESG data and reporting platforms",
+      "Circular economy technologies",
+      "Green infrastructure innovation",
+    ],
     accent: "#3fd19c",
+  },
+  {
+    num: "06",
+    title: "Data Infrastructure and Cloud Ecosystems",
+    items: [
+      "Cloud computing and hyperscale systems",
+      "Data lakes and real-time analytics",
+      "Edge computing and distributed systems",
+      "Data governance and sovereignty",
+      "Digital twin environments",
+    ],
+    accent: "#7a3fd1",
+  },
+  {
+    num: "07",
+    title: "Advanced Connectivity and Communications",
+    items: [
+      "5G and next-generation networks",
+      "Satellite communications and space-based internet",
+      "Internet of Things ecosystems",
+      "Secure communications platforms",
+      "Network resilience and redundancy",
+    ],
+    accent: "#56b3f5",
+  },
+  {
+    num: "08",
+    title: "Human Augmentation and Future Interfaces",
+    items: [
+      "Wearable technologies",
+      "Brain-computer interfaces",
+      "Extended reality and spatial computing",
+      "Biometric systems",
+      "Digital identity and human enhancement",
+    ],
+    accent: "#e91e8c",
+  },
+  {
+    num: "09",
+    title: "AI Governance and Compliance",
+    items: [
+      "AI policy, regulation, and global standards",
+      "Ethical AI and responsible deployment",
+      "AI risk management and assurance",
+      "Data governance, privacy, and sovereignty",
+      "Certification, compliance, and trust frameworks",
+    ],
+    accent: "#f5a623",
   },
 ];
 
-function TimelineStep({ step, index, dark }) {
-  var ref = useRef(null);
-  var isInView = useInView(ref, { once: true, margin: "-100px" });
-  var isLeft = index % 2 === 0;
+var APPLIED_SECTORS = [
+  { num: "01", title: "Healthcare and Life Sciences", desc: "Precision medicine, AI diagnostics, digital health platforms, biotech innovation, and public health systems." },
+  { num: "02", title: "Banking, Financial Services and Fintech", desc: "Digital banking, blockchain and digital assets, fraud detection, regulatory technology, and payment innovation." },
+  { num: "03", title: "Supply Chain, Manufacturing and Infrastructure", desc: "Industry 4.0 smart factories, logistics optimization, digital supply networks, infrastructure resilience, and construction tech." },
+  { num: "04", title: "Defense and Public Safety", desc: "Cyber defense, intelligence systems, situational awareness, emergency response, and national security infrastructure." },
+  { num: "05", title: "Energy and Utilities", desc: "Smart grids and grid security, renewable energy, energy storage, nuclear innovation and SMRs, and energy trading systems." },
+  { num: "06", title: "Smart Cities and Green Tech", desc: "Urban digital infrastructure, smart mobility, sustainable planning, climate monitoring, and green building technologies." },
+  { num: "07", title: "Transportation, Aerospace and Mobility", desc: "Autonomous transportation, aviation innovation, urban mobility, drone logistics, and space-enabled transportation." },
+  { num: "08", title: "Education, Workforce and Digital Society", desc: "Future of work, cyber education pipelines, EdTech platforms, digital inclusion, and workforce transformation." },
+  { num: "09", title: "Aerospace, Space and Defense Systems", desc: "Satellite systems, space commercialization, defense aerospace platforms, orbital security, and advanced propulsion." },
+  { num: "10", title: "Emergency Response and Disaster Resilience", desc: "Crisis response, disaster prediction and early warning, climate resilience, search and rescue innovation, and continuity systems." },
+  { num: "11", title: "Government, Defense and Strategic Procurement", desc: "Public sector procurement, defense modernization, sovereign tech strategies, public-private partnerships, and compliance frameworks." },
+];
 
+/* Tech pillar card */
+function PillarCard({ pillar, index, dark }) {
+  var ref = useRef(null);
+  var inView = useInView(ref, { once: true, margin: "-50px" });
   var textMain = dark ? "#ffffff" : "#0d0520";
-  var textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.65)";
+  var textMuted = dark ? "rgba(255,255,255,0.62)" : "rgba(13,5,32,0.62)";
   var cardBg = dark ? "rgba(255,255,255,0.03)" : "#ffffff";
   var cardBorder = dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
 
   return (
-    <div ref={ref} style={{ position: "relative", display: "flex", justifyContent: isLeft ? "flex-start" : "flex-end", marginBottom: "clamp(60px, 8vw, 100px)" }}>
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5, delay: (index % 3) * 0.08, ease: "easeOut" }}
+      whileHover={{ y: -6, borderColor: pillar.accent }}
+      style={{
+        background: cardBg,
+        border: "1.5px solid " + cardBorder,
+        borderRadius: 18,
+        padding: "clamp(22px, 2.5vw, 28px)",
+        position: "relative",
+        overflow: "hidden",
+        transition: "border-color 0.25s ease",
+        boxShadow: dark ? "0 4px 20px rgba(0,0,0,0.25)" : "0 4px 20px rgba(122,63,209,0.05)",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Accent corner */}
+      <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: 60, background: pillar.accent, borderRadius: "0 0 4px 0" }} />
 
-      {/* Center dot on timeline */}
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={isInView ? { scale: 1, opacity: 1 } : {}}
-        transition={{ type: "spring", stiffness: 200, damping: 18, delay: 0.2 }}
-        style={{
-          position: "absolute", left: "50%", top: 32, transform: "translateX(-50%)",
-          width: 20, height: 20, borderRadius: "50%",
-          background: step.accent,
-          boxShadow: "0 0 0 4px " + (dark ? "#06020f" : "#ffffff") + ", 0 0 30px " + step.accent + "80",
-          zIndex: 2,
-        }}
-      />
-
-      {/* Card */}
-      <motion.div
-        initial={{ opacity: 0, x: isLeft ? -50 : 50, y: 20 }}
-        animate={isInView ? { opacity: 1, x: 0, y: 0 } : {}}
-        transition={{ type: "spring", damping: 22, stiffness: 90, delay: 0.1 }}
-        className="timeline-card"
-        style={{
-          width: "calc(50% - 40px)",
-          padding: "clamp(24px, 3.5vw, 36px)",
-          borderRadius: 20,
-          background: cardBg,
-          border: "1px solid " + cardBorder,
-          boxShadow: dark ? "0 8px 32px rgba(0,0,0,0.35)" : "0 8px 32px rgba(122,63,209,0.08)",
-          position: "relative",
-        }}
-      >
-        {/* Accent line */}
-        <div style={{
-          position: "absolute",
-          top: 0,
-          [isLeft ? "right" : "left"]: -1,
-          width: 3, height: "100%",
-          background: "linear-gradient(180deg, " + step.accent + ", transparent)",
-          borderRadius: isLeft ? "0 20px 20px 0" : "20px 0 0 20px",
-        }} />
-
-        {/* Step number + icon */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
-          <div style={{
-            fontFamily: "'Orbitron', sans-serif",
-            fontSize: "0.65rem",
-            fontWeight: 800,
-            letterSpacing: "2.5px",
-            color: step.accent,
-            padding: "5px 12px",
-            borderRadius: 999,
-            background: step.accent + "15",
-            border: "1px solid " + step.accent + "30",
-          }}>STEP {step.num}</div>
-          <span style={{ fontSize: "1.6rem" }}>{step.icon}</span>
-        </div>
-
-        {/* Title */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 12 }}>
+        <span style={{
+          fontFamily: "'Orbitron', sans-serif",
+          fontSize: "0.95rem",
+          fontWeight: 900,
+          color: pillar.accent,
+          letterSpacing: "-0.5px",
+        }}>{pillar.num}</span>
         <h3 style={{
           fontFamily: "'Orbitron', sans-serif",
-          fontSize: "clamp(1.05rem, 2vw, 1.25rem)",
+          fontSize: "0.92rem",
           fontWeight: 800,
           color: textMain,
-          margin: "0 0 10px",
-          lineHeight: 1.25,
-          letterSpacing: "-0.3px",
-        }}>{step.title}</h3>
-
-        {/* Headline */}
-        <p style={{
-          fontSize: "clamp(0.95rem, 1.4vw, 1.1rem)",
-          fontWeight: 700,
-          color: step.accent,
-          margin: "0 0 14px",
-          lineHeight: 1.4,
-        }}>{step.headline}</p>
-
-        {/* Body */}
-        <p style={{
-          fontSize: "0.92rem",
-          lineHeight: 1.75,
-          color: textMuted,
           margin: 0,
-        }}>{step.body}</p>
-      </motion.div>
-    </div>
+          lineHeight: 1.35,
+          letterSpacing: "-0.2px",
+        }}>{pillar.title}</h3>
+      </div>
+
+      <ul style={{ listStyle: "none", padding: 0, margin: "auto 0 0", display: "flex", flexDirection: "column", gap: 7 }}>
+        {pillar.items.map(function (item, i) {
+          return (
+            <li key={i} style={{
+              fontSize: "0.78rem",
+              color: textMuted,
+              lineHeight: 1.5,
+              paddingLeft: 14,
+              position: "relative",
+            }}>
+              <span style={{
+                position: "absolute",
+                left: 0, top: 9,
+                width: 5, height: 5,
+                borderRadius: "50%",
+                background: pillar.accent,
+                opacity: 0.7,
+              }} />
+              {item}
+            </li>
+          );
+        })}
+      </ul>
+    </motion.div>
+  );
+}
+
+/* Applied sector card - compact */
+function SectorCard({ sector, index, dark }) {
+  var ref = useRef(null);
+  var inView = useInView(ref, { once: true, margin: "-50px" });
+  var textMain = dark ? "#ffffff" : "#0d0520";
+  var textMuted = dark ? "rgba(255,255,255,0.60)" : "rgba(13,5,32,0.60)";
+  var accent = dark ? "#f5a623" : "#d98a14";
+  var cardBg = dark ? "rgba(245,166,35,0.04)" : "rgba(245,166,35,0.03)";
+  var cardBorder = dark ? "rgba(245,166,35,0.12)" : "rgba(245,166,35,0.18)";
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 20 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.4, delay: (index % 3) * 0.06 }}
+      whileHover={{ y: -4, borderColor: accent }}
+      style={{
+        background: cardBg,
+        border: "1.5px solid " + cardBorder,
+        borderRadius: 16,
+        padding: "20px 22px",
+        transition: "border-color 0.25s ease",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
+        <span style={{
+          fontFamily: "'Orbitron', sans-serif",
+          fontSize: "0.78rem",
+          fontWeight: 900,
+          color: accent,
+          letterSpacing: "0.5px",
+        }}>{sector.num}</span>
+        <h4 style={{
+          fontFamily: "'Orbitron', sans-serif",
+          fontSize: "0.82rem",
+          fontWeight: 800,
+          color: textMain,
+          margin: 0,
+          lineHeight: 1.3,
+          letterSpacing: "-0.1px",
+        }}>{sector.title}</h4>
+      </div>
+      <p style={{
+        fontSize: "0.76rem",
+        color: textMuted,
+        lineHeight: 1.6,
+        margin: 0,
+      }}>{sector.desc}</p>
+    </motion.div>
   );
 }
 
 function ConvergenceSection({ dark }) {
-  var containerRef = useRef(null);
-  var scrollHook = useScroll({ target: containerRef, offset: ["start end", "end start"] });
-  var scrollYProgress = scrollHook.scrollYProgress;
-  var lineHeight = useTransform(scrollYProgress, [0.05, 0.85], ["0%", "100%"]);
-
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.65)";
   var accent = dark ? "#b99eff" : "#7a3fd1";
@@ -255,11 +367,14 @@ function ConvergenceSection({ dark }) {
   var introRef = useRef(null);
   var introInView = useInView(introRef, { once: true, margin: "-100px" });
 
-  var outroRef = useRef(null);
-  var outroInView = useInView(outroRef, { once: true, margin: "-100px" });
+  var sectorsIntroRef = useRef(null);
+  var sectorsIntroInView = useInView(sectorsIntroRef, { once: true, margin: "-80px" });
+
+  var collisionRef = useRef(null);
+  var collisionInView = useInView(collisionRef, { once: true, margin: "-100px" });
 
   return (
-    <section ref={containerRef} style={{
+    <section style={{
       position: "relative",
       background: dark ? "#06020f" : "#ffffff",
       padding: "clamp(60px, 10vw, 120px) 5% clamp(80px, 12vw, 140px)",
@@ -274,107 +389,204 @@ function ConvergenceSection({ dark }) {
           : "radial-gradient(ellipse 60% 40% at 50% 50%, rgba(122,63,209,0.04) 0%, transparent 70%)",
       }} />
 
-      {/* INTRO */}
-      <motion.div
-        ref={introRef}
-        initial={{ opacity: 0, y: 30 }}
-        animate={introInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        style={{ maxWidth: 800, margin: "0 auto clamp(60px, 8vw, 100px)", textAlign: "center", position: "relative", zIndex: 2 }}
-      >
-        <div style={{
-          display: "inline-block",
-          fontFamily: "'Orbitron', sans-serif",
-          fontWeight: 700, fontSize: "0.62rem",
-          letterSpacing: "3px", textTransform: "uppercase",
-          color: orange, marginBottom: 18,
-          padding: "6px 16px", borderRadius: 999,
-          background: orange + "15", border: "1px solid " + orange + "30",
-        }}>OUR VISION</div>
+      <div style={{ position: "relative", zIndex: 2, maxWidth: 1240, margin: "0 auto" }}>
 
-        <h2 style={{
-          fontFamily: "'Orbitron', sans-serif",
-          fontWeight: 900,
-          fontSize: "clamp(1.8rem, 4.5vw, 3rem)",
-          lineHeight: 1.1, letterSpacing: "-1px",
-          color: textMain, marginBottom: 20,
-        }}>
-          We're Not Building a<br />
-          <span style={{ backgroundImage: "linear-gradient(135deg, " + accent + ", " + orange + ")", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>Tech Conference</span>
-        </h2>
+        {/* ─── INTRO ─── */}
+        <motion.div
+          ref={introRef}
+          initial={{ opacity: 0, y: 30 }}
+          animate={introInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          style={{ maxWidth: 860, margin: "0 auto clamp(50px, 7vw, 80px)", textAlign: "center" }}
+        >
+          <div style={{
+            display: "inline-block",
+            fontFamily: "'Orbitron', sans-serif",
+            fontWeight: 700, fontSize: "0.62rem",
+            letterSpacing: "3px", textTransform: "uppercase",
+            color: orange, marginBottom: 18,
+            padding: "6px 16px", borderRadius: 999,
+            background: orange + "15", border: "1px solid " + orange + "30",
+          }}>OUR FRAMEWORK</div>
 
-        <p style={{ fontSize: "clamp(1rem, 1.6vw, 1.15rem)", color: textMuted, lineHeight: 1.75, maxWidth: 640, margin: "0 auto" }}>
-          We're building a global convergence platform where emerging technologies meet critical industries, public policy, and real-world impact. Here's how we're getting there.
-        </p>
-      </motion.div>
+          <h2 style={{
+            fontFamily: "'Orbitron', sans-serif",
+            fontWeight: 900,
+            fontSize: "clamp(1.8rem, 4.5vw, 3rem)",
+            lineHeight: 1.1, letterSpacing: "-1px",
+            color: textMain, marginBottom: 18,
+          }}>
+            From Innovation to Impact.
+          </h2>
+          <h3 style={{
+            fontFamily: "'Orbitron', sans-serif",
+            fontWeight: 700,
+            fontSize: "clamp(1.1rem, 2.2vw, 1.55rem)",
+            lineHeight: 1.3, letterSpacing: "-0.3px",
+            marginBottom: 24,
+          }}>
+            Where Core Technologies Converge with{" "}
+            <span style={{
+              backgroundImage: "linear-gradient(135deg, " + accent + ", " + orange + ")",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              color: "transparent",
+            }}>Real-World Transformation</span>
+          </h3>
+          <p style={{
+            fontSize: "clamp(0.95rem, 1.5vw, 1.1rem)",
+            color: textMuted, lineHeight: 1.75,
+            maxWidth: 700, margin: "0 auto",
+          }}>
+            Our expanded innovation framework reflects how technology is being deployed at global scale: nine core technology pillars converging with eleven applied sectors where real-world impact happens.
+          </p>
+        </motion.div>
 
-      {/* TIMELINE CONTAINER */}
-      <div className="convergence-timeline" style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
+        {/* ─── 9 TECH PILLARS ─── */}
+        <div style={{ marginBottom: "clamp(70px, 10vw, 110px)" }}>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={introInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            style={{ textAlign: "center", marginBottom: 36 }}
+          >
+            <div style={{
+              display: "inline-block",
+              fontFamily: "'Orbitron', sans-serif",
+              fontWeight: 700, fontSize: "0.58rem",
+              letterSpacing: "2.5px", textTransform: "uppercase",
+              color: accent, marginBottom: 12,
+              padding: "5px 14px", borderRadius: 999,
+              background: accent + "15", border: "1px solid " + accent + "30",
+            }}>NINE CORE PILLARS</div>
+            <h3 style={{
+              fontFamily: "'Orbitron', sans-serif",
+              fontWeight: 800,
+              fontSize: "clamp(1.4rem, 3vw, 2rem)",
+              letterSpacing: "-0.5px",
+              color: textMain, margin: 0,
+            }}>Technology Pillars</h3>
+          </motion.div>
 
-        {/* Center spine — background line */}
-        <div style={{
-          position: "absolute", left: "50%", top: 0, bottom: 0,
-          width: 2, transform: "translateX(-50%)",
-          background: dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.10)",
-          zIndex: 0,
-        }} />
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
+            gap: "clamp(14px, 1.5vw, 20px)",
+          }}>
+            {TECH_PILLARS.map(function (pillar, i) {
+              return <PillarCard key={pillar.num} pillar={pillar} index={i} dark={dark} />;
+            })}
+          </div>
+        </div>
 
-        {/* Center spine — animated progress fill */}
-        <motion.div style={{
-          position: "absolute", left: "50%", top: 0,
-          width: 2, transform: "translateX(-50%)",
-          height: lineHeight,
-          background: "linear-gradient(180deg, " + accent + ", " + orange + ")",
-          zIndex: 1,
-          boxShadow: "0 0 20px " + accent + "80",
-        }} />
+        {/* ─── DIVIDER ─── */}
+        <motion.div
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={sectorsIntroInView ? { scaleX: 1, opacity: 1 } : {}}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          style={{
+            width: "100%", maxWidth: 200, height: 2,
+            background: "linear-gradient(90deg, transparent, " + accent + ", " + orange + ", transparent)",
+            margin: "0 auto clamp(50px, 7vw, 80px)",
+            transformOrigin: "center",
+          }}
+        />
 
-        {/* Steps */}
-        {TIMELINE_STEPS.map(function (step, i) {
-          return <TimelineStep key={i} step={step} index={i} dark={dark} />;
-        })}
+        {/* ─── 11 APPLIED SECTORS ─── */}
+        <div style={{ marginBottom: "clamp(60px, 9vw, 100px)" }}>
+          <motion.div
+            ref={sectorsIntroRef}
+            initial={{ opacity: 0, y: 16 }}
+            animate={sectorsIntroInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6 }}
+            style={{ textAlign: "center", marginBottom: 36 }}
+          >
+            <div style={{
+              display: "inline-block",
+              fontFamily: "'Orbitron', sans-serif",
+              fontWeight: 700, fontSize: "0.58rem",
+              letterSpacing: "2.5px", textTransform: "uppercase",
+              color: orange, marginBottom: 12,
+              padding: "5px 14px", borderRadius: 999,
+              background: orange + "15", border: "1px solid " + orange + "30",
+            }}>ELEVEN APPLIED SECTORS</div>
+            <h3 style={{
+              fontFamily: "'Orbitron', sans-serif",
+              fontWeight: 800,
+              fontSize: "clamp(1.4rem, 3vw, 2rem)",
+              letterSpacing: "-0.5px",
+              color: textMain, margin: "0 0 12px",
+            }}>Where the Pillars Get Deployed</h3>
+            <p style={{
+              fontSize: "0.95rem", color: textMuted,
+              lineHeight: 1.6, maxWidth: 580, margin: "0 auto",
+            }}>
+              Industries where technology meets policy, strategy, and real-world implementation.
+            </p>
+          </motion.div>
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: "clamp(12px, 1.2vw, 16px)",
+          }}>
+            {APPLIED_SECTORS.map(function (sector, i) {
+              return <SectorCard key={sector.num} sector={sector} index={i} dark={dark} />;
+            })}
+          </div>
+        </div>
+
+        {/* ─── COLLISION CALL-TO-ACTION ─── */}
+        <motion.div
+          ref={collisionRef}
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={collisionInView ? { opacity: 1, scale: 1 } : {}}
+          transition={{ type: "spring", damping: 22, stiffness: 90, delay: 0.1 }}
+          style={{
+            maxWidth: 820, margin: "0 auto",
+            textAlign: "center",
+            padding: "clamp(40px, 6vw, 72px) clamp(28px, 5vw, 56px)",
+            borderRadius: 28,
+            background: dark
+              ? "linear-gradient(135deg, rgba(122,63,209,0.18), rgba(245,166,35,0.10))"
+              : "linear-gradient(135deg, rgba(122,63,209,0.10), rgba(245,166,35,0.06))",
+            border: dark ? "1px solid rgba(122,63,209,0.30)" : "1px solid rgba(122,63,209,0.18)",
+            boxShadow: dark ? "0 16px 64px rgba(122,63,209,0.20)" : "0 16px 64px rgba(122,63,209,0.10)",
+          }}
+        >
+          <div style={{
+            fontFamily: "'Orbitron', sans-serif",
+            fontWeight: 700, fontSize: "0.6rem",
+            letterSpacing: "3px", textTransform: "uppercase",
+            color: orange, marginBottom: 14,
+          }}>THE BIG IDEA</div>
+
+          <h3 style={{
+            fontFamily: "'Orbitron', sans-serif",
+            fontWeight: 900,
+            fontSize: "clamp(2rem, 6vw, 4rem)",
+            lineHeight: 1, letterSpacing: "-2px",
+            marginBottom: 20, color: textMain,
+          }}>
+            We're now thinking<br />
+            <span style={{
+              backgroundImage: "linear-gradient(135deg, " + accent + ", " + orange + ", #e91e8c)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              color: "transparent",
+            }}>COLLISION.</span>
+          </h3>
+
+          <p style={{
+            fontSize: "clamp(0.95rem, 1.5vw, 1.1rem)",
+            color: textMuted, lineHeight: 1.75,
+            maxWidth: 620, margin: "0 auto",
+          }}>
+            Where AI collides with policy. Where quantum collides with finance. Where defense collides with sustainability. Where ideas don't just meet — they collide, react, and produce something the world hasn't seen yet.
+          </p>
+        </motion.div>
+
       </div>
-
-      {/* OUTRO — COLLISION moment */}
-      <motion.div
-        ref={outroRef}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={outroInView ? { opacity: 1, scale: 1 } : {}}
-        transition={{ type: "spring", damping: 20, stiffness: 90, delay: 0.2 }}
-        style={{
-          maxWidth: 800, margin: "clamp(60px, 8vw, 100px) auto 0",
-          textAlign: "center", position: "relative", zIndex: 2,
-          padding: "clamp(40px, 6vw, 72px) clamp(28px, 5vw, 56px)",
-          borderRadius: 28,
-          background: dark
-            ? "linear-gradient(135deg, rgba(122,63,209,0.18), rgba(245,166,35,0.10))"
-            : "linear-gradient(135deg, rgba(122,63,209,0.10), rgba(245,166,35,0.06))",
-          border: dark ? "1px solid rgba(122,63,209,0.30)" : "1px solid rgba(122,63,209,0.18)",
-          boxShadow: dark ? "0 16px 64px rgba(122,63,209,0.20)" : "0 16px 64px rgba(122,63,209,0.10)",
-        }}
-      >
-        <div style={{
-          fontFamily: "'Orbitron', sans-serif",
-          fontWeight: 700, fontSize: "0.6rem",
-          letterSpacing: "3px", textTransform: "uppercase",
-          color: orange, marginBottom: 14,
-        }}>THE BIG IDEA</div>
-
-        <h3 style={{
-          fontFamily: "'Orbitron', sans-serif",
-          fontWeight: 900,
-          fontSize: "clamp(2rem, 6vw, 4rem)",
-          lineHeight: 1, letterSpacing: "-2px",
-          marginBottom: 20,
-        }}>
-          We're now thinking<br />
-          <span style={{ backgroundImage: "linear-gradient(135deg, " + accent + ", " + orange + ", #e91e8c)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>COLLISION.</span>
-        </h3>
-
-        <p style={{ fontSize: "clamp(0.95rem, 1.5vw, 1.1rem)", color: textMuted, lineHeight: 1.75, maxWidth: 580, margin: "0 auto" }}>
-          Where AI collides with policy. Where quantum collides with finance. Where defence collides with sustainability. Where ideas don't just meet — they collide, react, and produce something the world hasn't seen yet.
-        </p>
-      </motion.div>
     </section>
   );
 }
@@ -423,22 +635,15 @@ export default function Home() {
           .hero-ctas-wrap { flex-direction: column !important; width: 100% !important; }
           .hero-cta-solid, .hero-cta-ghost { width: 100% !important; justify-content: center !important; }
           .hero-sub { text-align: left !important; max-width: 100% !important; }
-          .timeline-card { width: calc(100% - 40px) !important; margin-left: 40px !important; }
-          .convergence-timeline > div > div:first-of-type { left: 20px !important; transform: translateX(-50%) !important; }
         }
         @media (min-width: 641px) {
           .hero-sub { max-width: 920px !important; width: 100% !important; }
-        }
-        @media (max-width: 900px) {
-          .convergence-timeline { padding-left: 40px; }
-          .convergence-timeline > div { justify-content: flex-start !important; }
-          .timeline-card { width: calc(100% - 60px) !important; }
         }
       `}</style>
 
       <Navbar />
 
-      {/* HERO UPPER — always dark */}
+      {/* HERO UPPER */}
       <section style={{ position: "relative", overflow: "hidden", background: "#06020f", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
         <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden" }}>
           <video autoPlay muted loop playsInline style={{ position: "absolute", top: "50%", left: "50%", minWidth: "100%", minHeight: "100%", width: "auto", height: "auto", transform: "translate(-50%, -50%)", objectFit: "cover" }}>
@@ -467,7 +672,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── NEW: CONVERGENCE TIMELINE ─── */}
+      {/* ─── EXPANDED FRAMEWORK ─── */}
       <ConvergenceSection dark={dark} />
 
       {/* ABOUT */}

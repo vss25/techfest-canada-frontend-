@@ -223,59 +223,83 @@ var APPLIED_SECTORS = [
   { num: "11", title: "Government, Defense and Strategic Procurement", desc: "Public sector procurement, defense modernization, sovereign tech strategies, public-private partnerships, and compliance frameworks." },
 ];
 
-/* Tech pillar card */
-function PillarCard({ pillar, index, dark }) {
-  var ref = useRef(null);
-  var inView = useInView(ref, { once: true, margin: "-50px" });
+/* Pillar item — horizontal track card */
+function PillarSlide({ pillar, dark }) {
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.62)" : "rgba(13,5,32,0.62)";
-  var cardBg = dark ? "rgba(255,255,255,0.03)" : "#ffffff";
-  var cardBorder = dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
+  var cardBg = dark ? "rgba(255,255,255,0.025)" : "rgba(255,255,255,0.9)";
 
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, delay: (index % 3) * 0.08, ease: "easeOut" }}
-      whileHover={{ y: -6, borderColor: pillar.accent }}
+    <div
       style={{
-        background: cardBg,
-        border: "1.5px solid " + cardBorder,
-        borderRadius: 18,
-        padding: "clamp(22px, 2.5vw, 28px)",
+        flexShrink: 0,
+        width: "clamp(280px, 75vw, 360px)",
+        minHeight: 380,
+        scrollSnapAlign: "start",
+        padding: "32px 28px",
         position: "relative",
-        overflow: "hidden",
-        transition: "border-color 0.25s ease",
-        boxShadow: dark ? "0 4px 20px rgba(0,0,0,0.25)" : "0 4px 20px rgba(122,63,209,0.05)",
-        height: "100%",
+        background: cardBg,
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        borderRadius: 20,
+        border: "1px solid " + (dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"),
         display: "flex",
         flexDirection: "column",
+        transition: "all 0.3s ease",
       }}
     >
-      {/* Accent corner */}
-      <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: 60, background: pillar.accent, borderRadius: "0 0 4px 0" }} />
+      {/* Big number watermark */}
+      <div style={{
+        position: "absolute",
+        top: 20, right: 24,
+        fontFamily: "'Orbitron', sans-serif",
+        fontSize: "5rem",
+        fontWeight: 900,
+        color: pillar.accent,
+        opacity: 0.08,
+        lineHeight: 1,
+        letterSpacing: "-3px",
+        pointerEvents: "none",
+      }}>{pillar.num}</div>
 
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 12 }}>
-        <span style={{
-          fontFamily: "'Orbitron', sans-serif",
-          fontSize: "0.95rem",
-          fontWeight: 900,
-          color: pillar.accent,
-          letterSpacing: "-0.5px",
-        }}>{pillar.num}</span>
-        <h3 style={{
-          fontFamily: "'Orbitron', sans-serif",
-          fontSize: "0.92rem",
-          fontWeight: 800,
-          color: textMain,
-          margin: 0,
-          lineHeight: 1.35,
-          letterSpacing: "-0.2px",
-        }}>{pillar.title}</h3>
-      </div>
+      {/* Top accent dot */}
+      <div style={{
+        width: 8, height: 8, borderRadius: "50%",
+        background: pillar.accent,
+        boxShadow: "0 0 12px " + pillar.accent + "80",
+        marginBottom: 18,
+      }} />
 
-      <ul style={{ listStyle: "none", padding: 0, margin: "auto 0 0", display: "flex", flexDirection: "column", gap: 7 }}>
+      {/* Number + title */}
+      <div style={{
+        fontFamily: "'Orbitron', sans-serif",
+        fontSize: "0.55rem",
+        fontWeight: 800,
+        letterSpacing: "2.5px",
+        color: pillar.accent,
+        marginBottom: 10,
+      }}>PILLAR {pillar.num}</div>
+
+      <h3 style={{
+        fontFamily: "'Orbitron', sans-serif",
+        fontSize: "1rem",
+        fontWeight: 800,
+        color: textMain,
+        margin: "0 0 22px",
+        lineHeight: 1.3,
+        letterSpacing: "-0.3px",
+      }}>{pillar.title}</h3>
+
+      {/* Divider */}
+      <div style={{
+        width: 36, height: 2,
+        background: pillar.accent,
+        opacity: 0.4,
+        marginBottom: 18,
+      }} />
+
+      {/* Items */}
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 9 }}>
         {pillar.items.map(function (item, i) {
           return (
             <li key={i} style={{
@@ -287,74 +311,225 @@ function PillarCard({ pillar, index, dark }) {
             }}>
               <span style={{
                 position: "absolute",
-                left: 0, top: 9,
-                width: 5, height: 5,
-                borderRadius: "50%",
+                left: 0, top: 8,
+                width: 6, height: 1,
                 background: pillar.accent,
-                opacity: 0.7,
+                opacity: 0.6,
               }} />
               {item}
             </li>
           );
         })}
       </ul>
-    </motion.div>
+    </div>
   );
 }
 
-/* Applied sector card - compact */
-function SectorCard({ sector, index, dark }) {
-  var ref = useRef(null);
-  var inView = useInView(ref, { once: true, margin: "-50px" });
+/* Sector item — horizontal track card */
+function SectorSlide({ sector, dark }) {
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.60)" : "rgba(13,5,32,0.60)";
   var accent = dark ? "#f5a623" : "#d98a14";
-  var cardBg = dark ? "rgba(245,166,35,0.04)" : "rgba(245,166,35,0.03)";
-  var cardBorder = dark ? "rgba(245,166,35,0.12)" : "rgba(245,166,35,0.18)";
+  var cardBg = dark ? "rgba(245,166,35,0.03)" : "rgba(245,166,35,0.025)";
 
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 20 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.4, delay: (index % 3) * 0.06 }}
-      whileHover={{ y: -4, borderColor: accent }}
+    <div
       style={{
+        flexShrink: 0,
+        width: "clamp(260px, 70vw, 320px)",
+        minHeight: 200,
+        scrollSnapAlign: "start",
+        padding: "26px 24px",
+        position: "relative",
         background: cardBg,
-        border: "1.5px solid " + cardBorder,
-        borderRadius: 16,
-        padding: "20px 22px",
-        transition: "border-color 0.25s ease",
-        height: "100%",
+        borderRadius: 18,
+        border: "1px solid " + (dark ? "rgba(245,166,35,0.10)" : "rgba(245,166,35,0.15)"),
         display: "flex",
         flexDirection: "column",
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
-        <span style={{
-          fontFamily: "'Orbitron', sans-serif",
-          fontSize: "0.78rem",
-          fontWeight: 900,
-          color: accent,
-          letterSpacing: "0.5px",
-        }}>{sector.num}</span>
-        <h4 style={{
-          fontFamily: "'Orbitron', sans-serif",
-          fontSize: "0.82rem",
-          fontWeight: 800,
-          color: textMain,
-          margin: 0,
-          lineHeight: 1.3,
-          letterSpacing: "-0.1px",
-        }}>{sector.title}</h4>
-      </div>
+      {/* Number watermark */}
+      <div style={{
+        position: "absolute",
+        top: 14, right: 20,
+        fontFamily: "'Orbitron', sans-serif",
+        fontSize: "3rem",
+        fontWeight: 900,
+        color: accent,
+        opacity: 0.10,
+        lineHeight: 1,
+        letterSpacing: "-2px",
+        pointerEvents: "none",
+      }}>{sector.num}</div>
+
+      <div style={{
+        fontFamily: "'Orbitron', sans-serif",
+        fontSize: "0.5rem",
+        fontWeight: 800,
+        letterSpacing: "2.5px",
+        color: accent,
+        marginBottom: 8,
+      }}>SECTOR {sector.num}</div>
+
+      <h4 style={{
+        fontFamily: "'Orbitron', sans-serif",
+        fontSize: "0.86rem",
+        fontWeight: 800,
+        color: textMain,
+        margin: "0 0 12px",
+        lineHeight: 1.3,
+        letterSpacing: "-0.2px",
+      }}>{sector.title}</h4>
+
+      <div style={{
+        width: 28, height: 2,
+        background: accent,
+        opacity: 0.4,
+        marginBottom: 12,
+      }} />
+
       <p style={{
         fontSize: "0.76rem",
         color: textMuted,
         lineHeight: 1.6,
         margin: 0,
       }}>{sector.desc}</p>
-    </motion.div>
+    </div>
+  );
+}
+
+/* Horizontal track with arrow controls */
+function HorizontalTrack({ children, dark }) {
+  var trackRef = useRef(null);
+  var s1 = useState(false); var canLeft = s1[0]; var setCanLeft = s1[1];
+  var s2 = useState(true); var canRight = s2[0]; var setCanRight = s2[1];
+
+  var checkScroll = function () {
+    if (!trackRef.current) return;
+    var el = trackRef.current;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  };
+
+  useEffect(function () {
+    checkScroll();
+    var el = trackRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
+    return function () {
+      el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, []);
+
+  var scrollBy = function (dir) {
+    if (!trackRef.current) return;
+    var amount = trackRef.current.clientWidth * 0.7;
+    trackRef.current.scrollBy({ left: dir * amount, behavior: "smooth" });
+  };
+
+  var arrowBg = dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
+  var arrowBgHover = dark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.12)";
+  var arrowColor = dark ? "#ffffff" : "#0d0520";
+
+  return (
+    <div style={{ position: "relative" }}>
+      {/* Track */}
+      <div
+        ref={trackRef}
+        style={{
+          display: "flex",
+          gap: 18,
+          overflowX: "auto",
+          overflowY: "hidden",
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+          padding: "8px 5% 32px",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+        className="hide-scrollbar"
+      >
+        {children}
+        {/* Trailing spacer */}
+        <div style={{ flexShrink: 0, width: 1 }} />
+      </div>
+
+      {/* Left arrow */}
+      <button
+        onClick={function () { scrollBy(-1); }}
+        disabled={!canLeft}
+        style={{
+          position: "absolute",
+          left: 8, top: "50%", transform: "translateY(-50%)",
+          width: 44, height: 44, borderRadius: "50%",
+          background: arrowBg,
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          border: "1px solid " + (dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"),
+          color: arrowColor,
+          cursor: canLeft ? "pointer" : "default",
+          opacity: canLeft ? 1 : 0.3,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          transition: "all 0.2s ease",
+          zIndex: 5,
+        }}
+        onMouseEnter={function (e) { if (canLeft) e.currentTarget.style.background = arrowBgHover; }}
+        onMouseLeave={function (e) { e.currentTarget.style.background = arrowBg; }}
+        aria-label="Scroll left"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+
+      {/* Right arrow */}
+      <button
+        onClick={function () { scrollBy(1); }}
+        disabled={!canRight}
+        style={{
+          position: "absolute",
+          right: 8, top: "50%", transform: "translateY(-50%)",
+          width: 44, height: 44, borderRadius: "50%",
+          background: arrowBg,
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          border: "1px solid " + (dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"),
+          color: arrowColor,
+          cursor: canRight ? "pointer" : "default",
+          opacity: canRight ? 1 : 0.3,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          transition: "all 0.2s ease",
+          zIndex: 5,
+        }}
+        onMouseEnter={function (e) { if (canRight) e.currentTarget.style.background = arrowBgHover; }}
+        onMouseLeave={function (e) { e.currentTarget.style.background = arrowBg; }}
+        aria-label="Scroll right"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+
+      {/* Edge fades */}
+      <div style={{
+        position: "absolute",
+        left: 0, top: 0, bottom: 32,
+        width: 60, pointerEvents: "none",
+        background: "linear-gradient(90deg, " + (dark ? "#06020f" : "#ffffff") + ", transparent)",
+        opacity: canLeft ? 1 : 0,
+        transition: "opacity 0.3s",
+      }} />
+      <div style={{
+        position: "absolute",
+        right: 0, top: 0, bottom: 32,
+        width: 60, pointerEvents: "none",
+        background: "linear-gradient(-90deg, " + (dark ? "#06020f" : "#ffffff") + ", transparent)",
+        opacity: canRight ? 1 : 0,
+        transition: "opacity 0.3s",
+      }} />
+    </div>
   );
 }
 
@@ -367,8 +542,11 @@ function ConvergenceSection({ dark }) {
   var introRef = useRef(null);
   var introInView = useInView(introRef, { once: true, margin: "-100px" });
 
-  var sectorsIntroRef = useRef(null);
-  var sectorsIntroInView = useInView(sectorsIntroRef, { once: true, margin: "-80px" });
+  var pillarsHeaderRef = useRef(null);
+  var pillarsHeaderInView = useInView(pillarsHeaderRef, { once: true, margin: "-80px" });
+
+  var sectorsHeaderRef = useRef(null);
+  var sectorsHeaderInView = useInView(sectorsHeaderRef, { once: true, margin: "-80px" });
 
   var collisionRef = useRef(null);
   var collisionInView = useInView(collisionRef, { once: true, margin: "-100px" });
@@ -377,11 +555,13 @@ function ConvergenceSection({ dark }) {
     <section style={{
       position: "relative",
       background: dark ? "#06020f" : "#ffffff",
-      padding: "clamp(60px, 10vw, 120px) 5% clamp(80px, 12vw, 140px)",
+      padding: "clamp(60px, 10vw, 120px) 0 clamp(80px, 12vw, 140px)",
       overflow: "hidden",
     }}>
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+      `}</style>
 
-      {/* Background glow */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
         background: dark
@@ -389,15 +569,15 @@ function ConvergenceSection({ dark }) {
           : "radial-gradient(ellipse 60% 40% at 50% 50%, rgba(122,63,209,0.04) 0%, transparent 70%)",
       }} />
 
-      <div style={{ position: "relative", zIndex: 2, maxWidth: 1240, margin: "0 auto" }}>
+      <div style={{ position: "relative", zIndex: 2 }}>
 
-        {/* ─── INTRO ─── */}
+        {/* INTRO */}
         <motion.div
           ref={introRef}
           initial={{ opacity: 0, y: 30 }}
           animate={introInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          style={{ maxWidth: 860, margin: "0 auto clamp(50px, 7vw, 80px)", textAlign: "center" }}
+          style={{ maxWidth: 860, margin: "0 auto clamp(50px, 7vw, 80px)", textAlign: "center", padding: "0 5%" }}
         >
           <div style={{
             display: "inline-block",
@@ -438,22 +618,23 @@ function ConvergenceSection({ dark }) {
             color: textMuted, lineHeight: 1.75,
             maxWidth: 700, margin: "0 auto",
           }}>
-            Our expanded innovation framework reflects how technology is being deployed at global scale: nine core technology pillars converging with eleven applied sectors where real-world impact happens.
+            Nine core technology pillars converging with eleven applied sectors where real-world impact happens.
           </p>
         </motion.div>
 
-        {/* ─── 9 TECH PILLARS ─── */}
-        <div style={{ marginBottom: "clamp(70px, 10vw, 110px)" }}>
+        {/* PILLARS — HORIZONTAL TRACK */}
+        <div style={{ marginBottom: "clamp(70px, 10vw, 100px)" }}>
           <motion.div
+            ref={pillarsHeaderRef}
             initial={{ opacity: 0, y: 16 }}
-            animate={introInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            style={{ textAlign: "center", marginBottom: 36 }}
+            animate={pillarsHeaderInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6 }}
+            style={{ textAlign: "center", marginBottom: 28, padding: "0 5%" }}
           >
             <div style={{
               display: "inline-block",
               fontFamily: "'Orbitron', sans-serif",
-              fontWeight: 700, fontSize: "0.58rem",
+              fontWeight: 700, fontSize: "0.55rem",
               letterSpacing: "2.5px", textTransform: "uppercase",
               color: accent, marginBottom: 12,
               padding: "5px 14px", borderRadius: 999,
@@ -466,45 +647,40 @@ function ConvergenceSection({ dark }) {
               letterSpacing: "-0.5px",
               color: textMain, margin: 0,
             }}>Technology Pillars</h3>
+            <p style={{ fontSize: "0.85rem", color: textMuted, marginTop: 8, opacity: 0.7 }}>
+              Swipe or use arrows to explore
+            </p>
           </motion.div>
 
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
-            gap: "clamp(14px, 1.5vw, 20px)",
-          }}>
-            {TECH_PILLARS.map(function (pillar, i) {
-              return <PillarCard key={pillar.num} pillar={pillar} index={i} dark={dark} />;
+          <HorizontalTrack dark={dark}>
+            {TECH_PILLARS.map(function (pillar) {
+              return <PillarSlide key={pillar.num} pillar={pillar} dark={dark} />;
             })}
-          </div>
+          </HorizontalTrack>
         </div>
 
-        {/* ─── DIVIDER ─── */}
-        <motion.div
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={sectorsIntroInView ? { scaleX: 1, opacity: 1 } : {}}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          style={{
-            width: "100%", maxWidth: 200, height: 2,
-            background: "linear-gradient(90deg, transparent, " + accent + ", " + orange + ", transparent)",
-            margin: "0 auto clamp(50px, 7vw, 80px)",
-            transformOrigin: "center",
-          }}
-        />
+        {/* DIVIDER */}
+        <div style={{ textAlign: "center", margin: "0 0 clamp(40px, 6vw, 70px)" }}>
+          <div style={{
+            display: "inline-block",
+            width: 60, height: 1,
+            background: dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)",
+          }} />
+        </div>
 
-        {/* ─── 11 APPLIED SECTORS ─── */}
+        {/* SECTORS — HORIZONTAL TRACK */}
         <div style={{ marginBottom: "clamp(60px, 9vw, 100px)" }}>
           <motion.div
-            ref={sectorsIntroRef}
+            ref={sectorsHeaderRef}
             initial={{ opacity: 0, y: 16 }}
-            animate={sectorsIntroInView ? { opacity: 1, y: 0 } : {}}
+            animate={sectorsHeaderInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6 }}
-            style={{ textAlign: "center", marginBottom: 36 }}
+            style={{ textAlign: "center", marginBottom: 28, padding: "0 5%" }}
           >
             <div style={{
               display: "inline-block",
               fontFamily: "'Orbitron', sans-serif",
-              fontWeight: 700, fontSize: "0.58rem",
+              fontWeight: 700, fontSize: "0.55rem",
               letterSpacing: "2.5px", textTransform: "uppercase",
               color: orange, marginBottom: 12,
               padding: "5px 14px", borderRadius: 999,
@@ -515,28 +691,18 @@ function ConvergenceSection({ dark }) {
               fontWeight: 800,
               fontSize: "clamp(1.4rem, 3vw, 2rem)",
               letterSpacing: "-0.5px",
-              color: textMain, margin: "0 0 12px",
+              color: textMain, margin: 0,
             }}>Where the Pillars Get Deployed</h3>
-            <p style={{
-              fontSize: "0.95rem", color: textMuted,
-              lineHeight: 1.6, maxWidth: 580, margin: "0 auto",
-            }}>
-              Industries where technology meets policy, strategy, and real-world implementation.
-            </p>
           </motion.div>
 
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "clamp(12px, 1.2vw, 16px)",
-          }}>
-            {APPLIED_SECTORS.map(function (sector, i) {
-              return <SectorCard key={sector.num} sector={sector} index={i} dark={dark} />;
+          <HorizontalTrack dark={dark}>
+            {APPLIED_SECTORS.map(function (sector) {
+              return <SectorSlide key={sector.num} sector={sector} dark={dark} />;
             })}
-          </div>
+          </HorizontalTrack>
         </div>
 
-        {/* ─── COLLISION CALL-TO-ACTION ─── */}
+        {/* COLLISION */}
         <motion.div
           ref={collisionRef}
           initial={{ opacity: 0, scale: 0.96 }}
@@ -552,6 +718,7 @@ function ConvergenceSection({ dark }) {
               : "linear-gradient(135deg, rgba(122,63,209,0.10), rgba(245,166,35,0.06))",
             border: dark ? "1px solid rgba(122,63,209,0.30)" : "1px solid rgba(122,63,209,0.18)",
             boxShadow: dark ? "0 16px 64px rgba(122,63,209,0.20)" : "0 16px 64px rgba(122,63,209,0.10)",
+            margin: "0 5%",
           }}
         >
           <div style={{

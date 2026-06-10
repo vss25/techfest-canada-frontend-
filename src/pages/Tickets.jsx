@@ -167,18 +167,6 @@ function QuestionnaireModal({ dark, tierLabel, onClose, onSubmit }) {
 
   useEffect(() => { const t = setTimeout(() => { if (firstInputRef.current) firstInputRef.current.focus(); }, 120); return () => clearTimeout(t); }, [step]);
 
-  // ESC key closes modal + lock background scroll while open
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [onClose]);
-
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.68)";
   const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)";
@@ -227,25 +215,17 @@ function QuestionnaireModal({ dark, tierLabel, onClose, onSubmit }) {
   const stepSubtitles = ["Personal & professional details", "Topics, objectives & agreements"];
 
   return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:100000, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px", background:"rgba(0,0,0,0.78)", backdropFilter:"blur(12px)" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width:"100%", maxWidth:580, maxHeight:"92vh", display:"flex", flexDirection:"column", background:modalBg, borderRadius:24, border: dark?"1px solid rgba(255,255,255,0.10)":"1px solid rgba(122,63,209,0.14)", boxShadow: dark?"0 28px 80px rgba(0,0,0,0.6)":"0 28px 80px rgba(122,63,209,0.15)", overflow:"hidden", position:"relative" }}>
-
-        {/* Floating close button — always visible, sits above content */}
-        <button onClick={onClose} aria-label="Close" style={{ position:"absolute", top:14, right:14, zIndex:5, width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", background: dark?"rgba(255,255,255,0.08)":"rgba(13,5,32,0.06)", border: dark?"1px solid rgba(255,255,255,0.12)":"1px solid rgba(13,5,32,0.08)", borderRadius:"50%", cursor:"pointer", color:textMain, transition:"background 0.15s, transform 0.15s" }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = dark?"rgba(255,255,255,0.14)":"rgba(13,5,32,0.10)"; e.currentTarget.style.transform = "scale(1.05)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = dark?"rgba(255,255,255,0.08)":"rgba(13,5,32,0.06)"; e.currentTarget.style.transform = "scale(1)"; }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
-        </button>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:9998, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px", background:"rgba(0,0,0,0.78)", backdropFilter:"blur(12px)" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width:"100%", maxWidth:580, maxHeight:"92vh", display:"flex", flexDirection:"column", background:modalBg, borderRadius:24, border: dark?"1px solid rgba(255,255,255,0.10)":"1px solid rgba(122,63,209,0.14)", boxShadow: dark?"0 28px 80px rgba(0,0,0,0.6)":"0 28px 80px rgba(122,63,209,0.15)", overflow:"hidden" }}>
 
         <div style={{ padding:"24px 28px 0", flexShrink:0 }}>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:6, paddingRight:40 }}>
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:6 }}>
             <div>
               <div style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.58rem", fontWeight:700, letterSpacing:"1.8px", textTransform:"uppercase", color:"#f5a623", marginBottom:4 }}>{tierLabel} Pass</div>
               <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"1.05rem", color:textMain, margin:0, lineHeight:1.2 }}>{stepTitles[step-1]}</h2>
               <p style={{ fontSize:"0.68rem", color:textMuted, margin:"4px 0 0", letterSpacing:"0.3px" }}>{stepSubtitles[step-1]}</p>
             </div>
+            <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:textMuted, fontSize:"1.4rem", lineHeight:1, padding:"4px 8px", flexShrink:0, marginTop:2 }} aria-label="Close">&times;</button>
           </div>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", margin:"14px 0 6px" }}>
             <span style={{ fontSize:"0.60rem", color: dark?"rgba(255,255,255,0.30)":"rgba(13,5,32,0.30)", fontWeight:600, letterSpacing:"0.5px" }}>Step {step} of {TOTAL_STEPS}</span>
@@ -309,12 +289,12 @@ function QuestionnaireModal({ dark, tierLabel, onClose, onSubmit }) {
 }
 
 const PASS_META = {
-  connect: { label:"Connect Pass", tagline:"More than just access to the conference.", description:"Designed for attendees who want to start the day in a more curated business environment. With entry to the exclusive CxO Breakfast, you can connect with senior leaders and build meaningful relationships before the main conference begins.", features:["2x Day Conference Access","2x CxO Breakfasts","2x Luncheons","Expo Floor Access","Networking Breaks"], tier:"connect", defaultPrice:599, featured:false },
+  connect: { label:"Connect Pass", tagline:"More than just access to the conference.", description:"Designed for attendees who want full access to the main conference and expo floor. Connect with senior leaders, explore the show floor, and build meaningful business relationships across both days.", features:["2x Day Conference Access","2x Luncheons","Expo Floor Access","Networking Breaks"], tier:"connect", defaultPrice:599, featured:false },
   influence: { label:"Influence Pass", tagline:"A fuller event experience beyond the conference floor.", description:"Built for decision makers, growth leaders, investors, and professionals who want premium daytime access plus entry to the Gala Dinner and Networking Reception \u2014 creating space for higher-value conversations and stronger business connections.", features:["2x Day Conference Access","2x CxO Breakfasts","2x Luncheons","1x Gala Dinner & Networking Reception","Expo Floor Access","Networking Breaks"], tier:"influence", defaultPrice:799, featured:true },
   power: { label:"Power Pass", tagline:"The ultimate all-access experience.", description:"Built for senior executives, VIP guests, investors, speakers, and leaders who want to experience The Tech Festival Canada at the highest level. With access to every major element of the event, this pass offers the most complete and elevated way to engage with the festival.", features:["2x Day Conference Access","2x CxO Breakfasts","2x Luncheons","1x Gala Dinner & Networking Reception","1x Awards Night","VIP Lounge Access (Both Days)","Expo Floor Access","Networking Breaks"], tier:"power", defaultPrice:999, featured:false },
 };
 
-function PassCard({ meta, inventoryItem, onPurchase, dark }) {
+function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded }) {
   const [hovered, setHovered] = useState(false);
   const price = inventoryItem?.price ?? meta.defaultPrice;
   const remaining = inventoryItem ? Math.max(inventoryItem.total - inventoryItem.sold, 0) : null;
@@ -330,7 +310,16 @@ function PassCard({ meta, inventoryItem, onPurchase, dark }) {
       style={{ position:"relative", flex:"1 1 260px", maxWidth:340, minWidth:240, borderRadius:20, padding:"32px 26px 28px", display:"flex", flexDirection:"column", backdropFilter:"blur(18px)", WebkitBackdropFilter:"blur(18px)", background: meta.featured?(dark?"linear-gradient(135deg, rgba(122,63,209,0.28) 0%, rgba(245,166,35,0.12) 100%)":"linear-gradient(135deg, rgba(122,63,209,0.12) 0%, rgba(245,166,35,0.08) 100%)"):cardBg, border: meta.featured?(dark?"1px solid rgba(122,63,209,0.55)":"1px solid rgba(122,63,209,0.40)"):cardBorder, boxShadow: meta.featured?(dark?"0 8px 48px rgba(122,63,209,0.25)":"0 8px 32px rgba(122,63,209,0.18)"):(dark?"0 4px 32px rgba(0,0,0,0.35)":"0 4px 24px rgba(122,63,209,0.08)"), transform: meta.featured?"scale(1.04)":hovered?"scale(1.02)":"scale(1)", transition:"transform 0.25s ease, box-shadow 0.25s ease", zIndex: meta.featured?2:1 }}>
       {meta.featured && <div style={{ position:"absolute", top:-14, left:"50%", transform:"translateX(-50%)", background:"linear-gradient(90deg, #7a3fd1, #f5a623)", color:"white", fontSize:"0.62rem", fontWeight:800, letterSpacing:"1.4px", textTransform:"uppercase", padding:"5px 16px", borderRadius:999, whiteSpace:"nowrap", fontFamily:"'Orbitron', sans-serif" }}>Most Popular</div>}
       <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.72rem", letterSpacing:"1.5px", textTransform:"uppercase", color: meta.featured?(dark?"#f5a623":"#d98a14"):(dark?"rgba(160,100,255,0.85)":"#7a3fd1"), marginBottom:8 }}>{meta.label}</div>
-      <div style={{ display:"flex", alignItems:"baseline", gap:6, marginBottom:2 }}><PriceWithAsterisk price={price} color={textMain} fontSize="2.6rem" fontWeight={900} /><span style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.95rem", fontWeight:800, color:textLight, letterSpacing:"1px", textTransform:"uppercase" }}>CAD</span></div>
+      <div style={{ display:"flex", alignItems:"baseline", gap:6, marginBottom:2, minHeight:"2.6rem" }}>
+        {inventoryLoaded ? (
+          <>
+            <PriceWithAsterisk price={price} color={textMain} fontSize="2.6rem" fontWeight={900} />
+            <span style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.95rem", fontWeight:800, color:textLight, letterSpacing:"1px", textTransform:"uppercase" }}>CAD</span>
+          </>
+        ) : (
+          <div aria-label="Loading price" style={{ width:160, height:"2.4rem", borderRadius:8, background: dark?"linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04))":"linear-gradient(90deg, rgba(122,63,209,0.05), rgba(122,63,209,0.12), rgba(122,63,209,0.05))", backgroundSize:"200% 100%", animation:"ttfcShimmer 1.4s ease-in-out infinite" }} />
+        )}
+      </div>
       <p style={{ fontSize:"0.62rem", fontWeight:600, color: dark?"rgba(255,255,255,0.35)":"rgba(13,5,32,0.38)", letterSpacing:"0.3px", marginBottom:4 }}>13% HST included</p>
       <div style={{ width:"100%", height:1, background: dark?"linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 50%,transparent)":"linear-gradient(90deg,transparent,rgba(122,63,209,0.18) 50%,transparent)", margin:"14px 0 16px" }} />
       <p style={{ fontSize:"0.82rem", fontWeight:600, color:textMain, marginBottom:8, lineHeight:1.5, textAlign:"justify" }}>{meta.tagline}</p>
@@ -349,6 +338,7 @@ function PassCard({ meta, inventoryItem, onPurchase, dark }) {
 
 export default function Tickets() {
   const [inventory, setInventory] = useState([]);
+  const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [dark, setDark] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
@@ -357,7 +347,7 @@ export default function Tickets() {
 
   useEffect(() => { setDark(document.body.classList.contains("dark-mode")); const obs = new MutationObserver(() => setDark(document.body.classList.contains("dark-mode"))); obs.observe(document.body, { attributes:true, attributeFilter:["class"] }); return () => obs.disconnect(); }, []);
   useEffect(() => { const params = new URLSearchParams(window.location.search); if (params.get("success") === "true") { setShowSuccessModal(true); window.history.replaceState(null, "", window.location.pathname); } }, []);
-  useEffect(() => { const load = async () => { try { const res = await fetch(API+"/admin/inventory/public"); const data = await res.json(); setInventory(Array.isArray(data)?data:[]); } catch(err) { console.error("Inventory fetch failed", err); } }; load(); }, []);
+  useEffect(() => { const load = async () => { try { const res = await fetch(API+"/admin/inventory/public"); const data = await res.json(); setInventory(Array.isArray(data)?data:[]); } catch(err) { console.error("Inventory fetch failed", err); } finally { setInventoryLoaded(true); } }; load(); }, []);
 
   const getTier = (tier) => inventory.find((i) => i.tier === tier) || null;
   const handleOpenQuestionnaire = (tier, label) => { setPendingTier(tier); setPendingLabel(label); setQuestionnaireOpen(true); };
@@ -370,13 +360,14 @@ export default function Tickets() {
   const passes = ["connect","influence","power"];
   const passLabels = { connect:"Connect", influence:"Influence", power:"Power" };
   const allFeatures = ["2x Day Conference Access","Expo Floor Access","Networking Breaks","2x CxO Breakfasts","2x Luncheons","1x Gala Dinner & Networking Reception","1x Awards Night","VIP Lounge Access (Both Days)"];
-  const passFeatureMap = { connect:[true,true,true,true,true,false,false,false], influence:[true,true,true,true,true,true,false,false], power:[true,true,true,true,true,true,true,true] };
+  const passFeatureMap = { connect:[true,true,true,false,true,false,false,false], influence:[true,true,true,true,true,true,false,false], power:[true,true,true,true,true,true,true,true] };
   const bg = dark ? "#06020f" : "#ffffff";
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(255,255,255,0.60)" : "rgba(13,5,32,0.68)";
 
   return (
     <><Navbar />
+      <style>{`@keyframes ttfcShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
       <div style={{ minHeight:"100vh", background:bg, color:textMain, position:"relative", transition:"background 0.3s ease" }}>
         <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, background: dark?"radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.10) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(245,166,35,0.06) 0%, transparent 70%)":"radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.05) 0%, transparent 70%)" }} />
         <div style={{ position:"relative", zIndex:1, paddingBottom:"1px" }}>
@@ -385,7 +376,7 @@ export default function Tickets() {
             <p style={{ fontSize:"1rem", color:textMuted, lineHeight:1.75, textAlign:"justify", hyphens:"auto" }}>Whether you are coming to learn, connect, explore partnerships, or experience the event at the highest level, The Tech Festival Canada offers a pass designed for every kind of delegate.</p>
           </div>
           <div style={{ display:"flex", flexWrap:"wrap", gap:20, justifyContent:"center", alignItems:"stretch", padding:"0 24px 80px", maxWidth:1260, margin:"0 auto" }}>
-            {passes.map(key => <PassCard key={key} meta={PASS_META[key]} inventoryItem={getTier(key)} onPurchase={handleOpenQuestionnaire} dark={dark} />)}
+            {passes.map(key => <PassCard key={key} meta={PASS_META[key]} inventoryItem={getTier(key)} onPurchase={handleOpenQuestionnaire} dark={dark} inventoryLoaded={inventoryLoaded} />)}
           </div>
           <div style={{ maxWidth:900, margin:"0 auto 80px", padding:"0 24px" }}>
             <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"1rem", letterSpacing:"1px", textTransform:"uppercase", color: dark?"rgba(255,255,255,0.35)":"rgba(13,5,32,0.40)", textAlign:"center", marginBottom:28 }}>Pass Comparison</h2>
@@ -415,7 +406,7 @@ export default function Tickets() {
         </div>
         {questionnaireOpen && <QuestionnaireModal dark={dark} tierLabel={pendingLabel} onClose={() => setQuestionnaireOpen(false)} onSubmit={handlePurchase} />}
         {showSuccessModal && (
-          <div style={{ position:"fixed", top:0, left:0, width:"100%", height:"100%", zIndex:100001, display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", background:"rgba(0,0,0,0.8)", backdropFilter:"blur(10px)" }}>
+          <div style={{ position:"fixed", top:0, left:0, width:"100%", height:"100%", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", background:"rgba(0,0,0,0.8)", backdropFilter:"blur(10px)" }}>
             <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"24px", width:"100%", maxWidth:"420px", background: dark?"#120a22":"#ffffff", padding:"40px 32px", borderRadius:"24px", border: dark?"1px solid rgba(255,255,255,0.1)":"1px solid rgba(122,63,209,0.1)" }}>
               <div style={{ textAlign:"center", color:textMain }}>
                 <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"2rem", margin:"0 0 12px 0", color:"#f5a623" }}>Thank You!</h2>

@@ -475,44 +475,6 @@ function CheckoutInner() {
                     {errors.objectives && <span style={errStyle}>{errors.objectives}</span>}
                   </div>
 
-                  {/* Promo code */}
-                  <div style={fieldStyle}>
-                    <label style={labelStyle}>Promo Code <span style={{ fontWeight:500, letterSpacing:0, textTransform:"none", color:textDim }}>(optional)</span></label>
-                    {promoCode ? (
-                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"12px 14px", borderRadius:10, border:"1px solid "+(dark?"rgba(122,63,209,0.45)":"rgba(122,63,209,0.32)"), background: dark?"rgba(122,63,209,0.12)":"rgba(122,63,209,0.06)" }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
-                          <div style={{ width:26, height:26, borderRadius:999, flexShrink:0, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                          </div>
-                          <div style={{ minWidth:0 }}>
-                            <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.78rem", letterSpacing:"0.5px", color:textMain, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{promoCode}</div>
-                            <div style={{ fontSize:"0.66rem", color:textMuted, marginTop:1 }}>{promoDiscount}% off applied</div>
-                          </div>
-                        </div>
-                        <button onClick={removePromo} style={{ background:"none", border:"1px solid "+(dark?"rgba(255,255,255,0.18)":"rgba(122,63,209,0.24)"), color:textMuted, borderRadius:8, padding:"6px 12px", fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"0.55rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", flexShrink:0 }}>Remove</button>
-                      </div>
-                    ) : (
-                      <>
-                        <div style={{ display:"flex", gap:8 }}>
-                          <input
-                            value={promoInput}
-                            onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); if (promoStatus === "error") { setPromoStatus(null); setPromoError(""); } }}
-                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyPromo(); } }}
-                            placeholder="Enter code"
-                            autoCapitalize="characters"
-                            spellCheck={false}
-                            style={{ flex:1, padding:"11px 14px", borderRadius:10, border:"1px solid "+(promoStatus==="error"?"#e05555":inputBorder), background:inputBg, color:textMain, fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"15px", letterSpacing:"1.5px", textTransform:"uppercase", outline:"none", boxSizing:"border-box" }}
-                          />
-                          <button type="button" onClick={applyPromo} disabled={promoStatus === "loading" || !promoInput.trim()}
-                            style={{ flexShrink:0, padding:"11px 20px", borderRadius:10, border:"none", cursor: (promoStatus==="loading" || !promoInput.trim())?"not-allowed":"pointer", opacity:(promoStatus==="loading" || !promoInput.trim())?0.55:1, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"white", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.62rem", letterSpacing:"1px", textTransform:"uppercase" }}>
-                            {promoStatus === "loading" ? "\u2026" : "Apply"}
-                          </button>
-                        </div>
-                        {promoStatus === "error" && <span style={{ ...errStyle, marginTop:6 }}>{promoError}</span>}
-                      </>
-                    )}
-                  </div>
-
                   {/* Consent */}
                   <div style={{ display:"flex", flexDirection:"column", gap:14, padding:"22px", background: dark?"rgba(122,63,209,0.08)":"rgba(122,63,209,0.04)", borderRadius:14, border: dark?"1px solid rgba(122,63,209,0.20)":"1px solid rgba(122,63,209,0.12)" }}>
                     <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#c8a8ff":"#7a3fd1", marginBottom:2 }}>Your Consent</div>
@@ -589,6 +551,48 @@ function CheckoutInner() {
                 <p style={{ fontSize:"0.65rem", color:textDim, lineHeight:1.5, margin:"14px 0 0" }}>
                   Pricing is indicative. The exact total (with HST) is shown on the Stripe checkout page before you pay.
                 </p>
+              </div>
+
+              {/* ====================== PROMO CODE BOX ====================== */}
+              <div style={{ marginTop:14, background:cardBg, border:cardBorder, borderRadius:20, padding:"20px 22px", backdropFilter:"blur(12px)" }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+                  <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.6rem", letterSpacing:"2px", textTransform:"uppercase", color:textDim }}>Promo Code</div>
+                  <span style={{ fontSize:"0.6rem", fontWeight:600, color:textDim, letterSpacing:"0.3px" }}>Optional</span>
+                </div>
+
+                {promoCode ? (
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"12px 14px", borderRadius:10, border:"1px solid "+(dark?"rgba(122,63,209,0.45)":"rgba(122,63,209,0.32)"), background: dark?"rgba(122,63,209,0.12)":"rgba(122,63,209,0.06)" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
+                      <div style={{ width:26, height:26, borderRadius:999, flexShrink:0, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                      </div>
+                      <div style={{ minWidth:0 }}>
+                        <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.78rem", letterSpacing:"0.5px", color:textMain, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{promoCode}</div>
+                        <div style={{ fontSize:"0.66rem", color:textMuted, marginTop:1 }}>{promoDiscount}% off applied</div>
+                      </div>
+                    </div>
+                    <button onClick={removePromo} style={{ background:"none", border:"1px solid "+(dark?"rgba(255,255,255,0.18)":"rgba(122,63,209,0.24)"), color:textMuted, borderRadius:8, padding:"6px 12px", fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"0.55rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", flexShrink:0 }}>Remove</button>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display:"flex", gap:8 }}>
+                      <input
+                        value={promoInput}
+                        onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); if (promoStatus === "error") { setPromoStatus(null); setPromoError(""); } }}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyPromo(); } }}
+                        placeholder="Enter code"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        style={{ flex:1, minWidth:0, padding:"11px 14px", borderRadius:10, border:"1px solid "+(promoStatus==="error"?"#e05555":inputBorder), background:inputBg, color:textMain, fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"15px", letterSpacing:"1.5px", textTransform:"uppercase", outline:"none", boxSizing:"border-box" }}
+                      />
+                      <button type="button" onClick={applyPromo} disabled={promoStatus === "loading" || !promoInput.trim()}
+                        style={{ flexShrink:0, padding:"11px 18px", borderRadius:10, border:"none", cursor: (promoStatus==="loading" || !promoInput.trim())?"not-allowed":"pointer", opacity:(promoStatus==="loading" || !promoInput.trim())?0.55:1, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"white", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.62rem", letterSpacing:"1px", textTransform:"uppercase" }}>
+                        {promoStatus === "loading" ? "\u2026" : "Apply"}
+                      </button>
+                    </div>
+                    {promoStatus === "error" && <span style={{ ...errStyle, marginTop:8, display:"block" }}>{promoError}</span>}
+                  </>
+                )}
               </div>
 
               <div style={{ marginTop:14, padding:"14px 16px", background: dark?"rgba(255,255,255,0.02)":"rgba(122,63,209,0.02)", border: dark?"1px solid rgba(255,255,255,0.05)":"1px solid rgba(122,63,209,0.08)", borderRadius:14 }}>

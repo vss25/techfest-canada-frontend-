@@ -2,11 +2,28 @@ import { useEffect, useState } from "react";
 
 const API = "https://techfest-canada-backend.onrender.com/api";
 
+const DISCOUNTS = [10, 25, 50];
+
+/* Client-side random code generator (backend re-checks uniqueness on create) */
+function genCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous 0/O/1/I
+  let out = "TTFC";
+  for (let i = 0; i < 5; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
 export default function AdminInventory() {
 
   const [isDark, setIsDark] = useState(true);
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  /* ===== PROMO CODE STATE ===== */
+  const [promos, setPromos] = useState([]);
+  const [newCode, setNewCode] = useState("");
+  const [newDiscount, setNewDiscount] = useState(10);
+  const [promoBusy, setPromoBusy] = useState(false);
+  const [promoMsg, setPromoMsg] = useState("");
 
   useEffect(() => {
     const checkDarkMode = () => {
@@ -23,6 +40,7 @@ export default function AdminInventory() {
 
   useEffect(() => {
     loadInventory();
+    loadPromos();
   }, []);
 
   /* ================= LOAD ================= */
@@ -105,6 +123,80 @@ export default function AdminInventory() {
 
   };
 
+  /* ================= PROMO CODES ================= */
+
+  const loadPromos = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/admin/promos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setPromos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Promo load failed:", err);
+    }
+  };
+
+  const createPromo = async () => {
+    const code = newCode.trim().toUpperCase().replace(/\s+/g, "");
+    if (!code) { setPromoMsg("Enter a code or click Generate."); return; }
+    setPromoBusy(true);
+    setPromoMsg("");
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/admin/promos`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ code, discount: Number(newDiscount) })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Create failed");
+      setNewCode("");
+      setNewDiscount(10);
+      setPromoMsg(`Created ${data.code} (${data.discount}% off).`);
+      loadPromos();
+    } catch (err) {
+      setPromoMsg(err.message || "Create failed");
+    } finally {
+      setPromoBusy(false);
+    }
+  };
+
+  const togglePromo = async (promo) => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${API}/admin/promos/${promo._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ active: !promo.active })
+      });
+      loadPromos();
+    } catch (err) {
+      console.error("Toggle failed");
+    }
+  };
+
+  const deletePromo = async (promo) => {
+    if (!window.confirm(`Delete promo code ${promo.code}? This cannot be undone.`)) return;
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${API}/admin/promos/${promo._id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      loadPromos();
+    } catch (err) {
+      console.error("Delete failed");
+    }
+  };
+
   /* ================= CALCULATIONS ================= */
 
   const totalRevenue = inventory.reduce(
@@ -124,7 +216,19 @@ export default function AdminInventory() {
 
   const cardClass = isDark ? "stat-card" : "stat-card stat-card-light";
 
+  /* ===== Inline theme tokens for the promo section (self-contained, no CSS dependency) ===== */
+  const t = {
+    text: isDark ? "#ffffff" : "#0d0520",
+    muted: isDark ? "rgba(255,255,255,0.55)" : "rgba(13,5,32,0.55)",
+    panel: isDark ? "rgba(255,255,255,0.03)" : "rgba(122,63,209,0.03)",
+    border: isDark ? "rgba(255,255,255,0.10)" : "rgba(122,63,209,0.14)",
+    inputBg: isDark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)",
+    inputBorder: isDark ? "rgba(255,255,255,0.14)" : "rgba(122,63,209,0.20)",
+    rowBorder: isDark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.08)",
+  };
+
   return (
+    <>
     <div className="admin-card">
 
       <h2 className={isDark ? "text-white" : "text-gray-900"}>Ticket Inventory</h2>
@@ -257,5 +361,208 @@ export default function AdminInventory() {
       </div>
 
     </div>
+
+    {/* ============================================================= */}
+    {/* ===== PROMO CODES ===== */}
+    {/* ============================================================= */}
+
+    <div className="admin-card" style={{ marginTop: 24 }}>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <h2 className={isDark ? "text-white" : "text-gray-900"} style={{ margin: 0 }}>Promo Codes</h2>
+        <span style={{ fontSize: "0.72rem", color: t.muted }}>Applies to all passes &middot; discount enforced on Stripe at checkout</span>
+      </div>
+
+      {/* ---- Create row ---- */}
+      <div style={{
+        marginTop: 18,
+        padding: "18px",
+        background: t.panel,
+        border: "1px solid " + t.border,
+        borderRadius: 14,
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 14,
+        alignItems: "flex-end"
+      }}>
+
+        {/* Discount selector */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <label style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: t.muted }}>Discount</label>
+          <div style={{ display: "flex", gap: 6 }}>
+            {DISCOUNTS.map((d) => {
+              const active = newDiscount === d;
+              return (
+                <button
+                  key={d}
+                  onClick={() => setNewDiscount(d)}
+                  style={{
+                    padding: "10px 16px",
+                    borderRadius: 10,
+                    border: "1px solid " + (active ? "#7a3fd1" : t.inputBorder),
+                    background: active ? "linear-gradient(135deg, #7a3fd1, #f5a623)" : "transparent",
+                    color: active ? "#fff" : t.text,
+                    fontWeight: 800,
+                    fontSize: "0.78rem",
+                    cursor: "pointer",
+                    transition: "all 0.15s"
+                  }}
+                >
+                  {d}%
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Code input */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: "1 1 220px", minWidth: 180 }}>
+          <label style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: t.muted }}>Code</label>
+          <input
+            value={newCode}
+            onChange={(e) => setNewCode(e.target.value.toUpperCase())}
+            onKeyDown={(e) => { if (e.key === "Enter") createPromo(); }}
+            placeholder="e.g. LAUNCH25"
+            spellCheck={false}
+            style={{
+              width: "100%",
+              padding: "11px 14px",
+              borderRadius: 10,
+              border: "1px solid " + t.inputBorder,
+              background: t.inputBg,
+              color: t.text,
+              fontWeight: 700,
+              fontSize: "15px",
+              letterSpacing: "1.5px",
+              textTransform: "uppercase",
+              outline: "none",
+              boxSizing: "border-box",
+              fontFamily: "inherit"
+            }}
+          />
+        </div>
+
+        {/* Generate button */}
+        <button
+          onClick={() => setNewCode(genCode())}
+          style={{
+            padding: "11px 18px",
+            borderRadius: 10,
+            border: "1px solid " + t.inputBorder,
+            background: "transparent",
+            color: t.text,
+            fontWeight: 700,
+            fontSize: "0.74rem",
+            letterSpacing: "0.5px",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f5a623" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+          Generate
+        </button>
+
+        {/* Create button */}
+        <button
+          onClick={createPromo}
+          disabled={promoBusy}
+          style={{
+            padding: "11px 22px",
+            borderRadius: 10,
+            border: "none",
+            background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+            color: "#fff",
+            fontWeight: 800,
+            fontSize: "0.74rem",
+            letterSpacing: "0.5px",
+            cursor: promoBusy ? "not-allowed" : "pointer",
+            opacity: promoBusy ? 0.6 : 1,
+            boxShadow: "0 4px 16px rgba(122,63,209,0.3)"
+          }}
+        >
+          {promoBusy ? "Creating\u2026" : "Create Code"}
+        </button>
+      </div>
+
+      {promoMsg && (
+        <div style={{ marginTop: 10, fontSize: "0.78rem", color: promoMsg.startsWith("Created") ? "#3fb968" : "#e05555", fontWeight: 600 }}>{promoMsg}</div>
+      )}
+
+      {/* ---- Existing codes table ---- */}
+      <div className="table-wrapper" style={{ marginTop: 18 }}>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Discount</th>
+              <th>Status</th>
+              <th>Times Used</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {promos.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ textAlign: "center", color: t.muted, padding: "20px 0" }}>No promo codes yet. Create one above.</td>
+              </tr>
+            )}
+            {promos.map((promo) => (
+              <tr key={promo._id}>
+                <td className={isDark ? "text-white" : "text-gray-900"} style={{ fontWeight: 700, letterSpacing: "1px" }}>{promo.code}</td>
+
+                <td className={isDark ? "text-white" : "text-gray-900"}>{promo.discount}%</td>
+
+                {/* Status toggle */}
+                <td>
+                  <button
+                    onClick={() => togglePromo(promo)}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: 999,
+                      border: "1px solid " + (promo.active ? "rgba(63,185,104,0.5)" : t.inputBorder),
+                      background: promo.active ? "rgba(63,185,104,0.15)" : "transparent",
+                      color: promo.active ? "#3fb968" : t.muted,
+                      fontWeight: 700,
+                      fontSize: "0.68rem",
+                      letterSpacing: "0.5px",
+                      textTransform: "uppercase",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {promo.active ? "Active" : "Inactive"}
+                  </button>
+                </td>
+
+                <td className={isDark ? "text-white" : "text-gray-900"}>{promo.timesUsed ?? 0}</td>
+
+                {/* Delete */}
+                <td>
+                  <button
+                    onClick={() => deletePromo(promo)}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: 8,
+                      border: "1px solid rgba(224,85,85,0.4)",
+                      background: "transparent",
+                      color: "#e05555",
+                      fontWeight: 700,
+                      fontSize: "0.68rem",
+                      letterSpacing: "0.5px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+    </>
   );
 }

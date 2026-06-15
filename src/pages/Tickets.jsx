@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { API } from "../utils/api";
@@ -11,35 +12,6 @@ function CheckIcon() {
       <path d="M20 6 9 17l-5-5" />
     </svg>
   );
-}
-
-function ChevronDown({ color, size = 14 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke={color || "currentColor"} strokeWidth="2.5"
-      strokeLinecap="round" strokeLinejoin="round"
-      style={{ flexShrink: 0, transition: "transform 0.2s ease" }}>
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function TickSmall() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-      stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-
-/* Format a CAD amount: no decimals for whole dollars, 2 decimals when a discount creates cents */
-function formatPrice(n) {
-  const num = Number(n);
-  return num.toLocaleString("en-CA", {
-    minimumFractionDigits: Number.isInteger(num) ? 0 : 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 function PriceWithAsterisk({ price, color, fontSize, fontWeight, style }) {
@@ -61,348 +33,110 @@ function PriceWithAsterisk({ price, color, fontSize, fontWeight, style }) {
   );
 }
 
-const COUNTRIES = ["Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo (Brazzaville)","Congo (Kinshasa)","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman","Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];
-const PRIORITY_COUNTRIES = ["Canada", "United States", "United Kingdom", "Australia"];
-const COUNTRY_FLAGS = { Canada: "\u{1F1E8}\u{1F1E6}", "United States": "\u{1F1FA}\u{1F1F8}", "United Kingdom": "\u{1F1EC}\u{1F1E7}", Australia: "\u{1F1E6}\u{1F1FA}" };
-
-const SALUTATIONS = ["Mr.", "Mrs.", "Ms.", "Dr.", "H.E.", "Hon.", "Prof."];
-const JOB_LEVELS = ["Student","Entry Level","Mid Level Professional","Manager","Senior Manager","Director","Vice President","C-Level / Executive","Founder / Owner / Partner","Government / Public Sector","Investor","Academic / Research","Other"];
-const JOB_FUNCTIONS = ["Compliance & Risk Management","Consulting & Advisory","Cybersecurity","Data, Analytics & Insights","Environmental, Social & Corporate Governance (ESG)","Executive Leadership & Board of Directors","Finance & Accounting","HR & Recruiting","Investing","Legal","Marketing & Communications","Operations & Project Management","Partnerships","Policy","Procurement & Vendor Management","Product","Research, Content & Journalism","Sales, BD & Account Management","Strategy, Innovation, R&D","Technology & IT","Not Applicable"];
-const TOPICS = ["Artificial Intelligence","Quantum Computing","Cybersecurity","Robotics & Automation","Sustainability & CleanTech","Healthcare & Lifesciences","Banking, Financial Services & Insurance","Supply Chain, Manufacturing & Infrastructure","Defence & Public Safety","Energy & Utilities"];
-const OBJECTIVES = ["Education","Investments","Jobs","Market Entry","Networking","Partnerships","Regulatory and Policy Dialogue","Solutions","Talent","Trends and Insights"];
-
-const EMPTY_FORM = { salutation:"",firstName:"",lastName:"",jobTitle:"",organisation:"",businessNumber:"",email:"",country:"",linkedin:"",jobLevel:"",jobLevelOther:"",jobFunction:"",topics:[],objectives:[],consent1:false,consent2:false };
-
-function CustomDropdown({ options, value, onChange, placeholder="Select\u2026", multi=false, searchable=false, dark, error, maxHeight=220, priorityOptions=[], flagMap={} }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const containerRef = useRef(null);
-  const searchRef = useRef(null);
-
-  const textMain = dark ? "#ffffff" : "#0d0520";
-  const textMuted = dark ? "rgba(255,255,255,0.55)" : "rgba(13,5,32,0.55)";
-  const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)";
-  const borderColor = error ? "#e05555" : open ? "#7a3fd1" : dark ? "rgba(255,255,255,0.14)" : "rgba(122,63,209,0.22)";
-  const dropBg = dark ? "#16092e" : "#ffffff";
-  const hoverBg = dark ? "rgba(122,63,209,0.18)" : "rgba(122,63,209,0.07)";
-  const selectedBg = dark ? "rgba(122,63,209,0.28)" : "rgba(122,63,209,0.12)";
-  const dividerColor = dark ? "rgba(255,255,255,0.07)" : "rgba(122,63,209,0.10)";
+/* ============================================================
+   CONFETTI CANVAS — pure JS, fires when shown on the success screen.
+   ============================================================ */
+function ConfettiCanvas() {
+  const canvasRef = useRef(null);
 
   useEffect(() => {
-    const handler = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) { setOpen(false); setSearch(""); } };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler);
-    return () => { document.removeEventListener("mousedown", handler); document.removeEventListener("touchstart", handler); };
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+    const handleResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
+    window.addEventListener("resize", handleResize);
+
+    const colors = ["#7a3fd1", "#f5a623", "#e91e8c", "#b99eff", "#56b3f5", "#3fd19c", "#ffffff"];
+    const particles = [];
+    const PARTICLE_COUNT = 180;
+
+    const origins = [
+      { x: w * 0.3, y: h * 0.45 },
+      { x: w * 0.7, y: h * 0.45 },
+    ];
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const origin = origins[i % 2];
+      const angle = (Math.random() * Math.PI * 2);
+      const velocity = Math.random() * 14 + 6;
+      particles.push({
+        x: origin.x,
+        y: origin.y,
+        vx: Math.cos(angle) * velocity,
+        vy: Math.sin(angle) * velocity - Math.random() * 5,
+        size: Math.random() * 8 + 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rotation: Math.random() * 360,
+        rotationSpeed: (Math.random() - 0.5) * 12,
+        shape: Math.random() > 0.5 ? "rect" : "circle",
+        opacity: 1,
+        gravity: 0.35,
+        drag: 0.985,
+      });
+    }
+
+    let frameId;
+    let elapsed = 0;
+    const maxFrames = 240;
+
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      let stillAlive = false;
+
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.vx *= p.drag;
+        p.rotation += p.rotationSpeed;
+        if (elapsed > 90) p.opacity = Math.max(0, p.opacity - 0.012);
+
+        if (p.opacity > 0 && p.y < h + 50) {
+          stillAlive = true;
+          ctx.save();
+          ctx.globalAlpha = p.opacity;
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          if (p.shape === "rect") {
+            ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+          } else {
+            ctx.beginPath();
+            ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      });
+
+      elapsed++;
+      if (stillAlive && elapsed < maxFrames) {
+        frameId = requestAnimationFrame(draw);
+      }
+    };
+
+    frameId = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
-  useEffect(() => { if (open && searchable && searchRef.current) setTimeout(() => searchRef.current?.focus(), 60); }, [open, searchable]);
-
-  const isSelected = (opt) => multi ? Array.isArray(value) && value.includes(opt) : value === opt;
-  const handleSelect = (opt) => {
-    if (multi) { const arr = Array.isArray(value) ? value : []; onChange(arr.includes(opt) ? arr.filter(x => x !== opt) : [...arr, opt]); }
-    else { onChange(opt); setOpen(false); setSearch(""); }
-  };
-  const removeTag = (e, opt) => { e.stopPropagation(); if (multi && Array.isArray(value)) onChange(value.filter(x => x !== opt)); };
-  const filteredOptions = options.filter(o => !search || o.toLowerCase().includes(search.toLowerCase()));
-  const filteredPriority = priorityOptions.filter(o => !search || o.toLowerCase().includes(search.toLowerCase()));
-  const filteredRest = filteredOptions.filter(o => !priorityOptions.includes(o));
-  const singleLabel = !multi && value ? (flagMap[value] ? flagMap[value]+" "+value : value) : null;
-  const tags = multi && Array.isArray(value) ? value : [];
-
   return (
-    <div ref={containerRef} style={{ position:"relative", userSelect:"none" }}>
-      <div onClick={() => setOpen(o => !o)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding: multi && tags.length > 0 ? "8px 12px" : "11px 14px", borderRadius:10, border:"1px solid "+borderColor, background:inputBg, cursor:"pointer", gap:8, transition:"border-color 0.2s, box-shadow 0.2s", boxShadow: open ? "0 0 0 3px "+(dark?"rgba(122,63,209,0.20)":"rgba(122,63,209,0.12)") : "none", minHeight:44 }}>
-        <div style={{ flex:1, display:"flex", flexWrap:"wrap", gap:6, alignItems:"center", minWidth:0 }}>
-          {multi && tags.length > 0 ? tags.map(tag => (
-            <span key={tag} style={{ display:"inline-flex", alignItems:"center", gap:5, background: dark?"rgba(122,63,209,0.30)":"rgba(122,63,209,0.12)", color: dark?"#c8a8ff":"#6a30c0", border:"1px solid "+(dark?"rgba(122,63,209,0.45)":"rgba(122,63,209,0.28)"), borderRadius:6, padding:"3px 8px", fontSize:"0.70rem", fontWeight:700, letterSpacing:"0.3px", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-              <span style={{ overflow:"hidden", textOverflow:"ellipsis" }}>{tag}</span>
-              <span onClick={(e) => removeTag(e, tag)} style={{ cursor:"pointer", opacity:0.7, lineHeight:1, flexShrink:0, fontSize:"0.9rem" }}>&times;</span>
-            </span>
-          )) : (
-            <span style={{ fontSize:"16px", color:(multi?tags.length===0:!value)?textMuted:textMain, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{multi ? placeholder : (singleLabel || placeholder)}</span>
-          )}
-        </div>
-        <span style={{ transform: open?"rotate(180deg)":"rotate(0deg)", transition:"transform 0.2s ease", flexShrink:0 }}><ChevronDown color={textMuted} /></span>
-      </div>
-      {open && (
-        <div style={{ position:"absolute", top:"calc(100% + 6px)", left:0, right:0, background:dropBg, border:"1px solid "+(dark?"rgba(122,63,209,0.35)":"rgba(122,63,209,0.18)"), borderRadius:12, zIndex:9999, boxShadow: dark?"0 12px 48px rgba(0,0,0,0.55)":"0 12px 40px rgba(122,63,209,0.14)", overflow:"hidden" }}>
-          {searchable && (
-            <div style={{ padding:"10px 10px 6px", borderBottom:"1px solid "+dividerColor }}>
-              <div style={{ position:"relative" }}>
-                <svg style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", opacity:0.4 }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={textMain} strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input ref={searchRef} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search\u2026" style={{ width:"100%", padding:"8px 10px 8px 30px", borderRadius:8, border:"1px solid "+dividerColor, background: dark?"rgba(255,255,255,0.05)":"rgba(122,63,209,0.04)", color:textMain, fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"inherit" }} />
-              </div>
-            </div>
-          )}
-          {multi && (
-            <div style={{ padding:"8px 12px", fontSize:"0.60rem", fontWeight:700, letterSpacing:"1px", textTransform:"uppercase", color: dark?"rgba(245,166,35,0.8)":"#d98a14", borderBottom:"1px solid "+dividerColor, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <span>{Array.isArray(value)?value.length:0} selected</span>
-              {Array.isArray(value) && value.length > 0 && <span onClick={(e)=>{e.stopPropagation();onChange([]);}} style={{ cursor:"pointer", opacity:0.7, fontSize:"0.60rem", color:"#e05555" }}>Clear all</span>}
-            </div>
-          )}
-          <div style={{ overflowY:"auto", maxHeight, WebkitOverflowScrolling:"touch" }}>
-            {filteredPriority.length > 0 && (<>
-              {filteredPriority.map(opt => <DropOption key={opt} opt={opt} label={flagMap[opt]?flagMap[opt]+" "+opt:opt} selected={isSelected(opt)} multi={multi} dark={dark} hoverBg={hoverBg} selectedBg={selectedBg} textMain={textMain} textMuted={textMuted} onSelect={handleSelect} />)}
-              {filteredRest.length > 0 && <div style={{ height:1, background:dividerColor, margin:"2px 0" }} />}
-            </>)}
-            {(priorityOptions.length > 0 ? filteredRest : filteredOptions).map(opt => <DropOption key={opt} opt={opt} label={flagMap[opt]?flagMap[opt]+" "+opt:opt} selected={isSelected(opt)} multi={multi} dark={dark} hoverBg={hoverBg} selectedBg={selectedBg} textMain={textMain} textMuted={textMuted} onSelect={handleSelect} />)}
-            {filteredOptions.length === 0 && filteredPriority.length === 0 && <div style={{ padding:"14px 16px", fontSize:"0.78rem", color:textMuted, textAlign:"center" }}>No results</div>}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DropOption({ opt, label, selected, multi, dark, hoverBg, selectedBg, textMain, textMuted, onSelect }) {
-  return (
-    <div onClick={() => onSelect(opt)} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px", cursor:"pointer", background: selected?selectedBg:"transparent", fontSize:"14px", color: selected?(dark?"#c8a8ff":"#6a30c0"):textMain, fontWeight: selected?600:400, transition:"background 0.12s" }}
-      onMouseEnter={e => { if(!selected) e.currentTarget.style.background = hoverBg; }}
-      onMouseLeave={e => { e.currentTarget.style.background = selected?selectedBg:"transparent"; }}>
-      {multi && <div style={{ width:18, height:18, borderRadius:5, flexShrink:0, border:"2px solid "+(selected?"#7a3fd1":(dark?"rgba(255,255,255,0.20)":"rgba(122,63,209,0.30)")), background: selected?"#7a3fd1":"transparent", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>{selected && <TickSmall />}</div>}
-      {!multi && selected && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={dark?"#c8a8ff":"#7a3fd1"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}><path d="M20 6 9 17l-5-5" /></svg>}
-      {!multi && !selected && <div style={{ width:13, flexShrink:0 }} />}
-      <span style={{ flex:1 }}>{label}</span>
-    </div>
-  );
-}
-
-/* =============================================================
-   QUESTIONNAIRE MODAL  (now with promo code field on Step 2)
-   ============================================================= */
-function QuestionnaireModal({ dark, tierLabel, basePrice, onClose, onSubmit }) {
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [errors, setErrors] = useState({});
-  const firstInputRef = useRef(null);
-  const TOTAL_STEPS = 2;
-
-  /* ===== Promo state local to the modal ===== */
-  const [promoInput, setPromoInput] = useState("");
-  const [promoCode, setPromoCode] = useState("");
-  const [promoDiscount, setPromoDiscount] = useState(0);
-  const [promoStatus, setPromoStatus] = useState(null); // null | "loading" | "error"
-  const [promoError, setPromoError] = useState("");
-
-  useEffect(() => { const t = setTimeout(() => { if (firstInputRef.current) firstInputRef.current.focus(); }, 120); return () => clearTimeout(t); }, [step]);
-
-  const textMain = dark ? "#ffffff" : "#0d0520";
-  const textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.68)";
-  const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)";
-  const inputBorder = dark ? "rgba(255,255,255,0.14)" : "rgba(122,63,209,0.20)";
-  const modalBg = dark ? "#0e0820" : "#ffffff";
-
-  const set = (key, val) => { setForm(f => ({ ...f, [key]: val })); setErrors(e => ({ ...e, [key]: undefined })); };
-  const setJobLevel = (val) => { setForm(f => ({ ...f, jobLevel: val, jobLevelOther: val === "Other" ? f.jobLevelOther : "" })); setErrors(e => ({ ...e, jobLevel: undefined, jobLevelOther: undefined })); };
-
-  const inputStyle = (err) => ({ width:"100%", padding:"11px 14px", borderRadius:10, border:"1px solid "+(err?"#e05555":inputBorder), background:inputBg, color:textMain, fontFamily:"inherit", fontSize:"16px", outline:"none", boxSizing:"border-box", transition:"border 0.2s, box-shadow 0.2s", WebkitAppearance:"none", appearance:"none" });
-  const labelStyle = { fontSize:"0.65rem", fontWeight:700, letterSpacing:"1px", textTransform:"uppercase", color:textMuted, display:"block", marginBottom:6 };
-  const fieldStyle = { display:"flex", flexDirection:"column", gap:0 };
-  const errStyle = { fontSize:"0.62rem", color:"#e05555", marginTop:4 };
-
-  const handlePhoneChange = (val) => { set("businessNumber", val.replace(/[^\d\s\-\+\(\)]/g, "").slice(0, 15)); };
-  const handleLinkedInBlur = () => { const v = form.linkedin.trim(); if (v && !v.startsWith("http") && !v.startsWith("linkedin")) set("linkedin", "https://linkedin.com/in/"+v); else if (v && v.startsWith("linkedin.com")) set("linkedin", "https://"+v); };
-
-  /* ===== Promo apply / remove ===== */
-  const applyPromo = useCallback(async () => {
-    const code = promoInput.trim().toUpperCase();
-    if (!code) return;
-    setPromoStatus("loading");
-    setPromoError("");
-    try {
-      const res = await fetch(API+"/promos/validate", { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ code }) });
-      const data = await res.json();
-      if (res.ok && data.valid) {
-        setPromoCode(data.code || code);
-        setPromoDiscount(Number(data.discount) || 0);
-        setPromoStatus(null);
-        setPromoError("");
-      } else {
-        setPromoStatus("error");
-        setPromoError(data.error || "That code isn't valid. Check it and try again.");
-      }
-    } catch (err) {
-      console.error("Promo validation failed", err);
-      setPromoStatus("error");
-      setPromoError("Couldn't check that code right now. Please try again.");
-    }
-  }, [promoInput]);
-
-  const removePromo = () => { setPromoCode(""); setPromoDiscount(0); setPromoInput(""); setPromoStatus(null); setPromoError(""); };
-
-  const validateStep = () => {
-    const e = {};
-    if (step === 1) {
-      if (!form.firstName.trim()) e.firstName = "Required";
-      if (!form.lastName.trim()) e.lastName = "Required";
-      if (!form.email.trim()) e.email = "Required";
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Invalid email address";
-      if (!form.organisation.trim()) e.organisation = "Required";
-      if (!form.country) e.country = "Please select your country";
-      if (!form.jobLevel) e.jobLevel = "Required";
-      if (form.jobLevel === "Other" && !form.jobLevelOther.trim()) e.jobLevelOther = "Please describe your role";
-      if (!form.jobFunction) e.jobFunction = "Required";
-    }
-    if (step === 2) {
-      if (form.topics.length === 0) e.topics = "Select at least one topic";
-      if (form.objectives.length === 0) e.objectives = "Select at least one objective";
-      if (!form.consent1) e.consent1 = "Required";
-      if (!form.consent2) e.consent2 = "Required";
-    }
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const next = () => { if (validateStep()) setStep(s => s + 1); };
-  const back = () => setStep(s => s - 1);
-  const submit = () => {
-    if (validateStep()) {
-      // Pass the validated promo code to the parent — the backend will re-validate before charging.
-      onSubmit({ ...form, promoCode: promoCode || "" });
-    }
-  };
-
-  /* ===== Final price preview ===== */
-  const finalPrice = promoDiscount > 0 ? basePrice * (1 - promoDiscount / 100) : basePrice;
-
-  const stepTitles = ["Your Profile", "Interests & Confirmation"];
-  const stepSubtitles = ["Personal & professional details", "Topics, promo code & consent"];
-
-  return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:9998, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px", background:"rgba(0,0,0,0.78)", backdropFilter:"blur(12px)" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width:"100%", maxWidth:580, maxHeight:"92vh", display:"flex", flexDirection:"column", background:modalBg, borderRadius:24, border: dark?"1px solid rgba(255,255,255,0.10)":"1px solid rgba(122,63,209,0.14)", boxShadow: dark?"0 28px 80px rgba(0,0,0,0.6)":"0 28px 80px rgba(122,63,209,0.15)", overflow:"hidden" }}>
-
-        <div style={{ padding:"24px 28px 0", flexShrink:0 }}>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:6 }}>
-            <div>
-              <div style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.58rem", fontWeight:700, letterSpacing:"1.8px", textTransform:"uppercase", color:"#f5a623", marginBottom:4 }}>{tierLabel} Pass</div>
-              <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"1.05rem", color:textMain, margin:0, lineHeight:1.2 }}>{stepTitles[step-1]}</h2>
-              <p style={{ fontSize:"0.68rem", color:textMuted, margin:"4px 0 0", letterSpacing:"0.3px" }}>{stepSubtitles[step-1]}</p>
-            </div>
-            <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:textMuted, fontSize:"1.4rem", lineHeight:1, padding:"4px 8px", flexShrink:0, marginTop:2 }} aria-label="Close">&times;</button>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", margin:"14px 0 6px" }}>
-            <span style={{ fontSize:"0.60rem", color: dark?"rgba(255,255,255,0.30)":"rgba(13,5,32,0.30)", fontWeight:600, letterSpacing:"0.5px" }}>Step {step} of {TOTAL_STEPS}</span>
-          </div>
-          <div style={{ display:"flex", gap:6, marginBottom:20 }}>
-            {[1,2].map(s => <div key={s} style={{ flex:1, height:3, borderRadius:999, background: s<=step?"linear-gradient(90deg, #7a3fd1, #f5a623)":(dark?"rgba(255,255,255,0.10)":"rgba(122,63,209,0.12)"), transition:"background 0.3s" }} />)}
-          </div>
-        </div>
-
-        <div style={{ overflowY:"auto", padding:"0 28px 24px", flexGrow:1, WebkitOverflowScrolling:"touch" }}>
-          {step === 1 && (
-            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-              <div style={fieldStyle}><label style={labelStyle}>Salutation</label><CustomDropdown options={SALUTATIONS} value={form.salutation} onChange={v => set("salutation",v)} placeholder="Select\u2026" dark={dark} /></div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                <div style={fieldStyle}><label style={labelStyle}>First Name *</label><input ref={firstInputRef} value={form.firstName} onChange={e => set("firstName",e.target.value)} placeholder="Jane" autoComplete="given-name" style={inputStyle(errors.firstName)} />{errors.firstName && <span style={errStyle}>{errors.firstName}</span>}</div>
-                <div style={fieldStyle}><label style={labelStyle}>Last Name *</label><input value={form.lastName} onChange={e => set("lastName",e.target.value)} placeholder="Smith" autoComplete="family-name" style={inputStyle(errors.lastName)} />{errors.lastName && <span style={errStyle}>{errors.lastName}</span>}</div>
-              </div>
-              <div style={fieldStyle}><label style={labelStyle}>Job Title</label><input value={form.jobTitle} onChange={e => set("jobTitle",e.target.value)} placeholder="e.g. Chief Technology Officer" autoComplete="organization-title" style={inputStyle(false)} /></div>
-              <div style={fieldStyle}><label style={labelStyle}>Organisation Name *</label><input value={form.organisation} onChange={e => set("organisation",e.target.value)} placeholder="e.g. Acme Corp" autoComplete="organization" style={inputStyle(errors.organisation)} />{errors.organisation && <span style={errStyle}>{errors.organisation}</span>}</div>
-              <div style={fieldStyle}><label style={labelStyle}>Business Phone</label><input type="tel" inputMode="tel" value={form.businessNumber} onChange={e => handlePhoneChange(e.target.value)} placeholder="+1 (416) 000-0000" autoComplete="tel" maxLength={15} style={inputStyle(false)} /><span style={{ fontSize:"0.60rem", color: dark?"rgba(255,255,255,0.30)":"rgba(13,5,32,0.35)", marginTop:4 }}>Include country code (e.g. +1 for Canada/US)</span></div>
-              <div style={fieldStyle}><label style={labelStyle}>Work Email *</label><input type="email" inputMode="email" value={form.email} onChange={e => set("email",e.target.value)} placeholder="jane@company.com" autoComplete="email" style={inputStyle(errors.email)} />{errors.email && <span style={errStyle}>{errors.email}</span>}</div>
-              <div style={fieldStyle}><label style={labelStyle}>Country *</label><CustomDropdown options={COUNTRIES.filter(c => !PRIORITY_COUNTRIES.includes(c))} priorityOptions={PRIORITY_COUNTRIES} flagMap={COUNTRY_FLAGS} value={form.country} onChange={v => set("country",v)} placeholder="Select your country\u2026" searchable dark={dark} error={!!errors.country} maxHeight={200} />{errors.country && <span style={errStyle}>{errors.country}</span>}</div>
-              <div style={fieldStyle}><label style={labelStyle}>LinkedIn Profile <span style={{ fontWeight:500, letterSpacing:0, textTransform:"none", color: dark?"rgba(255,255,255,0.35)":"rgba(13,5,32,0.35)" }}>(optional)</span></label><input type="url" inputMode="url" value={form.linkedin} onChange={e => set("linkedin",e.target.value)} onBlur={handleLinkedInBlur} placeholder="linkedin.com/in/yourname" autoComplete="url" style={inputStyle(false)} /><span style={{ fontSize:"0.60rem", color: dark?"rgba(255,255,255,0.30)":"rgba(13,5,32,0.35)", marginTop:4 }}>We'll auto-add https:// if needed</span></div>
-              <div style={{ width:"100%", height:1, background: dark?"rgba(255,255,255,0.07)":"rgba(122,63,209,0.10)", margin:"4px 0" }} />
-              <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.60rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#c8a8ff":"#7a3fd1" }}>Professional Profile</div>
-              <div style={fieldStyle}><label style={labelStyle}>Job Level *</label><CustomDropdown options={JOB_LEVELS} value={form.jobLevel} onChange={setJobLevel} placeholder="Select your level\u2026" dark={dark} error={!!errors.jobLevel} maxHeight={220} />{errors.jobLevel && <span style={errStyle}>{errors.jobLevel}</span>}{form.jobLevel === "Other" && <div style={{ marginTop:10 }}><input value={form.jobLevelOther} onChange={e => set("jobLevelOther",e.target.value)} placeholder="Please describe your role\u2026" style={inputStyle(!!errors.jobLevelOther)} autoFocus />{errors.jobLevelOther && <span style={errStyle}>{errors.jobLevelOther}</span>}</div>}</div>
-              <div style={fieldStyle}><label style={labelStyle}>Job Function *</label><CustomDropdown options={JOB_FUNCTIONS} value={form.jobFunction} onChange={v => set("jobFunction",v)} placeholder="Select your function\u2026" dark={dark} error={!!errors.jobFunction} maxHeight={220} />{errors.jobFunction && <span style={errStyle}>{errors.jobFunction}</span>}</div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-              <div style={fieldStyle}><label style={labelStyle}>Topics of Interest * <span style={{ color:textMuted, fontWeight:500, letterSpacing:0, textTransform:"none" }}>({form.topics.length} selected)</span></label><CustomDropdown options={TOPICS} value={form.topics} onChange={v => set("topics",v)} placeholder="Select all that apply\u2026" multi dark={dark} error={!!errors.topics} maxHeight={240} />{errors.topics && <span style={errStyle}>{errors.topics}</span>}</div>
-              <div style={fieldStyle}><label style={labelStyle}>Objectives for attending * <span style={{ color:textMuted, fontWeight:500, letterSpacing:0, textTransform:"none" }}>({form.objectives.length} selected)</span></label><CustomDropdown options={OBJECTIVES} value={form.objectives} onChange={v => set("objectives",v)} placeholder="Select all that apply\u2026" multi dark={dark} error={!!errors.objectives} maxHeight={240} />{errors.objectives && <span style={errStyle}>{errors.objectives}</span>}</div>
-
-              {/* ===================== PROMO CODE FIELD ===================== */}
-              <div style={fieldStyle}>
-                <label style={labelStyle}>Promo Code <span style={{ fontWeight:500, letterSpacing:0, textTransform:"none", color: dark?"rgba(255,255,255,0.35)":"rgba(13,5,32,0.35)" }}>(optional)</span></label>
-                {promoCode ? (
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"12px 14px", borderRadius:10, border:"1px solid "+(dark?"rgba(122,63,209,0.45)":"rgba(122,63,209,0.32)"), background: dark?"rgba(122,63,209,0.12)":"rgba(122,63,209,0.06)" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
-                      <div style={{ width:26, height:26, borderRadius:999, flexShrink:0, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                      </div>
-                      <div style={{ minWidth:0 }}>
-                        <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.78rem", letterSpacing:"0.5px", color:textMain, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{promoCode}</div>
-                        <div style={{ fontSize:"0.66rem", color:textMuted, marginTop:1 }}>{promoDiscount}% off applied</div>
-                      </div>
-                    </div>
-                    <button onClick={removePromo} style={{ background:"none", border:"1px solid "+(dark?"rgba(255,255,255,0.18)":"rgba(122,63,209,0.24)"), color:textMuted, borderRadius:8, padding:"6px 12px", fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"0.55rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", flexShrink:0 }}>Remove</button>
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ display:"flex", gap:8 }}>
-                      <input
-                        value={promoInput}
-                        onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); if (promoStatus === "error") { setPromoStatus(null); setPromoError(""); } }}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyPromo(); } }}
-                        placeholder="Enter code"
-                        autoCapitalize="characters"
-                        spellCheck={false}
-                        style={{ flex:1, padding:"11px 14px", borderRadius:10, border:"1px solid "+(promoStatus==="error"?"#e05555":inputBorder), background:inputBg, color:textMain, fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"15px", letterSpacing:"1.5px", textTransform:"uppercase", outline:"none", boxSizing:"border-box" }}
-                      />
-                      <button
-                        type="button"
-                        onClick={applyPromo}
-                        disabled={promoStatus === "loading" || !promoInput.trim()}
-                        style={{ flexShrink:0, padding:"11px 20px", borderRadius:10, border:"none", cursor: (promoStatus==="loading" || !promoInput.trim())?"not-allowed":"pointer", opacity:(promoStatus==="loading" || !promoInput.trim())?0.55:1, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"white", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.62rem", letterSpacing:"1px", textTransform:"uppercase" }}>
-                        {promoStatus === "loading" ? "\u2026" : "Apply"}
-                      </button>
-                    </div>
-                    {promoStatus === "error" && <span style={{ ...errStyle, marginTop:6 }}>{promoError}</span>}
-                  </>
-                )}
-              </div>
-
-              {/* ===================== PRICE SUMMARY ===================== */}
-              <div style={{ padding:"16px 18px", borderRadius:12, background: dark?"rgba(255,255,255,0.03)":"rgba(122,63,209,0.03)", border:"1px solid "+(dark?"rgba(255,255,255,0.06)":"rgba(122,63,209,0.10)"), display:"flex", flexDirection:"column", gap:8 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                  <span style={{ fontSize:"0.78rem", color:textMuted }}>{tierLabel} Pass</span>
-                  <span style={{ fontSize:"0.85rem", fontWeight:700, color:textMain, textDecoration: promoDiscount > 0 ? "line-through" : "none", textDecorationColor:"#e05555", opacity: promoDiscount > 0 ? 0.6 : 1 }}>${basePrice.toLocaleString()}</span>
-                </div>
-                {promoDiscount > 0 && (
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <span style={{ fontSize:"0.74rem", color: dark?"#c8a8ff":"#7a3fd1", fontWeight:700 }}>{promoCode} discount ({promoDiscount}%)</span>
-                    <span style={{ fontSize:"0.78rem", color: dark?"#c8a8ff":"#7a3fd1", fontWeight:700 }}>&minus;${(basePrice - finalPrice).toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                )}
-                <div style={{ width:"100%", height:1, background: dark?"rgba(255,255,255,0.08)":"rgba(122,63,209,0.12)", margin:"4px 0" }} />
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
-                  <span style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.7rem", fontWeight:800, letterSpacing:"1px", textTransform:"uppercase", color:textMain }}>Total Today</span>
-                  <span style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"1.3rem", fontWeight:900, color: promoDiscount > 0 ? (dark?"#f5a623":"#d98a14") : textMain, letterSpacing:"-0.5px" }}>${formatPrice(finalPrice)} CAD</span>
-                </div>
-                <p style={{ fontSize:"0.6rem", color: dark?"rgba(255,255,255,0.30)":"rgba(13,5,32,0.35)", margin:"4px 0 0", lineHeight:1.4 }}>Pricing shown is indicative. The discount will be applied to the official total (including HST) on the Stripe checkout page.</p>
-              </div>
-
-              {/* ===================== CONSENT BOX ===================== */}
-              <div style={{ display:"flex", flexDirection:"column", gap:14, padding:"20px", background: dark?"rgba(122,63,209,0.08)":"rgba(122,63,209,0.04)", borderRadius:14, border: dark?"1px solid rgba(122,63,209,0.20)":"1px solid rgba(122,63,209,0.12)" }}>
-                <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#c8a8ff":"#7a3fd1", marginBottom:2 }}>Your Consent</div>
-                {[
-                  { key:"consent1", text:"My consents hereto are given to the organisers and I agree to the organiser's terms of service and privacy policies." },
-                  { key:"consent2", text:"I acknowledge and agree that the organisers will collect, use, process and/or disclose my personal information for the purposes of securing my registration and attendance for The Tech Festival Canada, including digital platform usage on the The Tech Festival Canada platform, and consent to the collection, use, processing and/or disclosure of my personal information by the organisers for the purposes of receiving updates on the agenda, activities/events, collaboration projects, industry news relating to The Tech Festival Canada." },
-                ].map(({ key, text }, i) => (
-                  <label key={key} style={{ display:"flex", gap:12, alignItems:"flex-start", cursor:"pointer" }}>
-                    <div style={{ position:"relative", flexShrink:0, marginTop:1 }}>
-                      <input type="checkbox" checked={form[key]} onChange={e => set(key, e.target.checked)} style={{ position:"absolute", opacity:0, width:0, height:0 }} />
-                      <div style={{ width:20, height:20, borderRadius:6, border:"2px solid "+(errors[key]?"#e05555":(form[key]?"#7a3fd1":inputBorder)), background: form[key]?"#7a3fd1":"transparent", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}>{form[key] && <TickSmall />}</div>
-                    </div>
-                    <span style={{ fontSize:"14px", color:textMuted, lineHeight:1.6 }}><strong style={{ color:textMain, fontWeight:700 }}>{i+1}. </strong>{text}</span>
-                  </label>
-                ))}
-                {(errors.consent1 || errors.consent2) && <span style={errStyle}>Both consents are required to proceed.</span>}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div style={{ padding:"16px 28px 24px", flexShrink:0, borderTop: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(122,63,209,0.08)", display:"flex", gap:10 }}>
-          {step > 1 && <button onClick={back} style={{ flex:1, padding:"14px", borderRadius:12, border: dark?"1px solid rgba(255,255,255,0.14)":"1px solid rgba(122,63,209,0.20)", background:"transparent", color:textMain, fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer" }}>&larr; Back</button>}
-          <button onClick={step < TOTAL_STEPS ? next : submit} style={{ flex:2, padding:"14px", borderRadius:12, border:"none", background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"white", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", boxShadow:"0 4px 20px rgba(122,63,209,0.35)" }}>{step < TOTAL_STEPS ? "Continue \u2192" : "Proceed to Payment \u2192"}</button>
-        </div>
-      </div>
-    </div>
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "fixed",
+        top: 0, left: 0,
+        width: "100vw",
+        height: "100vh",
+        pointerEvents: "none",
+        zIndex: 100000,
+      }}
+    />
   );
 }
 
@@ -444,7 +178,7 @@ function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded }) {
       <p style={{ fontSize:"0.76rem", color:textMuted, lineHeight:1.65, marginBottom:18, textAlign:"justify", hyphens:"auto" }}>{meta.description}</p>
       <div style={{ fontSize:"0.66rem", fontWeight:700, letterSpacing:"1.2px", textTransform:"uppercase", color:textLight, marginBottom:10 }}>Includes</div>
       <ul style={{ listStyle:"none", padding:0, margin:"0 0 auto", display:"flex", flexDirection:"column", gap:8 }}>{meta.features.map(f => <li key={f} style={{ display:"flex", alignItems:"flex-start", gap:8, fontSize:"0.78rem", color:textMuted, lineHeight:1.4 }}><CheckIcon />{f}</li>)}</ul>
-      <button disabled={soldOut} onClick={() => !soldOut && onPurchase(meta.tier, meta.label, price)}
+      <button disabled={soldOut} onClick={() => !soldOut && onPurchase(meta.tier)}
         style={{ marginTop:24, width:"100%", padding:"13px 0", borderRadius:12, border:"none", cursor: soldOut?"not-allowed":"pointer", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.68rem", letterSpacing:"1px", textTransform:"uppercase", color: soldOut?(dark?"rgba(255,255,255,0.3)":"rgba(13,5,32,0.3)"):"white", background: soldOut?(dark?"rgba(255,255,255,0.05)":"rgba(13,5,32,0.05)"):meta.featured?"linear-gradient(135deg, #7a3fd1, #f5a623)":(dark?"rgba(122,63,209,0.35)":"#7a3fd1"), boxShadow: soldOut||!meta.featured?"none":"0 4px 20px rgba(122,63,209,0.4)", transition:"all 0.2s" }}
         onMouseEnter={(e) => { if (!soldOut && !meta.featured) e.currentTarget.style.background = dark?"rgba(122,63,209,0.55)":"#6330b3"; }}
         onMouseLeave={(e) => { if (!soldOut && !meta.featured) e.currentTarget.style.background = dark?"rgba(122,63,209,0.35)":"#7a3fd1"; }}>
@@ -455,37 +189,20 @@ function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded }) {
 }
 
 export default function Tickets() {
+  const navigate = useNavigate();
   const [inventory, setInventory] = useState([]);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [dark, setDark] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
-  const [pendingTier, setPendingTier] = useState(null);
-  const [pendingLabel, setPendingLabel] = useState("");
-  const [pendingPrice, setPendingPrice] = useState(0);
 
   useEffect(() => { setDark(document.body.classList.contains("dark-mode")); const obs = new MutationObserver(() => setDark(document.body.classList.contains("dark-mode"))); obs.observe(document.body, { attributes:true, attributeFilter:["class"] }); return () => obs.disconnect(); }, []);
   useEffect(() => { const params = new URLSearchParams(window.location.search); if (params.get("success") === "true") { setShowSuccessModal(true); window.history.replaceState(null, "", window.location.pathname); } }, []);
   useEffect(() => { const load = async () => { try { const res = await fetch(API+"/admin/inventory/public"); const data = await res.json(); setInventory(Array.isArray(data)?data:[]); } catch(err) { console.error("Inventory fetch failed", err); } finally { setInventoryLoaded(true); } }; load(); }, []);
 
   const getTier = (tier) => inventory.find((i) => i.tier === tier) || null;
-  const handleOpenQuestionnaire = (tier, label, price) => { setPendingTier(tier); setPendingLabel(label); setPendingPrice(price); setQuestionnaireOpen(true); };
 
-  const handlePurchase = async (formData) => {
-    setQuestionnaireOpen(false);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(API+"/payments/create-checkout", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", ...(token && { Authorization:"Bearer "+token }) },
-        // Server re-validates the promo code before applying it to Stripe.
-        body:JSON.stringify({ tier:pendingTier, promoCode: formData.promoCode || undefined }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Checkout failed");
-      window.location.href = data.url;
-    } catch(err) { console.error("Purchase error:", err); alert(err.message || "Purchase failed"); }
-  };
+  // Navigate to full-page checkout (no more modal!)
+  const handlePurchase = (tier) => { navigate(`/tickets/checkout?tier=${tier}`); };
 
   const passes = ["connect","influence","power"];
   const passLabels = { connect:"Connect", influence:"Influence", power:"Power" };
@@ -506,7 +223,7 @@ export default function Tickets() {
             <p style={{ fontSize:"1rem", color:textMuted, lineHeight:1.75, textAlign:"justify", hyphens:"auto" }}>Whether you are coming to learn, connect, explore partnerships, or experience the event at the highest level, The Tech Festival Canada offers a pass designed for every kind of delegate.</p>
           </div>
           <div style={{ display:"flex", flexWrap:"wrap", gap:20, justifyContent:"center", alignItems:"stretch", padding:"0 24px 80px", maxWidth:1260, margin:"0 auto" }}>
-            {passes.map(key => <PassCard key={key} meta={PASS_META[key]} inventoryItem={getTier(key)} onPurchase={handleOpenQuestionnaire} dark={dark} inventoryLoaded={inventoryLoaded} />)}
+            {passes.map(key => <PassCard key={key} meta={PASS_META[key]} inventoryItem={getTier(key)} onPurchase={handlePurchase} dark={dark} inventoryLoaded={inventoryLoaded} />)}
           </div>
 
           <div style={{ maxWidth:900, margin:"0 auto 80px", padding:"0 24px" }}>
@@ -536,19 +253,35 @@ export default function Tickets() {
           </div>
           <Footer />
         </div>
-        {questionnaireOpen && <QuestionnaireModal dark={dark} tierLabel={pendingLabel} basePrice={pendingPrice} onClose={() => setQuestionnaireOpen(false)} onSubmit={handlePurchase} />}
+
         {showSuccessModal && (
-          <div style={{ position:"fixed", top:0, left:0, width:"100%", height:"100%", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", background:"rgba(0,0,0,0.8)", backdropFilter:"blur(10px)" }}>
-            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"24px", width:"100%", maxWidth:"420px", background: dark?"#120a22":"#ffffff", padding:"40px 32px", borderRadius:"24px", border: dark?"1px solid rgba(255,255,255,0.1)":"1px solid rgba(122,63,209,0.1)" }}>
-              <div style={{ textAlign:"center", color:textMain }}>
-                <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"2rem", margin:"0 0 12px 0", color:"#f5a623" }}>Thank You!</h2>
-                <p style={{ opacity:0.8, margin:0, fontSize:"1.1rem", lineHeight:1.6 }}>Thank you for purchasing your ticket.</p>
-                <p style={{ opacity:0.6, marginTop:"8px", fontSize:"0.95rem" }}>Please check your email for the invoice and QR code.</p>
+          <>
+            <ConfettiCanvas />
+            <div style={{ position:"fixed", top:0, left:0, width:"100%", height:"100%", zIndex:99999, display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", background:"rgba(0,0,0,0.8)", backdropFilter:"blur(10px)" }}>
+              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"24px", width:"100%", maxWidth:"460px", background: dark?"#120a22":"#ffffff", padding:"48px 32px", borderRadius:"24px", border: dark?"1px solid rgba(255,255,255,0.1)":"1px solid rgba(122,63,209,0.1)", boxShadow: "0 30px 80px rgba(122,63,209,0.35)", animation: "ttfcSuccessIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)" }}>
+                <style>{`@keyframes ttfcSuccessIn { from { opacity: 0; transform: scale(0.85) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }`}</style>
+
+                <div style={{ width:72, height:72, borderRadius:"50%", background:"linear-gradient(135deg, #7a3fd1, #f5a623)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 12px 32px rgba(122,63,209,0.4)" }}>
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                </div>
+
+                <div style={{ textAlign:"center", color:textMain }}>
+                  <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"1.9rem", margin:"0 0 12px 0", letterSpacing:"-0.5px" }}>
+                    <span style={{ backgroundImage:"linear-gradient(135deg, #7a3fd1, #f5a623)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", color:"transparent" }}>You're In!</span>
+                  </h2>
+                  <p style={{ opacity:0.85, margin:0, fontSize:"1.05rem", lineHeight:1.6, fontWeight:500 }}>Thank you for your purchase.</p>
+                  <p style={{ opacity:0.65, marginTop:"8px", fontSize:"0.9rem", lineHeight:1.55 }}>Check your email for the invoice and your QR code pass. See you in Toronto.</p>
+                </div>
+
+                <button onClick={() => { setShowSuccessModal(false); navigate("/"); }}
+                  style={{ background:"linear-gradient(135deg, #7a3fd1, #f5a623)", border:"none", color:"white", padding:"16px 32px", borderRadius:"12px", cursor:"pointer", fontFamily:"'Orbitron', sans-serif", textTransform:"uppercase", fontSize:"0.78rem", letterSpacing:"1.5px", fontWeight:800, width:"100%", boxShadow:"0 8px 24px rgba(122,63,209,0.4)" }}>
+                  Back to Home
+                </button>
               </div>
-              <button onClick={() => { setShowSuccessModal(false); window.location.href = "/"; }}
-                style={{ background:"linear-gradient(135deg, #7a3fd1, #f5a623)", border:"none", color:"white", padding:"16px 32px", borderRadius:"12px", cursor:"pointer", fontFamily:"'Orbitron', sans-serif", textTransform:"uppercase", fontSize:"0.85rem", letterSpacing:"1px", fontWeight:700, width:"100%" }}>Go to Home</button>
             </div>
-          </div>
+          </>
         )}
       </div>
     </>

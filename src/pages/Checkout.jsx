@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { API } from "../utils/api";
@@ -147,12 +147,51 @@ function DropOption({ opt, label, selected, multi, dark, hoverBg, selectedBg, te
 }
 
 /* ============================================================
-   FULL-PAGE CHECKOUT
+   ERROR BOUNDARY — catches any error in CheckoutInner and shows a friendly fallback
+   ============================================================ */
+import React from "react";
+class CheckoutErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, info) { console.error("[Checkout] crashed:", error, info); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <>
+          <Navbar />
+          <div style={{ minHeight:"60vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 24px", textAlign:"center" }}>
+            <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"1.5rem", marginBottom:14 }}>Something went wrong</h2>
+            <p style={{ opacity:0.7, marginBottom:24, maxWidth:520, lineHeight:1.6 }}>
+              The checkout page hit a snag. Please head back to the tickets page and try again.
+              {this.state.error?.message ? <><br /><br /><code style={{ fontSize:"0.75rem", opacity:0.6 }}>{this.state.error.message}</code></> : null}
+            </p>
+            <a href="/tickets" style={{ display:"inline-block", padding:"14px 28px", borderRadius:12, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"#fff", textDecoration:"none", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.72rem", letterSpacing:"1.5px", textTransform:"uppercase" }}>Back to Tickets</a>
+          </div>
+          <Footer />
+        </>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+/* ============================================================
+   FULL-PAGE CHECKOUT (wrapped in error boundary)
    ============================================================ */
 export default function Checkout() {
+  return (
+    <CheckoutErrorBoundary>
+      <CheckoutInner />
+    </CheckoutErrorBoundary>
+  );
+}
+
+function CheckoutInner() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const tier = params.get("tier") || "connect";
+  // Use native URLSearchParams to read tier — avoids any router-context issues
+  const tier = (typeof window !== "undefined")
+    ? (new URLSearchParams(window.location.search).get("tier") || "connect")
+    : "connect";
   const tierLabel = TIER_LABELS[tier] || "Connect";
 
   const [dark, setDark] = useState(false);

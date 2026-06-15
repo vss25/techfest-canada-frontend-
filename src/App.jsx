@@ -6,6 +6,7 @@ import Speakers from "./pages/Speakers";
 import SpeakerProfile from "./pages/Speakerprofile";
 import Sponsors from "./pages/Sponsors";
 import Tickets from "./pages/Tickets";
+import Checkout from "./pages/Checkout";
 import Resources from "./pages/Resources";
 import Dashboard from "./pages/Dashboard";
 import Privacy from "./pages/Privacy";
@@ -28,14 +29,12 @@ import KycForm from "./pages/KycForm";
 import Volunteer from "./pages/Volunteer";
 import Partners2026 from "./pages/partners2026";
 import Organizers from "./pages/Organizers";
-
 /* ================= SYSTEM THEME DETECTOR ================= */
 function applySystemTheme() {
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   const theme = prefersDark ? "dark" : "light";
   document.documentElement.setAttribute("data-theme", theme);
 }
-
 function App() {
   useEffect(() => {
     applySystemTheme();
@@ -44,7 +43,6 @@ function App() {
     media.addEventListener("change", handleChange);
     return () => media.removeEventListener("change", handleChange);
   }, []);
-
   return (
     <BrowserRouter>
       <ScrollToTop />
@@ -55,6 +53,7 @@ function App() {
         <Route path="/speakers/:id" element={<SpeakerProfile />} />
         <Route path="/sponsors" element={<Sponsors />} />
         <Route path="/tickets" element={<Tickets />} />
+        <Route path="/tickets/checkout" element={<Checkout />} />
         <Route path="/first-timers" element={<Resources />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="/on-demand" element={<Resources />} />
@@ -94,5 +93,4 @@ function App() {
     </BrowserRouter>
   );
 }
-
 export default App;

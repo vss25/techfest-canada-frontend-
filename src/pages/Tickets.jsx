@@ -33,6 +33,15 @@ function TickSmall() {
   );
 }
 
+/* Format a CAD amount: no decimals for whole dollars, 2 decimals when a discount creates cents */
+function formatPrice(n) {
+  const num = Number(n);
+  return num.toLocaleString("en-CA", {
+    minimumFractionDigits: Number.isInteger(num) ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 function PriceWithAsterisk({ price, color, fontSize, fontWeight, style }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -294,9 +303,11 @@ const PASS_META = {
   power: { label:"Power Pass", tagline:"The ultimate all-access experience.", description:"Built for senior executives, VIP guests, investors, speakers, and leaders who want to experience The Tech Festival Canada at the highest level. With access to every major element of the event, this pass offers the most complete and elevated way to engage with the festival.", features:["2x Day Conference Access","2x CxO Breakfasts","2x Luncheons","1x Gala Dinner & Networking Reception","1x Awards Night","VIP Lounge Access (Both Days)","Expo Floor Access","Networking Breaks"], tier:"power", defaultPrice:999, featured:false },
 };
 
-function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded }) {
+function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded, promoDiscount = 0 }) {
   const [hovered, setHovered] = useState(false);
   const price = inventoryItem?.price ?? meta.defaultPrice;
+  const hasDiscount = promoDiscount > 0;
+  const discounted = hasDiscount ? price * (1 - promoDiscount / 100) : price;
   const remaining = inventoryItem ? Math.max(inventoryItem.total - inventoryItem.sold, 0) : null;
   const soldOut = remaining !== null && remaining <= 0;
   const textMain = dark ? "#ffffff" : "#0d0520";
@@ -310,16 +321,31 @@ function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded }) {
       style={{ position:"relative", flex:"1 1 260px", maxWidth:340, minWidth:240, borderRadius:20, padding:"32px 26px 28px", display:"flex", flexDirection:"column", backdropFilter:"blur(18px)", WebkitBackdropFilter:"blur(18px)", background: meta.featured?(dark?"linear-gradient(135deg, rgba(122,63,209,0.28) 0%, rgba(245,166,35,0.12) 100%)":"linear-gradient(135deg, rgba(122,63,209,0.12) 0%, rgba(245,166,35,0.08) 100%)"):cardBg, border: meta.featured?(dark?"1px solid rgba(122,63,209,0.55)":"1px solid rgba(122,63,209,0.40)"):cardBorder, boxShadow: meta.featured?(dark?"0 8px 48px rgba(122,63,209,0.25)":"0 8px 32px rgba(122,63,209,0.18)"):(dark?"0 4px 32px rgba(0,0,0,0.35)":"0 4px 24px rgba(122,63,209,0.08)"), transform: meta.featured?"scale(1.04)":hovered?"scale(1.02)":"scale(1)", transition:"transform 0.25s ease, box-shadow 0.25s ease", zIndex: meta.featured?2:1 }}>
       {meta.featured && <div style={{ position:"absolute", top:-14, left:"50%", transform:"translateX(-50%)", background:"linear-gradient(90deg, #7a3fd1, #f5a623)", color:"white", fontSize:"0.62rem", fontWeight:800, letterSpacing:"1.4px", textTransform:"uppercase", padding:"5px 16px", borderRadius:999, whiteSpace:"nowrap", fontFamily:"'Orbitron', sans-serif" }}>Most Popular</div>}
       <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.72rem", letterSpacing:"1.5px", textTransform:"uppercase", color: meta.featured?(dark?"#f5a623":"#d98a14"):(dark?"rgba(160,100,255,0.85)":"#7a3fd1"), marginBottom:8 }}>{meta.label}</div>
-      <div style={{ display:"flex", alignItems:"baseline", gap:6, marginBottom:2, minHeight:"2.6rem" }}>
+
+      <div style={{ marginBottom:2, minHeight:"2.6rem" }}>
         {inventoryLoaded ? (
-          <>
-            <PriceWithAsterisk price={price} color={textMain} fontSize="2.6rem" fontWeight={900} />
-            <span style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.95rem", fontWeight:800, color:textLight, letterSpacing:"1px", textTransform:"uppercase" }}>CAD</span>
-          </>
+          hasDiscount ? (
+            <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+                <span style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"1rem", fontWeight:700, color:textLight, textDecoration:"line-through", textDecorationColor:"#e05555", letterSpacing:"-0.5px" }}>${price.toLocaleString()}</span>
+                <span style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.56rem", fontWeight:800, letterSpacing:"1px", textTransform:"uppercase", color:"#ffffff", background:"linear-gradient(135deg, #7a3fd1, #f5a623)", padding:"3px 9px", borderRadius:999, whiteSpace:"nowrap" }}>{promoDiscount}% Off</span>
+              </div>
+              <div style={{ display:"flex", alignItems:"baseline", gap:6 }}>
+                <PriceWithAsterisk price={formatPrice(discounted)} color={textMain} fontSize="2.6rem" fontWeight={900} />
+                <span style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.95rem", fontWeight:800, color:textLight, letterSpacing:"1px", textTransform:"uppercase" }}>CAD</span>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display:"flex", alignItems:"baseline", gap:6 }}>
+              <PriceWithAsterisk price={price} color={textMain} fontSize="2.6rem" fontWeight={900} />
+              <span style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.95rem", fontWeight:800, color:textLight, letterSpacing:"1px", textTransform:"uppercase" }}>CAD</span>
+            </div>
+          )
         ) : (
           <div aria-label="Loading price" style={{ width:160, height:"2.4rem", borderRadius:8, background: dark?"linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04))":"linear-gradient(90deg, rgba(122,63,209,0.05), rgba(122,63,209,0.12), rgba(122,63,209,0.05))", backgroundSize:"200% 100%", animation:"ttfcShimmer 1.4s ease-in-out infinite" }} />
         )}
       </div>
+
       <p style={{ fontSize:"0.62rem", fontWeight:600, color: dark?"rgba(255,255,255,0.35)":"rgba(13,5,32,0.38)", letterSpacing:"0.3px", marginBottom:4 }}>13% HST included</p>
       <div style={{ width:"100%", height:1, background: dark?"linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 50%,transparent)":"linear-gradient(90deg,transparent,rgba(122,63,209,0.18) 50%,transparent)", margin:"14px 0 16px" }} />
       <p style={{ fontSize:"0.82rem", fontWeight:600, color:textMain, marginBottom:8, lineHeight:1.5, textAlign:"justify" }}>{meta.tagline}</p>
@@ -336,6 +362,59 @@ function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded }) {
   );
 }
 
+/* ============== PROMO CODE BAR (sits under all passes) ============== */
+function PromoBar({ dark, promoCode, promoDiscount, promoInput, setPromoInput, promoStatus, promoError, onApply, onRemove }) {
+  const textMain = dark ? "#ffffff" : "#0d0520";
+  const textMuted = dark ? "rgba(255,255,255,0.60)" : "rgba(13,5,32,0.65)";
+  const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)";
+  const inputBorder = dark ? "rgba(255,255,255,0.14)" : "rgba(122,63,209,0.20)";
+  const applied = !!promoCode;
+  const loading = promoStatus === "loading";
+
+  return (
+    <div style={{ maxWidth:560, margin:"0 auto 76px", padding:"0 24px" }}>
+      <div style={{ backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", background: applied ? (dark?"linear-gradient(135deg, rgba(122,63,209,0.18) 0%, rgba(245,166,35,0.10) 100%)":"linear-gradient(135deg, rgba(122,63,209,0.10) 0%, rgba(245,166,35,0.06) 100%)") : (dark?"rgba(255,255,255,0.04)":"rgba(122,63,209,0.03)"), border:"1px solid "+(applied?(dark?"rgba(122,63,209,0.45)":"rgba(122,63,209,0.32)"):(dark?"rgba(255,255,255,0.08)":"rgba(122,63,209,0.12)")), borderRadius:18, padding:"22px 22px" }}>
+        {applied ? (
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:14, flexWrap:"wrap" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <div style={{ width:34, height:34, borderRadius:999, flexShrink:0, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+              </div>
+              <div>
+                <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.82rem", letterSpacing:"0.5px", color:textMain }}>{promoCode} applied</div>
+                <div style={{ fontSize:"0.72rem", color:textMuted, marginTop:2 }}>{promoDiscount}% off every pass at checkout</div>
+              </div>
+            </div>
+            <button onClick={onRemove} style={{ background:"none", border:"1px solid "+(dark?"rgba(255,255,255,0.18)":"rgba(122,63,209,0.24)"), color:textMuted, borderRadius:10, padding:"9px 16px", fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"0.6rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer" }}>Remove</button>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"0.6rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#f5a623":"#d98a14", marginBottom:12 }}>Have a promo code?</div>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              <input
+                value={promoInput}
+                onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => { if (e.key === "Enter") onApply(); }}
+                placeholder="Enter your code"
+                autoCapitalize="characters"
+                spellCheck={false}
+                style={{ flex:"1 1 220px", minWidth:0, padding:"13px 16px", borderRadius:11, border:"1px solid "+(promoStatus==="error"?"#e05555":inputBorder), background:inputBg, color:textMain, fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"15px", letterSpacing:"1.5px", textTransform:"uppercase", outline:"none", boxSizing:"border-box" }}
+              />
+              <button
+                onClick={onApply}
+                disabled={loading || !promoInput.trim()}
+                style={{ flexShrink:0, padding:"13px 26px", borderRadius:11, border:"none", cursor: (loading || !promoInput.trim())?"not-allowed":"pointer", opacity:(loading || !promoInput.trim())?0.55:1, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"white", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1px", textTransform:"uppercase", boxShadow:"0 4px 18px rgba(122,63,209,0.30)" }}>
+                {loading ? "Checking\u2026" : "Apply"}
+              </button>
+            </div>
+            {promoStatus === "error" && <div style={{ fontSize:"0.72rem", color:"#e05555", marginTop:10, fontWeight:600 }}>{promoError}</div>}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Tickets() {
   const [inventory, setInventory] = useState([]);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
@@ -345,16 +424,61 @@ export default function Tickets() {
   const [pendingTier, setPendingTier] = useState(null);
   const [pendingLabel, setPendingLabel] = useState("");
 
+  // ----- Promo code state -----
+  const [promoInput, setPromoInput] = useState("");
+  const [promoCode, setPromoCode] = useState("");       // applied code
+  const [promoDiscount, setPromoDiscount] = useState(0); // 0 | 10 | 25 | 50
+  const [promoStatus, setPromoStatus] = useState(null);  // null | "loading" | "error"
+  const [promoError, setPromoError] = useState("");
+
   useEffect(() => { setDark(document.body.classList.contains("dark-mode")); const obs = new MutationObserver(() => setDark(document.body.classList.contains("dark-mode"))); obs.observe(document.body, { attributes:true, attributeFilter:["class"] }); return () => obs.disconnect(); }, []);
   useEffect(() => { const params = new URLSearchParams(window.location.search); if (params.get("success") === "true") { setShowSuccessModal(true); window.history.replaceState(null, "", window.location.pathname); } }, []);
   useEffect(() => { const load = async () => { try { const res = await fetch(API+"/admin/inventory/public"); const data = await res.json(); setInventory(Array.isArray(data)?data:[]); } catch(err) { console.error("Inventory fetch failed", err); } finally { setInventoryLoaded(true); } }; load(); }, []);
 
   const getTier = (tier) => inventory.find((i) => i.tier === tier) || null;
+
+  const applyPromo = useCallback(async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+    setPromoStatus("loading");
+    setPromoError("");
+    try {
+      const res = await fetch(API+"/promos/validate", { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ code }) });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        setPromoCode(data.code || code);
+        setPromoDiscount(Number(data.discount) || 0);
+        setPromoStatus(null);
+        setPromoError("");
+      } else {
+        setPromoStatus("error");
+        setPromoError(data.error || "That code isn't valid. Check it and try again.");
+      }
+    } catch (err) {
+      console.error("Promo validation failed", err);
+      setPromoStatus("error");
+      setPromoError("Couldn't check that code right now. Please try again.");
+    }
+  }, [promoInput]);
+
+  const removePromo = () => { setPromoCode(""); setPromoDiscount(0); setPromoInput(""); setPromoStatus(null); setPromoError(""); };
+
   const handleOpenQuestionnaire = (tier, label) => { setPendingTier(tier); setPendingLabel(label); setQuestionnaireOpen(true); };
   const handlePurchase = async (formData) => {
     setQuestionnaireOpen(false);
-    try { const token = localStorage.getItem("token"); const res = await fetch(API+"/payments/create-checkout", { method:"POST", headers:{ "Content-Type":"application/json", ...(token && { Authorization:"Bearer "+token }) }, body:JSON.stringify({ tier:pendingTier }) }); const data = await res.json(); if (!res.ok) throw new Error(data.error || "Checkout failed"); window.location.href = data.url; }
-    catch(err) { console.error("Purchase error:", err); alert(err.message || "Purchase failed"); }
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(API+"/payments/create-checkout", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", ...(token && { Authorization:"Bearer "+token }) },
+        // promoCode is sent so the backend can enforce the discount on Stripe.
+        // The discount is NEVER trusted from the client; the server re-validates the code.
+        body:JSON.stringify({ tier:pendingTier, promoCode: promoCode || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Checkout failed");
+      window.location.href = data.url;
+    } catch(err) { console.error("Purchase error:", err); alert(err.message || "Purchase failed"); }
   };
 
   const passes = ["connect","influence","power"];
@@ -375,9 +499,13 @@ export default function Tickets() {
             <h1 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"clamp(2rem, 5vw, 3.2rem)", letterSpacing:"-1px", lineHeight:1.15, marginBottom:20, color:textMain }}>Choose Your Pass</h1>
             <p style={{ fontSize:"1rem", color:textMuted, lineHeight:1.75, textAlign:"justify", hyphens:"auto" }}>Whether you are coming to learn, connect, explore partnerships, or experience the event at the highest level, The Tech Festival Canada offers a pass designed for every kind of delegate.</p>
           </div>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:20, justifyContent:"center", alignItems:"stretch", padding:"0 24px 80px", maxWidth:1260, margin:"0 auto" }}>
-            {passes.map(key => <PassCard key={key} meta={PASS_META[key]} inventoryItem={getTier(key)} onPurchase={handleOpenQuestionnaire} dark={dark} inventoryLoaded={inventoryLoaded} />)}
+          <div style={{ display:"flex", flexWrap:"wrap", gap:20, justifyContent:"center", alignItems:"stretch", padding:"0 24px 56px", maxWidth:1260, margin:"0 auto" }}>
+            {passes.map(key => <PassCard key={key} meta={PASS_META[key]} inventoryItem={getTier(key)} onPurchase={handleOpenQuestionnaire} dark={dark} inventoryLoaded={inventoryLoaded} promoDiscount={promoDiscount} />)}
           </div>
+
+          {/* Promo code bar — applies to all passes */}
+          <PromoBar dark={dark} promoCode={promoCode} promoDiscount={promoDiscount} promoInput={promoInput} setPromoInput={setPromoInput} promoStatus={promoStatus} promoError={promoError} onApply={applyPromo} onRemove={removePromo} />
+
           <div style={{ maxWidth:900, margin:"0 auto 80px", padding:"0 24px" }}>
             <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"1rem", letterSpacing:"1px", textTransform:"uppercase", color: dark?"rgba(255,255,255,0.35)":"rgba(13,5,32,0.40)", textAlign:"center", marginBottom:28 }}>Pass Comparison</h2>
             <div style={{ backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", background: dark?"rgba(255,255,255,0.04)":"rgba(122,63,209,0.03)", border: dark?"1px solid rgba(255,255,255,0.08)":"1px solid rgba(122,63,209,0.10)", borderRadius:20, overflowX:"auto", WebkitOverflowScrolling:"touch" }}>

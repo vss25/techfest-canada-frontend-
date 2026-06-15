@@ -22,141 +22,83 @@ export default function AdminInventory() {
   const [promos, setPromos] = useState([]);
   const [newCode, setNewCode] = useState("");
   const [newDiscount, setNewDiscount] = useState(10);
+  const [customDiscount, setCustomDiscount] = useState("");
+  const [useCustom, setUseCustom] = useState(false);
   const [promoBusy, setPromoBusy] = useState(false);
   const [promoMsg, setPromoMsg] = useState("");
 
   useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDark(document.body.classList.contains("dark-mode"));
-    };
-    
+    const checkDarkMode = () => { setIsDark(document.body.classList.contains("dark-mode")); };
     checkDarkMode();
-    
     const observer = new MutationObserver(checkDarkMode);
     observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-    
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    loadInventory();
-    loadPromos();
-  }, []);
+  useEffect(() => { loadInventory(); loadPromos(); }, []);
 
   /* ================= LOAD ================= */
-
   const loadInventory = async () => {
-
     try {
-
       const token = localStorage.getItem("token");
-
-      const res = await fetch(`${API}/admin/inventory`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
+      const res = await fetch(`${API}/admin/inventory`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-
       setInventory(Array.isArray(data) ? data : []);
-
-    } catch (err) {
-
-      console.error("Inventory load failed:", err);
-
-    }
-
+    } catch (err) { console.error("Inventory load failed:", err); }
   };
 
-  /* ================= UPDATE PRICE ================= */
-
+  /* ================= UPDATE PRICE / TOTAL ================= */
   const updatePrice = async (tier, price) => {
-
     try {
-
       const token = localStorage.getItem("token");
-
-      await fetch(`${API}/admin/inventory/${tier}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ price: Number(price) })
-      });
-
+      await fetch(`${API}/admin/inventory/${tier}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ price: Number(price) }) });
       loadInventory();
-
-    } catch (err) {
-
-      console.error("Price update failed");
-
-    }
-
+    } catch (err) { console.error("Price update failed"); }
   };
-
-  /* ================= UPDATE TOTAL ================= */
 
   const updateTotal = async (tier, total) => {
-
     try {
-
       const token = localStorage.getItem("token");
-
-      await fetch(`${API}/admin/inventory/${tier}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ total: Number(total) })
-      });
-
+      await fetch(`${API}/admin/inventory/${tier}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ total: Number(total) }) });
       loadInventory();
-
-    } catch (err) {
-
-      console.error("Total update failed");
-
-    }
-
+    } catch (err) { console.error("Total update failed"); }
   };
 
   /* ================= PROMO CODES ================= */
-
   const loadPromos = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API}/admin/promos`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetch(`${API}/admin/promos`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setPromos(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Promo load failed:", err);
-    }
+    } catch (err) { console.error("Promo load failed:", err); }
   };
 
   const createPromo = async () => {
     const code = newCode.trim().toUpperCase().replace(/\s+/g, "");
     if (!code) { setPromoMsg("Enter a code or click Generate."); return; }
+
+    const discount = useCustom ? Number(customDiscount) : Number(newDiscount);
+    if (!discount || discount <= 0 || discount > 100) {
+      setPromoMsg("Discount must be between 1 and 100.");
+      return;
+    }
+
     setPromoBusy(true);
     setPromoMsg("");
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API}/admin/promos`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ code, discount: Number(newDiscount) })
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ code, discount })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Create failed");
       setNewCode("");
       setNewDiscount(10);
+      setCustomDiscount("");
+      setUseCustom(false);
       setPromoMsg(`Created ${data.code} (${data.discount}% off).`);
       loadPromos();
     } catch (err) {
@@ -169,54 +111,26 @@ export default function AdminInventory() {
   const togglePromo = async (promo) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(`${API}/admin/promos/${promo._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ active: !promo.active })
-      });
+      await fetch(`${API}/admin/promos/${promo._id}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ active: !promo.active }) });
       loadPromos();
-    } catch (err) {
-      console.error("Toggle failed");
-    }
+    } catch (err) { console.error("Toggle failed"); }
   };
 
   const deletePromo = async (promo) => {
     if (!window.confirm(`Delete promo code ${promo.code}? This cannot be undone.`)) return;
     try {
       const token = localStorage.getItem("token");
-      await fetch(`${API}/admin/promos/${promo._id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await fetch(`${API}/admin/promos/${promo._id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       loadPromos();
-    } catch (err) {
-      console.error("Delete failed");
-    }
+    } catch (err) { console.error("Delete failed"); }
   };
 
   /* ================= CALCULATIONS ================= */
-
-  const totalRevenue = inventory.reduce(
-    (sum, i) => sum + (i.sold * (i.price || 0)),
-    0
-  );
-
-  const totalSold = inventory.reduce(
-    (sum, i) => sum + i.sold,
-    0
-  );
-
-  const totalRemaining = inventory.reduce(
-    (sum, i) => sum + (i.total - i.sold),
-    0
-  );
-
+  const totalRevenue = inventory.reduce((sum, i) => sum + (i.sold * (i.price || 0)), 0);
+  const totalSold = inventory.reduce((sum, i) => sum + i.sold, 0);
+  const totalRemaining = inventory.reduce((sum, i) => sum + (i.total - i.sold), 0);
   const cardClass = isDark ? "stat-card" : "stat-card stat-card-light";
 
-  /* ===== Inline theme tokens for the promo section (self-contained, no CSS dependency) ===== */
   const t = {
     text: isDark ? "#ffffff" : "#0d0520",
     muted: isDark ? "rgba(255,255,255,0.55)" : "rgba(13,5,32,0.55)",
@@ -230,142 +144,56 @@ export default function AdminInventory() {
   return (
     <>
     <div className="admin-card">
-
       <h2 className={isDark ? "text-white" : "text-gray-900"}>Ticket Inventory</h2>
 
-      {/* ===== DASHBOARD STATS ===== */}
-
-     <div className="inventory-stats">
-
-  <div className={cardClass}>
-    <p className={isDark ? "text-gray-400" : "text-gray-600"}>Total Revenue</p>
-    <h2 className={isDark ? "text-white" : "text-gray-900"}>${totalRevenue.toLocaleString()}</h2>
-  </div>
-
-  <div className={cardClass}>
-    <p className={isDark ? "text-gray-400" : "text-gray-600"}>Tickets Sold</p>
-    <h2 className={isDark ? "text-white" : "text-gray-900"}>{totalSold}</h2>
-  </div>
-
-  <div className={cardClass}>
-    <p className={isDark ? "text-gray-400" : "text-gray-600"}>Tickets Remaining</p>
-    <h2 className={isDark ? "text-white" : "text-gray-900"}>{totalRemaining}</h2>
-  </div>
-
-</div>
-
-      {/* ===== TABLE ===== */}
+      <div className="inventory-stats">
+        <div className={cardClass}>
+          <p className={isDark ? "text-gray-400" : "text-gray-600"}>Total Revenue</p>
+          <h2 className={isDark ? "text-white" : "text-gray-900"}>${totalRevenue.toLocaleString()}</h2>
+        </div>
+        <div className={cardClass}>
+          <p className={isDark ? "text-gray-400" : "text-gray-600"}>Tickets Sold</p>
+          <h2 className={isDark ? "text-white" : "text-gray-900"}>{totalSold}</h2>
+        </div>
+        <div className={cardClass}>
+          <p className={isDark ? "text-gray-400" : "text-gray-600"}>Tickets Remaining</p>
+          <h2 className={isDark ? "text-white" : "text-gray-900"}>{totalRemaining}</h2>
+        </div>
+      </div>
 
       <div className="table-wrapper">
-
         <table className="admin-table">
-
           <thead>
-            <tr>
-              <th>Tier</th>
-              <th>Price</th>
-              <th>Total</th>
-              <th>Sold</th>
-              <th>Remaining</th>
-              <th>Revenue</th>
-              <th>Progress</th>
-            </tr>
+            <tr><th>Tier</th><th>Price</th><th>Total</th><th>Sold</th><th>Remaining</th><th>Revenue</th><th>Progress</th></tr>
           </thead>
-
           <tbody>
-
             {inventory.map((item) => {
-
               const remaining = item.total - item.sold;
               const revenue = item.sold * (item.price || 0);
               const percent = (item.sold / item.total) * 100;
-
               return (
                 <tr key={item.tier}>
-
                   <td className={isDark ? "text-white" : "text-gray-900"}>{item.tier.toUpperCase()}</td>
-
-                  {/* PRICE */}
-
-                  <td>
-                    <input
-  type="number"
-  className={isDark ? "inventory-input" : "inventory-input inventory-input-light"}
-  defaultValue={item.price}
-  onBlur={(e) =>
-    updatePrice(item.tier, e.target.value)
-  }
-                    />
-                  </td>
-
-                  {/* TOTAL */}
-
-                  <td>
-                    <input
-                      type="number"
-                      className={isDark ? "inventory-input" : "inventory-input inventory-input-light"}
-                      
-                     defaultValue={item.total}
-                      onBlur={(e) =>
-                        updateTotal(item.tier, e.target.value)
-                      }
-                    />
-                  </td>
-
+                  <td><input type="number" className={isDark ? "inventory-input" : "inventory-input inventory-input-light"} defaultValue={item.price} onBlur={(e) => updatePrice(item.tier, e.target.value)} /></td>
+                  <td><input type="number" className={isDark ? "inventory-input" : "inventory-input inventory-input-light"} defaultValue={item.total} onBlur={(e) => updateTotal(item.tier, e.target.value)} /></td>
                   <td className={isDark ? "text-white" : "text-gray-900"}>{item.sold}</td>
-
-                  {/* REMAINING */}
-
-                  <td
-                    className={
-                      remaining <= 10
-                        ? "remaining-low"
-                        : isDark ? "remaining-ok" : "remaining-ok-light"
-                    }
-                  >
-                    {remaining}
-                  </td>
-
-                  {/* REVENUE */}
-
+                  <td className={remaining <= 10 ? "remaining-low" : isDark ? "remaining-ok" : "remaining-ok-light"}>{remaining}</td>
                   <td className={isDark ? "text-white" : "text-gray-900"}>${revenue}</td>
-
-                  {/* PROGRESS BAR */}
-
                   <td>
-
-                    <div className="progress-bar">
-
-                      <div
-                        className="progress-fill"
-                        style={{
-                          width: `${percent}%`
-                        }}
-                      />
-
-                    </div>
-
+                    <div className="progress-bar"><div className="progress-fill" style={{ width: `${percent}%` }} /></div>
                     <small className={isDark ? "text-gray-400" : "text-gray-600"}>{Math.round(percent)}%</small>
-
                   </td>
-
                 </tr>
               );
-
             })}
-
           </tbody>
-
         </table>
-
       </div>
-
     </div>
 
     {/* ============================================================= */}
     {/* ===== PROMO CODES ===== */}
     {/* ============================================================= */}
-
     <div className="admin-card" style={{ marginTop: 24 }}>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
@@ -374,44 +202,35 @@ export default function AdminInventory() {
       </div>
 
       {/* ---- Create row ---- */}
-      <div style={{
-        marginTop: 18,
-        padding: "18px",
-        background: t.panel,
-        border: "1px solid " + t.border,
-        borderRadius: 14,
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 14,
-        alignItems: "flex-end"
-      }}>
+      <div style={{ marginTop: 18, padding: "18px", background: t.panel, border: "1px solid " + t.border, borderRadius: 14, display: "flex", flexWrap: "wrap", gap: 14, alignItems: "flex-end" }}>
 
-        {/* Discount selector */}
+        {/* Discount selector with preset + custom */}
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <label style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: t.muted }}>Discount</label>
-          <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
             {DISCOUNTS.map((d) => {
-              const active = newDiscount === d;
+              const active = !useCustom && newDiscount === d;
               return (
-                <button
-                  key={d}
-                  onClick={() => setNewDiscount(d)}
-                  style={{
-                    padding: "10px 16px",
-                    borderRadius: 10,
-                    border: "1px solid " + (active ? "#7a3fd1" : t.inputBorder),
-                    background: active ? "linear-gradient(135deg, #7a3fd1, #f5a623)" : "transparent",
-                    color: active ? "#fff" : t.text,
-                    fontWeight: 800,
-                    fontSize: "0.78rem",
-                    cursor: "pointer",
-                    transition: "all 0.15s"
-                  }}
-                >
+                <button key={d} onClick={() => { setNewDiscount(d); setUseCustom(false); }}
+                  style={{ padding: "10px 16px", borderRadius: 10, border: "1px solid " + (active ? "#7a3fd1" : t.inputBorder), background: active ? "linear-gradient(135deg, #7a3fd1, #f5a623)" : "transparent", color: active ? "#fff" : t.text, fontWeight: 800, fontSize: "0.78rem", cursor: "pointer", transition: "all 0.15s" }}>
                   {d}%
                 </button>
               );
             })}
+            {/* Custom % input */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4, border: "1px solid " + (useCustom ? "#7a3fd1" : t.inputBorder), borderRadius: 10, padding: "2px 6px 2px 8px", background: useCustom ? (isDark ? "rgba(122,63,209,0.12)" : "rgba(122,63,209,0.06)") : "transparent" }}>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={customDiscount}
+                onChange={(e) => { setCustomDiscount(e.target.value); setUseCustom(true); }}
+                onFocus={() => setUseCustom(true)}
+                placeholder="Custom"
+                style={{ width: 70, padding: "8px 4px", border: "none", background: "transparent", color: t.text, fontWeight: 700, fontSize: "0.85rem", outline: "none", fontFamily: "inherit" }}
+              />
+              <span style={{ color: t.muted, fontWeight: 700, fontSize: "0.85rem" }}>%</span>
+            </div>
           </div>
         </div>
 
@@ -424,64 +243,20 @@ export default function AdminInventory() {
             onKeyDown={(e) => { if (e.key === "Enter") createPromo(); }}
             placeholder="e.g. LAUNCH25"
             spellCheck={false}
-            style={{
-              width: "100%",
-              padding: "11px 14px",
-              borderRadius: 10,
-              border: "1px solid " + t.inputBorder,
-              background: t.inputBg,
-              color: t.text,
-              fontWeight: 700,
-              fontSize: "15px",
-              letterSpacing: "1.5px",
-              textTransform: "uppercase",
-              outline: "none",
-              boxSizing: "border-box",
-              fontFamily: "inherit"
-            }}
+            style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid " + t.inputBorder, background: t.inputBg, color: t.text, fontWeight: 700, fontSize: "15px", letterSpacing: "1.5px", textTransform: "uppercase", outline: "none", boxSizing: "border-box", fontFamily: "inherit" }}
           />
         </div>
 
-        {/* Generate button */}
-        <button
-          onClick={() => setNewCode(genCode())}
-          style={{
-            padding: "11px 18px",
-            borderRadius: 10,
-            border: "1px solid " + t.inputBorder,
-            background: "transparent",
-            color: t.text,
-            fontWeight: 700,
-            fontSize: "0.74rem",
-            letterSpacing: "0.5px",
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7
-          }}
-        >
+        {/* Generate */}
+        <button onClick={() => setNewCode(genCode())}
+          style={{ padding: "11px 18px", borderRadius: 10, border: "1px solid " + t.inputBorder, background: "transparent", color: t.text, fontWeight: 700, fontSize: "0.74rem", letterSpacing: "0.5px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f5a623" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
           Generate
         </button>
 
-        {/* Create button */}
-        <button
-          onClick={createPromo}
-          disabled={promoBusy}
-          style={{
-            padding: "11px 22px",
-            borderRadius: 10,
-            border: "none",
-            background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
-            color: "#fff",
-            fontWeight: 800,
-            fontSize: "0.74rem",
-            letterSpacing: "0.5px",
-            cursor: promoBusy ? "not-allowed" : "pointer",
-            opacity: promoBusy ? 0.6 : 1,
-            boxShadow: "0 4px 16px rgba(122,63,209,0.3)"
-          }}
-        >
+        {/* Create */}
+        <button onClick={createPromo} disabled={promoBusy}
+          style={{ padding: "11px 22px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "#fff", fontWeight: 800, fontSize: "0.74rem", letterSpacing: "0.5px", cursor: promoBusy ? "not-allowed" : "pointer", opacity: promoBusy ? 0.6 : 1, boxShadow: "0 4px 16px rgba(122,63,209,0.3)" }}>
           {promoBusy ? "Creating\u2026" : "Create Code"}
         </button>
       </div>
@@ -494,65 +269,26 @@ export default function AdminInventory() {
       <div className="table-wrapper" style={{ marginTop: 18 }}>
         <table className="admin-table">
           <thead>
-            <tr>
-              <th>Code</th>
-              <th>Discount</th>
-              <th>Status</th>
-              <th>Times Used</th>
-              <th>Action</th>
-            </tr>
+            <tr><th>Code</th><th>Discount</th><th>Status</th><th>Times Used</th><th>Action</th></tr>
           </thead>
           <tbody>
             {promos.length === 0 && (
-              <tr>
-                <td colSpan={5} style={{ textAlign: "center", color: t.muted, padding: "20px 0" }}>No promo codes yet. Create one above.</td>
-              </tr>
+              <tr><td colSpan={5} style={{ textAlign: "center", color: t.muted, padding: "20px 0" }}>No promo codes yet. Create one above.</td></tr>
             )}
             {promos.map((promo) => (
               <tr key={promo._id}>
                 <td className={isDark ? "text-white" : "text-gray-900"} style={{ fontWeight: 700, letterSpacing: "1px" }}>{promo.code}</td>
-
                 <td className={isDark ? "text-white" : "text-gray-900"}>{promo.discount}%</td>
-
-                {/* Status toggle */}
                 <td>
-                  <button
-                    onClick={() => togglePromo(promo)}
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: 999,
-                      border: "1px solid " + (promo.active ? "rgba(63,185,104,0.5)" : t.inputBorder),
-                      background: promo.active ? "rgba(63,185,104,0.15)" : "transparent",
-                      color: promo.active ? "#3fb968" : t.muted,
-                      fontWeight: 700,
-                      fontSize: "0.68rem",
-                      letterSpacing: "0.5px",
-                      textTransform: "uppercase",
-                      cursor: "pointer"
-                    }}
-                  >
+                  <button onClick={() => togglePromo(promo)}
+                    style={{ padding: "5px 12px", borderRadius: 999, border: "1px solid " + (promo.active ? "rgba(63,185,104,0.5)" : t.inputBorder), background: promo.active ? "rgba(63,185,104,0.15)" : "transparent", color: promo.active ? "#3fb968" : t.muted, fontWeight: 700, fontSize: "0.68rem", letterSpacing: "0.5px", textTransform: "uppercase", cursor: "pointer" }}>
                     {promo.active ? "Active" : "Inactive"}
                   </button>
                 </td>
-
                 <td className={isDark ? "text-white" : "text-gray-900"}>{promo.timesUsed ?? 0}</td>
-
-                {/* Delete */}
                 <td>
-                  <button
-                    onClick={() => deletePromo(promo)}
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: 8,
-                      border: "1px solid rgba(224,85,85,0.4)",
-                      background: "transparent",
-                      color: "#e05555",
-                      fontWeight: 700,
-                      fontSize: "0.68rem",
-                      letterSpacing: "0.5px",
-                      cursor: "pointer"
-                    }}
-                  >
+                  <button onClick={() => deletePromo(promo)}
+                    style={{ padding: "5px 12px", borderRadius: 8, border: "1px solid rgba(224,85,85,0.4)", background: "transparent", color: "#e05555", fontWeight: 700, fontSize: "0.68rem", letterSpacing: "0.5px", cursor: "pointer" }}>
                     Delete
                   </button>
                 </td>
@@ -561,7 +297,6 @@ export default function AdminInventory() {
           </tbody>
         </table>
       </div>
-
     </div>
     </>
   );

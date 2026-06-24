@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import React from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { API } from "../utils/api";
 
 /* ============================================================
-   ICONS & HELPERS (shared, no emoji)
+   ICONS & HELPERS
    ============================================================ */
 function ChevronDown({ color, size = 14 }) {
   return (
@@ -50,7 +51,7 @@ const TIER_LABELS = { connect: "Connect", influence: "Influence", power: "Power"
 const TIER_DEFAULT_PRICE = { connect: 599, influence: 799, power: 999 };
 
 /* ============================================================
-   CUSTOM DROPDOWN (reused from tickets page)
+   CUSTOM DROPDOWN
    ============================================================ */
 function CustomDropdown({ options, value, onChange, placeholder="Select\u2026", multi=false, searchable=false, dark, error, maxHeight=220, priorityOptions=[], flagMap={} }) {
   const [open, setOpen] = useState(false);
@@ -147,9 +148,8 @@ function DropOption({ opt, label, selected, multi, dark, hoverBg, selectedBg, te
 }
 
 /* ============================================================
-   ERROR BOUNDARY — catches any error in CheckoutInner and shows a friendly fallback
+   ERROR BOUNDARY
    ============================================================ */
-import React from "react";
 class CheckoutErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
   static getDerivedStateFromError(error) { return { hasError: true, error }; }
@@ -188,7 +188,6 @@ export default function Checkout() {
 
 function CheckoutInner() {
   const navigate = useNavigate();
-  // Use native URLSearchParams to read tier — avoids any router-context issues
   const tier = (typeof window !== "undefined")
     ? (new URLSearchParams(window.location.search).get("tier") || "connect")
     : "connect";
@@ -204,7 +203,6 @@ function CheckoutInner() {
   const firstInputRef = useRef(null);
   const TOTAL_STEPS = 2;
 
-  // Promo state
   const [promoInput, setPromoInput] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoDiscount, setPromoDiscount] = useState(0);
@@ -213,12 +211,10 @@ function CheckoutInner() {
 
   useEffect(() => { setDark(document.body.classList.contains("dark-mode")); const obs = new MutationObserver(() => setDark(document.body.classList.contains("dark-mode"))); obs.observe(document.body, { attributes:true, attributeFilter:["class"] }); return () => obs.disconnect(); }, []);
 
-  // Validate tier param
   useEffect(() => {
     if (!TIER_LABELS[tier]) { navigate("/tickets", { replace: true }); }
   }, [tier, navigate]);
 
-  // Fetch live inventory price
   useEffect(() => {
     const load = async () => {
       try {
@@ -235,7 +231,6 @@ function CheckoutInner() {
     load();
   }, [tier]);
 
-  // Scroll to top on step change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setTimeout(() => { if (firstInputRef.current) firstInputRef.current.focus({ preventScroll: true }); }, 350);
@@ -270,7 +265,8 @@ function CheckoutInner() {
     setPromoStatus("loading");
     setPromoError("");
     try {
-      const res = await fetch(API+"/promos/validate", { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ code }) });
+      // Send tier so the backend can scope the code per-pass
+      const res = await fetch(API+"/promos/validate", { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ code, tier }) });
       const data = await res.json();
       if (res.ok && data.valid) {
         setPromoCode(data.code || code);
@@ -279,14 +275,14 @@ function CheckoutInner() {
         setPromoError("");
       } else {
         setPromoStatus("error");
-        setPromoError(data.error || "That code isn't valid. Check it and try again.");
+        setPromoError(data.error || "Invalid code");
       }
     } catch (err) {
       console.error("Promo validation failed", err);
       setPromoStatus("error");
       setPromoError("Couldn't check that code right now. Please try again.");
     }
-  }, [promoInput]);
+  }, [promoInput, tier]);
 
   const removePromo = () => { setPromoCode(""); setPromoDiscount(0); setPromoInput(""); setPromoStatus(null); setPromoError(""); };
 
@@ -344,7 +340,6 @@ function CheckoutInner() {
       <Navbar />
       <style>{`@keyframes ttfcShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
       <div style={{ minHeight: "100vh", background: bg, color: textMain, position: "relative" }}>
-        {/* Ambient background */}
         <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0,
           background: dark
             ? "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.10) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(245,166,35,0.06) 0%, transparent 70%)"
@@ -352,7 +347,6 @@ function CheckoutInner() {
 
         <div style={{ position:"relative", zIndex:1, maxWidth:1200, margin:"0 auto", padding:"clamp(80px, 12vw, 120px) clamp(20px, 5vw, 48px) 80px" }}>
 
-          {/* Page header */}
           <div style={{ marginBottom:36 }}>
             <button onClick={back}
               style={{ display:"inline-flex", alignItems:"center", gap:6, background:"none", border:"none", color:textMuted, cursor:"pointer", fontFamily:"'Orbitron', sans-serif", fontSize:"0.62rem", fontWeight:700, letterSpacing:"1.4px", textTransform:"uppercase", padding:"0 0 18px 0" }}
@@ -371,7 +365,6 @@ function CheckoutInner() {
             </div>
             <p style={{ fontSize:"0.95rem", color:textMuted, margin:0, lineHeight:1.6 }}>{stepSubtitles[step-1]}</p>
 
-            {/* Step progress */}
             <div style={{ marginTop:24, display:"flex", alignItems:"center", gap:12 }}>
               <span style={{ fontSize:"0.62rem", color:textDim, fontWeight:700, letterSpacing:"1px", textTransform:"uppercase" }}>Step {step} of {TOTAL_STEPS}</span>
               <div style={{ flex:1, display:"flex", gap:6, maxWidth:240 }}>
@@ -380,7 +373,6 @@ function CheckoutInner() {
             </div>
           </div>
 
-          {/* Two-column layout: form on left, order summary on right */}
           <div className="checkout-grid" style={{ display:"grid", gridTemplateColumns:"minmax(0, 1fr) 340px", gap:32, alignItems:"start" }}>
             <style>{`
               @media (max-width: 880px) {
@@ -475,7 +467,6 @@ function CheckoutInner() {
                     {errors.objectives && <span style={errStyle}>{errors.objectives}</span>}
                   </div>
 
-                  {/* Consent */}
                   <div style={{ display:"flex", flexDirection:"column", gap:14, padding:"22px", background: dark?"rgba(122,63,209,0.08)":"rgba(122,63,209,0.04)", borderRadius:14, border: dark?"1px solid rgba(122,63,209,0.20)":"1px solid rgba(122,63,209,0.12)" }}>
                     <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#c8a8ff":"#7a3fd1", marginBottom:2 }}>Your Consent</div>
                     {[
@@ -495,7 +486,6 @@ function CheckoutInner() {
                 </div>
               )}
 
-              {/* ===== Action buttons (form footer) ===== */}
               <div style={{ marginTop:32, paddingTop:24, borderTop: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(122,63,209,0.08)", display:"flex", gap:12 }}>
                 <button onClick={back}
                   style={{ flex:"0 0 auto", padding:"14px 28px", borderRadius:12, border: dark?"1px solid rgba(255,255,255,0.14)":"1px solid rgba(122,63,209,0.20)", background:"transparent", color:textMain, fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer" }}>
@@ -508,7 +498,7 @@ function CheckoutInner() {
               </div>
             </div>
 
-            {/* ====================== RIGHT: ORDER SUMMARY ====================== */}
+            {/* ====================== RIGHT: ORDER SUMMARY + PROMO ====================== */}
             <div className="checkout-summary" style={{ position:"sticky", top:100 }}>
               <div style={{ background:cardBg, border:cardBorder, borderRadius:20, padding:"26px 24px", backdropFilter:"blur(12px)" }}>
                 <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.6rem", letterSpacing:"2px", textTransform:"uppercase", color:textDim, marginBottom:14 }}>Order Summary</div>

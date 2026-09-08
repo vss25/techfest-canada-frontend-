@@ -149,7 +149,7 @@ export const SESSIONS = [
     id: "d1-17", day: 1, time: "14:35", endTime: "15:05",
     title: "Cybersecurity and Digital Trust in the Agentic Age",
     type: "Panel Session", format: "panel", pillar: "cybersecurity",
-    speakers: [{ name: "Francois Guay" }, { name: "Samrah Kazmi" }],
+    speakers: [{ name: "Francois Guay" }, { name: "Samrah Kazmi" }, { name: "Vance Lockton" }],
     moderator: { name: "Brennan Lodge" },
   },
   {
@@ -192,7 +192,7 @@ export const SESSIONS = [
     type: "Fireside Chat", format: "fireside", pillar: "ai", featured: true,
     speakers: [
       { name: "Maha Aziz" },
-      { name: "Mariano Alegra" },
+      { name: "Mariano Allegra" },
       { name: "Alyssa Daku" },
     ],
     moderator: { name: "John Wilder" },

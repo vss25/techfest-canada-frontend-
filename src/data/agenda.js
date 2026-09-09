@@ -102,7 +102,7 @@ export const SESSIONS = [
       { name: "Joe Greenwood" },
       { name: "Fatemah Pirone" },
       { name: "Naresh Gunupuru" },
-      { name: "Subramanian Viswanathan" },
+      { name: "TBD" },
     ],
     moderator: { name: "TBD" },
   },

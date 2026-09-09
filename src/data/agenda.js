@@ -377,7 +377,7 @@ export const SESSIONS = [
     speakers: [
       { name: "Kapidhwaja Singh" },
       { name: "TBD" },
-      { name: "Hiten Makim" },
+      { name: "TBD" },
       { name: "Marc Pepin" },
     ],
     moderator: { name: "Jack Greco" },

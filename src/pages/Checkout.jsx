@@ -574,7 +574,7 @@ function CheckoutInner() {
                     <div style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"1.5rem", fontWeight:900, color: promoDiscount > 0 ? (dark?"#f5a623":"#d98a14") : textMain, letterSpacing:"-0.8px", lineHeight:1 }}>
                       ${formatPrice(finalPrice)}
                     </div>
-                    <div style={{ fontSize:"0.62rem", color:textDim, marginTop:4, fontWeight:600, letterSpacing:"0.5px" }}>CAD &middot; 13% HST incl.</div>
+                    <div style={{ fontSize:"0.62rem", color:textDim, marginTop:4, fontWeight:600, letterSpacing:"0.5px" }}>CAD &middot; +13% HST</div>
                   </div>
                 </div>
 

@@ -505,8 +505,13 @@ function CheckoutModal({ booth, onClose, onCheckout, isDark, textMain, textMuted
   const panel = isDark ? "#120a22" : "#ffffff";
   const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)";
 
+  /* Booth prices are tax-EXCLUSIVE — Stripe adds 13% HST on top of the
+     discounted subtotal, so this summary mirrors the same maths. */
+  const HST_RATE = 0.13;
   const discountAmt = applied ? Math.round(booth.amount * (applied.discount / 100) * 100) / 100 : 0;
-  const total = booth.amount - discountAmt;
+  const subtotal = booth.amount - discountAmt;
+  const hstAmt = Math.round(subtotal * HST_RATE * 100) / 100;
+  const total = subtotal + hstAmt;
 
   const applyCode = async () => {
     const clean = code.trim().toUpperCase().replace(/\s+/g, "");
@@ -651,14 +656,15 @@ function CheckoutModal({ booth, onClose, onCheckout, isDark, textMain, textMuted
               <span>Discount ({applied.discount}%)</span><span>−{money(discountAmt)}</span>
             </div>
           )}
+          <div style={{ ...rowStyle, color: textMuted }}>
+            <span>HST (13%)</span><span>{money(hstAmt)}</span>
+          </div>
           <div style={{ ...rowStyle, color: textMain, fontWeight: 800, fontSize: "1.1rem", fontFamily: "'Orbitron', sans-serif" }}>
             <span>Total</span><span>{money(total)} CAD</span>
           </div>
-          {applied && applied.discount === 0 && (
-            <p style={{ fontSize: "0.72rem", color: textMuted }}>
-              Final total shown at payment.
-            </p>
-          )}
+          <p style={{ fontSize: "0.72rem", color: textMuted }}>
+            Booth prices exclude tax. 13% HST is added at checkout.
+          </p>
         </div>
 
         <button

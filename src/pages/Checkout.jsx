@@ -250,8 +250,18 @@ function CheckoutInner() {
     setTimeout(() => { if (firstInputRef.current) firstInputRef.current.focus({ preventScroll: true }); }, 350);
   }, [step]);
 
+  /* Listed prices are tax-EXCLUSIVE. Stripe adds 13% HST on top of the
+     (discounted) subtotal, so the order summary has to do the same or the
+     number on this page won't match the number on the Stripe page. */
+  const HST_RATE = 0.13;
+
   const basePrice = inventory?.price ?? TIER_DEFAULT_PRICE[tier] ?? 0;
-  const finalPrice = promoDiscount > 0 ? basePrice * (1 - promoDiscount / 100) : basePrice;
+  const subtotal = promoDiscount > 0 ? basePrice * (1 - promoDiscount / 100) : basePrice;
+  const hstAmount = subtotal * HST_RATE;
+  const grandTotal = subtotal + hstAmount;
+
+  // kept for any older references to the pre-tax figure
+  const finalPrice = subtotal;
 
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.68)";
@@ -568,18 +578,32 @@ function CheckoutInner() {
                   </div>
                 )}
 
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 0 0" }}>
+                  <span style={{ fontSize:"0.76rem", color:textMuted, fontWeight:600 }}>Subtotal</span>
+                  <span style={{ fontSize:"0.85rem", fontWeight:700, color:textMain, fontFamily:"'Orbitron', sans-serif" }}>
+                    ${formatPrice(subtotal)}
+                  </span>
+                </div>
+
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0 14px", borderBottom: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(122,63,209,0.08)" }}>
+                  <span style={{ fontSize:"0.76rem", color:textMuted, fontWeight:600 }}>HST (13%)</span>
+                  <span style={{ fontSize:"0.85rem", fontWeight:700, color:textMain, fontFamily:"'Orbitron', sans-serif" }}>
+                    ${formatPrice(hstAmount)}
+                  </span>
+                </div>
+
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", padding:"18px 0 6px" }}>
                   <span style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.7rem", fontWeight:800, letterSpacing:"1px", textTransform:"uppercase", color:textMain }}>Total</span>
                   <div style={{ textAlign:"right" }}>
                     <div style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"1.5rem", fontWeight:900, color: promoDiscount > 0 ? (dark?"#f5a623":"#d98a14") : textMain, letterSpacing:"-0.8px", lineHeight:1 }}>
-                      ${formatPrice(finalPrice)}
+                      ${formatPrice(grandTotal)}
                     </div>
-                    <div style={{ fontSize:"0.62rem", color:textDim, marginTop:4, fontWeight:600, letterSpacing:"0.5px" }}>CAD &middot; +13% HST</div>
+                    <div style={{ fontSize:"0.62rem", color:textDim, marginTop:4, fontWeight:600, letterSpacing:"0.5px" }}>CAD &middot; incl. 13% HST</div>
                   </div>
                 </div>
 
                 <p style={{ fontSize:"0.65rem", color:textDim, lineHeight:1.5, margin:"14px 0 0" }}>
-                  Pricing is indicative. The exact total (with HST) is shown on the Stripe checkout page before you pay.
+                  Prices are shown before tax. 13% HST is added at checkout and the same total is confirmed on the Stripe payment page before you pay.
                 </p>
               </div>
 

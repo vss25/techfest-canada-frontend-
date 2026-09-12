@@ -230,7 +230,10 @@ function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded }) {
         )}
       </div>
 
-      <p style={{ fontSize:"0.62rem", fontWeight:600, color: dark?"rgba(255,255,255,0.35)":"rgba(13,5,32,0.38)", letterSpacing:"0.3px", marginBottom:4 }}>+13% HST</p>
+      {/* Prices are tax-exclusive: Stripe adds 13% HST on top at checkout. */}
+      <p style={{ fontSize:"0.62rem", fontWeight:600, color: dark?"rgba(255,255,255,0.35)":"rgba(13,5,32,0.38)", letterSpacing:"0.3px", marginBottom:4 }}>
+        + 13% HST &middot; ${Math.round(price * 1.13).toLocaleString()} total
+      </p>
 
       <div style={{ width:"100%", height:1, background: dark?"linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 50%,transparent)":"linear-gradient(90deg,transparent,rgba(122,63,209,0.18) 50%,transparent)", margin:"14px 0 16px" }} />
 

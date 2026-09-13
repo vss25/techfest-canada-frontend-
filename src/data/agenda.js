@@ -48,9 +48,9 @@ export const SESSIONS = [
   {
     id: "d1-04", day: 1, time: "09:40", endTime: "10:10",
     title: "From Investment to Industrial Capacity: Canada's Next Ten Years",
-    type: "Keynote", format: "keynote", featured: true,
+    type: "Keynote", format: "Fireside Chat", featured: true,
     // Internal notes: 10 Mins Keynote + 15 Minutes Fireside + 5 Mins Q&A
-    speakers: [{ name: "Vic Fedelli" }],
+    speakers: [{ name: "Vic Fedelli" }, { name: "Dennis A. Darby"}], 
     moderator: { name: "Baldeep Singh Pahwa" },
   },
   {

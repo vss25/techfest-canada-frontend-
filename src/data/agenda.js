@@ -98,7 +98,7 @@ export const SESSIONS = [
     title: "Canada in the New Global Order",
     type: "Fireside Chat", format: "fireside", featured: true,
     // Internal notes: is Stephen Crawford fit for this panel? Move
-    // Christy Clark to Day 2 to avoid a second night of accommodation
+    // Christy Clark to Day 2
     // — not actioned yet, she's still listed here.
     speakers: [{ name: "Stephen Crawford" }, { name: "Christy Clark" }],
     moderator: { name: "Dominic Miserandino" },
@@ -175,7 +175,7 @@ export const SESSIONS = [
       { name: "Francois Guay" },
       { name: "Samrah Kazmi" },
       { name: "Vance Lockton" },
-      { name: "Neal (Boxx Insurance)" },
+      { name: "TBD" },
     ],
     moderator: { name: "Brennan Lodge" },
   },
@@ -230,9 +230,9 @@ export const SESSIONS = [
       { name: "Hon. Nina Tangri" },
       { name: "Kree Govender" },
       { name: "Hiten Makim" },
-      { name: "Claire Barnette" },
+      { name: "TBD" },
     ],
-    moderator: { name: "Dominic Miserandino" },
+    moderator: { name: "TBD" },
   },
   {
     id: "d1-24", day: 1, time: "17:25", endTime: "18:25",

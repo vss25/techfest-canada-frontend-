@@ -73,7 +73,7 @@ export const SESSIONS = [
     type: "Keynote", format: "keynote", featured: true,
     // Internal notes: 10 Mins Keynote + 15 Minutes Fireside + 5 Mins Q&A
     speakers: [{ name: "Vic Fedelli" }, { name: "Dennis Darby" }],
-    moderator: { name: "Dominic Miserandino" },
+    moderator: { name: "TBD" },
   },
   {
     id: "d1-05", day: 1, time: "10:05", endTime: "10:10",
@@ -127,7 +127,7 @@ export const SESSIONS = [
       { name: "Naresh Gunupuru" },
     ],
     // Sheet lists moderator only as "SV" — not a full name, treated as unconfirmed.
-    moderator: { name: "TBD" },
+    moderator: { name: "Subramanian Viswanathan" },
   },
   {
     id: "d1-12", day: 1, time: "12:30", endTime: "12:40",

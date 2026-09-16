@@ -12,8 +12,31 @@
 // placeholders: ["Hospital CMO", ...]         — unfilled slots from the
 //               planning sheet; rendered as "To be confirmed", never linked
 //
-// Rebuilt from Final_Agenda_W_Speakers_v11.xlsx, "Final Day1" and
-// "Final Day 2" tabs (most current version in the workbook).
+// Rebuilt from Final_Agenda_W_Speakers_v13.xlsx, "Final Day1" and
+// "Final Day 2" tabs (most current version in the workbook — the
+// "Day 1" / "Day 2" tabs are earlier drafts and were not used).
+//
+// Changes vs. the previous build (v11):
+//  - Day 1 opening shifted 5 min earlier (08:55 start); the old
+//    unstaffed "Opening Ceremony" slot is now "Country Partner
+//    Opening Keynote" with Mahaveer Singhvi + Kapidhwaja Pratap Singh.
+//  - "Canada's Tech Decade" keynote still has no confirmed speaker
+//    (moderator only) — Notes 18/08 still says "Lubna follow up".
+//  - "Allied by Design" and "Drones, Robotics & Remote Ops" lost
+//    their TBD slots; "Cybersecurity..." and "Robotics..." gained a
+//    4th named speaker; "Jobs, Skills, AI..." dropped Mariano Allegra.
+//  - "The Toronto Declaration on Technology, Trust and Competitiveness"
+//    and "Beyond the Vehicle" (mobility panel) do not appear in the
+//    Final Day 2 tab and have been removed.
+//  - New Day 2 slot at 13:00–13:30 ("TBD", Climate x Financial
+//    Services, speaker Akash Rastogi) has no confirmed title yet.
+//  - Several previously-TBD Day 2 seats are now filled: "Can Canada
+//    Regulate Its Way to Better Finance?" (David Merriby, Tania
+//    Narciso, Brigette, mod. April Fong) and "Capital Lifecycle"
+//    (added Meliena).
+//  - Gala Dinner's start time is missing/garbled in the sheet; kept
+//    at 17:20–19:15 (immediately after the prior session) pending
+//    confirmation.
 // ─────────────────────────────────────────────────────────────────
 
 export const DAYS = {
@@ -24,106 +47,106 @@ export const DAYS = {
 export const SESSIONS = [
   /* ══════════════════ DAY 1 — 26 Oct 2026 ══════════════════ */
   {
-    id: "d1-01", day: 1, time: "09:00", endTime: "09:05",
+    id: "d1-01", day: 1, time: "08:55", endTime: "09:00",
     title: "Opening Remarks + Land Acknowledgement",
     type: "Opening Remarks", format: "opening", featured: true,
     speakers: [{ name: "Baldeep Singh Pahwa" }, { name: "Lubna Soni" }],
   },
   {
-    id: "d1-02", day: 1, time: "09:05", endTime: "09:15",
-    title: "Opening Ceremony",
+    id: "d1-02", day: 1, time: "09:00", endTime: "09:15",
+    title: "Country Partner Opening Keynote",
     type: "Opening Ceremony", format: "opening", featured: true,
-    // No line-up listed on the Final Day1 sheet.
-    speakers: [],
+    speakers: [{ name: "Mahaveer Singhvi" }, { name: "Kapidhwaja Pratap Singh" }],
   },
   {
-    id: "d1-03", day: 1, time: "09:15", endTime: "09:40",
+    id: "d1-03", day: 1, time: "09:15", endTime: "09:35",
     title: "Canada's Tech Decade: Build | Secure | Scale",
     type: "Keynote", format: "keynote", featured: true,
     // Internal notes: 10 Mins Keynote + 30 Minutes Fireside + 5 Mins Q&A
-    // Notes 18/08: Lubna follow up on speaker.
-    speakers: [{ name: "TBD" }],
+    // Notes 18/08: Lubna follow up on speaker — still unconfirmed.
+    speakers: [],
     moderator: { name: "Baldeep Singh Pahwa" },
   },
   {
-    id: "d1-04", day: 1, time: "09:40", endTime: "10:10",
+    id: "d1-04", day: 1, time: "09:35", endTime: "10:05",
     title: "From Investment to Industrial Capacity: Canada's Next Ten Years",
-    type: "Fireside Chat", format: "Fireside Chat", featured: true,
+    type: "Keynote", format: "keynote", featured: true,
     // Internal notes: 10 Mins Keynote + 15 Minutes Fireside + 5 Mins Q&A
-    speakers: [{ name: "Vic Fedelli" }, { name: "Dennis A. Darby"}], 
-    moderator: { name: "Baldeep Singh Pahwa" },
+    speakers: [{ name: "Vic Fedelli" }, { name: "Dennis Darby" }],
+    moderator: { name: "Dominic Miserandino" },
   },
   {
-    id: "d1-05", day: 1, time: "10:10", endTime: "10:15",
+    id: "d1-05", day: 1, time: "10:05", endTime: "10:10",
     title: "Light Years: A Decade of Building Quantum in Canada",
     type: "Keynote", format: "keynote", pillar: "quantum",
     speakers: [{ name: "Dr. Christian Weedbrook" }],
   },
   {
-    id: "d1-06", day: 1, time: "10:15", endTime: "10:40",
+    id: "d1-06", day: 1, time: "10:10", endTime: "10:35",
     title: "Conviction Before Consensus: A Bet on Canadian Deep Tech",
     type: "Fireside Chat", format: "fireside", pillar: "quantum",
-    // Notes 18/08: follow up on Photonic's participation.
+    // Notes 18/08: follow-up on Photonic's participation still open.
     speakers: [{ name: "Dr. Christian Weedbrook" }],
     moderator: { name: "Shawn Abbott" },
   },
   {
-    id: "d1-07", day: 1, time: "10:40", endTime: "10:50",
+    id: "d1-07", day: 1, time: "10:35", endTime: "10:45",
     title: "AM Break", type: "Break", format: "break", isBreak: true,
   },
   {
-    id: "d1-08", day: 1, time: "10:50", endTime: "11:20",
+    id: "d1-08", day: 1, time: "10:45", endTime: "11:15",
     title: "Canada in the New Global Order",
     type: "Fireside Chat", format: "fireside", featured: true,
     // Internal notes: is Stephen Crawford fit for this panel? Move
-    // Christy Clark to Day 2 to avoid a second night of accommodation.
+    // Christy Clark to Day 2 to avoid a second night of accommodation
+    // — not actioned yet, she's still listed here.
     speakers: [{ name: "Stephen Crawford" }, { name: "Christy Clark" }],
     moderator: { name: "Dominic Miserandino" },
   },
   {
-    id: "d1-09", day: 1, time: "11:20", endTime: "11:40",
+    id: "d1-09", day: 1, time: "11:15", endTime: "11:35",
     title: "The Quantum Advantage: Separating Signal from Hype",
     type: "Fireside Chat", format: "fireside", pillar: "quantum",
     speakers: [{ name: "Prof. Aspuru-Guzik" }],
     moderator: { name: "David Succu" },
   },
   {
-    id: "d1-10", day: 1, time: "11:40", endTime: "12:10",
+    id: "d1-10", day: 1, time: "11:35", endTime: "12:00",
     title: "Reinventing the Intelligent Financial Institutions",
     type: "Fireside Chat", format: "fireside", sector: "fintech",
     speakers: [{ name: "Shereen Benzvy Miller" }],
     moderator: { name: "Baldeep Singh Pahwa" },
   },
   {
-    id: "d1-11", day: 1, time: "12:10", endTime: "12:40",
+    id: "d1-11", day: 1, time: "12:00", endTime: "12:30",
     title: "From Co-Pilots to Core Banking",
     type: "Panel Session", format: "panel", pillar: "ai", sector: "fintech",
     speakers: [
       { name: "Joe Greenwood" },
       { name: "Fatemah Pirone" },
       { name: "Naresh Gunupuru" },
-      { name: "TBD" },
     ],
+    // Sheet lists moderator only as "SV" — not a full name, treated as unconfirmed.
     moderator: { name: "TBD" },
   },
   {
-    id: "d1-12", day: 1, time: "12:40", endTime: "12:50",
+    id: "d1-12", day: 1, time: "12:30", endTime: "12:40",
     title: "The Upskilling Gap: What It Actually Takes to Put AI to Work",
     type: "Keynote", format: "keynote", pillar: "ai",
     speakers: [{ name: "Queena Cheung" }],
   },
   {
-    id: "d1-13", day: 1, time: "12:50", endTime: "13:35",
+    id: "d1-13", day: 1, time: "12:40", endTime: "13:25",
     title: "Networking Lunch", type: "Lunch Break", format: "networking", isBreak: true,
   },
   {
-    id: "d1-14", day: 1, time: "13:35", endTime: "13:45",
+    id: "d1-14", day: 1, time: "13:25", endTime: "13:35",
     title: "No Single Vendor Wins: A Boardroom Guide to Enterprise AI Architecture",
     type: "Keynote", format: "keynote", pillar: "ai",
     speakers: [{ name: "Thiru Venkatachalam" }],
   },
   {
-    id: "d1-15", day: 1, time: "13:45", endTime: "14:05",
+    id: "d1-15", day: 1, time: "13:35", endTime: "14:05",
     title: "When Software Starts Talking to Software: MCP, Agents and the Next Wave of Enterprise Automation",
     type: "Panel Session", format: "panel", pillar: "ai",
     speakers: [
@@ -141,7 +164,6 @@ export const SESSIONS = [
       { name: "Brigadier General Kyle Paul" },
       { name: "Nancy Morgan" },
       { name: "Daniel Sax" },
-      { name: "TBD" },
     ],
     moderator: { name: "Dr. Chris Golden" },
   },
@@ -149,7 +171,12 @@ export const SESSIONS = [
     id: "d1-17", day: 1, time: "14:35", endTime: "15:05",
     title: "Cybersecurity and Digital Trust in the Agentic Age",
     type: "Panel Session", format: "panel", pillar: "cybersecurity",
-    speakers: [{ name: "Francois Guay" }, { name: "Samrah Kazmi" }, { name: "Vance Lockton" }],
+    speakers: [
+      { name: "Francois Guay" },
+      { name: "Samrah Kazmi" },
+      { name: "Vance Lockton" },
+      { name: "Neal (Boxx Insurance)" },
+    ],
     moderator: { name: "Brennan Lodge" },
   },
   {
@@ -160,7 +187,7 @@ export const SESSIONS = [
       { name: "Ryan Gariepy" },
       { name: "Kulbir (Colin) Singh Dhillon" },
       { name: "Todd Deaville" },
-      { name: "Laila Burns" },
+      { name: "Vince Cifani" },
     ],
     moderator: { name: "Alireza Saboukhi" },
   },
@@ -169,51 +196,50 @@ export const SESSIONS = [
     title: "PM Tea Break", type: "Break", format: "break", isBreak: true,
   },
   {
-    id: "d1-20", day: 1, time: "15:45", endTime: "16:05",
+    id: "d1-20", day: 1, time: "15:45", endTime: "16:15",
     title: "Drones, Robotics & Remote Ops",
     type: "Fireside Chat", format: "fireside", pillar: "climate",
     speakers: [
       { name: "Geneviève Decambra" },
-      { name: "TBD" },
       { name: "James Castle" },
     ],
-    moderator: { name: "TBD" },
+    moderator: { name: "Simba Wakatama" },
   },
   {
-    id: "d1-21", day: 1, time: "16:05", endTime: "16:35",
+    id: "d1-21", day: 1, time: "16:15", endTime: "16:40",
     title: "Transition Finance, Carbon Credits and Bankability",
     type: "Fireside Chat", format: "fireside", pillar: "climate", sector: "fintech",
     speakers: [{ name: "Na'im Merchant" }, { name: "Brian Hong" }],
     moderator: { name: "David Hochhalter" },
   },
   {
-    id: "d1-22", day: 1, time: "16:35", endTime: "17:05",
+    id: "d1-22", day: 1, time: "16:40", endTime: "17:00",
     title: "Jobs, Skills, AI and the Human Contract",
     type: "Fireside Chat", format: "fireside", pillar: "ai", featured: true,
     speakers: [
       { name: "Maha Aziz" },
-      { name: "Mariano Allegra" },
       { name: "Alyssa Daku" },
     ],
     moderator: { name: "John Wilder" },
   },
   {
-    id: "d1-23", day: 1, time: "17:05", endTime: "17:30",
+    id: "d1-23", day: 1, time: "17:00", endTime: "17:25",
     title: "Build in Canada, Scale to the World: an SMB Way",
     type: "Panel Session", format: "panel", featured: true,
     speakers: [
       { name: "Hon. Nina Tangri" },
       { name: "Kree Govender" },
-      { name: "TBD" },
+      { name: "Hiten Makim" },
+      { name: "Claire Barnette" },
     ],
     moderator: { name: "Dominic Miserandino" },
   },
   {
-    id: "d1-24", day: 1, time: "17:30", endTime: "18:30",
+    id: "d1-24", day: 1, time: "17:25", endTime: "18:25",
     title: "Awards Evening", type: "Awards", format: "awards", isBreak: true, featured: true,
   },
   {
-    id: "d1-25", day: 1, time: "18:30", endTime: "19:30",
+    id: "d1-25", day: 1, time: "18:25", endTime: "19:25",
     title: "Private Dinner with Resonance",
     type: "Private Dinner", format: "networking", isBreak: true,
   },
@@ -228,17 +254,18 @@ export const SESSIONS = [
     id: "d2-02", day: 2, time: "09:05", endTime: "09:25",
     title: "Canada's Frontier: Building the Next Decade of Innovation",
     type: "Fireside", format: "fireside", pillar: "quantum", featured: true,
+    // Notes: pre-panel doc awaited.
     speakers: [{ name: "Hon. Mark Schaan" }],
-    moderator: { name: "Dominic Miserandino" },
+    moderator: { name: "Baldeep Singh Pahwa" },
   },
   {
-    id: "d2-03", day: 2, time: "09:25", endTime: "09:45",
+    id: "d2-03", day: 2, time: "09:25", endTime: "09:35",
     title: "Japan's Quantum Playbook: From National Strategy to Industrial Capability",
     type: "Keynote / Presentation", format: "keynote", pillar: "quantum",
     speakers: [{ name: "Masahiro Horibe" }],
   },
   {
-    id: "d2-04", day: 2, time: "09:45", endTime: "10:15",
+    id: "d2-04", day: 2, time: "09:35", endTime: "10:05",
     title: "Quantum as Strategic Infrastructure: Can Canada Win the Compute Race?",
     type: "Panel Session", format: "panel", pillar: "quantum", featured: true,
     speakers: [
@@ -250,7 +277,7 @@ export const SESSIONS = [
     moderator: { name: "Rajesh Patil" },
   },
   {
-    id: "d2-05", day: 2, time: "10:15", endTime: "10:45",
+    id: "d2-05", day: 2, time: "10:05", endTime: "10:35",
     title: "Risk Pricing and the Hype Gap",
     type: "Panel Session", format: "panel", pillar: "quantum", sector: "fintech",
     speakers: [
@@ -261,23 +288,23 @@ export const SESSIONS = [
     moderator: { name: "Louise Davey" },
   },
   {
-    id: "d2-06", day: 2, time: "10:45", endTime: "10:55",
+    id: "d2-06", day: 2, time: "10:35", endTime: "10:45",
     title: "AM Tea Break", type: "Break", format: "break", isBreak: true,
   },
   {
-    id: "d2-07", day: 2, time: "10:55", endTime: "11:25",
+    id: "d2-07", day: 2, time: "10:45", endTime: "11:05",
     title: "Artificial Intelligence Beyond the Pilot Phase",
     type: "Keynote", format: "keynote", pillar: "ai",
     speakers: [{ name: "Daniel Wigdor" }],
   },
   {
-    id: "d2-08", day: 2, time: "11:25", endTime: "11:45",
+    id: "d2-08", day: 2, time: "11:05", endTime: "11:25",
     title: "Who Owns AI Governance?",
     type: "Keynote", format: "keynote", pillar: "ai",
     speakers: [{ name: "Ashley Casovan" }],
   },
   {
-    id: "d2-09", day: 2, time: "11:45", endTime: "12:15",
+    id: "d2-09", day: 2, time: "11:25", endTime: "11:55",
     title: "AI in Financial Services: From Main Street Lending to Wall Street Trading",
     type: "Panel Session", format: "panel", pillar: "ai", sector: "fintech",
     speakers: [
@@ -285,63 +312,69 @@ export const SESSIONS = [
       { name: "Hashem Aboulhosn" },
       { name: "Peyman Pardis" },
     ],
-    moderator: { name: "Stephanie", org: "Globe and Mail" },
+    // Sheet lists moderator only as "The Logic" (the outlet, not a named person).
+    moderator: { name: "TBD", org: "The Logic" },
   },
   {
-    id: "d2-10", day: 2, time: "12:15", endTime: "12:35",
+    id: "d2-10", day: 2, time: "11:55", endTime: "12:15",
     title: "Patch Work: A Practitioner's View on Closing the Supply-Chain Security Gap",
     type: "Fireside", format: "fireside", sector: "fintech",
     speakers: [{ name: "Mark Paulsen" }],
     moderator: { name: "Paul Goldman" },
   },
   {
-    id: "d2-11", day: 2, time: "12:35", endTime: "13:20",
+    id: "d2-11", day: 2, time: "12:15", endTime: "13:00",
     title: "Lunch", type: "Lunch Break", format: "networking", isBreak: true,
   },
   {
-    id: "d2-12", day: 2, time: "13:20", endTime: "13:35",
-    title: "Powering Canada's Digital and Industrial Future: Grid Intelligence, Asset Optimization and Resilience",
-    type: "Keynote", format: "keynote", sector: "energy",
-    speakers: [{ name: "Delphine Adenot" }],
+    id: "d2-12", day: 2, time: "13:00", endTime: "13:30",
+    // Title not yet finalized on the planning sheet.
+    title: "TBD",
+    type: "Fireside", format: "fireside", pillar: "climate", sector: "fintech",
+    speakers: [{ name: "Akash Rastogi" }],
   },
   {
-    id: "d2-13", day: 2, time: "13:35", endTime: "14:05",
+    id: "d2-13", day: 2, time: "13:30", endTime: "14:00",
     title: "The Regulator's View on Enterprise AI in Canadian Finance",
     type: "Fireside", format: "fireside", pillar: "ai", sector: "fintech",
     speakers: [{ name: "Peter Routledge" }],
-    moderator: { name: "April Fong", org: "Globe and Mail" },
+    moderator: { name: "April Fong" },
   },
   {
-    id: "d2-14", day: 2, time: "14:05", endTime: "14:35",
+    id: "d2-14", day: 2, time: "14:00", endTime: "14:30",
     title: "Can Canada Regulate Its Way to Better Finance?",
     type: "Panel Session", format: "panel", sector: "fintech",
-    speakers: [{ name: "TBD" }, { name: "TBD" }],
-    moderator: { name: "TBD", org: "TBD" },
+    speakers: [
+      { name: "David Merriby" },
+      { name: "Tania Narciso" },
+      { name: "Brigette" },
+    ],
+    moderator: { name: "April Fong" },
   },
   {
-    id: "d2-15", day: 2, time: "14:35", endTime: "15:20",
+    id: "d2-15", day: 2, time: "14:30", endTime: "15:15",
     title: "Clinical AI That Actually Scales",
     type: "Panel Session", format: "panel", pillar: "ai", sector: "healthcare",
     speakers: [
       { name: "Namita Seth Mohta" },
       { name: "Julia Jezmir" },
-      { name: "Amy Flood" },
+      { name: "Farah (SE Health)" },
       { name: "Amina Alavi" },
     ],
     moderator: { name: "Laura Cooley" },
   },
   {
-    id: "d2-16", day: 2, time: "15:20", endTime: "15:40",
+    id: "d2-16", day: 2, time: "15:15", endTime: "15:35",
     title: "We Can't Treat What We Can't Find: Closing the Detection Gap in Healthcare",
     type: "Keynote", format: "keynote", sector: "healthcare",
     speakers: [{ name: "Mark Attila Opauszky" }],
   },
   {
-    id: "d2-17", day: 2, time: "15:40", endTime: "16:00",
+    id: "d2-17", day: 2, time: "15:35", endTime: "15:55",
     title: "Tea Break", type: "Break", format: "break", isBreak: true,
   },
   {
-    id: "d2-18", day: 2, time: "16:00", endTime: "16:35",
+    id: "d2-18", day: 2, time: "15:55", endTime: "16:30",
     title: "Closing the Women's Health Gap: Innovation, Investment and the Blueprint for Action",
     type: "Panel Session", format: "panel", sector: "healthcare",
     speakers: [
@@ -352,38 +385,27 @@ export const SESSIONS = [
     moderator: { name: "Amy Flood" },
   },
   {
-    id: "d2-19", day: 2, time: "16:35", endTime: "17:05",
+    id: "d2-19", day: 2, time: "16:30", endTime: "17:00",
     title: "Capital Lifecycle: Raise | Scale | Exit",
     type: "Panel Session", format: "panel", sector: "startups",
     speakers: [
       { name: "Kevin Jia" },
       { name: "Argentina Beltran" },
       { name: "Jasmin Ganie-Hobbs" },
-      { name: "TBD" },
+      { name: "Meliena" },
     ],
     moderator: { name: "Peter Aceto" },
   },
   {
-    id: "d2-20", day: 2, time: "17:05", endTime: "17:20",
-    title: "Beyond the Vehicle: Building the Connected, Intelligent, and Sustainable Mobility Systems of Tomorrow",
-    type: "Panel Session", format: "panel", sector: "manufacturing",
-    speakers: [{ name: "TBD" }, { name: "Vince Cifani" }],
-    moderator: { name: "TBD" },
+    id: "d2-20", day: 2, time: "17:00", endTime: "17:20",
+    title: "Powering Canada's Digital and Industrial Future: Grid Intelligence, Asset Optimization and Resilience",
+    type: "Keynote", format: "keynote", sector: "energy",
+    speakers: [{ name: "Delphine Adenot" }],
   },
   {
-    id: "d2-21", day: 2, time: "17:20", endTime: "17:45",
-    title: "The Toronto Declaration on Technology, Trust and Competitiveness",
-    type: "Panel Session", format: "panel", featured: true,
-    speakers: [
-      { name: "Kapidhwaja Singh" },
-      { name: "TBD" },
-      { name: "TBD" },
-      { name: "Marc Pepin" },
-    ],
-    moderator: { name: "Jack Greco" },
-  },
-  {
-    id: "d2-22", day: 2, time: "17:45", endTime: "19:15",
+    id: "d2-21", day: 2, time: "17:20", endTime: "19:15",
+    // Sheet's start time is missing/garbled for this row; kept
+    // immediately after the prior session pending confirmation.
     title: "Gala Dinner", type: "Gala", format: "awards", isBreak: true, featured: true,
   },
 ];

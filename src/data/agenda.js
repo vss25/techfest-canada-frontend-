@@ -347,7 +347,7 @@ export const SESSIONS = [
     speakers: [
       { name: "David Merriby" },
       { name: "Tania Narciso" },
-      { name: "Brigette" },
+      { name: "Brigitte Goulard" },
     ],
     moderator: { name: "April Fong" },
   },

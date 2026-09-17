@@ -112,7 +112,7 @@ export const SESSIONS = [
   },
   {
     id: "d1-10", day: 1, time: "11:35", endTime: "12:00",
-    title: "Reinventing the Intelligent Financial Institutions",
+    title: "Fireside Chat with Commissioner Shereen Benzvy Miller of the Financial Consumer Agency of Canada",
     type: "Fireside Chat", format: "fireside", sector: "fintech",
     speakers: [{ name: "Shereen Benzvy Miller" }],
     moderator: { name: "Baldeep Singh Pahwa" },

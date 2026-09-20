@@ -392,7 +392,7 @@ export const SESSIONS = [
       { name: "Kevin Jia" },
       { name: "Argentina Beltran" },
       { name: "Jasmin Ganie-Hobbs" },
-      { name: "Meliena" },
+      { name: "Milena Stoycheva" },
     ],
     moderator: { name: "Peter Aceto" },
   },

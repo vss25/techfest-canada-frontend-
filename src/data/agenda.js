@@ -238,11 +238,7 @@ export const SESSIONS = [
     id: "d1-24", day: 1, time: "17:25", endTime: "18:25",
     title: "Awards Evening", type: "Awards", format: "awards", isBreak: true, featured: true,
   },
-  {
-    id: "d1-25", day: 1, time: "18:25", endTime: "19:25",
-    title: "Private Dinner with Resonance",
-    type: "Private Dinner", format: "networking", isBreak: true,
-  },
+  
 
   /* ══════════════════ DAY 2 — 27 Oct 2026 ══════════════════ */
   {

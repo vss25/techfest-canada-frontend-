@@ -32,6 +32,7 @@ import Volunteer from "./pages/Volunteer";
 import Partners2026 from "./pages/partners2026";
 import Organizers from "./pages/Organizers";
 import LinkedinLanding from "./pages/Linkedin";
+import Media from "./pages/Media";
 
 /* ================= SYSTEM THEME DETECTOR ================= */
 function applySystemTheme() {
@@ -98,6 +99,7 @@ function App() {
         <Route path="/partners2026" element={<Partners2026 />} />
         <Route path="/organizers" element={<Organizers />} />
         <Route path="/linkedin" element={<LinkedinLanding />} />
+        <Route path="/media" element={<Media />} />
       </Routes>
       <TicketBar />
     </BrowserRouter>

@@ -6,7 +6,7 @@ import { API } from "../utils/api";
 /* ============================================================
    MEDIA ACCREDITATION
    Route: /media
-   Posts to: POST {API}/media/apply  →  emails sales@thetechfestival.com
+   Posts to: POST {API}/media/apply  →  emails the marcom inbox
    ============================================================ */
 
 const COVERAGE_AREAS = [
@@ -145,7 +145,7 @@ export default function Media() {
       setDone(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      setServerError(err.message || "Something went wrong. Please email sales@thetechfestival.com directly.");
+      setServerError(err.message || "Something went wrong. Please email marcom@thetechfestival.com directly.");
     } finally {
       setSubmitting(false);
     }
@@ -220,7 +220,7 @@ export default function Media() {
           </p>
           <p style={{ fontSize: "0.88rem", color: textDim, lineHeight: 1.7, margin: 0 }}>
             We review requests on a rolling basis and reply to <strong style={{ color: accent }}>{form.email}</strong>. For anything urgent, write to{" "}
-            <a href="mailto:sales@thetechfestival.com" style={{ color: accent, fontWeight: 700 }}>sales@thetechfestival.com</a>.
+            <a href="mailto:marcom@thetechfestival.com" style={{ color: accent, fontWeight: 700 }}>marcom@thetechfestival.com</a>.
           </p>
         </div>
         <Footer />
@@ -378,7 +378,7 @@ export default function Media() {
 
           <p style={{ fontSize: "0.7rem", color: textDim, lineHeight: 1.6, textAlign: "center", margin: "16px 0 0" }}>
             Goes straight to our press team at{" "}
-            <a href="mailto:sales@thetechfestival.com" style={{ color: accent, fontWeight: 700, textDecoration: "none" }}>sales@thetechfestival.com</a>.
+            <a href="mailto:marcom@thetechfestival.com" style={{ color: accent, fontWeight: 700, textDecoration: "none" }}>marcom@thetechfestival.com</a>.
           </p>
         </div>
       </div>

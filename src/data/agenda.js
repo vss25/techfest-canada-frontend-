@@ -323,13 +323,6 @@ export const SESSIONS = [
     title: "Lunch", type: "Lunch Break", format: "networking", isBreak: true,
   },
   {
-    id: "d2-12", day: 2, time: "13:00", endTime: "13:30",
-    // Title not yet finalized on the planning sheet.
-    title: "TBD",
-    type: "Fireside", format: "fireside", pillar: "climate", sector: "fintech",
-    speakers: [{ name: "Akash Rastogi" }],
-  },
-  {
     id: "d2-13", day: 2, time: "13:30", endTime: "14:00",
     title: "The Regulator's View on Enterprise AI in Canadian Finance",
     type: "Fireside", format: "fireside", pillar: "ai", sector: "fintech",

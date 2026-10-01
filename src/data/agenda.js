@@ -100,7 +100,7 @@ export const SESSIONS = [
     // Internal notes: is Stephen Crawford fit for this panel? Move
     // Christy Clark to Day 2
     // — not actioned yet, she's still listed here.
-    speakers: [{ name: "Stephen Crawford" }, { name: "Christy Clark" }],
+    speakers: [{ name: "Stephen Crawford" }],
     moderator: { name: "Dominic Miserandino" },
   },
   {

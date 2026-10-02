@@ -193,6 +193,46 @@ const PASS_META = {
   },
 };
 
+/* ============================================================
+   META PIXEL — Purchase event
+   Fires only from the Stripe success return, never on page load.
+   ============================================================ */
+const PENDING_ORDER_KEY = "ttfc_pending_order";
+
+function trackMetaPurchase(params) {
+  let order = null;
+  try { order = JSON.parse(sessionStorage.getItem(PENDING_ORDER_KEY) || "null"); } catch (e) {}
+
+  // Prefer values from the Stripe success_url if your backend adds them, else fall back to what we saved before checkout
+  const tier = params.get("tier") || order?.tier;
+  const urlValue = parseFloat(params.get("value"));
+  const orderTotal = Number.isFinite(urlValue) ? urlValue : order?.total;
+
+  if (!tier || !Number.isFinite(orderTotal)) {
+    console.warn("Meta Purchase not tracked: missing tier or value");
+    return;
+  }
+  if (typeof window.fbq !== "function") return;
+
+  window.fbq(
+    "track",
+    "Purchase",
+    {
+      value: orderTotal,
+      currency: "CAD",
+      content_type: "product",
+      content_ids: [tier],
+      content_name: PASS_META[tier]?.label,
+      num_items: 1,
+      contents: [{ id: tier, quantity: 1 }],
+    },
+    // eventID lets Meta de-duplicate if you later add the Conversions API
+    { eventID: params.get("session_id") || order?.orderId || `ttfc_${Date.now()}` }
+  );
+
+  try { sessionStorage.removeItem(PENDING_ORDER_KEY); } catch (e) {}
+}
+
 function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded }) {
   const [hovered, setHovered] = useState(false);
 
@@ -307,15 +347,37 @@ export default function Tickets() {
 
   useEffect(() => { setDark(document.body.classList.contains("dark-mode")); const obs = new MutationObserver(() => setDark(document.body.classList.contains("dark-mode"))); obs.observe(document.body, { attributes:true, attributeFilter:["class"] }); return () => obs.disconnect(); }, []);
 
-  useEffect(() => { const params = new URLSearchParams(window.location.search); if (params.get("success") === "true") { setShowSuccessModal(true); window.history.replaceState(null, "", window.location.pathname); } }, []);
+  // Stripe success return: show the modal AND fire the Meta Purchase event (once).
+  // The URL is cleaned immediately after, so a refresh won't re-fire the event.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("success") !== "true") return;
+
+    setShowSuccessModal(true);
+    trackMetaPurchase(params);
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   useEffect(() => { const load = async () => { try { const res = await fetch(API+"/admin/inventory/public"); const data = await res.json(); setInventory(Array.isArray(data)?data:[]); } catch(err) { console.error("Inventory fetch failed", err); } finally { setInventoryLoaded(true); } }; load(); }, []);
 
   const getTier = (tier) => inventory.find((i) => i.tier === tier) || null;
 
-  // Navigate to full-page checkout (no more modal!)
+  // Save the chosen tier + total (so we can report it after Stripe redirects back),
+  // then navigate to the full-page checkout.
   const handlePurchase = (tier) => {
     if (PASS_META[tier]?.soldOut) return;   // belt-and-braces: never route a sold-out tier
+
+    const item = getTier(tier);
+    const price = item?.price ?? PASS_META[tier].defaultPrice;
+    try {
+      sessionStorage.setItem(PENDING_ORDER_KEY, JSON.stringify({
+        tier,
+        price,                                         // pre-tax
+        total: Math.round(price * 1.13 * 100) / 100,   // incl. 13% HST, what Stripe charges
+        orderId: `${tier}_${Date.now()}`,
+      }));
+    } catch (e) {}
+
     navigate(`/tickets/checkout?tier=${tier}`);
   };
 

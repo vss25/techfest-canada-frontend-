@@ -6,7 +6,7 @@
 // disagree about who is speaking where.
 //
 // Times are 24-hour "HH:MM". Duration is computed from time/endTime,
-// never stored, so the two can't drift apart.
+// never stored, so the two can't drift apart ok.
 //
 // speakers:     [{ name, org?, tentative? }]  — real people
 // placeholders: ["Hospital CMO", ...]         — unfilled slots from the

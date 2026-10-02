@@ -369,7 +369,7 @@ export const SESSIONS = [
     speakers: [
       { name: "Jo-Anne Ryan" },
       { name: "Dr. Rulan S. Parekh" },
-      { name: "Shelley Peterson" }
+      { name: "Shelley Peterson" },
       { name: "Rachel Bartholomew" },
     ],
     moderator: { name: "Amy Flood" },

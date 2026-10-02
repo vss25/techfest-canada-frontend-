@@ -73,7 +73,7 @@ export const SESSIONS = [
     type: "Keynote", format: "keynote", featured: true,
     // Internal notes: 10 Mins Keynote + 15 Minutes Fireside + 5 Mins Q&A
     speakers: [{ name: "Vic Fedelli" }, { name: "Dennis Darby" }],
-    moderator: { name: "TBD" },
+    moderator: { name: "Dominick Miserandino" },
   },
   {
     id: "d1-05", day: 1, time: "10:05", endTime: "10:10",
@@ -124,7 +124,7 @@ export const SESSIONS = [
     speakers: [
       { name: "Joe Greenwood" },
       { name: "Fatemah Pirone" },
-      { name: "Naresh Gunupuru" },
+      { name: "Peyman Pardis" },
     ],
     // Sheet lists moderator only as "SV" — not a full name, treated as unconfirmed.
     moderator: { name: "Subramanian Viswanathan" },
@@ -161,7 +161,6 @@ export const SESSIONS = [
     title: "Allied by Design: Securing the Technologies That Hold the Alliance Together",
     type: "Panel Session", format: "panel", sector: "public",
     speakers: [
-      { name: "Brigadier General Kyle Paul" },
       { name: "Nancy Morgan" },
       { name: "Daniel Sax" },
     ],
@@ -187,7 +186,7 @@ export const SESSIONS = [
       { name: "Ryan Gariepy" },
       { name: "Kulbir (Colin) Singh Dhillon" },
       { name: "Todd Deaville" },
-      { name: "Vince Cifani" },
+      { name: "Laila Burns" },
     ],
     moderator: { name: "Alireza Saboukhi" },
   },
@@ -209,7 +208,7 @@ export const SESSIONS = [
     id: "d1-21", day: 1, time: "16:15", endTime: "16:40",
     title: "Transition Finance, Carbon Credits and Bankability",
     type: "Fireside Chat", format: "fireside", pillar: "climate", sector: "fintech",
-    speakers: [{ name: "Na'im Merchant" }, { name: "Brian Hong" }],
+    speakers: [{ name: "Na'im Merchant" }, { name: "Heather Crochetiere" } { name: "Brian Hong" }],
     moderator: { name: "David Hochhalter" },
   },
   {
@@ -230,7 +229,7 @@ export const SESSIONS = [
       { name: "Hon. Nina Tangri" },
       { name: "Kree Govender" },
       { name: "Hiten Makim" },
-      { name: "TBD" },
+      { name: "Vince Cifani" },
     ],
     moderator: { name: "TBD" },
   },
@@ -262,7 +261,7 @@ export const SESSIONS = [
   },
   {
     id: "d2-04", day: 2, time: "09:35", endTime: "10:05",
-    title: "Quantum as Strategic Infrastructure: Can Canada Win the Compute Race?",
+    title: "Quantum as Strategic Infrastructure: Where Canada Can Actually Lead?",
     type: "Panel Session", format: "panel", pillar: "quantum", featured: true,
     speakers: [
       { name: "Greg Dick" },
@@ -279,6 +278,7 @@ export const SESSIONS = [
     speakers: [
       { name: "Chetan Patel" },
       { name: "David Succu" },
+      { name: "Noelle Ibrahim" },
       { name: "Heling (Alex) Pu" },
     ],
     moderator: { name: "Louise Davey" },
@@ -305,11 +305,11 @@ export const SESSIONS = [
     type: "Panel Session", format: "panel", pillar: "ai", sector: "fintech",
     speakers: [
       { name: "Sankar Krishnan" },
-      { name: "Hashem Aboulhosn" },
+      { name: "Gagan Bhatia" },
       { name: "Peyman Pardis" },
     ],
     // Sheet lists moderator only as "The Logic" (the outlet, not a named person).
-    moderator: { name: "TBD", org: "The Logic" },
+    moderator: { name: "Ismail Laci", org: "Deloitte" },
   },
   {
     id: "d2-10", day: 2, time: "11:55", endTime: "12:15",
@@ -347,7 +347,7 @@ export const SESSIONS = [
     speakers: [
       { name: "Namita Seth Mohta" },
       { name: "Julia Jezmir" },
-      { name: "Farah (SE Health)" },
+      { name: "Farah Ismail" },
       { name: "Amina Alavi" },
     ],
     moderator: { name: "Laura Cooley" },
@@ -369,6 +369,7 @@ export const SESSIONS = [
     speakers: [
       { name: "Jo-Anne Ryan" },
       { name: "Dr. Rulan S. Parekh" },
+      { name: "Shelley Peterson" }
       { name: "Rachel Bartholomew" },
     ],
     moderator: { name: "Amy Flood" },

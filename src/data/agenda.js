@@ -208,7 +208,7 @@ export const SESSIONS = [
     id: "d1-21", day: 1, time: "16:15", endTime: "16:40",
     title: "Transition Finance, Carbon Credits and Bankability",
     type: "Fireside Chat", format: "fireside", pillar: "climate", sector: "fintech",
-    speakers: [{ name: "Na'im Merchant" }, { name: "Heather Crochetiere" } { name: "Brian Hong" }],
+    speakers: [{ name: "Na'im Merchant" }, { name: "Heather Crochetiere" }, { name: "Brian Hong" }],
     moderator: { name: "David Hochhalter" },
   },
   {

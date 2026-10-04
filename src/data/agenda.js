@@ -47,25 +47,27 @@ export const DAYS = {
 export const SESSIONS = [
   /* ══════════════════ DAY 1 — 26 Oct 2026 ══════════════════ */
   {
-    id: "d1-01", day: 1, time: "08:55", endTime: "09:00",
+    id: "d1-01", day: 1, time: "09:00", endTime: "09:15",
     title: "Opening Remarks + Land Acknowledgement",
     type: "Opening Remarks", format: "opening", featured: true,
     speakers: [{ name: "Baldeep Singh Pahwa" }, { name: "Lubna Soni" }],
   },
-  {
-    id: "d1-02", day: 1, time: "09:00", endTime: "09:15",
-    title: "Country Partner Opening Keynote",
-    type: "Opening Ceremony", format: "opening", featured: true,
-    speakers: [{ name: "Mahaveer Singhvi" }, { name: "Kapidhwaja Pratap Singh" }],
+{
+    id: "d1-02", day: 1, time: "09:15", endTime: "09:25",
+    title: "Opening Ceremony",
+    type: "Performance", format: "Performance", featured: true,
+    // Internal notes: 10 Mins Keynote + 30 Minutes Fireside + 5 Mins Q&A
+    // Notes 18/08: Lubna follow up on speaker — still unconfirmed.
+    speakers: [],
   },
   {
-    id: "d1-03", day: 1, time: "09:15", endTime: "09:35",
+    id: "d1-03", day: 1, time: "09:25", endTime: "09:35",
     title: "Canada's Tech Decade: Build | Secure | Scale",
     type: "Keynote", format: "keynote", featured: true,
     // Internal notes: 10 Mins Keynote + 30 Minutes Fireside + 5 Mins Q&A
     // Notes 18/08: Lubna follow up on speaker — still unconfirmed.
-    speakers: [],
-    moderator: { name: "Baldeep Singh Pahwa" },
+    speakers: [{ name: "Hon. Evan Solomon" }],
+    
   },
   {
     id: "d1-04", day: 1, time: "09:35", endTime: "10:05",

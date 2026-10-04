@@ -7,8 +7,10 @@ import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { AlertTriangle, Eye, EyeOff, Inbox, Loader2, RefreshCw, X } from "lucide-react";
+import { twMerge } from "tailwind-merge";
 
-const cx = (...a) => a.filter(Boolean).join(" ");
+// Later classes win (so `className="p-0"` overrides a default padding).
+const cx = (...a) => twMerge(a.filter(Boolean).join(" "));
 
 export const focusRing =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttfc-purple focus-visible:ring-offset-2 focus-visible:ring-offset-ttfc-ink";

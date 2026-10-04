@@ -3,7 +3,7 @@ import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Banner, Card, ErrorState, LoadingState, PageHeader, Switch } from "../ui";
-import ContentField from "../app/ContentField";
+import ContentSettings from "../content/ContentSettings";
 import { Globe, Lock } from "lucide-react";
 import { LIVE_NOTE } from "./cmsMeta";
 import useCmsStatus from "./useCmsStatus";
@@ -83,73 +83,14 @@ export default function SiteSettings() {
   );
 }
 
-/* ---------------- Website options (site.* keys in /api/console/app-content) ---------------- */
-const SITE_GROUPS = [
-  {
-    title: "Announcement bar",
-    hint: "A slim bar across the top of every page. Visitors can dismiss it; a new message shows again.",
-    fields: [
-      ["site.announcement", "Announcement text", "Leave empty to hide the bar.", undefined, "Early-bird pricing ends Friday!"],
-      ["site.announcement_link", "Announcement link", "Optional. Full web address, starting with https://", "url", "https://thetechfestival.com/tickets"],
-    ],
-  },
-  {
-    title: "Ticket sales",
-    hint: "Turning sales off disables every “Get your pass” button and the payment step. Existing tickets are unaffected.",
-    fields: [
-      ["site.ticket_sales_open", "Ticket sales open", "Off = buy buttons disabled and the message below is shown."],
-      ["site.ticket_sales_message", "Message while sales are paused", "Shown on the Tickets and Checkout pages."],
-    ],
-  },
-  {
-    title: "Forms & pages",
-    fields: [
-      ["site.nominations_open", "Award nominations open", "Off = the nomination form on the Awards page is replaced by “Nominations are closed”."],
-      ["site.volunteer_open", "Volunteer applications open", "Off = the volunteer form is replaced by a closed message."],
-      ["site.show_agenda", "Show the agenda", "Off = Agenda is removed from the menu and the agenda pages say “Agenda coming soon”."],
-      ["site.hero_tagline", "Homepage hero text", "Replaces the paragraph under the big headline on the homepage. Leave empty for the built-in text."],
-    ],
-  },
-  {
-    title: "Contact & social",
-    hint: "Used in the website footer. Empty social links fall back to the built-in TTFC accounts.",
-    fields: [
-      ["site.contact_email", "Contact email", "Shown in the footer.", "email", "info@thetechfestival.com"],
-      ["site.linkedin_url", "LinkedIn page", "Full web address, starting with https://", "url", "https://www.linkedin.com/company/…"],
-      ["site.instagram_url", "Instagram", "Full web address, starting with https://", "url", "https://www.instagram.com/…"],
-      ["site.x_url", "X (Twitter)", "Full web address, starting with https://", "url", "https://x.com/…"],
-    ],
-  },
-];
-
 function WebsiteOptions() {
-  const { data, error, loading, reload, setData } = useApi("/console/app-content");
-  const byKey = Object.fromEntries((data || []).map((r) => [r.key, r]));
-  const onSaved = (key, v) => setData((xs) => (xs || []).map((x) => (x.key === key ? { ...x, value: v, updatedBy: "you", updatedAt: new Date().toISOString() } : x)));
-  const missing = data && !data.some((r) => r.key.startsWith("site."));
-
   return (
     <section aria-labelledby="web-options-h">
       <h2 id="web-options-h" className="mb-1 flex items-center gap-2 text-base font-semibold"><Globe className="h-4 w-4 text-ttfc-pink" aria-hidden="true" /> Website options</h2>
-      <p className="mb-4 text-sm text-ttfc-muted">Each field saves on its own. Visitors see changes within about a minute (or on their next page load).</p>
-      {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : missing ? (
-        <Banner tone="warn" icon={Lock} title="Website options aren't available yet">The server needs the latest backend update before these settings appear.</Banner>
-      ) : (
-        <div className="space-y-6">
-          {SITE_GROUPS.map((g) => (
-            <div key={g.title}>
-              <h3 className="mb-1 text-sm font-semibold text-ttfc-text">{g.title}</h3>
-              {g.hint && <p className="mb-3 text-xs text-ttfc-muted">{g.hint}</p>}
-              <Card className="divide-y divide-ttfc-line p-0 sm:p-0">
-                {g.fields.filter(([k]) => byKey[k]).map(([k, label, help, type, placeholder]) => (
-                  <ContentField key={k} item={byKey[k]} label={label} help={help} type={type} placeholder={placeholder}
-                    onSaved={onSaved} showKey={false} savedMessage="Saved — live on the website within a minute" />
-                ))}
-              </Card>
-            </div>
-          ))}
-        </div>
-      )}
+      <p className="mb-5 text-sm text-ttfc-muted">
+        Switches save as soon as you flip them; text fields show a small Save button once you change them. Visitors see changes within about a minute. Empty fields use the built-in text.
+      </p>
+      <ContentSettings scope="website" />
     </section>
   );
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Mic2, Plus, Search, Star, Trash2, Pencil, X as XIcon } from "lucide-react";
+import { Crop, Mic2, Plus, Search, Star, Trash2, Pencil, X as XIcon } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
@@ -11,6 +11,9 @@ import { CmsBanners, ImagePicker } from "./CmsParts";
 import { SECTORS, SPEAKER_TYPES, TECH_PILLARS, labelOf, LIVE_NOTE } from "./cmsMeta";
 import { buildBody, nextOrder } from "./fields";
 import useCmsStatus from "./useCmsStatus";
+import PhotoFramer, { FramedPreview } from "./PhotoFramer";
+import { dimsFromAssetId } from "./framing";
+import { speakerPhotoUrl } from "../../utils/sanity";
 
 const KEYS = ["name", "title", "company", "bio", "order", "rowPosition", "featured", "speakerType", "techPillar", "sector",
   "linkedin", "twitter", "github", "website"];
@@ -37,9 +40,9 @@ function SpeakerCard({ s, readOnly, onEdit, onToggleFeatured, onOrder }) {
   };
   return (
     <article className="group flex flex-col overflow-hidden rounded-[18px] border border-ttfc-line bg-ttfc-panel transition hover:border-ttfc-purple/50">
-      <button type="button" onClick={() => onEdit(s)} className={`relative block aspect-[4/5] w-full overflow-hidden bg-ttfc-ink ${focusRing}`} aria-label={`Edit ${s.name}`}>
+      <button type="button" onClick={() => onEdit(s)} className={`relative block aspect-square w-full overflow-hidden bg-ttfc-ink ${focusRing}`} aria-label={`Edit ${s.name}`}>
         {s.imageUrl ? (
-          <img src={`${s.imageUrl}?w=480&fit=max&auto=format`} alt="" loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
+          <img src={s.image?.asset?._ref ? speakerPhotoUrl(s.image, 480) : `${s.imageUrl}?w=480&fit=max&auto=format`} alt="" loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
         ) : (
           <span className="flex h-full items-center justify-center text-ttfc-dim"><Mic2 className="h-10 w-10" aria-hidden="true" /></span>
         )}
@@ -98,6 +101,12 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
   const toast = useToast();
   const [form, setForm] = useState(() => (doc ? toForm(doc) : blank(defaultOrder)));
   const [image, setImage] = useState({ assetId: null, url: doc?.imageUrl || "" });
+  // Framing ("Adjust photo"): Sanity crop + hotspot. `framingChanged` = needs saving.
+  const [framing, setFraming] = useState(() => (doc?.image?.crop || doc?.image?.hotspot ? { crop: doc.image.crop, hotspot: doc.image.hotspot } : null));
+  const [framingChanged, setFramingChanged] = useState(false);
+  const [framerOpen, setFramerOpen] = useState(false);
+  const assetId = image.assetId || doc?.image?.asset?._ref || null;
+  const dims = dimsFromAssetId(assetId) || doc?.imageDims || null;
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e }));
@@ -115,13 +124,15 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
     if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
 
     const body = buildBody({ form, original: doc, keys: KEYS, numberKeys: NUMBER_KEYS, boolKeys: ["featured"], creating });
-    if (image.assetId) body.image = image.assetId;
+    if (assetId && (image.assetId || framingChanged)) {
+      body.image = framing ? { asset: assetId, crop: framing.crop, hotspot: framing.hotspot } : assetId;
+    }
     if (!creating && !Object.keys(body).length) { toast.info("Nothing changed"); onClose(); return; }
     setSaving(true);
     try {
       const saved = creating ? await api.post("/cms/speaker", body) : await api.patch(`/cms/speaker/${doc._id}`, body);
       toast.success(creating ? `${form.name} added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
-      onSaved({ ...(doc || {}), ...saved, imageUrl: image.url });
+      onSaved({ ...(doc || {}), ...saved, imageUrl: image.url, image: assetId ? { asset: { _ref: assetId }, ...(framing || {}) } : doc?.image });
     } catch (err) {
       toast.error(err);
     } finally {
@@ -159,8 +170,33 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
           url={image.url}
           disabled={readOnly}
           error={errors.image}
-          onUploaded={({ assetId, url, preview }) => { setImage({ assetId, url: url || preview }); setErrors((x) => ({ ...x, image: undefined })); }}
+          onUploaded={({ assetId: id, url, preview }) => {
+            setImage({ assetId: id, url: url || preview }); setFraming(null); setFramingChanged(false);
+            setErrors((x) => ({ ...x, image: undefined }));
+          }}
         />
+        {assetId && dims && (
+          <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-ttfc-line bg-ttfc-ink/40 p-3">
+            <FramedPreview assetId={assetId} framing={framing} size={72} />
+            <FramedPreview assetId={assetId} framing={framing} size={40} round />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">How it appears on the website</p>
+              <p className="text-xs text-ttfc-muted">{framingChanged ? "New framing — save to publish it." : framing ? "Custom framing." : "Centred automatically."}</p>
+            </div>
+            <Button size="sm" icon={Crop} onClick={() => setFramerOpen(true)} disabled={readOnly}>Adjust photo</Button>
+          </div>
+        )}
+        {framerOpen && (
+          <PhotoFramer
+            open
+            onClose={() => setFramerOpen(false)}
+            assetId={assetId}
+            imageUrl={image.url}
+            dims={dims}
+            image={framing}
+            onApply={(f) => { setFraming(f); setFramingChanged(true); setFramerOpen(false); toast.info("Framing set — save the speaker to publish it"); }}
+          />
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Full name" required error={errors.name} className="sm:col-span-2">
             {(id) => <Input id={id} value={form.name} onChange={set("name")} maxLength={120} disabled={readOnly} data-autofocus />}

@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
   Megaphone, ScrollText, UserCog, Power, KeyRound,
@@ -22,6 +23,7 @@ export const NAV = [
   {
     title: "Website content",
     items: [
+      { to: "content/agenda", label: "Agenda", icon: CalendarDays },
       { to: "content/speakers", label: "Speakers", icon: Mic2 },
       { to: "content/partners", label: "Partners", icon: Handshake },
       { to: "content/sponsors", label: "Sponsors", icon: Gem },

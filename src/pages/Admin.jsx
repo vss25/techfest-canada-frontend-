@@ -12,6 +12,7 @@ import { Button, ErrorState, ManagementOnly, Spinner } from "../admin/ui";
 import Overview from "../admin/sections/Overview";
 import Legacy from "../admin/sections/Legacy";
 import Speakers from "../admin/cms/Speakers";
+import AgendaAdmin from "../admin/cms/Agenda";
 import LogoCollection from "../admin/cms/LogoCollection";
 import SiteSettings from "../admin/cms/SiteSettings";
 import AppOverview from "../admin/app/AppOverview";
@@ -156,6 +157,7 @@ export default function Admin() {
             <Route path="analytics" element={<ManagementOnly><SalesAnalytics /></ManagementOnly>} />
 
             <Route path="content" element={<Navigate to="/admin/content/speakers" replace />} />
+            <Route path="content/agenda" element={<AgendaAdmin />} />
             <Route path="content/speakers" element={<Speakers />} />
             <Route path="content/partners" element={
               <LogoCollection key="partner" type="partner" title="Partners" singular="partner" withCategory

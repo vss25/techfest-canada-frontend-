@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import AuthModal from "./AuthModal";
+import useSiteSettings from "../hooks/useSiteSettings";
 
 const PARTNERS_DROPDOWN = [
   { label: "2026 Partners", path: "/partners2026" },
@@ -29,6 +30,8 @@ export default function Navbar() {
   const [mobilePartnersOpen, setMobilePartnersOpen] = useState(false);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const location = useLocation();
+  const site = useSiteSettings();
+  const showAgenda = site["site.show_agenda"] !== false;
 
   useEffect(() => {
     const saved = localStorage.getItem("theme") || "light";
@@ -92,7 +95,7 @@ export default function Navbar() {
     { label: "AGENDA", path: "/agenda" },
     { label: "AWARDS", path: "/awards" },
     { label: "MORE", hasDropdown: true, dropKey: "more" },
-  ];
+  ].filter((item) => showAgenda || (item.path !== "/agenda" && item.path !== "/programme"));
 
   const isActive = (item) => {
     if (item.dropKey === "partners") return PARTNERS_DROPDOWN.some(d => d.path === location.pathname);

@@ -26,14 +26,13 @@ import StaffAccounts from "../admin/staff/StaffAccounts";
 import KillSwitch from "../admin/staff/KillSwitch";
 import TicketManager from "../admin/tickets/TicketManager";
 import SalesAnalytics from "../admin/tickets/SalesAnalytics";
+import Inventory from "../admin/tickets/Inventory";
+import EmailTracking from "../admin/staff/EmailTracking";
 
 // Existing admin features — wrapped and restyled, logic unchanged.
-import AdminInventory from "../components/AdminInventory";
 import CheckIn from "../components/CheckIn";
-import AdminNominations from "../components/AdminNominations";
 
 const T = "Tickets & attendees";
-const M = "Marketing";
 
 /** The panel is always dark: existing components read body.dark-mode. */
 function useAdminBody() {
@@ -137,11 +136,9 @@ export default function Admin() {
             <Route index element={<Overview />} />
 
             <Route path="attendees" element={<TicketManager />} />
-            <Route path="inventory" element={<Legacy eyebrow={T} title="Inventory" description="Passes left of each type, and pricing."><AdminInventory /></Legacy>} />
+            <Route path="inventory" element={<Inventory />} />
             <Route path="check-in" element={<Legacy eyebrow={T} title="Check-in" description="Point the camera at a ticket's QR code to check the attendee in. Allow camera access when your browser asks."><CheckIn /></Legacy>} />
             <Route path="analytics" element={<SalesAnalytics />} />
-
-            <Route path="nominations" element={<Legacy eyebrow={M} title="Nominations" description="Catalyst Awards nominations."><AdminNominations /></Legacy>} />
 
             <Route path="content" element={<Navigate to="/admin/content/speakers" replace />} />
             <Route path="content/speakers" element={<Speakers />} />
@@ -174,6 +171,7 @@ export default function Admin() {
 
             <Route path="staff" element={<StaffAccounts />} />
             <Route path="kill-switch" element={<KillSwitch />} />
+            <Route path="email-tracking" element={<EmailTracking />} />
 
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>

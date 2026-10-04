@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, Package, ScanLine, BarChart3, Trophy,
+  LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
   Megaphone, ScrollText, UserCog, Power,
 } from "lucide-react";
@@ -17,12 +17,6 @@ export const NAV = [
       { to: "analytics", label: "Sales analytics", icon: BarChart3 },
       { to: "inventory", label: "Inventory", icon: Package },
       { to: "check-in", label: "Check-in", icon: ScanLine },
-    ],
-  },
-  {
-    title: "Marketing",
-    items: [
-      { to: "nominations", label: "Nominations", icon: Trophy },
     ],
   },
   {
@@ -52,6 +46,7 @@ export const NAV = [
     title: "Staff & safety",
     items: [
       { to: "staff", label: "Staff accounts", icon: UserCog },
+      { to: "email-tracking", label: "Email tracking", icon: MailCheck },
       { to: "kill-switch", label: "Kill switch", icon: Power, danger: true },
     ],
   },

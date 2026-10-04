@@ -1,7 +1,7 @@
 /* =========================================================
    Admin API helper.
    Same backend and the same auth pattern as the existing admin
-   components (AdminInventory, CheckIn, …): the staff JWT lives in
+   components (e.g. CheckIn): the staff JWT lives in
    localStorage under "token" and is sent as
    `Authorization: Bearer <token>`.
 ========================================================= */

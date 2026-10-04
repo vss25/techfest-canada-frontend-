@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/first-timers",
+      "destination": "/briefings",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/awards/nominations",

@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { BadgeCheck, CalendarDays, DollarSign, Info, RefreshCw, Ticket, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, BadgeCheck, CalendarDays, CreditCard, DollarSign, Info, Receipt, RefreshCw, Ticket, TrendingUp, Users } from "lucide-react";
 import { useApi } from "../hooks";
-import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, SkeletonGrid, StatTile, focusRing } from "../ui";
+import { api } from "../api";
+import { useToast } from "../toastContext";
+import { Badge, Banner, Button, Card, EmptyState, ErrorState, PageHeader, SkeletonGrid, StatTile, focusRing } from "../ui";
 import { ago, num } from "../format";
 
 const RANGES = [
@@ -20,7 +22,11 @@ const METRICS = {
 };
 const cadFmt = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 });
 const cad = (v) => cadFmt.format(Number(v) || 0);
-const tierLabel = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "Other");
+const cadExact = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" });
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
+// "power" → "Power", "upgrades" → "Upgrades", "upgrade → power" → "Upgrade → Power"
+const tierLabel = (t) => (t ? String(t).split(/\s*→\s*/).map(cap).join(" → ") : "Other");
+const money = (v) => (v == null ? "—" : cad(v));
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
 
 const AXIS = { stroke: "#7B7296", fontSize: 11, tickLine: false, axisLine: false };
@@ -53,6 +59,7 @@ function TierTip({ active, payload }) {
 }
 
 function Segmented({ options, value, onChange, label }) {
+  // options: [{ key, label, disabled? }]
   return (
     <div role="radiogroup" aria-label={label} className="inline-flex rounded-xl border border-ttfc-line bg-ttfc-panel p-1">
       {options.map((o) => (
@@ -61,8 +68,9 @@ function Segmented({ options, value, onChange, label }) {
           type="button"
           role="radio"
           aria-checked={value === o.key}
+          disabled={o.disabled}
           onClick={() => onChange(o.key)}
-          className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${value === o.key ? "bg-white/10 text-ttfc-text" : "text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}
+          className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${value === o.key ? "bg-white/10 text-ttfc-text" : "text-ttfc-muted hover:text-ttfc-text"} disabled:cursor-not-allowed disabled:opacity-40 ${focusRing}`}
         >
           {o.label}
         </button>
@@ -73,14 +81,31 @@ function Segmented({ options, value, onChange, label }) {
 
 export default function SalesAnalytics() {
   const [range, setRange] = useState("month");
-  const [metric, setMetric] = useState("tickets");
-  const { data, error, loading, reload, refreshing } = useApi(`/console/sales?range=${range}`);
+  const [metricChoice, setMetric] = useState("tickets");
+  const [syncing, setSyncing] = useState(false);
+  const toast = useToast();
+  const { data, error, loading, reload, refreshing, setData } = useApi(`/console/sales?range=${range}`);
+  const revenueKnown = data?.totals ? data.totals.totalRevenue != null : true;
+  const metric = revenueKnown ? metricChoice : "tickets";
+  const fromStripe = data?.source === "stripe";
+
+  const refreshFromStripe = async () => {
+    setSyncing(true);
+    try {
+      const fresh = await api.get(`/console/sales?range=${range}&refresh=1`);
+      setData(fresh);
+      if (fresh?.source === "stripe") toast.success("Revenue refreshed from Stripe");
+      else toast.error(fresh?.stripeError || "Couldn't reach Stripe");
+    } catch (err) { toast.error(err); } finally { setSyncing(false); }
+  };
 
   const t = data?.totals || {};
   const sales = data?.sales || [];
   const byTier = data?.byTier || [];
-  const inventory = data?.inventory || [];
+  const inventory = (data?.inventory || []).filter((r) => !r.archived);
   const recent = data?.recent || [];
+  const breakdown = data?.revenueBreakdown;
+  const tierRevenueKnown = byTier.some((r) => r.revenue != null);
   const periodTotal = sales.reduce((s, r) => s + (Number(r[metric]) || 0), 0);
   const rangeLabel = RANGES.find((r) => r.key === range)?.label.toLowerCase();
 
@@ -89,20 +114,31 @@ export default function SalesAnalytics() {
       <PageHeader
         eyebrow="Tickets & attendees"
         title="Sales analytics"
-        description="Real ticket sales from purchase dates. Tickets hidden from staff lists aren't counted."
+        description="Ticket revenue comes from Stripe (what buyers actually paid). Ticket counts, buyers and check-ins come from ticket records; tickets hidden from staff lists aren't counted."
         actions={
           <>
             <Segmented options={RANGES} value={range} onChange={setRange} label="Time range" />
-            <Button icon={RefreshCw} onClick={reload} loading={refreshing && !loading} aria-label="Refresh">Refresh</Button>
+            <Button icon={RefreshCw} onClick={reload} loading={refreshing && !loading && !syncing}>Refresh</Button>
+            <Button icon={CreditCard} onClick={refreshFromStripe} loading={syncing} title="Fetch the latest payments from Stripe now (normally cached for 5 minutes)">Refresh from Stripe</Button>
           </>
         }
       />
 
       {loading ? <SkeletonGrid count={6} className="h-28" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">
-            <StatTile label="Revenue" value={cad(t.totalRevenue)} icon={DollarSign} tone="orange" hint="CAD, list price" />
-            <StatTile label="Tickets sold" value={num(t.totalTickets)} icon={Ticket} tone="pink" />
+          {!revenueKnown && (
+            <Banner tone="warn" icon={AlertTriangle} title="Revenue is unavailable right now"
+              action={<Button size="sm" icon={RefreshCw} loading={syncing} onClick={refreshFromStripe}>Try again</Button>}>
+              We couldn't read payments from Stripe, so revenue isn't shown. Ticket counts below still come from ticket records.
+              {data?.stripeError && <span className="mt-1 block font-mono text-xs opacity-80">Stripe said: {data.stripeError}</span>}
+            </Banner>
+          )}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+            <StatTile label="Ticket revenue (Stripe)" value={money(t.totalRevenue)} icon={DollarSign} tone="orange"
+              hint={t.totalRevenue == null ? "Stripe unavailable" : "CAD, after promo codes, before HST, minus refunds"} />
+            <StatTile label="Tickets" value={num(t.totalTickets)} icon={Ticket} tone="pink" hint="All ticket records" />
+            <StatTile label="Paid tickets" value={t.paidTickets == null ? "—" : num(t.paidTickets)} icon={CreditCard} tone="purple"
+              hint={t.paidTickets == null ? "Needs Stripe" : "Paid through Stripe checkout"} />
             <StatTile label="Unique buyers" value={num(t.uniqueBuyers)} icon={Users} tone="purple" />
             <StatTile label="Checked in" value={`${pct(t.checkedIn, t.totalTickets)}%`} icon={BadgeCheck} tone="good" hint={`${num(t.checkedIn)} of ${num(t.totalTickets)}`} />
             <StatTile label="Today" value={num(t.today)} icon={CalendarDays} tone="neutral" hint="Last 24 hours" />
@@ -126,7 +162,7 @@ export default function SalesAnalytics() {
                   <b className="text-ttfc-text">{METRICS[metric].fmt(periodTotal)}</b> in the last {rangeLabel}
                 </p>
               </div>
-              <Segmented options={[{ key: "tickets", label: "Tickets" }, { key: "revenue", label: "Revenue" }]} value={metric} onChange={setMetric} label="Measure" />
+              <Segmented options={[{ key: "tickets", label: "Tickets" }, { key: "revenue", label: "Revenue", disabled: !revenueKnown }]} value={metric} onChange={setMetric} label="Measure" />
             </div>
             {periodTotal === 0 ? (
               <EmptyState icon={TrendingUp} title={`No sales in the last ${rangeLabel}`} body="Try a longer time range — new purchases show up here automatically." className="py-10" />
@@ -155,31 +191,32 @@ export default function SalesAnalytics() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
-              <h2 className="mb-1 text-base font-semibold">Revenue by pass</h2>
-              <p className="mb-4 text-sm text-ttfc-muted">All time, excluding hidden tickets.</p>
+              <h2 className="mb-1 text-base font-semibold">{tierRevenueKnown ? "Revenue by pass" : "Tickets by pass"}</h2>
+              <p className="mb-4 text-sm text-ttfc-muted">{tierRevenueKnown ? "All time, from Stripe. Upgrades are shown on their own." : "All time, from ticket records (revenue needs Stripe)."}</p>
               {!byTier.length ? <EmptyState title="No passes sold yet" className="py-10" /> : (
                 <>
                   <div style={{ height: Math.max(140, byTier.length * 52) }} className="w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={byTier} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }} barCategoryGap={10}>
                         <CartesianGrid horizontal={false} stroke="#2A2143" strokeDasharray="3 3" />
-                        <XAxis type="number" {...AXIS} tickFormatter={(v) => (v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v}`)} />
+                        <XAxis type="number" {...AXIS} allowDecimals={false} tickFormatter={(v) => (!tierRevenueKnown ? v : v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v}`)} />
                         <YAxis type="category" dataKey="tier" {...AXIS} width={84} tickFormatter={tierLabel} stroke="#A9A1C2" />
                         <Tooltip content={<TierTip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-                        <Bar dataKey="revenue" fill="#8B5CF6" radius={[0, 4, 4, 0]} maxBarSize={28} />
+                        <Bar dataKey={tierRevenueKnown ? "revenue" : "tickets"} fill="#8B5CF6" radius={[0, 4, 4, 0]} maxBarSize={28} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                   <table className="sr-only">
                     <caption>Revenue by pass</caption>
                     <thead><tr><th>Pass</th><th>Tickets</th><th>Revenue</th><th>Checked in</th></tr></thead>
-                    <tbody>{byTier.map((r) => <tr key={r.tier}><td>{tierLabel(r.tier)}</td><td>{r.tickets}</td><td>{cad(r.revenue)}</td><td>{r.checkedIn}</td></tr>)}</tbody>
+                    <tbody>{byTier.map((r) => <tr key={r.tier}><td>{tierLabel(r.tier)}</td><td>{r.tickets}</td><td>{money(r.revenue)}</td><td>{r.checkedIn ?? "—"}</td></tr>)}</tbody>
                   </table>
                   <ul className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                     {byTier.map((r) => (
                       <li key={r.tier} className="rounded-xl border border-ttfc-line bg-ttfc-panel2/60 px-3 py-2">
                         <p className="font-semibold text-ttfc-text">{tierLabel(r.tier)}</p>
-                        <p className="text-ttfc-muted">{num(r.tickets)} sold · {pct(r.checkedIn, r.tickets)}% in</p>
+                        <p className="text-ttfc-muted">{num(r.tickets)} {r.tier === "upgrades" ? "upgrades" : `sold · ${pct(r.checkedIn || 0, r.tickets)}% in`}</p>
+                        {r.revenue != null && <p className="text-ttfc-dim">{cad(r.revenue)}</p>}
                       </li>
                     ))}
                   </ul>
@@ -214,6 +251,25 @@ export default function SalesAnalytics() {
           </div>
 
           <Card>
+            <h2 className="mb-1 flex items-center gap-2 text-base font-semibold"><Receipt className="h-4 w-4 text-ttfc-orange" aria-hidden="true" /> Not ticket sales</h2>
+            <p className="mb-4 text-sm text-ttfc-muted">Other payments received through Stripe. They aren't counted in ticket revenue above.</p>
+            {!breakdown ? (
+              <p className="py-4 text-sm text-ttfc-dim">Shown when Stripe is connected.</p>
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-3">
+                {[["booths", "Exhibitor booths"], ["pavilion", "Pavilion deposits"], ["other", "Other Stripe payments"]].map(([k, l]) => (
+                  <li key={k} className="rounded-2xl border border-ttfc-line bg-ttfc-panel2/60 p-4">
+                    <p className="text-sm text-ttfc-muted">{l}</p>
+                    <p className="mt-1 text-xl font-bold tabular-nums text-ttfc-text">{cad(breakdown[k]?.revenue)}</p>
+                    <p className="text-xs text-ttfc-dim">{num(breakdown[k]?.count ?? 0)} payment{breakdown[k]?.count === 1 ? "" : "s"}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-4 text-xs text-ttfc-dim">Sponsorships invoiced outside Stripe aren't included.</p>
+          </Card>
+
+          <Card>
             <h2 className="mb-4 text-base font-semibold">Recent purchases</h2>
             {!recent.length ? <EmptyState icon={Ticket} title="No purchases yet" className="py-10" /> : (
               <ul className="divide-y divide-ttfc-line/70">
@@ -224,9 +280,10 @@ export default function SalesAnalytics() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-semibold">{r.name || "No name"}</span>
-                      <span className="block text-xs text-ttfc-dim">{r.source === "account" ? "App account" : "Guest checkout"}</span>
+                      <span className="block text-xs text-ttfc-dim">{r.source === "stripe" ? "Stripe payment" : r.source === "account" ? "App account" : "Guest checkout"}</span>
                     </span>
                     <Badge tone="purple">{tierLabel(r.tier)}</Badge>
+                    {r.amount != null && <span className="w-24 shrink-0 text-right text-sm font-semibold tabular-nums">{cadExact.format(Number(r.amount) || 0)}</span>}
                     <span className="w-24 shrink-0 text-right text-xs text-ttfc-muted">{ago(r.purchaseDate)}</span>
                   </li>
                 ))}
@@ -234,7 +291,12 @@ export default function SalesAnalytics() {
             )}
           </Card>
 
-          {data?.note && <p className="text-xs text-ttfc-dim">{data.note}</p>}
+          {data?.note && (
+            <p className="flex items-start gap-2 text-xs text-ttfc-dim">
+              {fromStripe && <Badge tone="good">Stripe</Badge>}
+              <span>{data.note}</span>
+            </p>
+          )}
         </div>
       )}
     </>

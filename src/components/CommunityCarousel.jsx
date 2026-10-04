@@ -10,7 +10,8 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mic, ChevronLeft, ChevronRight } from "lucide-react";
-import { client, urlFor } from "../utils/sanity";
+import { client, speakerPhotoUrl } from "../utils/sanity";
+import useAgenda from "../hooks/useAgenda";
 import { sessionsForSpeaker, slugifyName, formatTime12, DAYS } from "../data/agenda";
 
 var LinkedInIcon = function () {
@@ -25,8 +26,9 @@ var LinkedInIcon = function () {
 function CommunityCard({ speaker, dark }) {
   var s1 = useState(false); var hovered = s1[0]; var setHovered = s1[1];
 
-  var imageUrl = speaker.image ? urlFor(speaker.image).width(500).height(500).url() : null;
-  var mySessions = useMemo(function () { return sessionsForSpeaker(speaker.name); }, [speaker.name]);
+  var imageUrl = speakerPhotoUrl(speaker.image, 500);
+  var agenda = useAgenda().sessions;
+  var mySessions = useMemo(function () { return sessionsForSpeaker(speaker.name, agenda); }, [speaker.name, agenda]);
   var firstSession = mySessions[0] || null;
 
   var accent = dark ? "#b99eff" : "#7a3fd1";

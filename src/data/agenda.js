@@ -496,11 +496,12 @@ export function matchSpeaker(index, name) {
   return null;
 }
 
-/** Every session a given person appears in (as speaker OR moderator). */
-export function sessionsForSpeaker(name) {
+/** Every session a given person appears in (as speaker OR moderator).
+    Pass the live sessions (useAgenda) — defaults to the bundled list. */
+export function sessionsForSpeaker(name, sessions = SESSIONS) {
   const keys = new Set(nameKeys(name));
   if (!keys.size) return [];
-  return SESSIONS.filter((s) => {
+  return (sessions || SESSIONS).filter((s) => {
     const people = (s.speakers || []).concat(s.moderator ? [s.moderator] : []);
     return people.some((p) => nameKeys(p.name).some((k) => keys.has(k)));
   });

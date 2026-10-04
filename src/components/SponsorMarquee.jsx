@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from "react";
 import imageUrlBuilder from "@sanity/image-url";
-import { client } from "../utils/sanity";
+import { client, logoScaleOf } from "../utils/sanity";
 
 const builder = imageUrlBuilder(client);
 const urlFor = (source) => builder.image(source);
@@ -15,6 +15,7 @@ const SPONSORS_QUERY = `
     _id,
     name,
     logo,
+    logoScale,
     url,
   }
 `;
@@ -104,7 +105,7 @@ export default function SponsorMarquee({ dark, title }) {
           align-items: center;
           justify-content: center;
           padding: 12px 32px;
-          height: 64px;
+          min-height: 64px;
           flex-shrink: 0;
           background: #ffffff;
           border: 1px solid rgba(255, 255, 255, 0.08);
@@ -119,22 +120,22 @@ export default function SponsorMarquee({ dark, title }) {
           }
         }
         .marquee-item img {
-          height: 36px;
+          height: calc(36px * var(--logo-scale, 1));
           width: auto;
-          max-width: 160px;
+          max-width: calc(160px * var(--logo-scale, 1));
           object-fit: contain;
           opacity: 1;
           transition: opacity 0.25s ease;
         }
-        .marquee-item img[data-name="Temasek"]    { height: 17px; }
-        .marquee-item img[data-name="Amazon"]     { height: 26px; }
-        .marquee-item img[data-name="DHL"]        { height: 52px; }
-        .marquee-item img[data-name="Constellar"] { height: 44px; }
-        .marquee-item img[data-name="Ford"]       { height: 44px; }
-        .marquee-item img[data-name="KPMG"]       { height: 40px; }
-        .marquee-item img[data-name="Accenture"]  { height: 26px; }
-        .marquee-item img[data-name="Cvent"]      { height: 26px; }
-        .marquee-item img[data-name="VMware"]     { height: 48px; }
+        .marquee-item img[data-name="Temasek"]    { height: calc(17px * var(--logo-scale, 1)); }
+        .marquee-item img[data-name="Amazon"]     { height: calc(26px * var(--logo-scale, 1)); }
+        .marquee-item img[data-name="DHL"]        { height: calc(52px * var(--logo-scale, 1)); }
+        .marquee-item img[data-name="Constellar"] { height: calc(44px * var(--logo-scale, 1)); }
+        .marquee-item img[data-name="Ford"]       { height: calc(44px * var(--logo-scale, 1)); }
+        .marquee-item img[data-name="KPMG"]       { height: calc(40px * var(--logo-scale, 1)); }
+        .marquee-item img[data-name="Accenture"]  { height: calc(26px * var(--logo-scale, 1)); }
+        .marquee-item img[data-name="Cvent"]      { height: calc(26px * var(--logo-scale, 1)); }
+        .marquee-item img[data-name="VMware"]     { height: calc(48px * var(--logo-scale, 1)); }
       `}</style>
 
       <div
@@ -158,7 +159,8 @@ export default function SponsorMarquee({ dark, title }) {
 
         <div className="marquee-track">
           {items.map((sponsor, i) => {
-            const logoUrl = urlFor(sponsor.logo).height(80).auto("format").url();
+            const scale = logoScaleOf(sponsor);
+            const logoUrl = urlFor(sponsor.logo).height(Math.round(80 * Math.max(1, scale))).auto("format").url();
 
             const img = (
               <img
@@ -166,6 +168,7 @@ export default function SponsorMarquee({ dark, title }) {
                 alt={sponsor.name}
                 title={sponsor.name}
                 data-name={sponsor.name}
+                style={scale !== 1 ? { "--logo-scale": scale } : undefined}
                 loading="lazy"
               />
             );

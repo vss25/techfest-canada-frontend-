@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { client, urlFor } from "../utils/sanity";
+import { client, urlFor, logoScaleOf } from "../utils/sanity";
 
 /**
  * PartnerGrid — premium edition
@@ -29,12 +29,14 @@ export default function PartnerGrid({ category, dark, accent }) {
           _id,
           name,
           logo,
+          logoScale,
           url
         }`
       : `*[_type == "partner" && category == "${category}" && active == true] | order(order asc) {
           _id,
           name,
           logo,
+          logoScale,
           url
         }`;
 
@@ -159,8 +161,9 @@ export default function PartnerGrid({ category, dark, accent }) {
         .partner-tile img {
           position: relative;
           z-index: 2;
-          max-height: 70px;
-          max-width: 100%;
+          /* logo size from the admin panel (--logo-scale), never taller than the tile */
+          max-height: min(calc(70px * var(--logo-scale, 1)), 100%);
+          max-width: min(calc(100% * var(--logo-scale, 1)), 100%);
           width: auto;
           height: auto;
           object-fit: contain;
@@ -180,7 +183,7 @@ export default function PartnerGrid({ category, dark, accent }) {
             border-radius: 14px;
           }
           .partner-tile img {
-            max-height: 44px;
+            max-height: min(calc(44px * var(--logo-scale, 1)), 100%);
           }
         }
         @media (max-width: 480px) {
@@ -190,7 +193,7 @@ export default function PartnerGrid({ category, dark, accent }) {
             border-radius: 12px;
           }
           .partner-tile img {
-            max-height: 38px;
+            max-height: min(calc(38px * var(--logo-scale, 1)), 100%);
           }
         }
       `}</style>
@@ -199,7 +202,7 @@ export default function PartnerGrid({ category, dark, accent }) {
         {partners.map((partner, i) => {
           const hasLogo = !!partner.logo;
           const logoUrl = hasLogo
-            ? urlFor(partner.logo).height(140).auto("format").url()
+            ? urlFor(partner.logo).height(Math.round(140 * Math.max(1, logoScaleOf(partner)))).auto("format").url()
             : null;
 
           const baseShadow = dark
@@ -230,6 +233,7 @@ export default function PartnerGrid({ category, dark, accent }) {
               src={logoUrl}
               alt={partner.name || "Partner logo"}
               loading="lazy"
+              style={logoScaleOf(partner) !== 1 ? { "--logo-scale": logoScaleOf(partner) } : undefined}
             />
           ) : (
             <span

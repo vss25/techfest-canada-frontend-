@@ -62,7 +62,7 @@ export const SESSIONS = [
   },
   {
     id: "d1-03", day: 1, time: "09:25", endTime: "09:35",
-    title: "Canada's Tech Decade: Build | Secure | Scale",
+    title: "Special Message: Canada's Tech Decade: Build | Secure | Scale",
     type: "Keynote", format: "keynote", featured: true,
     // Internal notes: 10 Mins Keynote + 30 Minutes Fireside + 5 Mins Q&A
     // Notes 18/08: Lubna follow up on speaker — still unconfirmed.

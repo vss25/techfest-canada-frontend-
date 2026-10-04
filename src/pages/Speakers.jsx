@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import emailjs from "@emailjs/browser";
-import { client, urlFor } from "../utils/sanity";
+import { client, speakerPhotoUrl } from "../utils/sanity";
+import useAgenda from "../hooks/useAgenda";
 import SpeakerMarquee from "../components/SpeakerMarquee";
 import { sessionsForSpeaker, slugifyName, formatTime12, DAYS } from "../data/agenda";
 
@@ -305,10 +306,12 @@ function SpeakerCard({ speaker, dark, i }) {
   var inView = useInView(ref, { once: true, margin: "-50px" });
   var s1 = useState(false); var hovered = s1[0]; var setHovered = s1[1];
 
-  var imageUrl = speaker.image ? urlFor(speaker.image).width(500).height(500).url() : null;
+  // Honours the crop + hotspot ("Adjust photo") set in the admin panel
+  var imageUrl = speakerPhotoUrl(speaker.image, 500);
 
-  // Sessions this person appears in, straight from src/data/agenda.js
-  var mySessions = useMemo(function () { return sessionsForSpeaker(speaker.name); }, [speaker.name]);
+  // Sessions this person appears in — live agenda from the CMS (falls back to src/data/agenda.js)
+  var agenda = useAgenda().sessions;
+  var mySessions = useMemo(function () { return sessionsForSpeaker(speaker.name, agenda); }, [speaker.name, agenda]);
   var firstSession = mySessions[0] || null;
 
   var accent = dark ? "#b99eff" : "#7a3fd1";

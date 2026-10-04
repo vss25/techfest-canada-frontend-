@@ -7,9 +7,11 @@ import {
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { client, urlFor } from "../utils/sanity";
+import { client, speakerPhotoUrl } from "../utils/sanity";
+import useAgenda from "../hooks/useAgenda";
+import { FORMAT_MAP } from "../data/sessionFormats";
 import {
-  SESSIONS, DAYS,
+  DAYS,
   buildSpeakerIndex, matchSpeaker, sessionsForSpeaker,
   slugifyName, getDuration, formatTime12,
 } from "../data/agenda";
@@ -47,19 +49,7 @@ const SECTOR_MAP = {
   startups:      { label: "Startups & Capital",      short: "STP", icon: Rocket },
 };
 
-const FORMAT_MAP = {
-  networking:  { label: "Networking",          bg: "#3fd19c22", bgL: "#1a9e7022", tc: "#3fd19c", tcL: "#1a9e70" },
-  keynote:     { label: "Keynote",             bg: "#b99eff22", bgL: "#7a3fd122", tc: "#b99eff", tcL: "#7a3fd1" },
-  fireside:    { label: "Fireside",            bg: "#f5a62322", bgL: "#c4780a22", tc: "#f5a623", tcL: "#c4780a" },
-  briefing:    { label: "Boardroom Briefing",  bg: "#56b3f522", bgL: "#1878c222", tc: "#56b3f5", tcL: "#1878c2" },
-  panel:       { label: "Panel",               bg: "#f57eb322", bgL: "#c2287a22", tc: "#f57eb3", tcL: "#c2287a" },
-  provocation: { label: "Provocation",         bg: "#f5a62322", bgL: "#c4780a22", tc: "#f5a623", tcL: "#c4780a" },
-  break:       { label: "Break",               bg: "#88888818", bgL: "#88888818", tc: "#aaa",    tcL: "#777"    },
-  awards:      { label: "Awards / Gala",       bg: "#f5c84222", bgL: "#d4970022", tc: "#f5c842", tcL: "#d49700" },
-  opening:     { label: "Opening",             bg: "#b99eff22", bgL: "#7a3fd122", tc: "#b99eff", tcL: "#7a3fd1" },
-  dialogue:    { label: "Leadership Dialogue", bg: "#56b3f522", bgL: "#1878c222", tc: "#56b3f5", tcL: "#1878c2" },
-  closing:     { label: "Closing",             bg: "#b99eff22", bgL: "#7a3fd122", tc: "#b99eff", tcL: "#7a3fd1" },
-};
+// FORMAT_MAP (colours/labels per session format) lives in src/data/sessionFormats.js — shared with the admin panel.
 
 // Link blue for speaker names — deliberately distinct from the purple accent
 const LINK_BLUE      = "#1f6fd0";
@@ -175,7 +165,7 @@ function SpeakerChip({ person, doc, dark, role }) {
   const [hovered, setHovered] = useState(false);
   const blue = dark ? LINK_BLUE_DARK : LINK_BLUE;
   const mutedText = dark ? "rgba(255,255,255,0.48)" : "rgba(13,5,32,0.42)";
-  const imageUrl = doc && doc.image ? urlFor(doc.image).width(120).height(120).url() : null;
+  const imageUrl = doc ? speakerPhotoUrl(doc.image, 120) : null;
   // Company line: a session-specific org overrides the profile, otherwise use Sanity
   const org = person.org || (doc && doc.company) || null;
 
@@ -509,6 +499,8 @@ function TimeGroup({ time, sessions, dark, base, speakerIndex, highlightId, expa
 // ─── Page ─────────────────────────────────────────────────────────
 export default function AgendaPage() {
   useProtection();
+  // Live agenda from the CMS (Website content → Agenda in the admin panel); bundled list until it loads.
+  const { sessions: SESSIONS } = useAgenda();
   const [dark, setDark]                 = useState(false);
   const [activeDay, setActiveDay]       = useState(1);
   const [search, setSearch]             = useState("");
@@ -559,7 +551,7 @@ export default function AgendaPage() {
       // resolve the slug back to a name via Sanity docs, else prettify the slug
       const doc = speakerDocs.find((d) => slugifyName(d.name) === speakerSlug);
       const name = doc ? doc.name : speakerSlug.replace(/-/g, " ");
-      const mine = sessionsForSpeaker(name);
+      const mine = sessionsForSpeaker(name, SESSIONS);
       if (mine.length) {
         setFocusSpeaker({ slug: speakerSlug, name, sessionIds: mine.map((m) => m.id) });
         setActiveDay(mine[0].day);
@@ -572,7 +564,7 @@ export default function AgendaPage() {
       const hit = SESSIONS.find((s) => s.id === sessionId);
       if (hit) { setActiveDay(hit.day); setHighlightId(hit.id); }
     }
-  }, [speakerDocs]);
+  }, [speakerDocs, SESSIONS]);
 
   // scroll to the highlighted card once it's rendered
   useEffect(() => {
@@ -605,16 +597,14 @@ export default function AgendaPage() {
     return true;
   };
 
-  const filtered = useMemo(
-    () => SESSIONS.filter(s => s.day === activeDay && matchesFilters(s)),
-    [activeDay, search, activePillar, activeSector, focusSpeaker]
-  );
+  // ~50 sessions: cheap enough to recompute on every render (no memo needed)
+  const filtered = SESSIONS.filter(s => s.day === activeDay && matchesFilters(s));
 
-  const otherDayResults = useMemo(() => {
+  const otherDayResults = (() => {
     const otherDay = activeDay === 1 ? 2 : 1;
     const count = SESSIONS.filter(s => s.day === otherDay && matchesFilters(s)).length;
     return { day: otherDay, count };
-  }, [activeDay, search, activePillar, activeSector, focusSpeaker]);
+  })();
 
   const grouped = useMemo(() => {
     const map = new Map();

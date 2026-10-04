@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { client, urlFor } from "../utils/sanity";
+import { client, urlFor, logoScaleOf } from "../utils/sanity";
 
 const EMPTY_CELLS = Array.from({ length: 10 }, (_, idx) => ({
   _id: `empty-${idx}`,
@@ -17,6 +17,7 @@ export default function PartnerMarquee({ category, title, dark }) {
       _id,
       name,
       logo,
+      logoScale,
       url
     }`;
 
@@ -73,7 +74,7 @@ export default function PartnerMarquee({ category, title, dark }) {
           align-items: center;
           justify-content: center;
           padding: 12px 32px;
-          height: 64px;
+          min-height: 64px;
           flex-shrink: 0;
           background: #ffffff;
           border: 1px solid rgba(255, 255, 255, 0.08);
@@ -89,9 +90,9 @@ export default function PartnerMarquee({ category, title, dark }) {
           }
         }
         .partner-marquee-item img {
-          height: 36px;
+          height: calc(36px * var(--logo-scale, 1));
           width: auto;
-          max-width: 160px;
+          max-width: calc(160px * var(--logo-scale, 1));
           object-fit: contain;
         }
       `}</style>
@@ -140,9 +141,11 @@ export default function PartnerMarquee({ category, title, dark }) {
         <div className="partner-marquee-track">
           {marqueeItems.map((partner, i) => {
             const hasLogo = !!partner.logo;
-            const logoUrl = hasLogo ? urlFor(partner.logo).height(80).auto("format").url() : null;
+            const scale = logoScaleOf(partner);
+            const logoUrl = hasLogo ? urlFor(partner.logo).height(Math.round(80 * Math.max(1, scale))).auto("format").url() : null;
             const imgNode = hasLogo ? (
-              <img src={logoUrl} alt={partner.name || "Partner logo"} loading="lazy" />
+              <img src={logoUrl} alt={partner.name || "Partner logo"} loading="lazy"
+                style={scale !== 1 ? { "--logo-scale": scale } : undefined} />
             ) : null;
 
             return (

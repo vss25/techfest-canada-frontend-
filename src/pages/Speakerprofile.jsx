@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, MapPin, Calendar, Clock, Mic, Users } from 'lucide-react';
 import Navbar from "../components/Navbar.tsx";
 import Footer from "../components/Footer";
-import { client, urlFor } from "../utils/sanity";
+import { client, speakerPhotoUrl } from "../utils/sanity";
+import useAgenda from "../hooks/useAgenda";
 import {
   sessionsForSpeaker, roleInSession, nameKeys, slugifyName,
   DAYS, formatTime12, getDuration,
@@ -172,10 +173,11 @@ export default function SpeakerProfile() {
       });
   }, [params.slug]);
 
-  // Sessions for this person, from src/data/agenda.js
+  // Sessions for this person — live agenda from the CMS (falls back to src/data/agenda.js)
+  var agenda = useAgenda().sessions;
   var mySessions = useMemo(function () {
-    return speaker ? sessionsForSpeaker(speaker.name) : [];
-  }, [speaker]);
+    return speaker ? sessionsForSpeaker(speaker.name, agenda) : [];
+  }, [speaker, agenda]);
 
   var bg = dark ? "#06020f" : "#ffffff";
   var textMain = dark ? "#ffffff" : "#0d0520";
@@ -213,7 +215,7 @@ export default function SpeakerProfile() {
     );
   }
 
-  var imgUrl = speaker.image ? urlFor(speaker.image).width(600).height(600).url() : null;
+  var imgUrl = speakerPhotoUrl(speaker.image, 600);
 
   // Date line: exact day when all their sessions fall on one day
   var dayNums = mySessions.map(function (s) { return s.day; });

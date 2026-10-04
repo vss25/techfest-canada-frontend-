@@ -36,6 +36,14 @@ export default defineType({
       initialValue: 99,
     }),
     defineField({
+      name: 'logoScale',
+      title: 'Logo size (%)',
+      type: 'number',
+      description: 'How big the logo appears on the website, as a % of the normal size (30–250). 100 = normal. Also adjustable in the TTFC admin panel.',
+      initialValue: 100,
+      validation: (Rule) => Rule.min(30).max(250),
+    }),
+    defineField({
       name: 'active',
       title: 'Active',
       type: 'boolean',

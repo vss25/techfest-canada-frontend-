@@ -147,8 +147,15 @@ export function Textarea({ className, rows = 4, ...rest }) {
 
 export function Select({ className, children, ...rest }) {
   return (
-    <select className={cx(inputBase, "cursor-pointer appearance-none bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-9", className)}
-      style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A9A1C2' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")" }}
+    // Arrow styling lives in `style`: as Tailwind classes, tailwind-merge took
+    // them for background colours and dropped the dark background (white box).
+    <select className={cx(inputBase, "cursor-pointer appearance-none pr-9", className)}
+      style={{
+        backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A9A1C2' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
+        backgroundSize: "16px",
+        backgroundPosition: "right 12px center",
+        backgroundRepeat: "no-repeat",
+      }}
       {...rest}
     >
       {children}

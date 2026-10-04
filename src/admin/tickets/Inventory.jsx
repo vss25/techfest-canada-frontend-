@@ -239,6 +239,18 @@ export default function Inventory() {
   const [archiving, setArchiving] = useState(null);
   const [showRemoved, setShowRemoved] = useState(false);
   const [restoring, setRestoring] = useState("");
+  const [recount, setRecount] = useState(null);   // { changes, boothNote } preview
+  const [checking, setChecking] = useState(false);
+
+  // Recount "sold" from real tickets (hidden test/duplicate tickets don't count).
+  const previewRecount = async () => {
+    setChecking(true);
+    try {
+      const out = await api.post("/console/inventory/recount", { preview: true });
+      if (!out.changes?.length) toast.success(out.boothNote ? `Counts already match the tickets. ${out.boothNote}` : "Counts already match the tickets");
+      else setRecount(out);
+    } catch (e) { toast.error(e); } finally { setChecking(false); }
+  };
 
   const list = useMemo(() => (Array.isArray(data) ? data : []), [data]);
   const order = (a, b) => (a.price || 0) - (b.price || 0);
@@ -273,7 +285,15 @@ export default function Inventory() {
         eyebrow="Tickets & attendees"
         title="Inventory"
         description={isManagement ? "Prices and allocations for every pass and booth. Prices here are what Stripe charges." : "How many of each pass and booth are sold and left. Only management can change prices or allocations."}
-        actions={<Button icon={RefreshCw} onClick={reload} loading={refreshing && !loading}>Refresh</Button>}
+        actions={(
+          <div className="flex flex-wrap gap-2">
+            {isManagement && (
+              <Button variant="secondary" icon={Ticket} onClick={previewRecount} loading={checking}
+                title="Set each pass's sold count from the actual tickets">Recount from tickets</Button>
+            )}
+            <Button icon={RefreshCw} onClick={reload} loading={refreshing && !loading}>Refresh</Button>
+          </div>
+        )}
       />
 
       {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : (
@@ -338,6 +358,30 @@ export default function Inventory() {
           {isManagement && <PromoCodes passes={passes.map((p) => p.tier)} />}
         </>
       )}
+
+      <ConfirmDialog
+        open={!!recount}
+        onClose={() => setRecount(null)}
+        tone="primary"
+        title="Update sold counts?"
+        body="Sold counts are recounted from the actual tickets. Tickets hidden as tests or duplicates don't count; booths come from paid Stripe orders."
+        confirmLabel="Update counts"
+        onConfirm={async () => {
+          const out = await api.post("/console/inventory/recount", {});
+          toast.success(`Updated ${out.changes.length} ${out.changes.length === 1 ? "count" : "counts"}`);
+          reload();
+        }}
+      >
+        <ul className="mt-3 space-y-1.5 text-sm">
+          {(recount?.changes || []).map((c) => (
+            <li key={c.tier} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
+              <span>{label(c.tier)}{c.archived ? " (removed from sale)" : ""}</span>
+              <span className="tabular-nums text-ttfc-dim">{c.from} → <b className="text-ttfc-text">{c.to}</b> sold</span>
+            </li>
+          ))}
+        </ul>
+        {recount?.boothNote && <p className="mt-3 text-xs text-ttfc-dim">{recount.boothNote}</p>}
+      </ConfirmDialog>
 
       <ConfirmDialog
         open={!!archiving}

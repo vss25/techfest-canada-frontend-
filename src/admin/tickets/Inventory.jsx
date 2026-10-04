@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AlertTriangle, Archive, ArchiveRestore, ChevronDown, Package, Percent, Plus, RefreshCw, Save, Sparkles, Store, Tag, Ticket, Trash2,
 } from "lucide-react";
@@ -9,7 +10,8 @@ import {
   Badge, Banner, Button, Card, ConfirmDialog, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, StatTile, Switch,
   TableWrap, focusRing,
 } from "../ui";
-import { num } from "../format";
+import { day, num } from "../format";
+import { useAdmin } from "../adminContext";
 
 /* Passes the Tickets page sells. A missing row means checkout for it would fail. */
 const SITE_PASSES = ["connect", "influence", "power", "apex"];
@@ -19,7 +21,7 @@ const label = (t) => TIER_NAMES[t] || (t ? t.charAt(0).toUpperCase() + t.slice(1
 const cadFmt = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 });
 const cad = (v) => cadFmt.format(Number(v) || 0);
 
-function TierCard({ item, onSaved, onArchive }) {
+function TierCard({ item, onSaved, onArchive, canEdit }) {
   const toast = useToast();
   const [price, setPrice] = useState(String(item.price ?? 0));
   const [total, setTotal] = useState(String(item.total ?? 0));
@@ -53,7 +55,7 @@ function TierCard({ item, onSaved, onArchive }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-ttfc-text">{label(item.tier)}</h3>
-          <p className="text-sm text-ttfc-muted">{cad(item.price)} <span className="text-ttfc-dim">+ HST</span></p>
+          {canEdit && <p className="text-sm text-ttfc-muted">{cad(item.price)} <span className="text-ttfc-dim">+ HST</span></p>}
         </div>
         {soldOut ? <Badge tone="warn">Sold out</Badge> : <Badge tone="good">On sale</Badge>}
       </div>
@@ -69,6 +71,7 @@ function TierCard({ item, onSaved, onArchive }) {
         <p className="mt-1 text-xs text-ttfc-dim">{pct}% sold</p>
       </div>
 
+      {canEdit && <>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Price (CAD)">{(id) => <Input id={id} type="number" min={0} step="1" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} />}</Field>
         <Field label="Allocation">{(id) => <Input id={id} type="number" min={sold} step="1" inputMode="numeric" value={total} onChange={(e) => setTotal(e.target.value)} />}</Field>
@@ -81,6 +84,7 @@ function TierCard({ item, onSaved, onArchive }) {
         <span className="flex-1" />
         <Button size="sm" variant="ghost" icon={Archive} onClick={() => onArchive(item)}>Remove from sale</Button>
       </div>
+      </>}
     </Card>
   );
 }
@@ -165,21 +169,54 @@ function PromoCodes({ passes }) {
           {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !data?.length ? (
             <EmptyState icon={Percent} title="No promo codes yet" body="Create one on the left." />
           ) : (
-            <TableWrap>
-              <thead><tr><th>Code</th><th>Discount</th><th>Valid for</th><th>Used</th><th>Active</th><th><span className="sr-only">Actions</span></th></tr></thead>
-              <tbody>
-                {data.map((p) => (
-                  <tr key={p._id}>
-                    <td className="font-mono font-bold tracking-wider">{p.code}</td>
-                    <td className="tabular-nums">{p.discount}%</td>
-                    <td>{Array.isArray(p.tiers) && p.tiers.length ? <div className="flex flex-wrap gap-1">{p.tiers.map((t) => <Badge key={t} tone="purple">{label(t)}</Badge>)}</div> : <Badge tone="good">All passes</Badge>}</td>
-                    <td className="tabular-nums">{p.timesUsed ?? 0}</td>
-                    <td><Switch checked={!!p.active} onChange={() => toggle(p)} ariaLabel={`${p.code} active`} /></td>
-                    <td className="text-right"><Button size="sm" variant="dangerOutline" icon={Trash2} onClick={() => setDeleting(p)}>Delete</Button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableWrap>
+            <>
+              {data.some((p) => p.paidUses == null) && (
+                <p className="mb-3 flex items-start gap-1.5 text-xs text-amber-200/90">
+                  <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  Stripe is unavailable, so paid uses can't be counted right now. Showing checkout attempts instead.
+                  {data.find((p) => p.usageError)?.usageError ? ` (${data.find((p) => p.usageError).usageError})` : ""}
+                </p>
+              )}
+              <ul className="grid gap-3 lg:grid-cols-2">
+                {data.map((p) => {
+                  const paid = p.paidUses != null;
+                  return (
+                    <li key={p._id} className={`rounded-[18px] border bg-ttfc-panel p-4 ${p.active ? "border-ttfc-line" : "border-dashed border-ttfc-line opacity-75"}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-mono text-base font-bold tracking-wider text-ttfc-text">{p.code}</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                            <Badge tone="pink">{p.discount}% off</Badge>
+                            {Array.isArray(p.tiers) && p.tiers.length ? p.tiers.map((t) => <Badge key={t} tone="purple">{label(t)}</Badge>) : <Badge tone="good">All passes</Badge>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-ttfc-muted">{p.active ? "On" : "Off"}</span>
+                          <Switch checked={!!p.active} onChange={() => toggle(p)} ariaLabel={`${p.code} active`} />
+                        </div>
+                      </div>
+                      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div className="col-span-2 rounded-xl bg-white/5 px-3 py-2 sm:col-span-1">
+                          <dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Paid uses</dt>
+                          <dd className="text-2xl font-bold tabular-nums text-ttfc-text">{num(paid ? p.paidUses : p.timesUsed ?? 0)}</dd>
+                          {!paid && <dd className="text-[10px] text-amber-200/80">(Stripe unavailable)</dd>}
+                        </div>
+                        <div className="px-1 py-2"><dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Revenue</dt><dd className="text-sm font-semibold tabular-nums">{paid ? cad(p.revenue) : "—"}</dd></div>
+                        <div className="px-1 py-2"><dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Discount given</dt><dd className="text-sm font-semibold tabular-nums">{paid ? cad(p.discountGiven) : "—"}</dd></div>
+                        <div className="px-1 py-2"><dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Last used</dt><dd className="text-sm">{p.lastUsedAt ? day(p.lastUsedAt) : "Never"}</dd></div>
+                      </dl>
+                      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ttfc-line pt-3">
+                        <Link to={`/admin/attendees?promo=${encodeURIComponent(p.code)}`} className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-ttfc-pink hover:bg-white/5 ${focusRing}`}>
+                          <Ticket className="h-4 w-4" aria-hidden="true" /> See tickets
+                        </Link>
+                        <span className="flex-1" />
+                        <Button size="sm" variant="dangerOutline" icon={Trash2} onClick={() => setDeleting(p)}>Delete</Button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </div>
       </div>
@@ -197,6 +234,7 @@ function PromoCodes({ passes }) {
 
 export default function Inventory() {
   const toast = useToast();
+  const { isManagement } = useAdmin();
   const { data, error, loading, reload, refreshing } = useApi("/admin/inventory");
   const [archiving, setArchiving] = useState(null);
   const [showRemoved, setShowRemoved] = useState(false);
@@ -225,7 +263,7 @@ export default function Inventory() {
 
   const grid = (items, emptyTitle) => items.length ? (
     <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-      {items.map((t) => <TierCard key={`${t.tier}:${t.price}:${t.total}:${t.sold}`} item={t} onSaved={reload} onArchive={setArchiving} />)}
+      {items.map((t) => <TierCard key={`${t.tier}:${t.price}:${t.total}:${t.sold}`} item={t} onSaved={reload} onArchive={setArchiving} canEdit={isManagement} />)}
     </div>
   ) : <EmptyState title={emptyTitle} className="py-10" />;
 
@@ -234,7 +272,7 @@ export default function Inventory() {
       <PageHeader
         eyebrow="Tickets & attendees"
         title="Inventory"
-        description="Prices and allocations for every pass and booth. Prices here are what Stripe charges."
+        description={isManagement ? "Prices and allocations for every pass and booth. Prices here are what Stripe charges." : "How many of each pass and booth are sold and left. Only management can change prices or allocations."}
         actions={<Button icon={RefreshCw} onClick={reload} loading={refreshing && !loading}>Refresh</Button>}
       />
 
@@ -280,14 +318,14 @@ export default function Inventory() {
               <div id="removed-list" className="mt-3">
                 {!removed.length ? <EmptyState icon={Archive} title="Nothing removed" className="py-8" /> : (
                   <TableWrap>
-                    <thead><tr><th>Pass</th><th>Price</th><th>Sold</th><th><span className="sr-only">Actions</span></th></tr></thead>
+                    <thead><tr><th>Pass</th>{isManagement && <th>Price</th>}<th>Sold</th>{isManagement && <th><span className="sr-only">Actions</span></th>}</tr></thead>
                     <tbody>
                       {removed.map((t) => (
                         <tr key={t.tier}>
                           <td className="font-semibold">{label(t.tier)}</td>
-                          <td className="text-ttfc-muted">{cad(t.price)}</td>
+                          {isManagement && <td className="text-ttfc-muted">{cad(t.price)}</td>}
                           <td className="tabular-nums text-ttfc-muted">{num(t.sold)} of {num(t.total)}</td>
-                          <td className="text-right"><Button size="sm" icon={ArchiveRestore} loading={restoring === t.tier} onClick={() => restore(t)}>Restore</Button></td>
+                          {isManagement && <td className="text-right"><Button size="sm" icon={ArchiveRestore} loading={restoring === t.tier} onClick={() => restore(t)}>Restore</Button></td>}
                         </tr>
                       ))}
                     </tbody>
@@ -297,7 +335,7 @@ export default function Inventory() {
             )}
           </section>
 
-          <PromoCodes passes={passes.map((p) => p.tier)} />
+          {isManagement && <PromoCodes passes={passes.map((p) => p.tier)} />}
         </>
       )}
 

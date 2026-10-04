@@ -1,71 +1,16 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Ban, Eye, EyeOff, Lock, MessageSquare, RotateCcw, Save, Trash2, UserCheck } from "lucide-react";
+import { ArrowLeft, Ban, Eye, EyeOff, Lock, MessageSquare, RotateCcw, Trash2, UserCheck } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import {
-  Badge, Banner, Bars, Button, Card, ConfirmDialog, EmptyState, ErrorState, Field, Input, LoadingState, Modal, Select, Tabs,
+  Badge, Banner, Bars, Button, Card, ConfirmDialog, EmptyState, ErrorState, Field, LoadingState, Modal, Tabs,
   TableWrap, Textarea,
 } from "../ui";
 import { when, initials } from "../format";
 import { EventRow, StatusBadge } from "./parts";
-
-const PROFILE_FIELDS = [
-  ["name", "Name"], ["email", "Email", "email"], ["jobTitle", "Job title"], ["organization", "Company"],
-  ["linkedinUrl", "LinkedIn"], ["country", "Country"], ["fieldOfWork", "Field of work"],
-];
-
-function ProfilePane({ id, u, onSaved, onDelete }) {
-  const toast = useToast();
-  const [f, setF] = useState(() => ({
-    ...Object.fromEntries(PROFILE_FIELDS.map(([k]) => [k, u[k] ?? ""])),
-    topics: (u.topics || []).join(", "),
-    role: u.role === "admin" ? "admin" : "user",
-    directoryHidden: u.directoryHidden ? "true" : "false",
-    banned: u.banned ? "true" : "false",
-    bannedReason: u.bannedReason || "",
-  }));
-  const [saving, setSaving] = useState(false);
-  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
-
-  const save = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const body = { ...f, topics: f.topics.split(",").map((s) => s.trim()).filter(Boolean) };
-      const r = await api.patch(`/console/users/${id}`, body);
-      toast[r.changed?.length ? "success" : "info"](r.changed?.length ? `Saved: ${r.changed.join(", ")}` : "Nothing changed");
-      onSaved();
-    } catch (err) { toast.error(err); } finally { setSaving(false); }
-  };
-
-  return (
-    <Card as="form" onSubmit={save}>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {PROFILE_FIELDS.map(([k, label, type]) => (
-          <Field key={k} label={label}>{(fid) => <Input id={fid} type={type || "text"} value={f[k]} onChange={set(k)} />}</Field>
-        ))}
-        <Field label="Topics" hint="Separate with commas">{(fid) => <Input id={fid} value={f.topics} onChange={set("topics")} />}</Field>
-        <Field label="Role">{(fid) => (
-          <Select id={fid} value={f.role} onChange={set("role")}><option value="user">Attendee</option><option value="admin">Staff (admin)</option></Select>
-        )}</Field>
-        <Field label="Attendee list">{(fid) => (
-          <Select id={fid} value={f.directoryHidden} onChange={set("directoryHidden")}><option value="false">Shown</option><option value="true">Hidden</option></Select>
-        )}</Field>
-        <Field label="Account">{(fid) => (
-          <Select id={fid} value={f.banned} onChange={set("banned")}><option value="false">Active</option><option value="true">Suspended</option></Select>
-        )}</Field>
-        <Field label="Suspension reason" className="sm:col-span-2">{(fid) => <Input id={fid} value={f.bannedReason} onChange={set("bannedReason")} />}</Field>
-      </div>
-      <div className="mt-6 flex flex-col-reverse gap-3 border-t border-ttfc-line pt-5 sm:flex-row sm:items-center">
-        <Button variant="dangerOutline" icon={Trash2} onClick={onDelete}>Delete account</Button>
-        <span className="flex-1" />
-        <Button variant="primary" type="submit" icon={Save} loading={saving}>Save changes</Button>
-      </div>
-    </Card>
-  );
-}
+import ProfileEditor from "./ProfileEditor";
 
 function MessagesPane({ id }) {
   const [revealed, setRevealed] = useState(false);
@@ -241,7 +186,7 @@ function PersonView({ id }) {
       <Tabs tabs={tabs} value={tab} onChange={setTab} label="Person details" />
 
       <div role="tabpanel">
-        {tab === "profile" && <ProfilePane key={JSON.stringify([u.name, u.email, u.role, u.banned])} id={id} u={u} onSaved={reload} onDelete={() => setDel(true)} />}
+        {tab === "profile" && <ProfileEditor key={JSON.stringify(u)} id={id} user={u} onSaved={reload} onDelete={() => setDel(true)} />}
         {tab === "activity" && (d.events?.length ? (
           <Card className="p-0 sm:p-0"><ul>{d.events.map((e, i) => <EventRow key={e._id || i} e={e} />)}</ul></Card>
         ) : <EmptyState title="No activity recorded yet" />)}

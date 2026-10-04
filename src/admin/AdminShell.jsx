@@ -4,6 +4,7 @@ import { LogOut, Menu, X, ExternalLink } from "lucide-react";
 import { NAV, titleFor } from "./nav";
 import { focusRing, IconButton } from "./ui";
 import { initials } from "./format";
+import { useAdmin } from "./adminContext";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
@@ -27,6 +28,7 @@ function SiteStatusChip({ kill }) {
 }
 
 function SidebarContent({ onNavigate }) {
+  const { isManagement } = useAdmin();
   return (
     <nav aria-label="Admin sections" className="adm-sidebar-nav">
       <Link to="/admin" onClick={onNavigate} className={cx("mb-6 flex items-center gap-3 rounded-xl px-2 py-1", focusRing)}>
@@ -43,7 +45,7 @@ function SidebarContent({ onNavigate }) {
               <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.12em] text-ttfc-dim">{group.title}</p>
             )}
             <ul className="space-y-0.5">
-              {group.items.map((it) => (
+              {group.items.filter((it) => isManagement || !it.management).map((it) => (
                 <li key={it.to}>
                   <NavLink
                     to={it.to ? `/admin/${it.to}` : "/admin"}
@@ -79,6 +81,7 @@ function SidebarContent({ onNavigate }) {
 }
 
 export default function AdminShell({ me, kill, onSignOut, children }) {
+  const { isManagement } = useAdmin();
   const [drawer, setDrawer] = useState(false);
   const location = useLocation();
   const title = titleFor(location.pathname);
@@ -128,7 +131,7 @@ export default function AdminShell({ me, kill, onSignOut, children }) {
               </span>
               <div className="hidden min-w-0 leading-tight md:block">
                 <p className="truncate text-sm font-semibold text-ttfc-text">{me?.name || "Staff"}</p>
-                <p className="truncate text-xs text-ttfc-dim">{me?.email}</p>
+                <p className="truncate text-xs text-ttfc-dim">{isManagement ? "Management" : "Staff"} · {me?.email}</p>
               </div>
               <button
                 type="button"

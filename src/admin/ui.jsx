@@ -6,9 +6,13 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Eye, EyeOff, Inbox, Loader2, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, Inbox, Loader2, Lock, RefreshCw, X } from "lucide-react";
+import { useAdmin } from "./adminContext";
+import { isManagementError } from "./api";
+import { twMerge } from "tailwind-merge";
 
-const cx = (...a) => a.filter(Boolean).join(" ");
+// Later classes win (so `className="p-0"` overrides a default padding).
+const cx = (...a) => twMerge(a.filter(Boolean).join(" "));
 
 export const focusRing =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttfc-purple focus-visible:ring-offset-2 focus-visible:ring-offset-ttfc-ink";
@@ -243,7 +247,28 @@ export function EmptyState({ icon = Inbox, title = "Nothing here yet", body, act
   );
 }
 
+/** Friendly state for pages / sections limited to management. */
+export function ManagementState({ className, compact = false }) {
+  return (
+    <div role="status" className={cx("flex flex-col items-center justify-center rounded-[18px] border border-ttfc-line bg-ttfc-panel px-6 text-center", compact ? "py-8" : "py-16", className)}>
+      <span className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-ttfc-purple/15 text-violet-200">
+        <Lock className="h-6 w-6" aria-hidden="true" />
+      </span>
+      <p className="font-semibold text-ttfc-text">This is for management</p>
+      <p className="mt-1 max-w-md text-sm text-ttfc-muted">Sales, revenue, promo codes and staff settings are only visible to management. Ask a manager if you need something here.</p>
+    </div>
+  );
+}
+
+/** Renders children for management; everyone else sees ManagementState. */
+export function ManagementOnly({ children, fallback }) {
+  const { isManagement } = useAdmin();
+  if (isManagement) return children;
+  return fallback === undefined ? <ManagementState /> : fallback;
+}
+
 export function ErrorState({ error, onRetry, title = "Couldn't load this", className }) {
+  if (isManagementError(error)) return <ManagementState className={className} />;
   return (
     <div role="alert" className={cx("flex flex-col items-center justify-center rounded-[18px] border border-red-400/30 bg-red-500/5 px-6 py-12 text-center", className)}>
       <AlertTriangle className="mb-3 h-7 w-7 text-red-300" aria-hidden="true" />

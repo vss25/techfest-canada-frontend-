@@ -7,7 +7,7 @@ import AdminShell from "../admin/AdminShell";
 import Toaster from "../admin/Toaster";
 import { AdminContext } from "../admin/adminContext";
 import { adminFetch, signOut } from "../admin/api";
-import { Button, ErrorState, Spinner } from "../admin/ui";
+import { Button, ErrorState, ManagementOnly, Spinner } from "../admin/ui";
 
 import Overview from "../admin/sections/Overview";
 import Legacy from "../admin/sections/Legacy";
@@ -28,6 +28,7 @@ import TicketManager from "../admin/tickets/TicketManager";
 import SalesAnalytics from "../admin/tickets/SalesAnalytics";
 import Inventory from "../admin/tickets/Inventory";
 import EmailTracking from "../admin/staff/EmailTracking";
+import MyAccount from "../admin/staff/MyAccount";
 
 // Existing admin features — wrapped and restyled, logic unchanged.
 import CheckIn from "../components/CheckIn";
@@ -58,6 +59,7 @@ export default function Admin() {
   const [meError, setMeError] = useState(null);
   const [kill, setKill] = useState(null);
   const [killNonce, setKillNonce] = useState(0);
+  const [access, setAccess] = useState(null); // { staffRole, isManagement }
 
   const handleSignOut = useCallback(() => {
     signOut();
@@ -73,6 +75,18 @@ export default function Admin() {
     );
     return () => { alive = false; };
   }, []);
+
+  // Access level: "management" sees everything; "staff" doesn't see sales, money, promo codes or staff settings.
+  useEffect(() => {
+    if (me?.role !== "admin") return undefined;
+    let alive = true;
+    adminFetch("/console/me").then(
+      (a) => { if (alive) setAccess({ staffRole: a.staffRole || (a.isManagement ? "management" : "staff"), isManagement: !!a.isManagement }); },
+      // Older servers without access levels: show everything (the server still enforces its own rules).
+      (err) => { if (alive) setAccess({ staffRole: err?.status === 404 ? "management" : "staff", isManagement: err?.status === 404 }); },
+    );
+    return () => { alive = false; };
+  }, [me]);
 
   // Expired / invalid session anywhere → back to sign-in
   useEffect(() => {
@@ -94,7 +108,8 @@ export default function Admin() {
     return () => { alive = false; clearInterval(t); };
   }, [me, killNonce]);
 
-  const ctx = useMemo(() => ({ me, kill, setKill, reloadKill: () => setKillNonce((n) => n + 1) }), [me, kill]);
+  const isManagement = !!access?.isManagement;
+  const ctx = useMemo(() => ({ me, kill, setKill, reloadKill: () => setKillNonce((n) => n + 1), access, isManagement }), [me, kill, access, isManagement]);
 
   if (meError) {
     return (
@@ -106,7 +121,7 @@ export default function Admin() {
       </FullScreen>
     );
   }
-  if (!me) {
+  if (!me || (me.role === "admin" && !access)) {
     return (
       <FullScreen>
         <div className="flex flex-col items-center gap-3 text-sm text-ttfc-muted" role="status"><Spinner className="h-7 w-7" /> Opening the staff panel…</div>
@@ -138,7 +153,7 @@ export default function Admin() {
             <Route path="attendees" element={<TicketManager />} />
             <Route path="inventory" element={<Inventory />} />
             <Route path="check-in" element={<Legacy eyebrow={T} title="Check-in" description="Point the camera at a ticket's QR code to check the attendee in. Allow camera access when your browser asks."><CheckIn /></Legacy>} />
-            <Route path="analytics" element={<SalesAnalytics />} />
+            <Route path="analytics" element={<ManagementOnly><SalesAnalytics /></ManagementOnly>} />
 
             <Route path="content" element={<Navigate to="/admin/content/speakers" replace />} />
             <Route path="content/speakers" element={<Speakers />} />
@@ -169,9 +184,10 @@ export default function Admin() {
             <Route path="app/broadcast" element={<Broadcast />} />
             <Route path="app/audit" element={<AuditLog />} />
 
-            <Route path="staff" element={<StaffAccounts />} />
+            <Route path="staff" element={<ManagementOnly><StaffAccounts /></ManagementOnly>} />
             <Route path="kill-switch" element={<KillSwitch />} />
             <Route path="email-tracking" element={<EmailTracking />} />
+            <Route path="account" element={<MyAccount />} />
 
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>

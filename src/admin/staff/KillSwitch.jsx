@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, Power, RadioTower, ShieldAlert } from "lucide-react";
+import { AlertTriangle, Lock, Power, RadioTower, ShieldAlert } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
@@ -61,7 +61,7 @@ function ConfirmWithPassword({ action, message, onClose, onDone }) {
 
 export default function KillSwitch() {
   const toast = useToast();
-  const { setKill } = useAdmin();
+  const { setKill, isManagement } = useAdmin();
   const { data, error, loading, reload, setData } = useApi("/console/kill-switch");
   const [message, setMessage] = useState(null);
   const [action, setAction] = useState(null);
@@ -106,6 +106,17 @@ export default function KillSwitch() {
             </div>
           </div>
 
+          {!isManagement ? (
+            <div className="mt-8 space-y-3">
+              {off && data.message && (
+                <div className="rounded-xl border border-ttfc-line bg-ttfc-ink/60 p-3 text-sm">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-ttfc-dim">Visitors see</p>
+                  <p className="whitespace-pre-wrap">{data.message}</p>
+                </div>
+              )}
+              <p className="flex items-center gap-2 text-sm text-ttfc-muted"><Lock className="h-4 w-4" aria-hidden="true" /> Only management can switch the website and app on or off.</p>
+            </div>
+          ) : (<>
           <div className="mt-8">
             <Field label="Message shown to visitors" hint="Appears on every public page and in the app while offline.">
               {(id) => <Textarea id={id} rows={3} maxLength={500} value={msg} onChange={(e) => setMessage(e.target.value)} />}
@@ -124,6 +135,7 @@ export default function KillSwitch() {
               </Button>
             )}
           </div>
+          </>)}
         </section>
 
         <Card className="space-y-4 text-sm leading-relaxed text-ttfc-muted">

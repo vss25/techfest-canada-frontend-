@@ -86,7 +86,7 @@ export default function Navbar() {
 
   const navItems = [
     { label: "HOME", path: "/" },
-    { label: "FIRST TIMERS", path: "/first-timers" },
+    { label: "BRIEFINGS", path: "/briefings" },
     { label: "PARTNERS", hasDropdown: true, dropKey: "partners" },
     { label: "SPEAKERS", path: "/speakers" },
     { label: "AGENDA", path: "/agenda" },

@@ -1,7 +1,31 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar.tsx";
-import AdminTabs from "../components/AdminTabs";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { LogOut, ShieldX } from "lucide-react";
+
+import "../admin/admin.css";
+import AdminShell from "../admin/AdminShell";
+import Toaster from "../admin/Toaster";
+import { AdminContext } from "../admin/adminContext";
+import { adminFetch, signOut } from "../admin/api";
+import { Button, ErrorState, Spinner } from "../admin/ui";
+
+import Overview from "../admin/sections/Overview";
+import Legacy from "../admin/sections/Legacy";
+import Speakers from "../admin/cms/Speakers";
+import LogoCollection from "../admin/cms/LogoCollection";
+import SiteSettings from "../admin/cms/SiteSettings";
+import AppOverview from "../admin/app/AppOverview";
+import People from "../admin/app/People";
+import Person from "../admin/app/Person";
+import LiveActivity from "../admin/app/LiveActivity";
+import Moderation from "../admin/app/Moderation";
+import AppText from "../admin/app/AppText";
+import Broadcast from "../admin/app/Broadcast";
+import AuditLog from "../admin/app/AuditLog";
+import StaffAccounts from "../admin/staff/StaffAccounts";
+import KillSwitch from "../admin/staff/KillSwitch";
+
+// Existing admin features — wrapped and restyled, logic unchanged.
 import AdminAttendees from "../components/AdminAttendees";
 import AdminInventory from "../components/AdminInventory";
 import CheckIn from "../components/CheckIn";
@@ -11,182 +35,160 @@ import AdminEmailCampaigns from "../components/AdminEmailCampaigns";
 import AdminAudience from "../components/AdminAudience";
 import AdminCampaignCalendar from "../components/AdminCampaignCalendar";
 import AdminLeads from "../components/AdminLeads";
-import AdminNominations from "../components/AdminNominations"; // 👈 NEW
+import AdminNominations from "../components/AdminNominations";
 
-const API = "https://techfest-canada-backend.onrender.com/api";
+const T = "Tickets & attendees";
+const M = "Marketing";
 
-/* =========================================================
-   📊 OVERVIEW TAB
-========================================================= */
-function Overview() {
-  return (
-    <div className="admin-card">
-      <AdminAnalytics />
-    </div>
-  );
+/** The panel is always dark: existing components read body.dark-mode. */
+function useAdminBody() {
+  useEffect(() => {
+    const body = document.body;
+    const hadDark = body.classList.contains("dark-mode");
+    body.classList.add("dark-mode", "ttfc-admin-open");
+    return () => {
+      body.classList.remove("ttfc-admin-open");
+      if (!hadDark) body.classList.remove("dark-mode");
+    };
+  }, []);
 }
 
-/* =========================================================
-   👑 ADMIN MANAGEMENT TAB
-========================================================= */
-function AdminManagement() {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const handlePromote = async () => {
-    if (!email) {
-      setMessage("Please enter an email");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setMessage("");
-
-      const token = localStorage.getItem("token");
-
-      const res = await fetch(`${API}/admin/promote`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error);
-
-      setMessage(data.message || "User promoted successfully");
-      setEmail("");
-    } catch (err) {
-      setMessage(err.message || "Promotion failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="admin-card">
-      <h2>Admin Management</h2>
-      <p>Grant admin access to trusted team members.</p>
-
-      <div className="admin-form-row">
-        <input
-          type="email"
-          placeholder="user@email.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="admin-input"
-        />
-
-        <button
-          className="btn-primary"
-          onClick={handlePromote}
-          disabled={loading}
-        >
-          {loading ? "Promoting..." : "Make Admin"}
-        </button>
-      </div>
-
-      {message && (
-        <p className="admin-message">
-          {message}
-        </p>
-      )}
-    </div>
-  );
+function FullScreen({ children }) {
+  return <div className="ttfc-admin flex min-h-screen items-center justify-center p-6">{children}</div>;
 }
 
-/* =========================================================
-   🎯 LEADS TAB WRAPPER
-========================================================= */
-function Leads() {
-  return (
-    <div className="admin-card">
-      <AdminLeads />
-    </div>
-  );
-}
-
-/* =========================================================
-   🏆 NOMINATIONS TAB WRAPPER
-========================================================= */
-function Nominations() {
-  return (
-    <div className="admin-card">
-      <AdminNominations />
-    </div>
-  );
-}
-
-/* =========================================================
-   🧠 MAIN ADMIN PAGE
-========================================================= */
 export default function Admin() {
-
+  useAdminBody();
   const navigate = useNavigate();
+  const [me, setMe] = useState(null);
+  const [meError, setMeError] = useState(null);
+  const [kill, setKill] = useState(null);
+  const [killNonce, setKillNonce] = useState(0);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.dispatchEvent(new Event("authChanged"));
-    navigate("/admin-login");
-  };
+  const handleSignOut = useCallback(() => {
+    signOut();
+    navigate("/admin-login", { replace: true });
+  }, [navigate]);
 
-  const tabs = [
-    { label: "Overview", component: Overview },
-    { label: "Attendees", component: AdminAttendees },
-    { label: "Leads", component: Leads },
-    { label: "Nominations", component: Nominations }, // 👈 NEW TAB
-    { label: "Inventory", component: AdminInventory },
-    { label: "Scanner", component: CheckIn },
-    { label: "Admins", component: AdminManagement },
-    { label: "KYC", component: AdminKyc },
-    { label: "Campaigns", component: AdminEmailCampaigns },
-    { label: "Calendar", component: AdminCampaignCalendar },
-    { label: "Audience", component: AdminAudience },
-  ];
+  // Who's signed in
+  useEffect(() => {
+    let alive = true;
+    adminFetch("/auth/me").then(
+      (u) => { if (alive) setMe(u || {}); },
+      (err) => { if (alive) setMeError(err); },
+    );
+    return () => { alive = false; };
+  }, []);
+
+  // Expired / invalid session anywhere → back to sign-in
+  useEffect(() => {
+    const onUnauthorized = () => {
+      signOut();
+      navigate("/admin-login", { replace: true, state: { expired: true } });
+    };
+    window.addEventListener("ttfc:admin-unauthorized", onUnauthorized);
+    return () => window.removeEventListener("ttfc:admin-unauthorized", onUnauthorized);
+  }, [navigate]);
+
+  // Website / app status for the top bar (every 60 s)
+  useEffect(() => {
+    if (me?.role !== "admin") return undefined;
+    let alive = true;
+    const load = () => adminFetch("/console/kill-switch").then((s) => alive && setKill(s), () => {});
+    load();
+    const t = setInterval(load, 60000);
+    return () => { alive = false; clearInterval(t); };
+  }, [me, killNonce]);
+
+  const ctx = useMemo(() => ({ me, kill, setKill, reloadKill: () => setKillNonce((n) => n + 1) }), [me, kill]);
+
+  if (meError) {
+    return (
+      <FullScreen>
+        <div className="w-full max-w-md">
+          <ErrorState error={meError} title="Couldn't check your account" onRetry={() => window.location.reload()} />
+          <div className="mt-4 text-center"><Button variant="ghost" icon={LogOut} onClick={handleSignOut}>Sign out</Button></div>
+        </div>
+      </FullScreen>
+    );
+  }
+  if (!me) {
+    return (
+      <FullScreen>
+        <div className="flex flex-col items-center gap-3 text-sm text-ttfc-muted" role="status"><Spinner className="h-7 w-7" /> Opening the staff panel…</div>
+      </FullScreen>
+    );
+  }
+  if (me.role !== "admin") {
+    return (
+      <FullScreen>
+        <div className="w-full max-w-md rounded-[22px] border border-ttfc-line bg-ttfc-panel p-8 text-center">
+          <ShieldX className="mx-auto mb-4 h-10 w-10 text-ttfc-pink" aria-hidden="true" />
+          <h1 className="text-xl font-bold">This account isn't staff</h1>
+          <p className="mt-2 text-sm text-ttfc-muted">
+            You're signed in as {me.email || "a non-staff account"}. Ask an admin to give you access under Staff accounts.
+          </p>
+          <Button className="mt-6" variant="primary" icon={LogOut} onClick={handleSignOut}>Sign in with another account</Button>
+        </div>
+      </FullScreen>
+    );
+  }
 
   return (
-    <>
-      <Navbar />
+    <AdminContext.Provider value={ctx}>
+      <Toaster>
+        <AdminShell me={me} kill={kill} onSignOut={handleSignOut}>
+          <Routes>
+            <Route index element={<Overview />} />
 
-      <div className="container admin-page">
+            <Route path="attendees" element={<Legacy eyebrow={T} title="Attendees" description="Everyone with a ticket. Use “Sync from Stripe” if a recent purchase is missing."><AdminAttendees /></Legacy>} />
+            <Route path="inventory" element={<Legacy eyebrow={T} title="Inventory" description="Passes left of each type, and pricing."><AdminInventory /></Legacy>} />
+            <Route path="check-in" element={<Legacy eyebrow={T} title="Check-in" description="Point the camera at a ticket's QR code to check the attendee in. Allow camera access when your browser asks."><CheckIn /></Legacy>} />
+            <Route path="kyc" element={<Legacy eyebrow={T} title="KYC" description="Review KYC form submissions."><AdminKyc /></Legacy>} />
+            <Route path="analytics" element={<Legacy eyebrow={T} title="Analytics" description="Ticket sales and revenue over time."><AdminAnalytics /></Legacy>} />
 
-        {/* 🔥 HEADER WITH LOGOUT */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 20,
-            flexWrap: "wrap",
-            gap: 10
-          }}
-        >
-          <h1 className="admin-title">Admin Control Panel</h1>
+            <Route path="campaigns" element={<Legacy eyebrow={M} title="Email campaigns" description="Create, review and send email campaigns."><AdminEmailCampaigns /></Legacy>} />
+            <Route path="audience" element={<Legacy eyebrow={M} title="Audience" description="Contact lists used for campaigns. Import, edit and review contacts."><AdminAudience /></Legacy>} />
+            <Route path="calendar" element={<Legacy eyebrow={M} title="Calendar" description="Scheduled and automated campaigns by date."><AdminCampaignCalendar /></Legacy>} />
+            <Route path="leads" element={<Legacy eyebrow={M} title="Leads" description="Sales leads and follow-ups."><AdminLeads /></Legacy>} />
+            <Route path="nominations" element={<Legacy eyebrow={M} title="Nominations" description="Catalyst Awards nominations."><AdminNominations /></Legacy>} />
 
-          <button
-            onClick={handleLogout}
-            style={{
-              background: "transparent",
-              border: "1.5px solid rgba(239,68,68,0.4)",
-              color: "#f87171",
-              padding: "10px 18px",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: 700,
-            }}
-          >
-            Logout
-          </button>
-        </div>
+            <Route path="content" element={<Navigate to="/admin/content/speakers" replace />} />
+            <Route path="content/speakers" element={<Speakers />} />
+            <Route path="content/partners" element={
+              <LogoCollection key="partner" type="partner" title="Partners" singular="partner" withCategory
+                description="Partner logos on the Partners page, grouped by category. Switch a logo off to hide it without deleting it." />
+            } />
+            <Route path="content/sponsors" element={
+              <LogoCollection key="sponsor" type="sponsor" title="Sponsors" singular="sponsor"
+                description="The sponsor logo strip on the Home, Sponsors, Sponsor and Awards pages." />
+            } />
+            <Route path="content/sponsor-marquee" element={
+              <LogoCollection key="sponsorMarquee" type="sponsorMarquee" title="Sponsor marquee" singular="logo"
+                description="The scrolling logo strip on the Home and Speakers pages." />
+            } />
+            <Route path="content/home-sponsors" element={
+              <LogoCollection key="homeSponsor" type="homeSponsor" title="Home sponsors" singular="home sponsor"
+                description="Home sponsor logos." />
+            } />
+            <Route path="content/settings" element={<SiteSettings />} />
 
-        <AdminTabs tabs={tabs} />
+            <Route path="app" element={<AppOverview />} />
+            <Route path="app/people" element={<People />} />
+            <Route path="app/people/:id" element={<Person />} />
+            <Route path="app/activity" element={<LiveActivity />} />
+            <Route path="app/moderation" element={<Moderation />} />
+            <Route path="app/text" element={<AppText />} />
+            <Route path="app/broadcast" element={<Broadcast />} />
+            <Route path="app/audit" element={<AuditLog />} />
 
-      </div>
-    </>
+            <Route path="staff" element={<StaffAccounts />} />
+            <Route path="kill-switch" element={<KillSwitch />} />
+
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </AdminShell>
+      </Toaster>
+    </AdminContext.Provider>
   );
 }

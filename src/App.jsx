@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
 import Home from "./pages/Home";
 import Programme from "./pages/Programme";
 import Speakers from "./pages/Speakers";
@@ -16,8 +16,6 @@ import AuthSuccess from "./pages/AuthSuccess";
 import ResetPassword from "./pages/ResetPassword";
 import TicketBar from "./components/TicketBar";
 import Agenda from "./pages/Agenda";
-import Admin from "./pages/Admin";
-import AdminLogin from "./pages/AdminLogin";
 import AdminRoute from "./components/AdminRoute";
 import Sponsor from "./pages/Sponsor";
 import Exhibit from "./pages/Exhibit";
@@ -33,6 +31,16 @@ import Partners2026 from "./pages/partners2026";
 import Organizers from "./pages/Organizers";
 import LinkedinLanding from "./pages/Linkedin";
 import Media from "./pages/Media";
+import Briefings from "./pages/Briefings";
+import MaintenanceGate from "./components/MaintenanceGate";
+
+// The staff panel is loaded only when someone opens it.
+const Admin = lazy(() => import("./pages/Admin"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+
+function AdminLoading() {
+  return <div style={{ minHeight: "100vh", background: "#0B0716" }} aria-busy="true" />;
+}
 
 /* ================= SYSTEM THEME DETECTOR ================= */
 function applySystemTheme() {
@@ -53,6 +61,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <MaintenanceGate>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/programme" element={<Programme />} />
@@ -61,7 +70,8 @@ function App() {
         <Route path="/sponsors" element={<Sponsors />} />
         <Route path="/tickets" element={<Tickets />} />
         <Route path="/tickets/checkout" element={<Checkout />} />
-        <Route path="/first-timers" element={<Resources />} />
+        <Route path="/first-timers" element={<Navigate to="/briefings" replace />} />
+        <Route path="/briefings" element={<Briefings />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="/on-demand" element={<Resources />} />
         <Route
@@ -75,12 +85,21 @@ function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/agenda" element={<Agenda />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
         <Route
-          path="/admin"
+          path="/admin-login"
+          element={
+            <Suspense fallback={<AdminLoading />}>
+              <AdminLogin />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/admin/*"
           element={
             <AdminRoute>
-              <Admin />
+              <Suspense fallback={<AdminLoading />}>
+                <Admin />
+              </Suspense>
             </AdminRoute>
           }
         />
@@ -102,6 +121,7 @@ function App() {
         <Route path="/media" element={<Media />} />
       </Routes>
       <TicketBar />
+      </MaintenanceGate>
     </BrowserRouter>
   );
 }

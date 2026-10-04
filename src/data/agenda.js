@@ -58,7 +58,7 @@ export const SESSIONS = [
     type: "Performance", format: "Performance", featured: true,
     // Internal notes: 10 Mins Keynote + 30 Minutes Fireside + 5 Mins Q&A
     // Notes 18/08: Lubna follow up on speaker — still unconfirmed.
-    speakers: [],
+    
   },
   {
     id: "d1-03", day: 1, time: "09:25", endTime: "09:35",

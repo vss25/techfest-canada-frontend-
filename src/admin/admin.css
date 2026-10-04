@@ -1,0 +1,234 @@
+/* =========================================================
+   TTFC admin panel — scoped styles.
+   Everything is under .ttfc-admin (the shell) or
+   .ttfc-admin-portal (modals/drawers rendered into <body>),
+   so nothing leaks into the public website.
+========================================================= */
+
+.ttfc-admin,
+.ttfc-admin-portal {
+  --a-bg: #0b0716;
+  --a-panel: #130d22;
+  --a-panel-2: #1b1430;
+  --a-panel-3: #251c40;
+  --a-line: #2a2143;
+  --a-text: #f4f0fb;
+  --a-muted: #a9a1c2;
+  --a-dim: #7b7296;
+  --a-pink: #e8458b;
+  --a-purple: #8b5cf6;
+  --a-orange: #f59e42;
+
+  /* Re-point the public site's theme variables so the existing
+     admin components (which use them) render in the panel's look. */
+  --bg-main: var(--a-bg);
+  --bg-card: var(--a-panel);
+  --bg-modal: var(--a-panel);
+  --bg-input: var(--a-bg);
+  --bg-nav: var(--a-bg);
+  --text-main: var(--a-text);
+  --text-muted: var(--a-muted);
+  --border-main: var(--a-line);
+  --shadow-main: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --brand-purple: var(--a-purple);
+  --brand-magenta: var(--a-pink);
+  --brand-orange: var(--a-orange);
+  --gradient-brand: linear-gradient(135deg, var(--a-pink) 0%, var(--a-purple) 100%);
+
+  font-family: "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--a-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.ttfc-admin {
+  min-height: 100vh;
+  background-color: var(--a-bg);
+  background-image:
+    radial-gradient(900px 500px at 100% -10%, rgba(232, 69, 139, 0.12), transparent 60%),
+    radial-gradient(700px 500px at -10% 30%, rgba(139, 92, 246, 0.10), transparent 60%);
+  background-attachment: fixed;
+}
+
+.ttfc-admin h1,
+.ttfc-admin h2,
+.ttfc-admin h3,
+.ttfc-admin h4,
+.ttfc-admin-portal h1,
+.ttfc-admin-portal h2,
+.ttfc-admin-portal h3,
+.ttfc-admin-portal h4 {
+  font-family: inherit;
+  letter-spacing: -0.01em;
+}
+
+.ttfc-admin .font-display,
+.ttfc-admin-portal .font-display {
+  font-family: "Orbitron", "Montserrat", sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.ttfc-admin ::selection { background: rgba(232, 69, 139, 0.35); }
+
+/* Thin, quiet scrollbars */
+.ttfc-admin *::-webkit-scrollbar { width: 10px; height: 10px; }
+.ttfc-admin *::-webkit-scrollbar-thumb { background: #2f2650; border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+.ttfc-admin *::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------------- Tables (new pages + legacy .admin-table) ---------------- */
+.ttfc-admin .adm-table,
+.ttfc-admin .admin-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+}
+.ttfc-admin .adm-table th,
+.ttfc-admin .admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: 12px 16px;
+  background: #18112b;
+  color: var(--a-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--a-line);
+  white-space: nowrap;
+}
+.ttfc-admin .adm-table td,
+.ttfc-admin .admin-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(42, 33, 67, 0.7);
+  color: var(--a-text);
+  vertical-align: middle;
+}
+.ttfc-admin .adm-table tbody tr:last-child td,
+.ttfc-admin .admin-table tbody tr:last-child td { border-bottom: 0; }
+.ttfc-admin .adm-table tbody tr:hover td,
+.ttfc-admin .admin-table tbody tr:hover td { background: rgba(255, 255, 255, 0.025); }
+.ttfc-admin .adm-table tr.is-clickable { cursor: pointer; }
+.ttfc-admin .adm-table tr.is-clickable:focus-visible td { background: rgba(139, 92, 246, 0.12); outline: none; }
+
+/* ---------------- Legacy admin components ---------------- */
+.ttfc-admin .legacy .admin-card {
+  background: var(--a-panel);
+  border: 1px solid var(--a-line);
+  border-radius: 18px;
+  padding: 24px;
+  color: var(--a-text);
+}
+.ttfc-admin .legacy .admin-card > h2:first-child,
+.ttfc-admin .legacy .admin-card h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.ttfc-admin .legacy .table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--a-line);
+  border-radius: 14px;
+  margin-top: 16px;
+}
+.ttfc-admin .legacy .admin-input,
+.ttfc-admin .legacy .form-input {
+  background: var(--a-bg);
+  border: 1px solid var(--a-line);
+  border-radius: 12px;
+  color: var(--a-text);
+  padding: 10px 14px;
+}
+.ttfc-admin .legacy .admin-input:focus,
+.ttfc-admin .legacy .form-input:focus {
+  border-color: var(--a-purple);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+  outline: none;
+}
+.ttfc-admin .legacy .btn-primary,
+.ttfc-admin-portal .btn-primary {
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  background: linear-gradient(135deg, var(--a-pink), var(--a-purple));
+  box-shadow: 0 8px 24px rgba(232, 69, 139, 0.2);
+}
+.ttfc-admin .legacy .btn-primary:hover { transform: none; filter: brightness(1.1); }
+.ttfc-admin .legacy .btn-secondary,
+.ttfc-admin-portal .btn-secondary {
+  font-family: inherit;
+  text-transform: none;
+  font-size: 0.875rem;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: var(--a-panel-2);
+  border: 1px solid var(--a-line);
+  color: var(--a-text);
+}
+.ttfc-admin .legacy .btn-secondary:hover { border-color: rgba(139, 92, 246, 0.6); }
+.ttfc-admin .legacy .admin-tabs { border-bottom: 1px solid var(--a-line); }
+.ttfc-admin .legacy .admin-tabs button { font-family: inherit; text-transform: none; font-size: 0.85rem; letter-spacing: 0; }
+.ttfc-admin .legacy .admin-tabs button.active { color: #fff; border-bottom-color: var(--a-pink); }
+.ttfc-admin .legacy .ticket-badge {
+  margin-bottom: 0;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--a-muted);
+  border: 1px solid var(--a-line);
+}
+.ttfc-admin .legacy .ticket-badge.active {
+  background: rgba(52, 211, 153, 0.12);
+  color: #a7f3d0;
+  border-color: rgba(52, 211, 153, 0.3);
+}
+.ttfc-admin .legacy .scanner-wrapper {
+  max-width: 520px;
+  border-radius: 18px;
+  border: 1px solid var(--a-line);
+}
+.ttfc-admin .legacy .checkin-result {
+  max-width: 520px;
+  border-radius: 16px;
+  background: var(--a-panel-2);
+  border: 1px solid var(--a-line);
+}
+.ttfc-admin .legacy .checkin-success h3 { color: #6ee7b7; font-size: 1.05rem; }
+.ttfc-admin .legacy .checkin-error h3 { color: #fca5a5; font-size: 1.05rem; }
+.ttfc-admin .legacy .muted { color: var(--a-muted); }
+.ttfc-admin .legacy input[type="checkbox"],
+.ttfc-admin .legacy input[type="radio"] { accent-color: var(--a-pink); }
+
+/* Keyboard focus for anything the legacy components render */
+.ttfc-admin .legacy button:focus-visible,
+.ttfc-admin .legacy a:focus-visible,
+.ttfc-admin .legacy input:focus-visible,
+.ttfc-admin .legacy select:focus-visible,
+.ttfc-admin .legacy textarea:focus-visible {
+  outline: 2px solid var(--a-purple);
+  outline-offset: 2px;
+}
+
+/* The public site's sticky "Get your pass" bar never belongs in the panel */
+body.ttfc-admin-open .ticket-bar { display: none !important; }
+
+/* The public site styles every <nav> as a sticky 80px header — undo that for the sidebar. */
+.ttfc-admin nav.adm-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  height: 100%;
+  width: auto;
+  padding: 0;
+  background: none;
+  backdrop-filter: none;
+  border: 0;
+  position: static;
+  z-index: auto;
+}

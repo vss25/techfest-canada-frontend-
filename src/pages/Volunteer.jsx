@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import emailjs from "@emailjs/browser";
+import useSiteSettings from "../hooks/useSiteSettings";
+import { ClosedNotice } from "../components/SiteNotices";
 
 /* ───── tiny icons ───── */
 function ChevronDown({ open }) {
@@ -240,6 +242,8 @@ function VolunteerForm({ dark }) {
    MAIN PAGE
    ═══════════════════════════════════════════════ */
 export default function Volunteer() {
+  var site = useSiteSettings();
+  var volunteerOpen = site["site.volunteer_open"] !== false;
   var s = useState(false); var dark = s[0]; var setDark = s[1];
   useEffect(function () {
     setDark(document.body.classList.contains("dark-mode"));
@@ -345,10 +349,12 @@ export default function Volunteer() {
           <section id="apply">
             <div style={{ background: dark ? "linear-gradient(135deg, rgba(122,63,209,0.10), rgba(245,166,35,0.05))" : "linear-gradient(135deg, rgba(122,63,209,0.05), rgba(245,166,35,0.03))", border: "1px solid " + borderCol, borderRadius: 24, padding: "clamp(28px, 5vw, 48px)" }}>
               <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "1.3rem", marginBottom: 6 }}>Apply to Volunteer</h2>
-              <p style={{ fontSize: "0.85rem", color: textMuted, lineHeight: 1.6, marginBottom: 28 }}>
+              {volunteerOpen && <p style={{ fontSize: "0.85rem", color: textMuted, lineHeight: 1.6, marginBottom: 28 }}>
                 Fill out the form below and we'll be in touch. Spots are limited — applications are reviewed on a rolling basis.
-              </p>
-              <VolunteerForm dark={dark} />
+              </p>}
+              {volunteerOpen
+                ? <VolunteerForm dark={dark} />
+                : <ClosedNotice dark={dark} title="Volunteer applications are closed" body="Thank you for your interest. All volunteer spots for this year have been filled." />}
             </div>
           </section>
 

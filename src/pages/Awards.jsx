@@ -5,6 +5,8 @@ import Footer from "../components/Footer";
 import SponsorMarquee from "../components/SponsorMarquee";
 import NewsletterBar from "../components/NewsletterBar";
 import NominationForm from "../components/NominationForm";
+import useSiteSettings from "../hooks/useSiteSettings";
+import { ClosedNotice } from "../components/SiteNotices";
 
 /* ═══════════════════════════════════════════════════════
    ANIMATION VARIANTS
@@ -98,6 +100,8 @@ var SPECIAL_AWARDS = [
    ═══════════════════════════════════════════════════════ */
 
 export default function Awards() {
+  var site = useSiteSettings();
+  var nominationsOpen = site["site.nominations_open"] !== false;
   var s1 = useState(false); var dark = s1[0]; var setDark = s1[1];
   var s2 = useState(null); var expandedRow = s2[0]; var setExpandedRow = s2[1];
   var s3 = useState("Artificial Intelligence"); var activePillar = s3[0]; var setActivePillar = s3[1];
@@ -321,7 +325,15 @@ export default function Awards() {
       {/* ════════════════════════════════════════════════
          NOMINATION FORM (expanding inline)
          ════════════════════════════════════════════════ */}
-      <NominationForm dark={dark} textMain={textMain} textMid={textMid} textSoft={textSoft} accent={accent} cardBg={cardBg} cardBdr={cardBdr} />
+      {nominationsOpen ? (
+        <NominationForm dark={dark} textMain={textMain} textMid={textMid} textSoft={textSoft} accent={accent} cardBg={cardBg} cardBdr={cardBdr} />
+      ) : (
+        <section id="nominations" style={{ padding: "clamp(3rem, 6vw, 5rem) 5%", background: dark ? "#0a0618" : "#f4f0ff", borderTop: "1px solid " + cardBdr, scrollMarginTop: 80 }}>
+          <div style={{ maxWidth: 720, margin: "0 auto" }}>
+            <ClosedNotice dark={dark} title="Nominations are closed" body="Thank you to everyone who nominated. Follow us for the finalists and the Catalyst Awards night." />
+          </div>
+        </section>
+      )}
 
       {/* ════════════════ CTA ════════════════ */}
       <section style={{ padding: "clamp(4rem,8vw,7rem) 5%", background: sectionBg, borderTop: "1px solid " + cardBdr }}>

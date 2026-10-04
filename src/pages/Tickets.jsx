@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { API } from "../utils/api";
+import useSiteSettings from "../hooks/useSiteSettings";
+import { TicketSalesNotice } from "../components/SiteNotices";
 
 function CheckIcon() {
   return (
@@ -233,13 +235,15 @@ function trackMetaPurchase(params) {
   try { sessionStorage.removeItem(PENDING_ORDER_KEY); } catch (e) {}
 }
 
-function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded }) {
+function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded, salesClosed }) {
   const [hovered, setHovered] = useState(false);
 
   const price = inventoryItem?.price ?? meta.defaultPrice;
   const remaining = inventoryItem ? Math.max(inventoryItem.total - inventoryItem.sold, 0) : null;
   // Hard flag in PASS_META wins over inventory
   const soldOut = meta.soldOut === true || (remaining !== null && remaining <= 0);
+  // Sales paused from the admin panel (Site settings): same disabled look, different label.
+  const unavailable = soldOut || !!salesClosed;
 
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.68)";
@@ -283,11 +287,11 @@ function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded }) {
       <div style={{ fontSize:"0.66rem", fontWeight:700, letterSpacing:"1.2px", textTransform:"uppercase", color:textLight, marginBottom:10 }}>Includes</div>
       <ul style={{ listStyle:"none", padding:0, margin:"0 0 auto", display:"flex", flexDirection:"column", gap:8 }}>{meta.features.map(f => <li key={f} style={{ display:"flex", alignItems:"flex-start", gap:8, fontSize:"0.78rem", color:textMuted, lineHeight:1.4 }}><CheckIcon />{f}</li>)}</ul>
 
-      <button disabled={soldOut} onClick={() => !soldOut && onPurchase(meta.tier)}
-        style={{ marginTop:24, width:"100%", padding:"13px 0", borderRadius:12, border:"none", cursor: soldOut?"not-allowed":"pointer", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.68rem", letterSpacing:"1px", textTransform:"uppercase", color: soldOut?(dark?"rgba(255,255,255,0.3)":"rgba(13,5,32,0.3)"):"white", background: soldOut?(dark?"rgba(255,255,255,0.05)":"rgba(13,5,32,0.05)"):meta.featured?"linear-gradient(135deg, #7a3fd1, #f5a623)":(dark?"rgba(122,63,209,0.35)":"#7a3fd1"), boxShadow: soldOut||!meta.featured?"none":"0 4px 20px rgba(122,63,209,0.4)", transition:"all 0.2s" }}
-        onMouseEnter={(e) => { if (!soldOut && !meta.featured) e.currentTarget.style.background = dark?"rgba(122,63,209,0.55)":"#6330b3"; }}
-        onMouseLeave={(e) => { if (!soldOut && !meta.featured) e.currentTarget.style.background = dark?"rgba(122,63,209,0.35)":"#7a3fd1"; }}>
-        {soldOut ? "Sold Out" : "Get Your Pass"}
+      <button disabled={unavailable} onClick={() => !unavailable && onPurchase(meta.tier)}
+        style={{ marginTop:24, width:"100%", padding:"13px 0", borderRadius:12, border:"none", cursor: unavailable?"not-allowed":"pointer", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.68rem", letterSpacing:"1px", textTransform:"uppercase", color: unavailable?(dark?"rgba(255,255,255,0.3)":"rgba(13,5,32,0.3)"):"white", background: unavailable?(dark?"rgba(255,255,255,0.05)":"rgba(13,5,32,0.05)"):meta.featured?"linear-gradient(135deg, #7a3fd1, #f5a623)":(dark?"rgba(122,63,209,0.35)":"#7a3fd1"), boxShadow: unavailable||!meta.featured?"none":"0 4px 20px rgba(122,63,209,0.4)", transition:"all 0.2s" }}
+        onMouseEnter={(e) => { if (!unavailable && !meta.featured) e.currentTarget.style.background = dark?"rgba(122,63,209,0.55)":"#6330b3"; }}
+        onMouseLeave={(e) => { if (!unavailable && !meta.featured) e.currentTarget.style.background = dark?"rgba(122,63,209,0.35)":"#7a3fd1"; }}>
+        {soldOut ? "Sold Out" : salesClosed ? "Sales Paused" : "Get Your Pass"}
       </button>
     </div>
   );
@@ -361,10 +365,13 @@ export default function Tickets() {
   useEffect(() => { const load = async () => { try { const res = await fetch(API+"/admin/inventory/public"); const data = await res.json(); setInventory(Array.isArray(data)?data:[]); } catch(err) { console.error("Inventory fetch failed", err); } finally { setInventoryLoaded(true); } }; load(); }, []);
 
   const getTier = (tier) => inventory.find((i) => i.tier === tier) || null;
+  const site = useSiteSettings();
+  const salesClosed = site["site.ticket_sales_open"] === false;
 
   // Save the chosen tier + total (so we can report it after Stripe redirects back),
   // then navigate to the full-page checkout.
   const handlePurchase = (tier) => {
+    if (salesClosed) return;                // paused from the admin panel
     if (PASS_META[tier]?.soldOut) return;   // belt-and-braces: never route a sold-out tier
 
     const item = getTier(tier);
@@ -456,10 +463,11 @@ export default function Tickets() {
           <div style={{ textAlign:"center", padding:"100px 24px 60px", maxWidth:780, margin:"0 auto" }}>
             <h1 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"clamp(2rem, 5vw, 3.2rem)", letterSpacing:"-1px", lineHeight:1.15, marginBottom:20, color:textMain }}>Choose Your Pass</h1>
             <p style={{ fontSize:"1rem", color:textMuted, lineHeight:1.75, textAlign:"justify", hyphens:"auto" }}>Whether you are coming to learn, connect, explore partnerships, or experience the event at the highest level, The Tech Festival Canada offers a pass designed for every kind of delegate.</p>
+            {salesClosed && <TicketSalesNotice dark={dark} message={site["site.ticket_sales_message"]} style={{ marginTop:28 }} />}
           </div>
 
           <div ref={railRef} className="pass-rail">
-            {passes.map(key => <PassCard key={key} meta={PASS_META[key]} inventoryItem={getTier(key)} onPurchase={handlePurchase} dark={dark} inventoryLoaded={inventoryLoaded} />)}
+            {passes.map(key => <PassCard key={key} meta={PASS_META[key]} inventoryItem={getTier(key)} onPurchase={handlePurchase} dark={dark} inventoryLoaded={inventoryLoaded} salesClosed={salesClosed} />)}
           </div>
 
           {/* Mobile-only: dots + swipe hint */}

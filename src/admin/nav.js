@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, Package, ScanLine, BadgeCheck, BarChart3, Mail, Contact, CalendarDays, Target, Trophy,
+  LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
   Megaphone, ScrollText, UserCog, Power,
 } from "lucide-react";
@@ -13,21 +13,10 @@ export const NAV = [
   {
     title: "Tickets & attendees",
     items: [
-      { to: "attendees", label: "Attendees", icon: Users },
+      { to: "attendees", label: "Tickets", icon: Users },
+      { to: "analytics", label: "Sales analytics", icon: BarChart3 },
       { to: "inventory", label: "Inventory", icon: Package },
       { to: "check-in", label: "Check-in", icon: ScanLine },
-      { to: "kyc", label: "KYC", icon: BadgeCheck },
-      { to: "analytics", label: "Analytics", icon: BarChart3 },
-    ],
-  },
-  {
-    title: "Marketing",
-    items: [
-      { to: "campaigns", label: "Email campaigns", icon: Mail },
-      { to: "audience", label: "Audience", icon: Contact },
-      { to: "calendar", label: "Calendar", icon: CalendarDays },
-      { to: "leads", label: "Leads", icon: Target },
-      { to: "nominations", label: "Nominations", icon: Trophy },
     ],
   },
   {
@@ -57,6 +46,7 @@ export const NAV = [
     title: "Staff & safety",
     items: [
       { to: "staff", label: "Staff accounts", icon: UserCog },
+      { to: "email-tracking", label: "Email tracking", icon: MailCheck },
       { to: "kill-switch", label: "Kill switch", icon: Power, danger: true },
     ],
   },

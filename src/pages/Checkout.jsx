@@ -4,6 +4,8 @@ import React from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { API } from "../utils/api";
+import useSiteSettings from "../hooks/useSiteSettings";
+import { TicketSalesNotice } from "../components/SiteNotices";
 
 /* ============================================================
    ICONS & HELPERS
@@ -216,6 +218,8 @@ function CheckoutInner() {
   const [submitting, setSubmitting] = useState(false);
   const firstInputRef = useRef(null);
   const TOTAL_STEPS = 2;
+  const site = useSiteSettings();
+  const salesClosed = site["site.ticket_sales_open"] === false;   // paused from the admin panel
 
   const [promoInput, setPromoInput] = useState("");
   const [promoCode, setPromoCode] = useState("");
@@ -337,6 +341,7 @@ function CheckoutInner() {
   const back = () => { if (step > 1) setStep(s => s - 1); else navigate("/tickets"); };
 
   const submit = async () => {
+    if (salesClosed) return;
     if (!validateStep()) return;
     setSubmitting(true);
     try {
@@ -536,14 +541,15 @@ function CheckoutInner() {
                 </div>
               )}
 
+              {salesClosed && <TicketSalesNotice dark={dark} message={site["site.ticket_sales_message"]} style={{ marginTop:28 }} />}
               <div style={{ marginTop:32, paddingTop:24, borderTop: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(122,63,209,0.08)", display:"flex", gap:12 }}>
                 <button onClick={back}
                   style={{ flex:"0 0 auto", padding:"14px 28px", borderRadius:12, border: dark?"1px solid rgba(255,255,255,0.14)":"1px solid rgba(122,63,209,0.20)", background:"transparent", color:textMain, fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer" }}>
                   &larr; {step > 1 ? "Back" : "Cancel"}
                 </button>
-                <button onClick={step < TOTAL_STEPS ? next : submit} disabled={submitting}
-                  style={{ flex:1, padding:"14px", borderRadius:12, border:"none", background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"white", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1px", textTransform:"uppercase", cursor: submitting?"not-allowed":"pointer", opacity: submitting?0.7:1, boxShadow:"0 4px 20px rgba(122,63,209,0.35)" }}>
-                  {submitting ? "Redirecting to payment…" : (step < TOTAL_STEPS ? "Continue →" : "Proceed to Payment →")}
+                <button onClick={step < TOTAL_STEPS ? next : submit} disabled={submitting || (salesClosed && step >= TOTAL_STEPS)}
+                  style={{ flex:1, padding:"14px", borderRadius:12, border:"none", background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"white", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1px", textTransform:"uppercase", cursor: (submitting || (salesClosed && step >= TOTAL_STEPS))?"not-allowed":"pointer", opacity: (submitting || (salesClosed && step >= TOTAL_STEPS))?0.5:1, boxShadow:"0 4px 20px rgba(122,63,209,0.35)" }}>
+                  {submitting ? "Redirecting to payment…" : (step < TOTAL_STEPS ? "Continue →" : salesClosed ? "Sales Paused" : "Proceed to Payment →")}
                 </button>
               </div>
             </div>

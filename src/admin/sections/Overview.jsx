@@ -24,7 +24,7 @@ const QUICK = [
 export default function Overview() {
   const { me, kill } = useAdmin();
   const stats = useApi("/console/stats");
-  const sales = useApi("/admin/analytics");
+  const sales = useApi("/console/sales?range=week");
   const cms = useApi("/cms/status");
   const s = stats.data || {};
   const totals = sales.data?.totals || {};
@@ -57,7 +57,7 @@ export default function Overview() {
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatTile label="Tickets sold" value={sales.error ? "—" : num(totals.totalTickets)} icon={Ticket} tone="pink" to="/admin/analytics" />
-        <StatTile label="Ticket revenue" value={sales.error ? "—" : totals.totalRevenue != null ? `$${num(totals.totalRevenue)}` : undefined} icon={DollarSign} tone="orange" to="/admin/analytics" />
+        <StatTile label="Ticket revenue (Stripe)" value={sales.error || (sales.data && totals.totalRevenue == null) ? "—" : totals.totalRevenue != null ? `$${num(Math.round(totals.totalRevenue))}` : undefined} hint={sales.data && totals.totalRevenue == null ? "Stripe unavailable" : undefined} icon={DollarSign} tone="orange" to="/admin/analytics" />
         <StatTile label="App users active today" value={stats.error ? "—" : num(s.activeToday)} icon={Activity} tone="purple" hint={s.activeWeek != null ? `${num(s.activeWeek)} this week` : undefined} to="/admin/app" />
         <StatTile label="Open reports" value={stats.error ? "—" : num(s.openReports)} icon={ShieldAlert} tone={s.openReports ? "bad" : "good"} hint={s.openReports ? "Needs a look" : "All clear"} to="/admin/app/moderation" />
       </div>

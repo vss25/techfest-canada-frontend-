@@ -33,6 +33,7 @@ import LinkedinLanding from "./pages/Linkedin";
 import Media from "./pages/Media";
 import Briefings from "./pages/Briefings";
 import MaintenanceGate from "./components/MaintenanceGate";
+import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
 
 // The staff panel is loaded only when someone opens it.
 const Admin = lazy(() => import("./pages/Admin"));
@@ -62,9 +63,10 @@ function App() {
     <BrowserRouter>
       <ScrollToTop />
       <MaintenanceGate>
+      <AnnouncementBar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/programme" element={<Programme />} />
+        <Route path="/programme" element={<AgendaGate><Programme /></AgendaGate>} />
         <Route path="/speakers" element={<Speakers />} />
         <Route path="/speakers/:slug" element={<SpeakerProfile />} />
         <Route path="/sponsors" element={<Sponsors />} />
@@ -84,7 +86,7 @@ function App() {
         />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/about" element={<AboutUs />} />
-        <Route path="/agenda" element={<Agenda />} />
+        <Route path="/agenda" element={<AgendaGate><Agenda /></AgendaGate>} />
         <Route
           path="/admin-login"
           element={

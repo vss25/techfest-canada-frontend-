@@ -10,6 +10,7 @@ import SponsorMarquee from "../components/SponsorMarquee";
 import NewsletterBar from "../components/NewsletterBar";
 import CommunityCarousel from "../components/CommunityCarousel";
 import SpeakerMarquee from "../components/SpeakerMarquee";
+import useSiteSettings from "../hooks/useSiteSettings";
 
 var containerVariants = {
   hidden: {},
@@ -74,6 +75,8 @@ function DividerReveal(props) {
 }
 
 function SubtitleReveal(props) {
+  var site = useSiteSettings();
+  var tagline = site["site.hero_tagline"];   // set in the admin panel; empty = built-in text
   var ref = useRef(null);
   var isInView = useInView(ref, { once: true, margin: "-40px" });
   return (
@@ -84,11 +87,13 @@ function SubtitleReveal(props) {
       className="hero-sub"
       style={{ fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", lineHeight: 1.85, fontWeight: 400, maxWidth: 920, color: props.textMid, textAlign: "justify", hyphens: "auto", marginBottom: "3rem" }}
     >
+      {tagline || <>
       Canada's first-of-its-kind, deal-making platform where
       innovators, buyers, and policymakers turn emerging tech into real partnerships,
       pilots, and contracts, not just conversations. Expect a never-seen-before concentration of
       senior decision-makers from enterprise and critical sectors, alongside government,
       associations, media, and leading research institutions.
+      </>}
     </motion.p>
   );
 }

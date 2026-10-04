@@ -24,17 +24,12 @@ import Broadcast from "../admin/app/Broadcast";
 import AuditLog from "../admin/app/AuditLog";
 import StaffAccounts from "../admin/staff/StaffAccounts";
 import KillSwitch from "../admin/staff/KillSwitch";
+import TicketManager from "../admin/tickets/TicketManager";
+import SalesAnalytics from "../admin/tickets/SalesAnalytics";
 
 // Existing admin features — wrapped and restyled, logic unchanged.
-import AdminAttendees from "../components/AdminAttendees";
 import AdminInventory from "../components/AdminInventory";
 import CheckIn from "../components/CheckIn";
-import AdminAnalytics from "../components/AdminAnalytics";
-import AdminKyc from "../components/AdminKyc";
-import AdminEmailCampaigns from "../components/AdminEmailCampaigns";
-import AdminAudience from "../components/AdminAudience";
-import AdminCampaignCalendar from "../components/AdminCampaignCalendar";
-import AdminLeads from "../components/AdminLeads";
 import AdminNominations from "../components/AdminNominations";
 
 const T = "Tickets & attendees";
@@ -141,16 +136,11 @@ export default function Admin() {
           <Routes>
             <Route index element={<Overview />} />
 
-            <Route path="attendees" element={<Legacy eyebrow={T} title="Attendees" description="Everyone with a ticket. Use “Sync from Stripe” if a recent purchase is missing."><AdminAttendees /></Legacy>} />
+            <Route path="attendees" element={<TicketManager />} />
             <Route path="inventory" element={<Legacy eyebrow={T} title="Inventory" description="Passes left of each type, and pricing."><AdminInventory /></Legacy>} />
             <Route path="check-in" element={<Legacy eyebrow={T} title="Check-in" description="Point the camera at a ticket's QR code to check the attendee in. Allow camera access when your browser asks."><CheckIn /></Legacy>} />
-            <Route path="kyc" element={<Legacy eyebrow={T} title="KYC" description="Review KYC form submissions."><AdminKyc /></Legacy>} />
-            <Route path="analytics" element={<Legacy eyebrow={T} title="Analytics" description="Ticket sales and revenue over time."><AdminAnalytics /></Legacy>} />
+            <Route path="analytics" element={<SalesAnalytics />} />
 
-            <Route path="campaigns" element={<Legacy eyebrow={M} title="Email campaigns" description="Create, review and send email campaigns."><AdminEmailCampaigns /></Legacy>} />
-            <Route path="audience" element={<Legacy eyebrow={M} title="Audience" description="Contact lists used for campaigns. Import, edit and review contacts."><AdminAudience /></Legacy>} />
-            <Route path="calendar" element={<Legacy eyebrow={M} title="Calendar" description="Scheduled and automated campaigns by date."><AdminCampaignCalendar /></Legacy>} />
-            <Route path="leads" element={<Legacy eyebrow={M} title="Leads" description="Sales leads and follow-ups."><AdminLeads /></Legacy>} />
             <Route path="nominations" element={<Legacy eyebrow={M} title="Nominations" description="Catalyst Awards nominations."><AdminNominations /></Legacy>} />
 
             <Route path="content" element={<Navigate to="/admin/content/speakers" replace />} />

@@ -3,6 +3,7 @@ import { Check, Plus, Save, Trash2, X } from "lucide-react";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Button, Card, ConfirmDialog, Field, Input, Select, Switch, focusRing } from "../ui";
+import { useAdmin } from "../adminContext";
 import { FIELDS_OF_WORK, GENDERS, JOB_LEVELS, OBJECTIVES, SALUTATIONS, TOPICS } from "./profileOptions";
 
 /* Full profile editor for an app user (PATCH /api/console/users/:id, only changed fields). */
@@ -113,6 +114,7 @@ function SlotList({ value, onChange }) {
 
 export default function ProfileEditor({ id, user, onSaved, onDelete }) {
   const toast = useToast();
+  const { isManagement } = useAdmin();
   const orig = useMemo(() => fromUser(user), [user]);
   const [form, setForm] = useState(orig);
   const [saving, setSaving] = useState(false);
@@ -199,7 +201,11 @@ export default function ProfileEditor({ id, user, onSaved, onDelete }) {
           <div className="space-y-4">
             <Switch label="Show in the attendee list" description="Other attendees can find them in the app's directory." checked={form.showInList} onChange={set("showInList")} />
             <Switch label="Finished app profile" description="Off sends them through the app's profile set-up again next time they open it." checked={form.appOnboarded} onChange={set("appOnboarded")} />
-            <Switch label="Staff (admin) access" description="Can sign in to this admin panel and change everything." checked={form.role === "admin"} onChange={(v) => set("role")(v ? "admin" : "user")} />
+            {isManagement ? (
+              <Switch label="Staff (admin) access" description="Can sign in to this admin panel. New staff get the Staff level; change it under Staff accounts." checked={form.role === "admin"} onChange={(v) => set("role")(v ? "admin" : "user")} />
+            ) : (
+              <p className="text-xs text-ttfc-muted">Staff access: <b className="text-ttfc-text">{form.role === "admin" ? "Yes" : "No"}</b> — only management can change this.</p>
+            )}
             <Switch label="Suspended" description="Suspended accounts can't use the app's community features." checked={form.banned} onChange={set("banned")} />
             {form.banned && (
               <Field label="Suspension reason" hint="Visible to staff only.">{(fid) => <Input id={fid} value={form.bannedReason} onChange={set("bannedReason")} />}</Field>

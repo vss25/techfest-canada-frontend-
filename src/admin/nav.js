@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
-  Megaphone, ScrollText, UserCog, Power,
+  Megaphone, ScrollText, UserCog, Power, KeyRound,
 } from "lucide-react";
 
 /** Sidebar structure. `to` is relative to /admin. */
@@ -14,7 +14,7 @@ export const NAV = [
     title: "Tickets & attendees",
     items: [
       { to: "attendees", label: "Tickets", icon: Users },
-      { to: "analytics", label: "Sales analytics", icon: BarChart3 },
+      { to: "analytics", label: "Sales analytics", icon: BarChart3, management: true },
       { to: "inventory", label: "Inventory", icon: Package },
       { to: "check-in", label: "Check-in", icon: ScanLine },
     ],
@@ -45,8 +45,9 @@ export const NAV = [
   {
     title: "Staff & safety",
     items: [
-      { to: "staff", label: "Staff accounts", icon: UserCog },
+      { to: "staff", label: "Staff accounts", icon: UserCog, management: true },
       { to: "email-tracking", label: "Email tracking", icon: MailCheck },
+      { to: "account", label: "My account", icon: KeyRound },
       { to: "kill-switch", label: "Kill switch", icon: Power, danger: true },
     ],
   },

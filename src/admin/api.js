@@ -64,3 +64,6 @@ export const api = {
   patch: (p, body) => adminFetch(p, { method: "PATCH", body: body ?? {} }),
   del: (p) => adminFetch(p, { method: "DELETE" }),
 };
+
+/** True for the server's 403 "Management only" answers (non-management staff). */
+export const isManagementError = (e) => e?.status === 403 && /management/i.test(String(e?.message || ""));

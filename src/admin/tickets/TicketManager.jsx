@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
-  CheckCircle2, ChevronLeft, ChevronRight, Copy, EyeOff, Info, RefreshCw, RotateCcw, Search, Sparkles, Ticket, X,
+  CheckCircle2, ChevronLeft, ChevronRight, Copy, EyeOff, Info, RefreshCw, RotateCcw, Search, Sparkles, Tag, Ticket, X,
 } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import {
-  Badge, Banner, Button, ConfirmDialog, EmptyState, ErrorState, Input, LoadingState, PageHeader, Tabs, TableWrap,
+  Badge, Banner, Button, ConfirmDialog, EmptyState, ErrorState, Input, LoadingState, PageHeader, Select, Tabs, TableWrap,
 } from "../ui";
 import { day } from "../format";
 
@@ -50,6 +51,8 @@ function RowsPreview({ rows, max = 50 }) {
 
 export default function TicketManager() {
   const toast = useToast();
+  const [params, setParams] = useSearchParams();
+  const promo = (params.get("promo") || "").trim().toUpperCase(); // "" | "ANY" | a code
   const [show, setShow] = useState("visible");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
@@ -62,6 +65,7 @@ export default function TicketManager() {
   const dq = useDebounced(q.trim(), 300);
 
   const qs = new URLSearchParams({ show, page: String(page) });
+  if (promo) qs.set("promo", promo);
   if (dq) qs.set("q", dq);
   const { data, error, loading, reload, refreshing } = useApi(`/console/tickets?${qs}`);
   const rows = useMemo(() => data?.rows || [], [data]);
@@ -71,6 +75,11 @@ export default function TicketManager() {
   const clearSel = () => { setSelected(new Set()); setAllMatching(false); };
   const changeTab = (k) => { setShow(k); setPage(0); clearSel(); };
   const changeQ = (v) => { setQ(v); setPage(0); clearSel(); };
+  const changePromo = (v) => {
+    const p = new URLSearchParams(params);
+    if (v) p.set("promo", v); else p.delete("promo");
+    setParams(p, { replace: true }); setPage(0); clearSel();
+  };
 
   const pageKeys = rows.map((r) => r.key);
   const pageAllSelected = pageKeys.length > 0 && pageKeys.every((k) => selected.has(k));
@@ -88,6 +97,7 @@ export default function TicketManager() {
       for (let p = 0; p < pages; p++) {
         const qp = new URLSearchParams({ show, page: String(p) });
         if (dq) qp.set("q", dq);
+        if (promo) qp.set("promo", promo);
         const d = await api.get(`/console/tickets?${qp}`);
         (d.rows || []).forEach((r) => keys.add(r.key));
       }
@@ -160,6 +170,11 @@ export default function TicketManager() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
           <Input type="search" value={q} onChange={(e) => changeQ(e.target.value)} placeholder="Search name, email or ticket ID" className="pl-9" aria-label="Search tickets" />
         </div>
+        <Select value={promo} onChange={(e) => changePromo(e.target.value)} aria-label="Promo code filter" className="sm:w-56">
+          <option value="">All tickets</option>
+          <option value="ANY">Used a promo code</option>
+          {promo && promo !== "ANY" && <option value={promo}>Promo code {promo}</option>}
+        </Select>
         <p className="text-sm text-ttfc-muted" aria-live="polite">
           {loading ? "Loading…" : `${total.toLocaleString()} ticket${total === 1 ? "" : "s"}`}{refreshing && !loading ? " · updating…" : ""}
         </p>
@@ -187,8 +202,8 @@ export default function TicketManager() {
       {loading ? <LoadingState label="Loading tickets…" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !rows.length ? (
         <EmptyState
           icon={show === "duplicates" ? Copy : Ticket}
-          title={dq ? "No tickets match" : show === "duplicates" ? "No duplicates" : show === "hidden" ? "Nothing hidden" : "No tickets yet"}
-          body={dq ? "Try a different name, email or ticket ID." : show === "duplicates" ? "Every person has a single visible ticket." : show === "hidden" ? "Tickets you remove from staff lists appear here, and can be restored any time." : "Tickets appear here as soon as people buy them."}
+          title={dq || promo ? "No tickets match" : show === "duplicates" ? "No duplicates" : show === "hidden" ? "Nothing hidden" : "No tickets yet"}
+          body={promo && !dq ? (promo === "ANY" ? "No tickets in this list used a promo code." : `No tickets in this list used ${promo}.`) : dq ? "Try a different name, email or ticket ID." : show === "duplicates" ? "Every person has a single visible ticket." : show === "hidden" ? "Tickets you remove from staff lists appear here, and can be restored any time." : "Tickets appear here as soon as people buy them."}
         />
       ) : (
         <>
@@ -211,6 +226,7 @@ export default function TicketManager() {
                         <span className="whitespace-nowrap font-semibold">{r.name || <span className="text-ttfc-dim">No name</span>}</span>
                         {r.duplicate && <Badge tone="warn" icon={Copy}>Duplicate</Badge>}
                         {r.hidden && <Badge tone="neutral" icon={EyeOff}>Hidden</Badge>}
+                        {r.promoCode && <Badge tone="pink" icon={Tag} className="font-mono">{r.promoCode}</Badge>}
                       </div>
                     </td>
                     <td className="max-w-[220px] truncate font-mono text-xs text-ttfc-muted" title={r.email}>{r.email || "—"}</td>

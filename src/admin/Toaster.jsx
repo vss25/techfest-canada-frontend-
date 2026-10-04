@@ -16,7 +16,8 @@ export default function Toaster({ children }) {
   const dismiss = useCallback((id) => setItems((xs) => xs.filter((x) => x.id !== id)), []);
   const push = useCallback((type, message) => {
     const id = ++idRef.current;
-    const text = message instanceof Error ? message.message : String(message ?? "");
+    let text = message instanceof Error ? message.message : String(message ?? "");
+    if (/^management only$/i.test(text)) text = "Only management can do that.";
     setItems((xs) => [...xs.slice(-3), { id, type, text }]);
     setTimeout(() => dismiss(id), type === "error" ? 6500 : 3200);
   }, [dismiss]);

@@ -22,9 +22,11 @@ const QUICK = [
 ];
 
 export default function Overview() {
-  const { me, kill } = useAdmin();
+  const { me, kill, isManagement } = useAdmin();
   const stats = useApi("/console/stats");
-  const sales = useApi("/console/sales?range=week");
+  // Money is management-only; staff see the ticket count from the ticket list instead.
+  const sales = useApi(isManagement ? "/console/sales?range=week" : null);
+  const ticketList = useApi(isManagement ? null : "/console/tickets?show=visible");
   const cms = useApi("/cms/status");
   const s = stats.data || {};
   const totals = sales.data?.totals || {};
@@ -55,9 +57,11 @@ export default function Overview() {
         </Banner>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatTile label="Tickets sold" value={sales.error ? "—" : num(totals.totalTickets)} icon={Ticket} tone="pink" to="/admin/analytics" />
-        <StatTile label="Ticket revenue (Stripe)" value={sales.error || (sales.data && totals.totalRevenue == null) ? "—" : totals.totalRevenue != null ? `$${num(Math.round(totals.totalRevenue))}` : undefined} hint={sales.data && totals.totalRevenue == null ? "Stripe unavailable" : undefined} icon={DollarSign} tone="orange" to="/admin/analytics" />
+      <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${isManagement ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+        {isManagement
+          ? <StatTile label="Tickets sold" value={sales.error ? "—" : num(totals.totalTickets)} icon={Ticket} tone="pink" to="/admin/analytics" />
+          : <StatTile label="Tickets" value={ticketList.error ? "—" : num(ticketList.data?.total)} icon={Ticket} tone="pink" to="/admin/attendees" />}
+        {isManagement && <StatTile label="Ticket revenue (Stripe)" value={sales.error || (sales.data && totals.totalRevenue == null) ? "—" : totals.totalRevenue != null ? `$${num(Math.round(totals.totalRevenue))}` : undefined} hint={sales.data && totals.totalRevenue == null ? "Stripe unavailable" : undefined} icon={DollarSign} tone="orange" to="/admin/analytics" />}
         <StatTile label="App users active today" value={stats.error ? "—" : num(s.activeToday)} icon={Activity} tone="purple" hint={s.activeWeek != null ? `${num(s.activeWeek)} this week` : undefined} to="/admin/app" />
         <StatTile label="Open reports" value={stats.error ? "—" : num(s.openReports)} icon={ShieldAlert} tone={s.openReports ? "bad" : "good"} hint={s.openReports ? "Needs a look" : "All clear"} to="/admin/app/moderation" />
       </div>

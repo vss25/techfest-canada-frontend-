@@ -3,12 +3,17 @@ import { KeyRound, ShieldCheck, Trash2, UserPlus, UserCog } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
-import { Badge, Button, Card, ConfirmDialog, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, PasswordInput, TableWrap } from "../ui";
+import { Badge, Button, Card, ConfirmDialog, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, PasswordInput, Select, TableWrap, focusRing } from "../ui";
 import { ago, initials } from "../format";
+
+const LEVELS = [
+  { value: "staff", label: "Staff", help: "Everything except sales, revenue, promo codes and staff settings." },
+  { value: "management", label: "Management", help: "Everything, including sales, revenue, promo codes and staff settings." },
+];
 
 function AddStaff({ onAdded }) {
   const toast = useToast();
-  const [f, setF] = useState({ email: "", name: "", password: "" });
+  const [f, setF] = useState({ email: "", name: "", password: "", staffRole: "staff" });
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
@@ -22,11 +27,12 @@ function AddStaff({ onAdded }) {
     if (Object.keys(errs).length) return;
     setBusy(true);
     try {
-      const body = { email: f.email.trim().toLowerCase(), name: f.name.trim() };
+      const body = { email: f.email.trim().toLowerCase(), name: f.name.trim(), staffRole: f.staffRole };
       if (f.password) body.password = f.password;
       const r = await api.post("/console/staff", body);
-      toast.success(r.created ? `${r.email} can now sign in to the staff panel` : `${r.email} now has staff access`);
-      setF({ email: "", name: "", password: "" });
+      const lvl = f.staffRole === "management" ? "management" : "staff";
+      toast.success(r.created ? `${r.email} can now sign in (${lvl} access)` : `${r.email} now has ${lvl} access`);
+      setF({ email: "", name: "", password: "", staffRole: "staff" });
       onAdded();
     } catch (err) {
       setErrors({ form: err.message });
@@ -49,13 +55,25 @@ function AddStaff({ onAdded }) {
       <Field label="Password" error={errors.password} hint="Required for brand-new accounts.">
         {(id) => <PasswordInput id={id} value={f.password} onChange={set("password")} />}
       </Field>
+      <fieldset>
+        <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">Access level</legend>
+        <div role="radiogroup" className="grid grid-cols-2 gap-2">
+          {LEVELS.map((l) => (
+            <button key={l.value} type="button" role="radio" aria-checked={f.staffRole === l.value} onClick={() => setF((x) => ({ ...x, staffRole: l.value }))}
+              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${f.staffRole === l.value ? "border-ttfc-pink bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>
+              {l.label}{l.value === "staff" && <span className="ml-1 text-xs font-normal opacity-70">(default)</span>}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1.5 text-xs text-ttfc-dim">{LEVELS.find((l) => l.value === f.staffRole)?.help}</p>
+      </fieldset>
       {errors.form && <p role="alert" className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{errors.form}</p>}
       <Button variant="primary" type="submit" icon={UserPlus} loading={busy} className="w-full">Give staff access</Button>
     </Card>
   );
 }
 
-function ChangePassword() {
+export function ChangePassword() {
   const toast = useToast();
   const [f, setF] = useState({ current: "", next: "", confirm: "" });
   const [errors, setErrors] = useState({});
@@ -97,17 +115,27 @@ export default function StaffAccounts() {
   const toast = useToast();
   const { data, error, loading, reload, setData } = useApi("/console/staff");
   const [removing, setRemoving] = useState(null);
+  const [levelBusy, setLevelBusy] = useState("");
+
+  const changeLevel = async (s, staffRole) => {
+    setLevelBusy(s.id);
+    try {
+      await api.patch(`/console/staff/${s.id}`, { staffRole });
+      setData((xs) => (xs || []).map((x) => (x.id === s.id ? { ...x, staffRole } : x)));
+      toast.success(`${s.name} now has ${staffRole} access`);
+    } catch (err) { toast.error(err); } finally { setLevelBusy(""); }
+  };
 
   return (
     <>
-      <PageHeader eyebrow="Staff & safety" title="Staff accounts" description="People who can sign in to this panel. Staff can see and change everything here, so only add people you trust." />
+      <PageHeader eyebrow="Staff & safety" title="Staff accounts" description="People who can sign in to this panel. Management sees everything; staff can't see sales, revenue, promo codes or staff settings." />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0">
           {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !data?.length ? (
             <EmptyState icon={UserCog} title="No staff found" />
           ) : (
             <TableWrap>
-              <thead><tr><th>Person</th><th>Sign-in</th><th>Last active</th><th><span className="sr-only">Actions</span></th></tr></thead>
+              <thead><tr><th>Person</th><th>Access</th><th>Sign-in</th><th>Last active</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>
                 {data.map((s) => (
                   <tr key={s.id}>
@@ -118,6 +146,16 @@ export default function StaffAccounts() {
                           <p className="flex flex-wrap items-center gap-1.5 font-semibold">{s.name}{s.isMe && <Badge tone="pink">You</Badge>}</p>
                           <p className="truncate font-mono text-xs text-ttfc-muted">{s.email}</p>
                         </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="flex flex-col items-start gap-1.5">
+                        <Badge tone={s.staffRole === "management" ? "orange" : "neutral"}>{s.staffRole === "management" ? "Management" : "Staff"}</Badge>
+                        <Select value={s.staffRole === "management" ? "management" : "staff"} disabled={levelBusy === s.id || (s.isMe && s.staffRole === "management")}
+                          onChange={(e) => changeLevel(s, e.target.value)} aria-label={`Access level for ${s.name}`} className="h-8 w-36 py-1 text-xs"
+                          title={s.isMe ? "You can't remove your own management access" : undefined}>
+                          {LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+                        </Select>
                       </div>
                     </td>
                     <td>

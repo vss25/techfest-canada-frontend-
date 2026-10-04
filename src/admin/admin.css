@@ -232,3 +232,10 @@ body.ttfc-admin-open .ticket-bar { display: none !important; }
   position: static;
   z-index: auto;
 }
+
+/* Native dropdown lists follow the dark panel theme. */
+.ttfc-admin select option,
+.ttfc-admin select optgroup {
+  background-color: #120c22;
+  color: #f4f0fb;
+}

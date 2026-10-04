@@ -517,6 +517,7 @@ export function roleInSession(session, name) {
 }
 
 export function getDuration(start, end) {
+  if (!start || !end) return "";
   const [sh, sm] = start.split(":").map(Number);
   const [eh, em] = end.split(":").map(Number);
   const mins = (eh * 60 + em) - (sh * 60 + sm);
@@ -530,6 +531,7 @@ export function getDuration(start, end) {
 
 /** "14:05" -> "2:05 PM" */
 export function formatTime12(t) {
+  if (!t || typeof t !== "string" || !t.includes(":")) return "";
   const [h, m] = t.split(":").map(Number);
   const suffix = h >= 12 ? "PM" : "AM";
   const hr = h % 12 === 0 ? 12 : h % 12;

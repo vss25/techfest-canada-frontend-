@@ -237,8 +237,14 @@ function SessionRow({ s, speakerIndex, readOnly, onEdit, onDuplicate, onDelete }
   return (
     <li className={`grid gap-3 border-b border-ttfc-line/70 px-4 py-4 last:border-0 sm:grid-cols-[120px_minmax(0,1fr)_auto] sm:items-start sm:px-5 ${s.isBreak ? "bg-white/[0.02]" : ""}`}>
       <div className="text-sm tabular-nums">
-        <p className="font-semibold text-ttfc-text">{formatTime12(s.time)}</p>
-        <p className="text-xs text-ttfc-dim">to {formatTime12(s.endTime || s.time)} · {s.endTime ? getDuration(s.time, s.endTime) : ""}</p>
+        {s.time ? (
+          <>
+            <p className="font-semibold text-ttfc-text">{formatTime12(s.time)}</p>
+            <p className="text-xs text-ttfc-dim">to {formatTime12(s.endTime || s.time)}{s.endTime ? ` · ${getDuration(s.time, s.endTime)}` : ""}</p>
+          </>
+        ) : (
+          <p className="font-semibold text-amber-200">No time</p>
+        )}
       </div>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -286,14 +292,18 @@ export default function Agenda() {
   const list = useMemo(() => [...(data || [])].sort(byTime), [data]);
   const speakerIndex = useMemo(() => buildSpeakerIndex(speakers.data || []), [speakers.data]);
   const speakerNames = useMemo(() => (speakers.data || []).map((d) => d.name).filter(Boolean).sort(), [speakers.data]);
-  const dayList = list.filter((s) => Number(s.day) === day);
+  const dayList = list.filter((s) => Number(s.day) === day && s.time);
+  // Sessions made elsewhere (e.g. Sanity Studio) without a day or time don't show on the site.
+  const unscheduled = list.filter((s) => !(Number(s.day) === 1 || Number(s.day) === 2) || !s.time);
+  const imported = new Set(list.map((s) => s.sessionId).filter(Boolean));
+  const missing = SESSIONS.filter((s) => !imported.has(s.id)).length;
   const counts = { 1: list.filter((s) => Number(s.day) === 1).length, 2: list.filter((s) => Number(s.day) === 2).length };
 
   const importAgenda = async () => {
     setImporting(true);
     try {
       const r = await api.post("/cms/session/import", { sessions: SESSIONS });
-      toast.success(`Imported ${r.imported} sessions${r.skipped?.length ? ` · ${r.skipped.length} skipped` : ""}`);
+      toast.success(`Agenda imported: ${missing || r.imported} sessions added${r.skipped?.length ? ` · ${r.skipped.length} skipped` : ""}. Existing sessions weren't changed.`);
       reload();
     } catch (err) { toast.error(err); } finally { setImporting(false); }
   };
@@ -323,7 +333,17 @@ export default function Agenda() {
         eyebrow="Website content"
         title="Agenda"
         description="Every session on the website's Agenda page and in the app: titles, times, formats, speakers and moderators."
-        actions={list.length > 0 && <Button variant="primary" icon={Plus} disabled={readOnly} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add session</Button>}
+        actions={(
+          <div className="flex flex-wrap gap-2">
+            {missing > 0 && (
+              <Button icon={Download} loading={importing} disabled={readOnly} onClick={importAgenda}
+                title="Adds the built-in sessions that aren't in the CMS yet. Never changes sessions you've edited.">
+                Import current agenda ({missing})
+              </Button>
+            )}
+            {list.length > 0 && <Button variant="primary" icon={Plus} disabled={readOnly} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add session</Button>}
+          </div>
+        )}
       />
       <CmsBanners configured={configured} />
 
@@ -336,6 +356,18 @@ export default function Agenda() {
         />
       ) : (
         <>
+          {unscheduled.length > 0 && (
+            <div className="mb-6 rounded-[18px] border border-amber-400/40 bg-amber-400/10 p-4">
+              <p className="text-sm font-semibold text-amber-200">Needs a day &amp; time ({unscheduled.length})</p>
+              <p className="mt-1 text-xs text-ttfc-dim">These don't appear on the website or in the app until they have a day, start and end time. Edit them, or delete them if they were tests.</p>
+              <ul className="mt-3 overflow-hidden rounded-[14px] border border-ttfc-line bg-ttfc-panel">
+                {unscheduled.map((s) => (
+                  <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly}
+                    onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} onDuplicate={duplicate} onDelete={setDeleting} />
+                ))}
+              </ul>
+            </div>
+          )}
           <Tabs value={day} onChange={setDay} label="Day"
             tabs={[1, 2].map((d) => ({ key: d, label: `${DAYS[d].label} · ${DAYS[d].date}`, count: counts[d] }))} />
           {dayList.length ? (

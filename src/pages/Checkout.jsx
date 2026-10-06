@@ -352,16 +352,27 @@ function CheckoutInner() {
         body:JSON.stringify({
           tier,
           promoCode: promoCode || undefined,
-          // Attendee details so the ticket PDF and confirmation email
-          // aren't addressed to "Guest"
+          // Everything on the form. It travels with the Stripe session and is
+          // saved with the ticket (staff see it in Admin → Tickets).
+          // Lists use "; " because some topic names contain commas.
           metadata: {
+            salutation: form.salutation,
             firstName: form.firstName,
             lastName: form.lastName,
             name: [form.firstName, form.lastName].filter(Boolean).join(" "),
             email: form.email,
             organisation: form.organisation,
             jobTitle: form.jobTitle,
+            businessNumber: form.businessNumber,
             country: form.country,
+            linkedin: form.linkedin,
+            jobLevel: form.jobLevel,
+            jobLevelOther: form.jobLevelOther,
+            jobFunction: form.jobFunction,
+            topics: form.topics.join("; "),
+            objectives: form.objectives.join("; "),
+            consentTerms: String(!!form.consent1),
+            consentUpdates: String(!!form.consent2),
           },
         }),
       });

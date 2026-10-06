@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  CheckCircle2, ChevronLeft, ChevronRight, Copy, EyeOff, Info, RefreshCw, RotateCcw, Search, Sparkles, Tag, Ticket, X,
+  CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, EyeOff, Info, RefreshCw, RotateCcw, Search, Sparkles, Tag, Ticket, X,
 } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
-import { api } from "../api";
+import { api, ADMIN_API, getToken } from "../api";
+import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
 import {
-  Badge, Banner, Button, ConfirmDialog, EmptyState, ErrorState, Input, LoadingState, PageHeader, Select, Tabs, TableWrap,
+  Badge, Banner, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Input, LoadingState, PageHeader, Select, Tabs, TableWrap,
 } from "../ui";
 import { day } from "../format";
 
@@ -26,6 +27,52 @@ function Check({ checked, indeterminate, onChange, label }) {
       onClick={(e) => e.stopPropagation()}
       className="h-4 w-4 cursor-pointer rounded accent-[#E8458B] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ttfc-purple"
     />
+  );
+}
+
+const DETAIL_FIELDS = [
+  ["organisation", "Organisation"], ["jobTitle", "Job title"], ["jobLevel", "Job level"],
+  ["jobFunction", "Job function"], ["country", "Country"], ["phone", "Phone"], ["linkedin", "LinkedIn"],
+  ["topics", "Topics"], ["objectives", "Objectives"], ["consentUpdates", "Agreed to event updates"],
+];
+
+/** Everything the buyer filled in at checkout. */
+function AttendeeDrawer({ row, onClose }) {
+  const d = row?.details || null;
+  const show = (k, v) => {
+    if (Array.isArray(v)) return v.length ? <span className="flex flex-wrap gap-1.5">{v.map((x) => <Badge key={x} tone="neutral">{x}</Badge>)}</span> : null;
+    if (typeof v === "boolean") return v ? "Yes" : "No";
+    if (k === "linkedin" && v) {
+      const href = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+      return <a href={href} target="_blank" rel="noopener noreferrer" className="break-all text-ttfc-pink underline-offset-2 hover:underline">{v}</a>;
+    }
+    if (k === "phone" && v) return <a href={`tel:${v}`} className="text-ttfc-pink underline-offset-2 hover:underline">{v}</a>;
+    return v || null;
+  };
+  return (
+    <Drawer
+      open={!!row}
+      onClose={onClose}
+      title={[d?.salutation, row?.name].filter(Boolean).join(" ") || "No name"}
+      description={row ? `${tierLabel(row.tier)} pass · ${row.ticketId} · bought ${day(row.purchaseDate)}` : ""}
+    >
+      {row && (
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-[150px_1fr]">
+          <dt className="text-ttfc-muted">Email</dt>
+          <dd><a href={`mailto:${row.email}`} className="break-all text-ttfc-pink underline-offset-2 hover:underline">{row.email || "—"}</a></dd>
+          {DETAIL_FIELDS.map(([k, label]) => {
+            const v = show(k, d?.[k]);
+            return v == null ? null : [<dt key={k + "t"} className="text-ttfc-muted">{label}</dt>, <dd key={k}>{v}</dd>];
+          })}
+        </dl>
+      )}
+      {row && !d && (
+        <p className="mt-6 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm text-ttfc-muted">
+          No checkout answers saved for this ticket. It was bought before details were stored, issued by staff, or bought in the app.
+          “Sync from Stripe” fills in whatever Stripe still has.
+        </p>
+      )}
+    </Drawer>
   );
 }
 
@@ -62,6 +109,8 @@ export default function TicketManager() {
   const [confirmHide, setConfirmHide] = useState(null); // { keys, rows }
   const [dupes, setDupes] = useState(null);             // { count, rows }
   const [busy, setBusy] = useState("");
+  const [openRow, setOpenRow] = useState(null);
+  const { isManagement } = useAdmin();
   const dq = useDebounced(q.trim(), 300);
 
   const qs = new URLSearchParams({ show, page: String(page) });
@@ -139,6 +188,21 @@ export default function TicketManager() {
     } catch (err) { toast.error(err); } finally { setBusy(""); }
   };
 
+  // Spreadsheet of every visible ticket with checkout answers (management only)
+  const exportCsv = async () => {
+    setBusy("export");
+    try {
+      const res = await fetch(`${ADMIN_API}/console/tickets/export`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || `Export failed (${res.status})`);
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ttfc-attendees-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) { toast.error(err); } finally { setBusy(""); }
+  };
+
   const tabs = [
     { key: "visible", label: "Visible" },
     { key: "duplicates", label: "Duplicates", count: data?.duplicates ?? undefined },
@@ -155,6 +219,7 @@ export default function TicketManager() {
         description="Every ticket — app accounts and guest checkouts — in one list. Tidy up what staff see without touching anyone's ticket."
         actions={
           <>
+            {isManagement && <Button icon={Download} loading={busy === "export"} onClick={exportCsv} title="Every visible ticket with job, company, phone, topics and more">Download attendee list</Button>}
             <Button icon={RefreshCw} loading={busy === "sync"} onClick={syncStripe} title="Pull in any recent Stripe purchases that are missing">Sync from Stripe</Button>
             <Button variant="primary" icon={Sparkles} loading={busy === "dupes"} onClick={previewDupes}>Clean up duplicates</Button>
           </>
@@ -168,7 +233,7 @@ export default function TicketManager() {
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1 sm:max-w-md">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
-          <Input type="search" value={q} onChange={(e) => changeQ(e.target.value)} placeholder="Search name, email or ticket ID" className="pl-9" aria-label="Search tickets" />
+          <Input type="search" value={q} onChange={(e) => changeQ(e.target.value)} placeholder="Search name, email, company or ticket ID" className="pl-9" aria-label="Search tickets" />
         </div>
         <Select value={promo} onChange={(e) => changePromo(e.target.value)} aria-label="Promo code filter" className="sm:w-56">
           <option value="">All tickets</option>
@@ -211,7 +276,7 @@ export default function TicketManager() {
             <thead>
               <tr>
                 <th className="w-10"><Check checked={pageAllSelected} indeterminate={!pageAllSelected && pageSomeSelected} onChange={togglePage} label="Select all on this page" /></th>
-                <th>Name</th><th>Email</th><th>Ticket ID</th><th>Pass</th><th>Source</th><th>Bought</th><th>Check-in</th>
+                <th>Name</th><th>Company</th><th>Email</th><th>Ticket ID</th><th>Pass</th><th>Source</th><th>Bought</th><th>Check-in</th>
                 <th><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -223,11 +288,20 @@ export default function TicketManager() {
                     <td><Check checked={on} onChange={(v) => toggle(r.key, v)} label={`Select ${r.name || r.ticketId}`} /></td>
                     <td>
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="whitespace-nowrap font-semibold">{r.name || <span className="text-ttfc-dim">No name</span>}</span>
+                        <button type="button" onClick={() => setOpenRow(r)} title="See everything they filled in at checkout"
+                          className="whitespace-nowrap rounded font-semibold underline-offset-2 hover:text-ttfc-pink hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ttfc-purple">
+                          {r.name || <span className="text-ttfc-dim">No name</span>}
+                        </button>
                         {r.duplicate && <Badge tone="warn" icon={Copy}>Duplicate</Badge>}
                         {r.hidden && <Badge tone="neutral" icon={EyeOff}>Hidden</Badge>}
                         {r.promoCode && <Badge tone="pink" icon={Tag} className="font-mono">{r.promoCode}</Badge>}
                       </div>
+                    </td>
+                    <td className="max-w-[200px] text-xs">
+                      {r.details?.organisation || r.details?.jobTitle
+                        ? <><span className="block truncate font-semibold" title={r.details?.organisation}>{r.details?.organisation || "—"}</span>
+                            <span className="block truncate text-ttfc-muted" title={r.details?.jobTitle}>{r.details?.jobTitle}</span></>
+                        : <span className="text-ttfc-dim">—</span>}
                     </td>
                     <td className="max-w-[220px] truncate font-mono text-xs text-ttfc-muted" title={r.email}>{r.email || "—"}</td>
                     <td className="whitespace-nowrap font-mono text-xs">{r.ticketId}</td>
@@ -254,6 +328,8 @@ export default function TicketManager() {
           )}
         </>
       )}
+
+      <AttendeeDrawer row={openRow} onClose={() => setOpenRow(null)} />
 
       <ConfirmDialog
         open={!!confirmHide}

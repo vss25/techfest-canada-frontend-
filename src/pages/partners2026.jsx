@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import emailjs from "@emailjs/browser";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -7,22 +7,6 @@ import PartnerGrid from "../components/PartnerGrid";
 
 var EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
 var EASE_OUT_QUART = [0.22, 1, 0.36, 1];
-
-function RevealText({ children, delay, as, className, style }) {
-  var Tag = motion[as || "div"];
-  return (
-    <Tag
-      initial={{ opacity: 0, y: 50, filter: "blur(16px)", clipPath: "inset(0 100% 0 0)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)", clipPath: "inset(0 0% 0 0)" }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 1.4, delay: delay || 0, ease: EASE_OUT_EXPO }}
-      className={className}
-      style={style}
-    >
-      {children}
-    </Tag>
-  );
-}
 
 function HeroReveal({ children, delay, as, className, style }) {
   var Tag = motion[as || "div"];
@@ -550,36 +534,6 @@ export default function Partners2026() {
           </motion.div>
         </section>
 
-        {/* STATS */}
-        <section style={{ padding: "80px 5% 40px", maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "clamp(1.5rem, 4vw, 4rem)", justifyItems: "center" }}>
-            {[
-              { val: "25+", label: "Partners" },
-              { val: "10+", label: "Countries" },
-              { val: "5", label: "Tech Pillars" },
-              { val: "2", label: "Days" },
-            ].map(function (stat, i) {
-              return (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
-                  whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  viewport={{ once: true, margin: "-40px" }}
-                  transition={{ duration: 1.0, delay: i * 0.1, ease: EASE_OUT_QUART }}
-                  style={{ textAlign: "center" }}
-                >
-                  <div className="tfc-grad-text" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 900, lineHeight: 1, letterSpacing: "-1px" }}>
-                    {stat.val}
-                  </div>
-                  <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.62rem", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: textDim, marginTop: 10 }}>
-                    {stat.label}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </section>
-
         {/* PARTNER GRID */}
         <section style={{ padding: "60px 0 100px" }}>
           <SoftReveal>
@@ -587,15 +541,6 @@ export default function Partners2026() {
               The Network
             </div>
           </SoftReveal>
-
-          <RevealText
-            as="h2"
-            delay={0.1}
-            className="tfc-grad-text tfc-grad-block"
-            style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 900, fontSize: "clamp(1.8rem, 4vw, 2.6rem)", letterSpacing: "-0.5px", lineHeight: 1.15, textAlign: "center", margin: "0 auto 18px", padding: "0 5%", maxWidth: 900 }}
-          >
-            Attending Institutions
-          </RevealText>
 
           <SoftReveal delay={0.4}>
             <p style={{ fontSize: "clamp(0.95rem, 1.4vw, 1.1rem)", color: textMuted, lineHeight: 1.7, maxWidth: 640, margin: "0 auto 36px", padding: "0 5%", textAlign: "center" }}>

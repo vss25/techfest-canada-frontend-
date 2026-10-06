@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import imageUrlBuilder from "@sanity/image-url";
 import { client, logoScaleOf } from "../utils/sanity";
+import { logoHref } from "../data/logoLinks";
 
 const builder = imageUrlBuilder(client);
 const urlFor = (source) => builder.image(source);
@@ -162,9 +163,9 @@ export default function SpeakerMarquee({ dark, title }) {
 
             return (
               <div key={`${sponsor._id}-${i}`} className="marquee-item">
-                {sponsor.url ? (
+                {logoHref(sponsor) ? (
                   <a
-                    href={sponsor.url}
+                    href={logoHref(sponsor)}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={sponsor.name}

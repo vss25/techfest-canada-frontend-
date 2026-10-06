@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, EyeOff, Info, Pencil, RefreshCw, RotateCcw, Search, Sparkles, Tag, Ticket, X,
+  CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, EyeOff, Info, MailQuestion, Pencil, RefreshCw, RotateCcw, Search, Sparkles, Tag, Ticket, UserCheck, X,
 } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { api, ADMIN_API, getToken } from "../api";
@@ -11,6 +11,7 @@ import {
   Badge, Banner, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, Select, Tabs, TableWrap, Textarea,
 } from "../ui";
 import { day } from "../format";
+import { ProfileLinkPanel, ProfileRequestDialog } from "./ProfileRequests";
 
 const PAGE = 100;
 const SAFE_NOTE = "This only hides tickets from staff lists and analytics. The owner's ticket stays valid in the app, on the website and at the door.";
@@ -42,9 +43,11 @@ const EDIT_FIELDS = [
 ];
 
 /** Everything the buyer filled in at checkout, plus what staff add. */
-function AttendeeDrawer({ row, onClose, onSaved }) {
+function AttendeeDrawer({ row, onClose, onSaved, isManagement }) {
   const toast = useToast();
   const d = row?.details || null;
+  // Only bookkeeping (e.g. "profile link sent") isn't an answer.
+  const hasAnswers = !!d && Object.keys(d).some((k) => !["profileRequestedAt", "profileRequestCount", "source"].includes(k));
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -111,6 +114,7 @@ function AttendeeDrawer({ row, onClose, onSaved }) {
       )}
       {row && !editing && (
         <>
+          <ProfileLinkPanel key={row.key} row={row} canSend={isManagement} onSent={onSaved} />
           {boughtForSomeoneElse && (
             <p className="mb-5 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm text-ttfc-muted">
               The email doesn't match this name. Someone may have bought this ticket for them.
@@ -128,7 +132,7 @@ function AttendeeDrawer({ row, onClose, onSaved }) {
               return v == null ? null : [<dt key={k + "t"} className="text-ttfc-muted">{label}</dt>, <dd key={k}>{v}</dd>];
             })}
           </dl>
-          {!d && (
+          {!hasAnswers && (
             <p className="mt-6 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm text-ttfc-muted">
               No checkout answers saved for this ticket. It was bought before details were stored, issued by staff, or bought in the app.
               “Sync from Stripe” fills in whatever Stripe still has, or use Edit details to add what you know.
@@ -174,6 +178,7 @@ export default function TicketManager() {
   const [dupes, setDupes] = useState(null);             // { count, rows }
   const [busy, setBusy] = useState("");
   const [openRow, setOpenRow] = useState(null);
+  const [profileAsk, setProfileAsk] = useState(null);   // preview of "Ask for missing details"
   const { isManagement } = useAdmin();
   const dq = useDebounced(q.trim(), 300);
 
@@ -268,6 +273,13 @@ export default function TicketManager() {
     } catch (err) { toast.error(err); } finally { setBusy(""); }
   };
 
+  // Who would get the "complete your profile" email, plus a sample of it. Nothing is sent here.
+  const previewProfileAsk = async () => {
+    setBusy("profile");
+    try { setProfileAsk(await api.post("/console/tickets/profile-request", { preview: true })); }
+    catch (err) { toast.error(err); } finally { setBusy(""); }
+  };
+
   const tabs = [
     { key: "visible", label: "Visible" },
     { key: "duplicates", label: "Duplicates", count: data?.duplicates ?? undefined },
@@ -284,6 +296,7 @@ export default function TicketManager() {
         description="Every ticket — app accounts and guest checkouts — in one list. Tidy up what staff see without touching anyone's ticket."
         actions={
           <>
+            {isManagement && <Button icon={MailQuestion} loading={busy === "profile"} onClick={previewProfileAsk} title="Email people we don't have a job title or organisation for a link to fill in their details">Ask for missing details</Button>}
             {isManagement && <Button icon={Download} loading={busy === "export"} onClick={exportCsv} title="Every visible ticket with job, company, phone, topics and more">Download attendee list</Button>}
             <Button icon={RefreshCw} loading={busy === "sync"} onClick={syncStripe} title="Pull in any recent Stripe purchases that are missing">Sync from Stripe</Button>
             <Button variant="primary" icon={Sparkles} loading={busy === "dupes"} onClick={previewDupes}>Clean up duplicates</Button>
@@ -360,6 +373,7 @@ export default function TicketManager() {
                         {r.duplicate && <Badge tone="warn" icon={Copy}>Duplicate</Badge>}
                         {r.hidden && <Badge tone="neutral" icon={EyeOff}>Hidden</Badge>}
                         {r.promoCode && <Badge tone="pink" icon={Tag} className="font-mono">{r.promoCode}</Badge>}
+                        {r.profileCompletedAt && <span title={`Completed their profile on ${day(r.profileCompletedAt)}`}><Badge tone="good" icon={UserCheck}>Profile</Badge></span>}
                       </div>
                     </td>
                     <td className="max-w-[200px] text-xs">
@@ -396,7 +410,9 @@ export default function TicketManager() {
         </>
       )}
 
-      <AttendeeDrawer row={openRow} onClose={() => setOpenRow(null)} onSaved={(r) => { setOpenRow(r); reload(); }} />
+      <AttendeeDrawer row={openRow} isManagement={isManagement} onClose={() => setOpenRow(null)} onSaved={(r) => { setOpenRow(r); reload(); }} />
+
+      <ProfileRequestDialog preview={profileAsk} onClose={() => setProfileAsk(null)} onSent={reload} />
 
       <ConfirmDialog
         open={!!confirmHide}

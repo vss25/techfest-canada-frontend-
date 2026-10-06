@@ -32,6 +32,7 @@ import Organizers from "./pages/Organizers";
 import LinkedinLanding from "./pages/Linkedin";
 import Media from "./pages/Media";
 import Briefings from "./pages/Briefings";
+import CompleteProfile from "./pages/CompleteProfile";
 import MaintenanceGate from "./components/MaintenanceGate";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
 
@@ -121,6 +122,7 @@ function App() {
         <Route path="/organizers" element={<Organizers />} />
         <Route path="/linkedin" element={<LinkedinLanding />} />
         <Route path="/media" element={<Media />} />
+        <Route path="/complete-profile" element={<CompleteProfile />} />
       </Routes>
       <TicketBar />
       </MaintenanceGate>

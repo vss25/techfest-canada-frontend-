@@ -7,6 +7,8 @@ import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
 /* Public-site pieces driven by Site settings → Website options in the admin panel. */
 
 const isStaffPath = (p) => p === "/admin" || p.startsWith("/admin/") || p === "/admin-login";
+// Focused one-task pages (e.g. the emailed "complete your profile" link) skip site-wide announcements.
+const isFocusedPath = (p) => p === "/complete-profile";
 
 function useBodyDark() {
   const [dark, setDark] = useState(() => typeof document !== "undefined" && document.body.classList.contains("dark-mode"));
@@ -30,7 +32,7 @@ export function AnnouncementBar() {
   const ref = useRef(null);
   const text = s["site.announcement"];
   const link = safeUrl(s["site.announcement_link"]);
-  const show = !!text && dismissed !== text && !isStaffPath(pathname);
+  const show = !!text && dismissed !== text && !isStaffPath(pathname) && !isFocusedPath(pathname);
 
   useLayoutEffect(() => {
     const body = document.body;

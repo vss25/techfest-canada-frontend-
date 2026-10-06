@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { client, urlFor, logoScaleOf } from "../utils/sanity";
+import { logoHref } from "../data/logoLinks";
 
 /**
  * PartnerGrid — premium edition
@@ -252,10 +253,11 @@ export default function PartnerGrid({ category, dark, accent }) {
             </span>
           );
 
-          const TileMotion = motion[partner.url ? "a" : "div"];
-          const linkProps = partner.url
+          const href = logoHref(partner);
+          const TileMotion = motion[href ? "a" : "div"];
+          const linkProps = href
             ? {
-                href: partner.url,
+                href,
                 target: "_blank",
                 rel: "noopener noreferrer",
                 "aria-label": partner.name || "Partner",

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { client, urlFor, logoScaleOf } from "../utils/sanity";
+import { logoHref } from "../data/logoLinks";
 
 const EMPTY_CELLS = Array.from({ length: 10 }, (_, idx) => ({
   _id: `empty-${idx}`,
@@ -150,9 +151,9 @@ export default function PartnerMarquee({ category, title, dark }) {
 
             return (
               <div key={`${partner._id}-${i}`} className="partner-marquee-item">
-                {partner.url && imgNode ? (
+                {logoHref(partner) && imgNode ? (
                   <a
-                    href={partner.url}
+                    href={logoHref(partner)}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={partner.name || "Partner"}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import AuthModal from "./AuthModal";
@@ -12,6 +13,7 @@ const PARTNERS_DROPDOWN = [
 ];
 
 const MORE_DROPDOWN = [
+  { label: "Briefings", path: "/briefings" },
   { label: "Venue", path: "/venue" },
   { label: "Volunteer", path: "/volunteer" },
   { label: "Organizers", path: "/organizers" },
@@ -27,8 +29,8 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [partnersOpen, setPartnersOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [mobilePartnersOpen, setMobilePartnersOpen] = useState(false);
-  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const [navHeight, setNavHeight] = useState(92);
   const location = useLocation();
   const site = useSiteSettings();
   const showAgenda = site["site.show_agenda"] !== false;
@@ -66,9 +68,18 @@ export default function Navbar() {
     setMobileOpen(false);
     setPartnersOpen(false);
     setMoreOpen(false);
-    setMobilePartnersOpen(false);
-    setMobileMoreOpen(false);
   }, [location.pathname]);
+
+  // Phone menu: sit exactly under the bar, freeze the page behind it, close on Escape
+  useEffect(() => {
+    if (!mobileOpen) return;
+    if (navRef.current) setNavHeight(navRef.current.getBoundingClientRect().bottom);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => { if (e.key === "Escape") setMobileOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
+  }, [mobileOpen]);
 
   const dark = theme === "dark";
   const bg = dark ? "rgba(6,2,15,0.92)" : "rgba(255,255,255,0.94)";
@@ -89,7 +100,6 @@ export default function Navbar() {
 
   const navItems = [
     { label: "HOME", path: "/" },
-    { label: "BRIEFINGS", path: "/briefings" },
     { label: "PARTNERS", hasDropdown: true, dropKey: "partners" },
     { label: "SPEAKERS", path: "/speakers" },
     { label: "AGENDA", path: "/agenda" },
@@ -109,11 +119,10 @@ export default function Navbar() {
     return { open: false, setOpen: () => {}, items: [] };
   };
 
-  const getMobileDropConfig = (dropKey) => {
-    if (dropKey === "partners") return { open: mobilePartnersOpen, setOpen: setMobilePartnersOpen, items: PARTNERS_DROPDOWN };
-    if (dropKey === "more") return { open: mobileMoreOpen, setOpen: setMobileMoreOpen, items: MORE_DROPDOWN };
-    return { open: false, setOpen: () => {}, items: [] };
-  };
+  const mobileGroups = [
+    { title: "Partners", items: PARTNERS_DROPDOWN },
+    { title: "More", items: MORE_DROPDOWN },
+  ];
 
   const renderDropdown = (items, open, setOpen) => (
     <AnimatePresence>
@@ -238,8 +247,8 @@ export default function Navbar() {
         .tfc-drop-btn.active { background: rgba(122,63,209,0.14); }
 
         /* ── HAMBURGER ── */
-        .tfc-hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 6px; }
-        .tfc-hamburger span { display: block; width: 22px; height: 2px; border-radius: 2px; transition: all 0.25s ease; }
+        .tfc-hamburger { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; width: 40px; height: 40px; border-radius: 12px; padding: 0; flex-shrink: 0; }
+        .tfc-hamburger span { display: block; width: 18px; height: 2px; border-radius: 2px; transition: all 0.25s ease; }
         .tfc-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
         .tfc-hamburger.open span:nth-child(2) { opacity: 0; }
         .tfc-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -298,9 +307,18 @@ export default function Navbar() {
         @media (max-width: 380px) {
           .tfc-nav-logo { height: 60px !important; max-width: 180px !important; }
         }
+
+        /* ── PHONE MENU ── */
+        .tfc-m-row { display: flex; align-items: center; justify-content: space-between; min-height: 56px; padding: 0 4px; font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; border-bottom: 1px solid ${border}; }
+        .tfc-m-row svg { opacity: 0.45; transition: transform 0.2s ease, opacity 0.2s ease; }
+        .tfc-m-row:active svg, .tfc-m-row.active svg { opacity: 1; transform: translateX(3px); }
+        .tfc-m-label { font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin: 26px 4px 10px; }
+        .tfc-m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .tfc-m-tile { display: flex; align-items: center; min-height: 52px; padding: 0 14px; border-radius: 14px; font-family: 'Orbitron', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; text-decoration: none; border: 1px solid ${pillBorder}; transition: background 0.15s ease; }
+        .tfc-m-tile:active { background: rgba(122,63,209,0.14) !important; }
       `}</style>
 
-      <nav className="tfc-navbar-wrap" style={{ background: bg, borderBottom: "1px solid " + border }}>
+      <nav ref={navRef} className="tfc-navbar-wrap" style={{ background: bg, borderBottom: "1px solid " + border }}>
         <div className="tfc-nav-container">
 
           {/* LEFT: LOGO */}
@@ -362,7 +380,9 @@ export default function Navbar() {
 
             <ThemeToggle />
 
-            <button className={"tfc-hamburger" + (mobileOpen ? " open" : "")} onClick={() => setMobileOpen(!mobileOpen)} aria-label="Menu">
+            <button className={"tfc-hamburger" + (mobileOpen ? " open" : "")} onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen}
+              style={{ background: themeBtnBg, border: "1px solid " + themeBtnBorder }}>
               <span style={{ background: textMain }} />
               <span style={{ background: textMain }} />
               <span style={{ background: textMain }} />
@@ -371,64 +391,63 @@ export default function Navbar() {
 
         </div>
 
-        {/* MOBILE MENU */}
-        <AnimatePresence>
+        {/* MOBILE MENU — full-height sheet: big rows, grouped tiles, tickets always in reach.
+            Portalled to <body>: the bar's backdrop-filter would otherwise trap position:fixed inside it. */}
+        {createPortal(<AnimatePresence>
           {mobileOpen && (
-            <motion.div initial={{ opacity: 0, y: -15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.2 }}
-              style={{ position: "absolute", top: "100%", left: 0, width: "100%", height: "calc(100vh - 92px)", overflowY: "auto", background: mobileBg, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid " + border }}
+            <motion.div
+              data-lenis-prevent
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+              style={{ position: "fixed", top: navHeight, left: 0, right: 0, bottom: 0, zIndex: 9998, display: "flex", flexDirection: "column", background: mobileBg, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderTop: "1px solid " + border }}
             >
-              <div style={{ padding: "20px 24px 80px", display: "flex", flexDirection: "column", gap: 4 }}>
-                {navItems.map((item) => {
-                  if (item.hasDropdown) {
-                    var mdc = getMobileDropConfig(item.dropKey);
-                    return (
-                      <div key={item.dropKey} style={{ display: "flex", flexDirection: "column" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <span
-                            style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.78rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", padding: "12px 16px", borderRadius: 12, flex: 1, color: isActive(item) ? "#7a3fd1" : textMain, background: isActive(item) ? "rgba(122,63,209,0.08)" : "transparent" }}
-                          >{item.label}</span>
-                          <button onClick={() => mdc.setOpen(!mdc.open)} style={{ background: "transparent", border: "none", color: textMain, cursor: "pointer", padding: "10px 16px", display: "flex", alignItems: "center" }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: mdc.open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>
-                              <path d="M6 9l6 6 6-6" />
-                            </svg>
-                          </button>
-                        </div>
-                        <AnimatePresence>
-                          {mdc.open && (
-                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
-                              <div style={{ paddingLeft: 16, marginTop: 4, display: "flex", flexDirection: "column", gap: 4 }}>
-                                {mdc.items.map((d) => (
-                                  <Link key={d.path} to={d.path} onClick={() => setMobileOpen(false)}
-                                    style={{ display: "block", fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", textDecoration: "none", padding: "10px 16px", borderRadius: 10, color: location.pathname === d.path ? "#7a3fd1" : textMuted, background: location.pathname === d.path ? "rgba(122,63,209,0.08)" : "transparent" }}
-                                  >— {d.label}</Link>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  }
+              <motion.div
+                initial="hidden" animate="show"
+                variants={{ show: { transition: { staggerChildren: 0.035 } } }}
+                style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "8px 20px 24px" }}
+              >
+                {navItems.filter((item) => !item.hasDropdown).map((item) => {
+                  const active = location.pathname === item.path;
                   return (
-                    <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}
-                      style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.78rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none", padding: "12px 16px", borderRadius: 12, color: location.pathname === item.path ? "#7a3fd1" : textMain, background: location.pathname === item.path ? "rgba(122,63,209,0.08)" : "transparent" }}
-                    >{item.label}</Link>
+                    <motion.div key={item.path} variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
+                      <Link to={item.path} onClick={() => setMobileOpen(false)}
+                        className={"tfc-m-row" + (active ? " active" : "")}
+                        style={{ color: active ? "#7a3fd1" : textMain }}
+                      >
+                        {item.label}
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                      </Link>
+                    </motion.div>
                   );
                 })}
 
-                <Link to="/brochures" onClick={() => setMobileOpen(false)}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 12, padding: "14px", borderRadius: 14, fontFamily: "'Orbitron', sans-serif", fontSize: "0.76rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none", border: "1px solid " + (isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.18)"), color: isDark ? "#fff" : "#0f0520" }}
-                >BROCHURE</Link>
+                {mobileGroups.map((group) => (
+                  <motion.div key={group.title} variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
+                    <div className="tfc-m-label" style={{ color: textMuted }}>{group.title}</div>
+                    <div className="tfc-m-grid">
+                      {group.items.map((d) => {
+                        const active = location.pathname === d.path;
+                        return (
+                          <Link key={d.path} to={d.path} onClick={() => setMobileOpen(false)} className="tfc-m-tile"
+                            style={{ color: active ? "#7a3fd1" : textMain, background: active ? "rgba(122,63,209,0.10)" : pillBg }}
+                          >{d.label}</Link>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
 
-                <div style={{ marginTop: 8, padding: 2, borderRadius: 16 }}>
-                  <Link to="/tickets" onClick={() => setMobileOpen(false)} className="btn-primary"
-                    style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "14px", borderRadius: 14, fontFamily: "'Orbitron', sans-serif", fontSize: "0.82rem", fontWeight: 900, letterSpacing: "1.2px", textTransform: "uppercase", textDecoration: "none" }}
-                  >TICKETS</Link>
-                </div>
+              <div style={{ display: "flex", gap: 10, padding: "12px 20px calc(14px + env(safe-area-inset-bottom))", borderTop: "1px solid " + border, background: mobileBg }}>
+                <Link to="/brochures" onClick={() => setMobileOpen(false)}
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", height: 50, borderRadius: 14, fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none", border: "1.5px solid " + (isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.18)"), color: isDark ? "#fff" : "#0f0520" }}
+                >Brochure</Link>
+                <Link to="/tickets" onClick={() => setMobileOpen(false)} className="btn-primary"
+                  style={{ flex: 1.4, display: "flex", alignItems: "center", justifyContent: "center", height: 50, borderRadius: 14, fontFamily: "'Orbitron', sans-serif", fontSize: "0.78rem", fontWeight: 900, letterSpacing: "1.2px", textTransform: "uppercase", textDecoration: "none" }}
+                >Get tickets</Link>
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
+        </AnimatePresence>, document.body)}
       </nav>
 
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />

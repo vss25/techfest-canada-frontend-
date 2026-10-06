@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, EyeOff, Info, RefreshCw, RotateCcw, Search, Sparkles, Tag, Ticket, X,
+  CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, EyeOff, Info, Pencil, RefreshCw, RotateCcw, Search, Sparkles, Tag, Ticket, X,
 } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { api, ADMIN_API, getToken } from "../api";
 import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
 import {
-  Badge, Banner, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Input, LoadingState, PageHeader, Select, Tabs, TableWrap,
+  Badge, Banner, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, Select, Tabs, TableWrap, Textarea,
 } from "../ui";
 import { day } from "../format";
 
@@ -36,9 +36,37 @@ const DETAIL_FIELDS = [
   ["topics", "Topics"], ["objectives", "Objectives"], ["consentUpdates", "Agreed to event updates"],
 ];
 
-/** Everything the buyer filled in at checkout. */
-function AttendeeDrawer({ row, onClose }) {
+const EDIT_FIELDS = [
+  ["organisation", "Organisation"], ["jobTitle", "Job title"], ["phone", "Phone"],
+  ["linkedin", "LinkedIn"], ["country", "Country"],
+];
+
+/** Everything the buyer filled in at checkout, plus what staff add. */
+function AttendeeDrawer({ row, onClose, onSaved }) {
+  const toast = useToast();
   const d = row?.details || null;
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const isGuest = row?.source !== "account";
+
+  const startEdit = () => {
+    const f = { name: row.name || "", notes: d?.notes || "" };
+    EDIT_FIELDS.forEach(([k]) => { f[k] = d?.[k] || (k === "organisation" ? row.emailOrg || "" : ""); });
+    setForm(f); setEditing(true);
+  };
+  const close = () => { setEditing(false); onClose(); };
+  const save = async () => {
+    setSaving(true);
+    try {
+      const { name, ...details } = form;
+      const r = await api.patch("/console/tickets/details", { key: row.key, details, ...(isGuest && name.trim() !== row.name ? { name } : {}) });
+      toast.success("Saved");
+      onSaved({ ...row, details: r.details, ...(r.name ? { name: r.name } : {}) });
+      setEditing(false);
+    } catch (err) { toast.error(err); } finally { setSaving(false); }
+  };
+
   const show = (k, v) => {
     if (Array.isArray(v)) return v.length ? <span className="flex flex-wrap gap-1.5">{v.map((x) => <Badge key={x} tone="neutral">{x}</Badge>)}</span> : null;
     if (typeof v === "boolean") return v ? "Yes" : "No";
@@ -47,30 +75,66 @@ function AttendeeDrawer({ row, onClose }) {
       return <a href={href} target="_blank" rel="noopener noreferrer" className="break-all text-ttfc-pink underline-offset-2 hover:underline">{v}</a>;
     }
     if (k === "phone" && v) return <a href={`tel:${v}`} className="text-ttfc-pink underline-offset-2 hover:underline">{v}</a>;
+    if (k === "notes" && v) return <span className="whitespace-pre-wrap">{v}</span>;
     return v || null;
   };
+  const emailLocal = String(row?.email || "").split("@")[0].replace(/[._-]+/g, " ").toLowerCase();
+  const boughtForSomeoneElse = row && row.name && emailLocal.length > 3
+    && !row.name.toLowerCase().split(/\s+/).some((w) => w.length > 2 && emailLocal.includes(w));
+
   return (
     <Drawer
       open={!!row}
-      onClose={onClose}
+      onClose={close}
       title={[d?.salutation, row?.name].filter(Boolean).join(" ") || "No name"}
       description={row ? `${tierLabel(row.tier)} pass · ${row.ticketId} · bought ${day(row.purchaseDate)}` : ""}
+      footer={row && (editing
+        ? <><Button variant="primary" loading={saving} onClick={save}>Save</Button><Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button></>
+        : <Button icon={Pencil} onClick={startEdit}>Edit details</Button>)}
     >
-      {row && (
-        <dl className="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-[150px_1fr]">
-          <dt className="text-ttfc-muted">Email</dt>
-          <dd><a href={`mailto:${row.email}`} className="break-all text-ttfc-pink underline-offset-2 hover:underline">{row.email || "—"}</a></dd>
-          {DETAIL_FIELDS.map(([k, label]) => {
-            const v = show(k, d?.[k]);
-            return v == null ? null : [<dt key={k + "t"} className="text-ttfc-muted">{label}</dt>, <dd key={k}>{v}</dd>];
-          })}
-        </dl>
+      {row && editing && (
+        <div className="flex flex-col gap-4">
+          {isGuest && (
+            <Field label="Attendee name" hint="The person who will attend (the card holder's name is used by default).">
+              {(id) => <Input id={id} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />}
+            </Field>
+          )}
+          {EDIT_FIELDS.map(([k, label]) => (
+            <Field key={k} label={label} hint={k === "organisation" && !d?.organisation && row.emailOrg ? "Pre-filled from their email address. Check it before saving." : undefined}>
+              {(id) => <Input id={id} value={form[k]} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} />}
+            </Field>
+          ))}
+          <Field label="Staff notes" hint="Only staff see this. It's included in the attendee spreadsheet.">
+            {(id) => <Textarea id={id} rows={4} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />}
+          </Field>
+        </div>
       )}
-      {row && !d && (
-        <p className="mt-6 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm text-ttfc-muted">
-          No checkout answers saved for this ticket. It was bought before details were stored, issued by staff, or bought in the app.
-          “Sync from Stripe” fills in whatever Stripe still has.
-        </p>
+      {row && !editing && (
+        <>
+          {boughtForSomeoneElse && (
+            <p className="mb-5 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm text-ttfc-muted">
+              The email doesn't match this name. Someone may have bought this ticket for them.
+            </p>
+          )}
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-[150px_1fr]">
+            <dt className="text-ttfc-muted">Email</dt>
+            <dd><a href={`mailto:${row.email}`} className="break-all text-ttfc-pink underline-offset-2 hover:underline">{row.email || "—"}</a></dd>
+            {!d?.organisation && row.emailOrg && [
+              <dt key="eot" className="text-ttfc-muted">Organisation</dt>,
+              <dd key="eo">{row.emailOrg} <span className="text-xs text-ttfc-dim">(from email)</span></dd>,
+            ]}
+            {[...DETAIL_FIELDS, ["notes", "Staff notes"]].map(([k, label]) => {
+              const v = show(k, d?.[k]);
+              return v == null ? null : [<dt key={k + "t"} className="text-ttfc-muted">{label}</dt>, <dd key={k}>{v}</dd>];
+            })}
+          </dl>
+          {!d && (
+            <p className="mt-6 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm text-ttfc-muted">
+              No checkout answers saved for this ticket. It was bought before details were stored, issued by staff, or bought in the app.
+              “Sync from Stripe” fills in whatever Stripe still has, or use Edit details to add what you know.
+            </p>
+          )}
+        </>
       )}
     </Drawer>
   );
@@ -183,7 +247,8 @@ export default function TicketManager() {
     setBusy("sync");
     try {
       const r = await api.post("/admin/sync-guests-from-stripe");
-      toast.success(`Synced ${r.synced ?? 0} purchase${r.synced === 1 ? "" : "s"} from Stripe${r.skipped ? ` · skipped ${r.skipped}` : ""}`);
+      const filled = r.detailsFilled ? ` · filled in details for ${r.detailsFilled} ticket${r.detailsFilled === 1 ? "" : "s"}` : "";
+      toast.success(`Synced ${r.synced ?? 0} new purchase${r.synced === 1 ? "" : "s"} from Stripe${filled}`);
       reload();
     } catch (err) { toast.error(err); } finally { setBusy(""); }
   };
@@ -299,9 +364,11 @@ export default function TicketManager() {
                     </td>
                     <td className="max-w-[200px] text-xs">
                       {r.details?.organisation || r.details?.jobTitle
-                        ? <><span className="block truncate font-semibold" title={r.details?.organisation}>{r.details?.organisation || "—"}</span>
+                        ? <><span className="block truncate font-semibold" title={r.details?.organisation}>{r.details?.organisation || r.emailOrg || "—"}</span>
                             <span className="block truncate text-ttfc-muted" title={r.details?.jobTitle}>{r.details?.jobTitle}</span></>
-                        : <span className="text-ttfc-dim">—</span>}
+                        : r.emailOrg
+                          ? <span className="block truncate text-ttfc-muted" title="From their email address">{r.emailOrg}</span>
+                          : <span className="text-ttfc-dim">—</span>}
                     </td>
                     <td className="max-w-[220px] truncate font-mono text-xs text-ttfc-muted" title={r.email}>{r.email || "—"}</td>
                     <td className="whitespace-nowrap font-mono text-xs">{r.ticketId}</td>
@@ -329,7 +396,7 @@ export default function TicketManager() {
         </>
       )}
 
-      <AttendeeDrawer row={openRow} onClose={() => setOpenRow(null)} />
+      <AttendeeDrawer row={openRow} onClose={() => setOpenRow(null)} onSaved={(r) => { setOpenRow(r); reload(); }} />
 
       <ConfirmDialog
         open={!!confirmHide}

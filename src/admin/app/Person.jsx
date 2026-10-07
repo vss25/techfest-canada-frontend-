@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Ban, Eye, EyeOff, Lock, MessageSquare, RotateCcw, Trash2, UserCheck } from "lucide-react";
+import { ArrowLeft, Ban, BellRing, Eye, EyeOff, Lock, MessageSquare, RotateCcw, Trash2, UserCheck } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
@@ -140,6 +140,7 @@ function PersonView({ id }) {
   if (loading) return <LoadingState label="Loading person…" />;
   if (error && !d) return <ErrorState error={error} onRetry={reload} />;
   const u = d.user;
+  const onApp = !!(u.appOnboarded || u.lastActiveAt); // same rule as the app's "on the app"
   const tabs = [
     { key: "profile", label: "Profile" },
     { key: "activity", label: "Activity", count: d.activity?.total ?? 0 },
@@ -178,10 +179,23 @@ function PersonView({ id }) {
             {u.email} · {[u.jobTitle, u.organization].filter(Boolean).join(" · ") || "No title yet"} · joined {when(u.createdAt)} · last active {when(u.lastActiveAt)}
           </p>
         </div>
-        <Button variant={u.banned ? "success" : "dangerOutline"} icon={u.banned ? UserCheck : Ban} onClick={() => setSuspend(true)}>
-          {u.banned ? "Reinstate" : "Suspend"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            icon={BellRing}
+            disabled={!onApp || u.banned}
+            title={u.banned ? "Suspended people can't get notifications." : onApp ? `Write a notification to ${u.name}` : "They haven't signed into the app yet, so they can't get app notifications."}
+            onClick={() => navigate(`/admin/app/broadcast?to=${encodeURIComponent(id)}`)}
+          >
+            Send notification
+          </Button>
+          <Button variant={u.banned ? "success" : "dangerOutline"} icon={u.banned ? UserCheck : Ban} onClick={() => setSuspend(true)}>
+            {u.banned ? "Reinstate" : "Suspend"}
+          </Button>
+        </div>
       </header>
+      {!onApp && !u.banned && (
+        <p className="-mt-3 mb-5 text-xs text-ttfc-dim">Not on the app yet, so app notifications aren't available for {u.name}.</p>
+      )}
 
       <Tabs tabs={tabs} value={tab} onChange={setTab} label="Person details" />
 

@@ -11,7 +11,7 @@ export default function AuthSuccess() {
     if (token) {
       localStorage.setItem("token", token);
       window.dispatchEvent(new Event("authChanged"));
-      navigate("/dashboard");
+      navigate("/");
     } else {
       navigate("/");
     }

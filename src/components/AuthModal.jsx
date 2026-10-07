@@ -95,13 +95,7 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
         window.dispatchEvent(new CustomEvent("showSurvey", { detail: { name } }));
       }, 350);
     } else {
-      // Soft reload — only reload if not already on dashboard
-      const path = window.location.pathname;
-      if (path === "/dashboard") {
-        window.dispatchEvent(new CustomEvent("dashboardRefresh"));
-      } else {
-        window.location.reload();
-      }
+      window.location.reload();
     }
   };
 

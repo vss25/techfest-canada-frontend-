@@ -33,6 +33,7 @@ import LinkedinLanding from "./pages/Linkedin";
 import Media from "./pages/Media";
 import Briefings from "./pages/Briefings";
 import CompleteProfile from "./pages/CompleteProfile";
+import AppLogin from "./pages/AppLogin";
 import MaintenanceGate from "./components/MaintenanceGate";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
 
@@ -123,6 +124,7 @@ function App() {
         <Route path="/linkedin" element={<LinkedinLanding />} />
         <Route path="/media" element={<Media />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
+        <Route path="/app-login" element={<AppLogin />} />
       </Routes>
       <TicketBar />
       </MaintenanceGate>

@@ -104,6 +104,22 @@
     }
     </script>
 
+    <!-- Sign-in links (/app-login?token=…): move the one-time token out of the
+         address bar before any analytics script reads the page URL.
+         src/pages/AppLogin.jsx picks it up from sessionStorage. -->
+    <script>
+      (function () {
+        try {
+          if (location.pathname.replace(/\/+$/, "") !== "/app-login") return;
+          var p = new URLSearchParams(location.search);
+          var t = p.get("token");
+          if (!t) return;
+          sessionStorage.setItem("ttfc.appLoginToken", t);
+          history.replaceState(null, "", "/app-login");
+        } catch (e) { /* storage blocked: AppLogin falls back to the URL */ }
+      })();
+    </script>
+
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NG7Q6JVKPH"></script>
     <script>

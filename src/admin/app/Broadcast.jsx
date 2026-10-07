@@ -1,10 +1,42 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Megaphone, Send } from "lucide-react";
 import { api } from "../api";
 import { useToast } from "../toastContext";
-import { Banner, Button, Card, ConfirmDialog, Field, PageHeader, Textarea } from "../ui";
+import { Banner, Button, Card, ConfirmDialog, Field, PageHeader, SectionTitle, Tabs, Textarea } from "../ui";
+import PersonalNotify from "./PersonalNotify";
+
+const MODES = [
+  { key: "person", label: "Send to a person" },
+  { key: "everyone", label: "Announcement to everyone" },
+];
 
 export default function Broadcast() {
+  const [params, setParams] = useSearchParams();
+  const prefillIds = (params.get("to") || "").split(",").filter(Boolean);
+  const mode = params.get("mode") === "everyone" && !prefillIds.length ? "everyone" : "person";
+  const setMode = (m) => {
+    const p = new URLSearchParams(params);
+    if (m === "everyone") { p.set("mode", "everyone"); p.delete("to"); } else p.delete("mode");
+    setParams(p, { replace: true });
+  };
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="App"
+        title="Broadcast"
+        description="Send a private notification to one person or a few, or post an official update everyone sees."
+      />
+      <Tabs tabs={MODES} value={mode} onChange={setMode} label="Who to send to" />
+      <div role="tabpanel">
+        {mode === "person" ? <PersonalNotify key={prefillIds.join(",")} prefillIds={prefillIds} /> : <EveryoneAnnouncement />}
+      </div>
+    </>
+  );
+}
+
+function EveryoneAnnouncement() {
   const toast = useToast();
   const [body, setBody] = useState("");
   const [banner, setBanner] = useState(false);
@@ -19,13 +51,11 @@ export default function Broadcast() {
 
   return (
     <>
-      <PageHeader
-        eyebrow="App"
-        title="Broadcast"
-        description="Post an official update to everyone. It appears at the top of the Feed, and phones show a notification the next time the app checks in."
-      />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card as="form" onSubmit={review} className="space-y-5">
+          <SectionTitle hint="It appears at the top of the Feed, and phones show a notification the next time the app checks in.">
+            Announcement to everyone
+          </SectionTitle>
           <Field label="Message" error={err} hint={`${body.length}/4000 characters`}>
             {(id) => (
               <Textarea id={id} rows={6} value={body} maxLength={4000} onChange={(e) => setBody(e.target.value)}

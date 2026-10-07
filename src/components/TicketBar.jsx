@@ -4,7 +4,7 @@ export default function TicketBar() {
   const location = useLocation();
   
   // No "Get your pass" bar where people already have one (their emailed profile link).
-  if (location.pathname === "/tickets" || location.pathname === "/complete-profile") {
+  if (location.pathname === "/tickets" || location.pathname === "/complete-profile" || location.pathname === "/app-login") {
     return null;
   }
 

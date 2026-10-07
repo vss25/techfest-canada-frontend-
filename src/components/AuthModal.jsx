@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { getPendingPurchase, clearPendingPurchase } from "../utils/purchase";
+import { maskEmail, cleanCode, requestEmailLink, verifyEmailCode } from "../utils/emailLink";
 
 const API = "https://techfest-canada-backend.onrender.com/api/auth";
 const GOOGLE_CLIENT_ID = "676399067827-8rri9ibgjqonjfs5ov6laul096rj1m7o.apps.googleusercontent.com";
@@ -15,6 +16,17 @@ function GoogleIcon() {
   );
 }
 
+function MailIcon({ color }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <path d="m4 7 8 6 8-6" />
+    </svg>
+  );
+}
+
+const RESEND_SECONDS = 30;
+
 function LinkedInIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="#0A66C2">
@@ -28,6 +40,11 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const googleBtnRef = useRef(null);
+  // "Email me a sign-in link": the address it went to, the code typed, errors, resend cooldown.
+  const [linkEmail, setLinkEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [linkError, setLinkError] = useState("");
+  const [cooldown, setCooldown] = useState(0);
 
   // Detect dark mode
   const [isDark, setIsDark] = useState(
@@ -41,7 +58,13 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => { setForm({ name: "", email: "", password: "" }); }, [view]);
+  useEffect(() => { setForm({ name: "", email: "", password: "" }); setLinkError(""); }, [view]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -130,6 +153,36 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
       setView("login");
     } catch (err) { alert(err.message); } finally { setLoading(false); }
   }; 
+  const sendLink = async (email) => {
+    setLoading(true); setLinkError("");
+    try {
+      await requestEmailLink(email);
+      setLinkEmail(String(email).trim());
+      setCode("");
+      setCooldown(RESEND_SECONDS);
+      setView("emailCode");
+    } catch (err) { setLinkError(err.message); } finally { setLoading(false); }
+  };
+
+  const handleEmailLink = (e) => { e.preventDefault(); sendLink(form.email); };
+
+  const submitCode = async (value) => {
+    const clean = cleanCode(value);
+    if (clean.length !== 6 || loading) return;
+    setLoading(true); setLinkError("");
+    try {
+      const data = await verifyEmailCode(linkEmail, clean);
+      finishAuth(data.token, !!data.created);
+    } catch (err) { setLinkError(err.message); setCode(""); } finally { setLoading(false); }
+  };
+
+  const handleCodeChange = (e) => {
+    const next = cleanCode(e.target.value);
+    setCode(next);
+    if (linkError) setLinkError("");
+    if (next.length === 6) submitCode(next);
+  };
+
   // Theme-aware colors
   const bg        = isDark ? "#0f0720"         : "#ffffff";
   const cardBg    = isDark ? "#160c2c"         : "#f8f6ff";
@@ -227,11 +280,13 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
             {view === "login"  && <>Welcome <span style={{ color: "#f5a623" }}>Back</span></>}
             {view === "signup" && <>Create <span style={{ color: "#f5a623" }}>Account</span></>}
             {view === "forgot" && <>Reset <span style={{ color: "#f5a623" }}>Password</span></>}
+            {view === "emailLink" && <>Sign-in <span style={{ color: "#f5a623" }}>Link</span></>}
+            {view === "emailCode" && <>Check your <span style={{ color: "#f5a623" }}>Email</span></>}
           </h2>
         </div>
 
         {/* Social buttons */}
-        {view !== "forgot" && (
+        {(view === "login" || view === "signup") && (
           <>
             <div ref={googleBtnRef} style={{ display: "none" }} />
             <button style={socialBtnStyle} onClick={handleGoogleClick}
@@ -243,6 +298,11 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
               onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#2a1560" : "#e0d8ff"; }}
               onMouseLeave={e => { e.currentTarget.style.background = socialBg; }}>
               <LinkedInIcon /> Continue with LinkedIn
+            </button>
+            <button style={socialBtnStyle} onClick={() => setView("emailLink")}
+              onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#2a1560" : "#e0d8ff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = socialBg; }}>
+              <MailIcon color={isDark ? "#c4a8ff" : "#7a3fd1"} /> Email me a sign-in link
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0" }}>
               <div style={{ flex: 1, height: 1, background: border }} />
@@ -299,6 +359,69 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
             <p style={{ textAlign: "center", marginTop: 16, color: textMuted, fontSize: "0.88rem" }}>
               Already have an account?{" "}
               <span style={{ color: "#f5a623", cursor: "pointer", fontWeight: 700 }} onClick={() => setView("login")}>Sign in</span>
+            </p>
+          </form>
+        )}
+
+        {/* EMAIL ME A SIGN-IN LINK */}
+        {view === "emailLink" && (
+          <form onSubmit={handleEmailLink}>
+            <p style={{ color: textMuted, fontSize: "0.9rem", lineHeight: 1.55, margin: "0 0 16px", textAlign: "center" }}>
+              Enter the email you used to buy your ticket. We'll email you a link that signs you straight in.
+            </p>
+            <input style={inputStyle} name="email" type="email" autoComplete="email" inputMode="email" placeholder="Email you bought your ticket with" value={form.email} onChange={handleChange} required autoFocus />
+            {linkError && <p role="alert" style={{ color: "#e05555", fontSize: "0.82rem", margin: "-4px 0 12px" }}>{linkError}</p>}
+            <button type="submit" disabled={loading} style={{
+              width: "100%", padding: "14px",
+              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              border: "none", borderRadius: 12,
+              color: "white", fontWeight: 800, fontSize: "0.88rem",
+              fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.5px",
+              cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1,
+            }}>
+              {loading ? "Sending..." : "EMAIL ME A LINK"}
+            </button>
+            <p style={{ textAlign: "center", marginTop: 16 }}>
+              <span style={{ color: "#f5a623", cursor: "pointer", fontWeight: 700, fontSize: "0.88rem" }} onClick={() => setView("login")}>← Back to sign in</span>
+            </p>
+          </form>
+        )}
+
+        {/* CHECK YOUR EMAIL + 6-DIGIT CODE */}
+        {view === "emailCode" && (
+          <form onSubmit={(e) => { e.preventDefault(); submitCode(code); }}>
+            <p style={{ color: textMuted, fontSize: "0.9rem", lineHeight: 1.55, margin: "0 0 18px", textAlign: "center" }}>
+              We sent a sign-in link to <strong style={{ color: textMain }}>{maskEmail(linkEmail)}</strong>. It works for 15 minutes. Or enter the 6-digit code from the email.
+            </p>
+            <input
+              style={{ ...inputStyle, textAlign: "center", fontSize: "1.6rem", fontWeight: 800, letterSpacing: "0.45em", paddingLeft: "calc(16px + 0.45em)", fontFamily: "'SFMono-Regular', Menlo, Consolas, monospace" }}
+              name="code" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength={6}
+              placeholder="000000" aria-label="6-digit code" value={code} onChange={handleCodeChange} autoFocus
+              aria-invalid={!!linkError} disabled={loading}
+            />
+            {linkError && <p role="alert" style={{ color: "#e05555", fontSize: "0.82rem", margin: "-4px 0 12px", textAlign: "center" }}>{linkError}</p>}
+            <button type="submit" disabled={loading || code.length !== 6} style={{ ...{
+              width: "100%", padding: "14px",
+              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              border: "none", borderRadius: 12,
+              color: "white", fontWeight: 800, fontSize: "0.88rem",
+              fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.5px",
+              cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1,
+            }, opacity: loading || code.length !== 6 ? 0.6 : 1, cursor: loading || code.length !== 6 ? "not-allowed" : "pointer" }}>
+              {loading ? "Signing in..." : "SIGN IN"}
+            </button>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginTop: 16, fontSize: "0.85rem", fontWeight: 700 }}>
+              <button type="button" disabled={cooldown > 0 || loading} onClick={() => sendLink(linkEmail)}
+                style={{ background: "none", border: "none", padding: 0, fontFamily: "inherit", fontSize: "inherit", fontWeight: 700, color: cooldown > 0 ? textMuted : "#f5a623", cursor: cooldown > 0 ? "default" : "pointer" }}>
+                {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend email"}
+              </button>
+              <button type="button" onClick={() => setView("emailLink")}
+                style={{ background: "none", border: "none", padding: 0, fontFamily: "inherit", fontSize: "inherit", fontWeight: 700, color: "#f5a623", cursor: "pointer" }}>
+                Use a different email
+              </button>
+            </div>
+            <p style={{ color: textMuted, fontSize: "0.78rem", lineHeight: 1.5, margin: "16px 0 0", textAlign: "center" }}>
+              Nothing there? Check your spam folder, and make sure it's the email on your ticket.
             </p>
           </form>
         )}

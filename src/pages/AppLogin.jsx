@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import {
-  appLoginUrl, isMobileDevice, maskEmail, requestEmailLink, storeSession, verifyEmailLink,
+  appLoginUrl, isMobileDevice, maskEmail, requestEmailLink,
 } from "../utils/emailLink";
 
 /* ============================================================
    /app-login?token=…
    Where the "Your TTFC sign-in link" email lands. On a phone it
-   hands the one-time token to the app (ttfc://login?token=…); the
-   visitor can also sign in on the website instead. The token is
-   single use, so nothing is verified until someone taps a button:
-   verifying on load would burn the link before the app gets it.
+   hands the one-time token to the app (ttfc://login?token=…); on a
+   computer it explains how to sign in with the app instead (the
+   website has no signed-in area any more). Nothing is verified here,
+   so the single-use token stays usable by the app.
    index.html moves the token into sessionStorage before analytics
    scripts can read the URL.
    ============================================================ */
@@ -27,10 +27,6 @@ function readToken() {
   try { return sessionStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; }
 }
 
-function forgetToken() {
-  try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
-}
-
 function useBodyDark() {
   const [dark, setDark] = useState(() => typeof document !== "undefined" && document.body.classList.contains("dark-mode"));
   useEffect(() => {
@@ -44,13 +40,12 @@ function useBodyDark() {
 }
 
 export default function AppLogin() {
-  const navigate = useNavigate();
   const dark = useBodyDark();
   const [token] = useState(readToken);
   const [mobile] = useState(isMobileDevice);
-  // opening → choose → verifying → (navigates away) | error ; no token → invalid
+  // opening → choose ; no token → invalid
   const [status, setStatus] = useState(() => (!token ? "invalid" : mobile ? "opening" : "choose"));
-  const [error, setError] = useState("");
+  const error = "";
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState("");
@@ -79,20 +74,6 @@ export default function AppLogin() {
     return () => clearTimeout(t);
   }, [status, token]);
 
-  const signInHere = async () => {
-    setStatus("verifying"); setError("");
-    try {
-      const data = await verifyEmailLink(token);
-      forgetToken();
-      storeSession(data.token);
-      navigate("/dashboard", { replace: true });
-    } catch (err) {
-      forgetToken();
-      setError(err.message);
-      setStatus("error");
-    }
-  };
-
   const sendNewLink = async (e) => {
     e.preventDefault();
     setSending(true); setSendError("");
@@ -119,7 +100,6 @@ export default function AppLogin() {
   const lead = { margin: "0 auto", maxWidth: 400, color: textMuted, lineHeight: 1.6, fontSize: "1rem" };
   const btnBase = { display: "flex", alignItems: "center", justifyContent: "center", width: "100%", minHeight: 54, padding: "15px 18px", borderRadius: 14, fontFamily: ORBITRON, fontWeight: 800, fontSize: "0.72rem", letterSpacing: "1.2px", textTransform: "uppercase", textDecoration: "none", cursor: "pointer", boxSizing: "border-box" };
   const primary = { ...btnBase, border: "none", background: GRADIENT, color: "#fff", boxShadow: "0 6px 24px rgba(122,63,209,0.35)" };
-  const secondary = { ...btnBase, border: "1.5px solid " + inputBorder, background: "transparent", color: textMain };
   const spinner = <div aria-hidden="true" style={{ width: 38, height: 38, margin: "0 auto 20px", borderRadius: 999, border: `3px solid ${divider}`, borderTopColor: "#7a3fd1", animation: "alSpin 0.8s linear infinite" }} />;
   const badge = (
     <div aria-hidden="true" style={{ width: 64, height: 64, margin: "0 auto 18px", borderRadius: 20, background: GRADIENT, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 30px rgba(122,63,209,0.35)" }}>
@@ -128,30 +108,29 @@ export default function AppLogin() {
   );
 
   let content;
-  if (status === "opening" || status === "verifying") {
+  if (status === "opening") {
     content = (
       <div style={card} role="status" aria-live="polite">
         {spinner}
-        <h1 style={h1}>{status === "opening" ? "Opening the TTFC app…" : "Signing you in…"}</h1>
-        <p style={lead}>{status === "opening" ? "One moment." : "Just a second."}</p>
+        <h1 style={h1}>Opening the TTFC app…</h1>
+        <p style={lead}>One moment.</p>
       </div>
     );
   } else if (status === "choose") {
     content = (
       <div style={card}>
         {badge}
-        <h1 style={h1}>{mobile ? "Opening the TTFC app…" : "Sign in to TTFC 2026"}</h1>
+        <h1 style={h1}>{mobile ? "Opening the TTFC app…" : "Sign in to the TTFC app"}</h1>
         <p style={lead}>
           {mobile
-            ? "If the app didn't open, tap the button below. No app yet? You can sign in on the website instead."
-            : "This link signs you in to the TTFC app. Open the email on your phone to go straight into the app, or sign in on this computer."}
+            ? "If the app didn't open, tap the button below."
+            : "This link signs you in to the TTFC app. Open the email on your phone, or type the 6-digit code from the email into the app."}
         </p>
-        <div style={{ display: "flex", flexDirection: mobile ? "column" : "column-reverse", gap: 12, marginTop: 24 }}>
-          <a href={appLoginUrl(token)} style={mobile ? primary : secondary}>Open the TTFC app</a>
-          <button type="button" onClick={signInHere} style={mobile ? secondary : primary}>
-            {mobile ? "Sign in on the website instead" : "Sign in on the website"}
-          </button>
-        </div>
+        {mobile && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 24 }}>
+            <a href={appLoginUrl(token)} style={primary}>Open the TTFC app</a>
+          </div>
+        )}
         <p style={{ margin: "22px 0 0", color: textDim, fontSize: "0.82rem", lineHeight: 1.5 }}>
           The link works once and expires 15 minutes after it was sent.
         </p>

@@ -30,9 +30,9 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
 
   const PERKS = [
     { icon: "🎟", title: "Ticket Confirmed", desc: "Check your email for your digital pass" },
-    { icon: "📍", title: "The Carlu, Toronto", desc: "Wednesday, October 28, 2026 · Doors 8AM" },
+    { icon: "📍", title: "The Westin Harbour Castle", desc: "Mon–Tue, October 26–27, 2026 · Toronto" },
     { icon: "🤝", title: "500+ Decision Makers", desc: "You're now part of the inner circle" },
-    { icon: "📡", title: "Industry Intel Ready", desc: "Log in to your dashboard to access curated news" },
+    { icon: "📱", title: "The TTFC App", desc: "Your pass, agenda and networking. Coming soon to iPhone & Android" },
   ];
 
   return (
@@ -195,7 +195,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
                 {/* CTAs */}
                 <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
                   <motion.a
-                    href="/dashboard"
+                    href="/agenda"
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.65 }}
@@ -208,7 +208,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
                       letterSpacing: "0.4px", cursor: "pointer",
                     }}
                   >
-                    Go to My Dashboard →
+                    See the Agenda →
                   </motion.a>
                   <motion.button
                     onClick={onClose}

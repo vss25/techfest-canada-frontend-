@@ -8,7 +8,6 @@ import Sponsors from "./pages/Sponsors";
 import Tickets from "./pages/Tickets";
 import Checkout from "./pages/Checkout";
 import Resources from "./pages/Resources";
-import Dashboard from "./pages/Dashboard";
 import Privacy from "./pages/Privacy";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AboutUs from "./components/AboutUs";
@@ -78,14 +77,8 @@ function App() {
         <Route path="/briefings" element={<Briefings />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="/on-demand" element={<Resources />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
+        {/* The attendee dashboard was retired (the app replaces it); keep old links working. */}
+        <Route path="/dashboard" element={<Navigate to="/" replace />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/agenda" element={<AgendaGate><Agenda /></AgendaGate>} />

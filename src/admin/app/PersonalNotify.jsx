@@ -357,7 +357,7 @@ export default function PersonalNotify({ prefillIds = [] }) {
           </div>
           <p className="flex items-start gap-2 rounded-2xl border border-ttfc-line bg-ttfc-ink/40 p-3.5 text-[13px] leading-relaxed text-ttfc-muted">
             <Clock className="mt-0.5 h-4 w-4 shrink-0 text-ttfc-orange" aria-hidden="true" />
-            <span>They'll see it in the app's notifications, and as a phone notification the next time the app checks in (when they open it, or in the background every so often).</span>
+            <span>They'll see it in the app's notifications and as a phone notification: right away once push is switched on on the server, otherwise the next time the app checks in.</span>
           </p>
           <div className="flex justify-end">
             <Button variant="primary" type="submit" icon={Send}>Review & send</Button>

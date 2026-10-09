@@ -53,7 +53,7 @@ function EveryoneAnnouncement() {
     <>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card as="form" onSubmit={review} className="space-y-5">
-          <SectionTitle hint="It appears at the top of the Feed, and phones show a notification the next time the app checks in.">
+          <SectionTitle hint="It appears at the top of the Feed. Phones get a notification right away (or, before push is switched on, the next time the app checks in).">
             Announcement to everyone
           </SectionTitle>
           <Field label="Message" error={err} hint={`${body.length}/4000 characters`}>

@@ -73,7 +73,7 @@ var SECTIONS_PRIVACY = [
   },
   {
     title: "12. Children",
-    body: "The Services are intended for a professional audience and are not directed to children.",
+    body: "The Services are intended for a professional adult audience. You must be 18 or older to attend or to use the TTFC app, and we do not knowingly collect personal information from anyone under 18.",
   },
   {
     title: "13. Third-party links",
@@ -97,7 +97,7 @@ var SECTIONS_TERMS = [
   },
   {
     title: "2. Eligibility and acceptable use",
-    body: "You must use the Services lawfully and responsibly. You agree not to:",
+    body: "You must be 18 or older to attend the event or use the TTFC app, and you must use the Services lawfully and responsibly. You agree not to:",
     list: [
       "Use the Services in a way that violates any applicable law or regulation",
       "Interfere with the security, integrity, or performance of the Services",
@@ -161,6 +161,41 @@ var SECTIONS_TERMS = [
   },
 ];
  
+var SECTIONS_APP = [
+  {
+    title: "1. Who can use the app",
+    body: "The TTFC app is for people aged 18 and over. When you first open it we ask for your date of birth to confirm this; we keep only the confirmation, never the date. Alcohol is served only in licensed areas of the event (such as the Apex lounge) to guests of legal drinking age in Ontario (19+) with valid photo ID.",
+  },
+  {
+    title: "2. What the app collects",
+    body: "In addition to the information described in the Privacy Policy above, the app handles:",
+    list: [
+      "Profile details you choose to add: title, organisation, country, LinkedIn URL, job level and function, topics, goals, tagline, profile photo, meeting availability and, if you choose, salutation and gender. If you answered these on the ticket checkout, the app pre-fills them so you are not asked twice",
+      "Content you create: posts, comments, discussions, direct and group messages, session questions, poll votes and connection requests",
+      "Usage: screens you open, what you tap and search for, and the topics you look at, linked to your account (you can turn this off in Settings → Privacy & data)",
+      "Device: app version, an anonymous device identifier and, if you allow notifications, a push token used to deliver notifications",
+      "The camera is used only to scan ticket and connection QR codes; images are not stored or sent",
+    ],
+  },
+  {
+    title: "3. What other attendees see",
+    body: "Signed-in attendees can see your name, ticket type, profile photo and the profile details you add. They never see your email address unless you connect in person by scanning each other's codes. You can hide yourself from the attendee directory at any time.",
+  },
+  {
+    title: "4. Community rules (zero tolerance)",
+    body: "There is no tolerance for objectionable content or abusive users. Harassment, hate, sexual or violent content, spam, scams, illegal content and impersonation are not allowed. Posts and messages may be checked automatically, and staff review reported or flagged content and messages. You can report any content or person and block anyone; we review reports within 24 hours during the event and remove content or accounts that break these rules.",
+  },
+  {
+    title: "5. Deleting your account",
+    body: "You can delete your app account in Settings → Privacy & data. This removes your profile, posts, messages, connections and activity. Tickets you paid for stay valid at the door. App data is otherwise deleted or anonymised within 12 months after the event, except records we must keep by law.",
+  },
+  {
+    title: "6. Contact",
+    body: "Questions or requests about the app: legal@thetechfestival.com.",
+    email: "legal@thetechfestival.com",
+  },
+];
+
 var SECTIONS_COOKIES = [
   {
     title: "1. What cookies are",
@@ -399,6 +434,28 @@ export default function Privacy() {
           marginBottom: "5rem",
         }} />
  
+        {/* ═══ TTFC APP (privacy + terms for the iOS/Android app) ═══ */}
+        <div id="app">
+          <PolicyBlock
+            title="The TTFC App"
+            subtitle="Privacy and Terms for the mobile app"
+            effective="October 9, 2026"
+            intro="These sections apply to the TTFC mobile app in addition to the Privacy Policy and Terms of Use above. The full app versions are also shown inside the app (Settings → Privacy & data)."
+            sections={SECTIONS_APP}
+            dark={dark}
+          />
+        </div>
+
+        {/* Divider */}
+        <div style={{
+          height: 2,
+          background: dark
+            ? "linear-gradient(90deg, transparent, rgba(122,63,209,0.25), rgba(245,166,35,0.15), transparent)"
+            : "linear-gradient(90deg, transparent, rgba(122,63,209,0.15), rgba(245,166,35,0.10), transparent)",
+          borderRadius: 2,
+          marginBottom: "5rem",
+        }} />
+
         {/* ═══ COOKIE POLICY ═══ */}
         <PolicyBlock
           title="Cookie Policy"

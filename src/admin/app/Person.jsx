@@ -178,6 +178,12 @@ function PersonView({ id }) {
           <p className="mt-1 text-sm text-ttfc-muted">
             {u.email} · {[u.jobTitle, u.organization].filter(Boolean).join(" · ") || "No title yet"} · joined {when(u.createdAt)} · last active {when(u.lastActiveAt)}
           </p>
+          {/* Recorded by the app: 18+ self-confirmation and the Terms/Privacy version they accepted. */}
+          <p className="mt-1 text-xs text-ttfc-dim">
+            {u.ageConfirmedAt ? `18+ confirmed ${when(u.ageConfirmedAt)}` : "18+ not confirmed in the app yet"}
+            {" · "}
+            {u.termsVersion ? `accepted app Terms (${u.termsVersion}) ${when(u.termsAcceptedAt)}` : "app Terms not accepted yet"}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button

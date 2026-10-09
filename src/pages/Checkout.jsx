@@ -410,7 +410,7 @@ function CheckoutInner() {
                   <div style={{ display:"flex", flexDirection:"column", gap:14, padding:"22px", background: dark?"rgba(122,63,209,0.08)":"rgba(122,63,209,0.04)", borderRadius:14, border: dark?"1px solid rgba(122,63,209,0.20)":"1px solid rgba(122,63,209,0.12)" }}>
                     <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#c8a8ff":"#7a3fd1", marginBottom:2 }}>Your Consent</div>
                     {[
-                      { key:"consent1", text:"My consents hereto are given to the organisers and I agree to the organiser's terms of service and privacy policies." },
+                      { key:"consent1", text:"I confirm I am 18 years of age or older. My consents hereto are given to the organisers and I agree to the organiser's terms of service and privacy policies." },
                       { key:"consent2", text:"I acknowledge and agree that the organisers will collect, use, process and/or disclose my personal information for the purposes of securing my registration and attendance for The Tech Festival Canada, including digital platform usage on the The Tech Festival Canada platform, and consent to the collection, use, processing and/or disclosure of my personal information by the organisers for the purposes of receiving updates on the agenda, activities/events, collaboration projects, industry news relating to The Tech Festival Canada." },
                     ].map(({ key, text }, i) => (
                       <label key={key} style={{ display:"flex", gap:12, alignItems:"flex-start", cursor:"pointer" }}>

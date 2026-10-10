@@ -4,6 +4,7 @@ import emailjs from "@emailjs/browser";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PartnerGrid from "../components/PartnerGrid";
+import { addConsentedScript } from "../lib/trackers";
 
 var EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
 var EASE_OUT_QUART = [0.22, 1, 0.36, 1];
@@ -354,12 +355,9 @@ export default function Partners2026() {
     return function () { obs.disconnect(); };
   }, []);
 
+  // Visitor-identification script: only with "Accept All" cookie consent.
   useEffect(function () {
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = "https://a.usbrowserspeed.com/cs?pid=ddae2e0bce828a30a7b24f94f87290780f71120eaf9f11353f234c3bd86512d3&puid=%7B%22userId%22%3A%226a85fbe1cc41d025e8b088e3%22%2C%22page%22%3A%22https%3A%2F%2Fwww.thetechfestival.com%2Fpartners2026%22%2C%22env%22%3A%22prod%22%7D";
-    document.head.appendChild(script);
-    return function () { document.head.removeChild(script); };
+    return addConsentedScript("https://a.usbrowserspeed.com/cs?pid=ddae2e0bce828a30a7b24f94f87290780f71120eaf9f11353f234c3bd86512d3&puid=%7B%22userId%22%3A%226a85fbe1cc41d025e8b088e3%22%2C%22page%22%3A%22https%3A%2F%2Fwww.thetechfestival.com%2Fpartners2026%22%2C%22env%22%3A%22prod%22%7D");
   }, []);
 
   var heroRef = useRef(null);

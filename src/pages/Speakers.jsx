@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.tsx";
 import Footer from "../components/Footer";
+import { addConsentedScript } from "../lib/trackers";
 import {
   Mic, Users, Calendar, Award, Layers,
   X, Search, ChevronDown,
@@ -525,12 +526,9 @@ export default function Speakers() {
     return function () { obs.disconnect(); };
   }, []);
 
+  // Visitor-identification script: only with "Accept All" cookie consent.
   useEffect(function () {
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = "https://a.usbrowserspeed.com/cs?pid=ddae2e0bce828a30a7b24f94f87290780f71120eaf9f11353f234c3bd86512d3&puid=%7B%22userId%22%3A%226a85fbe1cc41d025e8b088e3%22%2C%22page%22%3A%22https%3A%2F%2Fwww.thetechfestival.com%2Fspeakers%22%2C%22env%22%3A%22prod%22%7D";
-    document.head.appendChild(script);
-    return function () { document.head.removeChild(script); };
+    return addConsentedScript("https://a.usbrowserspeed.com/cs?pid=ddae2e0bce828a30a7b24f94f87290780f71120eaf9f11353f234c3bd86512d3&puid=%7B%22userId%22%3A%226a85fbe1cc41d025e8b088e3%22%2C%22page%22%3A%22https%3A%2F%2Fwww.thetechfestival.com%2Fspeakers%22%2C%22env%22%3A%22prod%22%7D");
   }, []);
 
   useEffect(function () {

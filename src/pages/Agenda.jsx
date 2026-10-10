@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { addConsentedScript } from "../lib/trackers";
 import { client, speakerPhotoUrl } from "../utils/sanity";
 import useAgenda from "../hooks/useAgenda";
 import { FORMAT_MAP } from "../data/sessionFormats";
@@ -519,13 +520,8 @@ export default function AgendaPage() {
     return () => obs.disconnect();
   }, []);
 
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = "https://a.usbrowserspeed.com/cs?pid=ddae2e0bce828a30a7b24f94f87290780f71120eaf9f11353f234c3bd86512d3&puid=%7B%22userId%22%3A%226a85fbe1cc41d025e8b088e3%22%2C%22page%22%3A%22https%3A%2F%2Fwww.thetechfestival.com%2Fagenda%22%2C%22env%22%3A%22prod%22%7D";
-    document.head.appendChild(script);
-    return () => { document.head.removeChild(script); };
-  }, []);
+  // Visitor-identification script: only with "Accept All" cookie consent.
+  useEffect(() => addConsentedScript("https://a.usbrowserspeed.com/cs?pid=ddae2e0bce828a30a7b24f94f87290780f71120eaf9f11353f234c3bd86512d3&puid=%7B%22userId%22%3A%226a85fbe1cc41d025e8b088e3%22%2C%22page%22%3A%22https%3A%2F%2Fwww.thetechfestival.com%2Fagenda%22%2C%22env%22%3A%22prod%22%7D"), []);
 
   // Speaker photos / profile links come from the same Sanity data as the Speakers page
   useEffect(() => {

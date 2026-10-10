@@ -53,7 +53,7 @@ var SECTIONS_PRIVACY = [
   },
   {
     title: "7. Cookies and similar technologies",
-    body: "We use cookies and similar technologies to operate the website, remember preferences, secure the Services, and understand website traffic and performance. You can control cookies through your browser settings and, where available, site preference tools. Disabling certain cookies may affect site functionality.",
+    body: "We use cookies and similar technologies to operate the website, remember preferences, secure the Services, and understand website traffic and performance. Analytics and advertising cookies (Google Analytics, the Meta Pixel, and a visitor-identification service) are only used if you choose \"Accept All\" in our cookie banner. You can change your choice at any time using \"Cookie settings\" in the site footer, and you can also control cookies through your browser settings. Disabling certain cookies may affect site functionality.",
   },
   {
     title: "8. Retention",
@@ -217,17 +217,17 @@ var SECTIONS_COOKIES = [
     list: [
       "Strictly necessary cookies that help the site work and cannot be easily turned off without affecting functionality",
       "Preference cookies that remember settings and choices",
-      "Analytics cookies that help us understand site usage in aggregate",
-      "Marketing cookies that may support event promotion where enabled and where consent is obtained when required",
+      "Analytics cookies (Google Analytics) that help us understand site usage in aggregate, used only if you choose \"Accept All\"",
+      "Advertising and marketing technologies (the Meta Pixel and a visitor-identification service) that help us measure and promote the event, used only if you choose \"Accept All\"",
     ],
   },
   {
     title: "4. Your choices",
-    body: "You can manage cookies through your browser settings. You can typically delete existing cookies, block cookies, or set your browser to alert you when cookies are being used. If a site preference tool is available, you can use it to set your cookie choices. If you disable certain cookies, some parts of the site may not work properly.",
+    body: "When you first visit, our cookie banner lets you choose \"Accept All\" or \"Essential Only\". Analytics and advertising cookies are only used if you choose \"Accept All\". If you choose \"Essential Only\" or close the banner, they are not loaded. You can change your choice at any time using \"Cookie settings\" in the site footer. You can also manage cookies through your browser settings. You can typically delete existing cookies, block cookies, or set your browser to alert you when cookies are being used. If you disable certain cookies, some parts of the site may not work properly.",
   },
   {
     title: "5. Third-party cookies",
-    body: "Some cookies may be set by third-party service providers we use for hosting, analytics, payments, or embedded content. Those providers may process information under their own policies.",
+    body: "Some cookies may be set by third-party service providers we use for hosting, analytics, advertising, payments, sign-in (such as Google Sign-In), or embedded content. Analytics and advertising providers (Google Analytics, Meta, and our visitor-identification provider) are only loaded if you choose \"Accept All\". Those providers may process information under their own policies.",
   },
   {
     title: "6. Updates to this policy",
@@ -398,7 +398,7 @@ export default function Privacy() {
         <PolicyBlock
           title="Privacy Policy"
           subtitle="The Tech Festival Canada"
-          effective="March 9, 2026"
+          effective="October 9, 2026"
           intro="This website thetechfestival.com is organized by AtlasLink Markets Inc. We are responsible for the personal information handled through this site and related event services. This Privacy Policy explains how we collect, use, disclose, store, and protect personal information when you visit thetechfestival.com or interact with The Tech Festival Canada event services. We aim to comply with applicable Canadian privacy laws, including the Personal Information Protection and Electronic Documents Act and relevant provincial private sector privacy laws where they apply."
           sections={SECTIONS_PRIVACY}
           dark={dark}
@@ -460,7 +460,7 @@ export default function Privacy() {
         <PolicyBlock
           title="Cookie Policy"
           subtitle="The Tech Festival Canada"
-          effective="March 9, 2026"
+          effective="October 9, 2026"
           intro="This Cookie Policy explains how AtlasLink Markets Inc uses cookies and similar technologies on thetechfestival.com."
           sections={SECTIONS_COOKIES}
           dark={dark}

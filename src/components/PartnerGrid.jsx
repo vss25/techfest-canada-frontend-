@@ -95,15 +95,11 @@ function GroupRow({ group, items, dark, accentColor }) {
   );
 }
 
-function MatrixBlock({ label, dot, groups, byGroup, dark, accentColor }) {
+function MatrixBlock({ groups, byGroup, dark, accentColor }) {
   const shown = groups.filter((g) => (byGroup[g.key] || []).length > 0);
   if (!shown.length) return null;
   return (
     <section className="pm-block">
-      <div className="pm-block-label">
-        <span className="pm-dot" style={{ background: dot, boxShadow: "0 0 6px " + dot }} />
-        <span style={{ color: dot }}>{label}</span>
-      </div>
       {shown.map((g) => <GroupRow key={g.key} group={g} items={byGroup[g.key]} dark={dark} accentColor={accentColor} />)}
     </section>
   );
@@ -178,6 +174,7 @@ export default function PartnerGrid({ dark, accent }) {
           flex-direction: column;
           gap: 56px;
         }
+        .pm-block + .pm-block { margin-top: -56px; }
         .pm-featured {
           display: grid;
           grid-template-columns: repeat(var(--featured-cols, 4), minmax(0, 1fr));
@@ -198,15 +195,16 @@ export default function PartnerGrid({ dark, accent }) {
         }
         .pm-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
 
+        /* Each pillar/sector: title centred, its logos centred underneath */
         .pm-row {
-          display: grid;
-          grid-template-columns: 280px minmax(0, 1fr);
-          gap: 28px;
+          display: flex;
+          flex-direction: column;
           align-items: center;
-          padding: 22px 0;
+          gap: 20px;
+          padding: 32px 0;
           border-top: 1px solid ${line};
         }
-        .pm-row-head { display: flex; align-items: center; gap: 16px; }
+        .pm-row-head { display: flex; align-items: center; justify-content: center; gap: 14px; text-align: center; }
         .pm-row-icon {
           padding: 14px;
           border-radius: 14px;
@@ -219,16 +217,19 @@ export default function PartnerGrid({ dark, accent }) {
         .pm-row-title {
           margin: 0;
           font-family: 'Orbitron', sans-serif;
-          font-size: 0.82rem;
-          font-weight: 700;
-          line-height: 1.35;
+          font-size: clamp(1rem, 1.5vw, 1.2rem);
+          font-weight: 800;
+          line-height: 1.3;
           color: ${titleColor};
         }
         .pm-tiles {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
           gap: 14px;
+          width: 100%;
         }
+        .pm-tiles > .partner-tile { flex: 0 0 180px; }
 
         .partner-tile {
           position: relative;
@@ -285,18 +286,20 @@ export default function PartnerGrid({ dark, accent }) {
 
         @media (max-width: 900px) {
           .pm-wrap { gap: 44px; padding: 0 4%; }
+          .pm-block + .pm-block { margin-top: -44px; }
           .pm-featured { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
           .pm-featured > .partner-tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
           .pm-featured .partner-tile { height: 110px; }
           .pm-featured .partner-tile img { max-height: min(calc(54px * var(--logo-scale, 1)), 100%); }
-          .pm-row { grid-template-columns: 1fr; gap: 14px; padding: 20px 0; }
+          .pm-row { gap: 14px; padding: 24px 0; }
           .pm-row-icon { padding: 10px; border-radius: 12px; }
-          .pm-tiles { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+          .pm-tiles { gap: 10px; }
+          .pm-tiles > .partner-tile { flex-basis: 150px; }
           .partner-tile { height: 84px; padding: 12px 14px; border-radius: 14px; }
           .partner-tile img { max-height: min(calc(40px * var(--logo-scale, 1)), 100%); }
         }
         @media (max-width: 480px) {
-          .pm-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .pm-tiles > .partner-tile { flex-basis: calc(50% - 5px); }
           .partner-tile { height: 76px; padding: 10px 12px; border-radius: 12px; }
           .partner-tile img { max-height: min(calc(36px * var(--logo-scale, 1)), 100%); }
         }
@@ -315,8 +318,8 @@ export default function PartnerGrid({ dark, accent }) {
           </section>
         )}
 
-        <MatrixBlock label="5 Tech Pillars" dot="#f5a623" groups={PILLAR_GROUPS} byGroup={byGroup} dark={dark} accentColor={accentColor} />
-        <MatrixBlock label="5 Applied Sectors" dot="#a064ff" groups={SECTOR_GROUPS} byGroup={byGroup} dark={dark} accentColor={accentColor} />
+        <MatrixBlock groups={PILLAR_GROUPS} byGroup={byGroup} dark={dark} accentColor={accentColor} />
+        <MatrixBlock groups={SECTOR_GROUPS} byGroup={byGroup} dark={dark} accentColor={accentColor} />
 
         {ecosystem.length > 0 && (
           <section className="pm-block">

@@ -94,7 +94,10 @@ export default function IndiaPavilion() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [reference, setReference] = useState("");
   const formRef = useRef(null);
+  const honeypot = useRef("");
+  const openedAt = useRef(Date.now()); // bots fill the form in well under a second
   const TOTAL_STEPS = 6;
 
   useEffect(() => {
@@ -200,7 +203,13 @@ export default function IndiaPavilion() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const payload = { ...form, submittedAt: new Date().toISOString() };
+      const payload = {
+        ...form,
+        submittedAt: new Date().toISOString(),
+        page: window.location.pathname,
+        _hp: honeypot.current, // bots fill this; humans never see it
+        elapsedMs: Date.now() - openedAt.current,
+      };
       const res = await fetch(`${API}/pavilion`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -208,6 +217,7 @@ export default function IndiaPavilion() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed");
+      setReference(data.reference || "");
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -223,7 +233,9 @@ export default function IndiaPavilion() {
     setErrors({});
     setSubmitted(false);
     setSubmitError("");
+    setReference("");
     setStep(1);
+    openedAt.current = Date.now();
   };
 
   const labelStyle = {
@@ -449,6 +461,12 @@ export default function IndiaPavilion() {
                   ))}
                 </div>
               </div>
+
+              {/* honeypot — hidden from humans, catches bots */}
+              <input type="text" name="company_url_confirm" tabIndex={-1} autoComplete="off" aria-hidden="true"
+                onChange={(e) => { honeypot.current = e.target.value; }}
+                style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+              />
 
               {/* Step title */}
               <div style={{ marginTop: 32, marginBottom: 24 }}>
@@ -1029,6 +1047,13 @@ export default function IndiaPavilion() {
                   Thank you. We've sent a confirmation to <strong style={{ color: textMain }}>{form.repEmail}</strong>.
                   Applications are reviewed on a rolling basis with limited booths available.
                   Our team will be in touch shortly with next steps.
+                  {reference && (
+                    <>
+                      <br /><br />
+                      Your application reference is <strong style={{ color: textMain, fontFamily: "'Orbitron', sans-serif", letterSpacing: "1px" }}>{reference}</strong>.
+                      Please quote it when you pay your application deposit.
+                    </>
+                  )}
                 </p>
                 <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
                   <button onClick={resetForm}

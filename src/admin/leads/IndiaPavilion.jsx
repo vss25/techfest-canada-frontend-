@@ -25,6 +25,7 @@ const MATCHED_BY = {
   reference: "the application reference they typed on the deposit page",
   email: "their email address",
   company: "the company name",
+  deposit: "created from this deposit (the application form was only emailed to sales@)",
 };
 
 const money = (v, currency = "CAD") => (v == null ? "—" : new Intl.NumberFormat("en-CA", { style: "currency", currency: currency || "CAD", maximumFractionDigits: 2 }).format(Number(v) || 0));
@@ -320,6 +321,7 @@ export default function IndiaPavilion() {
                       {r.company || "No company name"}
                     </button>
                     {r.reference && <span className="block font-mono text-ttfc-dim">{r.reference}</span>}
+                    {r.fromDeposit && <span className="block text-ttfc-dim" title="Paid through Stripe before applications were saved. The form itself is in the sales@ inbox.">From Stripe deposit · form not on file</span>}
                   </td>
                   <td className="max-w-[180px] text-xs">
                     <span className="block truncate font-semibold" title={r.contactName}>{r.contactName || "—"}</span>

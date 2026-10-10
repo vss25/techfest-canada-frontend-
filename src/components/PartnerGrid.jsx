@@ -195,15 +195,16 @@ export default function PartnerGrid({ dark, accent }) {
         }
         .pm-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
 
+        /* Each pillar/sector: title centred, its logos centred underneath */
         .pm-row {
-          display: grid;
-          grid-template-columns: 280px minmax(0, 1fr);
-          gap: 28px;
+          display: flex;
+          flex-direction: column;
           align-items: center;
-          padding: 22px 0;
+          gap: 20px;
+          padding: 32px 0;
           border-top: 1px solid ${line};
         }
-        .pm-row-head { display: flex; align-items: center; gap: 16px; }
+        .pm-row-head { display: flex; align-items: center; justify-content: center; gap: 14px; text-align: center; }
         .pm-row-icon {
           padding: 14px;
           border-radius: 14px;
@@ -222,10 +223,13 @@ export default function PartnerGrid({ dark, accent }) {
           color: ${titleColor};
         }
         .pm-tiles {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
           gap: 14px;
+          width: 100%;
         }
+        .pm-tiles > .partner-tile { flex: 0 0 180px; }
 
         .partner-tile {
           position: relative;
@@ -287,14 +291,15 @@ export default function PartnerGrid({ dark, accent }) {
           .pm-featured > .partner-tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
           .pm-featured .partner-tile { height: 110px; }
           .pm-featured .partner-tile img { max-height: min(calc(54px * var(--logo-scale, 1)), 100%); }
-          .pm-row { grid-template-columns: 1fr; gap: 14px; padding: 20px 0; }
+          .pm-row { gap: 14px; padding: 24px 0; }
           .pm-row-icon { padding: 10px; border-radius: 12px; }
-          .pm-tiles { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+          .pm-tiles { gap: 10px; }
+          .pm-tiles > .partner-tile { flex-basis: 150px; }
           .partner-tile { height: 84px; padding: 12px 14px; border-radius: 14px; }
           .partner-tile img { max-height: min(calc(40px * var(--logo-scale, 1)), 100%); }
         }
         @media (max-width: 480px) {
-          .pm-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .pm-tiles > .partner-tile { flex-basis: calc(50% - 5px); }
           .partner-tile { height: 76px; padding: 10px 12px; border-radius: 12px; }
           .partner-tile img { max-height: min(calc(36px * var(--logo-scale, 1)), 100%); }
         }

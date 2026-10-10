@@ -22,6 +22,7 @@ export default function Brochures() {
   var s6 = useState(false); var btnPulsing = s6[0]; var setBtnPulsing = s6[1];
   var brochureRef = useRef(null);
   var honeypot = useRef("");
+  var openedAt = useRef(Date.now()); // bots fill the form in well under a second
 
   useEffect(function () {
     setDark(document.body.classList.contains("dark-mode"));
@@ -74,6 +75,7 @@ export default function Brochures() {
         page: window.location.pathname,
         referrer: document.referrer,
         _hp: honeypot.current, // bots fill this; humans never see it
+        elapsedMs: Date.now() - openedAt.current,
       }),
     }).catch(function (err) { console.error(err); });
   }

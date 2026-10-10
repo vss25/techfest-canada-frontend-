@@ -17,6 +17,7 @@ const STATUS = {
   failed: { tone: "bad", label: "Email failed" },
   duplicate: { tone: "neutral", label: "Already emailed", hint: "Same person asked again within 10 minutes, so it wasn't sent twice" },
   legacy: { tone: "neutral", label: "Not emailed", hint: "Downloaded before brochure emails started" },
+  blocked: { tone: "neutral", label: "Bot, not emailed", hint: "Looked like a bot (random text or filled in instantly), so nobody was emailed" },
 };
 
 function EmailStatus({ r }) {
@@ -43,10 +44,12 @@ export default function BrochureDownloads() {
   const [q, setQ] = useState(params.get("q") || "");
   const [exporting, setExporting] = useState(false);
   const page = Math.max(0, Number(params.get("page")) || 0);
+  const showSpam = params.get("spam") === "1";
   const dq = useDebounced(q.trim(), 300);
 
   const qs = new URLSearchParams({ page: String(page) });
   if (dq) qs.set("q", dq);
+  if (showSpam) qs.set("spam", "1");
   const { data, error, loading, reload, refreshing } = useApi(`/console/brochure-downloads?${qs}`);
 
   const update = (next) => {
@@ -55,6 +58,7 @@ export default function BrochureDownloads() {
     setParams(p, { replace: true });
   };
   const onSearch = (v) => { setQ(v); update({ q: v.trim(), page: 0 }); };
+  const spamCount = data?.spam ?? 0;
 
   const rows = data?.rows || [];
   const total = data?.total ?? 0;
@@ -64,7 +68,10 @@ export default function BrochureDownloads() {
   const exportCsv = async () => {
     setExporting(true);
     try {
-      const res = await fetch(`${ADMIN_API}/console/brochure-downloads/export${dq ? `?q=${encodeURIComponent(dq)}` : ""}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const eq = new URLSearchParams();
+      if (dq) eq.set("q", dq);
+      if (showSpam) eq.set("spam", "1");
+      const res = await fetch(`${ADMIN_API}/console/brochure-downloads/export${eq.toString() ? `?${eq}` : ""}`, { headers: { Authorization: `Bearer ${getToken()}` } });
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || `Export failed (${res.status})`);
       const url = URL.createObjectURL(await res.blob());
       const a = document.createElement("a");
@@ -98,8 +105,14 @@ export default function BrochureDownloads() {
           <Input type="search" value={q} onChange={(e) => onSearch(e.target.value)} placeholder="Search name, email, company or phone" className="pl-9" aria-label="Search brochure downloads" />
         </div>
         <p className="text-sm text-ttfc-muted" aria-live="polite">
-          {loading ? "Loading…" : `${total.toLocaleString()} download${total === 1 ? "" : "s"}`}{refreshing && !loading ? " · updating…" : ""}
+          {loading ? "Loading…" : `${total.toLocaleString()} ${showSpam ? "bot sign-up" : "download"}${total === 1 ? "" : "s"}`}{refreshing && !loading ? " · updating…" : ""}
         </p>
+        {(showSpam || spamCount > 0) && (
+          <Button size="sm" variant="ghost" onClick={() => update({ spam: showSpam ? "" : "1", page: 0 })}
+            title="Sign-ups with random text in the name or company, or filled in instantly. They are never emailed.">
+            {showSpam ? "Back to real downloads" : `${spamCount.toLocaleString()} bot sign-up${spamCount === 1 ? "" : "s"} hidden · show`}
+          </Button>
+        )}
       </div>
 
       {loading ? <LoadingState label="Loading brochure downloads…" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !rows.length ? (

@@ -1,0 +1,330 @@
+[
+ {
+  "name": "Mastercard",
+  "file": "mastercard.png",
+  "url": "https://www.mastercard.ca",
+  "group": "bfsi",
+  "order": 7.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Sun Life",
+  "file": "sun-life.png",
+  "url": "https://www.sunlife.ca",
+  "group": "bfsi",
+  "order": 7.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "RBC Capital Markets",
+  "file": "rbc-capital-markets.png",
+  "url": "https://www.rbccm.com",
+  "group": "bfsi",
+  "order": 20.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "TD Bank Group",
+  "file": "td.png",
+  "url": "https://www.td.com",
+  "group": "bfsi",
+  "order": 7.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Deloitte",
+  "file": "deloitte.png",
+  "url": "https://www.deloitte.com/ca/en.html",
+  "group": "bfsi",
+  "order": 7.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "EY",
+  "file": "ey.png",
+  "url": "https://www.ey.com/en_ca",
+  "group": "quantum",
+  "order": 7.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Interac",
+  "file": "interac.png",
+  "url": "https://www.interac.ca",
+  "group": "bfsi",
+  "order": 7.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "KOHO",
+  "file": "koho.png",
+  "url": "https://www.koho.ca",
+  "group": "bfsi",
+  "order": 36.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Inovia Capital",
+  "file": "inovia-capital.png",
+  "url": "https://www.inovia.vc",
+  "group": "ecosystem",
+  "order": 36.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "The Globe and Mail",
+  "file": "the-globe-and-mail.png",
+  "url": "https://www.theglobeandmail.com",
+  "group": "ecosystem",
+  "order": 20.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Women's College Hospital",
+  "file": "womens-college-hospital.png",
+  "url": "https://www.womenscollegehospital.ca",
+  "group": "health",
+  "order": 36.5,
+  "category": "academicResearchInstitutions"
+ },
+ {
+  "name": "Northeastern University",
+  "file": "northeastern-university.png",
+  "url": "https://www.northeastern.edu",
+  "group": "ecosystem",
+  "order": 20.5,
+  "category": "academicResearchInstitutions"
+ },
+ {
+  "name": "SE Health",
+  "file": "se-health.png",
+  "url": "https://sehc.com",
+  "group": "health",
+  "order": 36.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Hyivy Health",
+  "file": "hyivy-health.png",
+  "url": "https://hyivy.com",
+  "group": "health",
+  "order": 67.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Innovation, Science and Economic Development Canada (ISED)",
+  "file": "ised.png",
+  "url": "https://ised-isde.canada.ca",
+  "group": "ecosystem",
+  "order": 20.5,
+  "category": "governmentPartners"
+ },
+ {
+  "name": "Financial Consumer Agency of Canada (FCAC)",
+  "file": "fcac.png",
+  "url": "https://www.canada.ca/en/financial-consumer-agency.html",
+  "group": "bfsi",
+  "order": 36.5,
+  "category": "governmentPartners"
+ },
+ {
+  "name": "Canadian Manufacturers & Exporters",
+  "file": "canadian-manufacturers-exporters.png",
+  "url": "https://cme-mec.ca",
+  "group": "supply",
+  "order": 36.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Ontario Centre of Innovation",
+  "file": "ontario-centre-of-innovation.png",
+  "url": "https://www.oc-innovation.ca",
+  "group": "ecosystem",
+  "order": 36.5,
+  "category": "governmentPartners"
+ },
+ {
+  "name": "Quantum Bridge Technologies",
+  "file": "quantum-bridge.png",
+  "url": "https://quantumbridge.io",
+  "group": "quantum",
+  "order": 67.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Sielo Robotics",
+  "file": "sielo-robotics.png",
+  "url": "https://www.sielorobotics.com",
+  "group": "robotics",
+  "order": 67.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Carbon Removal Canada",
+  "file": "carbon-removal-canada.png",
+  "url": "https://carbonremoval.ca",
+  "group": "cleantech",
+  "order": 50.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Unified.to",
+  "file": "unified-to.png",
+  "url": "https://unified.to",
+  "group": "ai",
+  "order": 67.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "ZAKA",
+  "file": "zaka.png",
+  "url": "https://zaka.ai",
+  "group": "ai",
+  "order": 50.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "InclusifAI",
+  "file": "inclusifai.png",
+  "url": "https://www.inclusifai.com",
+  "group": "ai",
+  "order": 67.5,
+  "category": "partnersAndSupporters"
+ },
+ {
+  "name": "iTmethods",
+  "file": "itmethods.png",
+  "url": "https://itmethods.com",
+  "group": "ai",
+  "order": 50.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Canadian Strategic Missions Corporation (CSMC)",
+  "file": "csmc.png",
+  "url": "https://strategicmissions.ca",
+  "group": "defence",
+  "order": 67.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "AXL",
+  "file": "axl.png",
+  "url": "https://axl.vc",
+  "group": "ai",
+  "order": 50.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Aerial Evolution Association of Canada",
+  "file": "aerial-evolution-association-of-canada.png",
+  "url": "https://www.aerialevolution.ca",
+  "group": "robotics",
+  "order": 50.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "AristaMD",
+  "file": "aristamd.png",
+  "url": "https://www.aristamd.com",
+  "group": "health",
+  "order": 50.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "BLodgic",
+  "file": "blodgic.png",
+  "url": "https://blodgic.com",
+  "group": "cyber",
+  "order": 67.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Joyride",
+  "file": "joyride.png",
+  "url": "https://joyride.city",
+  "group": "supply",
+  "order": 50.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "LDIQ",
+  "file": "ldiq.png",
+  "url": "https://ldiq.ca",
+  "group": "quantum",
+  "order": 67.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "MacKay CEO Forums",
+  "file": "mackay-ceo-forums.png",
+  "url": "https://mackayceoforums.com",
+  "group": "ecosystem",
+  "order": 50.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "National Institute of Advanced Industrial Science and Technology (AIST)",
+  "file": "aist.png",
+  "url": "https://www.aist.go.jp/index_en.html",
+  "group": "quantum",
+  "order": 36.5,
+  "category": "academicResearchInstitutions"
+ },
+ {
+  "name": "Quoted Tech",
+  "file": "quoted-tech.png",
+  "url": "https://quoted.tech",
+  "group": "ecosystem",
+  "order": 50.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "RESRG",
+  "file": "resrg.png",
+  "url": "https://resrg.com",
+  "group": "ai",
+  "order": 67.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Torys LLP",
+  "file": "torys.png",
+  "url": "https://www.torys.com",
+  "group": "bfsi",
+  "order": 36.5,
+  "category": "corporateEnterprisePartners"
+ },
+ {
+  "name": "Women's Health Collective Canada",
+  "file": "womens-health-collective-canada.png",
+  "url": "https://whcc.ca",
+  "group": "health",
+  "order": 50.5,
+  "category": "partnersAndSupporters"
+ },
+ {
+  "name": "Government of Ontario",
+  "file": "government-of-ontario.png",
+  "url": "https://www.ontario.ca",
+  "group": "ecosystem",
+  "order": 20.5,
+  "category": "governmentPartners"
+ },
+ {
+  "name": "FLO 100",
+  "file": "flo100.png",
+  "url": "https://www.flo100.com",
+  "group": "ecosystem",
+  "order": 67.5,
+  "category": "partnersAndSupporters"
+ },
+ {
+  "name": "Category Communications",
+  "file": "category-communications.png",
+  "url": "https://categorycomms.com",
+  "group": "ecosystem",
+  "order": 67.5,
+  "category": "partnersAndSupporters"
+ }
+]

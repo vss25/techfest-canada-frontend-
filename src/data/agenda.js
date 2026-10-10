@@ -431,6 +431,8 @@ const TITLES = [
 
 export function normalizeName(raw) {
   let n = String(raw || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // strip accents: "Geneviève" -> "genevieve"
     .replace(/\(.*?\)/g, " ")        // drop "(Mastercard)", "(Alex)"
     .toLowerCase()
     .replace(/[’‘']/g, "")           // Na'im -> naim
@@ -505,6 +507,35 @@ export function sessionsForSpeaker(name, sessions = SESSIONS) {
     const people = (s.speakers || []).concat(s.moderator ? [s.moderator] : []);
     return people.some((p) => nameKeys(p.name).some((k) => keys.has(k)));
   });
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   SPEAKER CATEGORIES
+   A speaker's tech pillars / applied sectors come from the agenda
+   sessions they're on (as speaker or moderator) — never from their
+   bio. Speakers with no session (or only uncategorised sessions)
+   have empty sets, so they only appear when no filter is active.
+   ───────────────────────────────────────────────────────────────── */
+
+/** { pillars: Set, sectors: Set, sessionCount } for one person. */
+export function categoriesForSpeaker(name, sessions = SESSIONS) {
+  const pillars = new Set();
+  const sectors = new Set();
+  const mine = sessionsForSpeaker(name, sessions);
+  mine.forEach((s) => {
+    if (s.pillar) pillars.add(s.pillar);
+    if (s.sector) sectors.add(s.sector);
+  });
+  return { pillars, sectors, sessionCount: mine.length };
+}
+
+/** { speakerId -> categoriesForSpeaker(...) } for a Sanity speaker list. */
+export function buildSpeakerCategoryMap(speakerDocs, sessions = SESSIONS) {
+  const map = {};
+  (speakerDocs || []).forEach((doc) => {
+    map[doc._id || doc.name] = categoriesForSpeaker(doc.name, sessions);
+  });
+  return map;
 }
 
 /** Role of a person within one session: "speaker" | "moderator" | null */

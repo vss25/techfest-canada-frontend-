@@ -40,7 +40,7 @@ const ROWS = [
   { form: "Volunteer application", what: "People applying to volunteer", path: "/volunteer", to: [], toNote: "Set in the EmailJS template — no address in the website code.", via: "emailjs", reply: null, check: true },
   { form: "Institutional partnership enquiry", what: "Organisations asking to partner", path: "/partners2026", to: [], toNote: "Set in the EmailJS template — no address in the website code.", via: "emailjs", reply: null, check: true },
   { form: "Newsletter sign-up", what: "Email box in the footer and on some pages", to: [], toNote: "Not emailed to staff — saved as a subscriber.", via: "saved", reply: "Confirmation email from noreply@thetechfestival.com." },
-  { form: "Brochure download", what: "Request a brochure", path: "/brochures", to: [], toNote: "Not emailed to staff — saved on the server.", via: "saved", reply: null },
+  { form: "Brochure download", what: "Request a brochure", path: "/brochures", to: ["sales@thetechfestival.com"], toNote: "A receipt for each download. Every download is also listed under Leads → Brochure downloads.", via: "backend", viaNote: "from noreply@thetechfestival.com", reply: "The brochure (download link, or the PDF attached when it's small enough). Replies go to sales@thetechfestival.com." },
   { form: "Ticket purchase", what: "Buying a pass through Stripe", path: "/tickets", to: [], toNote: "No staff email.", via: "stripe", reply: "Their ticket, from tickets@thetechfestival.com." },
 ];
 

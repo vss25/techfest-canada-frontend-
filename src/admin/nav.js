@@ -2,7 +2,7 @@ import {
   CalendarDays,
   LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
-  Megaphone, ScrollText, UserCog, Power, KeyRound,
+  Megaphone, ScrollText, UserCog, Power, KeyRound, FileDown,
 } from "lucide-react";
 
 /** Sidebar structure. `to` is relative to /admin. */
@@ -30,6 +30,12 @@ export const NAV = [
       { to: "content/sponsor-marquee", label: "Sponsor marquee", icon: GalleryHorizontal },
       { to: "content/home-sponsors", label: "Home sponsors", icon: House },
       { to: "content/settings", label: "Site settings", icon: Settings2 },
+    ],
+  },
+  {
+    title: "Leads",
+    items: [
+      { to: "brochure-downloads", label: "Brochure downloads", icon: FileDown },
     ],
   },
   {

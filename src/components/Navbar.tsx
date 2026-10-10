@@ -13,7 +13,6 @@ const PARTNERS_DROPDOWN = [
 ];
 
 const MORE_DROPDOWN = [
-  { label: "Briefings", path: "/briefings" },
   { label: "Venue", path: "/venue" },
   { label: "Volunteer", path: "/volunteer" },
   { label: "Organizers", path: "/organizers" },

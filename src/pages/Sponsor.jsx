@@ -3,7 +3,6 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import SponsorInquiryModal from "../components/SponsorInquiryModal";
 import { useEffect, useState, useRef } from "react";
-import SponsorMarquee from "../components/SponsorMarquee";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 
 var TIERS = [
@@ -203,8 +202,6 @@ export default function Sponsor() {
 
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 100, zIndex: 4, pointerEvents: "none", background: "linear-gradient(to bottom, transparent, " + bg + ")" }} />
       </section>
-
-      <SponsorMarquee dark={dark} />
 
       {/* COMPARISON TABLE */}
       <ComparisonTable dark={dark} bg={bg} textMain={textMain} textMid={textMid} textSoft={textSoft} accent={accent} cardBg={cardBg} cardBdr={cardBdr} onInquiry={function () { setInquiryOpen(true); }} />

@@ -120,43 +120,28 @@
       })();
     </script>
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NG7Q6JVKPH"></script>
+    <!-- Analytics / advertising (Google Analytics 4, Meta Pixel, visitor identification)
+         are NOT loaded here. src/lib/trackers.js injects them only after the visitor
+         chooses "Accept All" in the cookie banner (localStorage tfc_cookie_consent = "all").
+         These stubs only queue calls in memory so window.gtag / window.fbq (e.g. the
+         Purchase event in src/pages/Tickets.jsx) never throw; nothing is sent unless
+         the real scripts are loaded after consent. -->
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-NG7Q6JVKPH');
+      window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+      (function (f) {
+        if (f.fbq) return;
+        var n = f.fbq = function () {
+          if (n.callMethod) n.callMethod.apply(n, arguments);
+          else n.queue.push(arguments);
+        };
+        if (!f._fbq) f._fbq = n;
+        n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = [];
+      })(window);
     </script>
-    <script type="text/javascript" src="https://a.usbrowserspeed.com/cs?pid=ddae2e0bce828a30a7b24f94f87290780f71120eaf9f11353f234c3bd86512d3&puid=%7B%22userId%22%3A%226a85fbe1cc41d025e8b088e3%22%2C%22env%22%3A%22prod%22%7D"></script>
-
-    <!-- Meta Pixel Code (base code only: init + PageView).
-         The Purchase event is fired from src/pages/Tickets.jsx after the Stripe success return.
-         Pixel ID is set below. -->
-    <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1071261145737578');
-    fbq('track', 'PageView');
-    </script>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=1071261145737578&ev=PageView&noscript=1"
-    /></noscript>
-    <!-- End Meta Pixel Code -->
 
     <!-- Google Sign-In -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="root"></div>

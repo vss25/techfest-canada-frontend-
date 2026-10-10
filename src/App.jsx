@@ -34,6 +34,7 @@ import Briefings from "./pages/Briefings";
 import CompleteProfile from "./pages/CompleteProfile";
 import AppLogin from "./pages/AppLogin";
 import MaintenanceGate from "./components/MaintenanceGate";
+import CookieConsent from "./components/CookieConsent";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
 
 // The staff panel is loaded only when someone opens it.
@@ -121,6 +122,7 @@ function App() {
       </Routes>
       <TicketBar />
       </MaintenanceGate>
+      <CookieConsent />
     </BrowserRouter>
   );
 }

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { openCookieSettings } from "../lib/trackers";
 import { useEffect, useState } from "react";
 import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
 
@@ -62,6 +63,12 @@ export default function Footer() {
             onMouseEnter={function (e) { e.currentTarget.style.opacity = "0.7"; }}
             onMouseLeave={function (e) { e.currentTarget.style.opacity = "1"; }}
           >Privacy Policy</Link>
+          {" "}|{" "}
+          <button type="button" onClick={openCookieSettings}
+            style={{ background: "none", border: "none", padding: 0, font: "inherit", color: lCol, cursor: "pointer", transition: "opacity 0.2s ease" }}
+            onMouseEnter={function (e) { e.currentTarget.style.opacity = "0.7"; }}
+            onMouseLeave={function (e) { e.currentTarget.style.opacity = "1"; }}
+          >Cookie settings</button>
           {contactEmail && <>{" "}|{" "}
             <a href={"mailto:" + contactEmail} style={{ color: lCol, textDecoration: "none", transition: "opacity 0.2s ease" }}
               onMouseEnter={function (e) { e.currentTarget.style.opacity = "0.7"; }}

@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  getConsent, setConsent, clearConsent, loadTrackers, trackersLoaded, OPEN_SETTINGS_EVENT,
+} from "../lib/trackers";
 
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
@@ -16,16 +19,31 @@ export default function CookieConsent() {
   }, []);
 
   useEffect(() => {
-    const consent = localStorage.getItem("tfc_cookie_consent");
+    const consent = getConsent();
     if (!consent) {
       const t = setTimeout(() => setVisible(true), 1200);
       return () => clearTimeout(t);
     }
   }, []);
 
+  // "Cookie settings" in the footer: forget the saved choice and ask again.
+  useEffect(() => {
+    const open = () => {
+      clearConsent();
+      setVisible(true);
+    };
+    window.addEventListener(OPEN_SETTINGS_EVENT, open);
+    return () => window.removeEventListener(OPEN_SETTINGS_EVENT, open);
+  }, []);
+
+  // Analytics/advertising tags (Google Analytics, Meta Pixel, visitor identification)
+  // load only on "all". Choosing "essential" after they were loaded on this page
+  // reloads the page so they stop.
   const accept = (type) => {
-    localStorage.setItem("tfc_cookie_consent", type);
+    setConsent(type);
     setVisible(false);
+    if (type === "all") loadTrackers();
+    else if (trackersLoaded()) window.location.reload();
   };
 
   const bg     = isDark ? "rgba(18,8,40,0.98)"    : "#ffffff";
@@ -77,7 +95,7 @@ export default function CookieConsent() {
                 We use cookies
               </div>
               <p style={{ fontSize: "0.78rem", color: muted, lineHeight: 1.6, margin: 0 }}>
-                TFC uses cookies to enhance your experience, remember your login, and analyse usage.
+                TFC uses essential cookies to run the site and remember your login. With your permission (Accept All) we also use analytics and advertising cookies.
               </p>
             </div>
 
@@ -99,7 +117,8 @@ export default function CookieConsent() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 7, paddingTop: 4 }}>
                   {[
                     { emoji: "🔒", label: "Essential",       desc: "Login, security, preferences — always on" },
-                    { emoji: "📊", label: "Analytics",       desc: "Anonymous usage data to improve the site" },
+                    { emoji: "📊", label: "Analytics",       desc: "Google Analytics usage data — only with Accept All" },
+                    { emoji: "📣", label: "Advertising",     desc: "Meta Pixel and a visitor-identification service — only with Accept All" },
                     { emoji: "⚙️", label: "Personalisation", desc: "Remember your session and settings" },
                   ].map(c => (
                     <div key={c.label} style={{

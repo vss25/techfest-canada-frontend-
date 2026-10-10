@@ -9,6 +9,65 @@ import useSiteSettings from "../hooks/useSiteSettings";
 import { ClosedNotice } from "../components/SiteNotices";
 
 /* ═══════════════════════════════════════════════════════
+   KEY DATES — edit the ISO dates (YYYY-MM-DD, Toronto time);
+   the *_LABEL text and the timeline follow automatically.
+   NOMINATIONS_END_DATE is the single source for the hero pill,
+   the line above "Submit Your Nomination", the success message
+   and the timeline's "Nominations open" stage.
+   ═══════════════════════════════════════════════════════ */
+
+var NOMINATIONS_END_DATE  = "2026-10-15";
+var NOMINATIONS_OPEN_DATE = "2026-07-01";
+var AWARDS_NIGHT_DATE     = "2026-10-26";
+var FESTIVAL_START_DATE   = "2026-10-26";
+var FESTIVAL_END_DATE     = "2026-10-27";
+
+var NOMINATIONS_END_LABEL = formatDay(NOMINATIONS_END_DATE, true); // "15 Oct 2026"
+var NOMINATIONS_END_SHORT = formatDay(NOMINATIONS_END_DATE, false); // "15 Oct" (hero pill)
+
+/* ═══════════════════════════════════════════════════════
+   DATE HELPERS (plain YYYY-MM-DD strings, no timezone drift)
+   ═══════════════════════════════════════════════════════ */
+
+/* Function declarations (not vars) so the *_LABEL constants above can use them. */
+function monthName(m) { return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m - 1]; }
+
+function parseISO(iso) { var p = iso.split("-"); return { y: +p[0], m: +p[1], d: +p[2] }; }
+
+function formatDay(iso, withYear) {
+  var p = parseISO(iso);
+  return p.d + " " + monthName(p.m) + (withYear ? " " + p.y : "");
+}
+
+function formatRange(start, end) {
+  if (start === end) return formatDay(start, false);
+  var a = parseISO(start); var b = parseISO(end);
+  if (a.y === b.y && a.m === b.m) return a.d + "–" + b.d + " " + monthName(b.m);
+  return formatDay(start, false) + " – " + formatDay(end, false);
+}
+
+function addDays(iso, days) {
+  var p = parseISO(iso);
+  return new Date(Date.UTC(p.y, p.m - 1, p.d + days)).toISOString().slice(0, 10);
+}
+
+function daysBetween(fromIso, toIso) {
+  var a = parseISO(fromIso); var b = parseISO(toIso);
+  return Math.round((Date.UTC(b.y, b.m - 1, b.d) - Date.UTC(a.y, a.m - 1, a.d)) / 86400000);
+}
+
+function todayInToronto() {
+  try {
+    var parts = {};
+    new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", year: "numeric", month: "2-digit", day: "2-digit" })
+      .formatToParts(new Date()).forEach(function (pt) { parts[pt.type] = pt.value; });
+    return parts.year + "-" + parts.month + "-" + parts.day;
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
    ANIMATION VARIANTS
    ═══════════════════════════════════════════════════════ */
 
@@ -37,7 +96,7 @@ function TextReveal({ text, colors, style, delay }) {
   return (
     <motion.h2 ref={ref} initial="hidden" animate={isInView ? "visible" : "hidden"}
       variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.14, delayChildren: delay || 0 } } }}
-      style={Object.assign({ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "0.18em", flexWrap: "nowrap", margin: 0 }, style || {})}
+      style={Object.assign({ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", columnGap: "0.18em", rowGap: 0, flexWrap: "wrap", margin: 0 }, style || {})}
     >
       {text.split(" ").map(function (word, i) {
         return <motion.span key={i} variants={wordVariants} style={{ display: "inline-block", color: (colors && colors[i]) || "inherit", willChange: "transform, opacity, filter" }}>{word}</motion.span>;
@@ -95,6 +154,38 @@ var SPECIAL_AWARDS = [
   { num: 28, name: "The Catalyst Cross-Border Impact Award", desc: "A Canada-international collaboration driving measurable technology adoption across borders." },
 ];
 
+/* Jury scoring weights (sum to 100). Ordered by weight so the biggest factor reads first. */
+var CRITERIA = [
+  { label: "Impact", val: 30, desc: "Measurable results the work has already delivered.", color: "#7a3fd1" },
+  { label: "Innovation", val: 25, desc: "How new and significant the technology or approach is.", color: "#9959a6" },
+  { label: "Scale", val: 20, desc: "Reach today and the potential to grow.", color: "#b8737a" },
+  { label: "Canadian Relevance", val: 15, desc: "Benefit to Canada's technology ecosystem.", color: "#d68c4f" },
+  { label: "Execution", val: 10, desc: "Track record of delivering on plans.", color: "#f5a623" },
+];
+
+/* Road to Awards Night. Status (done / now / upcoming) is worked out from today's date in Toronto. */
+var STAGES = [
+  { title: "Nominations open", start: NOMINATIONS_OPEN_DATE, end: NOMINATIONS_END_DATE, endVerb: "Closes", desc: "Free to enter. Self-nominations and third-party nominations welcome." },
+  { title: "Jury review", start: addDays(NOMINATIONS_END_DATE, 1), end: addDays(AWARDS_NIGHT_DATE, -1), endVerb: "Ends", desc: "The jury scores every nomination. Shortlisted nominees are contacted directly." },
+  { title: "Awards Night", start: AWARDS_NIGHT_DATE, end: AWARDS_NIGHT_DATE, endVerb: "Ends", desc: "Winners announced on Day 1 of The Tech Festival Canada in Toronto." },
+];
+
+function stageStatus(stage, today) {
+  if (today > stage.end) return "done";
+  if (today >= stage.start) return "current";
+  return "upcoming";
+}
+
+function stageChip(stage, status, today) {
+  if (status === "done") return "Done";
+  if (status === "upcoming") return "Coming up";
+  if (stage.start === stage.end) return "Today";
+  var left = daysBetween(today, stage.end);
+  if (left <= 0) return "Now · " + stage.endVerb + " today";
+  if (left === 1) return "Now · " + stage.endVerb + " tomorrow";
+  return "Now · " + stage.endVerb + " in " + left + " days";
+}
+
 /* ═══════════════════════════════════════════════════════
    PAGE
    ═══════════════════════════════════════════════════════ */
@@ -125,23 +216,54 @@ export default function Awards() {
 
   var filtered = activePillar === "all" ? ALL_CATEGORIES : ALL_CATEGORIES.filter(function (a) { return a.pillar === activePillar; });
 
+  var today = todayInToronto();
+  var tlMuted = dark ? "rgba(185,158,255,0.22)" : "rgba(122,63,209,0.18)";
+  var tlDone  = dark ? "#b99eff" : "#7a3fd1";
+
   return (
     <div style={{ background: bg, minHeight: "100vh", color: textMain, overflowX: "hidden" }}>
       <style dangerouslySetInnerHTML={{ __html: `
+        /* ── Jury criteria (stats) ── */
+        .aw-crit-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+        .aw-crit-card { display: flex; flex-direction: column; gap: 6px; padding: 18px 16px; border-radius: 14px; border: 1px solid ${cardBdr}; border-top: 3px solid var(--aw-c); background: ${bg}; }
+        .aw-crit-val { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: clamp(1.5rem, 2.2vw, 1.9rem); line-height: 1; color: ${dark ? "#f5a623" : accent}; }
+        .aw-crit-label { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; color: ${textMain}; line-height: 1.35; margin-top: 6px; }
+        .aw-crit-desc { font-family: 'Montserrat', sans-serif; font-size: 0.84rem; color: ${textMid}; line-height: 1.55; }
+        @media (max-width: 860px) {
+          .aw-crit-grid { grid-template-columns: 1fr; gap: 10px; }
+          .aw-crit-card { display: grid; grid-template-columns: 76px minmax(0, 1fr); column-gap: 14px; align-items: center; padding: 14px 16px; border-top: 1px solid ${cardBdr}; border-left: 4px solid var(--aw-c); }
+          .aw-crit-label { margin-top: 0; }
+        }
+
+        /* ── Timeline: horizontal on laptop/tablet, vertical on phones ── */
+        .aw-tl { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(${STAGES.length}, minmax(0, 1fr)); gap: 20px; }
+        .aw-tl-step { position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+        .aw-tl-step:not(:last-child)::after { content: ""; position: absolute; top: 10px; left: 30px; right: -12px; height: 2px; border-radius: 2px; background: ${tlMuted}; }
+        .aw-tl-step.is-done:not(:last-child)::after { background: ${tlDone}; }
+        .aw-tl-dot { position: relative; z-index: 2; flex-shrink: 0; box-sizing: border-box; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .aw-tl-card { flex: 1; min-width: 0; padding: 16px 18px; border-radius: 14px; border: 1px solid ${cardBdr}; background: ${cardBg}; }
+        @media (max-width: 767px) {
+          .aw-tl { grid-template-columns: 1fr; gap: 0; }
+          .aw-tl-step { flex-direction: row; gap: 14px; padding-bottom: 14px; }
+          .aw-tl-step:last-child { padding-bottom: 0; }
+          .aw-tl-dot { margin-top: 16px; }
+          .aw-tl-step:not(:last-child)::after { top: 44px; bottom: -10px; left: 10px; right: auto; width: 2px; height: auto; }
+        }
+
         @media (max-width: 768px) {
-          .aw-hero-grid { grid-template-columns: 1fr !important; text-align: center !important; gap: 2rem !important; padding: 0 20px !important; }
+          .aw-hero { height: auto !important; min-height: 100vh !important; padding-bottom: 96px !important; }
+          .aw-hero-grid { grid-template-columns: 1fr !important; text-align: center !important; gap: 1.5rem !important; padding: 32px 20px 0 !important; }
           .aw-hero-grid > div { align-items: center !important; text-align: center !important; }
           .aw-hero-grid h1 { font-size: clamp(2.2rem, 12vw, 3.5rem) !important; text-align: center !important; }
+          .aw-hero-line { flex-wrap: wrap !important; justify-content: center !important; row-gap: 0.1em !important; }
+          .aw-hero-grid p { margin-left: auto !important; margin-right: auto !important; }
+          .aw-hero-trophy { width: min(80vw, 340px) !important; }
           .aw-hero-ctas { flex-direction: column !important; width: 100% !important; }
           .aw-hero-ctas a { width: 100% !important; justify-content: center !important; }
           .aw-feature-grid { grid-template-columns: 1fr !important; }
-          .aw-criteria-bar { flex-wrap: wrap !important; }
-          .aw-criteria-bar > div { flex: 1 1 calc(33% - 1px) !important; min-width: 80px !important; }
-          .aw-timeline-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; padding-bottom: 16px !important; }
-          .aw-timeline-inner { min-width: 600px !important; }
         }
         @media (max-width: 480px) {
-          .aw-criteria-bar > div { flex: 1 1 calc(50% - 1px) !important; }
+          .aw-hero-pill { padding: 9px 18px !important; letter-spacing: 1px !important; }
         }
       `}} />
 
@@ -149,12 +271,12 @@ export default function Awards() {
       <StickyTrophy dark={dark} />
 
       {/* ════════════════ HERO ════════════════ */}
-      <section style={{ position: "relative", overflow: "hidden", background: bg, height: "100vh", minHeight: 700, display: "flex", flexDirection: "column" }}>
+      <section className="aw-hero" style={{ position: "relative", overflow: "hidden", background: bg, height: "100vh", minHeight: 700, display: "flex", flexDirection: "column" }}>
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundImage: "linear-gradient(" + (dark ? "rgba(122,63,209,0.03)" : "rgba(122,63,209,0.04)") + " 1px, transparent 1px), linear-gradient(90deg, " + (dark ? "rgba(122,63,209,0.03)" : "rgba(122,63,209,0.04)") + " 1px, transparent 1px)", backgroundSize: "80px 80px", maskImage: "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%)" }} />
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.8 }}
-          style={{ position: "relative", zIndex: 20, textAlign: "center", paddingTop: "clamp(90px, 12vh, 130px)" }}>
-          <span style={{ display: "inline-block", background: "rgba(245,166,35,0.12)", border: "1px solid rgba(245,166,35,0.35)", color: "#f5a623", fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", padding: "10px 24px", borderRadius: 999 }}>
-            Nominations Open July 2026
+          style={{ position: "relative", zIndex: 20, textAlign: "center", paddingTop: "clamp(90px, 12vh, 130px)", paddingLeft: 16, paddingRight: 16 }}>
+          <span className="aw-hero-pill" style={{ display: "inline-block", background: "rgba(245,166,35,0.12)", border: "1px solid rgba(245,166,35,0.35)", color: "#f5a623", fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", padding: "10px 24px", borderRadius: 999 }}>
+            Nominations close {NOMINATIONS_END_SHORT}
           </span>
         </motion.div>
 
@@ -163,7 +285,7 @@ export default function Awards() {
             <h1 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(2.5rem, 7vw, 6.5rem)", fontWeight: 900, lineHeight: 0.9, letterSpacing: "-2px", color: textMain, textTransform: "uppercase", margin: 0 }}>
               YOU<br />HAVE<br />EARNED
             </h1>
-            <div style={{ display: "flex", alignItems: "baseline", gap: "0.25em", marginTop: "clamp(8px, 1.5vw, 16px)" }}>
+            <div className="aw-hero-line" style={{ display: "flex", alignItems: "baseline", gap: "0.25em", marginTop: "clamp(8px, 1.5vw, 16px)" }}>
               <h1 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(2.5rem, 7vw, 6.5rem)", fontWeight: 900, lineHeight: 0.9, letterSpacing: "-2px", color: textMain, textTransform: "uppercase", margin: 0 }}>THIS</h1>
               <h1 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(2.5rem, 7vw, 6.5rem)", fontWeight: 900, lineHeight: 0.9, letterSpacing: "-2px", margin: 0, color: "#f5a623" }}>MOMENT.</h1>
             </div>
@@ -179,7 +301,7 @@ export default function Awards() {
 
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3, duration: 1.2, ease: [0.22, 1, 0.36, 1] }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
             <motion.div animate={{ y: [0, -14, 0], rotate: [-3, -1, -3] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}>
-              <img src="/awards-trophy-single.png" alt="The Catalyst Award" style={{ width: "clamp(300px, 42vw, 600px)", height: "auto",
+              <img className="aw-hero-trophy" src="/awards-trophy-single.png" alt="The Catalyst Award" style={{ width: "clamp(300px, 42vw, 600px)", maxWidth: "100%", height: "auto",
                 filter: dark ? "drop-shadow(0 24px 80px rgba(122,63,209,0.50)) drop-shadow(0 8px 28px rgba(245,166,35,0.20))" : "drop-shadow(0 24px 80px rgba(0,0,0,0.18))",
               }} />
             </motion.div>
@@ -219,7 +341,7 @@ export default function Awards() {
             <div style={{ background: cardBg, border: "1px solid " + cardBdr, borderRadius: 20, padding: "clamp(24px,4vw,40px)", transition: "border-color 0.3s ease", boxShadow: dark ? "0 4px 32px rgba(0,0,0,0.3)" : "0 4px 24px rgba(122,63,209,0.06)" }}
               onMouseEnter={function (e) { e.currentTarget.style.borderColor = "#f5a623"; }}
               onMouseLeave={function (e) { e.currentTarget.style.borderColor = cardBdr; }}>
-              <span style={{ display: "inline-block", background: "rgba(245,166,35,0.12)", color: "#f5a623", fontFamily: "'Orbitron',sans-serif", fontSize: "0.62rem", fontWeight: 700, letterSpacing: "1.5px", padding: "5px 14px", borderRadius: 999, marginBottom: 20 }}>Nominations Open July 2026</span>
+              <span style={{ display: "inline-block", background: "rgba(245,166,35,0.12)", color: "#f5a623", fontFamily: "'Orbitron',sans-serif", fontSize: "0.62rem", fontWeight: 700, letterSpacing: "1.5px", padding: "5px 14px", borderRadius: 999, marginBottom: 20 }}>{nominationsOpen ? "Nominations now open" : "Nominations closed"}</span>
               <h3 style={{ fontFamily: "'Orbitron',sans-serif", fontWeight: 800, fontSize: "clamp(1rem,2vw,1.3rem)", color: textMain, marginBottom: 10, lineHeight: 1.3 }}>The Catalyst Awards</h3>
               <p style={{ fontFamily: "'Montserrat',sans-serif", fontSize: "0.98rem", color: textMid, lineHeight: 1.75, marginBottom: 20 }}>Honouring the pioneers transforming industries through technology. 25 core categories across the 5x5 pillar-sector matrix, plus 3 special recognition awards.</p>
               <a href="#awards-list" style={{ color: "#f5a623", fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 700, textDecoration: "none", letterSpacing: "1px", display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -270,22 +392,34 @@ export default function Awards() {
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <ScrollReveal>
             <p style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.58rem", fontWeight: 800, letterSpacing: "3px", textTransform: "uppercase", color: textSoft, marginBottom: 12 }}>Evaluation</p>
-            <h3 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(1.4rem,3vw,2.2rem)", fontWeight: 900, color: textMain, marginBottom: 28 }}>How Winners Are Chosen</h3>
+            <h3 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(1.4rem,3vw,2.2rem)", fontWeight: 900, color: textMain, marginBottom: 12 }}>How Winners Are Chosen</h3>
+            <p style={{ fontFamily: "'Montserrat',sans-serif", fontSize: "1rem", color: textMid, lineHeight: 1.7, maxWidth: 620, margin: "0 0 24px" }}>
+              The jury scores every nomination out of 100. Each percentage below is how much that criterion counts towards the final score.
+            </p>
           </ScrollReveal>
 
           <ScrollReveal delay={0.1}>
-            <div className="aw-criteria-bar" style={{ display: "flex", borderRadius: 16, overflow: "hidden", border: "1px solid " + cardBdr }}>
-              {[
-                { label: "Innovation", val: "25%" },
-                { label: "Impact", val: "30%" },
-                { label: "Scale", val: "20%" },
-                { label: "Canadian", val: "15%" },
-                { label: "Execution", val: "10%" },
-              ].map(function (c, i) {
+            {/* Proportion bar: the five weights side by side, adding up to 100% */}
+            <div role="img" aria-label={"Score weighting: " + CRITERIA.map(function (c) { return c.label + " " + c.val + "%"; }).join(", ")}
+              style={{ display: "flex", height: 10, borderRadius: 999, overflow: "hidden", gap: 2, marginBottom: 8, background: cardBdr }}>
+              {CRITERIA.map(function (c) {
+                return <div key={c.label} style={{ flex: c.val + " 0 0", background: c.color }} />;
+              })}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'Montserrat',sans-serif", fontSize: "0.75rem", fontWeight: 600, color: textMid, marginBottom: 18 }}>
+              <span>Weight of each criterion</span>
+              <span>Total = 100%</span>
+            </div>
+
+            <div className="aw-crit-grid">
+              {CRITERIA.map(function (c) {
                 return (
-                  <div key={c.label} style={{ flex: 1, padding: "clamp(16px,2.5vw,28px) clamp(10px,1.5vw,18px)", textAlign: "center", background: bg, borderRight: i < 4 ? "1px solid " + cardBdr : "none" }}>
-                    <div style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(1.1rem,2vw,1.6rem)", fontWeight: 900, color: "#f5a623", marginBottom: 4 }}>{c.val}</div>
-                    <div style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(0.48rem,0.7vw,0.58rem)", fontWeight: 700, color: textSoft, letterSpacing: "0.5px", textTransform: "uppercase" }}>{c.label}</div>
+                  <div key={c.label} className="aw-crit-card" style={{ "--aw-c": c.color }}>
+                    <div className="aw-crit-val">{c.val}%</div>
+                    <div>
+                      <div className="aw-crit-label">{c.label}</div>
+                      <div className="aw-crit-desc">{c.desc}</div>
+                    </div>
                   </div>
                 );
               })}
@@ -293,32 +427,48 @@ export default function Awards() {
           </ScrollReveal>
 
           <ScrollReveal delay={0.15}>
-            <h3 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(1.4rem,3vw,2.2rem)", fontWeight: 900, color: textMain, marginTop: "clamp(4rem,7vw,6rem)", marginBottom: 32, textAlign: "center" }}>Road to Awards Night</h3>
+            <h3 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(1.4rem,3vw,2.2rem)", fontWeight: 900, color: textMain, marginTop: "clamp(4rem,7vw,6rem)", marginBottom: 10, textAlign: "center" }}>Road to Awards Night</h3>
+            <p style={{ fontFamily: "'Montserrat',sans-serif", fontSize: "0.95rem", color: textMid, lineHeight: 1.6, textAlign: "center", margin: "0 auto 32px", maxWidth: 560 }}>
+              The Tech Festival Canada · {formatRange(FESTIVAL_START_DATE, FESTIVAL_END_DATE)} {parseISO(FESTIVAL_END_DATE).y} · Toronto
+            </p>
           </ScrollReveal>
 
-          <div className="aw-timeline-wrap" style={{ overflow: "visible" }}>
-            <div className="aw-timeline-inner" style={{ position: "relative", display: "flex", justifyContent: "space-between" }}>
-              <div style={{ position: "absolute", top: 5, left: 0, right: 0, height: 2, background: dark ? "linear-gradient(90deg, rgba(185,158,255,0.15), rgba(245,166,35,0.25))" : "linear-gradient(90deg, rgba(122,63,209,0.12), rgba(245,166,35,0.18))" }} />
-              {[
-                { d: "Jun", l: "Framework" },
-                { d: "Jul–Aug", l: "Nominations" },
-                { d: "Sep", l: "Screening" },
-                { d: "Oct 6", l: "Shortlist" },
-                { d: "Oct 15", l: "Sealed" },
-                { d: "Oct 26", l: "Awards Night", h: true },
-              ].map(function (t, i) {
+          <ScrollReveal delay={0.2}>
+            <ol className="aw-tl" aria-label="Catalyst Awards timeline">
+              {STAGES.map(function (st) {
+                var status = stageStatus(st, today);
+                var isNow = status === "current";
+                var isDone = status === "done";
                 return (
-                  <ScrollReveal key={t.d} delay={i * 0.06}>
-                    <div style={{ textAlign: "center", position: "relative", zIndex: 2, minWidth: 75, padding: "0 4px" }}>
-                      <div style={{ width: t.h ? 14 : 8, height: t.h ? 14 : 8, borderRadius: "50%", background: t.h ? "#f5a623" : (dark ? "rgba(185,158,255,0.30)" : "rgba(122,63,209,0.20)"), margin: t.h ? "-3px auto 10px" : "0 auto 10px", boxShadow: t.h ? "0 0 14px rgba(245,166,35,0.40)" : "none" }} />
-                      <div style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.58rem", fontWeight: 800, color: t.h ? "#f5a623" : textSoft, letterSpacing: "1px", marginBottom: 3 }}>{t.d}</div>
-                      <div style={{ fontSize: "0.72rem", fontWeight: 700, color: textMain, lineHeight: 1.3 }}>{t.l}</div>
+                  <li key={st.title} className={"aw-tl-step is-" + status} aria-current={isNow ? "step" : undefined}>
+                    <span className="aw-tl-dot" aria-hidden="true" style={{
+                      background: isNow ? "#f5a623" : isDone ? "#7a3fd1" : bg,
+                      border: isNow || isDone ? "none" : "2px solid " + tlMuted,
+                      boxShadow: isNow ? "0 0 0 5px rgba(245,166,35,0.22), 0 0 18px rgba(245,166,35,0.45)" : "none",
+                    }}>
+                      {isDone && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>}
+                      {isNow && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff" }} />}
+                    </span>
+                    <div className="aw-tl-card" style={isNow ? {
+                      border: "1.5px solid rgba(245,166,35,0.60)",
+                      background: dark ? "rgba(245,166,35,0.08)" : "rgba(245,166,35,0.07)",
+                      boxShadow: dark ? "0 8px 28px rgba(245,166,35,0.10)" : "0 8px 24px rgba(245,166,35,0.14)",
+                    } : undefined}>
+                      <span style={{
+                        display: "inline-block", fontFamily: "'Orbitron',sans-serif", fontSize: "0.58rem", fontWeight: 800, letterSpacing: "1.2px", textTransform: "uppercase",
+                        padding: isNow ? "5px 10px" : 0, borderRadius: 999, marginBottom: 10,
+                        background: isNow ? "#f5a623" : "transparent",
+                        color: isNow ? "#1a0b00" : isDone ? tlDone : textMid,
+                      }}>{stageChip(st, status, today)}</span>
+                      <div style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(0.9rem,1.4vw,1.05rem)", fontWeight: 800, color: textMain, lineHeight: 1.3, marginBottom: 4 }}>{formatRange(st.start, st.end)}</div>
+                      <div style={{ fontFamily: "'Montserrat',sans-serif", fontSize: "1rem", fontWeight: 700, color: isDone ? textMid : textMain, marginBottom: 6 }}>{st.title}</div>
+                      <div style={{ fontFamily: "'Montserrat',sans-serif", fontSize: "0.86rem", color: textMid, lineHeight: 1.6 }}>{st.desc}</div>
                     </div>
-                  </ScrollReveal>
+                  </li>
                 );
               })}
-            </div>
-          </div>
+            </ol>
+          </ScrollReveal>
         </div>
       </section>
 
@@ -326,7 +476,7 @@ export default function Awards() {
          NOMINATION FORM (expanding inline)
          ════════════════════════════════════════════════ */}
       {nominationsOpen ? (
-        <NominationForm dark={dark} textMain={textMain} textMid={textMid} textSoft={textSoft} accent={accent} cardBg={cardBg} cardBdr={cardBdr} />
+        <NominationForm deadlineLabel={NOMINATIONS_END_LABEL} dark={dark} textMain={textMain} textMid={textMid} textSoft={textSoft} accent={accent} cardBg={cardBg} cardBdr={cardBdr} />
       ) : (
         <section id="nominations" style={{ padding: "clamp(3rem, 6vw, 5rem) 5%", background: dark ? "#0a0618" : "#f4f0ff", borderTop: "1px solid " + cardBdr, scrollMarginTop: 80 }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -344,7 +494,7 @@ export default function Awards() {
               Ready to be <span style={{ color: "#f5a623" }}>recognised?</span>
             </h2>
             <p style={{ fontFamily: "'Montserrat',sans-serif", fontSize: "1.05rem", color: textMid, lineHeight: 1.8, maxWidth: 480, margin: "0 auto 32px" }}>
-              Nominations are free. Self-nominations and third-party nominations welcome. Portal opens July 1, 2026.
+              Nominations are free. Self-nominations and third-party nominations welcome.
             </p>
             <div className="aw-hero-ctas" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
               <motion.a href="/tickets" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}

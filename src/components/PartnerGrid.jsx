@@ -180,7 +180,7 @@ export default function PartnerGrid({ dark, accent }) {
         }
         .pm-featured {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(var(--featured-cols, 4), minmax(0, 1fr));
           gap: 20px;
         }
         .pm-featured .partner-tile { height: 150px; }
@@ -286,6 +286,7 @@ export default function PartnerGrid({ dark, accent }) {
         @media (max-width: 900px) {
           .pm-wrap { gap: 44px; padding: 0 4%; }
           .pm-featured { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+          .pm-featured > .partner-tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
           .pm-featured .partner-tile { height: 110px; }
           .pm-featured .partner-tile img { max-height: min(calc(54px * var(--logo-scale, 1)), 100%); }
           .pm-row { grid-template-columns: 1fr; gap: 14px; padding: 20px 0; }
@@ -308,7 +309,7 @@ export default function PartnerGrid({ dark, accent }) {
               <span className="pm-dot" style={{ background: "#f5a623", boxShadow: "0 0 6px #f5a623" }} />
               <span style={{ color: "#f5a623" }}>{FEATURED_GROUP.title}</span>
             </div>
-            <div className="pm-featured">
+            <div className="pm-featured" style={{ "--featured-cols": Math.min(Math.max(featured.length, 1), 5) }}>
               {featured.map((p, i) => <PartnerTile key={p._id} partner={p} i={i} dark={dark} accentColor={accentColor} />)}
             </div>
           </section>

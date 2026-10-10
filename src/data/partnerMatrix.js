@@ -39,6 +39,7 @@ var DEFAULT_GROUPS = {
   "2datpkVcvmhpv74vwA0HS5": "featured", // Kosim Robotics
   "82f1d0a0-0167-479a-94e3-4b9ffeefb24d": "featured", // Dell Technologies
   "inoqRsrtOZgDGk9v20EIqV": "featured", // Paragon Micro
+  "inoqRsrtOZgDGk9v20m52d": "featured", // Transient.AI
 
   // Artificial Intelligence
   "dd18693d-bf75-4f53-8f87-3386a71d7cdc": "ai", // Amazon
@@ -47,7 +48,6 @@ var DEFAULT_GROUPS = {
   "43301b44-ee7e-4b4e-a692-b789a524f5de": "ai", // AI Collective
   "44127cd8-4b59-4c0e-938e-2bee3b9f649c": "ai", // Iris Software
   "137ae343-b5ef-44ad-97b5-c85d75b61b6e": "ai", // Fusion Collective
-  "inoqRsrtOZgDGk9v20m52d": "ai", // Transient.AI
 
   // Quantum Computing
   "497f0323-55b9-4312-ab80-41d6b6f2e21f": "quantum", // IBM

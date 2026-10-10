@@ -95,15 +95,11 @@ function GroupRow({ group, items, dark, accentColor }) {
   );
 }
 
-function MatrixBlock({ label, dot, groups, byGroup, dark, accentColor }) {
+function MatrixBlock({ groups, byGroup, dark, accentColor }) {
   const shown = groups.filter((g) => (byGroup[g.key] || []).length > 0);
   if (!shown.length) return null;
   return (
     <section className="pm-block">
-      <div className="pm-block-label">
-        <span className="pm-dot" style={{ background: dot, boxShadow: "0 0 6px " + dot }} />
-        <span style={{ color: dot }}>{label}</span>
-      </div>
       {shown.map((g) => <GroupRow key={g.key} group={g} items={byGroup[g.key]} dark={dark} accentColor={accentColor} />)}
     </section>
   );
@@ -178,6 +174,7 @@ export default function PartnerGrid({ dark, accent }) {
           flex-direction: column;
           gap: 56px;
         }
+        .pm-block + .pm-block { margin-top: -56px; }
         .pm-featured {
           display: grid;
           grid-template-columns: repeat(var(--featured-cols, 4), minmax(0, 1fr));
@@ -219,9 +216,9 @@ export default function PartnerGrid({ dark, accent }) {
         .pm-row-title {
           margin: 0;
           font-family: 'Orbitron', sans-serif;
-          font-size: 0.82rem;
-          font-weight: 700;
-          line-height: 1.35;
+          font-size: clamp(1rem, 1.5vw, 1.2rem);
+          font-weight: 800;
+          line-height: 1.3;
           color: ${titleColor};
         }
         .pm-tiles {
@@ -285,6 +282,7 @@ export default function PartnerGrid({ dark, accent }) {
 
         @media (max-width: 900px) {
           .pm-wrap { gap: 44px; padding: 0 4%; }
+          .pm-block + .pm-block { margin-top: -44px; }
           .pm-featured { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
           .pm-featured > .partner-tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
           .pm-featured .partner-tile { height: 110px; }
@@ -315,8 +313,8 @@ export default function PartnerGrid({ dark, accent }) {
           </section>
         )}
 
-        <MatrixBlock label="5 Tech Pillars" dot="#f5a623" groups={PILLAR_GROUPS} byGroup={byGroup} dark={dark} accentColor={accentColor} />
-        <MatrixBlock label="5 Applied Sectors" dot="#a064ff" groups={SECTOR_GROUPS} byGroup={byGroup} dark={dark} accentColor={accentColor} />
+        <MatrixBlock groups={PILLAR_GROUPS} byGroup={byGroup} dark={dark} accentColor={accentColor} />
+        <MatrixBlock groups={SECTOR_GROUPS} byGroup={byGroup} dark={dark} accentColor={accentColor} />
 
         {ecosystem.length > 0 && (
           <section className="pm-block">

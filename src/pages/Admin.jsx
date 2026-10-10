@@ -30,6 +30,7 @@ import SalesAnalytics from "../admin/tickets/SalesAnalytics";
 import Inventory from "../admin/tickets/Inventory";
 import EmailTracking from "../admin/staff/EmailTracking";
 import MyAccount from "../admin/staff/MyAccount";
+import BrochureDownloads from "../admin/leads/BrochureDownloads";
 
 // Existing admin features — wrapped and restyled, logic unchanged.
 import CheckIn from "../components/CheckIn";
@@ -176,6 +177,8 @@ export default function Admin() {
                 description="Home sponsor logos." />
             } />
             <Route path="content/settings" element={<SiteSettings />} />
+
+            <Route path="brochure-downloads" element={<BrochureDownloads />} />
 
             <Route path="app" element={<AppOverview />} />
             <Route path="app/people" element={<People />} />

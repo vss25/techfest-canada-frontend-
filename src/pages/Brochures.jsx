@@ -21,6 +21,7 @@ export default function Brochures() {
   var s5 = useState(false); var brochureOpen = s5[0]; var setBrochureOpen = s5[1];
   var s6 = useState(false); var btnPulsing = s6[0]; var setBtnPulsing = s6[1];
   var brochureRef = useRef(null);
+  var honeypot = useRef("");
 
   useEffect(function () {
     setDark(document.body.classList.contains("dark-mode"));
@@ -43,7 +44,7 @@ export default function Brochures() {
     if (!form.firstName.trim()) e.firstName = "Required";
     if (!form.lastName.trim())  e.lastName  = "Required";
     if (!form.email.trim())     e.email     = "Required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Invalid email";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email)) e.email = "Invalid email";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -53,34 +54,29 @@ export default function Brochures() {
     if (errors[field]) setErrors(function (prev) { var n={...prev}; delete n[field]; return n; });
   }
 
-  async function handleSubmit(e) {
-  e.preventDefault();
-  if (!validate()) return;
+  // Unlock straight away. Saving the details and emailing the brochure happen in
+  // the background, so a slow or failed request never blocks the download.
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!validate()) return;
 
-  try {
-    const res = await fetch("https://techfest-canada-backend.onrender.com/api/brochure/submit", {
+    setSubmitted(true);
+    setBtnPulsing(true);
+    setTimeout(function () { setBtnPulsing(false); }, 3000);
+
+    fetch("https://techfest-canada-backend.onrender.com/api/brochure/submit", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      setSubmitted(true);
-      setBtnPulsing(true);
-      setTimeout(function () { setBtnPulsing(false); }, 3000);
-    } else {
-      alert("Something went wrong");
-    }
-
-  } catch (err) {
-    console.error(err);
-    alert("Server error");
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        ...form,
+        brochure: "sponsorship",
+        page: window.location.pathname,
+        referrer: document.referrer,
+        _hp: honeypot.current, // bots fill this; humans never see it
+      }),
+    }).catch(function (err) { console.error(err); });
   }
-}
 
   function openBrochure() {
     setBrochureOpen(true);
@@ -90,12 +86,12 @@ export default function Brochures() {
   }
 
   var fields = [
-    { key:"firstName", label:"First Name",    required:true,  placeholder:"Alex" },
-    { key:"lastName",  label:"Last Name",     required:true,  placeholder:"Chen" },
-    { key:"company",   label:"Company Name",  required:false, placeholder:"Acme Corp" },
-    { key:"jobTitle",  label:"Job Title",     required:false, placeholder:"CTO" },
-    { key:"email",     label:"Email Address", required:true,  placeholder:"alex@company.com", type:"email" },
-    { key:"phone",     label:"Phone Number",  required:false, placeholder:"+1 (416) 000-0000", type:"tel" },
+    { key:"firstName", label:"First Name",    required:true,  placeholder:"Alex", maxLength:80 },
+    { key:"lastName",  label:"Last Name",     required:true,  placeholder:"Chen", maxLength:80 },
+    { key:"company",   label:"Company Name",  required:false, placeholder:"Acme Corp", maxLength:160 },
+    { key:"jobTitle",  label:"Job Title",     required:false, placeholder:"CTO", maxLength:120 },
+    { key:"email",     label:"Email Address", required:true,  placeholder:"alex@company.com", type:"email", maxLength:254 },
+    { key:"phone",     label:"Phone Number",  required:false, placeholder:"+1 (416) 000-0000", type:"tel", maxLength:40 },
   ];
 
   return (
@@ -167,11 +163,16 @@ export default function Brochures() {
                 <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:"0.7rem", fontWeight:800, letterSpacing:"1px", textTransform:"uppercase", color:submitted?"#f5a623":"#b99eff", marginBottom:2 }}>
                   {submitted ? "Access Granted" : "Request Access"}
                 </div>
-                <div style={{ fontSize:"0.78rem", color:textMid }}>{submitted?"Your brochure is ready to view below":"Fill in your details to unlock the full brochure"}</div>
+                <div style={{ fontSize:"0.78rem", color:textMid }}>{submitted?"Your brochure is ready to view below. We\u2019re also emailing you a copy.":"Fill in your details to unlock the full brochure"}</div>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} noValidate>
+              {/* honeypot — hidden from humans, catches bots */}
+              <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true"
+                onChange={function(e){ honeypot.current = e.target.value; }}
+                style={{ position:"absolute", left:"-9999px", width:1, height:1, opacity:0 }}
+              />
               <div className="form-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem 1.5rem", marginBottom:"1rem" }}>
                 {fields.slice(0,4).map(function(f){
                   return (
@@ -179,7 +180,7 @@ export default function Brochures() {
                       <label style={{ display:"block", fontFamily:"'Orbitron',sans-serif", fontSize:"0.6rem", fontWeight:700, letterSpacing:"1px", textTransform:"uppercase", color:errors[f.key]?"#ff6b6b":textMid, marginBottom:7 }}>
                         {f.label}{f.required&&<span style={{ color:"#f5a623", marginLeft:3 }}>*</span>}
                       </label>
-                      <input className="brochure-input" type={f.type||"text"} placeholder={f.placeholder} value={form[f.key]}
+                      <input className="brochure-input" type={f.type||"text"} placeholder={f.placeholder} value={form[f.key]} maxLength={f.maxLength}
                         onChange={function(e){handleChange(f.key,e.target.value);}} disabled={submitted}
                         style={{ background:submitted?(dark?"rgba(255,255,255,0.03)":"rgba(122,63,209,0.02)"):inputBg, border:"1px solid "+(errors[f.key]?"#ff6b6b":inputBdr), color:textMain, opacity:submitted?0.6:1, cursor:submitted?"not-allowed":"text" }}
                       />
@@ -208,7 +209,7 @@ export default function Brochures() {
                         {f.label}{f.required&&<span style={{ color:"#f5a623", marginLeft:3 }}>*</span>}
                         {!f.required&&<span style={{ color:textMid, opacity:0.5, marginLeft:6, fontSize:"0.55rem" }}>(optional)</span>}
                       </label>
-                      <input className="brochure-input" type={f.type||"text"} placeholder={f.placeholder} value={form[f.key]}
+                      <input className="brochure-input" type={f.type||"text"} placeholder={f.placeholder} value={form[f.key]} maxLength={f.maxLength}
                         onChange={function(e){handleChange(f.key,e.target.value);}} disabled={submitted}
                         style={{ background:submitted?(dark?"rgba(255,255,255,0.03)":"rgba(122,63,209,0.02)"):inputBg, border:"1px solid "+(errors[f.key]?"#ff6b6b":inputBdr), color:textMain, opacity:submitted?0.6:1, cursor:submitted?"not-allowed":"text" }}
                       />

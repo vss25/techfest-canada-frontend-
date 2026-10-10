@@ -84,7 +84,7 @@ function wordCount(text) {
    COMPONENT
    ═══════════════════════════════════════════════════════ */
 
-export default function NominationForm({ dark, textMain, textMid, textSoft, accent, cardBg, cardBdr }) {
+export default function NominationForm({ dark, textMain, textMid, textSoft, accent, cardBg, cardBdr, deadlineLabel }) {
   const [expanded, setExpanded] = useState(false);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -295,17 +295,23 @@ export default function NominationForm({ dark, textMain, textMid, textSoft, acce
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 220 }}>
-              <p style={{
-                fontFamily: "'Orbitron', sans-serif",
-                fontSize: "0.58rem",
-                fontWeight: 800,
-                letterSpacing: "3px",
-                textTransform: "uppercase",
-                color: "#f5a623",
-                marginBottom: 8,
-              }}>
-                Free to nominate · Deadline September 30, 2026
-              </p>
+              {deadlineLabel && (
+                <p style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontFamily: "'Montserrat', sans-serif",
+                  fontSize: "0.92rem",
+                  fontWeight: 700,
+                  color: textMain,
+                  margin: "0 0 12px",
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f5a623" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
+                  Nominations end {deadlineLabel}
+                </p>
+              )}
               <h2 style={{
                 fontFamily: "'Orbitron', sans-serif",
                 fontSize: "clamp(1.5rem, 3vw, 2.2rem)",
@@ -923,7 +929,7 @@ export default function NominationForm({ dark, textMain, textMid, textSoft, acce
                   </span>
                 </h3>
                 <p style={{ fontFamily: "'Montserrat', sans-serif", fontSize: "0.98rem", color: textMid, lineHeight: 1.7, maxWidth: 480, margin: "0 auto 24px" }}>
-                  Thank you for your nomination. We've sent a confirmation to <strong style={{ color: textMain }}>{form.nominatorEmail}</strong>. Our jury will review submissions after the September 30 deadline. Shortlisted nominees will be contacted directly.
+                  Thank you for your nomination. We've sent a confirmation to <strong style={{ color: textMain }}>{form.nominatorEmail}</strong>. Our jury will review submissions after nominations close{deadlineLabel ? " on " + deadlineLabel : ""}. Shortlisted nominees will be contacted directly.
                 </p>
                 <button onClick={resetForm}
                   style={{

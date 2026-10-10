@@ -12,6 +12,7 @@ import {
 } from "../ui";
 import { day } from "../format";
 import { ProfileLinkPanel, ProfileRequestDialog } from "./ProfileRequests";
+import { CompTicketDrawer } from "./CompTicket";
 
 const PAGE = 100;
 const SAFE_NOTE = "This only hides tickets from staff lists and analytics. The owner's ticket stays valid in the app, on the website and at the door.";
@@ -180,6 +181,7 @@ export default function TicketManager() {
   const [openRow, setOpenRow] = useState(null);
   const [profileAsk, setProfileAsk] = useState(null);   // preview of "Ask for missing details"
   const { isManagement } = useAdmin();
+  const [compOpen, setCompOpen] = useState(false);
   const dq = useDebounced(q.trim(), 300);
 
   const qs = new URLSearchParams({ show, page: String(page) });
@@ -296,6 +298,7 @@ export default function TicketManager() {
         description="Every ticket — app accounts and guest checkouts — in one list. Tidy up what staff see without touching anyone's ticket."
         actions={
           <>
+            {isManagement && <Button icon={Ticket} onClick={() => setCompOpen(true)} title="Give someone a free pass (speakers, guests, App Review)">Complimentary ticket</Button>}
             {isManagement && <Button icon={MailQuestion} loading={busy === "profile"} onClick={previewProfileAsk} title="Email people we don't have a job title or organisation for a link to fill in their details">Ask for missing details</Button>}
             {isManagement && <Button icon={Download} loading={busy === "export"} onClick={exportCsv} title="Every visible ticket with job, company, phone, topics and more">Download attendee list</Button>}
             <Button icon={RefreshCw} loading={busy === "sync"} onClick={syncStripe} title="Pull in any recent Stripe purchases that are missing">Sync from Stripe</Button>
@@ -305,6 +308,7 @@ export default function TicketManager() {
       />
 
       <Banner tone="info" icon={Info} className="mb-6" title="Removing a ticket here is safe">{SAFE_NOTE}</Banner>
+      <CompTicketDrawer open={compOpen} onClose={() => setCompOpen(false)} onCreated={reload} />
 
       <Tabs tabs={tabs} value={show} onChange={changeTab} label="Which tickets" />
 

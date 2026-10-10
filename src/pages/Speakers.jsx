@@ -13,7 +13,7 @@ import emailjs from "@emailjs/browser";
 import { client, speakerPhotoUrl } from "../utils/sanity";
 import useAgenda from "../hooks/useAgenda";
 import SpeakerMarquee from "../components/SpeakerMarquee";
-import { sessionsForSpeaker, slugifyName, formatTime12, DAYS } from "../data/agenda";
+import { sessionsForSpeaker, buildSpeakerCategoryMap, slugifyName, formatTime12, DAYS } from "../data/agenda";
 
 // ─── Protection ──────────────────────────────────────────────────
 function useProtection() {
@@ -38,149 +38,27 @@ const STATS = [
   ["5",     "Applied Sectors"],
 ];
 
-// ─── Pillar & Sector maps (TIGHTENED KEYWORDS) ──────────────────
+// ─── Pillar & Sector maps ────────────────────────────────────────
+// Keys match the `pillar` / `sector` values on agenda sessions
+// (src/data/agenda.js and the Sanity "session" docs), and labels match
+// the Agenda page. A speaker belongs to a pillar/sector when any session
+// they speak at or moderate is tagged with it — see categoriesForSpeaker.
 const PILLAR_MAP = {
-  ai: {
-    label: "AI / ML", icon: Sparkles, color: "#b99eff", light: "#7a3fd1",
-    keywords: [
-      "artificial intelligence", "machine learning", "deep learning",
-      "large language model", "llm", "generative ai", "genai", "gen ai",
-      "neural network", "natural language processing", "nlp",
-      "computer vision", "data science", "foundation model",
-      "gpt", "agentic ai", "ai agent", "ml ops", "mlops",
-      "responsible ai", "ai governance", "ai ethics",
-      "recommendation engine", "predictive analytics",
-      "ai infrastructure", "ai platform",
-    ],
-  },
-  quantum: {
-    label: "Quantum", icon: Zap, color: "#56b3f5", light: "#1878c2",
-    keywords: [
-      "quantum computing", "quantum", "qubit", "superposition",
-      "entanglement", "quantum cryptography", "quantum sensing",
-      "quantum communication", "quantum hardware", "quantum software",
-      "post-quantum", "post quantum",
-    ],
-  },
-  cybersecurity: {
-    label: "Cybersecurity", icon: Shield, color: "#f57eb3", light: "#c2287a",
-    keywords: [
-      "cybersecurity", "cyber security", "infosec", "information security",
-      "threat intelligence", "zero trust", "penetration testing",
-      "vulnerability management", "security operations center", "soc analyst",
-      "ciso", "chief information security", "identity management",
-      "ransomware", "malware", "devsecops", "incident response",
-      "digital forensics", "network security", "endpoint security",
-      "cloud security", "application security", "appsec",
-      "data protection", "encryption", "cyber threat", "cyber defense",
-      "security architect", "security engineering",
-    ],
-  },
-  robotics: {
-    label: "Robotics", icon: Cpu, color: "#f5a623", light: "#c4780a",
-    keywords: [
-      "robotics", "robot", "autonomous vehicle", "autonomous system",
-      "cobot", "collaborative robot", "drone", "uav",
-      "humanoid robot", "physical ai", "mechatronics",
-      "industrial automation", "robotic process",
-      "actuator", "embedded systems", "field robotics",
-    ],
-  },
-  climate: {
-    label: "Climate Tech", icon: Leaf, color: "#3fd19c", light: "#1a9e70",
-    keywords: [
-      "climate tech", "climate technology", "sustainability",
-      "sustainable", "renewable energy", "carbon capture",
-      "net zero", "net-zero", "esg reporting", "clean energy",
-      "cleantech", "clean tech", "decarbonization", "decarbonisation",
-      "circular economy", "carbon neutral", "green technology",
-      "solar energy", "wind energy", "energy transition",
-      "climate change", "environmental technology",
-    ],
-  },
+  ai:            { label: "AI / ML",       icon: Sparkles, color: "#b99eff", light: "#7a3fd1" },
+  quantum:       { label: "Quantum",       icon: Zap,      color: "#56b3f5", light: "#1878c2" },
+  cybersecurity: { label: "Cybersecurity", icon: Shield,   color: "#f57eb3", light: "#c2287a" },
+  robotics:      { label: "Robotics",      icon: Cpu,      color: "#f5a623", light: "#c4780a" },
+  climate:       { label: "Climate Tech",  icon: Leaf,     color: "#3fd19c", light: "#1a9e70" },
 };
 
 const SECTOR_MAP = {
-  fintech: {
-    label: "Financial Services", short: "FIN",
-    keywords: [
-      "fintech", "financial services", "financial technology",
-      "banking", "capital markets", "trading platform",
-      "wealth management", "asset management", "hedge fund",
-      "venture capital", "private equity", "blockchain",
-      "cryptocurrency", "defi", "regtech", "insurtech",
-      "payment processing", "digital payments",
-    ],
-  },
-  healthcare: {
-    label: "Healthcare & Life Sci", short: "HLT",
-    keywords: [
-      "healthcare", "health tech", "healthtech", "medical device",
-      "hospital", "clinical trial", "pharmaceutical", "pharma",
-      "biotech", "biotechnology", "life sciences", "drug discovery",
-      "patient care", "genomics", "medtech", "telemedicine",
-      "therapeutics", "digital health", "health system",
-      "public health", "mental health", "oncology", "radiology",
-    ],
-  },
-  energy: {
-    label: "Energy & Infrastructure", short: "ENR",
-    keywords: [
-      "energy sector", "power grid", "utility company", "utilities",
-      "oil and gas", "petroleum", "electrification",
-      "energy storage", "battery technology", "smart grid",
-      "microgrid", "nuclear energy", "hydroelectric",
-      "energy infrastructure", "power generation",
-    ],
-  },
-  manufacturing: {
-    label: "Manufacturing & Supply", short: "MFG",
-    keywords: [
-      "manufacturing", "supply chain", "logistics technology",
-      "production line", "factory automation", "industrial iot",
-      "automotive industry", "aerospace", "warehouse automation",
-      "inventory management", "procurement", "industry 4.0",
-      "smart factory", "digital twin", "additive manufacturing",
-    ],
-  },
-  public: {
-    label: "Public Sector & Defence", short: "DEF",
-    keywords: [
-      "defence", "defense", "public sector", "military",
-      "national security", "government technology", "govtech",
-      "federal government", "border security", "emergency management",
-      "intelligence community", "armed forces", "law enforcement",
-      "public safety", "ministry of defence", "department of defense",
-    ],
-  },
+  fintech:       { label: "Financial Services",      short: "FIN" },
+  healthcare:    { label: "Healthcare & Life Sci",   short: "HLT" },
+  energy:        { label: "Energy & Infrastructure", short: "ENR" },
+  manufacturing: { label: "Manufacturing & Supply",  short: "MFG" },
+  public:        { label: "Public Sector & Defence", short: "DEF" },
+  startups:      { label: "Startups & Capital",      short: "STP" },
 };
-
-// ─── Word-boundary aware matching ────────────────────────────────
-function speakerMatchesKeywords(speaker, keywords) {
-  var blob = [
-    speaker.name || "",
-    speaker.title || "",
-    speaker.company || "",
-    speaker.bio || "",
-  ].join(" ").toLowerCase();
-  return keywords.some(function (kw) {
-    if (kw.includes(" ")) {
-      return blob.includes(kw.toLowerCase());
-    }
-    try {
-      var re = new RegExp("\\b" + kw.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b");
-      return re.test(blob);
-    } catch (e) {
-      return blob.includes(kw.toLowerCase());
-    }
-  });
-}
-
-/* NOTE: the per-card category pills (AI / ML, Robotics, Public Sector …) were
-   removed at the client's request, along with the keyword-scoring helpers that
-   generated them (countMatches / deriveTags). The PILLAR_MAP and SECTOR_MAP
-   keyword lists are still used — by speakerMatchesKeywords above — to power the
-   TECH PILLAR and SECTOR filter dropdowns. Don't delete those maps. */
 
 var LinkedInIcon = function () {
   return (
@@ -548,6 +426,26 @@ export default function Speakers() {
   var mutedText = dark ? "rgba(255,255,255,0.48)" : "rgba(13,5,32,0.42)";
   var secondary = dark ? "rgba(255,255,255,0.68)" : "rgba(13,5,32,0.58)";
 
+  // Each speaker's pillars/sectors come from their agenda sessions (live CMS
+  // agenda, falling back to src/data/agenda.js) — not from bio keywords.
+  var agendaState = useAgenda();
+  var agendaSessions = agendaState.sessions;
+  var categoryMap = useMemo(function () {
+    return buildSpeakerCategoryMap(speakers, agendaSessions);
+  }, [speakers, agendaSessions]);
+
+  // Dev aid: list speakers who aren't on any agenda session (name mismatch or
+  // not yet scheduled). They still show when no pillar/sector filter is set.
+  useEffect(function () {
+    if (!import.meta.env.DEV || loading || !agendaState.loaded || !speakers.length) return;
+    var unmatched = speakers
+      .filter(function (s) { var c = categoryMap[s._id]; return !c || !c.sessionCount; })
+      .map(function (s) { return s.name; });
+    if (unmatched.length) {
+      console.info("[Speakers] " + unmatched.length + " speaker(s) with no agenda session (" + agendaState.source + "):", unmatched);
+    }
+  }, [loading, agendaState.loaded, agendaState.source, speakers, categoryMap]);
+
   var filtered = useMemo(function () {
     return speakers.filter(function (s) {
       if (search.trim()) {
@@ -559,17 +457,12 @@ export default function Speakers() {
           (s.bio && s.bio.toLowerCase().includes(q));
         if (!textMatch) return false;
       }
-      if (activePillar) {
-        var pillarKeywords = PILLAR_MAP[activePillar] ? PILLAR_MAP[activePillar].keywords : [];
-        if (!speakerMatchesKeywords(s, pillarKeywords)) return false;
-      }
-      if (activeSector) {
-        var sectorKeywords = SECTOR_MAP[activeSector] ? SECTOR_MAP[activeSector].keywords : [];
-        if (!speakerMatchesKeywords(s, sectorKeywords)) return false;
-      }
+      var cats = categoryMap[s._id];
+      if (activePillar && !(cats && cats.pillars.has(activePillar))) return false;
+      if (activeSector && !(cats && cats.sectors.has(activeSector))) return false;
       return true;
     });
-  }, [speakers, search, activePillar, activeSector]);
+  }, [speakers, search, activePillar, activeSector, categoryMap]);
 
   var hasFilters = !!(activePillar || activeSector || search.trim());
   var fp = { dark: dark, accent: accent, border: border, inactiveText: inactiveText };

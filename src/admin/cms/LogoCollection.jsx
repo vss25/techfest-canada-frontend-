@@ -10,6 +10,9 @@ import { CmsBanners, ImagePicker } from "./CmsParts";
 import { PARTNER_CATEGORIES, LIVE_NOTE } from "./cmsMeta";
 import { buildBody, nextOrder } from "./fields";
 import useCmsStatus from "./useCmsStatus";
+import { FEATURED_GROUP, PILLAR_GROUPS, SECTOR_GROUPS, ECOSYSTEM_GROUP } from "../../data/partnerMatrix";
+
+const MATRIX_OPTIONS = [FEATURED_GROUP, ...PILLAR_GROUPS, ...SECTOR_GROUPS, ECOSYSTEM_GROUP];
 
 const scaleOf = (d) => (Number.isFinite(Number(d?.logoScale)) && d?.logoScale !== null && d?.logoScale !== "" ? Number(d.logoScale) : 100);
 const clampScale = (n) => Math.min(250, Math.max(30, Math.round(n)));
@@ -81,7 +84,7 @@ function LogoTile({ doc, readOnly, light, onEdit, onToggleActive, onScale }) {
 
 function LogoDrawer({ type, singular, withCategory, doc, creating, defaultOrder, readOnly, onClose, onSaved, onDelete }) {
   const toast = useToast();
-  const keys = ["name", "url", "order", "active", "logoScale", ...(withCategory ? ["category"] : [])];
+  const keys = ["name", "url", "order", "active", "logoScale", ...(withCategory ? ["category", "matrixGroup"] : [])];
   const [form, setForm] = useState(() => ({
     name: doc?.name || "",
     url: doc?.url || "",
@@ -89,6 +92,7 @@ function LogoDrawer({ type, singular, withCategory, doc, creating, defaultOrder,
     active: doc ? doc.active !== false : true,
     logoScale: String(scaleOf(doc)),
     category: doc?.category || (withCategory ? "partnersAndSupporters" : ""),
+    matrixGroup: doc?.matrixGroup || "",
   }));
   const [logo, setLogo] = useState({ assetId: null, url: doc?.logoUrl || "" });
   const [errors, setErrors] = useState({});
@@ -169,6 +173,16 @@ function LogoDrawer({ type, singular, withCategory, doc, creating, defaultOrder,
             {(id) => (
               <Select id={id} value={form.category} onChange={set("category")} disabled={readOnly}>
                 {PARTNER_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </Select>
+            )}
+          </Field>
+        )}
+        {withCategory && (
+          <Field label="Partners page row" hint="Which tech pillar or applied sector row the logo sits in on the Partners page. Automatic uses the built-in list; new logos default to Ecosystem & Media.">
+            {(id) => (
+              <Select id={id} value={form.matrixGroup} onChange={set("matrixGroup")} disabled={readOnly}>
+                <option value="">Automatic</option>
+                {MATRIX_OPTIONS.map((g) => <option key={g.key} value={g.key}>{g.title}</option>)}
               </Select>
             )}
           </Field>

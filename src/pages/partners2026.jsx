@@ -368,7 +368,6 @@ export default function Partners2026() {
   var bg = dark ? "#06020f" : "#ffffff";
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.62)" : "rgba(13,5,32,0.62)";
-  var textDim = dark ? "rgba(255,255,255,0.30)" : "rgba(13,5,32,0.30)";
   var accent = dark ? "#b99eff" : "#7a3fd1";
   var orange = dark ? "#f5a623" : "#d98a14";
   var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.10)";
@@ -480,9 +479,9 @@ export default function Partners2026() {
         <section
           ref={heroRef}
           style={{
-            position: "relative", minHeight: "92vh",
+            position: "relative",
             display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "clamp(120px, 16vw, 160px) 5% clamp(60px, 10vw, 120px)",
+            padding: "clamp(120px, 16vw, 160px) 5% clamp(32px, 4vw, 48px)",
             overflow: "hidden",
             background: dark
               ? "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.14) 0%, transparent 70%)"
@@ -508,7 +507,7 @@ export default function Partners2026() {
               </div>
             </HeroSoft>
 
-            <h1 style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 900, fontSize: "clamp(2.5rem, 7vw, 5rem)", letterSpacing: "-1.5px", lineHeight: 1.05, marginBottom: 32 }}>
+            <h1 style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 900, fontSize: "clamp(2.5rem, 7vw, 5rem)", letterSpacing: "-1.5px", lineHeight: 1.05, marginBottom: 24 }}>
               <HeroReveal as="span" delay={0.3} className="tfc-silver-text" style={{ display: "block" }}>Institutions</HeroReveal>
               <HeroReveal as="span" delay={0.55} className="tfc-grad-text" style={{ display: "block" }}>Involved</HeroReveal>
             </h1>
@@ -519,37 +518,11 @@ export default function Partners2026() {
               </p>
             </HeroSoft>
 
-            <HeroSoft delay={1.2}>
-              <motion.div
-                animate={{ y: [0, 8, 0] }}
-                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                style={{ marginTop: 64, textAlign: "center", color: textDim, fontFamily: "'Orbitron', sans-serif", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "2.5px", textTransform: "uppercase" }}
-              >
-                <div style={{ fontSize: "1.2rem", marginBottom: 4 }}>↓</div>
-                Discover Our Network
-              </motion.div>
-            </HeroSoft>
           </motion.div>
         </section>
 
         {/* PARTNER GRID */}
-        <section style={{ padding: "60px 0 100px" }}>
-          <SoftReveal>
-            <div style={{ textAlign: "center", fontFamily: "'Orbitron', sans-serif", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "3px", textTransform: "uppercase", color: textDim, marginBottom: 16 }}>
-              The Network
-            </div>
-          </SoftReveal>
-
-          <SoftReveal delay={0.4}>
-            <p style={{ fontSize: "clamp(0.95rem, 1.4vw, 1.1rem)", color: textMuted, lineHeight: 1.7, maxWidth: 640, margin: "0 auto 36px", padding: "0 5%", textAlign: "center" }}>
-              Government bodies, industry associations, academic institutions, enterprises, startups, and international trade organisations — all in one room.
-            </p>
-          </SoftReveal>
-
-          <SoftReveal delay={0.6}>
-            <div className="tfc-divider" style={{ marginBottom: 48 }} />
-          </SoftReveal>
-
+        <section style={{ padding: "0 0 100px" }}>
           <PartnerGrid dark={dark} accent={accent} />
         </section>
 

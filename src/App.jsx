@@ -30,7 +30,6 @@ import Partners2026 from "./pages/partners2026";
 import Organizers from "./pages/Organizers";
 import LinkedinLanding from "./pages/Linkedin";
 import Media from "./pages/Media";
-import Briefings from "./pages/Briefings";
 import CompleteProfile from "./pages/CompleteProfile";
 import AppLogin from "./pages/AppLogin";
 import MaintenanceGate from "./components/MaintenanceGate";
@@ -74,8 +73,9 @@ function App() {
         <Route path="/sponsors" element={<Sponsors />} />
         <Route path="/tickets" element={<Tickets />} />
         <Route path="/tickets/checkout" element={<Checkout />} />
-        <Route path="/first-timers" element={<Navigate to="/briefings" replace />} />
-        <Route path="/briefings" element={<Briefings />} />
+        <Route path="/first-timers" element={<Navigate to="/" replace />} />
+        {/* Briefings page hidden (Oct 2026); src/pages/Briefings.jsx kept for later */}
+        <Route path="/briefings" element={<Navigate to="/" replace />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="/on-demand" element={<Resources />} />
         {/* The attendee dashboard was retired (the app replaces it); keep old links working. */}

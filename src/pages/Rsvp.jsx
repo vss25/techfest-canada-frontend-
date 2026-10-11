@@ -1,0 +1,911 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import {
+  AlertCircle, ArrowLeft, ArrowRight, BadgeCheck, CalendarPlus, Check, Loader2, Lock, Mic2, Pencil, RotateCcw, Sparkles,
+} from "lucide-react";
+import AuroraBackground from "../components/AuroraBackground";
+import { API, useFormGuard } from "../lib/forms";
+
+/* =========================================================
+   /rsvp — TTFC 2026 RSVP (a "ghost" page)
+   ---------------------------------------------------------
+   Nothing links here: no navbar or footer entry, not in any sitemap,
+   and the page sets <meta name="robots" content="noindex,nofollow">.
+   People reach it by typing thetechfestival.com/rsvp.
+
+   One question per screen. What each pass includes comes from the
+   backend (GET /api/rsvp/options, services/rsvp.js), the same matrix as
+   the Tickets page, so it is never copied here. As people type their
+   name (and optionally a ticket ID) we ask POST /api/rsvp/lookup who
+   they are: a verified ticket or a speaker locks the pass. The backend
+   checks everything again when the RSVP is saved (POST /api/rsvp).
+   Staff see RSVPs in Admin → Leads → RSVPs.
+========================================================= */
+
+const ENQUIRE = "enquire@thetechfestival.com";
+const STEPS = ["welcome", "name", "pass", "days", "experiences", "dietary", "review", "success"];
+const FORM_STEPS = ["name", "pass", "days", "experiences", "dietary", "review"];
+const PASS_ORDER = ["connect", "influence", "power", "apex"];
+const PASS_ACCENT = { connect: "#9b6cff", influence: "#e8458b", power: "#f5a623", apex: "#ffd27a", speaker: "#e8458b" };
+const LOCATION = "The Westin Harbour Castle, 1 Harbour Square, Toronto, ON M5J 1A6";
+const DOORS = { day1: "Registration opens 8:00 AM.", day2: "Registration opens 8:30 AM." };
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const NONE = { kind: "none", verified: false };
+const article = (label) => (/^[aeiou]/i.test(label) ? "an" : "a");
+
+const shortDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+const longDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
+
+/** "2× Networking Luncheon · CxO Breakfast …" for a pass, from the shared option list. */
+function includesFor(tier, options) {
+  const counts = new Map();
+  for (const o of options) {
+    if (o.kind !== "experience" || !o.tiers.includes(tier)) continue;
+    const label = o.label.replace(/\s*\(.*\)$/, "");
+    counts.set(label, (counts.get(label) || 0) + 1);
+  }
+  return [...counts].map(([label, n]) => (n > 1 ? `${n}× ${label}` : label));
+}
+
+/* ---------- Add to calendar (.ics, made in the browser) ---------- */
+const icsText = (s) => String(s).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/([,;])/g, "\\$1");
+function foldIcs(line) {
+  // Lines longer than 75 octets continue on the next line after a space (RFC 5545).
+  const enc = new TextEncoder();
+  const out = [];
+  let cur = "";
+  let limit = 75;
+  for (const ch of line) {
+    if (enc.encode(cur + ch).length > limit) { out.push(cur); cur = ""; limit = 74; }
+    cur += ch;
+  }
+  out.push(cur);
+  return out.join("\r\n ");
+}
+function buildIcs({ days, options, catalog }) {
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//The Tech Festival Canada//RSVP//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
+  const chosen = catalog.days.filter((d) => days.includes(d.key));
+  const picked = catalog.options.filter((o) => options.includes(o.key));
+  chosen.forEach((d, i) => {
+    const start = d.date.replace(/-/g, "");
+    const next = new Date(`${d.date}T12:00:00Z`);
+    next.setUTCDate(next.getUTCDate() + 1);
+    const end = next.toISOString().slice(0, 10).replace(/-/g, "");
+    const mine = picked.filter((o) => o.day === d.key).map((o) => o.label);
+    const anyDay = i === 0 ? picked.filter((o) => !o.day).map((o) => o.label) : [];
+    const desc = [
+      `The Tech Festival Canada 2026 · ${d.label}.`, DOORS[d.key] || "",
+      mine.length ? `Your RSVP: ${mine.join(", ")}.` : "",
+      anyDay.length ? `Also on your RSVP: ${anyDay.join(", ")}.` : "",
+      "https://www.thetechfestival.com",
+    ].filter(Boolean).join("\n");
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:ttfc-2026-${d.key}@thetechfestival.com`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${start}`,
+      `DTEND;VALUE=DATE:${end}`,
+      `SUMMARY:${icsText(`TTFC 2026 · ${d.label}`)}`,
+      `LOCATION:${icsText(LOCATION)}`,
+      `DESCRIPTION:${icsText(desc)}`,
+      "URL:https://www.thetechfestival.com",
+      "END:VEVENT",
+    );
+  });
+  lines.push("END:VCALENDAR");
+  return lines.map(foldIcs).join("\r\n") + "\r\n";
+}
+
+/* ---------- Small pieces ---------- */
+function Field({ id, label, hint, error, optional, children }) {
+  return (
+    <div className="rsvp-field">
+      <label htmlFor={id} className="rsvp-label">
+        {label}{optional && <span className="rsvp-optional"> (optional)</span>}
+      </label>
+      {children}
+      {hint && !error && <p id={`${id}-hint`} className="rsvp-hint">{hint}</p>}
+      {error && <p id={`${id}-error`} className="rsvp-error" role="alert"><AlertCircle size={14} aria-hidden="true" /> {error}</p>}
+    </div>
+  );
+}
+
+function CheckMark({ on, round }) {
+  return (
+    <span className={`rsvp-check${round ? " rsvp-check-round" : ""}`} data-on={on || undefined} aria-hidden="true">
+      <AnimatePresence initial={false}>
+        {on && (
+          <motion.span key="c" initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }} transition={{ type: "spring", stiffness: 500, damping: 26 }}>
+            <Check size={14} strokeWidth={3} />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </span>
+  );
+}
+
+function StepHeader({ eyebrow, title, sub, id }) {
+  return (
+    <header className="rsvp-head">
+      {eyebrow && <p className="rsvp-eyebrow">{eyebrow}</p>}
+      <h1 id={id} className="rsvp-title">{title}</h1>
+      {sub && <p className="rsvp-sub">{sub}</p>}
+    </header>
+  );
+}
+
+/** Confetti made of brand-coloured bits, placed deterministically (no randomness during render). */
+function Celebration() {
+  const reduce = useReducedMotion();
+  const bits = useMemo(() => Array.from({ length: 34 }, (_, i) => {
+    const a = i * 2.39996; // golden angle
+    const r = 120 + ((i * 53) % 110);
+    return {
+      x: Math.cos(a) * r, y: Math.sin(a) * r * 0.8 - 40,
+      rot: (i * 97) % 360, size: 6 + (i % 4) * 2,
+      color: ["#7a3fd1", "#e8458b", "#f5a623", "#ffffff"][i % 4], round: i % 3 === 0, delay: (i % 6) * 0.03,
+    };
+  }), []);
+  return (
+    <div className="rsvp-celebrate" aria-hidden="true">
+      {!reduce && bits.map((b, i) => (
+        <motion.span key={i} className="rsvp-confetti"
+          style={{ width: b.size, height: b.round ? b.size : b.size * 0.45, background: b.color, borderRadius: b.round ? 999 : 2 }}
+          initial={{ x: 0, y: 0, opacity: 0, scale: 0.4, rotate: 0 }}
+          animate={{ x: b.x, y: [0, b.y, b.y + 140], opacity: [0, 1, 0], scale: 1, rotate: b.rot + 360 }}
+          transition={{ duration: 2.2, delay: 0.15 + b.delay, ease: "easeOut", times: [0, 0.4, 1] }} />
+      ))}
+      <motion.div className="rsvp-success-badge"
+        initial={reduce ? false : { scale: 0.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 18 }}>
+        {!reduce && [0, 1].map((k) => (
+          <motion.span key={k} className="rsvp-ring" initial={{ scale: 0.8, opacity: 0.7 }} animate={{ scale: 2.1, opacity: 0 }}
+            transition={{ duration: 1.8, delay: 0.3 + k * 0.5, repeat: Infinity, repeatDelay: 1.2 }} />
+        ))}
+        <Check size={38} strokeWidth={3} />
+      </motion.div>
+    </div>
+  );
+}
+
+/* ---------- The page ---------- */
+export default function Rsvp() {
+  const reduce = useReducedMotion();
+  const guard = useFormGuard(true);
+  const [catalog, setCatalog] = useState(null);
+  const [catalogError, setCatalogError] = useState(false);
+  const [catalogNonce, setCatalogNonce] = useState(0);
+  const [step, setStep] = useState(0);
+  const [dir, setDir] = useState(1);
+  const [form, setForm] = useState({
+    firstName: "", lastName: "", ticketId: "", email: "", tier: "", days: [], options: [], dietary: [], dietaryOther: "", accessibility: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [lookup, setLookup] = useState({ key: "", checking: false, result: NONE });
+  const [answer, setAnswer] = useState({ key: "", choice: "" }); // "Is this right?" for an unverified match
+  const [returnToReview, setReturnToReview] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [saved, setSaved] = useState(null);
+  const stepRef = useRef(null);
+  const primaryRef = useRef(null);
+
+  /* Hidden page: keep it out of search engines, and give it a quiet title. */
+  useEffect(() => {
+    const prev = document.title;
+    document.title = "RSVP · TTFC 2026";
+    const robots = document.createElement("meta");
+    robots.name = "robots";
+    robots.content = "noindex,nofollow";
+    document.head.appendChild(robots);
+    document.body.classList.add("rsvp-open");
+    return () => { document.title = prev; robots.remove(); document.body.classList.remove("rsvp-open"); };
+  }, []);
+
+  /* What each pass includes, from the backend. */
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch(`${API}/rsvp/options`, { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((data) => { setCatalog(data); setCatalogError(false); })
+      .catch((err) => { if (err?.name !== "AbortError") setCatalogError(true); });
+    return () => ctrl.abort();
+  }, [catalogNonce]);
+
+  /* Who is this? Ask ~600 ms after they stop typing, once both names (or a ticket ID + last name) are in. */
+  const first = form.firstName.trim();
+  const last = form.lastName.trim();
+  const tid = form.ticketId.trim();
+  const lookupKey = (first && last.length >= 2) || (tid && last.length >= 2) ? `${first}|${last}|${tid}`.toLowerCase() : "";
+  useEffect(() => {
+    if (!lookupKey) return undefined;
+    const ctrl = new AbortController();
+    const timer = setTimeout(async () => {
+      setLookup((l) => ({ ...l, checking: true }));
+      let result = NONE;
+      try {
+        const res = await fetch(`${API}/rsvp/lookup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firstName: first, lastName: last, ticketId: tid, _hp: guard.meta()._hp }),
+          signal: ctrl.signal,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data && typeof data.kind === "string") result = data;
+      } catch (err) {
+        if (err?.name === "AbortError") return;
+      }
+      setLookup({ key: lookupKey, checking: false, result });
+    }, 600);
+    return () => { clearTimeout(timer); ctrl.abort(); };
+    // guard.meta reads a ref; first/last/tid are inside lookupKey
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lookupKey]);
+
+  const found = lookupKey && lookup.key === lookupKey ? lookup.result : NONE;
+  const checking = !!lookupKey && (lookup.checking || lookup.key !== lookupKey);
+  const lockedTier = found.verified && (found.kind === "ticket" || found.kind === "speaker") ? found.tier : "";
+  const isSpeaker = found.kind === "speaker";
+  const foundKey = `${found.kind}:${found.tier || ""}:${found.verified}`;
+  const choice = answer.key === foundKey ? answer.choice : "";
+  const suggested = found.kind === "ticket" && !found.verified && choice !== "no" ? found.tier : "";
+  const tier = lockedTier || form.tier || suggested;
+
+  const options = useMemo(() => catalog?.options || [], [catalog]);
+  const days = catalog?.days || [];
+  const tierLabel = (k) => catalog?.tiers?.find((t) => t.key === k)?.label || "";
+  const allowed = useMemo(() => options.filter((o) => o.kind === "experience" && o.tiers.includes(tier) && (!o.day || form.days.includes(o.day))), [options, tier, form.days]);
+  const chosenOptions = allowed.filter((o) => form.options.includes(o.key)).map((o) => o.key);
+
+  const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setErrors((e) => (e[k] ? { ...e, [k]: "" } : e)); };
+  const toggle = (k, v) => setForm((f) => ({ ...f, [k]: f[k].includes(v) ? f[k].filter((x) => x !== v) : [...f[k], v] }));
+  const toggleDiet = (v) => setForm((f) => {
+    let next = f.dietary.includes(v) ? f.dietary.filter((x) => x !== v) : [...f.dietary, v];
+    if (v === "none" && next.includes("none")) next = ["none"]; // "None" clears the rest
+    else if (v !== "none") next = next.filter((x) => x !== "none");
+    return { ...f, dietary: next };
+  });
+
+  const name = STEPS[step];
+  const go = useCallback((to) => {
+    setDir(to > step ? 1 : -1);
+    setStep(to);
+    setSubmitError("");
+  }, [step]);
+  const goName = (n) => go(STEPS.indexOf(n));
+
+  /* Check the current question; returns true when they can move on. */
+  const check = () => {
+    const e = {};
+    if (name === "name") {
+      if (!first) e.firstName = "Please enter your first name";
+      if (!last) e.lastName = "Please enter your last name";
+    }
+    if (name === "pass" && !tier) e.tier = "Choose your pass";
+    if (name === "days" && !form.days.length) e.days = "Choose at least one day";
+    if (name === "dietary") {
+      if (form.dietary.includes("other") && !form.dietaryOther.trim()) e.dietaryOther = "Tell us what you need";
+      if (form.email.trim() && !EMAIL_RE.test(form.email.trim())) e.email = "That email doesn't look right";
+    }
+    setErrors(e);
+    return !Object.values(e).some(Boolean);
+  };
+
+  const submit = async () => {
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      const res = await fetch(`${API}/rsvp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: first, lastName: last, email: form.email.trim(), ticketId: tid, tier,
+          days: form.days, options: chosenOptions, dietary: form.dietary,
+          dietaryOther: form.dietary.includes("other") ? form.dietaryOther.trim() : "",
+          accessibility: form.accessibility.trim(), page: window.location.pathname, ...guard.meta(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.message || data?.error || "We couldn't save your RSVP.");
+      setSaved(data);
+      setReturnToReview(false);
+      go(STEPS.indexOf("success"));
+    } catch (err) {
+      setSubmitError(err?.message && !/fetch|network/i.test(err.message) ? err.message : "We couldn't reach the server.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const next = () => {
+    if (name === "welcome") { if (catalog) go(1); return; }
+    if (name === "review") { if (!submitting) submit(); return; }
+    if (!check()) {
+      requestAnimationFrame(() => stepRef.current?.querySelector("[aria-invalid='true'], [data-invalid='true'] input")?.focus());
+      return;
+    }
+    if (returnToReview) { go(STEPS.indexOf("review")); return; }
+    go(step + 1);
+  };
+  const back = () => {
+    if (returnToReview && name !== "review") { go(STEPS.indexOf("review")); return; }
+    go(Math.max(0, step - 1));
+  };
+  const edit = (n) => { setReturnToReview(true); goName(n); };
+
+  /* Enter moves on (except in text areas and on buttons, which act themselves). */
+  const onKeyDown = (e) => {
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+    const tag = e.target.tagName;
+    if (tag === "TEXTAREA" || tag === "BUTTON" || tag === "A") return;
+    e.preventDefault();
+    if (name !== "success") next();
+  };
+
+  /* When a question arrives, put the cursor in its first field. */
+  const focusFirst = () => {
+    const root = stepRef.current;
+    if (!root) return;
+    // Review has only Edit buttons: land on "Send my RSVP" instead, so Enter sends.
+    const el = root.querySelector("[data-autofocus]") || root.querySelector("input:not([disabled]):not([tabindex='-1']), textarea") || primaryRef.current;
+    el?.focus({ preventScroll: true });
+  };
+
+  const progressIndex = FORM_STEPS.indexOf(name);
+  const progress = name === "success" ? 1 : progressIndex < 0 ? 0 : (progressIndex + 1) / FORM_STEPS.length;
+
+  const variants = {
+    enter: (d) => (reduce ? { opacity: 0 } : { opacity: 0, x: d * 48, filter: "blur(10px)" }),
+    center: { opacity: 1, x: 0, filter: "blur(0px)" },
+    exit: (d) => (reduce ? { opacity: 0 } : { opacity: 0, x: d * -48, filter: "blur(10px)" }),
+  };
+
+  const downloadIcs = () => {
+    const blob = new Blob([buildIcs({ days: form.days, options: chosenOptions, catalog })], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ttfc-2026.ics";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const dayLabel = (k) => days.find((d) => d.key === k)?.label || k;
+  const firstDay = days.find((d) => form.days.includes(d.key));
+  const titleId = `rsvp-${name}-title`;
+
+  /* ---------- One screen per question ---------- */
+  let body = null;
+  if (name === "welcome") {
+    body = (
+      <>
+        <motion.div className="rsvp-spark" aria-hidden="true" initial={reduce ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1, type: "spring", stiffness: 220, damping: 16 }}>
+          <Sparkles size={26} />
+        </motion.div>
+        <StepHeader id={titleId} eyebrow="TTFC 2026 RSVP" title="You're invited" sub="The Tech Festival Canada · 26–27 October 2026 · The Westin Harbour Castle, Toronto. Tell us which days you're coming and what you'll join, so we can save you a seat." />
+        <ul className="rsvp-facts" aria-label="Event details">
+          <li><span>Dates</span>Mon 26 &amp; Tue 27 Oct</li>
+          <li><span>Venue</span>Westin Harbour Castle</li>
+          <li><span>Takes</span>About a minute</li>
+        </ul>
+        {catalogError && (
+          <p className="rsvp-error rsvp-error-block" role="alert">
+            <AlertCircle size={16} aria-hidden="true" /> We couldn't load the RSVP form.{" "}
+            <button type="button" className="rsvp-link" onClick={() => { setCatalogError(false); setCatalogNonce((n) => n + 1); }}>Try again</button>{" "}
+            or email <a className="rsvp-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a>.
+          </p>
+        )}
+      </>
+    );
+  } else if (name === "name") {
+    body = (
+      <>
+        <StepHeader id={titleId} eyebrow="Step 1 · You" title="What's your name?" sub="As it appears on your ticket." />
+        <div className="rsvp-grid2">
+          <Field id="rsvp-first" label="First name" error={errors.firstName}>
+            <input id="rsvp-first" className="rsvp-input" data-autofocus autoComplete="given-name" value={form.firstName}
+              onChange={(e) => set("firstName", e.target.value)} maxLength={80} aria-invalid={!!errors.firstName || undefined}
+              aria-describedby={errors.firstName ? "rsvp-first-error" : undefined} />
+          </Field>
+          <Field id="rsvp-last" label="Last name" error={errors.lastName}>
+            <input id="rsvp-last" className="rsvp-input" autoComplete="family-name" value={form.lastName}
+              onChange={(e) => set("lastName", e.target.value)} maxLength={80} aria-invalid={!!errors.lastName || undefined}
+              aria-describedby={errors.lastName ? "rsvp-last-error" : undefined} />
+          </Field>
+        </div>
+        <Field id="rsvp-ticket" label="Ticket ID" optional hint="On your ticket email / pass QR. It lets us confirm your pass.">
+          <input id="rsvp-ticket" className="rsvp-input rsvp-mono" autoComplete="off" autoCapitalize="characters" spellCheck={false}
+            value={form.ticketId} onChange={(e) => set("ticketId", e.target.value)} maxLength={64} aria-describedby="rsvp-ticket-hint" placeholder="e.g. A1B2C3D4E5F6" />
+        </Field>
+        <div className="rsvp-lookup" aria-live="polite" aria-atomic="true">
+          <AnimatePresence mode="wait" initial={false}>
+            {checking ? (
+              <motion.p key="checking" className="rsvp-checking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <Loader2 size={14} className="rsvp-spin" aria-hidden="true" /> Looking you up…
+              </motion.p>
+            ) : isSpeaker ? (
+              <motion.div key="speaker" className="rsvp-chip rsvp-chip-magic" initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }}>
+                <Mic2 size={18} aria-hidden="true" />
+                <span className="rsvp-chip-text">Welcome, speaker. Everything's open for you</span>
+              </motion.div>
+            ) : found.kind === "ticket" && found.verified ? (
+              <motion.div key={`v-${found.tier}`} className="rsvp-chip rsvp-chip-magic" initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }}>
+                <BadgeCheck size={18} aria-hidden="true" />
+                <span className="rsvp-chip-text">We found your <strong>{found.tierLabel || tierLabel(found.tier)}</strong></span>
+              </motion.div>
+            ) : found.kind === "ticket" && choice !== "no" ? (
+              <motion.div key={`u-${found.tier}`} className="rsvp-chip rsvp-chip-ask" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
+                <span className="rsvp-chip-text">
+                  {choice === "yes" ? <>Great, <strong>{found.tierLabel || tierLabel(found.tier)}</strong> it is.</>
+                    : <>Looks like you have {article(found.tierLabel || tierLabel(found.tier))} <strong>{found.tierLabel || tierLabel(found.tier)}</strong>. Is this right?</>}
+                </span>
+                {choice !== "yes" && (
+                  <span className="rsvp-chip-actions">
+                    <button type="button" className="rsvp-mini" onClick={() => { setAnswer({ key: foundKey, choice: "yes" }); set("tier", found.tier); }}>Yes</button>
+                    <button type="button" className="rsvp-mini rsvp-mini-ghost" onClick={() => { setAnswer({ key: foundKey, choice: "no" }); if (form.tier === found.tier) set("tier", ""); }}>No</button>
+                  </span>
+                )}
+              </motion.div>
+            ) : tid && found.ticketMatched === false ? (
+              <motion.p key="nomatch" className="rsvp-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                We couldn't match that ticket ID with your last name. That's fine, you can still continue.
+              </motion.p>
+            ) : null}
+          </AnimatePresence>
+        </div>
+      </>
+    );
+  } else if (name === "pass") {
+    const cards = isSpeaker ? ["speaker"] : PASS_ORDER;
+    body = (
+      <>
+        <StepHeader id={titleId} eyebrow="Step 2 · Your pass" title={lockedTier ? "Your pass" : "Which pass do you have?"}
+          sub={lockedTier ? (isSpeaker ? "Speakers can join everything." : "Confirmed from your ticket.") : "It decides which experiences you can RSVP for."} />
+        <div className="rsvp-stack" role="radiogroup" aria-labelledby={titleId} aria-describedby={errors.tier ? "rsvp-tier-error" : undefined}>
+          {cards.map((k, i) => {
+            const on = tier === k;
+            const disabled = !!lockedTier && !on;
+            const inc = k === "speaker" ? ["Everything: every meal, the Gala, the Awards, meetings and the lounge"] : includesFor(k, options);
+            return (
+              <motion.label key={k} className="rsvp-choice rsvp-pass" data-checked={on || undefined} data-disabled={disabled || undefined}
+                style={{ "--accent": PASS_ACCENT[k] }}
+                initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: disabled ? 0.42 : 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                <input type="radio" name="rsvp-tier" className="rsvp-sr" value={k} checked={on} disabled={disabled}
+                  onChange={() => { set("tier", k); if (found.kind === "ticket" && !found.verified && k !== found.tier) setAnswer({ key: foundKey, choice: "no" }); }}
+                  data-autofocus={on || (!tier && i === 0) || undefined} />
+                <CheckMark on={on} round />
+                <span className="rsvp-choice-body">
+                  <span className="rsvp-choice-title">
+                    {k === "speaker" ? "Speaker" : tierLabel(k)}
+                    {on && lockedTier && <span className="rsvp-lock"><Lock size={12} aria-hidden="true" /> {isSpeaker ? "All access" : "Verified"}</span>}
+                  </span>
+                  <span className="rsvp-choice-desc">{inc.length ? inc.join(" · ") : "Both conference days, the expo floor and networking breaks"}</span>
+                </span>
+              </motion.label>
+            );
+          })}
+        </div>
+        {lockedTier && !isSpeaker && (
+          <p className="rsvp-hint">Not right? Go back and check the ticket ID, or email <a className="rsvp-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a>.</p>
+        )}
+        {errors.tier && <p id="rsvp-tier-error" className="rsvp-error" role="alert"><AlertCircle size={14} aria-hidden="true" /> {errors.tier}</p>}
+      </>
+    );
+  } else if (name === "days") {
+    body = (
+      <>
+        <StepHeader id={titleId} eyebrow="Step 3 · Days" title="Which days are you coming?" sub="Pick one or both." />
+        <div className="rsvp-grid2" role="group" aria-labelledby={titleId} data-invalid={!!errors.days || undefined}>
+          {days.map((d, i) => {
+            const on = form.days.includes(d.key);
+            return (
+              <label key={d.key} className="rsvp-choice rsvp-day" data-checked={on || undefined}>
+                <input type="checkbox" className="rsvp-sr" checked={on} onChange={() => { toggle("days", d.key); setErrors({}); }}
+                  data-autofocus={i === 0 || undefined} aria-invalid={!!errors.days || undefined} />
+                <CheckMark on={on} />
+                <span className="rsvp-choice-body">
+                  <span className="rsvp-day-label">{d.label}</span>
+                  <span className="rsvp-day-date">{shortDate(d.date)}</span>
+                  <span className="rsvp-choice-desc">{d.long}</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+        <button type="button" className="rsvp-text-btn" onClick={() => { set("days", days.map((d) => d.key)); setErrors({}); }}>Both days</button>
+        {errors.days && <p className="rsvp-error" role="alert"><AlertCircle size={14} aria-hidden="true" /> {errors.days}</p>}
+      </>
+    );
+  } else if (name === "experiences") {
+    const all = allowed.length > 0 && chosenOptions.length === allowed.length;
+    body = (
+      <>
+        <StepHeader id={titleId} eyebrow="Step 4 · Experiences" title="What will you join?"
+          sub={allowed.length ? `Included with your ${isSpeaker ? "speaker access" : tierLabel(tier)} on the ${form.days.length > 1 ? "days" : "day"} you picked. Tick everything you'll attend so we can plan seats and catering.` : ""} />
+        {allowed.length > 0 && (
+          <button type="button" className="rsvp-text-btn rsvp-text-btn-top" onClick={() => set("options", all ? [] : allowed.map((o) => o.key))}>
+            {all ? "Clear all" : "Select all"}
+          </button>
+        )}
+        <motion.div className="rsvp-stack" role="group" aria-labelledby={titleId} layout={!reduce}>
+          <AnimatePresence initial={false} mode="popLayout">
+            {allowed.map((o, i) => {
+              const on = form.options.includes(o.key);
+              const day = o.day ? days.find((d) => d.key === o.day) : null;
+              return (
+                <motion.label key={o.key} layout={!reduce} className="rsvp-choice" data-checked={on || undefined}
+                  initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94, transition: { duration: 0.18 } }}
+                  transition={{ type: "spring", stiffness: 420, damping: 32, delay: reduce ? 0 : i * 0.03 }}>
+                  <input type="checkbox" className="rsvp-sr" checked={on} onChange={() => toggle("options", o.key)} data-autofocus={i === 0 || undefined} />
+                  <CheckMark on={on} />
+                  <span className="rsvp-choice-body">
+                    <span className="rsvp-choice-title">
+                      {o.label}
+                      {day && !/day \d/i.test(o.label) && <span className="rsvp-tag">{day.label} · {shortDate(day.date)}</span>}
+                    </span>
+                    <span className="rsvp-choice-desc">{o.description}</span>
+                    {o.note && <span className="rsvp-note">{o.note}</span>}
+                  </span>
+                </motion.label>
+              );
+            })}
+          </AnimatePresence>
+        </motion.div>
+        {!allowed.length && (
+          <div className="rsvp-empty">
+            <p><strong>You're all set.</strong> Your {tierLabel(tier) || "pass"} covers the conference, the expo floor and networking breaks on the {form.days.length > 1 ? "days" : "day"} you picked. There's nothing else to choose.</p>
+          </div>
+        )}
+      </>
+    );
+  } else if (name === "dietary") {
+    const diets = catalog?.dietary || [];
+    body = (
+      <>
+        <StepHeader id={titleId} eyebrow="Step 5 · A few details" title="Any dietary needs?" sub="Pick all that apply." />
+        <div className="rsvp-pills" role="group" aria-labelledby={titleId}>
+          {diets.map((d, i) => {
+            const on = form.dietary.includes(d.key);
+            return (
+              <label key={d.key} className="rsvp-pill" data-checked={on || undefined}>
+                <input type="checkbox" className="rsvp-sr" checked={on} onChange={() => toggleDiet(d.key)} data-autofocus={i === 0 || undefined} />
+                {on && <Check size={14} strokeWidth={3} aria-hidden="true" />}
+                {d.label}
+              </label>
+            );
+          })}
+        </div>
+        <AnimatePresence initial={false}>
+          {form.dietary.includes("other") && (
+            <motion.div key="other" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
+              <Field id="rsvp-diet-other" label="Tell us more" error={errors.dietaryOther}>
+                <input id="rsvp-diet-other" className="rsvp-input" value={form.dietaryOther} maxLength={200}
+                  onChange={(e) => set("dietaryOther", e.target.value)} placeholder="e.g. low FODMAP, no pork" aria-invalid={!!errors.dietaryOther || undefined} />
+              </Field>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <Field id="rsvp-access" label="Accessibility needs" optional hint="Anything that helps us make the day work for you.">
+          <textarea id="rsvp-access" className="rsvp-input rsvp-textarea" rows={3} maxLength={600} value={form.accessibility}
+            onChange={(e) => set("accessibility", e.target.value)} aria-describedby="rsvp-access-hint" />
+        </Field>
+        <Field id="rsvp-email" label="Email" optional error={errors.email} hint="So the team can confirm your RSVP or reach you about changes.">
+          <input id="rsvp-email" type="email" inputMode="email" autoComplete="email" className="rsvp-input" value={form.email} maxLength={254}
+            onChange={(e) => set("email", e.target.value)} aria-invalid={!!errors.email || undefined}
+            aria-describedby={errors.email ? "rsvp-email-error" : "rsvp-email-hint"} />
+        </Field>
+      </>
+    );
+  } else if (name === "review") {
+    const dietLabels = (catalog?.dietary || []).filter((d) => form.dietary.includes(d.key)).map((d) => (d.key === "other" && form.dietaryOther.trim() ? `Other: ${form.dietaryOther.trim()}` : d.label));
+    const rows = [
+      { step: "name", label: "Name", value: `${first} ${last}`, extra: tid ? `Ticket ${tid.toUpperCase()}` : "" },
+      { step: "pass", label: "Pass", value: isSpeaker ? "Speaker" : tierLabel(tier), badge: lockedTier ? (isSpeaker ? "All access" : "Verified") : "" },
+      { step: "days", label: "Days", value: days.filter((d) => form.days.includes(d.key)).map((d) => `${d.label} (${shortDate(d.date)})`).join(" & ") },
+      { step: "experiences", label: "Experiences", value: chosenOptions.length ? allowed.filter((o) => chosenOptions.includes(o.key)).map((o) => (o.day && !/day \d/i.test(o.label) ? `${o.label} (${dayLabel(o.day)})` : o.label)).join(", ") : "None selected" },
+      { step: "dietary", label: "Dietary", value: dietLabels.length ? dietLabels.join(", ") : "Not specified", extra: [form.accessibility.trim() && "Accessibility note added", form.email.trim()].filter(Boolean).join(" · ") },
+    ];
+    body = (
+      <>
+        <StepHeader id={titleId} eyebrow="Step 6 · Review" title="All good?" sub="Check your answers, then send your RSVP." />
+        <dl className="rsvp-summary">
+          {rows.map((r) => (
+            <div key={r.step} className="rsvp-summary-row">
+              <dt>{r.label}</dt>
+              <dd>
+                <span className="rsvp-summary-value">{r.value}{r.badge && <span className="rsvp-lock"><Lock size={11} aria-hidden="true" /> {r.badge}</span>}</span>
+                {r.extra && <span className="rsvp-summary-extra">{r.extra}</span>}
+              </dd>
+              <button type="button" className="rsvp-edit" onClick={() => edit(r.step)} aria-label={`Edit ${r.label.toLowerCase()}`}>
+                <Pencil size={13} aria-hidden="true" /> Edit
+              </button>
+            </div>
+          ))}
+        </dl>
+        {submitError && (
+          <p className="rsvp-error rsvp-error-block" role="alert">
+            <AlertCircle size={16} aria-hidden="true" />
+            <span>
+              {submitError.includes(ENQUIRE)
+                ? submitError.split(ENQUIRE).map((part, i) => (i ? [<a key={i} className="rsvp-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a>, part] : part))
+                : <>{submitError} Please try again, or email <a className="rsvp-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a>.</>}
+            </span>
+          </p>
+        )}
+      </>
+    );
+  } else if (name === "success") {
+    const when = firstDay ? longDate(firstDay.date) : "26 October";
+    body = (
+      <div className="rsvp-success">
+        <Celebration />
+        <StepHeader id={titleId} eyebrow={saved?.updated ? "RSVP updated" : "RSVP received"} title={`See you on ${when}`}
+          sub={`Thanks, ${first}. ${saved?.updated ? "We've updated your RSVP." : "Your RSVP is in."} ${form.days.length > 1 ? "Both days are" : `${dayLabel(form.days[0])} is`} on your list.`} />
+        <div className="rsvp-success-chips">
+          <span className="rsvp-tag rsvp-tag-lg">{saved?.tierLabel || tierLabel(tier) || "Speaker"}</span>
+          {form.days.map((d) => <span key={d} className="rsvp-tag rsvp-tag-lg">{dayLabel(d)}</span>)}
+          {chosenOptions.length > 0 && <span className="rsvp-tag rsvp-tag-lg">{chosenOptions.length} experience{chosenOptions.length === 1 ? "" : "s"}</span>}
+        </div>
+        <button type="button" className="rsvp-btn" onClick={downloadIcs} data-autofocus>
+          <CalendarPlus size={18} aria-hidden="true" /> Add to calendar
+        </button>
+        <button type="button" className="rsvp-text-btn" onClick={() => { setReturnToReview(false); goName("review"); }}>
+          <RotateCcw size={13} aria-hidden="true" /> Change my RSVP
+        </button>
+      </div>
+    );
+  }
+
+  const showNav = name !== "success";
+  const nextLabel = name === "welcome" ? "RSVP now" : name === "review" ? (submitting ? "Sending…" : "Send my RSVP") : returnToReview ? "Back to review" : "Continue";
+
+  return (
+    <div className="rsvp-root">
+      <style>{CSS}</style>
+      <AuroraBackground />
+
+      <div className="rsvp-brand">
+        <img src="/Tech_Festival_Canada_Logo_Dark_Transparent.png" alt="The Tech Festival Canada" width="96" height="60" />
+      </div>
+
+      <main className="rsvp-card" aria-labelledby={titleId}>
+        {name !== "welcome" && name !== "success" && (
+          <div className="rsvp-progress-wrap">
+            <div className="rsvp-progress" role="progressbar" aria-label="RSVP progress" aria-valuemin={1} aria-valuemax={FORM_STEPS.length} aria-valuenow={progressIndex + 1}
+              aria-valuetext={`Step ${progressIndex + 1} of ${FORM_STEPS.length}`}>
+              <motion.div className="rsvp-progress-bar" initial={false} animate={{ width: `${progress * 100}%` }} transition={{ type: "spring", stiffness: 120, damping: 22 }} />
+            </div>
+            <span className="rsvp-progress-text">{progressIndex + 1}/{FORM_STEPS.length}</span>
+          </div>
+        )}
+
+        {/* Bots fill this; people never see it. */}
+        <input {...guard.honeypotProps} aria-label="Leave this empty" />
+
+        <div onKeyDown={onKeyDown}>
+          <AnimatePresence mode="wait" custom={dir} initial={false}>
+            <motion.section key={name} ref={stepRef} custom={dir} variants={variants} initial="enter" animate="center" exit="exit"
+              transition={{ duration: reduce ? 0.15 : 0.32, ease: [0.22, 1, 0.36, 1] }}
+              onAnimationComplete={(def) => { if (def === "center") focusFirst(); }}
+              aria-labelledby={titleId} className="rsvp-step">
+              {body}
+            </motion.section>
+          </AnimatePresence>
+
+          {showNav && (
+            <div className="rsvp-nav">
+              {name !== "welcome" && (
+                <button type="button" className="rsvp-btn-ghost" onClick={back} aria-label={returnToReview && name !== "review" ? "Back to review" : "Back"}>
+                  <ArrowLeft size={18} aria-hidden="true" />
+                </button>
+              )}
+              <button type="button" ref={primaryRef} className="rsvp-btn" onClick={next}
+                disabled={(name === "welcome" && !catalog) || submitting} aria-busy={submitting || (name === "welcome" && !catalog && !catalogError) || undefined}>
+                {(submitting || (name === "welcome" && !catalog && !catalogError)) && <Loader2 size={18} className="rsvp-spin" aria-hidden="true" />}
+                {nextLabel}
+                {!submitting && name !== "review" && <ArrowRight size={18} aria-hidden="true" />}
+              </button>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <p className="rsvp-foot">Questions? <a className="rsvp-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a></p>
+    </div>
+  );
+}
+
+const CSS = `
+body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
+.rsvp-root {
+  position: relative; min-height: 100vh; min-height: 100dvh; color: #fff; overflow-x: hidden;
+  font-family: 'DM Sans', system-ui, Helvetica, Arial, sans-serif;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 28px 16px 32px; box-sizing: border-box;
+}
+.rsvp-root *, .rsvp-root *::before, .rsvp-root *::after { box-sizing: border-box; }
+.rsvp-brand { position: relative; z-index: 1; margin-bottom: 18px; }
+.rsvp-brand img { height: 60px; width: auto; display: block; }
+
+.rsvp-card {
+  position: relative; z-index: 1; width: 100%; max-width: 560px;
+  border-radius: 28px; padding: 26px 26px 24px;
+  background: linear-gradient(160deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.04) 55%, rgba(255,255,255,0.06) 100%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%); backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.13);
+  box-shadow: 0 30px 90px rgba(3,0,12,0.55), inset 0 1px 0 rgba(255,255,255,0.14);
+  transition: box-shadow .35s ease;
+}
+.rsvp-card::before {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(130deg, #7a3fd1, #e8458b 45%, #f5a623 90%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude; opacity: .3; transition: opacity .35s ease;
+}
+.rsvp-card:hover::before, .rsvp-card:focus-within::before { opacity: .85; }
+.rsvp-card:hover, .rsvp-card:focus-within { box-shadow: 0 30px 90px rgba(3,0,12,0.55), 0 0 60px rgba(232,69,139,0.16), inset 0 1px 0 rgba(255,255,255,0.14); }
+
+.rsvp-progress-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.rsvp-progress { flex: 1; height: 5px; border-radius: 99px; background: rgba(255,255,255,0.09); overflow: hidden; }
+.rsvp-progress-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #7a3fd1, #e8458b, #f5a623); box-shadow: 0 0 14px rgba(232,69,139,0.6); }
+.rsvp-progress-text { font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: 1px; color: rgba(255,255,255,0.6); font-variant-numeric: tabular-nums; }
+
+.rsvp-step { outline: none; }
+.rsvp-head { margin-bottom: 20px; }
+.rsvp-eyebrow { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; color: #f5a623; margin: 0 0 10px; }
+.rsvp-title { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: clamp(1.45rem, 5.4vw, 2rem); line-height: 1.15; letter-spacing: -0.3px; margin: 0;
+  background: linear-gradient(100deg, #fff 30%, #f6d0ff 70%, #ffd9a0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.rsvp-sub { margin: 10px 0 0; color: rgba(255,255,255,0.72); font-size: 15px; line-height: 1.6; }
+
+.rsvp-spark { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 18px;
+  background: linear-gradient(135deg, rgba(122,63,209,0.5), rgba(232,69,139,0.45)); border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 10px 30px rgba(232,69,139,0.35); color: #fff; }
+.rsvp-facts { list-style: none; padding: 0; margin: 4px 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.rsvp-facts li { border-radius: 14px; padding: 12px; background: rgba(6,2,15,0.35); border: 1px solid rgba(255,255,255,0.09); font-size: 13px; font-weight: 600; line-height: 1.35; }
+.rsvp-facts span { display: block; font-family: 'Orbitron', sans-serif; font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 6px; font-weight: 700; }
+
+.rsvp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rsvp-stack { display: flex; flex-direction: column; gap: 10px; }
+.rsvp-field { margin-bottom: 14px; }
+.rsvp-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; color: rgba(255,255,255,0.9); }
+.rsvp-optional { color: rgba(255,255,255,0.5); font-weight: 500; }
+.rsvp-input { width: 100%; height: 52px; border-radius: 14px; padding: 0 16px; font: inherit; font-size: 16px; color: #fff;
+  background: rgba(6,2,15,0.5); border: 1px solid rgba(255,255,255,0.15); outline: none; transition: border-color .2s, box-shadow .2s, background .2s; }
+.rsvp-input::placeholder { color: rgba(255,255,255,0.32); }
+.rsvp-input:hover { border-color: rgba(255,255,255,0.28); }
+.rsvp-input:focus { border-color: #e8458b; box-shadow: 0 0 0 4px rgba(232,69,139,0.2), 0 0 24px rgba(232,69,139,0.18); background: rgba(6,2,15,0.65); }
+.rsvp-input[aria-invalid="true"] { border-color: #ff7a8a; }
+.rsvp-textarea { height: auto; min-height: 88px; padding: 13px 16px; resize: vertical; line-height: 1.5; }
+.rsvp-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.5px; }
+.rsvp-hint { margin: 7px 0 0; font-size: 12.5px; color: rgba(255,255,255,0.58); line-height: 1.5; }
+.rsvp-error { display: flex; gap: 6px; align-items: center; margin: 7px 0 0; font-size: 13px; color: #ff9aa8; }
+.rsvp-error-block { align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: rgba(255,90,110,0.1); border: 1px solid rgba(255,120,140,0.3); margin-top: 16px; line-height: 1.5; }
+.rsvp-error-block svg { flex: none; margin-top: 2px; }
+.rsvp-link { color: #ffb3d1; text-decoration: underline; text-underline-offset: 2px; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+.rsvp-link:hover { color: #fff; }
+.rsvp-sr { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+
+.rsvp-lookup { min-height: 48px; }
+.rsvp-checking { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.6); margin: 4px 0 0; }
+.rsvp-chip { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; font-size: 14.5px; line-height: 1.45;
+  background: linear-gradient(120deg, rgba(122,63,209,0.32), rgba(232,69,139,0.26)); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(122,63,209,0.25); }
+.rsvp-chip strong { font-weight: 700; color: #ffd9a0; }
+.rsvp-chip svg { flex: none; color: #ffd9a0; }
+.rsvp-chip-text { flex: 1 1 200px; min-width: 0; }
+.rsvp-chip-magic::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.28) 50%, transparent 70%); transform: translateX(-100%); animation: rsvpSheen 2.6s ease .2s infinite; }
+@keyframes rsvpSheen { 0% { transform: translateX(-100%); } 45%, 100% { transform: translateX(100%); } }
+.rsvp-chip-ask { background: rgba(245,166,35,0.12); border-color: rgba(245,166,35,0.35); box-shadow: none; justify-content: space-between; }
+.rsvp-chip-actions { display: inline-flex; gap: 8px; }
+.rsvp-mini { height: 32px; padding: 0 14px; border-radius: 99px; border: 0; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; color: #1a0b2e; background: #ffd27a; }
+.rsvp-mini-ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+.rsvp-mini:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+.rsvp-choice { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 15px 16px; border-radius: 18px; cursor: pointer;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); transition: border-color .2s, background .2s, box-shadow .25s, transform .2s; }
+.rsvp-choice:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.08); box-shadow: 0 0 0 1px rgba(232,69,139,0.25), 0 10px 30px rgba(122,63,209,0.22); }
+.rsvp-choice:focus-within { border-color: #e8458b; box-shadow: 0 0 0 3px rgba(232,69,139,0.35), 0 0 28px rgba(232,69,139,0.25); }
+.rsvp-choice[data-checked] { border-color: rgba(232,69,139,0.75); background: linear-gradient(120deg, rgba(122,63,209,0.24), rgba(232,69,139,0.16)); box-shadow: 0 10px 34px rgba(232,69,139,0.2); }
+.rsvp-choice[data-disabled] { cursor: not-allowed; filter: saturate(0.4); }
+.rsvp-choice[data-disabled]:hover { box-shadow: none; border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); }
+.rsvp-pass[data-checked] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 12px 36px rgba(232,69,139,0.22); }
+.rsvp-choice-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.rsvp-choice-title { font-weight: 700; font-size: 15.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rsvp-choice-desc { font-size: 13px; color: rgba(255,255,255,0.66); line-height: 1.5; }
+.rsvp-note { font-size: 12px; font-weight: 700; color: #ffd27a; }
+.rsvp-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; padding: 3px 9px; border-radius: 99px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.14); }
+.rsvp-tag-lg { font-size: 13px; padding: 6px 12px; }
+.rsvp-lock { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px; color: #1a0b2e; background: linear-gradient(90deg, #ffd27a, #f5a623); margin-left: 8px; }
+.rsvp-choice-title .rsvp-lock { margin-left: 0; }
+
+.rsvp-check { flex: none; width: 24px; height: 24px; margin-top: 1px; border-radius: 8px; display: grid; place-items: center; color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.35); background: rgba(6,2,15,0.4); transition: background .2s, border-color .2s; }
+.rsvp-check-round { border-radius: 99px; }
+.rsvp-check[data-on] { border-color: transparent; background: linear-gradient(135deg, #7a3fd1, #e8458b); box-shadow: 0 0 14px rgba(232,69,139,0.55); }
+.rsvp-check > span { display: grid; place-items: center; }
+
+.rsvp-day { flex-direction: column; gap: 12px; padding: 18px; }
+.rsvp-day .rsvp-check { position: absolute; top: 16px; right: 16px; }
+.rsvp-day-label { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 18px; }
+.rsvp-day-date { font-size: 22px; font-weight: 700; color: #ffd9a0; }
+
+.rsvp-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.rsvp-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 0 15px; border-radius: 99px; cursor: pointer; font-size: 14px; font-weight: 600;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16); transition: background .2s, border-color .2s, box-shadow .2s; }
+.rsvp-pill:hover { border-color: rgba(255,255,255,0.35); box-shadow: 0 0 18px rgba(122,63,209,0.3); }
+.rsvp-pill:focus-within { box-shadow: 0 0 0 3px rgba(232,69,139,0.4); border-color: #e8458b; }
+.rsvp-pill[data-checked] { background: linear-gradient(120deg, rgba(122,63,209,0.55), rgba(232,69,139,0.45)); border-color: rgba(255,255,255,0.35); }
+
+.rsvp-text-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; background: none; border: 0; padding: 4px 0; color: #ffb3d1; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.rsvp-text-btn:hover { color: #fff; }
+.rsvp-text-btn:focus-visible { outline: 2px solid #e8458b; outline-offset: 3px; border-radius: 6px; }
+.rsvp-text-btn-top { margin: -8px 0 12px; }
+.rsvp-empty { padding: 18px; border-radius: 18px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); line-height: 1.6; font-size: 14.5px; }
+.rsvp-empty p { margin: 0; }
+
+.rsvp-summary { margin: 0; border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,0.12); background: rgba(6,2,15,0.35); }
+.rsvp-summary-row { display: grid; grid-template-columns: 96px 1fr auto; gap: 12px; align-items: start; padding: 14px 16px; }
+.rsvp-summary-row + .rsvp-summary-row { border-top: 1px solid rgba(255,255,255,0.08); }
+.rsvp-summary dt { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; color: rgba(255,255,255,0.5); padding-top: 2px; font-family: 'Orbitron', sans-serif; font-size: 10px; }
+.rsvp-summary dd { margin: 0; min-width: 0; }
+.rsvp-summary-value { display: block; font-weight: 600; font-size: 14.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.rsvp-summary-extra { display: block; font-size: 12.5px; color: rgba(255,255,255,0.55); margin-top: 3px; overflow-wrap: anywhere; }
+.rsvp-edit { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.05);
+  color: #fff; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color .2s, background .2s; }
+.rsvp-edit:hover { border-color: #e8458b; background: rgba(232,69,139,0.14); }
+.rsvp-edit:focus-visible { outline: 2px solid #e8458b; outline-offset: 2px; }
+
+.rsvp-nav { display: flex; gap: 12px; margin-top: 24px; }
+.rsvp-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 54px; padding: 0 22px; border-radius: 99px; border: 0; cursor: pointer;
+  font: inherit; font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.2px;
+  background: linear-gradient(90deg, #7a3fd1, #e8458b, #f5a623, #e8458b, #7a3fd1); background-size: 300% 100%; background-position: 0% 0;
+  box-shadow: 0 12px 34px rgba(232,69,139,0.38), inset 0 1px 0 rgba(255,255,255,0.3); transition: background-position .6s ease, transform .15s ease, box-shadow .25s; }
+.rsvp-btn:hover:not(:disabled) { background-position: 60% 0; box-shadow: 0 14px 44px rgba(232,69,139,0.5), inset 0 1px 0 rgba(255,255,255,0.3); }
+.rsvp-btn:active:not(:disabled) { transform: scale(0.98); }
+.rsvp-btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.rsvp-btn:disabled { cursor: progress; opacity: 0.75; }
+.rsvp-btn-ghost { flex: none; width: 54px; height: 54px; border-radius: 99px; display: grid; place-items: center; cursor: pointer; color: #fff;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); transition: border-color .2s, background .2s; }
+.rsvp-btn-ghost:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.1); }
+.rsvp-btn-ghost:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.rsvp-spin { animation: rsvpSpin 0.9s linear infinite; }
+@keyframes rsvpSpin { to { transform: rotate(360deg); } }
+
+.rsvp-success { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.rsvp-success .rsvp-btn { width: 100%; margin-top: 22px; flex: none; }
+.rsvp-celebrate { position: relative; width: 100%; height: 120px; display: grid; place-items: center; margin-bottom: 6px; }
+.rsvp-confetti { position: absolute; left: 50%; top: 50%; margin: -4px 0 0 -4px; }
+.rsvp-success-badge { position: relative; width: 88px; height: 88px; border-radius: 99px; display: grid; place-items: center; color: #fff;
+  background: linear-gradient(135deg, #7a3fd1, #e8458b 60%, #f5a623); box-shadow: 0 0 50px rgba(232,69,139,0.6); }
+.rsvp-ring { position: absolute; inset: 0; border-radius: 99px; border: 2px solid rgba(255,210,122,0.8); }
+.rsvp-success-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
+
+.rsvp-foot { position: relative; z-index: 1; margin: 20px 0 0; font-size: 13px; color: rgba(255,255,255,0.55); text-align: center; }
+
+@media (max-width: 480px) {
+  .rsvp-root { justify-content: flex-start; padding: 18px 16px 28px; }
+  .rsvp-brand { margin-bottom: 14px; }
+  .rsvp-brand img { height: 44px; }
+  .rsvp-card { border-radius: 24px; padding: 22px 18px 18px; }
+  .rsvp-grid2 { grid-template-columns: 1fr; gap: 0; }
+  .rsvp-grid2 .rsvp-day { margin-bottom: 10px; flex-direction: row; align-items: center; }
+  .rsvp-day .rsvp-check { position: static; }
+  .rsvp-day .rsvp-choice-body { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
+  .rsvp-day .rsvp-choice-desc { flex-basis: 100%; }
+  .rsvp-day-date { font-size: 18px; }
+  .rsvp-facts { grid-template-columns: 1fr; gap: 8px; }
+  .rsvp-facts li { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; }
+  .rsvp-facts span { margin: 0; }
+  .rsvp-summary-row { grid-template-columns: 1fr auto; row-gap: 2px; align-items: center; padding: 12px 14px; }
+  .rsvp-summary-row dd { grid-column: 1 / -1; grid-row: 2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rsvp-chip-magic::after { animation: none; display: none; }
+  .rsvp-spin { animation-duration: 2s; }
+  .rsvp-btn, .rsvp-choice { transition: none; }
+}
+`;

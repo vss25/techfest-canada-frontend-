@@ -7,8 +7,8 @@ import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
 /* Public-site pieces driven by Site settings → Website options in the admin panel. */
 
 const isStaffPath = (p) => p === "/admin" || p.startsWith("/admin/") || p === "/admin-login";
-// Focused one-task pages (e.g. the emailed "complete your profile" link) skip site-wide announcements.
-const isFocusedPath = (p) => p === "/complete-profile";
+// Focused one-task pages (e.g. the emailed "complete your profile" link, the unlinked RSVP page) skip site-wide announcements.
+const isFocusedPath = (p) => p === "/complete-profile" || p === "/rsvp";
 
 function useBodyDark() {
   const [dark, setDark] = useState(() => typeof document !== "undefined" && document.body.classList.contains("dark-mode"));

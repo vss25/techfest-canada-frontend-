@@ -1,4 +1,10 @@
 {
+  "headers": [
+    {
+      "source": "/rsvp",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    }
+  ],
   "redirects": [
     {
       "source": "/first-timers",

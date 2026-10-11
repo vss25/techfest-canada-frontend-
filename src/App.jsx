@@ -32,6 +32,8 @@ import LinkedinLanding from "./pages/Linkedin";
 import Media from "./pages/Media";
 import CompleteProfile from "./pages/CompleteProfile";
 import AppLogin from "./pages/AppLogin";
+// Unlinked RSVP page: reached only by typing thetechfestival.com/rsvp (noindex, not in any menu).
+const Rsvp = lazy(() => import("./pages/Rsvp"));
 import MaintenanceGate from "./components/MaintenanceGate";
 import CookieConsent from "./components/CookieConsent";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
@@ -119,6 +121,7 @@ function App() {
         <Route path="/media" element={<Media />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
         <Route path="/app-login" element={<AppLogin />} />
+        <Route path="/rsvp" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><Rsvp /></Suspense>} />
       </Routes>
       <TicketBar />
       </MaintenanceGate>

@@ -12,7 +12,7 @@ import { useEffect, useRef } from "react";
    (keep in step with services/formSubmissions.js FORMS in the backend).
 ========================================================= */
 
-const API = import.meta.env.VITE_API_URL || "https://techfest-canada-backend.onrender.com/api";
+export const API = import.meta.env.VITE_API_URL || "https://techfest-canada-backend.onrender.com/api";
 
 /** Shown with every form's error message. */
 export const FORMS_FALLBACK_EMAIL = "baldeep@thetechfestival.com";

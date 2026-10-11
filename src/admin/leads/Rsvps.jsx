@@ -1,22 +1,28 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  AlertTriangle, BadgeCheck, CalendarCheck, ChevronLeft, ChevronRight, Download, Info, PartyPopper, Search, Utensils,
+  AlertTriangle, BadgeCheck, CalendarCheck, ChevronLeft, ChevronRight, Coffee, Download, GitMerge, Handshake, Info, PartyPopper,
+  Presentation, Search, Split, Store, Trophy, Utensils, Wine,
 } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
-import { ADMIN_API, getToken } from "../api";
+import { ADMIN_API, api, getToken } from "../api";
 import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
 import {
-  Badge, Banner, Bars, Button, Card, Drawer, EmptyState, ErrorState, Input, LoadingState, PageHeader, SectionTitle, Select, StatTile, TableWrap,
+  Badge, Banner, Bars, Button, Card, ConfirmDialog, Drawer, EmptyState, ErrorState, Input, LoadingState, PageHeader, SectionTitle, Select, StatTile, TableWrap,
 } from "../ui";
 import { when } from "../format";
 
 /* Admin → Leads → RSVPs
    TTFC 2026 RSVPs from the unlinked website page /rsvp (POST /api/rsvp).
-   One row per person; re-submitting updates it. The pass is worked out by
-   the server: a ticket ID + last name or a speaker name is "verified",
-   anything else is what the person picked ("unverified").
+   One row per person; re-submitting from the same browser (its edit token)
+   or with the same verified ticket updates it. The pass is worked out by
+   the server: a ticket ID + last name is "verified", anything else
+   (speakers included, matched by name) is "unverified".
+   A second RSVP under a name that already has one, with no proof it's the
+   same person, is listed as a "Possible duplicate" (`duplicateOf`) and left
+   out of the headcounts until staff Merge it or Keep it separate
+   (POST /console/rsvps/:id/resolve); "Needs review" (?review=1) lists them.
    Days, experiences and dietary options are the same list the website uses
    (services/rsvp.js in the backend). Read from the staff list's `catalog`
    when the backend sends it (it keeps working while the kill switch has the
@@ -25,15 +31,29 @@ import { when } from "../format";
 
 const PAGE = 50;
 const TIER_TONE = { connect: "neutral", influence: "pink", power: "orange", apex: "purple", speaker: "good" };
-// Short names for the headcount tiles (the full names are in the list).
-const SHORT = { gala: "Gala dinner", awards: "Awards night", meetings: "Pre-matched meetings", lounge: "Scotch lounge (19+)" };
+// Per-day options share a base key (sessions_d1 → sessions). Short names for the headcount tiles (full names are in the list).
+const baseKey = (k) => String(k).replace(/_d\d+$/, "");
+const SHORT = {
+  sessions: "Keynotes & sessions", expo: "Expo floor", breaks: "Networking breaks", lunch: "Luncheon", cxo: "CxO breakfast",
+  gala: "Gala dinner", awards: "Awards night", meetings: "Pre-matched meetings", lounge: "Scotch lounge (19+)",
+};
+const ICON = { sessions: Presentation, expo: Store, breaks: Coffee, lunch: Utensils, cxo: Utensils, gala: Utensils, awards: Trophy, meetings: Handshake, lounge: Wine };
+/** Under a day's heading the day is already said: "Catalyst Awards Night (Day 1 evening)" → "… (evening)". */
+const inDay = (label) => String(label).replace(/\s*\(Day \d+\)$/i, "").replace(/\(Day \d+\s+/i, "(");
+const shortDate = (iso) => (iso ? new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }) : "");
+/** day1 → day1, lunch_d2 → day2, meetings → null: the day a raw key belongs to (for the summary-only fallback). */
+const dayOfKey = (k) => (/^day\d+$/.test(k) ? k : /_d(\d+)$/.test(k) ? `day${k.match(/_d(\d+)$/)[1]}` : null);
 
 /** The catalog's shape, from the summary's own keys: raw names, but every count still shows. */
-const catalogFromSummary = (s) => s && {
-  options: Object.keys(s.counts || {}).map((key) => ({ key, kind: /^day\d+$/.test(key) ? "day" : "experience", label: key })),
-  tiers: Object.keys(s.tiers || {}).map((key) => ({ key, label: key })),
-  dietary: Object.keys(s.dietary || {}).map((key) => ({ key, label: key })),
-  days: [],
+const catalogFromSummary = (s) => {
+  if (!s) return null;
+  const keys = Object.keys(s.counts || {});
+  return {
+    options: keys.map((key) => ({ key, kind: /^day\d+$/.test(key) ? "day" : "experience", label: key, day: dayOfKey(key) })),
+    tiers: Object.keys(s.tiers || {}).map((key) => ({ key, label: key })),
+    dietary: Object.keys(s.dietary || {}).map((key) => ({ key, label: key })),
+    days: keys.filter((k) => /^day\d+$/.test(k)).map((key) => ({ key, label: key.replace(/^day/, "Day ") })),
+  };
 };
 
 /** Days, experiences, passes and dietary options. `list` is the GET /console/rsvps response. */
@@ -53,19 +73,44 @@ function useCatalog(list) {
     if (!o) return k;
     return o.kind === "experience" && o.day && !/day \d/i.test(o.label) ? `${o.label} · ${dayName(o.day)}` : o.label;
   };
-  const tileName = (k) => {
+  /** Name inside its day's group (the day is in the heading). */
+  const shortName = (k) => {
     const o = options.find((x) => x.key === k);
-    if (!o) return k;
-    if (o.kind === "day") return dayName(o.key);
-    const base = SHORT[k] || o.label;
-    return o.day && !/day \d/i.test(base) ? `${base} · ${dayName(o.day)}` : base;
+    if (o?.kind === "day") return "Attending";
+    return SHORT[baseKey(k)] || (o ? inDay(o.label) : k);
   };
+  // One group per day (the day itself, then what happens that day), then what isn't tied to a day.
+  const groups = [
+    ...days.map((d) => ({ key: d.key, title: d.label, date: shortDate(d.date), options: options.filter((o) => (o.kind === "day" ? o.key === d.key : o.day === d.key)) })),
+    { key: "any", title: "Anytime", date: "", options: options.filter((o) => !days.some((d) => (o.kind === "day" ? o.key === d.key : o.day === d.key))) },
+  ].filter((g) => g.options.length);
+  /** A row's experiences, one line per day: [{ key, title, names }]. */
+  const byDay = (keys) => groups
+    .map((g) => ({ key: g.key, title: g.title, names: g.options.filter((o) => o.kind !== "day" && keys.includes(o.key)).map((o) => shortName(o.key)) }))
+    .filter((g) => g.names.length)
+    .concat(keys.some((k) => !options.some((o) => o.key === k)) ? [{ key: "other", title: "Other", names: keys.filter((k) => !options.some((o) => o.key === k)) }] : []);
   return {
-    loaded: !!data, options, tiers, dietary,
+    loaded: !!data, options, tiers, dietary, groups,
     tierName: (k) => tiers.find((t) => t.key === k)?.label || k || "—",
     dietName: (k) => dietary.find((d) => d.key === k)?.label || k,
-    dayName, optionName, tileName,
+    dayName, optionName, shortName, byDay,
   };
+}
+
+/** A row's experiences, a line per day. */
+function ExperienceLines({ keys, cat, empty = "None" }) {
+  const lines = cat.byDay(keys || []);
+  if (!lines.length) return <span className="text-ttfc-dim">{empty}</span>;
+  return (
+    <span className="block space-y-1">
+      {lines.map((l) => (
+        <span key={l.key} className="block leading-snug">
+          <span className="mr-1.5 text-[11px] font-semibold uppercase tracking-wide text-ttfc-dim">{l.title}</span>
+          {l.names.join(" · ")}
+        </span>
+      ))}
+    </span>
+  );
 }
 
 function PassBadge({ tier, verified, cat }) {
@@ -73,8 +118,8 @@ function PassBadge({ tier, verified, cat }) {
     <span className="inline-flex flex-wrap items-center gap-1.5">
       <Badge tone={TIER_TONE[tier] || "neutral"}>{cat.tierName(tier)}</Badge>
       {verified
-        ? <BadgeCheck className="h-4 w-4 text-emerald-300" aria-label="Verified" title={tier === "speaker" ? "On the speaker list" : "Verified with their ticket"} />
-        : <span className="text-[11px] text-amber-200/80" title="Chosen by the person; no ticket ID matched">unverified</span>}
+        ? <BadgeCheck className="h-4 w-4 text-emerald-300" aria-label="Verified" title="Verified with their ticket" />
+        : <span className="text-[11px] text-amber-200/80" title={tier === "speaker" ? "Matched to the speaker list by name: confirm before relying on it" : "Chosen by the person; no ticket ID matched"}>unverified</span>}
     </span>
   );
 }
@@ -100,22 +145,114 @@ const KIND = {
   none: () => "No ticket or speaker matched",
 };
 
-function RsvpDrawer({ id, onClose, cat }) {
+/** The earlier RSVP a possible duplicate may repeat, side by side, so staff can tell. */
+function DuplicateCompare({ r, cat, onOpen }) {
+  const { data, error, loading } = useApi(r.duplicateOf ? `/console/rsvps/${r.duplicateOf}` : null);
+  const o = data?.rsvp?.id === r.duplicateOf ? data.rsvp : null;
+  const line = (label, mine, theirs) => (
+    <tr key={label} className="align-top">
+      <th scope="row" className="py-1.5 pr-3 text-left font-medium text-ttfc-muted">{label}</th>
+      <td className="py-1.5 pr-3">{mine}</td>
+      <td className="py-1.5">{theirs}</td>
+    </tr>
+  );
+  const pass = (x) => <PassBadge tier={x.tier} verified={x.tierVerified} cat={cat} />;
+  return (
+    <section className="mb-7">
+      <SectionTitle hint="Same name, sent without proof it's the same person">Compare with the earlier RSVP</SectionTitle>
+      {loading ? <LoadingState label="Loading the earlier RSVP…" /> : !o ? (
+        <p className="text-sm text-ttfc-muted">{error ? `Couldn't load it: ${error.message}` : "The earlier RSVP isn't there any more."}</p>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-ttfc-line">
+          <table className="w-full min-w-[460px] text-sm">
+            <thead>
+              <tr className="border-b border-ttfc-line text-left text-xs text-ttfc-dim">
+                <th className="px-3 py-2 font-semibold" />
+                <th className="py-2 pr-3 font-semibold">This one</th>
+                <th className="py-2 font-semibold">
+                  Earlier · <button type="button" className="text-ttfc-pink underline-offset-2 hover:underline" onClick={() => onOpen(o.id)}>open</button>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="[&_th]:pl-3">
+              {line("Sent", when(r.updatedAt), when(o.updatedAt))}
+              {line("Pass", pass(r), pass(o))}
+              {line("Ticket ID", r.ticketId ? <span className="font-mono text-xs">{r.ticketId.toUpperCase()}</span> : <Dash />, o.ticketId ? <span className="font-mono text-xs">{o.ticketId.toUpperCase()}</span> : <Dash />)}
+              {line("Email", r.email || <Dash />, o.email || <Dash />)}
+              {line("Days", r.days.map(cat.dayName).join(" & ") || <Dash />, o.days.map(cat.dayName).join(" & ") || <Dash />)}
+              {line("Experiences", <ExperienceLines keys={r.options} cat={cat} />, <ExperienceLines keys={o.options} cat={cat} />)}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+const RESOLVE = {
+  merge: {
+    title: "Merge into one RSVP?",
+    body: "Use this when it's the same person sending their RSVP again. One RSVP stays: the newer answers (days, experiences, dietary needs, accessibility, email) with the verified pass and ticket, if either one has them. The other is kept for the record but no longer listed or counted.",
+    confirm: "Merge",
+    done: "Merged into one RSVP",
+  },
+  separate: {
+    title: "Keep as a separate person?",
+    body: "Use this for two different people with the same name. This RSVP is counted on its own from now on and won't be flagged again when they change it.",
+    confirm: "Keep separate",
+    done: "Kept as a separate person",
+  },
+};
+
+function RsvpDrawer({ id, onClose, onOpen, onResolved, cat }) {
+  const toast = useToast();
+  const [confirm, setConfirm] = useState("");
   const { data, error, loading, reload } = useApi(id ? `/console/rsvps/${id}` : null);
-  const r = data?.rsvp;
+  // The row this drawer is for (not the previous one, still showing while it loads).
+  const r = data?.rsvp?.id === id ? data.rsvp : null;
+  const resolve = async (action) => {
+    const res = await api.post(`/console/rsvps/${id}/resolve`, { action });
+    const dropped = (res?.dropped || []).map(cat.optionName);
+    toast.success(`${RESOLVE[action].done}${dropped.length ? `. Not in their pass, so dropped: ${dropped.join(", ")}` : ""}`);
+    onResolved();
+    // A merge may keep the other row: show the one that stays.
+    if (res?.rsvp?.id && res.rsvp.id !== id) onOpen(res.rsvp.id); else reload();
+  };
+  const dup = !!(r && r.duplicateOf && !r.spam);
   return (
     <Drawer
       open={!!id}
       onClose={onClose}
       width="max-w-2xl"
-      title={r?.name || (loading ? "Loading…" : "RSVP")}
+      title={r?.name || (loading || !error ? "Loading…" : "RSVP")}
       description={r ? `${r.submissions > 1 ? `Updated ${r.submissions - 1}× · last ` : ""}${when(r.updatedAt)}` : ""}
+      footer={dup && (
+        <>
+          <Button variant="primary" icon={GitMerge} onClick={() => setConfirm("merge")}>Merge</Button>
+          <Button icon={Split} onClick={() => setConfirm("separate")}>Keep separate</Button>
+          <span className="text-xs text-ttfc-muted">Not in the headcounts until you choose.</span>
+        </>
+      )}
     >
-      {loading ? <LoadingState label="Loading RSVP…" /> : error && !r ? <ErrorState error={error} onRetry={reload} /> : r && (
+      {!r && error ? <ErrorState error={error} onRetry={reload} /> : !r ? <LoadingState label="Loading RSVP…" /> : (
         <>
           {r.spam && (
             <Banner tone="warn" icon={AlertTriangle} className="mb-6" title="Flagged as a bot">
               {r.spamReason ? `Reason: ${r.spamReason}. ` : ""}Not counted in the headcounts.
+            </Banner>
+          )}
+          {dup && (
+            <>
+              <Banner tone="warn" icon={AlertTriangle} className="mb-6" title="Possible duplicate">
+                Someone already RSVP'd with this name, and this one came without proof it's them (the same ticket ID, or the browser they used before).
+                It isn't in the headcounts until you merge it or keep it separate.
+              </Banner>
+              <DuplicateCompare r={r} cat={cat} onOpen={onOpen} />
+            </>
+          )}
+          {!dup && r.separatedAt && (
+            <Banner tone="info" icon={Info} className="mb-6" title="Kept as a separate person">
+              {r.separatedBy ? `${r.separatedBy}, ` : ""}{when(r.separatedAt)}. Counted on its own, and not flagged again.
             </Banner>
           )}
           <DetailSection title="Person">
@@ -133,11 +270,7 @@ function RsvpDrawer({ id, onClose, cat }) {
 
           <DetailSection title="Coming to">
             <Row label="Days">{r.days.length ? r.days.map(cat.dayName).join(" & ") : <Dash />}</Row>
-            <Row label="Experiences">
-              {r.options.length
-                ? <ul className="space-y-1">{r.options.map((k) => <li key={k}>{cat.optionName(k)}</li>)}</ul>
-                : <span className="text-ttfc-muted">None</span>}
-            </Row>
+            <Row label="Experiences"><ExperienceLines keys={r.options} cat={cat} empty="None ticked" /></Row>
           </DetailSection>
 
           <DetailSection title="Needs">
@@ -155,6 +288,15 @@ function RsvpDrawer({ id, onClose, cat }) {
           </DetailSection>
         </>
       )}
+      <ConfirmDialog
+        open={!!confirm}
+        onClose={() => setConfirm("")}
+        onConfirm={() => resolve(confirm)}
+        title={RESOLVE[confirm]?.title}
+        body={RESOLVE[confirm]?.body}
+        confirmLabel={RESOLVE[confirm]?.confirm}
+        tone="primary"
+      />
     </Drawer>
   );
 }
@@ -169,6 +311,7 @@ export default function Rsvps() {
   const tier = params.get("tier") || "";
   const option = params.get("option") || "";
   const verified = ["0", "1"].includes(params.get("verified")) ? params.get("verified") : "";
+  const review = params.get("review") === "1" ? "1" : "";
   const openId = params.get("id") || "";
   const dq = useDebounced(q.trim(), 300);
 
@@ -177,6 +320,7 @@ export default function Rsvps() {
   if (tier) view.set("tier", tier);
   if (option) view.set("option", option);
   if (verified) view.set("verified", verified);
+  if (review) view.set("review", review);
   const qs = new URLSearchParams(view);
   qs.set("page", String(page));
   const { data, error, loading, reload, refreshing } = useApi(`/console/rsvps?${qs}`);
@@ -210,14 +354,17 @@ export default function Rsvps() {
   };
 
   const dietRows = s ? cat.dietary.filter((d) => d.key !== "none").map((d) => ({ key: d.label, count: s.dietary?.[d.key] || 0 })).filter((r) => r.count > 0).sort((a, b) => b.count - a.count) : [];
-  const filtered = !!(dq || tier || option || verified);
+  const filtered = !!(dq || tier || option || verified || review);
+  // The list shows every RSVP; the headcounts leave out possible duplicates until staff decide.
+  const duplicates = s?.duplicates || 0;
+  const listed = s ? s.total + duplicates : 0;
 
   return (
     <>
       <PageHeader
         eyebrow="Leads"
         title="RSVPs"
-        description="RSVPs for 26–27 October from the unlinked page thetechfestival.com/rsvp, one row per person (sending it again updates their row). Headcounts cover everyone, whatever the filters. Click a tile to list who's coming to that, or a row for everything they told us."
+        description="RSVPs for 26–27 October from the unlinked page thetechfestival.com/rsvp, one row per person (sending it again from the same browser, or with the same ticket ID, updates their row). Headcounts cover everyone, whatever the filters. Click a tile to list who's coming to that, or a row for everything they told us."
         actions={isManagement && <Button icon={Download} loading={exporting} onClick={exportCsv} disabled={!total} title="Every RSVP matching the search and filters">Download CSV</Button>}
       />
 
@@ -227,15 +374,38 @@ export default function Rsvps() {
         </Banner>
       )}
 
+      {duplicates > 0 && !review && (
+        <Banner tone="warn" icon={AlertTriangle} className="mb-6"
+          title={`${duplicates.toLocaleString()} possible duplicate${duplicates === 1 ? "" : "s"} to review`}
+          action={<Button size="sm" onClick={() => update({ review: "1", page: 0 })}>Review {duplicates === 1 ? "it" : "them"}</Button>}>
+          A second RSVP under a name that already has one, sent without proof it's the same person. Merge it or keep it separate;
+          until then it's listed but not in the headcounts.
+        </Banner>
+      )}
+
       {s && (
         <>
-          <SectionTitle hint={`${s.total.toLocaleString()} RSVP${s.total === 1 ? "" : "s"} · ${s.unverified.toLocaleString()} unverified pass${s.unverified === 1 ? "" : "es"}`}>Headcounts</SectionTitle>
-          <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {cat.options.map((o) => (
-              <StatTile key={o.key} label={cat.tileName(o.key)} value={(counts[o.key] || 0).toLocaleString()}
-                icon={o.kind === "day" ? CalendarCheck : /lunch|cxo|gala/.test(o.key) ? Utensils : PartyPopper}
-                tone={o.kind === "day" ? "purple" : o.key === option ? "orange" : "pink"}
-                to={`?option=${o.key}`} />
+          <SectionTitle hint={`${s.total.toLocaleString()} RSVP${s.total === 1 ? "" : "s"} counted · ${s.unverified.toLocaleString()} unverified pass${s.unverified === 1 ? "" : "es"}`}>Headcounts</SectionTitle>
+          {duplicates > 0 && (
+            <p className="-mt-2 mb-4 text-sm text-ttfc-muted">
+              The list below has {listed.toLocaleString()} RSVPs: the {s.total.toLocaleString()} counted here plus {duplicates.toLocaleString()} possible duplicate{duplicates === 1 ? "" : "s"}, counted once staff merge {duplicates === 1 ? "it" : "them"} or keep {duplicates === 1 ? "it" : "them"} separate.
+            </p>
+          )}
+          <div className="mb-8 space-y-5">
+            {cat.groups.map((g) => (
+              <div key={g.key}>
+                <p className="mb-2 flex items-baseline gap-2 text-xs font-semibold uppercase tracking-wide text-ttfc-dim">
+                  {g.title}{g.date && <span className="font-medium normal-case tracking-normal text-ttfc-muted">{g.date}</span>}
+                </p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7">
+                  {g.options.map((o) => (
+                    <StatTile key={o.key} label={cat.shortName(o.key)} value={(counts[o.key] || 0).toLocaleString()}
+                      icon={o.kind === "day" ? CalendarCheck : ICON[baseKey(o.key)] || PartyPopper}
+                      tone={o.kind === "day" ? "purple" : o.key === option ? "orange" : "pink"}
+                      to={`?option=${o.key}`} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 
@@ -253,7 +423,7 @@ export default function Rsvps() {
               )}
             </Card>
             <Card className="p-5">
-              <SectionTitle hint="Verified = ticket ID matched, or on the speaker list">Passes</SectionTitle>
+              <SectionTitle hint="Verified = ticket ID and last name matched">Passes</SectionTitle>
               <ul className="space-y-2.5 text-sm">
                 {cat.tiers.map((t) => {
                   const n = s.tiers?.[t.key] || { total: 0, verified: 0 };
@@ -286,24 +456,34 @@ export default function Rsvps() {
         </Select>
         <Select value={option} onChange={(e) => update({ option: e.target.value, page: 0 })} className="sm:w-64" aria-label="Filter by day or experience">
           <option value="">Any day or experience</option>
-          {cat.options.map((o) => <option key={o.key} value={o.key}>{cat.optionName(o.key)}</option>)}
+          {cat.groups.map((g) => (
+            <optgroup key={g.key} label={g.title}>
+              {g.options.map((o) => <option key={o.key} value={o.key}>{o.kind === "day" ? `${g.title}: attending` : `${cat.shortName(o.key)} · ${g.title}`}</option>)}
+            </optgroup>
+          ))}
         </Select>
         <Select value={verified} onChange={(e) => update({ verified: e.target.value, page: 0 })} className="sm:w-40" aria-label="Filter by verified pass">
           <option value="">Verified or not</option>
           <option value="1">Verified pass</option>
           <option value="0">Unverified pass</option>
         </Select>
+        <Button variant={review ? "primary" : "secondary"} icon={AlertTriangle} aria-pressed={!!review}
+          onClick={() => update({ review: review ? "" : "1", page: 0 })} title="Possible duplicates: listed, not counted until you decide">
+          Needs review{duplicates ? ` (${duplicates.toLocaleString()})` : ""}
+        </Button>
         <p className="text-sm text-ttfc-muted" aria-live="polite">
-          {loading ? "Loading…" : `${total.toLocaleString()} RSVP${total === 1 ? "" : "s"}`}{refreshing && !loading ? " · updating…" : ""}
+          {loading ? "Loading…" : `${total.toLocaleString()} RSVP${total === 1 ? "" : "s"}${review ? " to review" : ""}`}
+          {!loading && !filtered && duplicates > 0 ? ` (${s.total.toLocaleString()} counted + ${duplicates.toLocaleString()} to review)` : ""}
+          {refreshing && !loading ? " · updating…" : ""}
         </p>
-        {filtered && <Button size="sm" variant="ghost" onClick={() => { setQ(""); update({ q: "", tier: "", option: "", verified: "", page: 0 }); }}>Clear filters</Button>}
+        {filtered && <Button size="sm" variant="ghost" onClick={() => { setQ(""); update({ q: "", tier: "", option: "", verified: "", review: "", page: 0 }); }}>Clear filters</Button>}
       </div>
 
       {loading ? <LoadingState label="Loading RSVPs…" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !rows.length ? (
         <EmptyState
           icon={CalendarCheck}
-          title={filtered ? "No RSVPs match" : "No RSVPs yet"}
-          body={filtered ? "Try a different search or filter." : "RSVPs appear here as soon as someone sends one from thetechfestival.com/rsvp."}
+          title={review && !dq && !tier && !option && !verified ? "Nothing to review" : filtered ? "No RSVPs match" : "No RSVPs yet"}
+          body={review && !dq && !tier && !option && !verified ? "No possible duplicates are waiting." : filtered ? "Try a different search or filter." : "RSVPs appear here as soon as someone sends one from thetechfestival.com/rsvp."}
         />
       ) : (
         <>
@@ -321,16 +501,13 @@ export default function Rsvps() {
                       {r.name || "No name"}
                     </button>
                     {r.email && <span className="block truncate font-mono text-ttfc-muted" title={r.email}>{r.email}</span>}
+                    {r.duplicateOf && <Badge tone="warn" icon={AlertTriangle} className="mt-1.5">Possible duplicate</Badge>}
                   </td>
                   <td className="whitespace-nowrap"><PassBadge tier={r.tier} verified={r.tierVerified} cat={cat} /></td>
                   <td className="whitespace-nowrap">
                     <span className="inline-flex gap-1">{r.days.map((d) => <Badge key={d} tone="purple">{cat.dayName(d)}</Badge>)}</span>
                   </td>
-                  <td className="max-w-[340px] text-xs">
-                    {r.options.length
-                      ? <span className="flex flex-wrap gap-1">{r.options.map((k) => <Badge key={k}>{cat.optionName(k)}</Badge>)}</span>
-                      : <span className="text-ttfc-dim">None</span>}
-                  </td>
+                  <td className="min-w-[220px] max-w-[360px] text-xs"><ExperienceLines keys={r.options} cat={cat} /></td>
                   <td className="max-w-[200px] text-xs text-ttfc-muted">
                     {r.dietary.length ? r.dietary.map(cat.dietName).join(", ") : <span className="text-ttfc-dim">—</span>}
                     {r.dietaryOther && <span className="block truncate text-ttfc-dim" title={r.dietaryOther}>{r.dietaryOther}</span>}
@@ -354,7 +531,7 @@ export default function Rsvps() {
         </>
       )}
 
-      <RsvpDrawer id={openId} onClose={() => update({ id: "" })} cat={cat} />
+      <RsvpDrawer id={openId} onClose={() => update({ id: "" })} onOpen={(id) => update({ id })} onResolved={reload} cat={cat} />
     </>
   );
 }

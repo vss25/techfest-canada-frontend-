@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { X, Send, CheckCircle, Loader } from "lucide-react";
+import { submitForm, useFormGuard, FORMS_FALLBACK_EMAIL } from "../lib/forms";
 
 
 export default function InquiryModal({ isOpen, onClose }) {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", enquiry: "" });
   const [status, setStatus] = useState("idle"); // idle | sending | success | error
+  const guard = useFormGuard(isOpen);
 
   if (!isOpen) return null;
 
@@ -16,27 +18,8 @@ export default function InquiryModal({ isOpen, onClose }) {
     setStatus("sending");
 
     try {
-      const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          service_id:  "service_gy3fvru",
-          template_id: "template_ufqzzep",
-          user_id:     "gZgYZtLCXPVgUsVj_",
-          template_params: {
-            to_email:   "baldeep@thetechfestival.com",
-            from_name:  `${firstName} ${lastName}`,
-            from_email: email,
-            message:    enquiry,
-          },
-        }),
-      });
-
-      if (res.ok || res.status === 200) {
-        setStatus("success");
-      } else {
-        setStatus("error");
-      }
+      await submitForm("inquiry", { firstName, lastName, email, message: enquiry }, guard.meta());
+      setStatus("success");
     } catch {
       setStatus("error");
     }
@@ -210,6 +193,8 @@ export default function InquiryModal({ isOpen, onClose }) {
             </div>
           ) : (
             <>
+              {/* honeypot — hidden from people, catches bots */}
+              <input {...guard.honeypotProps} />
               <div className="inq-eyebrow">
                 <span className="inq-eyebrow-dot" />
                 Get Involved
@@ -241,7 +226,7 @@ export default function InquiryModal({ isOpen, onClose }) {
               </div>
 
               {status === "error" && (
-                <div className="inq-error">Something went wrong. Please try again.</div>
+                <div className="inq-error">Something went wrong. Please try again, or email <a href={"mailto:" + FORMS_FALLBACK_EMAIL} style={{ color: "inherit", textDecoration: "underline" }}>{FORMS_FALLBACK_EMAIL}</a>.</div>
               )}
 
               <button className="inq-btn" onClick={handleSubmit} disabled={!isValid || status === "sending"}>

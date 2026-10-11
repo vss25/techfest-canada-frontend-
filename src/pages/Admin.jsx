@@ -32,6 +32,7 @@ import EmailTracking from "../admin/staff/EmailTracking";
 import MyAccount from "../admin/staff/MyAccount";
 import BrochureDownloads from "../admin/leads/BrochureDownloads";
 import IndiaPavilion from "../admin/leads/IndiaPavilion";
+import FormSubmissions from "../admin/leads/FormSubmissions";
 
 // Existing admin features — wrapped and restyled, logic unchanged.
 import CheckIn from "../components/CheckIn";
@@ -181,6 +182,7 @@ export default function Admin() {
 
             <Route path="brochure-downloads" element={<BrochureDownloads />} />
             <Route path="india-pavilion" element={<IndiaPavilion />} />
+            <Route path="form-submissions" element={<FormSubmissions />} />
 
             <Route path="app" element={<AppOverview />} />
             <Route path="app/people" element={<People />} />

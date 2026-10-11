@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import emailjs from "@emailjs/browser";
+import { submitForm, useFormGuard, FORMS_FALLBACK_EMAIL } from "../lib/forms";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PartnerGrid from "../components/PartnerGrid";
@@ -56,7 +56,7 @@ function HeroSoft({ children, delay, className, style, as }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CONTACT MODAL — EmailJS integration
+   CONTACT MODAL — saved by the TTFC backend, emailed to baldeep@
    ═══════════════════════════════════════════════════════════ */
 function ContactModal({ open, onClose, dark, accent, orange }) {
   var s1 = useState(""); var firstName = s1[0]; var setFirstName = s1[1];
@@ -65,6 +65,7 @@ function ContactModal({ open, onClose, dark, accent, orange }) {
   var s4 = useState(""); var message = s4[0]; var setMessage = s4[1];
   var s5 = useState("idle"); var status = s5[0]; var setStatus = s5[1];
   var s6 = useState({}); var errors = s6[0]; var setErrors = s6[1];
+  var guard = useFormGuard(open);
 
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.65)";
@@ -97,16 +98,12 @@ function ContactModal({ open, onClose, dark, accent, orange }) {
     ev.preventDefault();
     if (!validate()) return;
     setStatus("sending");
-    emailjs.send(
-      "service_gy3fvru",
-      "template_ufqzzep",
-      {
-        from_name: firstName + " " + lastName,
-        from_email: email,
-        message: "[Institutional Partnership Inquiry]\n\nFrom: " + firstName + " " + lastName + "\nEmail: " + email + "\n\nMessage:\n" + message,
-      },
-      "gZgYZtLCXPVgUsVj_"
-    ).then(function () {
+    submitForm("partnership", {
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      message: message,
+    }, guard.meta()).then(function () {
       setStatus("sent");
     }).catch(function () {
       setStatus("error");
@@ -241,6 +238,8 @@ function ContactModal({ open, onClose, dark, accent, orange }) {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* honeypot — hidden from people, catches bots */}
+                  <input {...guard.honeypotProps} />
                   {/* First / Last name */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <div>
@@ -297,7 +296,7 @@ function ContactModal({ open, onClose, dark, accent, orange }) {
 
                   {status === "error" && (
                     <p style={{ color: "#e05555", fontSize: "0.78rem", textAlign: "center", margin: 0 }}>
-                      Something went wrong. Please try again or email sales@thetechfestival.com directly.
+                      Something went wrong. Please try again, or email <a href={"mailto:" + FORMS_FALLBACK_EMAIL} style={{ color: "inherit", textDecoration: "underline" }}>{FORMS_FALLBACK_EMAIL}</a>.
                     </p>
                   )}
 

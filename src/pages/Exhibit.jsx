@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useInView } from "framer-motion";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PavilionCard from "../components/PavilionCard";
+import { submitForm, useFormGuard, FORMS_FALLBACK_EMAIL } from "../lib/forms";
 
 const API = import.meta.env.VITE_API_URL || "https://techfest-canada-backend.onrender.com/api";
 
@@ -696,6 +697,7 @@ function CheckoutModal({ booth, onClose, onCheckout, isDark, textMain, textMuted
 function EnquireModal({ booth, onClose, isDark, textMain, border }) {
   const [status, setStatus] = useState("");
   const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", message: "" });
+  const guard = useFormGuard();
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -703,25 +705,15 @@ function EnquireModal({ booth, onClose, isDark, textMain, border }) {
     e.preventDefault();
     setStatus("Sending...");
     try {
-      const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          service_id: "service_gy3fvru", template_id: "template_ufqzzep", user_id: "gZgYZtLCXPVgUsVj_",
-          template_params: {
-            to_email: "baldeep@thetechfestival.com",
-            from_name: `${formData.firstName} ${formData.lastName}`,
-            from_email: formData.email,
-            message: `[Booth Enquiry: ${booth.title} — ${booth.specs}]\n\n${formData.message || "No additional message."}`,
-          },
-        }),
-      });
-      if (res.ok || res.status === 200) {
-        setStatus("Success! We will be in touch shortly.");
-        setTimeout(() => { onClose(); }, 2500);
-      } else {
-        setStatus("Error — please try again.");
-      }
+      await submitForm("exhibit", {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        message: formData.message,
+        fields: { booth: booth.title, boothSpecs: booth.specs },
+      }, guard.meta());
+      setStatus("Success! We will be in touch shortly.");
+      setTimeout(() => { onClose(); }, 2500);
     } catch {
       setStatus("Error — please try again.");
     }
@@ -767,6 +759,8 @@ function EnquireModal({ booth, onClose, isDark, textMain, border }) {
         </p>
 
         <form onSubmit={handleSubmit}>
+          {/* honeypot — hidden from people, catches bots */}
+          <input {...guard.honeypotProps} />
           <div style={{ display: "flex", gap: "16px" }}>
             <input type="text" name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleChange} required style={inputStyle} />
             <input type="text" name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} required style={inputStyle} />
@@ -786,6 +780,11 @@ function EnquireModal({ booth, onClose, isDark, textMain, border }) {
           >
             {status || "Submit Enquiry"}
           </button>
+          {status === "Error — please try again." && (
+            <p style={{ marginTop: 12, textAlign: "center", fontSize: "0.8rem", color: "#ff6b6b" }}>
+              Or email <a href={"mailto:" + FORMS_FALLBACK_EMAIL} style={{ color: "inherit", textDecoration: "underline" }}>{FORMS_FALLBACK_EMAIL}</a>.
+            </p>
+          )}
         </form>
       </motion.div>
     </div>

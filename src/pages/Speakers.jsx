@@ -9,7 +9,7 @@ import {
   Sparkles, Zap, Shield, Cpu, Leaf,
 } from "lucide-react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import emailjs from "@emailjs/browser";
+import { submitForm, useFormGuard, FORMS_FALLBACK_EMAIL } from "../lib/forms";
 import { client, speakerPhotoUrl } from "../utils/sanity";
 import useAgenda from "../hooks/useAgenda";
 import SpeakerMarquee from "../components/SpeakerMarquee";
@@ -753,21 +753,17 @@ function ApplyToSpeak({ dark, border, accent, text, secondary, mutedText }) {
   var s2 = useState({ name: "", email: "", title: "", industry: "", experience: "", linkedin: "" });
   var form = s2[0]; var setForm = s2[1];
   var s3 = useState("idle"); var status = s3[0]; var setStatus = s3[1];
+  var guard = useFormGuard(open);
 
   var handleSubmit = function () {
     if (!form.name || !form.email) return;
     setStatus("loading");
-    emailjs.send(
-      "service_gy3fvru",
-      "template_ufqzzep",
-      {
-        to_email: "baldeep@thetechfestival.com",
-        from_name: form.name,
-        from_email: form.email,
-        message: "[Speaker Application]\nName: " + form.name + "\nEmail: " + form.email + "\nTitle: " + form.title + "\nIndustry: " + form.industry + "\nExperience: " + form.experience + "\nLinkedIn: " + form.linkedin,
-      },
-      "gZgYZtLCXPVgUsVj_"
-    ).then(function () {
+    submitForm("speaker", {
+      name: form.name,
+      email: form.email,
+      jobTitle: form.title,
+      fields: { industry: form.industry, experience: form.experience, linkedin: form.linkedin },
+    }, guard.meta()).then(function () {
       setStatus("success");
     }).catch(function () {
       setStatus("error");
@@ -847,6 +843,8 @@ function ApplyToSpeak({ dark, border, accent, text, secondary, mutedText }) {
               </div>
             ) : (
               <>
+                {/* honeypot — hidden from people, catches bots */}
+                <input {...guard.honeypotProps} />
                 {[
                   { key: "name", label: "Full Name", placeholder: "Jane Smith" },
                   { key: "email", label: "Email", placeholder: "jane@company.com", type: "email" },
@@ -882,7 +880,7 @@ function ApplyToSpeak({ dark, border, accent, text, secondary, mutedText }) {
                 })}
                 {status === "error" && (
                   <p style={{ color: "#f87171", fontSize: "0.8rem", marginBottom: 12 }}>
-                    Something went wrong. Please try again or email us directly.
+                    Something went wrong. Please try again, or email <a href={"mailto:" + FORMS_FALLBACK_EMAIL} style={{ color: "inherit", textDecoration: "underline" }}>{FORMS_FALLBACK_EMAIL}</a>.
                   </p>
                 )}
                 <button

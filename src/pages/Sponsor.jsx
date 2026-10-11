@@ -2,6 +2,7 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import SponsorInquiryModal from "../components/SponsorInquiryModal";
+import { submitForm, useFormGuard, FORMS_FALLBACK_EMAIL } from "../lib/forms";
 import { useEffect, useState, useRef } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 
@@ -573,6 +574,7 @@ function SponsorInquiryForm(props) {
   var s8 = useState(false); var sending = s8[0]; var setSending = s8[1];
   var s9 = useState("idle"); var status = s9[0]; var setStatus = s9[1];
   var s10 = useState(false); var dark = s10[0]; var setDark = s10[1];
+  var guard = useFormGuard(isOpen);
 
   useEffect(function () {
     setDark(document.body.classList.contains("dark-mode"));
@@ -595,45 +597,26 @@ function SponsorInquiryForm(props) {
   function handleSubmit() {
     if (!firstName.trim() || !lastName.trim()) return;
     setSending(true);
+    setStatus("idle");
 
-    var messageLines = [
-      "[Sponsorship Enquiry]",
-      "Name: " + firstName + " " + lastName,
-      email ? "Email: " + email : "",
-      phone ? "Phone: " + phone : "",
-      company ? "Company: " + company : "",
-      jobTitle ? "Job Title: " + jobTitle : "",
-      industry ? "Industry: " + industry : "",
-    ].filter(Boolean).join("\n");
-
-    fetch("https://api.emailjs.com/api/v1.0/email/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        service_id:  "service_gy3fvru",
-        template_id: "template_ufqzzep",
-        user_id:     "gZgYZtLCXPVgUsVj_",
-        template_params: {
-          to_email:   "baldeep@thetechfestival.com",
-          from_name:  firstName + " " + lastName,
-          from_email: email || "not provided",
-          message:    messageLines,
-        },
-      }),
-    })
-      .then(function (res) {
+    submitForm("sponsor", {
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      phone: phone,
+      company: company,
+      jobTitle: jobTitle,
+      fields: { industry: industry },
+    }, guard.meta())
+      .then(function () {
         setSending(false);
-        if (res.ok || res.status === 200) {
-          setStatus("success");
-          setTimeout(function () {
-            setStatus("idle");
-            setFirstName(""); setLastName(""); setEmail("");
-            setPhone(""); setCompany(""); setJobTitle(""); setIndustry("");
-            onClose();
-          }, 2200);
-        } else {
-          setStatus("error");
-        }
+        setStatus("success");
+        setTimeout(function () {
+          setStatus("idle");
+          setFirstName(""); setLastName(""); setEmail("");
+          setPhone(""); setCompany(""); setJobTitle(""); setIndustry("");
+          onClose();
+        }, 2200);
       })
       .catch(function () {
         setSending(false);
@@ -793,6 +776,8 @@ function SponsorInquiryForm(props) {
               </div>
             ) : (
               <>
+                {/* honeypot — hidden from people, catches bots */}
+                <input {...guard.honeypotProps} />
                 {/* Row: First + Last Name */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 18 }}>
                   <div>
@@ -897,7 +882,7 @@ function SponsorInquiryForm(props) {
                     textAlign: "center", padding: "10px 14px", marginBottom: 14,
                     background: "rgba(255,107,107,0.10)", border: "1px solid rgba(255,107,107,0.25)",
                     borderRadius: 8, fontSize: "0.78rem", color: "#ff6b6b",
-                  }}>Something went wrong. Please try again.</div>
+                  }}>Something went wrong. Please try again, or email <a href={"mailto:" + FORMS_FALLBACK_EMAIL} style={{ color: "inherit", textDecoration: "underline" }}>{FORMS_FALLBACK_EMAIL}</a>.</div>
                 )}
 
                 {/* Submit */}

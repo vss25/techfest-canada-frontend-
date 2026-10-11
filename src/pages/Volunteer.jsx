@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import emailjs from "@emailjs/browser";
+import { submitForm, useFormGuard, FORMS_FALLBACK_EMAIL } from "../lib/forms";
 import useSiteSettings from "../hooks/useSiteSettings";
 import { ClosedNotice } from "../components/SiteNotices";
 
@@ -150,6 +150,7 @@ function VolunteerForm({ dark }) {
   var s7 = useState(""); var why = s7[0]; var setWhy = s7[1];
   var s8 = useState("idle"); var status = s8[0]; var setStatus = s8[1];
   var formRef = useRef(null);
+  var guard = useFormGuard();
 
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.60)" : "rgba(13,5,32,0.65)";
@@ -162,14 +163,14 @@ function VolunteerForm({ dark }) {
     e.preventDefault();
     if (!firstName || !lastName || !email || !role1) return;
     setStatus("sending");
-    emailjs.send("service_gy3fvru", "template_ufqzzep", {
-      from_name: firstName + " " + lastName,
-      from_email: email,
+    submitForm("volunteer", {
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
       phone: phone,
-      preferred_role_1: role1,
-      preferred_role_2: role2,
-      message: "VOLUNTEER APPLICATION\n\nName: " + firstName + " " + lastName + "\nEmail: " + email + "\nPhone: " + phone + "\nPreferred Role 1: " + role1 + "\nPreferred Role 2: " + role2 + "\n\nWhy I want to volunteer:\n" + why,
-    }, "gZgYZtLCXPVgUsVj_").then(function () {
+      message: why,
+      fields: { preferredRole1: role1, preferredRole2: role2 },
+    }, guard.meta()).then(function () {
       setStatus("sent");
     }).catch(function () {
       setStatus("error");
@@ -188,7 +189,9 @@ function VolunteerForm({ dark }) {
   var roleNames = ROLES.map(function (r) { return r.title; });
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <form ref={formRef} onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20, position: "relative" }}>
+      {/* honeypot — hidden from people, catches bots */}
+      <input {...guard.honeypotProps} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div>
           <label style={{ fontSize: "0.72rem", fontWeight: 700, color: textMuted, letterSpacing: "0.5px", marginBottom: 6, display: "block" }}>First Name *</label>
@@ -233,7 +236,7 @@ function VolunteerForm({ dark }) {
         onMouseEnter={function (e) { e.currentTarget.style.transform = "translateY(-2px)"; }}
         onMouseLeave={function (e) { e.currentTarget.style.transform = "translateY(0)"; }}
       >{status === "sending" ? "Submitting..." : "Submit Application"}</button>
-      {status === "error" && <p style={{ color: "#ff4d4d", fontSize: "0.8rem", textAlign: "center" }}>Something went wrong. Please try again.</p>}
+      {status === "error" && <p style={{ color: "#ff4d4d", fontSize: "0.8rem", textAlign: "center" }}>Something went wrong. Please try again, or email <a href={"mailto:" + FORMS_FALLBACK_EMAIL} style={{ color: "inherit", textDecoration: "underline" }}>{FORMS_FALLBACK_EMAIL}</a>.</p>}
     </form>
   );
 }

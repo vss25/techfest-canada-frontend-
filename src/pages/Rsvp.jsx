@@ -370,6 +370,9 @@ export default function Rsvp() {
     if (n === "name") {
       if (!first) e.firstName = "Please enter your first name";
       if (!last) e.lastName = "Please enter your last name";
+      if (!tid) e.ticketId = "Please enter your ticket ID";
+      else if (!ticketReady) e.ticketId = "That ticket ID looks too short";
+      else if (found && found.ticketMatched === false) e.ticketId = "That ticket ID doesn't match your last name";
     }
     if (n === "pass" && !tier) e.tier = "Choose your pass";
     if (n === "days" && !form.days.length) e.days = "Choose at least one day";
@@ -545,7 +548,7 @@ export default function Rsvp() {
         <motion.div className="rsvp-spark" aria-hidden="true" initial={reduce ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1, type: "spring", stiffness: 220, damping: 16 }}>
           <Sparkles size={26} />
         </motion.div>
-        <StepHeader id={titleId} eyebrow="TTFC 2026 RSVP" title="You're invited" sub="The Tech Festival Canada · 26–27 October 2026 · The Westin Harbour Castle, Toronto. Tell us which days you're coming and what you'll join, so we can save you a seat." />
+        <StepHeader id={titleId} title="You're invited" sub="The Tech Festival Canada · 26–27 October 2026 · The Westin Harbour Castle, Toronto. Tell us which days you're coming and what you'll join, so we can save you a seat." />
         <ul className="rsvp-facts" aria-label="Event details">
           <li><span>Dates</span>Mon 26 &amp; Tue 27 Oct</li>
           <li><span>Venue</span>Westin Harbour Castle</li>
@@ -576,7 +579,7 @@ export default function Rsvp() {
               aria-describedby={errors.lastName ? "rsvp-last-error" : undefined} />
           </Field>
         </div>
-        <Field id="rsvp-ticket" label="Ticket ID" optional hint="On your ticket email / pass QR. It lets us confirm your pass." error={errors.ticketId}>
+        <Field id="rsvp-ticket" label="Ticket ID" hint="On your ticket email or pass QR code." error={errors.ticketId}>
           <input id="rsvp-ticket" className="rsvp-input rsvp-mono" autoComplete="off" autoCapitalize="characters" spellCheck={false}
             value={form.ticketId} onChange={(e) => set("ticketId", e.target.value)} onBlur={() => { if (checking) setRush(lookupKey); }}
             maxLength={64} aria-invalid={!!errors.ticketId || undefined} aria-describedby={errors.ticketId ? "rsvp-ticket-error" : "rsvp-ticket-hint"}
@@ -880,7 +883,7 @@ export default function Rsvp() {
       <AuroraBackground />
 
       <div className="rsvp-brand">
-        <img src="/Tech_Festival_Canada_Logo_Dark_Transparent.png" alt="The Tech Festival Canada" width="96" height="60" />
+        <img src="/Tech_Festival_Canada_Logo_Dark_Transparent.png" alt="The Tech Festival Canada" width="288" height="180" />
       </div>
 
       <main className="rsvp-card" aria-labelledby={titleId}>
@@ -940,7 +943,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 }
 .rsvp-root *, .rsvp-root *::before, .rsvp-root *::after { box-sizing: border-box; }
 .rsvp-brand { position: relative; z-index: 1; margin-bottom: 18px; }
-.rsvp-brand img { height: 60px; width: auto; display: block; }
+.rsvp-brand img { height: 180px; max-width: 80vw; width: auto; display: block; }
 
 .rsvp-card {
   position: relative; z-index: 1; width: 100%; max-width: 560px;
@@ -1123,7 +1126,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 @media (max-width: 480px) {
   .rsvp-root { justify-content: flex-start; padding: 18px 16px 28px; }
   .rsvp-brand { margin-bottom: 14px; }
-  .rsvp-brand img { height: 44px; }
+  .rsvp-brand img { height: 120px; }
   .rsvp-card { border-radius: 24px; padding: 22px 18px 18px; }
   .rsvp-grid2 { grid-template-columns: 1fr; gap: 0; }
   .rsvp-grid2 .rsvp-day { margin-bottom: 10px; flex-direction: row; align-items: center; }

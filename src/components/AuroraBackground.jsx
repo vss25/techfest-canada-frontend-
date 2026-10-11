@@ -9,8 +9,17 @@ import { useEffect, useRef, useState } from "react";
    - prefers-reduced-motion: one still frame, no pointer response.
    - Tab hidden: the animation loop stops until it's visible again.
    - No WebGL (or the shader fails): a plain CSS gradient instead.
-   Rendered at reduced resolution (the image is soft anyway) to stay
-   light on phones.
+   - WebGL context lost (iOS does this to background tabs): set up
+     again when the browser restores it; the CSS gradient only if it
+     doesn't come back.
+   Light on phones: reduced resolution (the image is soft anyway),
+   at most ~30 frames a second (the drift is slow), 4 noise octaves.
+   Precision: the noise needs 32-bit floats, so the shader asks for
+   highp (mediump is often 16-bit on phones, where any hash goes flat);
+   a GPU that can't give highp in fragment shaders gets the CSS
+   gradient. The hash has no sin() (imprecise for large arguments on
+   many mobile GPUs) and time goes in as a loop of small numbers that
+   never jumps, rather than a number that grows forever.
 ========================================================= */
 
 const VERT = `
@@ -19,12 +28,22 @@ void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
 `;
 
 const FRAG = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
 precision mediump float;
+#endif
 uniform vec2 u_res;
-uniform float u_time;
+uniform vec2 u_flow;    // how far the drift has got, round a slow loop (see draw())
+uniform float u_phase;  // curtain sway, 0..2pi
 uniform vec2 u_pointer; // 0..1, y up
 
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+// "Hash without Sine" (Dave Hoskins): no sin(), so it doesn't depend on how precisely the GPU does sin(62000.0).
+float hash(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
 float noise(vec2 p) {
   vec2 i = floor(p), f = fract(p);
   vec2 u = f * f * (3.0 - 2.0 * f);
@@ -34,7 +53,7 @@ float noise(vec2 p) {
 float fbm(vec2 p) {
   float v = 0.0, a = 0.5;
   mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
-  for (int i = 0; i < 5; i++) { v += a * noise(p); p = m * p; a *= 0.5; }
+  for (int i = 0; i < 4; i++) { v += a * noise(p); p = m * p; a *= 0.5; }
   return v;
 }
 
@@ -43,12 +62,13 @@ void main() {
   vec2 p = (gl_FragCoord.xy - 0.5 * u_res) / s;
   vec2 uv = gl_FragCoord.xy / u_res;
   vec2 m = (u_pointer - 0.5) * u_res / s;
-  float t = u_time * 0.035;
+  vec2 w = u_flow;                       // starts out as (0, t): a slow drift upward
+  vec2 wd = vec2(w.y + w.x, w.y - w.x);  // starts out as (t, t)
 
   // Domain warping: noise feeding noise, for slow flowing folds.
-  vec2 q = vec2(fbm(p * 0.85 + vec2(0.0, t)), fbm(p * 0.85 + vec2(5.2, -t)));
-  vec2 r = vec2(fbm(p * 0.75 + 1.8 * q + vec2(1.7, 9.2) + t * 1.3 + m * 0.25),
-                fbm(p * 0.75 + 1.8 * q + vec2(8.3, 2.8) - t * 1.1 - m * 0.25));
+  vec2 q = vec2(fbm(p * 0.85 + w), fbm(p * 0.85 + vec2(5.2, 0.0) - w));
+  vec2 r = vec2(fbm(p * 0.75 + 1.8 * q + vec2(1.7, 9.2) + wd * 1.3 + m * 0.25),
+                fbm(p * 0.75 + 1.8 * q + vec2(8.3, 2.8) - wd * 1.1 - m * 0.25));
   float f = fbm(p * 0.9 + 2.0 * r);
 
   vec3 ink = vec3(0.024, 0.008, 0.059);
@@ -62,7 +82,7 @@ void main() {
   col = mix(col, orange, smoothstep(0.52, 0.82, r.y) * smoothstep(0.45, 0.8, f) * 0.6);
 
   // Aurora curtains: soft vertical light bending with the flow.
-  float curtain = pow(0.5 + 0.5 * sin(p.x * 3.2 + f * 5.0 + t * 3.0), 6.0);
+  float curtain = pow(0.5 + 0.5 * sin(p.x * 3.2 + f * 5.0 + u_phase), 6.0);
   col += mix(purple, magenta, uv.x) * curtain * 0.28 * smoothstep(-0.3, 0.6, p.y + 0.4 * f);
 
   // A gentle glow where the pointer is.
@@ -94,9 +114,21 @@ function compile(gl, type, src) {
   return sh;
 }
 
-export default function AuroraBackground({ resolution = 0.55 }) {
+// The drift goes round a loop: LOOP seconds, at the speed it always had (DRIFT noise units a second),
+// with the curtains swaying SWAY times per loop (about 0.1 radians a second). Seamless, and small numbers.
+const LOOP = 900;
+const DRIFT = 0.035;
+const RADIUS = (DRIFT * LOOP) / (2 * Math.PI);
+const SWAY = 15;
+const FRAME_MS = 1000 / 30;
+const RESTORE_WAIT = 4000; // ms a lost context gets to come back (while the tab is visible) before the CSS gradient takes over
+
+export default function AuroraBackground({ resolution = 0.4 }) {
   const canvasRef = useRef(null);
   const [failed, setFailed] = useState(false);
+  const [generation, setGeneration] = useState(0); // bumped when a lost WebGL context is restored: set up again
+  const startRef = useRef(0);
+  const pointerRef = useRef({ x: 0.5, y: 0.55, tx: 0.5, ty: 0.55 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -107,6 +139,9 @@ export default function AuroraBackground({ resolution = 0.55 }) {
         || canvas.getContext("experimental-webgl");
     } catch { gl = null; }
     if (!gl) { setFailed(true); return undefined; }
+    // No real 32-bit floats in fragment shaders (old ES2-era GPUs report 0 or fp24's 16 bits): the noise would go flat.
+    const highp = gl.getShaderPrecisionFormat?.(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+    if (!gl.isContextLost() && highp && highp.precision < 20) { setFailed(true); return undefined; }
 
     const vs = compile(gl, gl.VERTEX_SHADER, VERT);
     const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
@@ -126,17 +161,24 @@ export default function AuroraBackground({ resolution = 0.55 }) {
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     const uRes = gl.getUniformLocation(prog, "u_res");
-    const uTime = gl.getUniformLocation(prog, "u_time");
+    const uFlow = gl.getUniformLocation(prog, "u_flow");
+    const uPhase = gl.getUniformLocation(prog, "u_phase");
     const uPointer = gl.getUniformLocation(prog, "u_pointer");
 
     const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     let reduced = !!motion?.matches;
-    const pointer = { x: 0.5, y: 0.55, tx: 0.5, ty: 0.55 };
-    const start = performance.now();
+    const pointer = pointerRef.current;
+    // Kept across a context restore, so the picture carries on where it was.
+    if (!startRef.current) startRef.current = performance.now();
+    const start = startRef.current;
     // A fixed moment for the still frame, so it always looks the same.
     const STILL_TIME = 18;
     let raf = 0;
     let lost = false;
+    let last = 0;
+    let giveUp = 0;
+    let vw = 0;
+    let vh = 0;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -145,14 +187,20 @@ export default function AuroraBackground({ resolution = 0.55 }) {
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w;
         canvas.height = h;
+      }
+      if (vw !== w || vh !== h) {
+        vw = w;
+        vh = h;
         gl.viewport(0, 0, w, h);
       }
     };
 
     const draw = (time) => {
       resize();
+      const a = ((time % LOOP) / LOOP) * 2 * Math.PI;
       gl.uniform2f(uRes, canvas.width, canvas.height);
-      gl.uniform1f(uTime, time);
+      gl.uniform2f(uFlow, RADIUS * (Math.cos(a) - 1), RADIUS * Math.sin(a));
+      gl.uniform1f(uPhase, (SWAY * a) % (2 * Math.PI));
       gl.uniform2f(uPointer, pointer.x, pointer.y);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
@@ -160,10 +208,16 @@ export default function AuroraBackground({ resolution = 0.55 }) {
     const frame = (now) => {
       raf = 0;
       if (lost) return;
-      // Ease toward the pointer so it feels like a current, not a cursor.
-      pointer.x += (pointer.tx - pointer.x) * 0.03;
-      pointer.y += (pointer.ty - pointer.y) * 0.03;
-      draw((now - start) / 1000 + STILL_TIME);
+      // ~30 fps is plenty for something this slow, and halves the work (and the card's backdrop blur) on 60-120 Hz screens.
+      if (now - last >= FRAME_MS - 4) {
+        const dt = last ? Math.min(100, now - last) : FRAME_MS;
+        last = now;
+        // Ease toward the pointer so it feels like a current, not a cursor (same feel at any frame rate).
+        const k = 1 - Math.pow(0.97, dt / (1000 / 60));
+        pointer.x += (pointer.tx - pointer.x) * k;
+        pointer.y += (pointer.ty - pointer.y) * k;
+        draw((now - start) / 1000 + STILL_TIME);
+      }
       if (!reduced && !document.hidden) raf = requestAnimationFrame(frame);
     };
 
@@ -179,31 +233,45 @@ export default function AuroraBackground({ resolution = 0.55 }) {
       pointer.tx = e.clientX / window.innerWidth;
       pointer.ty = 1 - e.clientY / window.innerHeight;
     };
-    const onVisibility = () => (document.hidden ? stop() : play());
-    const onResize = () => { if (reduced || document.hidden) draw(STILL_TIME); };
+    // Lost context: wait for the browser to restore it (preventDefault asks it to). The countdown to the
+    // CSS fallback only runs while the tab is visible, since browsers restore when they come back to it.
+    const armGiveUp = () => { if (!giveUp && !document.hidden) giveUp = setTimeout(() => setFailed(true), RESTORE_WAIT); };
+    const disarmGiveUp = () => { clearTimeout(giveUp); giveUp = 0; };
+    const onVisibility = () => {
+      if (lost) { if (document.hidden) disarmGiveUp(); else armGiveUp(); return; }
+      if (document.hidden) stop(); else play();
+    };
+    const onResize = () => { if (!lost && (reduced || document.hidden)) draw(STILL_TIME); };
     const onMotion = () => { reduced = !!motion?.matches; stop(); play(); };
-    const onLost = (e) => { e.preventDefault(); lost = true; stop(); setFailed(true); };
+    const onLost = (e) => { e.preventDefault(); lost = true; stop(); armGiveUp(); };
+    const onRestored = () => { disarmGiveUp(); setGeneration((g) => g + 1); };
 
     window.addEventListener("pointermove", onPointer, { passive: true });
     window.addEventListener("resize", onResize);
     document.addEventListener("visibilitychange", onVisibility);
     motion?.addEventListener?.("change", onMotion);
     canvas.addEventListener("webglcontextlost", onLost);
+    canvas.addEventListener("webglcontextrestored", onRestored);
     play();
 
     return () => {
       stop();
+      disarmGiveUp();
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("resize", onResize);
       document.removeEventListener("visibilitychange", onVisibility);
       motion?.removeEventListener?.("change", onMotion);
       canvas.removeEventListener("webglcontextlost", onLost);
-      gl.deleteBuffer(buf);
-      gl.deleteProgram(prog);
-      gl.deleteShader(vs);
-      gl.deleteShader(fs);
+      canvas.removeEventListener("webglcontextrestored", onRestored);
+      // Objects from a lost context are already gone (and deleting them would only log errors).
+      if (!lost && !gl.isContextLost()) {
+        gl.deleteBuffer(buf);
+        gl.deleteProgram(prog);
+        gl.deleteShader(vs);
+        gl.deleteShader(fs);
+      }
     };
-  }, [resolution]);
+  }, [resolution, generation]);
 
   return (
     <div aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 0, background: FALLBACK, pointerEvents: "none" }}>

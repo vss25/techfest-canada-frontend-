@@ -8,7 +8,9 @@ import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
 
 const isStaffPath = (p) => p === "/admin" || p.startsWith("/admin/") || p === "/admin-login";
 // Focused one-task pages (e.g. the emailed "complete your profile" link, the unlinked RSVP page) skip site-wide announcements.
-const isFocusedPath = (p) => p === "/complete-profile" || p === "/rsvp";
+// The router matches paths ignoring case and a trailing slash (/RSVP, /rsvp/), so compare the same way.
+const FOCUSED = new Set(["/complete-profile", "/rsvp"]);
+const isFocusedPath = (p) => FOCUSED.has(p.replace(/\/+$/, "").toLowerCase());
 
 function useBodyDark() {
   const [dark, setDark] = useState(() => typeof document !== "undefined" && document.body.classList.contains("dark-mode"));

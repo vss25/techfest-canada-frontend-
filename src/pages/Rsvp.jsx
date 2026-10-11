@@ -17,9 +17,15 @@ import { API, useFormGuard } from "../lib/forms";
    backend (GET /api/rsvp/options, services/rsvp.js), the same matrix as
    the Tickets page, so it is never copied here. As people type their
    name (and optionally a ticket ID) we ask POST /api/rsvp/lookup who
-   they are: a verified ticket or a speaker locks the pass. The backend
-   checks everything again when the RSVP is saved (POST /api/rsvp).
-   Staff see RSVPs in Admin → Leads → RSVPs.
+   they are: a verified ticket or a speaker locks the pass (only a fresh
+   answer for exactly what's typed; a refused lookup never does). The
+   backend checks everything again when the RSVP is saved (POST /api/rsvp)
+   and, if it reads the pass differently, the page unlocks it and asks again.
+   Experiences (sessions, expo floor and breaks for every pass, plus what
+   the pass adds) are grouped by day and never ticked for them.
+   The save answers with an edit token, kept in localStorage
+   ("ttfc.rsvp.edit"); sent back under the same name, it updates that
+   RSVP instead of adding another. Staff see RSVPs in Admin → Leads → RSVPs.
 ========================================================= */
 
 const ENQUIRE = "enquire@thetechfestival.com";
@@ -38,15 +44,48 @@ const TICKET_MIN = 6; // shorter than any real ticket ID: a half-typed one is ne
 const WAIT_NAME = 600; // ms after they stop typing a name
 const WAIT_TICKET = 1200; // ticket IDs are often copied from another screen, a few characters at a time
 const endStop = (s) => (/[.!?]$/.test(s) ? s : `${s}.`);
+// Which question a server error belongs to (POST /api/rsvp answers 400 with `field`).
+const FIELD_STEP = {
+  firstName: "name", lastName: "name", ticketId: "name", tier: "pass", days: "days", options: "experiences",
+  dietary: "dietary", dietaryOther: "dietary", email: "dietary", accessibility: "dietary",
+};
+
+/* The edit token POST /api/rsvp hands back: sent with a later RSVP from this browser under the same name,
+   it changes that RSVP instead of adding a second one. { nameKey, ticketId?, token } */
+const EDIT_KEY = "ttfc.rsvp.edit";
+/** "José  Núñez-Díaz" → "jose nunezdiaz": the same name, whatever the case, accents or spacing. */
+const nameKeyOf = (firstName, lastName) => `${firstName} ${lastName}`.split(/\s+/)
+  .map((w) => w.normalize("NFKD").replace(/\p{M}+/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ""))
+  .filter(Boolean).join(" ");
+function readEditToken(nameKey) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(EDIT_KEY) || "null");
+    return saved && typeof saved.token === "string" && saved.nameKey === nameKey ? saved.token : "";
+  } catch { return ""; }
+}
+function saveEditToken(entry) {
+  try { localStorage.setItem(EDIT_KEY, JSON.stringify(entry)); } catch { /* storage blocked: a later change just can't be matched */ }
+}
 
 const shortDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 const longDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
 
-/** "2× Networking Luncheon · CxO Breakfast …" for a pass, from the shared option list. */
+// Sessions, the expo floor and breaks come with every pass; the rest are what a pass adds.
+const isBase = (o) => o.tiers.includes("connect");
+/** Under a day's heading the day is already said: "Gala Dinner & Networking Reception (Day 2 evening)" → "… (evening)". */
+const inDay = (label) => label.replace(/\s*\(Day \d+\)$/i, "").replace(/\(Day \d+\s+/i, "(");
+/** Experiences by the day they happen on (in catalog order), then the ones not tied to a day. */
+function byDay(list, days) {
+  const groups = days.map((d) => ({ key: d.key, day: d, items: list.filter((o) => o.day === d.key) }));
+  groups.push({ key: "any", day: null, items: list.filter((o) => !days.some((d) => d.key === o.day)) });
+  return groups.filter((g) => g.items.length);
+}
+
+/** "2× Networking Luncheon · CxO Breakfast …" for a pass, from the shared option list (what it adds to the base). */
 function includesFor(tier, options) {
   const counts = new Map();
   for (const o of options) {
-    if (o.kind !== "experience" || !o.tiers.includes(tier)) continue;
+    if (o.kind !== "experience" || !o.tiers.includes(tier) || isBase(o)) continue;
     const label = o.label.replace(/\s*\(.*\)$/, "");
     counts.set(label, (counts.get(label) || 0) + 1);
   }
@@ -190,6 +229,7 @@ export default function Rsvp() {
   const [errors, setErrors] = useState({});
   const [answers, setAnswers] = useState({}); // lookup key → what the server said, so nothing is asked twice
   const [failures, setFailures] = useState({}); // lookup key → "limited" (429) or "failed"
+  const [overruled, setOverruled] = useState({}); // lookup key → true when sending showed the server sees their pass differently
   const [rush, setRush] = useState(""); // a lookup key to ask about now, without waiting for a typing pause
   const [queued, setQueued] = useState(false); // Continue pressed while we were still looking them up
   const [answer, setAnswer] = useState({ key: "", choice: "" }); // "Is this right?" for an unverified match
@@ -270,20 +310,26 @@ export default function Rsvp() {
 
   const answered = lookupKey ? answers[lookupKey] : undefined;
   const failure = lookupKey && !answered ? failures[lookupKey] || "" : "";
-  // If a lookup is refused (too many) or fails, keep the last answer we had for this last name rather than forgetting them.
+  // Only a fresh answer for exactly what's typed can lock the pass, and not once sending showed the server disagrees.
+  const found = answered && !overruled[lookupKey] ? answered : NONE;
+  // A lookup refused (too many) or failed: an earlier answer for the same first AND last name (and the same
+  // ticket ID, when one is typed) can still suggest their pass. Only a suggestion: it never locks anything.
   const kept = useMemo(() => {
     if (!failure) return NONE;
-    const lastKey = last.toLowerCase();
-    const prev = Object.entries(answers).reverse().find(([k]) => k.split("|")[1] === lastKey);
+    const [f, l, t] = lookupKey.split("|");
+    const prev = Object.entries(answers).reverse().find(([k]) => {
+      const [kf, kl, kt] = k.split("|");
+      return kf === f && kl === l && (!tid || kt === t);
+    });
     return prev ? prev[1] : NONE;
-  }, [failure, answers, last]);
-  const found = answered || kept;
+  }, [failure, answers, lookupKey, tid]);
   const checking = !!lookupKey && !answered && !failure;
   const lockedTier = found.verified && (found.kind === "ticket" || found.kind === "speaker") ? found.tier : "";
   const isSpeaker = found.kind === "speaker";
   const foundKey = `${found.kind}:${found.tier || ""}:${found.verified}`;
   const choice = answer.key === foundKey ? answer.choice : "";
-  const suggested = found.kind === "ticket" && !found.verified && choice !== "no" ? found.tier : "";
+  const keptTier = failure && PASS_ORDER.includes(kept.tier) ? kept.tier : "";
+  const suggested = found.kind === "ticket" && !found.verified && choice !== "no" ? found.tier : keptTier;
   const tier = lockedTier || form.tier || suggested;
 
   const options = useMemo(() => catalog?.options || [], [catalog]);
@@ -298,6 +344,10 @@ export default function Rsvp() {
     if (k === "firstName" || k === "lastName" || k === "ticketId") setQueued(false); // still typing: don't move on by itself
   };
   const toggle = (k, v) => setForm((f) => ({ ...f, [k]: f[k].includes(v) ? f[k].filter((x) => x !== v) : [...f[k], v] }));
+  const pickOptions = (keys, on) => {
+    setForm((f) => ({ ...f, options: on ? [...new Set([...f.options, ...keys])] : f.options.filter((k) => !keys.includes(k)) }));
+    setErrors((e) => (e.options ? { ...e, options: "" } : e));
+  };
   const toggleDiet = (v) => setForm((f) => {
     let next = f.dietary.includes(v) ? f.dietary.filter((x) => x !== v) : [...f.dietary, v];
     if (v === "none" && next.includes("none")) next = ["none"]; // "None" clears the rest
@@ -353,6 +403,9 @@ export default function Rsvp() {
   const submit = async () => {
     setSubmitting(true);
     setSubmitError("");
+    const nameKey = nameKeyOf(first, last);
+    // This browser's earlier RSVP under the same name: the token lets the server update it in place.
+    const editToken = readEditToken(nameKey);
     try {
       const res = await fetch(`${API}/rsvp`, {
         method: "POST",
@@ -361,11 +414,27 @@ export default function Rsvp() {
           firstName: first, lastName: last, email: form.email.trim(), ticketId: tid, tier,
           days: form.days, options: chosenOptions, dietary: form.dietary,
           dietaryOther: form.dietary.includes("other") ? form.dietaryOther.trim() : "",
-          accessibility: form.accessibility.trim(), page: window.location.pathname, ...guard.meta(),
+          accessibility: form.accessibility.trim(), page: window.location.pathname,
+          ...(editToken ? { editToken } : {}), ...guard.meta(),
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.message || data?.error || "We couldn't save your RSVP.");
+      if (!res.ok) {
+        const message = data?.message || data?.error || "We couldn't save your RSVP.";
+        const at = res.status === 400 ? FIELD_STEP[data?.field] : "";
+        if (at) {
+          // The server read their pass (or an answer) differently from this page: never leave them on a
+          // locked pass they can't send. Unlock it and take them to that question with the server's words.
+          if (data.field === "tier" || data.field === "ticketId") setOverruled((o) => ({ ...o, [lookupKey]: true }));
+          setEditBase(allowed.map((o) => o.key));
+          setReturnToReview(true);
+          go(STEPS.indexOf(at));
+          setErrors({ [data.field]: endStop(message) });
+          return;
+        }
+        throw new Error(message);
+      }
+      if (data.editToken) saveEditToken({ nameKey, ...(ticketKey ? { ticketId: ticketKey.toUpperCase() } : {}), token: data.editToken });
       // What was sent, so the thank-you screen and calendar file show exactly what was saved.
       setSaved({ ...data, sent: { days: form.days, options: chosenOptions } });
       setReturnToReview(false);
@@ -435,7 +504,9 @@ export default function Rsvp() {
     const root = stepRef.current;
     if (!root) return;
     // Review has only Edit buttons: land on "Send my RSVP" instead, so Enter sends.
-    const el = root.querySelector("[data-autofocus]") || root.querySelector("input:not([disabled]):not([tabindex='-1']), textarea") || primaryRef.current;
+    // A question they were sent back to fix: straight to what needs fixing.
+    const el = root.querySelector("input[aria-invalid='true']") || root.querySelector("[data-autofocus]")
+      || root.querySelector("input:not([disabled]):not([tabindex='-1']), textarea") || primaryRef.current;
     el?.focus({ preventScroll: true });
   };
 
@@ -505,10 +576,11 @@ export default function Rsvp() {
               aria-describedby={errors.lastName ? "rsvp-last-error" : undefined} />
           </Field>
         </div>
-        <Field id="rsvp-ticket" label="Ticket ID" optional hint="On your ticket email / pass QR. It lets us confirm your pass.">
+        <Field id="rsvp-ticket" label="Ticket ID" optional hint="On your ticket email / pass QR. It lets us confirm your pass." error={errors.ticketId}>
           <input id="rsvp-ticket" className="rsvp-input rsvp-mono" autoComplete="off" autoCapitalize="characters" spellCheck={false}
             value={form.ticketId} onChange={(e) => set("ticketId", e.target.value)} onBlur={() => { if (checking) setRush(lookupKey); }}
-            maxLength={64} aria-describedby="rsvp-ticket-hint" placeholder="e.g. A1B2C3D4E5F6" />
+            maxLength={64} aria-invalid={!!errors.ticketId || undefined} aria-describedby={errors.ticketId ? "rsvp-ticket-error" : "rsvp-ticket-hint"}
+            placeholder="e.g. A1B2C3D4E5F6" />
         </Field>
         <div className="rsvp-lookup" aria-live="polite" aria-atomic="true">
           <AnimatePresence mode="wait" initial={false}>
@@ -543,6 +615,7 @@ export default function Rsvp() {
               <motion.p key="failed" className="rsvp-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 {failure === "limited" ? "We can't check your pass right now (too many tries)." : "We couldn't check your pass just now."}{" "}
                 You can still continue and choose it on the next step; we'll confirm it when you send.
+                {keptTier && !form.tier && <> Earlier it looked like you have {article(tierLabel(keptTier))} {tierLabel(keptTier)}, so that's picked to start with.</>}
               </motion.p>
             ) : tid && found.ticketMatched === false ? (
               <motion.p key="nomatch" className="rsvp-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -615,45 +688,75 @@ export default function Rsvp() {
       </>
     );
   } else if (name === "experiences") {
+    // Nothing is ticked for anyone: every pass is asked, and they tick what they'll actually join.
     const all = allowed.length > 0 && chosenOptions.length === allowed.length;
+    const groups = byDay(allowed, days.filter((d) => form.days.includes(d.key)));
+    let n = 0; // card order across the groups, for the stagger and the first field's focus
     body = (
       <>
         <StepHeader id={titleId} eyebrow="Step 4 · Experiences" title="What will you join?"
-          sub={allowed.length ? `Included with your ${isSpeaker ? "speaker access" : tierLabel(tier)} on the ${form.days.length > 1 ? "days" : "day"} you picked. Tick everything you'll attend so we can plan seats and catering.` : ""} />
+          sub={allowed.length ? `All of these come with your ${isSpeaker ? "speaker access" : tierLabel(tier) || "pass"} on the ${form.days.length > 1 ? "days" : "day"} you picked. Tick the ones you'll actually join, so we can plan seats and catering.` : ""} />
         {allowed.length > 0 && (
-          <button type="button" className="rsvp-text-btn rsvp-text-btn-top" onClick={() => set("options", all ? [] : allowed.map((o) => o.key))}>
-            {all ? "Clear all" : "Select all"}
-          </button>
+          <div className="rsvp-exp-bar">
+            <span className="rsvp-exp-count" aria-live="polite">{chosenOptions.length ? `${chosenOptions.length} of ${allowed.length} ticked` : "Nothing ticked yet"}</span>
+            <button type="button" className="rsvp-text-btn" onClick={() => pickOptions(allowed.map((o) => o.key), !all)}>
+              {all ? "Clear all" : "Select all"}
+            </button>
+          </div>
         )}
-        <motion.div className="rsvp-stack" role="group" aria-labelledby={titleId} layout={!reduce}>
-          <AnimatePresence initial={false} mode="popLayout">
-            {allowed.map((o, i) => {
-              const on = form.options.includes(o.key);
-              const day = o.day ? days.find((d) => d.key === o.day) : null;
-              return (
-                <motion.label key={o.key} layout={!reduce} className="rsvp-choice" data-checked={on || undefined}
-                  initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94, transition: { duration: 0.18 } }}
-                  transition={{ type: "spring", stiffness: 420, damping: 32, delay: reduce ? 0 : i * 0.03 }}>
-                  <input type="checkbox" className="rsvp-sr" checked={on} onChange={() => toggle("options", o.key)} data-autofocus={i === 0 || undefined} />
-                  <CheckMark on={on} />
-                  <span className="rsvp-choice-body">
-                    <span className="rsvp-choice-title">
-                      {o.label}
-                      {day && !/day \d/i.test(o.label) && <span className="rsvp-tag">{day.label} · {shortDate(day.date)}</span>}
-                      {returnToReview && !editBase.includes(o.key) && <span className="rsvp-tag rsvp-tag-new">New</span>}
-                    </span>
-                    <span className="rsvp-choice-desc">{o.description}</span>
-                    {o.note && <span className="rsvp-note">{o.note}</span>}
-                  </span>
-                </motion.label>
-              );
-            })}
-          </AnimatePresence>
-        </motion.div>
+        <div className="rsvp-groups" role="group" aria-labelledby={titleId}>
+          {groups.map((g) => {
+            const keys = g.items.map((o) => o.key);
+            const picked = keys.filter((k) => chosenOptions.includes(k)).length;
+            const whole = picked === keys.length;
+            const groupName = g.day ? `${g.day.label}, ${g.day.long || shortDate(g.day.date)}` : "Anytime";
+            return (
+              <section key={g.key} className="rsvp-group" aria-label={groupName}>
+                <div className="rsvp-group-head">
+                  <span className="rsvp-group-day">{g.day ? g.day.label : "Anytime"}</span>
+                  {g.day && <span className="rsvp-group-date">{shortDate(g.day.date)}</span>}
+                  <span className="rsvp-group-line" aria-hidden="true" />
+                  <span className="rsvp-group-count" aria-hidden="true">{picked}/{keys.length}</span>
+                  {keys.length > 1 && (
+                    <button type="button" className="rsvp-group-all" onClick={() => pickOptions(keys, !whole)}
+                      aria-label={whole ? `Clear ${g.day ? g.day.label : "anytime experiences"}` : `Select everything ${g.day ? `on ${g.day.label}` : "anytime"}`}>
+                      {whole ? "None" : "All"}
+                    </button>
+                  )}
+                </div>
+                <div className="rsvp-stack">
+                  {g.items.map((o) => {
+                    const i = n++;
+                    const on = chosenOptions.includes(o.key);
+                    return (
+                      <motion.label key={o.key} className="rsvp-choice rsvp-exp" data-checked={on || undefined}
+                        initial={reduce ? false : { opacity: 0, scale: 0.96, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ type: "spring", stiffness: 420, damping: 32, delay: reduce ? 0 : Math.min(i, 14) * 0.025 }}>
+                        <input type="checkbox" className="rsvp-sr" checked={on} onChange={() => pickOptions([o.key], !on)} data-autofocus={i === 0 || undefined} />
+                        <CheckMark on={on} />
+                        <span className="rsvp-choice-body">
+                          <span className="rsvp-choice-title">
+                            {g.day ? inDay(o.label) : o.label}
+                            {returnToReview && !editBase.includes(o.key) && <span className="rsvp-tag rsvp-tag-new">New</span>}
+                          </span>
+                          {o.description && <span className="rsvp-choice-desc">{o.description}</span>}
+                          {o.note && <span className="rsvp-note">{o.note}</span>}
+                        </span>
+                      </motion.label>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+        {errors.options && <p className="rsvp-error" role="alert"><AlertCircle size={14} aria-hidden="true" /> {errors.options}</p>}
+        {allowed.length > 0 && !chosenOptions.length && !errors.options && (
+          <p className="rsvp-hint">Only coming for the day? You can leave these unticked and just send your days.</p>
+        )}
         {!allowed.length && (
           <div className="rsvp-empty">
-            <p><strong>You're all set.</strong> Your {tierLabel(tier) || "pass"} covers the conference, the expo floor and networking breaks on the {form.days.length > 1 ? "days" : "day"} you picked. There's nothing else to choose.</p>
+            <p>There's nothing to choose for the {form.days.length > 1 ? "days" : "day"} you picked. Carry on to the next step.</p>
           </div>
         )}
       </>
@@ -698,11 +801,22 @@ export default function Rsvp() {
     );
   } else if (name === "review") {
     const dietLabels = (catalog?.dietary || []).filter((d) => form.dietary.includes(d.key)).map((d) => (d.key === "other" && form.dietaryOther.trim() ? `Other: ${form.dietaryOther.trim()}` : d.label));
+    const chosenGroups = byDay(allowed.filter((o) => chosenOptions.includes(o.key)), days.filter((d) => form.days.includes(d.key)));
+    const experiences = chosenGroups.length ? (
+      <span className="rsvp-summary-groups">
+        {chosenGroups.map((g) => (
+          <span key={g.key} className="rsvp-summary-group">
+            <span className="rsvp-summary-day">{g.day ? g.day.label : "Anytime"}</span>
+            {g.items.map((o) => (g.day ? inDay(o.label) : o.label)).join(", ")}
+          </span>
+        ))}
+      </span>
+    ) : "None ticked, just the days";
     const rows = [
       { step: "name", label: "Name", value: `${first} ${last}`, extra: tid ? `Ticket ${tid.toUpperCase()}` : "" },
       { step: "pass", label: "Pass", value: isSpeaker ? "Speaker" : tierLabel(tier), badge: lockedTier ? (isSpeaker ? "All access" : "Verified") : "" },
       { step: "days", label: "Days", value: days.filter((d) => form.days.includes(d.key)).map((d) => `${d.label} (${shortDate(d.date)})`).join(" & ") },
-      { step: "experiences", label: "Experiences", value: chosenOptions.length ? allowed.filter((o) => chosenOptions.includes(o.key)).map((o) => (o.day && !/day \d/i.test(o.label) ? `${o.label} (${dayLabel(o.day)})` : o.label)).join(", ") : "None selected" },
+      { step: "experiences", label: "Experiences", value: experiences },
       { step: "dietary", label: "Dietary", value: dietLabels.length ? dietLabels.join(", ") : "Not specified", extra: [form.accessibility.trim() && "Accessibility note added", form.email.trim()].filter(Boolean).join(" · ") },
     ];
     body = (
@@ -942,7 +1056,25 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-text-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; background: none; border: 0; padding: 4px 0; color: #ffb3d1; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
 .rsvp-text-btn:hover { color: #fff; }
 .rsvp-text-btn:focus-visible { outline: 2px solid #e8458b; outline-offset: 3px; border-radius: 6px; }
-.rsvp-text-btn-top { margin: -8px 0 12px; }
+
+/* Experiences: one group per day, so a long list stays easy to scan. */
+.rsvp-exp-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -6px 0 14px; }
+.rsvp-exp-bar .rsvp-text-btn { margin: 0; }
+.rsvp-exp-count { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8); font-variant-numeric: tabular-nums; }
+.rsvp-group + .rsvp-group { margin-top: 20px; }
+.rsvp-group-head { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; min-height: 28px; }
+.rsvp-group-day { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase; color: #fff; white-space: nowrap; }
+.rsvp-group-date { font-size: 13px; font-weight: 700; color: #ffd9a0; white-space: nowrap; }
+.rsvp-group-line { flex: 1; min-width: 12px; height: 1px; background: linear-gradient(90deg, rgba(232,69,139,0.7), rgba(122,63,209,0.35) 60%, rgba(255,255,255,0)); }
+.rsvp-group-count { font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.82); font-variant-numeric: tabular-nums; }
+.rsvp-group-all { height: 26px; padding: 0 11px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #ffb3d1;
+  font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: border-color .2s, background .2s, color .2s; }
+.rsvp-group-all:hover { color: #fff; border-color: #e8458b; background: rgba(232,69,139,0.16); }
+.rsvp-group-all:focus-visible { outline: 2px solid #e8458b; outline-offset: 2px; }
+.rsvp-exp { padding: 13px 15px; gap: 12px; border-radius: 16px; }
+.rsvp-exp .rsvp-choice-title { font-size: 15px; }
+.rsvp-exp .rsvp-choice-desc { font-size: 12.5px; }
+.rsvp-stack + .rsvp-error, .rsvp-groups + .rsvp-error, .rsvp-groups + .rsvp-hint { margin-top: 14px; }
 .rsvp-empty { padding: 18px; border-radius: 18px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); line-height: 1.6; font-size: 14.5px; }
 .rsvp-empty p { margin: 0; }
 
@@ -952,6 +1084,9 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-summary dt { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; color: rgba(255,255,255,0.7); padding-top: 2px; font-family: 'Orbitron', sans-serif; font-size: 10px; }
 .rsvp-summary dd { margin: 0; min-width: 0; }
 .rsvp-summary-value { display: block; font-weight: 600; font-size: 14.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.rsvp-summary-group { display: grid; grid-template-columns: 64px 1fr; align-items: baseline; }
+.rsvp-summary-group + .rsvp-summary-group { margin-top: 6px; }
+.rsvp-summary-day { font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #ffd9a0; }
 .rsvp-summary-extra { display: block; font-size: 12.5px; color: rgba(255,255,255,0.74); margin-top: 3px; overflow-wrap: anywhere; }
 .rsvp-edit { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.05);
   color: #fff; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color .2s, background .2s; }

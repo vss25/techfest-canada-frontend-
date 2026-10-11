@@ -4,7 +4,9 @@ export default function TicketBar() {
   const location = useLocation();
   
   // No "Get your pass" bar where people already have one (their emailed profile link).
-  if (location.pathname === "/tickets" || location.pathname === "/complete-profile" || location.pathname === "/app-login" || location.pathname === "/rsvp") {
+  // The router matches paths ignoring case and a trailing slash (/RSVP, /rsvp/ open the RSVP page), so compare the same way.
+  const path = location.pathname.replace(/\/+$/, "").toLowerCase() || "/";
+  if (path === "/tickets" || path === "/complete-profile" || path === "/app-login" || path === "/rsvp") {
     return null;
   }
 

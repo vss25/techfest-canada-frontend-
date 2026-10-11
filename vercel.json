@@ -1,7 +1,7 @@
 {
   "headers": [
     {
-      "source": "/rsvp",
+      "source": "/:path([Rr][Ss][Vv][Pp]/?)",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     }
   ],

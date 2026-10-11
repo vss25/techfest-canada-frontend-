@@ -32,6 +32,12 @@ const DOORS = { day1: "Registration opens 8:00 AM.", day2: "Registration opens 8
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const NONE = { kind: "none", verified: false };
 const article = (label) => (/^[aeiou]/i.test(label) ? "an" : "a");
+// Ticket IDs are read the way the backend reads them (normalizeTicketId), so "APX 654321" and "apx654321" are one lookup.
+const normTicket = (s) => String(s || "").trim().replace(/^TECHFEST:/i, "").replace(/\s+/g, "").toLowerCase();
+const TICKET_MIN = 6; // shorter than any real ticket ID: a half-typed one is never looked up
+const WAIT_NAME = 600; // ms after they stop typing a name
+const WAIT_TICKET = 1200; // ticket IDs are often copied from another screen, a few characters at a time
+const endStop = (s) => (/[.!?]$/.test(s) ? s : `${s}.`);
 
 const shortDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 const longDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
@@ -182,14 +188,20 @@ export default function Rsvp() {
     firstName: "", lastName: "", ticketId: "", email: "", tier: "", days: [], options: [], dietary: [], dietaryOther: "", accessibility: "",
   });
   const [errors, setErrors] = useState({});
-  const [lookup, setLookup] = useState({ key: "", checking: false, result: NONE });
+  const [answers, setAnswers] = useState({}); // lookup key → what the server said, so nothing is asked twice
+  const [failures, setFailures] = useState({}); // lookup key → "limited" (429) or "failed"
+  const [rush, setRush] = useState(""); // a lookup key to ask about now, without waiting for a typing pause
+  const [queued, setQueued] = useState(false); // Continue pressed while we were still looking them up
   const [answer, setAnswer] = useState({ key: "", choice: "" }); // "Is this right?" for an unverified match
   const [returnToReview, setReturnToReview] = useState(false);
+  const [editBase, setEditBase] = useState([]); // experiences on offer when they went back from Review to edit
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [saved, setSaved] = useState(null);
   const stepRef = useRef(null);
   const primaryRef = useRef(null);
+  const inflightRef = useRef(new Set());
+  const lastTicketRef = useRef("");
 
   /* Hidden page: keep it out of search engines, and give it a quiet title. */
   useEffect(() => {
@@ -213,38 +225,60 @@ export default function Rsvp() {
     return () => ctrl.abort();
   }, [catalogNonce]);
 
-  /* Who is this? Ask ~600 ms after they stop typing, once both names (or a ticket ID + last name) are in. */
+  /* Who is this? Ask once both names (or a whole ticket ID + last name) are in and they pause typing
+     (longer for the ticket ID), or straight away when they leave the ticket field or press Continue.
+     The backend limits lookups per name and per network, so each answer is kept and a ticket ID
+     is only sent once it's long enough to be a whole one. */
   const first = form.firstName.trim();
   const last = form.lastName.trim();
   const tid = form.ticketId.trim();
-  const lookupKey = (first && last.length >= 2) || (tid && last.length >= 2) ? `${first}|${last}|${tid}`.toLowerCase() : "";
+  const ticketKey = normTicket(tid);
+  const ticketReady = ticketKey.length >= TICKET_MIN;
+  const lookupKey = last.length >= 2 && (first || ticketReady) ? `${first}|${last}|${ticketReady ? ticketKey : ""}`.toLowerCase() : "";
   useEffect(() => {
-    if (!lookupKey) return undefined;
-    const ctrl = new AbortController();
+    if (!lookupKey || answers[lookupKey] || failures[lookupKey] === "limited" || inflightRef.current.has(lookupKey)) return undefined;
+    const key = lookupKey;
+    const body = { firstName: first, lastName: last, ticketId: ticketReady ? tid : "" };
+    const ticketPart = ticketReady ? ticketKey : "";
+    // Longer while the ticket ID is what's changing (since the last lookup we actually sent).
+    const wait = rush === key ? 0 : ticketPart !== lastTicketRef.current ? WAIT_TICKET : WAIT_NAME;
     const timer = setTimeout(async () => {
-      setLookup((l) => ({ ...l, checking: true }));
-      let result = NONE;
+      lastTicketRef.current = ticketPart;
+      inflightRef.current.add(key);
+      setFailures((f) => (f[key] ? { ...f, [key]: "" } : f));
+      let result = null;
+      let failed = "failed";
       try {
         const res = await fetch(`${API}/rsvp/lookup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ firstName: first, lastName: last, ticketId: tid, _hp: guard.meta()._hp }),
-          signal: ctrl.signal,
+          body: JSON.stringify({ ...body, _hp: guard.meta()._hp }),
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data && typeof data.kind === "string") result = data;
-      } catch (err) {
-        if (err?.name === "AbortError") return;
-      }
-      setLookup({ key: lookupKey, checking: false, result });
-    }, 600);
-    return () => { clearTimeout(timer); ctrl.abort(); };
-    // guard.meta reads a ref; first/last/tid are inside lookupKey
+        else if (res.status === 429) failed = "limited";
+      } catch { /* offline: handled below like any other failure */ }
+      inflightRef.current.delete(key);
+      // Kept under its own key, so a late answer can never land on what they've typed since.
+      if (result) setAnswers((a) => ({ ...a, [key]: result }));
+      else setFailures((f) => ({ ...f, [key]: failed }));
+    }, wait);
+    return () => clearTimeout(timer);
+    // guard.meta reads a ref; first/last/tid are inside lookupKey; answers/failures are read when the key changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lookupKey]);
+  }, [lookupKey, rush]);
 
-  const found = lookupKey && lookup.key === lookupKey ? lookup.result : NONE;
-  const checking = !!lookupKey && (lookup.checking || lookup.key !== lookupKey);
+  const answered = lookupKey ? answers[lookupKey] : undefined;
+  const failure = lookupKey && !answered ? failures[lookupKey] || "" : "";
+  // If a lookup is refused (too many) or fails, keep the last answer we had for this last name rather than forgetting them.
+  const kept = useMemo(() => {
+    if (!failure) return NONE;
+    const lastKey = last.toLowerCase();
+    const prev = Object.entries(answers).reverse().find(([k]) => k.split("|")[1] === lastKey);
+    return prev ? prev[1] : NONE;
+  }, [failure, answers, last]);
+  const found = answered || kept;
+  const checking = !!lookupKey && !answered && !failure;
   const lockedTier = found.verified && (found.kind === "ticket" || found.kind === "speaker") ? found.tier : "";
   const isSpeaker = found.kind === "speaker";
   const foundKey = `${found.kind}:${found.tier || ""}:${found.verified}`;
@@ -258,7 +292,11 @@ export default function Rsvp() {
   const allowed = useMemo(() => options.filter((o) => o.kind === "experience" && o.tiers.includes(tier) && (!o.day || form.days.includes(o.day))), [options, tier, form.days]);
   const chosenOptions = allowed.filter((o) => form.options.includes(o.key)).map((o) => o.key);
 
-  const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setErrors((e) => (e[k] ? { ...e, [k]: "" } : e)); };
+  const set = (k, v) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    setErrors((e) => (e[k] ? { ...e, [k]: "" } : e));
+    if (k === "firstName" || k === "lastName" || k === "ticketId") setQueued(false); // still typing: don't move on by itself
+  };
   const toggle = (k, v) => setForm((f) => ({ ...f, [k]: f[k].includes(v) ? f[k].filter((x) => x !== v) : [...f[k], v] }));
   const toggleDiet = (v) => setForm((f) => {
     let next = f.dietary.includes(v) ? f.dietary.filter((x) => x !== v) : [...f.dietary, v];
@@ -272,24 +310,44 @@ export default function Rsvp() {
     setDir(to > step ? 1 : -1);
     setStep(to);
     setSubmitError("");
+    setQueued(false);
   }, [step]);
   const goName = (n) => go(STEPS.indexOf(n));
 
-  /* Check the current question; returns true when they can move on. */
-  const check = () => {
+  /* What's missing or wrong on one question ({} when it's fine). */
+  const problems = (n) => {
     const e = {};
-    if (name === "name") {
+    if (n === "name") {
       if (!first) e.firstName = "Please enter your first name";
       if (!last) e.lastName = "Please enter your last name";
     }
-    if (name === "pass" && !tier) e.tier = "Choose your pass";
-    if (name === "days" && !form.days.length) e.days = "Choose at least one day";
-    if (name === "dietary") {
+    if (n === "pass" && !tier) e.tier = "Choose your pass";
+    if (n === "days" && !form.days.length) e.days = "Choose at least one day";
+    if (n === "dietary") {
       if (form.dietary.includes("other") && !form.dietaryOther.trim()) e.dietaryOther = "Tell us what you need";
       if (form.email.trim() && !EMAIL_RE.test(form.email.trim())) e.email = "That email doesn't look right";
     }
+    return e;
+  };
+  const hasProblems = (n) => Object.values(problems(n)).some(Boolean);
+  const focusInvalid = () => requestAnimationFrame(() => stepRef.current?.querySelector("[aria-invalid='true'], [data-invalid='true'] input")?.focus());
+  /* Check the current question; returns true when they can move on. */
+  const check = () => {
+    const e = problems(name);
     setErrors(e);
     return !Object.values(e).some(Boolean);
+  };
+  /* Review only ever shows (and sends) a complete RSVP: anything missing sends them to that question first. */
+  const firstBad = () => FORM_STEPS.find((n) => n !== "review" && hasProblems(n));
+  const fix = (bad) => {
+    setErrors(problems(bad));
+    if (name === "review") setEditBase(allowed.map((o) => o.key));
+    setReturnToReview(true);
+    if (bad === name) focusInvalid(); else goName(bad);
+  };
+  const toReview = () => {
+    const bad = firstBad();
+    if (bad) fix(bad); else goName("review");
   };
 
   const submit = async () => {
@@ -308,7 +366,8 @@ export default function Rsvp() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.message || data?.error || "We couldn't save your RSVP.");
-      setSaved(data);
+      // What was sent, so the thank-you screen and calendar file show exactly what was saved.
+      setSaved({ ...data, sent: { days: form.days, options: chosenOptions } });
       setReturnToReview(false);
       go(STEPS.indexOf("success"));
     } catch (err) {
@@ -320,19 +379,45 @@ export default function Rsvp() {
 
   const next = () => {
     if (name === "welcome") { if (catalog) go(1); return; }
-    if (name === "review") { if (!submitting) submit(); return; }
-    if (!check()) {
-      requestAnimationFrame(() => stepRef.current?.querySelector("[aria-invalid='true'], [data-invalid='true'] input")?.focus());
+    // Their pass may still be on its way back from the lookup: wait for it (asking now) rather than move on or send without it.
+    if (checking && (name === "name" || name === "review")) {
+      if (name === "name" && !check()) { focusInvalid(); return; }
+      setRush(lookupKey);
+      setQueued(true);
       return;
     }
-    if (returnToReview) { go(STEPS.indexOf("review")); return; }
+    if (name === "review") {
+      if (submitting) return;
+      const bad = firstBad();
+      if (bad) fix(bad); else submit();
+      return;
+    }
+    if (!check()) { focusInvalid(); return; }
+    // Keep the pass they confirmed, so a later lookup (or a refused one) can't leave the RSVP without one.
+    if (name === "pass" && PASS_ORDER.includes(tier) && form.tier !== tier) set("tier", tier);
+    if (returnToReview) {
+      // New days, a new pass or a newly verified ticket can open experiences they haven't been asked about.
+      if (name !== "experiences" && allowed.some((o) => !editBase.includes(o.key))) { goName("experiences"); return; }
+      toReview();
+      return;
+    }
     go(step + 1);
   };
+  // While editing from Review the arrow means "back to review", with the same checks as the main button.
   const back = () => {
-    if (returnToReview && name !== "review") { go(STEPS.indexOf("review")); return; }
+    if (returnToReview && name !== "review") { next(); return; }
     go(Math.max(0, step - 1));
   };
-  const edit = (n) => { setReturnToReview(true); goName(n); };
+  const edit = (n) => { setEditBase(allowed.map((o) => o.key)); setReturnToReview(true); goName(n); };
+
+  /* Continue was pressed mid-lookup: carry on as soon as the answer (or a refusal) is in. */
+  useEffect(() => {
+    if (!queued || checking) return;
+    setQueued(false);
+    next();
+    // next is rebuilt every render; this only needs to run when the lookup settles
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queued, checking]);
 
   /* Enter moves on (except in text areas and on buttons, which act themselves). */
   const onKeyDown = (e) => {
@@ -342,6 +427,8 @@ export default function Rsvp() {
     e.preventDefault();
     if (name !== "success") next();
   };
+
+  const focusPrimary = () => requestAnimationFrame(() => primaryRef.current?.focus());
 
   /* When a question arrives, put the cursor in its first field. */
   const focusFirst = () => {
@@ -361,8 +448,10 @@ export default function Rsvp() {
     exit: (d) => (reduce ? { opacity: 0 } : { opacity: 0, x: d * -48, filter: "blur(10px)" }),
   };
 
+  const sentDays = saved?.sent?.days || form.days;
+  const sentOptions = saved?.sent?.options || chosenOptions;
   const downloadIcs = () => {
-    const blob = new Blob([buildIcs({ days: form.days, options: chosenOptions, catalog })], { type: "text/calendar;charset=utf-8" });
+    const blob = new Blob([buildIcs({ days: sentDays, options: sentOptions, catalog })], { type: "text/calendar;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -374,7 +463,7 @@ export default function Rsvp() {
   };
 
   const dayLabel = (k) => days.find((d) => d.key === k)?.label || k;
-  const firstDay = days.find((d) => form.days.includes(d.key));
+  const firstDay = days.find((d) => sentDays.includes(d.key));
   const titleId = `rsvp-${name}-title`;
 
   /* ---------- One screen per question ---------- */
@@ -418,7 +507,8 @@ export default function Rsvp() {
         </div>
         <Field id="rsvp-ticket" label="Ticket ID" optional hint="On your ticket email / pass QR. It lets us confirm your pass.">
           <input id="rsvp-ticket" className="rsvp-input rsvp-mono" autoComplete="off" autoCapitalize="characters" spellCheck={false}
-            value={form.ticketId} onChange={(e) => set("ticketId", e.target.value)} maxLength={64} aria-describedby="rsvp-ticket-hint" placeholder="e.g. A1B2C3D4E5F6" />
+            value={form.ticketId} onChange={(e) => set("ticketId", e.target.value)} onBlur={() => { if (checking) setRush(lookupKey); }}
+            maxLength={64} aria-describedby="rsvp-ticket-hint" placeholder="e.g. A1B2C3D4E5F6" />
         </Field>
         <div className="rsvp-lookup" aria-live="polite" aria-atomic="true">
           <AnimatePresence mode="wait" initial={false}>
@@ -444,11 +534,16 @@ export default function Rsvp() {
                 </span>
                 {choice !== "yes" && (
                   <span className="rsvp-chip-actions">
-                    <button type="button" className="rsvp-mini" onClick={() => { setAnswer({ key: foundKey, choice: "yes" }); set("tier", found.tier); }}>Yes</button>
-                    <button type="button" className="rsvp-mini rsvp-mini-ghost" onClick={() => { setAnswer({ key: foundKey, choice: "no" }); if (form.tier === found.tier) set("tier", ""); }}>No</button>
+                    <button type="button" className="rsvp-mini" onClick={() => { setAnswer({ key: foundKey, choice: "yes" }); set("tier", found.tier); focusPrimary(); }}>Yes</button>
+                    <button type="button" className="rsvp-mini rsvp-mini-ghost" onClick={() => { setAnswer({ key: foundKey, choice: "no" }); if (form.tier === found.tier) set("tier", ""); focusPrimary(); }}>No</button>
                   </span>
                 )}
               </motion.div>
+            ) : failure ? (
+              <motion.p key="failed" className="rsvp-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {failure === "limited" ? "We can't check your pass right now (too many tries)." : "We couldn't check your pass just now."}{" "}
+                You can still continue and choose it on the next step; we'll confirm it when you send.
+              </motion.p>
             ) : tid && found.ticketMatched === false ? (
               <motion.p key="nomatch" className="rsvp-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 We couldn't match that ticket ID with your last name. That's fine, you can still continue.
@@ -546,6 +641,7 @@ export default function Rsvp() {
                     <span className="rsvp-choice-title">
                       {o.label}
                       {day && !/day \d/i.test(o.label) && <span className="rsvp-tag">{day.label} · {shortDate(day.date)}</span>}
+                      {returnToReview && !editBase.includes(o.key) && <span className="rsvp-tag rsvp-tag-new">New</span>}
                     </span>
                     <span className="rsvp-choice-desc">{o.description}</span>
                     {o.note && <span className="rsvp-note">{o.note}</span>}
@@ -632,7 +728,7 @@ export default function Rsvp() {
             <span>
               {submitError.includes(ENQUIRE)
                 ? submitError.split(ENQUIRE).map((part, i) => (i ? [<a key={i} className="rsvp-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a>, part] : part))
-                : <>{submitError} Please try again, or email <a className="rsvp-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a>.</>}
+                : <>{endStop(submitError)} Please try again, or email <a className="rsvp-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a>.</>}
             </span>
           </p>
         )}
@@ -644,11 +740,11 @@ export default function Rsvp() {
       <div className="rsvp-success">
         <Celebration />
         <StepHeader id={titleId} eyebrow={saved?.updated ? "RSVP updated" : "RSVP received"} title={`See you on ${when}`}
-          sub={`Thanks, ${first}. ${saved?.updated ? "We've updated your RSVP." : "Your RSVP is in."} ${form.days.length > 1 ? "Both days are" : `${dayLabel(form.days[0])} is`} on your list.`} />
+          sub={`Thanks, ${first}. ${saved?.updated ? "We've updated your RSVP." : "Your RSVP is in."} ${sentDays.length > 1 ? "Both days are" : `${dayLabel(sentDays[0])} is`} on your list.`} />
         <div className="rsvp-success-chips">
           <span className="rsvp-tag rsvp-tag-lg">{saved?.tierLabel || tierLabel(tier) || "Speaker"}</span>
-          {form.days.map((d) => <span key={d} className="rsvp-tag rsvp-tag-lg">{dayLabel(d)}</span>)}
-          {chosenOptions.length > 0 && <span className="rsvp-tag rsvp-tag-lg">{chosenOptions.length} experience{chosenOptions.length === 1 ? "" : "s"}</span>}
+          {sentDays.map((d) => <span key={d} className="rsvp-tag rsvp-tag-lg">{dayLabel(d)}</span>)}
+          {sentOptions.length > 0 && <span className="rsvp-tag rsvp-tag-lg">{sentOptions.length} experience{sentOptions.length === 1 ? "" : "s"}</span>}
         </div>
         <button type="button" className="rsvp-btn" onClick={downloadIcs} data-autofocus>
           <CalendarPlus size={18} aria-hidden="true" /> Add to calendar
@@ -662,6 +758,7 @@ export default function Rsvp() {
 
   const showNav = name !== "success";
   const nextLabel = name === "welcome" ? "RSVP now" : name === "review" ? (submitting ? "Sending…" : "Send my RSVP") : returnToReview ? "Back to review" : "Continue";
+  const busy = submitting || queued || (name === "welcome" && !catalog && !catalogError);
 
   return (
     <div className="rsvp-root">
@@ -704,10 +801,10 @@ export default function Rsvp() {
                 </button>
               )}
               <button type="button" ref={primaryRef} className="rsvp-btn" onClick={next}
-                disabled={(name === "welcome" && !catalog) || submitting} aria-busy={submitting || (name === "welcome" && !catalog && !catalogError) || undefined}>
-                {(submitting || (name === "welcome" && !catalog && !catalogError)) && <Loader2 size={18} className="rsvp-spin" aria-hidden="true" />}
+                disabled={(name === "welcome" && !catalog) || submitting} aria-busy={busy || undefined}>
+                {busy && <Loader2 size={18} className="rsvp-spin" aria-hidden="true" />}
                 {nextLabel}
-                {!submitting && name !== "review" && <ArrowRight size={18} aria-hidden="true" />}
+                {!busy && name !== "review" && <ArrowRight size={18} aria-hidden="true" />}
               </button>
             </div>
           )}
@@ -734,8 +831,9 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-card {
   position: relative; z-index: 1; width: 100%; max-width: 560px;
   border-radius: 28px; padding: 26px 26px 24px;
-  background: linear-gradient(160deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.04) 55%, rgba(255,255,255,0.06) 100%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%); backdrop-filter: blur(24px) saturate(150%);
+  /* A dark glass base: the aurora's brightest magenta drifts behind the text, and small text has to stay readable over it. */
+  background: linear-gradient(160deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.04) 100%), rgba(10,4,24,0.5);
+  -webkit-backdrop-filter: blur(24px) saturate(130%); backdrop-filter: blur(24px) saturate(130%);
   border: 1px solid rgba(255,255,255,0.13);
   box-shadow: 0 30px 90px rgba(3,0,12,0.55), inset 0 1px 0 rgba(255,255,255,0.14);
   transition: box-shadow .35s ease;
@@ -752,27 +850,27 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-progress-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
 .rsvp-progress { flex: 1; height: 5px; border-radius: 99px; background: rgba(255,255,255,0.09); overflow: hidden; }
 .rsvp-progress-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #7a3fd1, #e8458b, #f5a623); box-shadow: 0 0 14px rgba(232,69,139,0.6); }
-.rsvp-progress-text { font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: 1px; color: rgba(255,255,255,0.6); font-variant-numeric: tabular-nums; }
+.rsvp-progress-text { font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: 1px; color: rgba(255,255,255,0.8); font-variant-numeric: tabular-nums; }
 
 .rsvp-step { outline: none; }
 .rsvp-head { margin-bottom: 20px; }
-.rsvp-eyebrow { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; color: #f5a623; margin: 0 0 10px; }
+.rsvp-eyebrow { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; color: #ffc56b; margin: 0 0 10px; }
 .rsvp-title { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: clamp(1.45rem, 5.4vw, 2rem); line-height: 1.15; letter-spacing: -0.3px; margin: 0;
   background: linear-gradient(100deg, #fff 30%, #f6d0ff 70%, #ffd9a0); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.rsvp-sub { margin: 10px 0 0; color: rgba(255,255,255,0.72); font-size: 15px; line-height: 1.6; }
+.rsvp-sub { margin: 10px 0 0; color: rgba(255,255,255,0.82); font-size: 15px; line-height: 1.6; }
 
 .rsvp-spark { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 18px;
   background: linear-gradient(135deg, rgba(122,63,209,0.5), rgba(232,69,139,0.45)); border: 1px solid rgba(255,255,255,0.2);
   box-shadow: 0 10px 30px rgba(232,69,139,0.35); color: #fff; }
 .rsvp-facts { list-style: none; padding: 0; margin: 4px 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .rsvp-facts li { border-radius: 14px; padding: 12px; background: rgba(6,2,15,0.35); border: 1px solid rgba(255,255,255,0.09); font-size: 13px; font-weight: 600; line-height: 1.35; }
-.rsvp-facts span { display: block; font-family: 'Orbitron', sans-serif; font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 6px; font-weight: 700; }
+.rsvp-facts span { display: block; font-family: 'Orbitron', sans-serif; font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255,255,255,0.7); margin-bottom: 6px; font-weight: 700; }
 
 .rsvp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .rsvp-stack { display: flex; flex-direction: column; gap: 10px; }
 .rsvp-field { margin-bottom: 14px; }
 .rsvp-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; color: rgba(255,255,255,0.9); }
-.rsvp-optional { color: rgba(255,255,255,0.5); font-weight: 500; }
+.rsvp-optional { color: rgba(255,255,255,0.7); font-weight: 500; }
 .rsvp-input { width: 100%; height: 52px; border-radius: 14px; padding: 0 16px; font: inherit; font-size: 16px; color: #fff;
   background: rgba(6,2,15,0.5); border: 1px solid rgba(255,255,255,0.15); outline: none; transition: border-color .2s, box-shadow .2s, background .2s; }
 .rsvp-input::placeholder { color: rgba(255,255,255,0.32); }
@@ -781,7 +879,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-input[aria-invalid="true"] { border-color: #ff7a8a; }
 .rsvp-textarea { height: auto; min-height: 88px; padding: 13px 16px; resize: vertical; line-height: 1.5; }
 .rsvp-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.5px; }
-.rsvp-hint { margin: 7px 0 0; font-size: 12.5px; color: rgba(255,255,255,0.58); line-height: 1.5; }
+.rsvp-hint { margin: 7px 0 0; font-size: 12.5px; color: rgba(255,255,255,0.76); line-height: 1.5; }
 .rsvp-error { display: flex; gap: 6px; align-items: center; margin: 7px 0 0; font-size: 13px; color: #ff9aa8; }
 .rsvp-error-block { align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: rgba(255,90,110,0.1); border: 1px solid rgba(255,120,140,0.3); margin-top: 16px; line-height: 1.5; }
 .rsvp-error-block svg { flex: none; margin-top: 2px; }
@@ -790,7 +888,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-sr { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
 
 .rsvp-lookup { min-height: 48px; }
-.rsvp-checking { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.6); margin: 4px 0 0; }
+.rsvp-checking { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.78); margin: 4px 0 0; }
 .rsvp-chip { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; font-size: 14.5px; line-height: 1.45;
   background: linear-gradient(120deg, rgba(122,63,209,0.32), rgba(232,69,139,0.26)); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(122,63,209,0.25); }
 .rsvp-chip strong { font-weight: 700; color: #ffd9a0; }
@@ -815,10 +913,11 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-pass[data-checked] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 12px 36px rgba(232,69,139,0.22); }
 .rsvp-choice-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .rsvp-choice-title { font-weight: 700; font-size: 15.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.rsvp-choice-desc { font-size: 13px; color: rgba(255,255,255,0.66); line-height: 1.5; }
+.rsvp-choice-desc { font-size: 13px; color: rgba(255,255,255,0.76); line-height: 1.5; }
 .rsvp-note { font-size: 12px; font-weight: 700; color: #ffd27a; }
 .rsvp-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; padding: 3px 9px; border-radius: 99px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.14); }
 .rsvp-tag-lg { font-size: 13px; padding: 6px 12px; }
+.rsvp-tag-new { color: #ffd27a; background: rgba(255,210,122,0.14); border-color: rgba(255,210,122,0.45); }
 .rsvp-lock { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px; color: #1a0b2e; background: linear-gradient(90deg, #ffd27a, #f5a623); margin-left: 8px; }
 .rsvp-choice-title .rsvp-lock { margin-left: 0; }
 
@@ -850,10 +949,10 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-summary { margin: 0; border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,0.12); background: rgba(6,2,15,0.35); }
 .rsvp-summary-row { display: grid; grid-template-columns: 96px 1fr auto; gap: 12px; align-items: start; padding: 14px 16px; }
 .rsvp-summary-row + .rsvp-summary-row { border-top: 1px solid rgba(255,255,255,0.08); }
-.rsvp-summary dt { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; color: rgba(255,255,255,0.5); padding-top: 2px; font-family: 'Orbitron', sans-serif; font-size: 10px; }
+.rsvp-summary dt { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; color: rgba(255,255,255,0.7); padding-top: 2px; font-family: 'Orbitron', sans-serif; font-size: 10px; }
 .rsvp-summary dd { margin: 0; min-width: 0; }
 .rsvp-summary-value { display: block; font-weight: 600; font-size: 14.5px; line-height: 1.5; overflow-wrap: anywhere; }
-.rsvp-summary-extra { display: block; font-size: 12.5px; color: rgba(255,255,255,0.55); margin-top: 3px; overflow-wrap: anywhere; }
+.rsvp-summary-extra { display: block; font-size: 12.5px; color: rgba(255,255,255,0.74); margin-top: 3px; overflow-wrap: anywhere; }
 .rsvp-edit { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.05);
   color: #fff; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color .2s, background .2s; }
 .rsvp-edit:hover { border-color: #e8458b; background: rgba(232,69,139,0.14); }
@@ -884,7 +983,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-ring { position: absolute; inset: 0; border-radius: 99px; border: 2px solid rgba(255,210,122,0.8); }
 .rsvp-success-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
 
-.rsvp-foot { position: relative; z-index: 1; margin: 20px 0 0; font-size: 13px; color: rgba(255,255,255,0.55); text-align: center; }
+.rsvp-foot { position: relative; z-index: 1; margin: 20px 0 0; font-size: 13px; color: rgba(255,255,255,0.75); text-align: center; }
 
 @media (max-width: 480px) {
   .rsvp-root { justify-content: flex-start; padding: 18px 16px 28px; }

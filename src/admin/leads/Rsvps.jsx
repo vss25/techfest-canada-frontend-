@@ -17,16 +17,32 @@ import { when } from "../format";
    One row per person; re-submitting updates it. The pass is worked out by
    the server: a ticket ID + last name or a speaker name is "verified",
    anything else is what the person picked ("unverified").
-   Days, experiences and dietary options come from GET /api/rsvp/options,
-   the same list the website uses (services/rsvp.js in the backend). */
+   Days, experiences and dietary options are the same list the website uses
+   (services/rsvp.js in the backend). Read from the staff list's `catalog`
+   when the backend sends it (it keeps working while the kill switch has the
+   public site, GET /api/rsvp/options included, switched off); otherwise from
+   GET /api/rsvp/options, and failing that from the summary's own keys. */
 
 const PAGE = 50;
 const TIER_TONE = { connect: "neutral", influence: "pink", power: "orange", apex: "purple", speaker: "good" };
 // Short names for the headcount tiles (the full names are in the list).
 const SHORT = { gala: "Gala dinner", awards: "Awards night", meetings: "Pre-matched meetings", lounge: "Scotch lounge (19+)" };
 
-function useCatalog() {
-  const { data } = useApi("/rsvp/options");
+/** The catalog's shape, from the summary's own keys: raw names, but every count still shows. */
+const catalogFromSummary = (s) => s && {
+  options: Object.keys(s.counts || {}).map((key) => ({ key, kind: /^day\d+$/.test(key) ? "day" : "experience", label: key })),
+  tiers: Object.keys(s.tiers || {}).map((key) => ({ key, label: key })),
+  dietary: Object.keys(s.dietary || {}).map((key) => ({ key, label: key })),
+  days: [],
+};
+
+/** Days, experiences, passes and dietary options. `list` is the GET /console/rsvps response. */
+function useCatalog(list) {
+  // A backend that doesn't send `catalog` yet: ask the public endpoint, and if that's refused
+  // (the kill switch), fall back to the summary's keys so the headcounts never disappear.
+  const sent = list?.catalog;
+  const { data: pub, error: pubError } = useApi(list && !sent ? "/rsvp/options" : null);
+  const data = sent || pub || (pubError ? catalogFromSummary(list?.summary) : null);
   const options = data?.options || [];
   const days = data?.days || [];
   const tiers = data?.tiers || [];
@@ -146,7 +162,6 @@ function RsvpDrawer({ id, onClose, cat }) {
 export default function Rsvps() {
   const { isManagement } = useAdmin();
   const toast = useToast();
-  const cat = useCatalog();
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState(params.get("q") || "");
   const [exporting, setExporting] = useState(false);
@@ -165,6 +180,7 @@ export default function Rsvps() {
   const qs = new URLSearchParams(view);
   qs.set("page", String(page));
   const { data, error, loading, reload, refreshing } = useApi(`/console/rsvps?${qs}`);
+  const cat = useCatalog(data);
 
   const update = (next) => {
     const p = new URLSearchParams(params);

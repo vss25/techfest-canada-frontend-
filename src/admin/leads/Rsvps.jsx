@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AlertTriangle, BadgeCheck, CalendarCheck, ChevronLeft, ChevronRight, Coffee, Download, GitMerge, Handshake, Info, PartyPopper,
-  Presentation, Search, Split, Store, Trophy, Utensils, Wine,
+  Presentation, Search, Split, Store, Trash2, Trophy, Utensils, Wine,
 } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { ADMIN_API, api, getToken } from "../api";
@@ -206,7 +206,18 @@ const RESOLVE = {
 
 function RsvpDrawer({ id, onClose, onOpen, onResolved, cat }) {
   const toast = useToast();
+  const { isManagement } = useAdmin();
   const [confirm, setConfirm] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const remove = async () => {
+    try {
+      await api.del(`/console/rsvps/${id}`);
+      toast.success("RSVP deleted");
+      setConfirmDelete(false);
+      onResolved();
+      onClose();
+    } catch (err) { toast.error(err); }
+  };
   const { data, error, loading, reload } = useApi(id ? `/console/rsvps/${id}` : null);
   // The row this drawer is for (not the previous one, still showing while it loads).
   const r = data?.rsvp?.id === id ? data.rsvp : null;
@@ -226,11 +237,16 @@ function RsvpDrawer({ id, onClose, onOpen, onResolved, cat }) {
       width="max-w-2xl"
       title={r?.name || (loading || !error ? "Loading…" : "RSVP")}
       description={r ? `${r.submissions > 1 ? `Updated ${r.submissions - 1}× · last ` : ""}${when(r.updatedAt)}` : ""}
-      footer={dup && (
+      footer={(dup || (isManagement && r)) && (
         <>
-          <Button variant="primary" icon={GitMerge} onClick={() => setConfirm("merge")}>Merge</Button>
-          <Button icon={Split} onClick={() => setConfirm("separate")}>Keep separate</Button>
-          <span className="text-xs text-ttfc-muted">Not in the headcounts until you choose.</span>
+          {isManagement && r && <Button variant="dangerOutline" icon={Trash2} onClick={() => setConfirmDelete(true)}>Delete</Button>}
+          <span className="flex-1" />
+          {dup && (
+            <>
+              <Button variant="primary" icon={GitMerge} onClick={() => setConfirm("merge")}>Merge</Button>
+              <Button icon={Split} onClick={() => setConfirm("separate")}>Keep separate</Button>
+            </>
+          )}
         </>
       )}
     >
@@ -296,6 +312,15 @@ function RsvpDrawer({ id, onClose, onOpen, onResolved, cat }) {
         body={RESOLVE[confirm]?.body}
         confirmLabel={RESOLVE[confirm]?.confirm}
         tone="primary"
+      />
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={remove}
+        title="Delete this RSVP?"
+        body={`${r?.name || "This RSVP"} will be removed from the list and the headcounts. This can't be undone.`}
+        confirmLabel="Delete RSVP"
+        tone="danger"
       />
     </Drawer>
   );

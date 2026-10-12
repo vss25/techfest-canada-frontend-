@@ -16,7 +16,8 @@ import { day } from "../format";
 
 const DAY = 864e5;
 const RESEND_DAYS = 3;
-const tierLabel = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "—");
+const TIER_NAMES = { speaker: "Speaker Pass" };
+const tierLabel = (t) => TIER_NAMES[t] || (t ? t.charAt(0).toUpperCase() + t.slice(1) : "—");
 const plural = (n, one, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
 const REASONS = {

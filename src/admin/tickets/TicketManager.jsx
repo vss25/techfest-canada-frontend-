@@ -16,7 +16,8 @@ import { CompTicketDrawer } from "./CompTicket";
 
 const PAGE = 100;
 const SAFE_NOTE = "This only hides tickets from staff lists and analytics. The owner's ticket stays valid in the app, on the website and at the door.";
-const tierLabel = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "—");
+const TIER_NAMES = { speaker: "Speaker Pass" }; // ghost tickets for speakers (Admin → Speaker passes)
+const tierLabel = (t) => TIER_NAMES[t] || (t ? t.charAt(0).toUpperCase() + t.slice(1) : "—");
 
 function Check({ checked, indeterminate, onChange, label }) {
   return (
@@ -91,7 +92,7 @@ function AttendeeDrawer({ row, onClose, onSaved, isManagement }) {
       open={!!row}
       onClose={close}
       title={[d?.salutation, row?.name].filter(Boolean).join(" ") || "No name"}
-      description={row ? `${tierLabel(row.tier)} pass · ${row.ticketId} · bought ${day(row.purchaseDate)}` : ""}
+      description={row ? `${tierLabel(row.tier)}${TIER_NAMES[row.tier] ? "" : " pass"} · ${row.ticketId} · bought ${day(row.purchaseDate)}` : ""}
       footer={row && (editing
         ? <><Button variant="primary" loading={saving} onClick={save}>Save</Button><Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button></>
         : <Button icon={Pencil} onClick={startEdit}>Edit details</Button>)}

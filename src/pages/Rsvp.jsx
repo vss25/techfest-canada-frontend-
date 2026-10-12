@@ -613,18 +613,18 @@ export default function Rsvp() {
       <>
         <StepHeader id={titleId} eyebrow="Step 1 · You" title="What's your name?" sub="As it appears on your ticket." />
         <div className="rsvp-grid2">
-          <Field id="rsvp-first" label="First name" error={errors.firstName}>
+          <Field id="rsvp-first" label="First Name" error={errors.firstName}>
             <input id="rsvp-first" className="rsvp-input" data-autofocus autoComplete="given-name" value={form.firstName}
               onChange={(e) => set("firstName", e.target.value)} maxLength={80} aria-invalid={!!errors.firstName || undefined}
               aria-describedby={errors.firstName ? "rsvp-first-error" : undefined} />
           </Field>
-          <Field id="rsvp-last" label="Last name" error={errors.lastName}>
+          <Field id="rsvp-last" label="Last Name" error={errors.lastName}>
             <input id="rsvp-last" className="rsvp-input" autoComplete="family-name" value={form.lastName}
               onChange={(e) => set("lastName", e.target.value)} maxLength={80} aria-invalid={!!errors.lastName || undefined}
               aria-describedby={errors.lastName ? "rsvp-last-error" : undefined} />
           </Field>
         </div>
-        <Field id="rsvp-ticket" label="Ticket ID" hint="On your ticket email or pass QR code." error={errors.ticketId}>
+        <Field id="rsvp-ticket" label="Ticket ID" hint="Find it on your ticket email or pass QR code." error={errors.ticketId}>
           <input id="rsvp-ticket" className="rsvp-input rsvp-mono" autoComplete="off" autoCapitalize="characters" spellCheck={false}
             value={form.ticketId} onChange={(e) => set("ticketId", e.target.value)} onBlur={() => { if (checking) setRush(lookupKey); }}
             maxLength={64} aria-invalid={!!errors.ticketId || undefined} aria-describedby={errors.ticketId ? "rsvp-ticket-error" : "rsvp-ticket-hint"}
@@ -706,7 +706,7 @@ export default function Rsvp() {
   } else if (name === "events") {
     body = (
       <>
-        <StepHeader id={titleId} eyebrow="Step 2 · Days & events" title="Which days are you coming?" sub="Pick one or both." />
+        <StepHeader id={titleId} eyebrow="Step 2 · Days & Events" title="Which days are you coming?" sub="Pick one or both." />
         <div className="rsvp-grid2" role="group" aria-labelledby={titleId} data-invalid={!!errors.days || undefined}>
           {days.map((d, i) => {
             const on = form.days.includes(d.key);
@@ -724,7 +724,7 @@ export default function Rsvp() {
             );
           })}
         </div>
-        <button type="button" className="rsvp-text-btn" onClick={() => { set("days", days.map((d) => d.key)); setErrors({}); }}>Both days</button>
+        <button type="button" className="rsvp-text-btn" onClick={() => { set("days", days.map((d) => d.key)); setErrors({}); }}>Both Days</button>
         {errors.days && <p className="rsvp-error" role="alert"><AlertCircle size={14} aria-hidden="true" /> {errors.days}</p>}
       </>
     );
@@ -738,14 +738,14 @@ export default function Rsvp() {
       <>
         {body}
         <div className="rsvp-events-head">
-          <h3 className="rsvp-events-title">Special events</h3>
-          <p className="rsvp-events-sub">{allowed.length ? `Included with your ${isSpeaker ? "speaker access" : tierLabel(tier) || "pass"}. Tick the ones you'll join, so we can plan seats and catering.` : ""}</p>
+          <h3 className="rsvp-events-title">Special Events</h3>
+          <p className="rsvp-events-sub">{allowed.length ? `Included with your ${isSpeaker ? "Speaker Pass" : tierLabel(tier) || "pass"}. Select the ones you'll attend, so we can plan seating and catering.` : ""}</p>
         </div>
         {allowed.length > 0 && (
           <div className="rsvp-exp-bar">
-            <span className="rsvp-exp-count" aria-live="polite">{chosenOptions.length ? `${chosenOptions.length} of ${allowed.length} ticked` : "Nothing ticked yet"}</span>
+            <span className="rsvp-exp-count" aria-live="polite">{chosenOptions.length ? `${chosenOptions.length} of ${allowed.length} selected` : "Nothing selected yet"}</span>
             <button type="button" className="rsvp-text-btn" onClick={() => pickOptions(allowed.map((o) => o.key), !all)}>
-              {all ? "Clear all" : "Select all"}
+              {all ? "Clear All" : "Select All"}
             </button>
           </div>
         )}
@@ -787,6 +787,7 @@ export default function Rsvp() {
                           {o.description && <span className="rsvp-choice-desc">{o.description}</span>}
                           {o.note && <span className="rsvp-note">{o.note}</span>}
                         </span>
+                        {o.time && <span className="rsvp-time">{o.time}</span>}
                       </motion.label>
                     );
                   })}
@@ -797,7 +798,7 @@ export default function Rsvp() {
         </div>
         {errors.options && <p className="rsvp-error" role="alert"><AlertCircle size={14} aria-hidden="true" /> {errors.options}</p>}
         {allowed.length > 0 && !chosenOptions.length && !errors.options && (
-          <p className="rsvp-hint">Only coming for the day? You can leave these unticked and just send your days.</p>
+          <p className="rsvp-hint">Only coming for the conference? Leave these unselected and just send your days.</p>
         )}
         {!allowed.length && (
           <div className="rsvp-empty">
@@ -826,14 +827,14 @@ export default function Rsvp() {
         <AnimatePresence initial={false}>
           {form.dietary.includes("other") && (
             <motion.div key="other" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
-              <Field id="rsvp-diet-other" label="Tell us more" error={errors.dietaryOther}>
+              <Field id="rsvp-diet-other" label="Tell Us More" error={errors.dietaryOther}>
                 <input id="rsvp-diet-other" className="rsvp-input" value={form.dietaryOther} maxLength={200}
                   onChange={(e) => set("dietaryOther", e.target.value)} placeholder="e.g. low FODMAP, no pork" aria-invalid={!!errors.dietaryOther || undefined} />
               </Field>
             </motion.div>
           )}
         </AnimatePresence>
-        <Field id="rsvp-access" label="Accessibility needs" optional hint="Anything that helps us make the day work for you.">
+        <Field id="rsvp-access" label="Accessibility Needs" optional hint="Anything that helps us make the day work for you.">
           <textarea id="rsvp-access" className="rsvp-input rsvp-textarea" rows={3} maxLength={600} value={form.accessibility}
             onChange={(e) => set("accessibility", e.target.value)} aria-describedby="rsvp-access-hint" />
         </Field>
@@ -893,7 +894,7 @@ export default function Rsvp() {
     body = (
       <div className="rsvp-success">
         <Celebration />
-        <StepHeader id={titleId} eyebrow={saved?.updated ? "RSVP updated" : "RSVP received"} title={`See you on ${when}`}
+        <StepHeader id={titleId} eyebrow={saved?.updated ? "RSVP Updated" : "RSVP Received"} title={`See you on ${when}`}
           sub={`Thanks, ${first}. ${saved?.updated ? "We've updated your RSVP." : "Your RSVP is in."} ${sentDays.length > 1 ? "Both days are" : `${dayLabel(sentDays[0])} is`} on your list.`} />
         <div className="rsvp-success-chips">
           <span className="rsvp-tag rsvp-tag-lg">{saved?.tierLabel || tierLabel(tier) || "Speaker"}</span>
@@ -901,17 +902,17 @@ export default function Rsvp() {
           {sentOptions.length > 0 && <span className="rsvp-tag rsvp-tag-lg">{sentOptions.length} experience{sentOptions.length === 1 ? "" : "s"}</span>}
         </div>
         <button type="button" className="rsvp-btn" onClick={downloadIcs} data-autofocus>
-          <CalendarPlus size={18} aria-hidden="true" /> Add to calendar
+          <CalendarPlus size={18} aria-hidden="true" /> Add to Calendar
         </button>
         <button type="button" className="rsvp-text-btn" onClick={() => { setReturnToReview(false); goName("review"); }}>
-          <RotateCcw size={13} aria-hidden="true" /> Change my RSVP
+          <RotateCcw size={13} aria-hidden="true" /> Change My RSVP
         </button>
       </div>
     );
   }
 
   const showNav = name !== "success";
-  const nextLabel = name === "welcome" ? "RSVP now" : name === "dietary" ? (submitting ? "Sending…" : "Send my RSVP") : returnToReview ? "Back to review" : "Continue";
+  const nextLabel = name === "welcome" ? "RSVP Now" : name === "dietary" ? (submitting ? "Sending…" : "Send My RSVP") : returnToReview ? "Back to Review" : "Continue";
   const busy = submitting || queued || (!catalog && !catalogError);
 
   return (
@@ -950,7 +951,7 @@ export default function Rsvp() {
           {showNav && (
             <div className="rsvp-nav">
               {name !== "welcome" && (
-                <button type="button" className="rsvp-btn-ghost" onClick={back} aria-label={returnToReview && name !== "review" ? "Back to review" : "Back"}>
+                <button type="button" className="rsvp-btn-ghost" onClick={back} aria-label={returnToReview && name !== "review" ? "Back to Review" : "Back"}>
                   <ArrowLeft size={18} aria-hidden="true" />
                 </button>
               )}
@@ -974,7 +975,7 @@ const CSS = `
 body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-root {
   position: relative; min-height: 100vh; min-height: 100dvh; color: #fff; overflow-x: hidden;
-  font-family: 'DM Sans', system-ui, Helvetica, Arial, sans-serif;
+  font-family: 'Orbitron', 'DM Sans', system-ui, sans-serif; letter-spacing: 0.2px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 28px 16px 32px; box-sizing: border-box;
 }
@@ -1011,7 +1012,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-eyebrow { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; color: #ffc56b; margin: 0 0 10px; }
 .rsvp-title { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: clamp(1.45rem, 5.4vw, 2rem); line-height: 1.15; letter-spacing: -0.3px; margin: 0;
   background: linear-gradient(100deg, #fff 30%, #f6d0ff 70%, #ffd9a0); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.rsvp-sub { margin: 10px 0 0; color: rgba(255,255,255,0.82); font-size: 15px; line-height: 1.6; }
+.rsvp-sub { margin: 10px 0 0; color: rgba(255,255,255,0.82); font-size: 13.5px; line-height: 1.7; }
 
 .rsvp-spark { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 18px;
   background: linear-gradient(135deg, rgba(122,63,209,0.5), rgba(232,69,139,0.45)); border: 1px solid rgba(255,255,255,0.2);
@@ -1023,7 +1024,8 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .rsvp-stack { display: flex; flex-direction: column; gap: 10px; }
 .rsvp-field { margin-bottom: 14px; }
-.rsvp-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; color: rgba(255,255,255,0.9); }
+.rsvp-label { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; margin-bottom: 7px; color: rgba(255,255,255,0.9); }
+.rsvp-time { margin-left: auto; align-self: center; padding-left: 12px; font-size: 18px; font-weight: 800; letter-spacing: 0.4px; color: #f5a623; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 .rsvp-events-head { margin: 26px 0 12px; }
 .rsvp-events-title { font-family: Orbitron, sans-serif; font-size: 1.05rem; font-weight: 800; margin: 0 0 4px; color: #fff; }
 .rsvp-events-sub { margin: 0; font-size: 0.92rem; color: rgba(255,255,255,0.78); }
@@ -1035,8 +1037,8 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-input:focus { border-color: #e8458b; box-shadow: 0 0 0 4px rgba(232,69,139,0.2), 0 0 24px rgba(232,69,139,0.18); background: rgba(6,2,15,0.65); }
 .rsvp-input[aria-invalid="true"] { border-color: #ff7a8a; }
 .rsvp-textarea { height: auto; min-height: 88px; padding: 13px 16px; resize: vertical; line-height: 1.5; }
-.rsvp-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.5px; }
-.rsvp-hint { margin: 7px 0 0; font-size: 12.5px; color: rgba(255,255,255,0.76); line-height: 1.5; }
+.rsvp-mono { font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
+.rsvp-hint { margin: 7px 0 0; font-size: 11.5px; color: rgba(255,255,255,0.76); line-height: 1.5; }
 .rsvp-error { display: flex; gap: 6px; align-items: center; margin: 7px 0 0; font-size: 13px; color: #ff9aa8; }
 .rsvp-error-block { align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: rgba(255,90,110,0.1); border: 1px solid rgba(255,120,140,0.3); margin-top: 16px; line-height: 1.5; }
 .rsvp-error-block svg { flex: none; margin-top: 2px; }
@@ -1046,7 +1048,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 
 .rsvp-lookup { min-height: 48px; }
 .rsvp-checking { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.78); margin: 4px 0 0; }
-.rsvp-chip { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; font-size: 14.5px; line-height: 1.45;
+.rsvp-chip { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; font-size: 13px; line-height: 1.5;
   background: linear-gradient(120deg, rgba(122,63,209,0.32), rgba(232,69,139,0.26)); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(122,63,209,0.25); }
 .rsvp-chip strong { font-weight: 700; color: #ffd9a0; }
 .rsvp-chip svg { flex: none; color: #ffd9a0; }
@@ -1069,8 +1071,8 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-choice[data-disabled]:hover { box-shadow: none; border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); }
 .rsvp-pass[data-checked] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 12px 36px rgba(232,69,139,0.22); }
 .rsvp-choice-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.rsvp-choice-title { font-weight: 700; font-size: 15.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.rsvp-choice-desc { font-size: 13px; color: rgba(255,255,255,0.76); line-height: 1.5; }
+.rsvp-choice-title { font-weight: 700; font-size: 14.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rsvp-choice-desc { font-size: 11.5px; color: rgba(255,255,255,0.78); line-height: 1.6; }
 .rsvp-note { font-size: 12px; font-weight: 700; color: #ffd27a; }
 .rsvp-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; padding: 3px 9px; border-radius: 99px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.14); }
 .rsvp-tag-lg { font-size: 13px; padding: 6px 12px; }
@@ -1164,6 +1166,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-foot { position: relative; z-index: 1; margin: 20px 0 0; font-size: 13px; color: rgba(255,255,255,0.75); text-align: center; }
 
 @media (max-width: 480px) {
+  .rsvp-time { font-size: 15px; padding-left: 8px; }
   .rsvp-root { justify-content: flex-start; padding: 18px 16px 28px; }
   .rsvp-brand { margin-bottom: 14px; }
   .rsvp-brand img { height: 120px; }

@@ -613,18 +613,18 @@ export default function Rsvp() {
       <>
         <StepHeader id={titleId} eyebrow="Step 1 · You" title="What's your name?" sub="As it appears on your ticket." />
         <div className="rsvp-grid2">
-          <Field id="rsvp-first" label="First name" error={errors.firstName}>
+          <Field id="rsvp-first" label="First Name" error={errors.firstName}>
             <input id="rsvp-first" className="rsvp-input" data-autofocus autoComplete="given-name" value={form.firstName}
               onChange={(e) => set("firstName", e.target.value)} maxLength={80} aria-invalid={!!errors.firstName || undefined}
               aria-describedby={errors.firstName ? "rsvp-first-error" : undefined} />
           </Field>
-          <Field id="rsvp-last" label="Last name" error={errors.lastName}>
+          <Field id="rsvp-last" label="Last Name" error={errors.lastName}>
             <input id="rsvp-last" className="rsvp-input" autoComplete="family-name" value={form.lastName}
               onChange={(e) => set("lastName", e.target.value)} maxLength={80} aria-invalid={!!errors.lastName || undefined}
               aria-describedby={errors.lastName ? "rsvp-last-error" : undefined} />
           </Field>
         </div>
-        <Field id="rsvp-ticket" label="Ticket ID" hint="On your ticket email or pass QR code." error={errors.ticketId}>
+        <Field id="rsvp-ticket" label="Ticket ID" hint="Find it on your ticket email or pass QR code." error={errors.ticketId}>
           <input id="rsvp-ticket" className="rsvp-input rsvp-mono" autoComplete="off" autoCapitalize="characters" spellCheck={false}
             value={form.ticketId} onChange={(e) => set("ticketId", e.target.value)} onBlur={() => { if (checking) setRush(lookupKey); }}
             maxLength={64} aria-invalid={!!errors.ticketId || undefined} aria-describedby={errors.ticketId ? "rsvp-ticket-error" : "rsvp-ticket-hint"}
@@ -706,7 +706,7 @@ export default function Rsvp() {
   } else if (name === "events") {
     body = (
       <>
-        <StepHeader id={titleId} eyebrow="Step 2 · Days & events" title="Which days are you coming?" sub="Pick one or both." />
+        <StepHeader id={titleId} eyebrow="Step 2 · Days & Events" title="Which days are you coming?" sub="Pick one or both." />
         <div className="rsvp-grid2" role="group" aria-labelledby={titleId} data-invalid={!!errors.days || undefined}>
           {days.map((d, i) => {
             const on = form.days.includes(d.key);
@@ -724,7 +724,7 @@ export default function Rsvp() {
             );
           })}
         </div>
-        <button type="button" className="rsvp-text-btn" onClick={() => { set("days", days.map((d) => d.key)); setErrors({}); }}>Both days</button>
+        <button type="button" className="rsvp-text-btn" onClick={() => { set("days", days.map((d) => d.key)); setErrors({}); }}>Both Days</button>
         {errors.days && <p className="rsvp-error" role="alert"><AlertCircle size={14} aria-hidden="true" /> {errors.days}</p>}
       </>
     );
@@ -738,14 +738,14 @@ export default function Rsvp() {
       <>
         {body}
         <div className="rsvp-events-head">
-          <h3 className="rsvp-events-title">Special events</h3>
-          <p className="rsvp-events-sub">{allowed.length ? `Included with your ${isSpeaker ? "speaker access" : tierLabel(tier) || "pass"}. Tick the ones you'll join, so we can plan seats and catering.` : ""}</p>
+          <h3 className="rsvp-events-title">Special Events</h3>
+          <p className="rsvp-events-sub">{allowed.length ? `Included with your ${isSpeaker ? "Speaker Pass" : tierLabel(tier) || "pass"}. Select the ones you'll attend, so we can plan seating and catering.` : ""}</p>
         </div>
         {allowed.length > 0 && (
           <div className="rsvp-exp-bar">
-            <span className="rsvp-exp-count" aria-live="polite">{chosenOptions.length ? `${chosenOptions.length} of ${allowed.length} ticked` : "Nothing ticked yet"}</span>
+            <span className="rsvp-exp-count" aria-live="polite">{chosenOptions.length ? `${chosenOptions.length} of ${allowed.length} selected` : "Nothing selected yet"}</span>
             <button type="button" className="rsvp-text-btn" onClick={() => pickOptions(allowed.map((o) => o.key), !all)}>
-              {all ? "Clear all" : "Select all"}
+              {all ? "Clear All" : "Select All"}
             </button>
           </div>
         )}
@@ -784,6 +784,7 @@ export default function Rsvp() {
                             {g.day ? inDay(o.label) : o.label}
                             {returnToReview && !editBase.includes(o.key) && <span className="rsvp-tag rsvp-tag-new">New</span>}
                           </span>
+                          {o.time && <span className="rsvp-time">{o.time}</span>}
                           {o.description && <span className="rsvp-choice-desc">{o.description}</span>}
                           {o.note && <span className="rsvp-note">{o.note}</span>}
                         </span>
@@ -797,7 +798,7 @@ export default function Rsvp() {
         </div>
         {errors.options && <p className="rsvp-error" role="alert"><AlertCircle size={14} aria-hidden="true" /> {errors.options}</p>}
         {allowed.length > 0 && !chosenOptions.length && !errors.options && (
-          <p className="rsvp-hint">Only coming for the day? You can leave these unticked and just send your days.</p>
+          <p className="rsvp-hint">Only coming for the conference? Leave these unselected and just send your days.</p>
         )}
         {!allowed.length && (
           <div className="rsvp-empty">
@@ -826,14 +827,14 @@ export default function Rsvp() {
         <AnimatePresence initial={false}>
           {form.dietary.includes("other") && (
             <motion.div key="other" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
-              <Field id="rsvp-diet-other" label="Tell us more" error={errors.dietaryOther}>
+              <Field id="rsvp-diet-other" label="Tell Us More" error={errors.dietaryOther}>
                 <input id="rsvp-diet-other" className="rsvp-input" value={form.dietaryOther} maxLength={200}
                   onChange={(e) => set("dietaryOther", e.target.value)} placeholder="e.g. low FODMAP, no pork" aria-invalid={!!errors.dietaryOther || undefined} />
               </Field>
             </motion.div>
           )}
         </AnimatePresence>
-        <Field id="rsvp-access" label="Accessibility needs" optional hint="Anything that helps us make the day work for you.">
+        <Field id="rsvp-access" label="Accessibility Needs" optional hint="Anything that helps us make the day work for you.">
           <textarea id="rsvp-access" className="rsvp-input rsvp-textarea" rows={3} maxLength={600} value={form.accessibility}
             onChange={(e) => set("accessibility", e.target.value)} aria-describedby="rsvp-access-hint" />
         </Field>
@@ -893,7 +894,7 @@ export default function Rsvp() {
     body = (
       <div className="rsvp-success">
         <Celebration />
-        <StepHeader id={titleId} eyebrow={saved?.updated ? "RSVP updated" : "RSVP received"} title={`See you on ${when}`}
+        <StepHeader id={titleId} eyebrow={saved?.updated ? "RSVP Updated" : "RSVP Received"} title={`See you on ${when}`}
           sub={`Thanks, ${first}. ${saved?.updated ? "We've updated your RSVP." : "Your RSVP is in."} ${sentDays.length > 1 ? "Both days are" : `${dayLabel(sentDays[0])} is`} on your list.`} />
         <div className="rsvp-success-chips">
           <span className="rsvp-tag rsvp-tag-lg">{saved?.tierLabel || tierLabel(tier) || "Speaker"}</span>
@@ -901,17 +902,17 @@ export default function Rsvp() {
           {sentOptions.length > 0 && <span className="rsvp-tag rsvp-tag-lg">{sentOptions.length} experience{sentOptions.length === 1 ? "" : "s"}</span>}
         </div>
         <button type="button" className="rsvp-btn" onClick={downloadIcs} data-autofocus>
-          <CalendarPlus size={18} aria-hidden="true" /> Add to calendar
+          <CalendarPlus size={18} aria-hidden="true" /> Add to Calendar
         </button>
         <button type="button" className="rsvp-text-btn" onClick={() => { setReturnToReview(false); goName("review"); }}>
-          <RotateCcw size={13} aria-hidden="true" /> Change my RSVP
+          <RotateCcw size={13} aria-hidden="true" /> Change My RSVP
         </button>
       </div>
     );
   }
 
   const showNav = name !== "success";
-  const nextLabel = name === "welcome" ? "RSVP now" : name === "dietary" ? (submitting ? "Sending…" : "Send my RSVP") : returnToReview ? "Back to review" : "Continue";
+  const nextLabel = name === "welcome" ? "RSVP Now" : name === "dietary" ? (submitting ? "Sending…" : "Send My RSVP") : returnToReview ? "Back to Review" : "Continue";
   const busy = submitting || queued || (!catalog && !catalogError);
 
   return (
@@ -950,7 +951,7 @@ export default function Rsvp() {
           {showNav && (
             <div className="rsvp-nav">
               {name !== "welcome" && (
-                <button type="button" className="rsvp-btn-ghost" onClick={back} aria-label={returnToReview && name !== "review" ? "Back to review" : "Back"}>
+                <button type="button" className="rsvp-btn-ghost" onClick={back} aria-label={returnToReview && name !== "review" ? "Back to Review" : "Back"}>
                   <ArrowLeft size={18} aria-hidden="true" />
                 </button>
               )}
@@ -1024,6 +1025,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-stack { display: flex; flex-direction: column; gap: 10px; }
 .rsvp-field { margin-bottom: 14px; }
 .rsvp-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; color: rgba(255,255,255,0.9); }
+.rsvp-time { display: inline-block; margin: 2px 0 4px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.4px; color: #f5a623; }
 .rsvp-events-head { margin: 26px 0 12px; }
 .rsvp-events-title { font-family: Orbitron, sans-serif; font-size: 1.05rem; font-weight: 800; margin: 0 0 4px; color: #fff; }
 .rsvp-events-sub { margin: 0; font-size: 0.92rem; color: rgba(255,255,255,0.78); }

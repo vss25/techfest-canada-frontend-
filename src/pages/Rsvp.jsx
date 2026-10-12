@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
-  AlertCircle, ArrowLeft, ArrowRight, BadgeCheck, CalendarPlus, Check, Loader2, Lock, Mic2, Pencil, RotateCcw, Sparkles,
+  AlertCircle, ArrowLeft, ArrowRight, BadgeCheck, CalendarPlus, Check, Loader2, Lock, Mic2, Pencil, RotateCcw,
 } from "lucide-react";
 import AuroraBackground from "../components/AuroraBackground";
 import { API, useFormGuard } from "../lib/forms";
@@ -545,9 +545,6 @@ export default function Rsvp() {
   if (name === "welcome") {
     body = (
       <>
-        <motion.div className="rsvp-spark" aria-hidden="true" initial={reduce ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1, type: "spring", stiffness: 220, damping: 16 }}>
-          <Sparkles size={26} />
-        </motion.div>
         <StepHeader id={titleId} title="You're invited" sub="The Tech Festival Canada · 26–27 October 2026 · The Westin Harbour Castle, Toronto. Tell us which days you're coming and what you'll join, so we can save you a seat." />
         <ul className="rsvp-facts" aria-label="Event details">
           <li><span>Dates</span>Mon 26 &amp; Tue 27 Oct</li>

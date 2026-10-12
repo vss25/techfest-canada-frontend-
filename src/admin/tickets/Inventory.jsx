@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  AlertTriangle, Archive, ArchiveRestore, ChevronDown, Package, Percent, Plus, RefreshCw, Save, Sparkles, Store, Tag, Ticket, Trash2,
+  AlertTriangle, Archive, ArchiveRestore, ArrowUpDown, ChevronDown, Package, Pencil, Percent, Plus, RefreshCw, Save, Sparkles, Store, Tag, Ticket, Trash2,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import {
-  Badge, Banner, Button, Card, ConfirmDialog, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, StatTile, Switch,
+  Badge, Banner, Button, Card, ConfirmDialog, EmptyState, ErrorState, Field, Input, LoadingState, Modal, PageHeader, Select, StatTile, Switch,
   TableWrap, focusRing,
 } from "../ui";
 import { day, num } from "../format";
@@ -96,15 +96,137 @@ function genCode() {
   return out;
 }
 
+/* Usage limit: "" = unlimited, else a whole number of 1 or more (the backend checks too). */
+const limitError = (v) => {
+  const s = String(v ?? "").trim();
+  return s === "" || (/^\d+$/.test(s) && Number(s) >= 1) ? "" : "Usage limit must be a whole number of 1 or more, or empty for unlimited";
+};
+const limitValue = (v) => (String(v ?? "").trim() === "" ? null : Number(v));
+/* "Used" = paid uses from Stripe (what the backend counts against the limit);
+   the Mongo counter only when Stripe is unavailable. */
+const usedOf = (p) => (p.paidUses != null ? p.paidUses : p.timesUsed ?? 0);
+const isFullPromo = (p) => p.maxUses > 0 && usedOf(p) >= p.maxUses;
+
+const PROMO_SORTS = {
+  newest: { label: "Newest first", cmp: () => 0 },
+  most: { label: "Most used", cmp: (a, b) => usedOf(b) - usedOf(a) },
+  least: { label: "Least used", cmp: (a, b) => usedOf(a) - usedOf(b) },
+  limit: {
+    label: "Closest to limit",
+    // Share of the limit used; codes without a limit go last
+    cmp: (a, b) => (b.maxUses ? usedOf(b) / b.maxUses : -1) - (a.maxUses ? usedOf(a) / a.maxUses : -1),
+  },
+};
+
+/** Discount, scope and usage limit: shared by the create form and the edit dialog. */
+function PromoTermsFields({ passes, discount, setDiscount, tiers, setTiers, maxUses, setMaxUses, used }) {
+  const over = used != null && limitValue(maxUses) != null && !limitError(maxUses) && used >= limitValue(maxUses);
+  return (
+    <>
+      <Field label="Discount (%)">{(id) => (
+        <div className="flex flex-wrap items-center gap-2">
+          {["10", "25", "50"].map((d) => (
+            <button key={d} type="button" onClick={() => setDiscount(d)} aria-pressed={discount === d}
+              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${discount === d ? "border-ttfc-pink bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>{d}%</button>
+          ))}
+          <Input id={id} type="number" min={1} max={100} value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-24" aria-label="Custom discount percent" />
+        </div>
+      )}</Field>
+      <fieldset>
+        <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">Valid for</legend>
+        <div className="flex flex-wrap gap-2">
+          {passes.map((t) => {
+            const on = tiers.includes(t);
+            return (
+              <button key={t} type="button" aria-pressed={on} onClick={() => setTiers((xs) => (on ? xs.filter((x) => x !== t) : [...xs, t]))}
+                className={`rounded-xl border px-3 py-1.5 text-sm font-semibold transition ${on ? "border-ttfc-purple bg-ttfc-purple/20 text-white" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>{label(t)}</button>
+            );
+          })}
+        </div>
+        <p className="mt-1.5 text-xs text-ttfc-dim">{tiers.length ? `Only ${tiers.map(label).join(", ")}` : "Nothing selected = all passes"}</p>
+      </fieldset>
+      <Field label="Usage limit" hint="How many times this code can be used. Leave empty for unlimited." error={limitError(maxUses) || (over ? `Already used ${num(used)} times, so the code will stop working right away.` : "")}>
+        {(id) => <Input id={id} type="number" min={1} step="1" inputMode="numeric" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="Unlimited" className="w-40" />}
+      </Field>
+    </>
+  );
+}
+
+/** "12 / 50" with a small bar when there's a limit, "12" otherwise. */
+function PromoUsed({ p }) {
+  const used = usedOf(p);
+  const max = p.maxUses > 0 ? p.maxUses : null;
+  const pct = max ? Math.min(100, Math.round((used / max) * 100)) : 0;
+  return (
+    <>
+      <dd className="text-2xl font-bold tabular-nums text-ttfc-text">
+        {num(used)}{max != null && <span className="text-base font-semibold text-ttfc-muted"> / {num(max)}</span>}
+      </dd>
+      {max != null && (
+        <dd className="mt-1.5 h-1.5 rounded-full bg-white/10" role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={used} aria-label={`${p.code} used ${used} of ${max}`}>
+          <div className={`h-1.5 rounded-full ${used >= max ? "bg-amber-400" : "bg-gradient-to-r from-ttfc-pink to-ttfc-orange"}`} style={{ width: `${used > 0 ? Math.max(4, pct) : 0}%` }} />
+        </dd>
+      )}
+    </>
+  );
+}
+
+function EditPromo({ promo, passes, onClose, onSaved }) {
+  const toast = useToast();
+  const [discount, setDiscount] = useState(String(promo.discount ?? ""));
+  const [tiers, setTiers] = useState(Array.isArray(promo.tiers) ? promo.tiers : []);
+  const [maxUses, setMaxUses] = useState(promo.maxUses ? String(promo.maxUses) : "");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const save = async (e) => {
+    e?.preventDefault();
+    const d = Number(discount);
+    if (!Number.isFinite(d) || d < 1 || d > 100) { setErr("Discount must be between 1 and 100"); return; }
+    if (limitError(maxUses)) { setErr(limitError(maxUses)); return; }
+    setErr(""); setBusy(true);
+    try {
+      const out = await api.put(`/admin/promos/${promo._id}`, { discount: d, tiers, maxUses: limitValue(maxUses) });
+      toast.success(`${promo.code} updated`);
+      onSaved({ discount: out?.discount ?? d, tiers: out?.tiers ?? tiers, maxUses: out?.maxUses ?? limitValue(maxUses) });
+      onClose();
+    } catch (e2) { setErr(e2.message); toast.error(e2); } finally { setBusy(false); }
+  };
+
+  // Every input is inside the form, so Enter in any of them saves
+  const formId = `edit-promo-${promo._id}`;
+  return (
+    <Modal open onClose={busy ? () => {} : onClose} title={`Edit ${promo.code}`} description="Changes apply to new checkouts. Orders already paid aren't affected."
+      footer={<>
+        <Button onClick={onClose} disabled={busy}>Cancel</Button>
+        <Button type="submit" form={formId} variant="primary" icon={Save} loading={busy}>Save changes</Button>
+      </>}>
+      <form id={formId} onSubmit={save} className="space-y-4" noValidate>
+        <PromoTermsFields passes={passes} discount={discount} setDiscount={setDiscount} tiers={tiers} setTiers={setTiers}
+          maxUses={maxUses} setMaxUses={setMaxUses} used={usedOf(promo)} />
+        {err && <p role="alert" className="text-xs text-red-300">{err}</p>}
+      </form>
+    </Modal>
+  );
+}
+
 function PromoCodes({ passes }) {
   const toast = useToast();
   const { data, error, loading, reload, setData } = useApi("/admin/promos");
   const [code, setCode] = useState("");
   const [discount, setDiscount] = useState("10");
   const [tiers, setTiers] = useState([]);
+  const [maxUses, setMaxUses] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [deleting, setDeleting] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [sort, setSort] = useState("newest");
+
+  const sorted = useMemo(
+    () => (Array.isArray(data) ? [...data].sort(PROMO_SORTS[sort]?.cmp || PROMO_SORTS.newest.cmp) : []),
+    [data, sort],
+  );
 
   const create = async (e) => {
     e.preventDefault();
@@ -112,11 +234,13 @@ function PromoCodes({ passes }) {
     const d = Number(discount);
     if (!c) { setErr("Enter a code or click Generate"); return; }
     if (!Number.isFinite(d) || d < 1 || d > 100) { setErr("Discount must be between 1 and 100"); return; }
+    if (limitError(maxUses)) { setErr(limitError(maxUses)); return; }
     setErr(""); setBusy(true);
     try {
-      const out = await api.post("/admin/promos", { code: c, discount: d, tiers });
-      toast.success(`Created ${out.code || c}: ${out.discount ?? d}% off ${tiers.length ? tiers.map(label).join(", ") : "all passes"}`);
-      setCode(""); setDiscount("10"); setTiers([]); reload();
+      const out = await api.post("/admin/promos", { code: c, discount: d, tiers, maxUses: limitValue(maxUses) });
+      const lim = limitValue(maxUses);
+      toast.success(`Created ${out.code || c}: ${out.discount ?? d}% off ${tiers.length ? tiers.map(label).join(", ") : "all passes"}${lim ? `, ${num(lim)} uses` : ""}`);
+      setCode(""); setDiscount("10"); setTiers([]); setMaxUses(""); reload();
     } catch (e2) { setErr(e2.message); toast.error(e2); } finally { setBusy(false); }
   };
 
@@ -129,7 +253,7 @@ function PromoCodes({ passes }) {
   return (
     <section aria-labelledby="promos-h" className="mt-10">
       <h2 id="promos-h" className="mb-1 flex items-center gap-2 text-base font-semibold"><Tag className="h-4 w-4 text-ttfc-pink" aria-hidden="true" /> Promo codes</h2>
-      <p className="mb-4 text-sm text-ttfc-muted">Discount codes buyers enter at checkout.</p>
+      <p className="mb-4 text-sm text-ttfc-muted">Discount codes buyers enter at checkout. Used = paid orders with the code.</p>
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <Card as="form" onSubmit={create} className="space-y-4" noValidate>
           <h3 className="text-sm font-semibold">New code</h3>
@@ -139,28 +263,7 @@ function PromoCodes({ passes }) {
               <Button icon={Sparkles} onClick={() => setCode(genCode())}>Generate</Button>
             </div>
           )}</Field>
-          <Field label="Discount (%)">{(id) => (
-            <div className="flex flex-wrap items-center gap-2">
-              {["10", "25", "50"].map((d) => (
-                <button key={d} type="button" onClick={() => setDiscount(d)} aria-pressed={discount === d}
-                  className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${discount === d ? "border-ttfc-pink bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>{d}%</button>
-              ))}
-              <Input id={id} type="number" min={1} max={100} value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-24" aria-label="Custom discount percent" />
-            </div>
-          )}</Field>
-          <fieldset>
-            <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">Valid for</legend>
-            <div className="flex flex-wrap gap-2">
-              {passes.map((t) => {
-                const on = tiers.includes(t);
-                return (
-                  <button key={t} type="button" aria-pressed={on} onClick={() => setTiers((xs) => (on ? xs.filter((x) => x !== t) : [...xs, t]))}
-                    className={`rounded-xl border px-3 py-1.5 text-sm font-semibold transition ${on ? "border-ttfc-purple bg-ttfc-purple/20 text-white" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>{label(t)}</button>
-                );
-              })}
-            </div>
-            <p className="mt-1.5 text-xs text-ttfc-dim">{tiers.length ? `Only ${tiers.map(label).join(", ")}` : "Nothing selected = all passes"}</p>
-          </fieldset>
+          <PromoTermsFields passes={passes} discount={discount} setDiscount={setDiscount} tiers={tiers} setTiers={setTiers} maxUses={maxUses} setMaxUses={setMaxUses} />
           {err && <p role="alert" className="text-xs text-red-300">{err}</p>}
           <Button type="submit" variant="primary" icon={Plus} loading={busy} className="w-full">Create promo code</Button>
         </Card>
@@ -177,14 +280,26 @@ function PromoCodes({ passes }) {
                   {data.find((p) => p.usageError)?.usageError ? ` (${data.find((p) => p.usageError).usageError})` : ""}
                 </p>
               )}
+              {data.length > 1 && (
+                <div className="mb-3 flex items-center justify-end gap-2">
+                  <label htmlFor="promo-sort" className="flex items-center gap-1.5 text-xs font-semibold text-ttfc-dim"><ArrowUpDown className="h-3.5 w-3.5" aria-hidden="true" /> Sort</label>
+                  <Select id="promo-sort" value={sort} onChange={(e) => setSort(e.target.value)} className="w-auto py-1.5 text-xs">
+                    {Object.entries(PROMO_SORTS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}
+                  </Select>
+                </div>
+              )}
               <ul className="grid gap-3 lg:grid-cols-2">
-                {data.map((p) => {
+                {sorted.map((p) => {
                   const paid = p.paidUses != null;
+                  const full = isFullPromo(p);
                   return (
                     <li key={p._id} className={`rounded-[18px] border bg-ttfc-panel p-4 ${p.active ? "border-ttfc-line" : "border-dashed border-ttfc-line opacity-75"}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="font-mono text-base font-bold tracking-wider text-ttfc-text">{p.code}</p>
+                          <p className="flex flex-wrap items-center gap-2 font-mono text-base font-bold tracking-wider text-ttfc-text">
+                            {p.code}
+                            {full && <Badge tone="warn" className="font-sans tracking-normal">Full</Badge>}
+                          </p>
                           <div className="mt-1 flex flex-wrap items-center gap-1.5">
                             <Badge tone="pink">{p.discount}% off</Badge>
                             {Array.isArray(p.tiers) && p.tiers.length ? p.tiers.map((t) => <Badge key={t} tone="purple">{label(t)}</Badge>) : <Badge tone="good">All passes</Badge>}
@@ -197,8 +312,8 @@ function PromoCodes({ passes }) {
                       </div>
                       <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                         <div className="col-span-2 rounded-xl bg-white/5 px-3 py-2 sm:col-span-1">
-                          <dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Paid uses</dt>
-                          <dd className="text-2xl font-bold tabular-nums text-ttfc-text">{num(paid ? p.paidUses : p.timesUsed ?? 0)}</dd>
+                          <dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Used</dt>
+                          <PromoUsed p={p} />
                           {!paid && <dd className="text-[10px] text-amber-200/80">(Stripe unavailable)</dd>}
                         </div>
                         <div className="px-1 py-2"><dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Revenue</dt><dd className="text-sm font-semibold tabular-nums">{paid ? cad(p.revenue) : "—"}</dd></div>
@@ -210,6 +325,7 @@ function PromoCodes({ passes }) {
                           <Ticket className="h-4 w-4" aria-hidden="true" /> See tickets
                         </Link>
                         <span className="flex-1" />
+                        <Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditing(p)}>Edit</Button>
                         <Button size="sm" variant="dangerOutline" icon={Trash2} onClick={() => setDeleting(p)}>Delete</Button>
                       </div>
                     </li>
@@ -220,6 +336,10 @@ function PromoCodes({ passes }) {
           )}
         </div>
       </div>
+      {editing && (
+        <EditPromo promo={editing} passes={passes} onClose={() => setEditing(null)}
+          onSaved={(patch) => setData((xs) => (xs || []).map((x) => (x._id === editing._id ? { ...x, ...patch } : x)))} />
+      )}
       <ConfirmDialog
         open={!!deleting}
         onClose={() => setDeleting(null)}

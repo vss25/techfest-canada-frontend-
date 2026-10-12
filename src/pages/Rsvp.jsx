@@ -109,7 +109,13 @@ function saveEditToken(entry) {
 }
 
 const shortDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
-const longDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
+/** "2026-10-26" → "October 26th". */
+function monthDay(iso) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  const n = d.getUTCDate();
+  const th = n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th";
+  return `${d.toLocaleDateString("en-US", { month: "long", timeZone: "UTC" })} ${n}${th}`;
+}
 
 // Sessions, the expo floor and breaks come with every pass; the rest are what a pass adds.
 const isBase = (o) => o.tiers.includes("connect");
@@ -890,7 +896,7 @@ export default function Rsvp() {
       </>
     );
   } else if (name === "success") {
-    const when = firstDay ? longDate(firstDay.date) : "26 October";
+    const when = firstDay ? monthDay(firstDay.date) : "October 26th";
     body = (
       <div className="rsvp-success">
         <Celebration />
@@ -898,8 +904,6 @@ export default function Rsvp() {
           sub={`Thanks, ${first}. ${saved?.updated ? "We've updated your RSVP." : "Your RSVP is in."} ${sentDays.length > 1 ? "Both days are" : `${dayLabel(sentDays[0])} is`} on your list.`} />
         <div className="rsvp-success-chips">
           <span className="rsvp-tag rsvp-tag-lg">{saved?.tierLabel || tierLabel(tier) || "Speaker"}</span>
-          {sentDays.map((d) => <span key={d} className="rsvp-tag rsvp-tag-lg">{dayLabel(d)}</span>)}
-          {sentOptions.length > 0 && <span className="rsvp-tag rsvp-tag-lg">{sentOptions.length} experience{sentOptions.length === 1 ? "" : "s"}</span>}
         </div>
         <button type="button" className="rsvp-btn" onClick={downloadIcs} data-autofocus>
           <CalendarPlus size={18} aria-hidden="true" /> Add to Calendar

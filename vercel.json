@@ -3,6 +3,10 @@
     {
       "source": "/:path([Rr][Ss][Vv][Pp]/?)",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/:path([Aa][Tt][Tt][Ee][Nn][Dd][Ii][Nn][Gg]/?)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     }
   ],
   "redirects": [

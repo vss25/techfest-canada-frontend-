@@ -784,10 +784,10 @@ export default function Rsvp() {
                             {g.day ? inDay(o.label) : o.label}
                             {returnToReview && !editBase.includes(o.key) && <span className="rsvp-tag rsvp-tag-new">New</span>}
                           </span>
-                          {o.time && <span className="rsvp-time">{o.time}</span>}
                           {o.description && <span className="rsvp-choice-desc">{o.description}</span>}
                           {o.note && <span className="rsvp-note">{o.note}</span>}
                         </span>
+                        {o.time && <span className="rsvp-time">{o.time}</span>}
                       </motion.label>
                     );
                   })}
@@ -975,7 +975,7 @@ const CSS = `
 body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-root {
   position: relative; min-height: 100vh; min-height: 100dvh; color: #fff; overflow-x: hidden;
-  font-family: 'DM Sans', system-ui, Helvetica, Arial, sans-serif;
+  font-family: 'Orbitron', 'DM Sans', system-ui, sans-serif; letter-spacing: 0.2px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 28px 16px 32px; box-sizing: border-box;
 }
@@ -1012,7 +1012,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-eyebrow { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; color: #ffc56b; margin: 0 0 10px; }
 .rsvp-title { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: clamp(1.45rem, 5.4vw, 2rem); line-height: 1.15; letter-spacing: -0.3px; margin: 0;
   background: linear-gradient(100deg, #fff 30%, #f6d0ff 70%, #ffd9a0); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.rsvp-sub { margin: 10px 0 0; color: rgba(255,255,255,0.82); font-size: 15px; line-height: 1.6; }
+.rsvp-sub { margin: 10px 0 0; color: rgba(255,255,255,0.82); font-size: 13.5px; line-height: 1.7; }
 
 .rsvp-spark { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 18px;
   background: linear-gradient(135deg, rgba(122,63,209,0.5), rgba(232,69,139,0.45)); border: 1px solid rgba(255,255,255,0.2);
@@ -1024,8 +1024,8 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .rsvp-stack { display: flex; flex-direction: column; gap: 10px; }
 .rsvp-field { margin-bottom: 14px; }
-.rsvp-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; color: rgba(255,255,255,0.9); }
-.rsvp-time { display: inline-block; margin: 2px 0 4px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.4px; color: #f5a623; }
+.rsvp-label { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.4px; margin-bottom: 7px; color: rgba(255,255,255,0.9); }
+.rsvp-time { margin-left: auto; align-self: center; padding-left: 12px; font-size: 18px; font-weight: 800; letter-spacing: 0.4px; color: #f5a623; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 .rsvp-events-head { margin: 26px 0 12px; }
 .rsvp-events-title { font-family: Orbitron, sans-serif; font-size: 1.05rem; font-weight: 800; margin: 0 0 4px; color: #fff; }
 .rsvp-events-sub { margin: 0; font-size: 0.92rem; color: rgba(255,255,255,0.78); }
@@ -1037,8 +1037,8 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-input:focus { border-color: #e8458b; box-shadow: 0 0 0 4px rgba(232,69,139,0.2), 0 0 24px rgba(232,69,139,0.18); background: rgba(6,2,15,0.65); }
 .rsvp-input[aria-invalid="true"] { border-color: #ff7a8a; }
 .rsvp-textarea { height: auto; min-height: 88px; padding: 13px 16px; resize: vertical; line-height: 1.5; }
-.rsvp-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.5px; }
-.rsvp-hint { margin: 7px 0 0; font-size: 12.5px; color: rgba(255,255,255,0.76); line-height: 1.5; }
+.rsvp-mono { font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
+.rsvp-hint { margin: 7px 0 0; font-size: 11.5px; color: rgba(255,255,255,0.76); line-height: 1.5; }
 .rsvp-error { display: flex; gap: 6px; align-items: center; margin: 7px 0 0; font-size: 13px; color: #ff9aa8; }
 .rsvp-error-block { align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: rgba(255,90,110,0.1); border: 1px solid rgba(255,120,140,0.3); margin-top: 16px; line-height: 1.5; }
 .rsvp-error-block svg { flex: none; margin-top: 2px; }
@@ -1048,7 +1048,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 
 .rsvp-lookup { min-height: 48px; }
 .rsvp-checking { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.78); margin: 4px 0 0; }
-.rsvp-chip { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; font-size: 14.5px; line-height: 1.45;
+.rsvp-chip { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; font-size: 13px; line-height: 1.5;
   background: linear-gradient(120deg, rgba(122,63,209,0.32), rgba(232,69,139,0.26)); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(122,63,209,0.25); }
 .rsvp-chip strong { font-weight: 700; color: #ffd9a0; }
 .rsvp-chip svg { flex: none; color: #ffd9a0; }
@@ -1071,8 +1071,8 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-choice[data-disabled]:hover { box-shadow: none; border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); }
 .rsvp-pass[data-checked] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 12px 36px rgba(232,69,139,0.22); }
 .rsvp-choice-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.rsvp-choice-title { font-weight: 700; font-size: 15.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.rsvp-choice-desc { font-size: 13px; color: rgba(255,255,255,0.76); line-height: 1.5; }
+.rsvp-choice-title { font-weight: 700; font-size: 14.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rsvp-choice-desc { font-size: 11.5px; color: rgba(255,255,255,0.78); line-height: 1.6; }
 .rsvp-note { font-size: 12px; font-weight: 700; color: #ffd27a; }
 .rsvp-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; padding: 3px 9px; border-radius: 99px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.14); }
 .rsvp-tag-lg { font-size: 13px; padding: 6px 12px; }
@@ -1166,6 +1166,7 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-foot { position: relative; z-index: 1; margin: 20px 0 0; font-size: 13px; color: rgba(255,255,255,0.75); text-align: center; }
 
 @media (max-width: 480px) {
+  .rsvp-time { font-size: 15px; padding-left: 8px; }
   .rsvp-root { justify-content: flex-start; padding: 18px 16px 28px; }
   .rsvp-brand { margin-bottom: 14px; }
   .rsvp-brand img { height: 120px; }

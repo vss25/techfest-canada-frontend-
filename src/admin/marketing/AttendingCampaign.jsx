@@ -7,8 +7,8 @@ import { api } from "../api";
 import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
 import {
-  Badge, Banner, Button, Card, EmptyState, ErrorState, Field, Input, LoadingState, Modal, PageHeader, SectionTitle,
-  StatTile, TableWrap,
+  Badge, Banner, Button, Card, ConfirmDialog, EmptyState, ErrorState, Field, Input, LoadingState, Modal, PageHeader,
+  SectionTitle, StatTile, TableWrap,
 } from "../ui";
 import { num, when } from "../format";
 
@@ -22,6 +22,7 @@ import { num, when } from "../format";
      GET  /preview-sample        → { subject, html, text, link }
      GET  /recipients            → { counts, skipped, recipients, job }
      POST /send-test { to }      → { sent, to }            (management)
+     POST /send-one { email, again? } → { sent, sentAt } (management; one person now)
      POST /send-all { confirm: "SEND" } → 202 { started, toSend, alreadySent }
                                    (management; runs in the background)
    Recipients are worked out live from the tickets. Re-running the
@@ -49,7 +50,7 @@ const SKIP_LABELS = {
 };
 
 /** The email, isolated in a sandboxed frame (no scripts, no same-origin access). */
-function EmailPreview({ preview }) {
+export function EmailPreview({ preview, title = "Email preview" }) {
   const [mode, setMode] = useState("html");
   if (!preview) return null;
   return (
@@ -66,7 +67,7 @@ function EmailPreview({ preview }) {
         </div>
       </div>
       {mode === "html"
-        ? <iframe title="I'm attending email preview" sandbox="" srcDoc={preview.html || ""} className="block h-[70vh] min-h-[480px] w-full bg-[#06020f]" />
+        ? <iframe title={title} sandbox="" srcDoc={preview.html || ""} className="block h-[70vh] min-h-[480px] w-full bg-[#06020f]" />
         : <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap bg-ttfc-ink px-4 py-3 font-mono text-xs leading-relaxed text-ttfc-muted">{preview.text}</pre>}
     </div>
   );
@@ -127,7 +128,7 @@ function SendAllDialog({ toSend, alreadySent, unconfirmed, onClose, onStarted })
   );
 }
 
-function SendTest() {
+export function SendTest({ base = BASE, hint = "The sample (Jane Doe), subject starting “[Test]”. Not counted as sent." }) {
   const toast = useToast();
   const [to, setTo] = useState("");
   const [busy, setBusy] = useState(false);
@@ -136,7 +137,7 @@ function SendTest() {
     if (!to.trim() || busy) return;
     setBusy(true);
     try {
-      const r = await api.post(`${BASE}/send-test`, { to: to.trim() });
+      const r = await api.post(`${base}/send-test`, { to: to.trim() });
       toast.success(`Test email sent to ${r?.to || to.trim()}`);
     } catch (err) {
       toast.error(err);
@@ -146,7 +147,7 @@ function SendTest() {
   };
   return (
     <form onSubmit={send} className="flex flex-col gap-3">
-      <Field label="Send a test to" hint="The sample (Jane Doe), subject starting “[Test]”. Not counted as sent.">
+      <Field label="Send a test to" hint={hint}>
         {(id) => <Input id={id} type="email" value={to} onChange={(e) => setTo(e.target.value)} placeholder="you@thetechfestival.com" autoComplete="email" />}
       </Field>
       <Button type="submit" icon={Mail} loading={busy} disabled={!to.trim()} className="self-start">Send test</Button>
@@ -164,6 +165,8 @@ export default function AttendingCampaign() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [one, setOne] = useState(null); // the row "Send" was clicked on
+  const toast = useToast();
 
   const data = recipients.data;
   const counts = data?.counts || { recipients: 0, sent: 0, failed: 0, sending: 0, pending: 0 };
@@ -290,7 +293,7 @@ export default function AttendingCampaign() {
       {data && (shown.length ? (
         <TableWrap>
           <thead>
-            <tr><th>Name</th><th>Email</th><th>Title · company</th><th>Pass</th><th>Status</th></tr>
+            <tr><th>Name</th><th>Email</th><th>Title · company</th><th>Pass</th><th>Status</th>{isManagement && <th><span className="sr-only">Send</span></th>}</tr>
           </thead>
           <tbody>
             {shown.slice(0, 500).map((r) => {
@@ -305,6 +308,14 @@ export default function AttendingCampaign() {
                     <span title={r.error || (r.sentAt ? `Sent ${when(r.sentAt)}` : undefined)}><Badge tone={s.tone} icon={s.icon}>{s.label}</Badge></span>
                     {r.error && <span className="mt-1 block max-w-[240px] truncate text-[11px] text-red-200">{r.error}</span>}
                   </td>
+                  {isManagement && (
+                    <td className="text-right">
+                      <Button size="sm" icon={Send} disabled={running} onClick={() => setOne(r)}
+                        aria-label={`${r.status === "sent" ? "Send again to" : "Send to"} ${r.name || r.email}`}>
+                        {r.status === "sent" ? "Send again" : "Send"}
+                      </Button>
+                    </td>
+                  )}
                 </tr>
               );
             })}
@@ -312,6 +323,24 @@ export default function AttendingCampaign() {
         </TableWrap>
       ) : <EmptyState icon={Users} title={rows.length ? "No one matches" : "No recipients yet"} body={rows.length ? "Try another search or filter." : "Nobody with a ticket has an email yet."} />)}
       {shown.length > 500 && <p className="mt-2 text-xs text-ttfc-dim">Showing the first 500. Search to find someone.</p>}
+
+      <ConfirmDialog
+        open={!!one}
+        onClose={() => setOne(null)}
+        tone={one?.status === "sent" || one?.status === "sending" ? "danger" : "primary"}
+        title={`Email ${one?.name || one?.email || ""} now?`}
+        body={one?.status === "sent"
+          ? `They already got it${one.sentAt ? ` ${when(one.sentAt)}` : ""}. This sends it again to ${one.email}.`
+          : one?.status === "sending"
+            ? `A send to ${one?.email} wasn't confirmed last time. Check Resend first, or they may get it twice.`
+            : `Sends the “Show the world you're attending” email to ${one?.email}. “Send to all” will skip them afterwards.`}
+        confirmLabel={one?.status === "sent" || one?.status === "sending" ? "Send again" : "Send"}
+        onConfirm={async () => {
+          await api.post(`${BASE}/send-one`, { email: one.email, again: one.status === "sent" || one.status === "sending" });
+          toast.success(`Sent to ${one.email}`);
+          recipients.reload();
+        }}
+      />
 
       {confirmOpen && (
         <SendAllDialog toSend={toSend} alreadySent={counts.sent} unconfirmed={counts.sending}

@@ -2,7 +2,7 @@ import {
   CalendarDays,
   LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
-  Megaphone, ScrollText, UserCog, Power, KeyRound, FileDown, Landmark, Inbox, CalendarCheck, IdCard, Share2,
+  Megaphone, ScrollText, UserCog, Power, KeyRound, FileDown, Landmark, Inbox, CalendarCheck, IdCard, Share2, BellRing,
 } from "lucide-react";
 
 /** Sidebar structure. `to` is relative to /admin. */
@@ -46,6 +46,7 @@ export const NAV = [
     title: "Marketing",
     items: [
       { to: "marketing/attending", label: "I'm attending campaign", icon: Share2 },
+      { to: "marketing/rsvp-reminders", label: "RSVP reminders", icon: BellRing },
     ],
   },
   {

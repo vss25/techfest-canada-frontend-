@@ -36,6 +36,7 @@ import IndiaPavilion from "../admin/leads/IndiaPavilion";
 import FormSubmissions from "../admin/leads/FormSubmissions";
 import Rsvps from "../admin/leads/Rsvps";
 import AttendingCampaign from "../admin/marketing/AttendingCampaign";
+import RsvpReminders from "../admin/marketing/RsvpReminders";
 
 // Existing admin features — wrapped and restyled, logic unchanged.
 import CheckIn from "../components/CheckIn";
@@ -190,6 +191,7 @@ export default function Admin() {
             <Route path="rsvps" element={<Rsvps />} />
 
             <Route path="marketing/attending" element={<AttendingCampaign />} />
+            <Route path="marketing/rsvp-reminders" element={<RsvpReminders />} />
 
             <Route path="app" element={<AppOverview />} />
             <Route path="app/people" element={<People />} />

@@ -327,7 +327,8 @@ export default function Rsvp() {
   }, [failure, answers, lookupKey, tid]);
   const checking = !!lookupKey && !answered && !failure;
   const lockedTier = found.verified && (found.kind === "ticket" || found.kind === "speaker") ? found.tier : "";
-  const isSpeaker = found.kind === "speaker";
+  // A speaker on the list, or a verified Speaker Pass ticket ID (tier "speaker").
+  const isSpeaker = found.kind === "speaker" || (found.verified && found.tier === "speaker");
   const foundKey = `${found.kind}:${found.tier || ""}:${found.verified}`;
   const choice = answer.key === foundKey ? answer.choice : "";
   const keptTier = ""; // never guess a pass: only a verified ticket sets it

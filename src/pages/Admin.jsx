@@ -26,6 +26,7 @@ import AuditLog from "../admin/app/AuditLog";
 import StaffAccounts from "../admin/staff/StaffAccounts";
 import KillSwitch from "../admin/staff/KillSwitch";
 import TicketManager from "../admin/tickets/TicketManager";
+import SpeakerPasses from "../admin/tickets/SpeakerPasses";
 import SalesAnalytics from "../admin/tickets/SalesAnalytics";
 import Inventory from "../admin/tickets/Inventory";
 import EmailTracking from "../admin/staff/EmailTracking";
@@ -156,6 +157,7 @@ export default function Admin() {
             <Route index element={<Overview />} />
 
             <Route path="attendees" element={<TicketManager />} />
+            <Route path="speaker-passes" element={<SpeakerPasses />} />
             <Route path="inventory" element={<Inventory />} />
             <Route path="check-in" element={<Legacy eyebrow={T} title="Check-in" description="Point the camera at a ticket's QR code to check the attendee in. Allow camera access when your browser asks."><CheckIn /></Legacy>} />
             <Route path="analytics" element={<ManagementOnly><SalesAnalytics /></ManagementOnly>} />

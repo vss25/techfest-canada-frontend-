@@ -638,7 +638,7 @@ export default function Rsvp() {
               <motion.div key="speaker" className="rsvp-chip rsvp-chip-magic" initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }}>
                 <Mic2 size={18} aria-hidden="true" />
                 <span className="rsvp-chip-text">
-                  {found.ticketMatched ? <>We found your <strong>Speaker Pass</strong>. Everything's open for you</> : "Welcome, speaker. Everything's open for you"}
+                  {found.ticketMatched ? <>We found your <strong>Speaker Pass</strong>. Welcome, speaker</> : "Welcome, speaker"}
                 </span>
               </motion.div>
             ) : found.kind === "ticket" && found.verified ? (
@@ -672,12 +672,12 @@ export default function Rsvp() {
     body = (
       <>
         <StepHeader id={titleId} eyebrow="Step 2 · Your pass" title={lockedTier ? "Your pass" : "Which pass do you have?"}
-          sub={lockedTier ? (isSpeaker ? "Speakers can join everything." : "Confirmed from your ticket.") : "It decides which experiences you can RSVP for."} />
+          sub={lockedTier ? (isSpeaker ? "Your Speaker Pass includes every breakfast, luncheon, the Gala and the Awards." : "Confirmed from your ticket.") : "It decides which experiences you can RSVP for."} />
         <div className="rsvp-stack" role="radiogroup" aria-labelledby={titleId} aria-describedby={errors.tier ? "rsvp-tier-error" : undefined}>
           {cards.map((k, i) => {
             const on = tier === k;
             const disabled = !!lockedTier && !on;
-            const inc = k === "speaker" ? ["Everything: every meal, the Gala, the Awards, meetings and the lounge"] : includesFor(k, options);
+            const inc = k === "speaker" ? ["Every CxO breakfast and luncheon, the Gala Dinner and the Awards Night"] : includesFor(k, options);
             return (
               <motion.label key={k} className="rsvp-choice rsvp-pass" data-checked={on || undefined} data-disabled={disabled || undefined}
                 style={{ "--accent": PASS_ACCENT[k] }}

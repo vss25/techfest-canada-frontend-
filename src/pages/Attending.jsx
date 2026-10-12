@@ -34,9 +34,14 @@ import {
      c) no photo: their initials on the brand gradient,
    then post it to LinkedIn with pre-written (editable) text:
      - phones: the share sheet with the PNG + text (straight to the app);
-     - otherwise: the PNG downloads, the text is copied, and LinkedIn's
-       share box opens with the text filled in; they attach the image.
-   Everything happens in the browser. The photo is never uploaded.
+     - computers: "Post to LinkedIn" sends the finished PNG + text to
+       the backend (POST /api/attending/post), then LinkedIn asks them
+       to allow posting and the backend posts it with the image
+       attached; they come back to #posted=1&post=<URL>. If that fails
+       or isn't switched on, the manual way: the PNG downloads, the
+       text is copied, LinkedIn's share box opens, they attach it.
+   The image is drawn in the browser. Only the finished image is
+   uploaded, and only when they post it.
 ========================================================= */
 
 const SHAPES = ["square", "landscape"];
@@ -47,15 +52,22 @@ const LI_ERRORS = {
   no_photo: "Your LinkedIn profile doesn't have a photo we can use. Upload one instead.",
 };
 const liErrorText = (code) => LI_ERRORS[code] || "We couldn't get your LinkedIn photo. Upload a photo instead.";
+const POST_ERRORS = {
+  cancelled: "You cancelled on LinkedIn, so nothing was posted. Try again whenever you’re ready.",
+  unavailable: "Posting straight to LinkedIn isn’t available right now. You can still download it and open LinkedIn.",
+  expired: "That took a little too long. Press “Post to LinkedIn” again.",
+  busy: "Too many tries. Wait a few minutes, then try again.",
+};
+const postErrorText = (code) => POST_ERRORS[code] || "LinkedIn didn’t accept the post. Try again, or download it and open LinkedIn.";
 
 const EMPTY = { firstName: "", lastName: "", title: "", company: "" };
 const filled = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => !!v));
 
 /** First render: what the link (or the trip back from LinkedIn) brought. Doesn't change anything. */
 function initialState() {
-  if (typeof window === "undefined") return { fields: EMPTY, text: defaultPostText(), format: "square", picture: "", error: "", clear: false, returning: false };
+  if (typeof window === "undefined") return { fields: EMPTY, text: defaultPostText(), format: "square", picture: "", error: "", clear: false, returning: false, posted: null, postError: "", photoData: "" };
   const frag = readFragment(window.location.hash);
-  const returning = !!(frag.linkedin || frag.linkedinError);
+  const returning = !!(frag.linkedin || frag.linkedinError || frag.posted || frag.postError);
   const draft = returning ? peekDraft() : null;
   const saved = { ...EMPTY, ...(draft?.fields && typeof draft.fields === "object" ? draft.fields : {}) };
   for (const k of Object.keys(saved)) saved[k] = typeof saved[k] === "string" ? saved[k].slice(0, 120) : "";
@@ -70,6 +82,12 @@ function initialState() {
     error: frag.linkedinError ? liErrorText(frag.linkedinError) : frag.linkedin && !frag.linkedin.picture ? LI_ERRORS.no_photo : "",
     clear: frag.had,
     returning,
+    posted: frag.posted,
+    postError: frag.postError ? postErrorText(frag.postError) : "",
+    // Back from "Post to LinkedIn": the photo they had (a JPEG data URL), its source and framing.
+    photoData: !frag.linkedin && typeof draft?.photo === "string" && draft.photo.startsWith("data:image/jpeg;base64,") ? draft.photo : "",
+    photoSource: ["upload", "camera", "linkedin"].includes(draft?.photoSource) ? draft.photoSource : "upload",
+    crop: draft?.crop && typeof draft.crop === "object" ? draft.crop : null,
   };
 }
 
@@ -86,6 +104,16 @@ async function blobToPhoto(blob) {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+/** A photo saved before the trip to LinkedIn (a data URL from this page). */
+async function dataUrlToPhoto(dataUrl) {
+  const img = new Image();
+  img.src = dataUrl;
+  await img.decode();
+  const prepared = prepareImage(img);
+  if (!prepared) throw new Error("empty image");
+  return prepared;
 }
 
 /** LinkedIn's picture: straight from its CDN when it allows it, else through our image proxy (same hosts only). */
@@ -121,11 +149,14 @@ export default function Attending() {
   const [crop, setCrop] = useState(DEFAULT_CROP);
   const [assets, setAssets] = useState(null);
   const [glyphs, setGlyphs] = useState(0);
-  const [photoBusy, setPhotoBusy] = useState(!!init.picture);
+  const [photoBusy, setPhotoBusy] = useState(!!(init.picture || init.photoData));
   const [photoError, setPhotoError] = useState(init.error);
   const [copied, setCopied] = useState(false);
   const [guide, setGuide] = useState(null); // { copied, name, mode } after "Share on LinkedIn" without the share sheet
   const [shared, setShared] = useState(false);
+  const [posting, setPosting] = useState(false);
+  const [posted, setPosted] = useState(init.posted); // { url } after "Post to LinkedIn"
+  const [postError, setPostError] = useState(init.postError);
   const canvasRef = useRef(null);
   const textRef = useRef(null);
   const dragRef = useRef(null);
@@ -152,6 +183,17 @@ export default function Attending() {
     startedRef.current = true;
     if (init.clear) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
     if (init.returning) clearDraft();
+    if (init.photoData) {
+      (async () => {
+        try {
+          const img = await dataUrlToPhoto(init.photoData);
+          setPhoto({ img, source: init.photoSource });
+          setCrop(init.crop ? clampCrop({ ...DEFAULT_CROP, ...init.crop }, img) : DEFAULT_CROP);
+        } catch { /* they can add it again */ }
+        finally { setPhotoBusy(false); }
+      })();
+      return;
+    }
     if (!init.picture) return;
     (async () => {
       try {
@@ -281,6 +323,35 @@ export default function Attending() {
     else if (e.key === "-" || e.key === "_") { e.preventDefault(); setZoom(crop.zoom - 0.1); }
   };
 
+  /* Computers: send the finished image + text, then LinkedIn asks to allow posting and the backend posts it. */
+  const postToLinkedin = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !ready || posting) return;
+    setPosting(true);
+    setPostError("");
+    setPosted(null);
+    setGuide(null);
+    const base = { fields, text, format };
+    let photoData = "";
+    try { photoData = photo?.img ? photo.img.toDataURL("image/jpeg", 0.9) : ""; } catch { /* keep the rest */ }
+    if (!photoData || !saveDraft({ ...base, photo: photoData, photoSource: photo.source, crop })) saveDraft(base);
+    try {
+      const r = await fetch(`${API}/attending/post`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "omit",
+        body: JSON.stringify({ image: canvas.toDataURL("image/png"), text }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.id) throw Object.assign(new Error(j.error || "failed"), { code: j.code || "failed" });
+      window.location.assign(`${API}/attending/linkedin/post?d=${encodeURIComponent(j.id)}`);
+    } catch (err) {
+      clearDraft();
+      setPosting(false);
+      setPostError(postErrorText(err?.code));
+    }
+  };
+
   /* Sharing. Everything happens inside the click, so the share sheet, the copy and the new tab are allowed. */
   const share = () => {
     const canvas = canvasRef.current;
@@ -297,6 +368,17 @@ export default function Attending() {
       );
       return;
     }
+    postToLinkedin();
+  };
+
+  /* The manual way: download the image, copy the text, open LinkedIn's share box. */
+  const shareManually = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !ready) return;
+    const name = cardFileName(format);
+    const blob = canvasPngBlob(canvas);
+    setShared(false);
+    setPostError("");
     downloadBlob(blob, name);
     const ok = copyTextNow(text);
     window.open(linkedinShareUrl(text), "_blank", "noopener,noreferrer");
@@ -331,6 +413,21 @@ export default function Attending() {
         <h1 className="att-title">Show the world you're attending</h1>
         <p className="att-sub">Make your personal “I’m attending” image in seconds, then share it on LinkedIn with a post we’ve written for you.</p>
       </div>
+
+      {posted && (
+        <div className="att-posted" role="status">
+          <span className="att-posted-icon"><Check size={22} aria-hidden="true" /></span>
+          <div>
+            <p className="att-posted-title">You’re on LinkedIn!</p>
+            <p className="att-posted-sub">Your post is live with your image attached. Thank you for spreading the word, see you in Toronto.</p>
+            {posted.url && (
+              <a className="att-text-btn" href={posted.url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink size={14} aria-hidden="true" /> View your post
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       <main className="att-grid">
         <div className="att-preview-col">
@@ -410,7 +507,7 @@ export default function Attending() {
             </div>
             {photoError && <p className="att-error" role="alert"><AlertCircle size={16} aria-hidden="true" /> {photoError}</p>}
             <div className="att-photo-foot">
-              <p className="att-private"><Lock size={13} aria-hidden="true" /> Your photo stays on this device. It’s never uploaded.</p>
+              <p className="att-private"><Lock size={13} aria-hidden="true" /> Your photo stays on this device. Only the finished image is shared, when you post it.</p>
               {photo && (
                 <button type="button" className="att-text-btn" onClick={removePhoto}>
                   <Trash2 size={14} aria-hidden="true" /> Use my initials instead
@@ -449,9 +546,24 @@ export default function Attending() {
           </Step>
 
           <div className="att-actions">
-            <button type="button" className="att-btn" onClick={share} disabled={!ready} aria-busy={!ready || undefined}>
-              <Linkedin size={20} aria-hidden="true" /> Share on LinkedIn
+            <button type="button" className="att-btn" onClick={share} disabled={!ready || posting} aria-busy={!ready || posting || undefined}>
+              {posting ? <Loader2 size={20} className="att-spin" aria-hidden="true" /> : <Linkedin size={20} aria-hidden="true" />}
+              {posting ? "Opening LinkedIn…" : mobile ? "Share on LinkedIn" : "Post to LinkedIn"}
             </button>
+            {!mobile && !postError && (
+              <p className="att-hint att-hint-center">LinkedIn asks you to allow it once, then your post goes up with the image attached.</p>
+            )}
+            {postError && (
+              <div className="att-error att-post-error" role="alert">
+                <AlertCircle size={16} aria-hidden="true" />
+                <div>
+                  <span>{postError}</span>
+                  <button type="button" className="att-text-btn" onClick={shareManually} disabled={!ready}>
+                    <Download size={14} aria-hidden="true" /> Download and open LinkedIn
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="att-actions-row">
               <button type="button" className="att-btn-ghost" onClick={download} disabled={!ready}>
                 <Download size={17} aria-hidden="true" /> Download image
@@ -493,7 +605,7 @@ export default function Attending() {
       </main>
 
       <footer className="att-foot">
-        <p>Made in your browser: nothing you add here is stored or uploaded.</p>
+        <p>Made in your browser. When you post, only your finished image and text go to LinkedIn. We don’t keep a copy.</p>
         <p>Questions? <a className="att-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a></p>
       </footer>
     </div>
@@ -635,6 +747,12 @@ body.att-open { background: #06020f !important; padding-bottom: 0 !important; }
 .att-error { display: flex; gap: 7px; align-items: flex-start; margin: 12px 0 0; padding: 11px 13px; border-radius: 14px; font-size: 13.5px; line-height: 1.5; color: #ffc2cb;
   background: rgba(255,90,110,0.1); border: 1px solid rgba(255,120,140,0.3); }
 .att-error svg { flex: none; margin-top: 2px; }
+.att-posted { position: relative; z-index: 1; display: flex; gap: 14px; align-items: flex-start; width: 100%; max-width: 720px; margin: 0 auto 22px; padding: 18px 20px; border-radius: 20px;
+  background: rgba(60,200,130,0.14); border: 1px solid rgba(120,230,170,0.45); box-shadow: 0 18px 50px rgba(0,0,0,0.35); }
+.att-posted-icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(120,230,170,0.22); color: #c9f7dc; }
+.att-posted-title { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 17px; margin: 2px 0 6px; color: #e9fff2; }
+.att-posted-sub { margin: 0 0 8px; font-size: 14.5px; line-height: 1.55; color: rgba(233,255,242,0.86); }
+.att-post-error > div { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .att-done { display: flex; align-items: center; gap: 8px; margin: 16px 0 0; padding: 12px 14px; border-radius: 14px; font-size: 14px; color: #c9f7dc; background: rgba(60,200,130,0.12); border: 1px solid rgba(120,230,170,0.35); }
 
 .att-guide { margin-top: 18px; padding: 16px 16px 12px; border-radius: 18px; background: linear-gradient(120deg, rgba(122,63,209,0.26), rgba(232,69,139,0.18)); border: 1px solid rgba(255,255,255,0.18); }

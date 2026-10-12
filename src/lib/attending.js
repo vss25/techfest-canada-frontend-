@@ -7,6 +7,8 @@
    the page reads them once and removes them from the address bar.
    After "Use my LinkedIn photo" the backend sends people back with
    #li=1&fn=…&ln=…&pic=<media.licdn.com URL>, or #li_error=<code>.
+   After "Post to LinkedIn" (computers): #posted=1&post=<post URL>,
+   or #post_error=<code>.
 ========================================================= */
 
 export const SITE_URL = "https://www.thetechfestival.com";
@@ -46,9 +48,13 @@ export function isLinkedinPhotoUrl(raw) {
   }
 }
 
+/** A LinkedIn post's address, as the backend sends it back after posting. */
+export const isLinkedinPostUrl = (raw) => /^https:\/\/www\.linkedin\.com\/feed\/update\/urn:li:(share|ugcPost):\d+\/$/.test(String(raw || ""));
+
 /**
  * Reads the fragment: { fields: { firstName, lastName, title, company }, linkedin: { picture } | null,
- * linkedinError: "" | code, had: boolean }. `had` is true when there was anything to clear.
+ * linkedinError: "" | code, posted: { url } | null, postError: "" | code, had: boolean }.
+ * `had` is true when there was anything to clear.
  */
 export function readFragment(hash) {
   const raw = String(hash || "").replace(/^#/, "");
@@ -62,7 +68,10 @@ export function readFragment(hash) {
   const pic = p.get("pic") || "";
   const linkedin = p.get("li") === "1" ? { picture: isLinkedinPhotoUrl(pic) ? pic : "" } : null;
   const linkedinError = tidy(p.get("li_error"), 40);
-  return { fields, linkedin, linkedinError, had: raw.length > 0 };
+  const post = p.get("post") || "";
+  const posted = p.get("posted") === "1" ? { url: isLinkedinPostUrl(post) ? post : "" } : null;
+  const postError = tidy(p.get("post_error"), 40);
+  return { fields, linkedin, linkedinError, posted, postError, had: raw.length > 0 };
 }
 
 /** Phones and tablets: share straight to the LinkedIn app via the share sheet. */
@@ -127,10 +136,11 @@ export function downloadBlob(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-/* What people typed survives the round trip to LinkedIn's sign-in page (this tab only). */
+/* What people typed (and their photo) survives the round trip to LinkedIn (this tab only). */
 const DRAFT_KEY = "ttfc.attending.draft";
+/** True when saved (false: private mode, or too big for the browser's storage). */
 export function saveDraft(draft) {
-  try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch { /* private mode */ }
+  try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); return true; } catch { return false; }
 }
 /** The saved draft (left in place: React may render twice before effects run). */
 export function peekDraft() {

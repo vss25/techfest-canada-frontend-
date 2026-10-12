@@ -26,6 +26,12 @@ import { API, useFormGuard } from "../lib/forms";
    The save answers with an edit token, kept in localStorage
    ("ttfc.rsvp.edit"); sent back under the same name, it updates that
    RSVP instead of adding another. Staff see RSVPs in Admin → Leads → RSVPs.
+
+   Personal links (the Speaker Pass email): /rsvp#t=<ticketId>&fn=<first>&ln=<last>.
+   The fragment never reaches the server; index.html moves it out of the address
+   bar before analytics loads (this page clears it too, as a fallback). The page
+   opens on the name question already filled in and looks the ticket up at once.
+   The values only ever fill the form; nothing else is kept.
 ========================================================= */
 
 const ENQUIRE = "enquire@thetechfestival.com";
@@ -43,6 +49,12 @@ const article = (label) => (/^[aeiou]/i.test(label) ? "an" : "a");
 // Ticket IDs are read the way the backend reads them (normalizeTicketId), so "APX 654321" and "apx654321" are one lookup.
 const normTicket = (s) => String(s || "").trim().replace(/^TECHFEST:/i, "").replace(/\s+/g, "").toLowerCase();
 const TICKET_MIN = 6; // shorter than any real ticket ID: a half-typed one is never looked up
+/** What the lookup is asked about (and its answer kept under): only once a last name and a whole ticket ID are in. */
+const lookupKeyOf = (firstName, lastName, ticketId) => {
+  const last = lastName.trim();
+  const ticket = normTicket(ticketId);
+  return last.length >= 2 && ticket.length >= TICKET_MIN ? `${firstName.trim()}|${last}|${ticket}`.toLowerCase() : "";
+};
 const WAIT_NAME = 600; // ms after they stop typing a name
 const WAIT_TICKET = 1200; // ticket IDs are often copied from another screen, a few characters at a time
 const endStop = (s) => (/[.!?]$/.test(s) ? s : `${s}.`);
@@ -51,6 +63,33 @@ const FIELD_STEP = {
   firstName: "name", lastName: "name", ticketId: "name", tier: "name", days: "events", options: "events",
   dietary: "dietary", dietaryOther: "dietary", email: "dietary", accessibility: "dietary",
 };
+
+/* A personal link's ticket ID and name: from index.html (which already took them out of the address bar),
+   else from the fragment or query string. Read only; clearPrefill() takes them out of the URL. */
+const PREFILL_KEYS = ["t", "fn", "ln"];
+function readPrefill() {
+  try {
+    const held = window.__ttfcRsvpPrefill;
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const query = new URLSearchParams(window.location.search);
+    const value = (k, max) => String((held ? held[k] : hash.get(k) ?? query.get(k)) ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+    const p = { ticketId: value("t", 64), firstName: value("fn", 80), lastName: value("ln", 80) };
+    return p.ticketId || p.firstName || p.lastName ? p : null;
+  } catch { return null; }
+}
+function clearPrefill() {
+  try {
+    delete window.__ttfcRsvpPrefill;
+    const { pathname, search, hash } = window.location;
+    const h = new URLSearchParams(hash.replace(/^#/, ""));
+    const q = new URLSearchParams(search);
+    if (!PREFILL_KEYS.some((k) => h.has(k) || q.has(k))) return;
+    PREFILL_KEYS.forEach((k) => { h.delete(k); q.delete(k); });
+    const qs = q.toString();
+    const hs = h.toString();
+    window.history.replaceState(window.history.state, "", `${pathname}${qs ? `?${qs}` : ""}${hs ? `#${hs}` : ""}`);
+  } catch { /* nothing to clear */ }
+}
 
 /* The edit token POST /api/rsvp hands back: sent with a later RSVP from this browser under the same name,
    it changes that RSVP instead of adding a second one. { nameKey, ticketId?, token } */
@@ -223,16 +262,19 @@ export default function Rsvp() {
   const [catalog, setCatalog] = useState(null);
   const [catalogError, setCatalogError] = useState(false);
   const [catalogNonce, setCatalogNonce] = useState(0);
-  const [step, setStep] = useState(0);
+  const [prefill] = useState(readPrefill); // a personal link: straight to the name question, filled in
+  const [step, setStep] = useState(prefill ? 1 : 0);
   const [dir, setDir] = useState(1);
   const [form, setForm] = useState({
-    firstName: "", lastName: "", ticketId: "", email: "", tier: "", days: [], options: [], dietary: [], dietaryOther: "", accessibility: "",
+    firstName: prefill?.firstName || "", lastName: prefill?.lastName || "", ticketId: prefill?.ticketId || "",
+    email: "", tier: "", days: [], options: [], dietary: [], dietaryOther: "", accessibility: "",
   });
   const [errors, setErrors] = useState({});
   const [answers, setAnswers] = useState({}); // lookup key → what the server said, so nothing is asked twice
   const [failures, setFailures] = useState({}); // lookup key → "limited" (429) or "failed"
   const [overruled, setOverruled] = useState({}); // lookup key → true when sending showed the server sees their pass differently
-  const [rush, setRush] = useState(""); // a lookup key to ask about now, without waiting for a typing pause
+  // A lookup key to ask about now, without waiting for a typing pause (a personal link's, straight away).
+  const [rush, setRush] = useState(() => (prefill ? lookupKeyOf(prefill.firstName, prefill.lastName, prefill.ticketId) : ""));
   const [queued, setQueued] = useState(false); // Continue pressed while we were still looking them up
   const [answer, setAnswer] = useState({ key: "", choice: "" }); // "Is this right?" for an unverified match
   const [returnToReview, setReturnToReview] = useState(false);
@@ -257,6 +299,9 @@ export default function Rsvp() {
     return () => { document.title = prev; robots.remove(); document.body.classList.remove("rsvp-open"); };
   }, []);
 
+  /* A personal link's ticket ID and name leave the address bar at once (index.html usually has already). */
+  useEffect(() => { clearPrefill(); }, []);
+
   /* What each pass includes, from the backend. */
   useEffect(() => {
     const ctrl = new AbortController();
@@ -276,7 +321,7 @@ export default function Rsvp() {
   const tid = form.ticketId.trim();
   const ticketKey = normTicket(tid);
   const ticketReady = ticketKey.length >= TICKET_MIN;
-  const lookupKey = last.length >= 2 && ticketReady ? `${first}|${last}|${ticketReady ? ticketKey : ""}`.toLowerCase() : "";
+  const lookupKey = lookupKeyOf(form.firstName, form.lastName, form.ticketId);
   useEffect(() => {
     if (!lookupKey || answers[lookupKey] || failures[lookupKey] === "limited" || inflightRef.current.has(lookupKey)) return undefined;
     const key = lookupKey;
@@ -451,7 +496,8 @@ export default function Rsvp() {
   };
 
   const next = () => {
-    if (name === "welcome") { if (catalog) go(1); return; }
+    if (!catalog) return; // a personal link can land on the name question before the options are in
+    if (name === "welcome") { go(1); return; }
     // Their pass may still be on its way back from the lookup: wait for it (asking now) rather than move on or send without it.
     if (checking && (name === "name" || name === "dietary")) {
       if (name === "name" && !check()) { focusInvalid(); return; }
@@ -540,6 +586,14 @@ export default function Rsvp() {
   const firstDay = days.find((d) => sentDays.includes(d.key));
   const titleId = `rsvp-${name}-title`;
 
+  const catalogProblem = catalogError && (
+    <p className="rsvp-error rsvp-error-block" role="alert">
+      <AlertCircle size={16} aria-hidden="true" /> We couldn't load the RSVP form.{" "}
+      <button type="button" className="rsvp-link" onClick={() => { setCatalogError(false); setCatalogNonce((n) => n + 1); }}>Try again</button>{" "}
+      or email <a className="rsvp-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a>.
+    </p>
+  );
+
   /* ---------- One screen per question ---------- */
   let body = null;
   if (name === "welcome") {
@@ -551,13 +605,7 @@ export default function Rsvp() {
           <li><span>Venue</span>Westin Harbour Castle</li>
           <li><span>Takes</span>About a minute</li>
         </ul>
-        {catalogError && (
-          <p className="rsvp-error rsvp-error-block" role="alert">
-            <AlertCircle size={16} aria-hidden="true" /> We couldn't load the RSVP form.{" "}
-            <button type="button" className="rsvp-link" onClick={() => { setCatalogError(false); setCatalogNonce((n) => n + 1); }}>Try again</button>{" "}
-            or email <a className="rsvp-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a>.
-          </p>
-        )}
+        {catalogProblem}
       </>
     );
   } else if (name === "name") {
@@ -589,7 +637,9 @@ export default function Rsvp() {
             ) : isSpeaker ? (
               <motion.div key="speaker" className="rsvp-chip rsvp-chip-magic" initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }}>
                 <Mic2 size={18} aria-hidden="true" />
-                <span className="rsvp-chip-text">Welcome, speaker. Everything's open for you</span>
+                <span className="rsvp-chip-text">
+                  {found.ticketMatched ? <>We found your <strong>Speaker Pass</strong>. Everything's open for you</> : "Welcome, speaker. Everything's open for you"}
+                </span>
               </motion.div>
             ) : found.kind === "ticket" && found.verified ? (
               <motion.div key={`v-${found.tier}`} className="rsvp-chip rsvp-chip-magic" initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }}>
@@ -614,6 +664,7 @@ export default function Rsvp() {
             ) : null}
           </AnimatePresence>
         </div>
+        {catalogProblem}
       </>
     );
   } else if (name === "pass") {
@@ -861,7 +912,7 @@ export default function Rsvp() {
 
   const showNav = name !== "success";
   const nextLabel = name === "welcome" ? "RSVP now" : name === "dietary" ? (submitting ? "Sending…" : "Send my RSVP") : returnToReview ? "Back to review" : "Continue";
-  const busy = submitting || queued || (name === "welcome" && !catalog && !catalogError);
+  const busy = submitting || queued || (!catalog && !catalogError);
 
   return (
     <div className="rsvp-root">
@@ -904,7 +955,7 @@ export default function Rsvp() {
                 </button>
               )}
               <button type="button" ref={primaryRef} className="rsvp-btn" onClick={next}
-                disabled={(name === "welcome" && !catalog) || submitting} aria-busy={busy || undefined}>
+                disabled={!catalog || submitting} aria-busy={busy || undefined}>
                 {busy && <Loader2 size={18} className="rsvp-spin" aria-hidden="true" />}
                 {nextLabel}
                 {!busy && name !== "review" && <ArrowRight size={18} aria-hidden="true" />}

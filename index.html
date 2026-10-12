@@ -121,6 +121,30 @@
       })();
     </script>
 
+    <!-- Personal RSVP links (/rsvp#t=<ticketId>&fn=<first>&ln=<last>, from the Speaker
+         Pass email; the same keys in the query string work too): take the ticket ID and
+         name out of the address bar before any analytics script reads the page URL.
+         Held in memory only; src/pages/Rsvp.jsx reads them once to fill in the form. -->
+    <script>
+      (function () {
+        try {
+          if (location.pathname.replace(/\/+$/, "") !== "/rsvp") return;
+          var h = new URLSearchParams(location.hash.replace(/^#/, ""));
+          var q = new URLSearchParams(location.search);
+          var got = {}, any = false;
+          ["t", "fn", "ln"].forEach(function (k) {
+            var v = h.has(k) ? h.get(k) : q.get(k);
+            if (v !== null) { got[k] = v; any = true; }
+            h.delete(k); q.delete(k);
+          });
+          if (!any) return;
+          window.__ttfcRsvpPrefill = got;
+          var qs = q.toString(), hs = h.toString();
+          history.replaceState(history.state, "", location.pathname + (qs ? "?" + qs : "") + (hs ? "#" + hs : ""));
+        } catch (e) { /* Rsvp.jsx reads and clears the address bar itself */ }
+      })();
+    </script>
+
     <!-- Analytics / advertising (Google Analytics 4, Meta Pixel, visitor identification)
          are NOT loaded here. src/lib/trackers.js injects them only after the visitor
          chooses "Accept All" in the cookie banner (localStorage tfc_cookie_consent = "all").

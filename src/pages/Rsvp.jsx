@@ -29,8 +29,10 @@ import { API, useFormGuard } from "../lib/forms";
 ========================================================= */
 
 const ENQUIRE = "enquire@thetechfestival.com";
-const STEPS = ["welcome", "name", "pass", "days", "experiences", "dietary", "review", "success"];
-const FORM_STEPS = ["name", "pass", "days", "experiences", "dietary", "review"];
+const STEPS = ["welcome", "name", "events", "dietary", "success"];
+const FORM_STEPS = ["name", "events", "dietary"];
+// Everyone with a ticket comes to the conference: only the special events are asked about.
+const SPECIAL = (o) => !/^(sessions|expo|breaks)_/.test(o.key);
 const PASS_ORDER = ["connect", "influence", "power", "apex"];
 const PASS_ACCENT = { connect: "#9b6cff", influence: "#e8458b", power: "#f5a623", apex: "#ffd27a", speaker: "#e8458b" };
 const LOCATION = "The Westin Harbour Castle, 1 Harbour Square, Toronto, ON M5J 1A6";
@@ -46,7 +48,7 @@ const WAIT_TICKET = 1200; // ticket IDs are often copied from another screen, a 
 const endStop = (s) => (/[.!?]$/.test(s) ? s : `${s}.`);
 // Which question a server error belongs to (POST /api/rsvp answers 400 with `field`).
 const FIELD_STEP = {
-  firstName: "name", lastName: "name", ticketId: "name", tier: "pass", days: "days", options: "experiences",
+  firstName: "name", lastName: "name", ticketId: "name", tier: "name", days: "events", options: "events",
   dietary: "dietary", dietaryOther: "dietary", email: "dietary", accessibility: "dietary",
 };
 
@@ -335,7 +337,7 @@ export default function Rsvp() {
   const options = useMemo(() => catalog?.options || [], [catalog]);
   const days = catalog?.days || [];
   const tierLabel = (k) => catalog?.tiers?.find((t) => t.key === k)?.label || "";
-  const allowed = useMemo(() => options.filter((o) => o.kind === "experience" && o.tiers.includes(tier) && (!o.day || form.days.includes(o.day))), [options, tier, form.days]);
+  const allowed = useMemo(() => options.filter((o) => o.kind === "experience" && SPECIAL(o) && o.tiers.includes(tier) && (!o.day || form.days.includes(o.day))), [options, tier, form.days]);
   const chosenOptions = allowed.filter((o) => form.options.includes(o.key)).map((o) => o.key);
 
   const set = (k, v) => {
@@ -373,12 +375,11 @@ export default function Rsvp() {
       if (!tid) e.ticketId = "Please enter your ticket ID";
       else if (!ticketReady) e.ticketId = "That ticket ID looks too short";
       else if (found && found.ticketMatched === false) e.ticketId = "We couldn't find that ticket. Check your ticket email, or get your pass at thetechfestival.com/tickets";
+      else if (!checking && !lockedTier) e.ticketId = "We couldn't confirm your pass from that ticket ID. Check your ticket email, or get your pass at thetechfestival.com/tickets";
     }
-    if (n === "pass" && !tier) e.tier = "Choose your pass";
-    if (n === "days" && !form.days.length) e.days = "Choose at least one day";
+    if (n === "events" && !form.days.length) e.days = "Choose at least one day";
     if (n === "dietary") {
       if (form.dietary.includes("other") && !form.dietaryOther.trim()) e.dietaryOther = "Tell us what you need";
-      if (form.email.trim() && !EMAIL_RE.test(form.email.trim())) e.email = "That email doesn't look right";
     }
     return e;
   };
@@ -391,16 +392,15 @@ export default function Rsvp() {
     return !Object.values(e).some(Boolean);
   };
   /* Review only ever shows (and sends) a complete RSVP: anything missing sends them to that question first. */
-  const firstBad = () => FORM_STEPS.find((n) => n !== "review" && hasProblems(n));
+  const firstBad = () => FORM_STEPS.find((n) => hasProblems(n));
   const fix = (bad) => {
     setErrors(problems(bad));
-    if (name === "review") setEditBase(allowed.map((o) => o.key));
     setReturnToReview(true);
     if (bad === name) focusInvalid(); else goName(bad);
   };
   const toReview = () => {
     const bad = firstBad();
-    if (bad) fix(bad); else goName("review");
+    if (bad) fix(bad); else goName("dietary");
   };
 
   const submit = async () => {
@@ -414,7 +414,7 @@ export default function Rsvp() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: first, lastName: last, email: form.email.trim(), ticketId: tid, tier,
+          firstName: first, lastName: last, ticketId: tid, tier,
           days: form.days, options: chosenOptions, dietary: form.dietary,
           dietaryOther: form.dietary.includes("other") ? form.dietaryOther.trim() : "",
           accessibility: form.accessibility.trim(), page: window.location.pathname,
@@ -452,13 +452,13 @@ export default function Rsvp() {
   const next = () => {
     if (name === "welcome") { if (catalog) go(1); return; }
     // Their pass may still be on its way back from the lookup: wait for it (asking now) rather than move on or send without it.
-    if (checking && (name === "name" || name === "review")) {
+    if (checking && (name === "name" || name === "dietary")) {
       if (name === "name" && !check()) { focusInvalid(); return; }
       setRush(lookupKey);
       setQueued(true);
       return;
     }
-    if (name === "review") {
+    if (name === "dietary") {
       if (submitting) return;
       const bad = firstBad();
       if (bad) fix(bad); else submit();
@@ -466,10 +466,9 @@ export default function Rsvp() {
     }
     if (!check()) { focusInvalid(); return; }
     // Keep the pass they confirmed, so a later lookup (or a refused one) can't leave the RSVP without one.
-    if (name === "pass" && PASS_ORDER.includes(tier) && form.tier !== tier) set("tier", tier);
     if (returnToReview) {
       // New days, a new pass or a newly verified ticket can open experiences they haven't been asked about.
-      if (name !== "experiences" && allowed.some((o) => !editBase.includes(o.key))) { goName("experiences"); return; }
+      if (name !== "events" && allowed.some((o) => !editBase.includes(o.key))) { goName("events"); return; }
       toReview();
       return;
     }
@@ -477,7 +476,7 @@ export default function Rsvp() {
   };
   // While editing from Review the arrow means "back to review", with the same checks as the main button.
   const back = () => {
-    if (returnToReview && name !== "review") { next(); return; }
+    if (returnToReview && name !== "dietary") { next(); return; }
     go(Math.max(0, step - 1));
   };
   const edit = (n) => { setEditBase(allowed.map((o) => o.key)); setReturnToReview(true); goName(n); };
@@ -652,10 +651,10 @@ export default function Rsvp() {
         {errors.tier && <p id="rsvp-tier-error" className="rsvp-error" role="alert"><AlertCircle size={14} aria-hidden="true" /> {errors.tier}</p>}
       </>
     );
-  } else if (name === "days") {
+  } else if (name === "events") {
     body = (
       <>
-        <StepHeader id={titleId} eyebrow="Step 3 · Days" title="Which days are you coming?" sub="Pick one or both." />
+        <StepHeader id={titleId} eyebrow="Step 2 · Days & events" title="Which days are you coming?" sub="Pick one or both." />
         <div className="rsvp-grid2" role="group" aria-labelledby={titleId} data-invalid={!!errors.days || undefined}>
           {days.map((d, i) => {
             const on = form.days.includes(d.key);
@@ -677,15 +676,19 @@ export default function Rsvp() {
         {errors.days && <p className="rsvp-error" role="alert"><AlertCircle size={14} aria-hidden="true" /> {errors.days}</p>}
       </>
     );
-  } else if (name === "experiences") {
+  }
+  if (name === "events" && form.days.length) {
     // Nothing is ticked for anyone: every pass is asked, and they tick what they'll actually join.
     const all = allowed.length > 0 && chosenOptions.length === allowed.length;
     const groups = byDay(allowed, days.filter((d) => form.days.includes(d.key)));
     let n = 0; // card order across the groups, for the stagger and the first field's focus
     body = (
       <>
-        <StepHeader id={titleId} eyebrow="Step 4 · Experiences" title="What will you join?"
-          sub={allowed.length ? `All of these come with your ${isSpeaker ? "speaker access" : tierLabel(tier) || "pass"} on the ${form.days.length > 1 ? "days" : "day"} you picked. Tick the ones you'll actually join, so we can plan seats and catering.` : ""} />
+        {body}
+        <div className="rsvp-events-head">
+          <h3 className="rsvp-events-title">Special events</h3>
+          <p className="rsvp-events-sub">{allowed.length ? `Included with your ${isSpeaker ? "speaker access" : tierLabel(tier) || "pass"}. Tick the ones you'll join, so we can plan seats and catering.` : ""}</p>
+        </div>
         {allowed.length > 0 && (
           <div className="rsvp-exp-bar">
             <span className="rsvp-exp-count" aria-live="polite">{chosenOptions.length ? `${chosenOptions.length} of ${allowed.length} ticked` : "Nothing ticked yet"}</span>
@@ -746,7 +749,7 @@ export default function Rsvp() {
         )}
         {!allowed.length && (
           <div className="rsvp-empty">
-            <p>There's nothing to choose for the {form.days.length > 1 ? "days" : "day"} you picked. Carry on to the next step.</p>
+            <p>Your {tierLabel(tier) || "pass"} doesn't include special events on the {form.days.length > 1 ? "days" : "day"} you picked. Carry on to the last step.</p>
           </div>
         )}
       </>
@@ -755,7 +758,7 @@ export default function Rsvp() {
     const diets = catalog?.dietary || [];
     body = (
       <>
-        <StepHeader id={titleId} eyebrow="Step 5 · A few details" title="Any dietary needs?" sub="Pick all that apply." />
+        <StepHeader id={titleId} eyebrow="Step 3 · Dietary" title="Any dietary needs?" sub="Pick all that apply, then send your RSVP." />
         <div className="rsvp-pills" role="group" aria-labelledby={titleId}>
           {diets.map((d, i) => {
             const on = form.dietary.includes(d.key);
@@ -781,11 +784,6 @@ export default function Rsvp() {
         <Field id="rsvp-access" label="Accessibility needs" optional hint="Anything that helps us make the day work for you.">
           <textarea id="rsvp-access" className="rsvp-input rsvp-textarea" rows={3} maxLength={600} value={form.accessibility}
             onChange={(e) => set("accessibility", e.target.value)} aria-describedby="rsvp-access-hint" />
-        </Field>
-        <Field id="rsvp-email" label="Email" optional error={errors.email} hint="So the team can confirm your RSVP or reach you about changes.">
-          <input id="rsvp-email" type="email" inputMode="email" autoComplete="email" className="rsvp-input" value={form.email} maxLength={254}
-            onChange={(e) => set("email", e.target.value)} aria-invalid={!!errors.email || undefined}
-            aria-describedby={errors.email ? "rsvp-email-error" : "rsvp-email-hint"} />
         </Field>
       </>
     );
@@ -861,7 +859,7 @@ export default function Rsvp() {
   }
 
   const showNav = name !== "success";
-  const nextLabel = name === "welcome" ? "RSVP now" : name === "review" ? (submitting ? "Sending…" : "Send my RSVP") : returnToReview ? "Back to review" : "Continue";
+  const nextLabel = name === "welcome" ? "RSVP now" : name === "dietary" ? (submitting ? "Sending…" : "Send my RSVP") : returnToReview ? "Back to review" : "Continue";
   const busy = submitting || queued || (name === "welcome" && !catalog && !catalogError);
 
   return (
@@ -974,6 +972,9 @@ body.rsvp-open { background: #06020f !important; padding-bottom: 0 !important; }
 .rsvp-stack { display: flex; flex-direction: column; gap: 10px; }
 .rsvp-field { margin-bottom: 14px; }
 .rsvp-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; color: rgba(255,255,255,0.9); }
+.rsvp-events-head { margin: 26px 0 12px; }
+.rsvp-events-title { font-family: Orbitron, sans-serif; font-size: 1.05rem; font-weight: 800; margin: 0 0 4px; color: #fff; }
+.rsvp-events-sub { margin: 0; font-size: 0.92rem; color: rgba(255,255,255,0.78); }
 .rsvp-optional { color: rgba(255,255,255,0.7); font-weight: 500; }
 .rsvp-input { width: 100%; height: 52px; border-radius: 14px; padding: 0 16px; font: inherit; font-size: 16px; color: #fff;
   background: rgba(6,2,15,0.5); border: 1px solid rgba(255,255,255,0.15); outline: none; transition: border-color .2s, box-shadow .2s, background .2s; }

@@ -328,8 +328,8 @@ export default function Rsvp() {
   const isSpeaker = found.kind === "speaker";
   const foundKey = `${found.kind}:${found.tier || ""}:${found.verified}`;
   const choice = answer.key === foundKey ? answer.choice : "";
-  const keptTier = failure && PASS_ORDER.includes(kept.tier) ? kept.tier : "";
-  const suggested = found.kind === "ticket" && !found.verified && choice !== "no" ? found.tier : keptTier;
+  const keptTier = ""; // never guess a pass: only a verified ticket sets it
+  const suggested = "";
   const tier = lockedTier || form.tier || suggested;
 
   const options = useMemo(() => catalog?.options || [], [catalog]);
@@ -372,7 +372,7 @@ export default function Rsvp() {
       if (!last) e.lastName = "Please enter your last name";
       if (!tid) e.ticketId = "Please enter your ticket ID";
       else if (!ticketReady) e.ticketId = "That ticket ID looks too short";
-      else if (found && found.ticketMatched === false) e.ticketId = "That ticket ID doesn't match your last name";
+      else if (found && found.ticketMatched === false) e.ticketId = "We couldn't find that ticket. Check your ticket email, or get your pass at thetechfestival.com/tickets";
     }
     if (n === "pass" && !tier) e.tier = "Choose your pass";
     if (n === "days" && !form.days.length) e.days = "Choose at least one day";
@@ -598,19 +598,6 @@ export default function Rsvp() {
                 <BadgeCheck size={18} aria-hidden="true" />
                 <span className="rsvp-chip-text">We found your <strong>{found.tierLabel || tierLabel(found.tier)}</strong></span>
               </motion.div>
-            ) : found.kind === "ticket" && choice !== "no" ? (
-              <motion.div key={`u-${found.tier}`} className="rsvp-chip rsvp-chip-ask" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
-                <span className="rsvp-chip-text">
-                  {choice === "yes" ? <>Great, <strong>{found.tierLabel || tierLabel(found.tier)}</strong> it is.</>
-                    : <>Looks like you have {article(found.tierLabel || tierLabel(found.tier))} <strong>{found.tierLabel || tierLabel(found.tier)}</strong>. Is this right?</>}
-                </span>
-                {choice !== "yes" && (
-                  <span className="rsvp-chip-actions">
-                    <button type="button" className="rsvp-mini" onClick={() => { setAnswer({ key: foundKey, choice: "yes" }); set("tier", found.tier); focusPrimary(); }}>Yes</button>
-                    <button type="button" className="rsvp-mini rsvp-mini-ghost" onClick={() => { setAnswer({ key: foundKey, choice: "no" }); if (form.tier === found.tier) set("tier", ""); focusPrimary(); }}>No</button>
-                  </span>
-                )}
-              </motion.div>
             ) : failure ? (
               <motion.p key="failed" className="rsvp-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 {failure === "limited" ? "We can't check your pass right now (too many tries)." : "We couldn't check your pass just now."}{" "}
@@ -619,7 +606,12 @@ export default function Rsvp() {
               </motion.p>
             ) : tid && found.ticketMatched === false ? (
               <motion.p key="nomatch" className="rsvp-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                We couldn't match that ticket ID with your last name. That's fine, you can still continue.
+                We couldn't find a ticket with that ID and last name. Check your ticket email, or{" "}
+                <a href="/tickets" style={{ color: "#f5a623", fontWeight: 700 }}>get your pass here</a>.
+              </motion.p>
+            ) : !ticketReady && first && last ? (
+              <motion.p key="needid" className="rsvp-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                Enter your ticket ID to confirm your pass.
               </motion.p>
             ) : null}
           </AnimatePresence>

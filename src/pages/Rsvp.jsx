@@ -274,7 +274,7 @@ export default function Rsvp() {
   const tid = form.ticketId.trim();
   const ticketKey = normTicket(tid);
   const ticketReady = ticketKey.length >= TICKET_MIN;
-  const lookupKey = last.length >= 2 && (first || ticketReady) ? `${first}|${last}|${ticketReady ? ticketKey : ""}`.toLowerCase() : "";
+  const lookupKey = last.length >= 2 && ticketReady ? `${first}|${last}|${ticketReady ? ticketKey : ""}`.toLowerCase() : "";
   useEffect(() => {
     if (!lookupKey || answers[lookupKey] || failures[lookupKey] === "limited" || inflightRef.current.has(lookupKey)) return undefined;
     const key = lookupKey;
@@ -585,9 +585,7 @@ export default function Rsvp() {
         <div className="rsvp-lookup" aria-live="polite" aria-atomic="true">
           <AnimatePresence mode="wait" initial={false}>
             {checking ? (
-              <motion.p key="checking" className="rsvp-checking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <Loader2 size={14} className="rsvp-spin" aria-hidden="true" /> Looking you up…
-              </motion.p>
+              null
             ) : isSpeaker ? (
               <motion.div key="speaker" className="rsvp-chip rsvp-chip-magic" initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }}>
                 <Mic2 size={18} aria-hidden="true" />

@@ -2,7 +2,7 @@ import {
   CalendarDays,
   LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
-  Megaphone, ScrollText, UserCog, Power, KeyRound, FileDown, Landmark, Inbox, CalendarCheck, IdCard, Share2, BellRing,
+  Megaphone, ScrollText, UserCog, Power, KeyRound, FileDown, Landmark, Inbox, CalendarCheck, IdCard, Share2, TicketPlus, BellRing,
 } from "lucide-react";
 
 /** Sidebar structure. `to` is relative to /admin. */
@@ -16,6 +16,7 @@ export const NAV = [
     items: [
       { to: "attendees", label: "Tickets", icon: Users },
       { to: "speaker-passes", label: "Speaker passes", icon: IdCard },
+      { to: "issued-passes", label: "Issue passes", icon: TicketPlus },
       { to: "analytics", label: "Sales analytics", icon: BarChart3, management: true },
       { to: "inventory", label: "Inventory", icon: Package },
       { to: "check-in", label: "Check-in", icon: ScanLine },

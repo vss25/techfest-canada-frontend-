@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
-  AlertTriangle, CheckCircle2, Copy, Eye, IdCard, Info, Mail, MailCheck, Search, Send, Smartphone, UserPlus, X,
+  AlertTriangle, CalendarCheck, CalendarClock, CheckCircle2, Copy, Eye, IdCard, Info, Mail, MailCheck, Search, Send, Smartphone,
+  UserPlus, X,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
@@ -22,7 +23,10 @@ import { num, when } from "../format";
    Backend (all under /console/speaker-passes):
      GET  /                 → { rows, counts }
      POST /sync             → create passes for every speaker (management)
-     PATCH /:id { email }   → { row }   ("" clears it; 400 { error } when invalid)
+     PATCH /:id { email, contact?, runOfShow? } → { row }   ("" clears the email; 400 { error } when invalid)
+     Each row also has: sessions (run of show), contact ("own" | "handler" | "team"),
+     invitesSentAt, and rsvp ({ at, days, options } or null, matched by ticket ID).
+     Sending a pass also sends a calendar invite per session; Lubna is cc'd on both.
      GET  /:id/preview, GET /preview-sample → { to, subject, html, text }
      POST /:id/send         → { row }   (management)
      POST /send-all { confirm: "SEND" } → { sent, failed, skipped, failures } (management)
@@ -96,6 +100,17 @@ function EmailCell({ row, onSaved, onSaving }) {
   );
 }
 
+function RsvpCell({ rsvp }) {
+  if (!rsvp) return <span className="text-xs text-ttfc-dim">Not yet</span>;
+  const extras = (rsvp.options || []).filter((o) => !/^(sessions|expo|breaks)_/.test(o)).length;
+  return (
+    <span className="flex flex-col items-start gap-1" title={rsvp.at ? `RSVP'd ${when(rsvp.at)}` : undefined}>
+      <Badge tone="good" icon={CalendarCheck}>RSVP'd{rsvp.at ? ` ${shortDay(rsvp.at)}` : ""}</Badge>
+      <span className="text-[11px] text-ttfc-dim">{(rsvp.days || []).length === 2 ? "Both days" : (rsvp.days || []).map((d) => d.replace("day", "Day ")).join(", ") || "No days"}{extras ? ` · ${plural(extras, "event")}` : ""}</span>
+    </span>
+  );
+}
+
 function Status({ row }) {
   const pill = row.status === "sent"
     ? <Badge tone="good" icon={MailCheck}>Sent {shortDay(row.emailSentAt)}{row.sentCount > 1 ? ` · ×${row.sentCount}` : ""}</Badge>
@@ -106,6 +121,9 @@ function Status({ row }) {
     <div className="flex flex-col items-start gap-1">
       <span className="flex flex-wrap items-center gap-1.5">
         <span title={row.emailSentAt ? `Last sent ${when(row.emailSentAt)}${row.emailSentTo ? ` to ${row.emailSentTo}` : ""}` : undefined}>{pill}</span>
+        {row.sessions > 0 && <Badge tone="purple" icon={CalendarClock}>{plural(row.sessions, "session")}</Badge>}
+        {row.contact === "handler" && <Badge tone="neutral">Via assistant</Badge>}
+        {row.invitesSentAt && <Badge tone="good" icon={CalendarCheck}>Invite sent</Badge>}
         {row.claimed && <Badge tone="neutral" icon={Smartphone}>In app</Badge>}
         {row.checkedIn && <Badge tone="neutral" icon={CheckCircle2}>Checked in</Badge>}
       </span>
@@ -291,6 +309,7 @@ export default function SpeakerPasses() {
     withEmail: rows.filter((r) => r.email).length,
     sent: rows.filter((r) => r.status === "sent").length,
     ready: rows.filter((r) => r.status === "ready").length,
+    rsvpd: rows.filter((r) => r.rsvp).length,
   }), [rows]);
   const readyRows = useMemo(() => rows.filter((r) => r.status === "ready"), [rows]);
   const needle = q.trim().toLowerCase();
@@ -324,8 +343,10 @@ export default function SpeakerPasses() {
   const sendOne = async () => {
     const row = sendTarget;
     const r = await api.post(`${BASE}/${encodeURIComponent(row.id)}/send`);
-    if (r?.row) updateRow(r.row);
-    toast.success(`Speaker Pass sent to ${r?.row?.emailSentTo || row.email}`);
+    if (r?.row) updateRow({ ...r.row, rsvp: row.rsvp });
+    const to = r?.row?.emailSentTo || row.email;
+    if (r?.inviteError) toast.error(`Speaker Pass sent to ${to}, but the calendar invite failed: ${r.inviteError}`);
+    else toast.success(row.sessions ? `Speaker Pass and ${plural(row.sessions, "calendar invite")} sent to ${to}` : `Speaker Pass sent to ${to}`);
   };
 
   const syncSummary = syncResult && [
@@ -378,11 +399,12 @@ export default function SpeakerPasses() {
       )}
 
       {data && (
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
           <StatTile label="Passes" value={num(counts.passes)} icon={IdCard} tone="purple" />
           <StatTile label="Emails added" value={num(counts.withEmail)} icon={Mail} tone="pink" />
           <StatTile label="Sent" value={num(counts.sent)} icon={MailCheck} tone="good" />
           <StatTile label="Ready to send" value={num(counts.ready)} icon={Send} tone="orange" />
+          <StatTile label="RSVP'd" value={num(counts.rsvpd)} icon={CalendarCheck} tone="good" hint="Matched by their Speaker Pass ticket ID" />
         </div>
       )}
 
@@ -410,7 +432,7 @@ export default function SpeakerPasses() {
         <TableWrap>
           <thead>
             <tr>
-              <th>Speaker</th><th>Ticket ID</th><th>Email</th><th>Status</th>
+              <th>Speaker</th><th>Ticket ID</th><th>Email</th><th>Status</th><th>RSVP</th>
               <th><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
@@ -434,6 +456,7 @@ export default function SpeakerPasses() {
                     <EmailCell row={r} onSaved={updateRow} onSaving={(on) => markSaving(r.id, on)} />
                   </td>
                   <td><Status row={r} /></td>
+                  <td><RsvpCell rsvp={r.rsvp} /></td>
                   <td className="text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <Button size="sm" variant="ghost" icon={Eye} onClick={() => openPreview(r.id)}>Preview</Button>
@@ -469,9 +492,13 @@ export default function SpeakerPasses() {
         onClose={() => setSendTarget(null)}
         tone="primary"
         title={sendTarget ? `Send ${sendTarget.name || "this speaker"}'s Speaker Pass to ${sendTarget.email}?` : ""}
-        body={sendTarget && alreadySent(sendTarget)
-          ? `It was already sent on ${shortDay(sendTarget.emailSentAt) || "an earlier date"}${sentElsewhere(sendTarget) ? ` to ${sendTarget.emailSentTo}` : ""}.`
-          : "They'll get the email you see under Preview."}
+        body={sendTarget && [
+          alreadySent(sendTarget)
+            ? `It was already sent on ${shortDay(sendTarget.emailSentAt) || "an earlier date"}${sentElsewhere(sendTarget) ? ` to ${sendTarget.emailSentTo}` : ""}.`
+            : "They'll get the email you see under Preview.",
+          sendTarget.sessions ? `Plus ${plural(sendTarget.sessions, "calendar invite")} for their ${sendTarget.sessions > 1 ? "sessions" : "session"}.` : "",
+          "Lubna is cc'd.",
+        ].filter(Boolean).join(" ")}
         confirmLabel={sendTarget && alreadySent(sendTarget) ? "Resend" : "Send"}
         onConfirm={sendOne}
       />

@@ -24,7 +24,6 @@ import Brochures from "./pages/Brochures";
 import Venue from "./pages/Venue";
 import ScrollToTop from "./components/ScrollToTop";
 import Awards from "./pages/Awards";
-import KycForm from "./pages/KycForm";
 import Volunteer from "./pages/Volunteer";
 import Partners2026 from "./pages/partners2026";
 import Organizers from "./pages/Organizers";
@@ -115,7 +114,8 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/awards" element={<Awards />} />
         <Route path="/awards/nominations" element={<Awards />} />
-        <Route path="/kyc" element={<KycForm />} />
+        {/* KYC form hidden (13 Oct 2026); the page is kept in src/pages/KycForm.jsx */}
+        <Route path="/kyc" element={<Navigate to="/" replace />} />
         <Route path="/volunteer" element={<Volunteer />} />
         <Route path="/partners2026" element={<Partners2026 />} />
         <Route path="/organizers" element={<Organizers />} />

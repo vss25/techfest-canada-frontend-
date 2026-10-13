@@ -14,6 +14,7 @@ import { client, speakerPhotoUrl } from "../utils/sanity";
 import useAgenda from "../hooks/useAgenda";
 import SpeakerMarquee from "../components/SpeakerMarquee";
 import { useCompanyLogoIndex, companyLogos } from "../lib/companyLogos";
+import { logoArt } from "../lib/logoArt";
 import { sessionsForSpeaker, buildSpeakerCategoryMap, slugifyName, formatTime12, DAYS } from "../data/agenda";
 
 // ─── Protection ──────────────────────────────────────────────────
@@ -180,34 +181,49 @@ function FilterDropdown({ label, value, options, onSelect, dark, accent, border,
   );
 }
 
-// ─── Company logo(s) on a speaker card ───────────────────────────
-// Logos come from the CMS partner/sponsor logos (src/lib/companyLogos.js).
-// They sit as small white badges in the photo's top-left corner, so the
-// card keeps its size and its company line; parts with no logo, or a
-// past role ("Ex. CIA"), only appear in that company line.
-function CompanyLogoBadges({ parts }) {
-  var logos = parts.filter(function (p) { return p.logo; });
-  if (!logos.length) return null;
+// ─── Company line with logo(s) ───────────────────────────────────
+// Shows the company's logo where the company name was: trimmed, no box,
+// and recoloured for dark cards (src/lib/companyLogos.js finds it,
+// src/lib/logoArt.js cleans it). The name stays underneath, hidden, so
+// the line takes exactly the space it always did and the card's size
+// doesn't change. Parts with no logo, or a past role
+// ("Ex. CIA"), stay as text. Until the logo is ready, or if it can't be
+// read, the line shows the company name as before.
+function CompanyLine({ company, parts, dark, mutedText }) {
+  var s1 = useState(null); var arts = s1[0]; var setArts = s1[1];
+  useEffect(function () {
+    var live = true;
+    Promise.all(parts.map(function (p) { return p.logo ? logoArt(p.logo.src) : null; }))
+      .then(function (a) { if (live) setArts(a); });
+    return function () { live = false; };
+  }, [parts]);
+
+  var textStyle = { fontSize: "0.82rem", lineHeight: 1.5, color: mutedText };
+  var ready = arts && parts.some(function (p, n) { return p.logo && arts[n]; });
+  if (!ready) return <p style={textStyle}>{company}</p>;
   return (
-    <div style={{
-      position: "absolute", top: 12, left: 12, right: 12, zIndex: 1,
-      display: "flex", flexWrap: "wrap", gap: 6, pointerEvents: "none",
-    }}>
-      {logos.map(function (p, n) {
-        var logoHeight = Math.round(Math.min(26, Math.max(16, 22 * p.logo.scale)));
+    <div title={company} style={{ position: "relative" }}>
+      <p aria-hidden="true" style={Object.assign({ visibility: "hidden" }, textStyle)}>{company}</p>
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0,
+        display: "flex", alignItems: "center", gap: 10, minWidth: 0,
+        height: "calc(0.82rem * 1.5)", whiteSpace: "nowrap",
+      }}>
+      {parts.map(function (p, n) {
+        var art = p.logo && arts[n];
+        if (!art) {
+          return <span key={n} style={Object.assign({ overflow: "hidden", textOverflow: "ellipsis" }, textStyle)}>{p.text}</span>;
+        }
+        // Squarer marks a little taller so they read as well as wordmarks.
+        var height = art.aspect < 1.6 ? 28 : art.aspect < 3 ? 24 : 20;
         return (
-          <span key={n} title={p.text} style={{
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
-            height: 36, padding: "0 10px", borderRadius: 8, background: "#fff",
-            boxShadow: "0 2px 10px rgba(10,3,26,0.22)",
-          }}>
-            <img src={p.logo.src} alt={p.text} loading="lazy" decoding="async" style={{
-              display: "block", width: "auto", height: "auto",
-              maxHeight: logoHeight, maxWidth: 110, objectFit: "contain",
-            }} />
-          </span>
+          <img key={n} src={dark ? art.dark : art.light} alt={p.text} style={{
+            display: "block", height: height, width: "auto", maxWidth: 150,
+            objectFit: "contain", objectPosition: "left center", flexShrink: 0,
+          }} />
         );
       })}
+      </div>
     </div>
   );
 }
@@ -281,7 +297,6 @@ function SpeakerCard({ speaker, dark, i }) {
               <Mic size={52} />
             </div>
           )}
-          <CompanyLogoBadges parts={companyParts} />
           <div style={{
             position: "absolute", bottom: 0, left: 0, right: 0, height: "45%",
             background: "linear-gradient(to top, rgba(10,3,26,0.92) 0%, transparent 100%)",
@@ -323,7 +338,9 @@ function SpeakerCard({ speaker, dark, i }) {
             </p>
           )}
 
-          {speaker.company && (
+          {companyParts.length > 0 ? (
+            <CompanyLine company={speaker.company} parts={companyParts} dark={dark} mutedText={mutedText} />
+          ) : speaker.company && (
             <p style={{
               fontSize: "0.82rem", lineHeight: 1.5,
               color: mutedText,

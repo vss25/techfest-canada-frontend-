@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { client, urlFor, logoScaleOf } from "../utils/sanity";
+import { client, urlFor } from "../utils/sanity";
 
 /* =========================================================
    Speaker company → logo
@@ -17,10 +17,10 @@ import { client, urlFor, logoScaleOf } from "../utils/sanity";
    Carbon Removal Canada.
 ========================================================= */
 
-const QUERY = `*[_type in ["partner", "sponsor", "sponsorMarquee"] && defined(logo.asset)]{ _type, name, logo, logoScale }`;
+const QUERY = `*[_type in ["partner", "sponsor", "sponsorMarquee"] && defined(logo.asset)]{ _type, name, logo }`;
 
 /** Our own name has no CMS logo: use the site's. */
-const OWN = { name: "The Tech Festival Canada", src: "/Tech_Festival_Canada_Logo_Light_Transparent.webp", scale: 1.2 };
+const OWN = { name: "The Tech Festival Canada", src: "/Tech_Festival_Canada_Logo_Light_Transparent.webp" };
 
 /** Speaker-side spellings → the CMS name (as keys). */
 const ALIASES = {
@@ -57,11 +57,8 @@ export function buildLogoIndex(docs) {
   const put = (k, entry) => { if (k && !byKey.has(k)) byKey.set(k, entry); };
   for (const d of sorted) {
     if (!d?.logo?.asset || !d.name) continue;
-    const entry = {
-      name: d.name.trim(),
-      src: urlFor(d.logo).height(96).fit("max").auto("format").url(),
-      scale: logoScaleOf(d),
-    };
+    // PNG keeps transparency (and rasterises SVGs) for src/lib/logoArt.js.
+    const entry = { name: d.name.trim(), src: urlFor(d.logo).width(640).fit("max").format("png").url() };
     const k = companyKey(d.name);
     put(k, entry);
     put("#" + compact(k), entry);
@@ -90,7 +87,7 @@ function lookup(index, text) {
 
 /**
  * The parts of a speaker's company line, each with its logo when there is one:
- * [{ text, logo: { name, src, scale } | null }]. Empty when nothing has a logo.
+ * [{ text, logo: { name, src } | null }]. Empty when nothing has a logo.
  */
 export function companyLogos(company, index) {
   const text = String(company || "").trim();

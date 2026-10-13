@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle, CalendarCheck, CalendarClock, CheckCircle2, Copy, Eye, IdCard, Info, Mail, MailCheck, Search, Send, Smartphone,
-  UserPlus, X,
+  AlertTriangle, CalendarCheck, CalendarClock, CheckCircle2, ChevronDown, Copy, Eye, IdCard, Info, Mail, MailCheck, PenLine, Search, Send,
+  Smartphone, UserPlus, X,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
@@ -12,6 +12,8 @@ import {
   Spinner, StatTile, TableWrap,
 } from "../ui";
 import { num, when } from "../format";
+import { CopyFields, ListField, TemplateDrawer } from "./SpeakerEmailCompose";
+import { listText, useLivePreview } from "./speakerEmailHooks";
 
 /* =========================================================
    Admin → Tickets & attendees → Speaker passes
@@ -47,7 +49,7 @@ function EmailCell({ row, onSaved, onSaving }) {
   const toast = useToast();
   const [draft, setDraft] = useState(null); // null = showing the saved email
   const [saving, setSaving] = useState(false);
-  const saved = row.email || "";
+  const saved = listText(row.emails?.length ? row.emails : row.email ? [row.email] : []);
   const value = draft ?? saved;
   const dirty = draft !== null && draft.trim() !== saved;
   const who = row.name || "this speaker";
@@ -61,7 +63,7 @@ function EmailCell({ row, onSaved, onSaving }) {
     try {
       const r = await api.patch(`${BASE}/${encodeURIComponent(row.id)}`, { email: next });
       if (r?.row) onSaved(r.row);
-      toast.success(next ? `Email saved for ${who}` : `Email removed for ${who}`);
+      toast.success(next ? `Email${next.includes(",") ? "s" : ""} saved for ${who}` : `Email removed for ${who}`);
     } catch (err) {
       toast.error(err); // e.g. 400 for an invalid email: the field goes back to the saved one
     } finally {
@@ -74,9 +76,11 @@ function EmailCell({ row, onSaved, onSaving }) {
   return (
     <div className="relative min-w-[210px]">
       <Input
-        type="email"
+        type="text"
+        inputMode="email"
         value={value}
-        placeholder="Add email"
+        placeholder="Add email (or several, with commas)"
+        title="Several addresses? Separate them with commas: they all get the same email."
         autoComplete="off"
         spellCheck={false}
         readOnly={saving}
@@ -145,11 +149,12 @@ function invitesFor(row) {
   });
 }
 
-function WhatGoesOut({ row }) {
+function WhatGoesOut({ row, to, cc }) {
   const invites = invitesFor(row);
+  const toText = to ?? listText(row.emails?.length ? row.emails : row.email ? [row.email] : []);
   return (
     <div className="mb-4 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm">
-      <p className="font-semibold">What {row.email ? <>goes to <span className="text-ttfc-pink">{row.email}</span></> : "will go out"}</p>
+      <p className="font-semibold">What {toText ? <>goes to <span className="text-ttfc-pink">{toText}</span></> : "will go out"}</p>
       <ul className="mt-2 space-y-1.5 text-ttfc-muted">
         <li className="flex gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> This Speaker Pass email{invites.length ? ", with their run of show" : ""}.</li>
         {invites.map((i) => (
@@ -159,7 +164,7 @@ function WhatGoesOut({ row }) {
           </li>
         ))}
         {!invites.length && <li className="flex gap-2"><Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> No sessions on this pass, so no calendar invite.</li>}
-        <li className="flex gap-2"><Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> Lubna is cc'd on each.</li>
+        <li className="flex gap-2"><Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {cc?.length ? <>Cc on each: {listText(cc)}.</> : "Nobody is cc'd."}</li>
       </ul>
     </div>
   );
@@ -175,6 +180,7 @@ function PassPreview({ preview }) {
         <div className="min-w-0 space-y-0.5">
           <p className="truncate"><span className="text-ttfc-dim">Subject</span> <b>{preview.subject || "—"}</b></p>
           {preview.to && <p className="truncate text-ttfc-muted"><span className="text-ttfc-dim">To:</span> {preview.to}</p>}
+          {preview.cc?.length > 0 && <p className="truncate text-ttfc-muted"><span className="text-ttfc-dim">Cc:</span> {listText(preview.cc)}</p>}
         </div>
         {preview.text && (
           <div className="flex gap-1" role="tablist" aria-label="Email format">
@@ -194,15 +200,39 @@ function PassPreview({ preview }) {
   );
 }
 
-/** Right-side drawer with one speaker's email (`id`), or the sample (`id` null). Mounted per open, so it always refetches. */
+/**
+ * Right-side drawer with one speaker's email (`id`), or the sample (`id` null). Mounted per open.
+ * For management it's also where you send: To, Cc and the wording can be changed for this send,
+ * and the preview follows the edits.
+ */
 function PreviewDrawer({ id, row, canSend, onSend, onClose }) {
-  const { data, error, loading, reload } = useApi(id ? `${BASE}/${encodeURIComponent(id)}/preview` : `${BASE}/preview-sample`);
-  const footer = id && canSend && row ? (
+  const composing = !!(id && canSend && row);
+  const [tpl, setTpl] = useState(null);
+  const [to, setTo] = useState(() => listText(row?.emails?.length ? row.emails : row?.email ? [row.email] : []));
+  const [cc, setCc] = useState("");
+  const [copy, setCopy] = useState({ subject: "", headline: "", message: "" });
+  const [showWording, setShowWording] = useState(false);
+  useEffect(() => {
+    if (!composing) return;
+    api.get(`${BASE}/template`).then((r) => {
+      setTpl(r);
+      setCc(listText(r.template.cc));
+      setCopy({ subject: r.template.subject, headline: r.template.headline, message: r.template.message });
+    }, () => setTpl({ template: { cc: [] }, defaults: {} }));
+  }, [composing]);
+  const body = composing ? { ...(to.trim() ? { to } : {}), cc, ...copy } : {};
+  const live = useLivePreview(id ? `${BASE}/${encodeURIComponent(id)}/preview` : `${BASE}/preview-sample`, body, { enabled: !composing || !!tpl });
+  const data = live.data;
+  const loading = live.loading && !data;
+  const error = !data ? live.error : null;
+  const reload = () => setCopy((c) => ({ ...c }));
+  const footer = composing ? (
     <>
-      {row.email
-        ? <Button variant="primary" icon={Send} onClick={() => onSend(row)}>{alreadySent(row) ? "Resend" : "Send"} to {row.email}</Button>
-        : <p className="text-sm text-ttfc-muted">Add an email in the list to send this.</p>}
+      {to.trim()
+        ? <Button variant="primary" icon={Send} disabled={!tpl || live.loading || !!live.error} onClick={() => onSend(row, body, data)}>{alreadySent(row) ? "Resend" : "Send"}</Button>
+        : <p className="text-sm text-ttfc-muted">Add an address in To (or in the list) to send this.</p>}
       <Button variant="ghost" onClick={onClose}>Close</Button>
+      {live.error && data && <p className="text-xs text-red-200">{live.error.message}</p>}
     </>
   ) : undefined;
   return (
@@ -225,7 +255,20 @@ function PreviewDrawer({ id, row, canSend, onSend, onClose }) {
               {id && !data?.to && !row?.email && (
                 <p className="mb-4 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm text-ttfc-muted">No email on this pass yet. Add one in the list before sending.</p>
               )}
-              {id && row && <WhatGoesOut row={row} />}
+              {composing && (
+                <div className="mb-4 flex flex-col gap-3 rounded-xl border border-ttfc-line px-4 py-3">
+                  <ListField label="To" hint="Commas between addresses. Everyone in To gets the same email and calendar invites."
+                    value={to} onChange={setTo} placeholder="speaker@company.com, assistant@company.com" />
+                  <ListField label="Cc" hint="For this send. The usual list is set in Edit email." value={cc} onChange={setCc} placeholder="Nobody" />
+                  <button type="button" onClick={() => setShowWording((v) => !v)} aria-expanded={showWording}
+                    className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-ttfc-pink hover:text-white">
+                    <PenLine className="h-4 w-4" aria-hidden="true" /> Edit the wording for this send
+                    <ChevronDown className={`h-4 w-4 transition ${showWording ? "rotate-180" : ""}`} aria-hidden="true" />
+                  </button>
+                  {showWording && <CopyFields value={copy} onChange={setCopy} defaults={tpl?.defaults || {}} />}
+                </div>
+              )}
+              {id && row && <WhatGoesOut row={row} to={data?.to} cc={data?.cc} />}
               <PassPreview preview={data} />
             </>
           )}
@@ -233,9 +276,17 @@ function PreviewDrawer({ id, row, canSend, onSend, onClose }) {
   );
 }
 
-/** "Send to all ready": lists everyone and only arms once SEND is typed. Mounted per open. */
-function SendAllDialog({ rows, onClose, onDone }) {
+/**
+ * "Send to all ready" (mode "all") or "Send to selected" (mode "selected"): lists everyone and only
+ * arms once SEND is typed. The wording is the saved one (Edit email); a selected send can change the cc.
+ * Mounted per open.
+ */
+function SendAllDialog({ rows, mode = "all", onClose, onDone }) {
   const toast = useToast();
+  const [cc, setCc] = useState(null); // null until the saved list loads
+  useEffect(() => {
+    api.get(`${BASE}/template`).then((r) => setCc(listText(r.template.cc)), () => setCc(""));
+  }, []);
   const [typed, setTyped] = useState("");
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null);
@@ -249,7 +300,9 @@ function SendAllDialog({ rows, onClose, onDone }) {
     setSending(true);
     setErr("");
     try {
-      const r = await api.post(`${BASE}/send-all`, { confirm: "SEND" });
+      const r = mode === "selected"
+        ? await api.post(`${BASE}/send-selected`, { confirm: "SEND", ids: rows.map((x) => x.id), cc: cc ?? undefined })
+        : await api.post(`${BASE}/send-all`, { confirm: "SEND" });
       setResult(r || {});
       const summary = `Sent ${num(r?.sent ?? 0)}, failed ${num(r?.failed ?? 0)}`;
       if (r?.failed) toast.error(summary); else toast.success(summary);
@@ -268,7 +321,7 @@ function SendAllDialog({ rows, onClose, onDone }) {
       size="lg"
       tone="danger"
       title={result ? "Done" : `Send ${plural(n, "Speaker Pass", "Speaker Passes")} now?`}
-      description={result ? undefined : `This emails ${plural(n, "speaker")} their Speaker Pass now. This cannot be undone.`}
+      description={result ? undefined : `This emails ${plural(n, "speaker")} their Speaker Pass${mode === "selected" ? " (everyone you ticked)" : ""} now, with the wording from Edit email. This cannot be undone.`}
       footer={result
         ? <Button variant="primary" onClick={close} data-autofocus>Close</Button>
         : (
@@ -304,11 +357,14 @@ function SendAllDialog({ rows, onClose, onDone }) {
               {rows.map((r) => (
                 <li key={r.id} className="flex items-center justify-between gap-3 px-3 py-2">
                   <span className="min-w-0 truncate font-semibold">{r.name || "No name"}</span>
-                  <span className="min-w-0 truncate text-xs text-ttfc-muted">{r.email}</span>
+                  <span className="min-w-0 truncate text-xs text-ttfc-muted">{listText(r.emails?.length ? r.emails : [r.email])}</span>
                 </li>
               ))}
             </ul>
           </div>
+          {mode === "selected"
+            ? <ListField label="Cc on each email and invite" hint="Commas between addresses. Empty = nobody." value={cc ?? ""} onChange={setCc} placeholder="Nobody" disabled={sending || cc === null} />
+            : <p className="text-xs text-ttfc-muted">Cc on each: {cc === null ? "…" : cc || "nobody"} (change it in Edit email).</p>}
           <Field label={<>Type <span className="font-mono">SEND</span> to confirm</>}>
             {(id) => (
               <Input id={id} value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" autoCapitalize="characters"
@@ -333,7 +389,9 @@ export default function SpeakerPasses() {
   const [preview, setPreview] = useState(null); // { id } for one speaker, { id: null } for the sample
   const [previewN, setPreviewN] = useState(0);
   const [sendTarget, setSendTarget] = useState(null); // the row being confirmed
-  const [sendAllOpen, setSendAllOpen] = useState(false);
+  const [sendAllOpen, setSendAllOpen] = useState(false); // false | "all" | "selected"
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [selected, setSelected] = useState(() => new Set());
   const [savingIds, setSavingIds] = useState({}); // id → true while its email saves
 
   const rows = useMemo(() => data?.rows || [], [data]);
@@ -346,6 +404,7 @@ export default function SpeakerPasses() {
     rsvpd: rows.filter((r) => r.rsvp).length,
   }), [rows]);
   const readyRows = useMemo(() => rows.filter((r) => r.status === "ready"), [rows]);
+  const selectedRows = useMemo(() => rows.filter((r) => selected.has(r.id) && (r.emails?.length || r.email)), [rows, selected]);
   const needle = q.trim().toLowerCase();
   const shown = useMemo(() => {
     if (!needle) return rows;
@@ -354,6 +413,13 @@ export default function SpeakerPasses() {
       || lower(r.ticketId).replace(/\s+/g, "").includes(compact));
   }, [rows, needle]);
 
+  const toggle = (id) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const allShownSelected = shown.length > 0 && shown.every((r) => selected.has(r.id));
+  const toggleAllShown = () => setSelected((s) => {
+    const n = new Set(s);
+    if (allShownSelected) shown.forEach((r) => n.delete(r.id)); else shown.forEach((r) => n.add(r.id));
+    return n;
+  });
   const updateRow = (row) => setData((d) => (d ? { ...d, rows: (d.rows || []).map((r) => (r.id === row.id ? { ...r, ...row } : r)) } : d));
   const markSaving = (id, on) => setSavingIds((s) => ({ ...s, [id]: on }));
   const openPreview = (id) => { setPreview({ id }); setPreviewN((n) => n + 1); };
@@ -375,8 +441,8 @@ export default function SpeakerPasses() {
   };
 
   const sendOne = async () => {
-    const row = sendTarget;
-    const r = await api.post(`${BASE}/${encodeURIComponent(row.id)}/send`);
+    const { row, body } = sendTarget;
+    const r = await api.post(`${BASE}/${encodeURIComponent(row.id)}/send`, body);
     if (r?.row) updateRow({ ...r.row, rsvp: row.rsvp });
     setPreview(null);
     const to = r?.row?.emailSentTo || row.email;
@@ -400,13 +466,20 @@ export default function SpeakerPasses() {
         actions={
           <>
             <Button icon={Eye} onClick={() => openPreview(null)} title="See the email speakers get, with sample details">Preview email</Button>
+            <Button icon={PenLine} onClick={() => setTemplateOpen(true)} title="Change the subject, headline, message and who's cc'd">Edit email</Button>
             {isManagement && (
               <Button icon={UserPlus} loading={syncing} onClick={sync} title="Give every speaker on the website a Speaker Pass. Speakers who already have one are left as they are. Nothing is emailed.">
                 Create passes for all speakers
               </Button>
             )}
+            {isManagement && selected.size > 0 && (
+              <Button icon={Send} disabled={!selectedRows.length} onClick={() => setSendAllOpen("selected")}
+                title={selectedRows.length ? "Email the speakers you ticked" : "None of the ticked speakers has an email"}>
+                Send to selected ({num(selectedRows.length)})
+              </Button>
+            )}
             {isManagement && (
-              <Button variant="primary" icon={Send} disabled={!counts.ready} onClick={() => setSendAllOpen(true)}
+              <Button variant="primary" icon={Send} disabled={!counts.ready} onClick={() => setSendAllOpen("all")}
                 title={counts.ready ? "Email every speaker marked Ready" : "No speakers are ready: add emails first"}>
                 Send to all ready{counts.ready ? ` (${num(counts.ready)})` : ""}
               </Button>
@@ -467,6 +540,11 @@ export default function SpeakerPasses() {
         <TableWrap>
           <thead>
             <tr>
+              {isManagement && (
+                <th className="w-10">
+                  <input type="checkbox" checked={allShownSelected} onChange={toggleAllShown} aria-label="Select every speaker shown" className="h-4 w-4 accent-ttfc-pink" />
+                </th>
+              )}
               <th>Speaker</th><th>Ticket ID</th><th>Email</th><th>Status</th><th>RSVP</th>
             </tr>
           </thead>
@@ -475,7 +553,12 @@ export default function SpeakerPasses() {
               const sub = [r.title, r.company].filter(Boolean).join(" · ");
               const busy = !!savingIds[r.id];
               return (
-                <tr key={r.id}>
+                <tr key={r.id} data-selected={selected.has(r.id) || undefined}>
+                  {isManagement && (
+                    <td>
+                      <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Select ${r.name}`} className="h-4 w-4 accent-ttfc-pink" />
+                    </td>
+                  )}
                   <td className="min-w-[200px] max-w-[280px]">
                     <button type="button" onClick={() => openPreview(r.id)} className="block max-w-full truncate text-left font-semibold hover:text-ttfc-pink" title={`Preview ${r.name}'s email`}>
                       {r.name || <span className="text-ttfc-dim">No name</span>}
@@ -516,7 +599,7 @@ export default function SpeakerPasses() {
           id={preview.id}
           row={previewRow}
           canSend={isManagement}
-          onSend={(row) => setSendTarget(row)}
+          onSend={(row, body, preview) => setSendTarget({ row, body, preview })}
           onClose={() => setPreview(null)}
         />
       )}
@@ -525,19 +608,28 @@ export default function SpeakerPasses() {
         open={!!sendTarget}
         onClose={() => setSendTarget(null)}
         tone="primary"
-        title={sendTarget ? `Send ${sendTarget.name || "this speaker"}'s Speaker Pass to ${sendTarget.email}?` : ""}
+        title={sendTarget ? `Send ${sendTarget.row.name || "this speaker"}'s Speaker Pass?` : ""}
         body={sendTarget && [
-          alreadySent(sendTarget)
-            ? `It was already sent on ${shortDay(sendTarget.emailSentAt) || "an earlier date"}${sentElsewhere(sendTarget) ? ` to ${sendTarget.emailSentTo}` : ""}.`
-            : "They'll get the email you see under Preview.",
-          sendTarget.sessions ? `Plus ${plural(sendTarget.sessions, "calendar invite")} for their ${sendTarget.sessions > 1 ? "sessions" : "session"}.` : "",
-          "Lubna is cc'd.",
+          `To: ${sendTarget.preview?.to || sendTarget.row.email}.`,
+          `Cc: ${listText(sendTarget.preview?.cc) || "nobody"}.`,
+          alreadySent(sendTarget.row)
+            ? `It was already sent on ${shortDay(sendTarget.row.emailSentAt) || "an earlier date"}${sentElsewhere(sendTarget.row) ? ` to ${sendTarget.row.emailSentTo}` : ""}.`
+            : "They'll get the email you see in the preview.",
+          sendTarget.row.sessions ? `Plus ${plural(sendTarget.row.sessions, "calendar invite")} for their ${sendTarget.row.sessions > 1 ? "sessions" : "session"}.` : "",
         ].filter(Boolean).join(" ")}
-        confirmLabel={sendTarget && alreadySent(sendTarget) ? "Resend" : "Send"}
+        confirmLabel={sendTarget && alreadySent(sendTarget.row) ? "Resend" : "Send"}
         onConfirm={sendOne}
       />
 
-      {sendAllOpen && <SendAllDialog rows={readyRows} onClose={() => setSendAllOpen(false)} onDone={reload} />}
+      {sendAllOpen && (
+        <SendAllDialog
+          mode={sendAllOpen}
+          rows={sendAllOpen === "selected" ? selectedRows : readyRows}
+          onClose={() => setSendAllOpen(false)}
+          onDone={() => { reload(); if (sendAllOpen === "selected") setSelected(new Set()); }}
+        />
+      )}
+      {templateOpen && <TemplateDrawer canEdit={isManagement} onClose={() => setTemplateOpen(false)} />}
     </>
   );
 }

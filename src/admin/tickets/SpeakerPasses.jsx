@@ -132,6 +132,39 @@ function Status({ row }) {
   );
 }
 
+const toMin = (t) => Number(String(t).slice(0, 2)) * 60 + Number(String(t).slice(3, 5));
+const fmt12 = (m) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m >= 720 ? "PM" : "AM"}`;
+const DAY_SHORT = { 1: "Mon 26 Oct", 2: "Tue 27 Oct" };
+/** The calendar invites a send adds: one per session, from mic fitting (30 min early) to the end. */
+function invitesFor(row) {
+  const sessions = row?.runOfShow?.sessions || [];
+  return sessions.map((s) => {
+    const backToBack = sessions.some((o) => o !== s && o.day === s.day && toMin(o.start) < toMin(s.start) && toMin(s.start) - toMin(o.end) < 30);
+    const from = toMin(s.start) - (backToBack ? 0 : 30);
+    return { key: `${s.day}-${s.start}`, title: s.title, when: `${DAY_SHORT[s.day] || ""} · ${fmt12(from)} to ${fmt12(toMin(s.end))}`, micUp: !backToBack };
+  });
+}
+
+function WhatGoesOut({ row }) {
+  const invites = invitesFor(row);
+  return (
+    <div className="mb-4 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm">
+      <p className="font-semibold">What {row.email ? <>goes to <span className="text-ttfc-pink">{row.email}</span></> : "will go out"}</p>
+      <ul className="mt-2 space-y-1.5 text-ttfc-muted">
+        <li className="flex gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> This Speaker Pass email{invites.length ? ", with their run of show" : ""}.</li>
+        {invites.map((i) => (
+          <li key={i.key} className="flex gap-2">
+            <CalendarClock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Calendar invite: <b className="text-ttfc-text">{i.title}</b> · {i.when}{i.micUp ? " (starts at mic fitting)" : ""}</span>
+          </li>
+        ))}
+        {!invites.length && <li className="flex gap-2"><Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> No sessions on this pass, so no calendar invite.</li>}
+        <li className="flex gap-2"><Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> Lubna is cc'd on each.</li>
+      </ul>
+    </div>
+  );
+}
+
 /** The email, isolated in a sandboxed frame (no scripts, no same-origin access). */
 function PassPreview({ preview }) {
   const [mode, setMode] = useState("html");
@@ -192,6 +225,7 @@ function PreviewDrawer({ id, row, canSend, onSend, onClose }) {
               {id && !data?.to && !row?.email && (
                 <p className="mb-4 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm text-ttfc-muted">No email on this pass yet. Add one in the list before sending.</p>
               )}
+              {id && row && <WhatGoesOut row={row} />}
               <PassPreview preview={data} />
             </>
           )}
@@ -344,6 +378,7 @@ export default function SpeakerPasses() {
     const row = sendTarget;
     const r = await api.post(`${BASE}/${encodeURIComponent(row.id)}/send`);
     if (r?.row) updateRow({ ...r.row, rsvp: row.rsvp });
+    setPreview(null);
     const to = r?.row?.emailSentTo || row.email;
     if (r?.inviteError) toast.error(`Speaker Pass sent to ${to}, but the calendar invite failed: ${r.inviteError}`);
     else toast.success(row.sessions ? `Speaker Pass and ${plural(row.sessions, "calendar invite")} sent to ${to}` : `Speaker Pass sent to ${to}`);
@@ -433,7 +468,6 @@ export default function SpeakerPasses() {
           <thead>
             <tr>
               <th>Speaker</th><th>Ticket ID</th><th>Email</th><th>Status</th><th>RSVP</th>
-              <th><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -442,9 +476,21 @@ export default function SpeakerPasses() {
               const busy = !!savingIds[r.id];
               return (
                 <tr key={r.id}>
-                  <td className="min-w-[180px] max-w-[260px]">
-                    <span className="block truncate font-semibold" title={r.name}>{r.name || <span className="text-ttfc-dim">No name</span>}</span>
+                  <td className="min-w-[200px] max-w-[280px]">
+                    <button type="button" onClick={() => openPreview(r.id)} className="block max-w-full truncate text-left font-semibold hover:text-ttfc-pink" title={`Preview ${r.name}'s email`}>
+                      {r.name || <span className="text-ttfc-dim">No name</span>}
+                    </button>
                     {sub && <span className="block truncate text-xs text-ttfc-muted" title={sub}>{sub}</span>}
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <Button size="sm" variant="ghost" icon={Eye} onClick={() => openPreview(r.id)}>Preview</Button>
+                      {isManagement && (
+                        <span title={!r.email ? "Add an email first" : busy ? "Saving the email…" : "Opens the preview, then send from there"}>
+                          <Button size="sm" icon={Send} disabled={!r.email || busy} onClick={() => openPreview(r.id)}>
+                            {alreadySent(r) ? "Preview & resend" : "Preview & send"}
+                          </Button>
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="whitespace-nowrap">
                     <span className="inline-flex items-center gap-1">
@@ -457,18 +503,6 @@ export default function SpeakerPasses() {
                   </td>
                   <td><Status row={r} /></td>
                   <td><RsvpCell rsvp={r.rsvp} /></td>
-                  <td className="text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Button size="sm" variant="ghost" icon={Eye} onClick={() => openPreview(r.id)}>Preview</Button>
-                      {isManagement && (
-                        <span title={!r.email ? "Add an email first" : busy ? "Saving the email…" : undefined}>
-                          <Button size="sm" icon={Send} disabled={!r.email || busy} onClick={() => setSendTarget(r)}>
-                            {alreadySent(r) ? "Resend" : "Send"}
-                          </Button>
-                        </span>
-                      )}
-                    </div>
-                  </td>
                 </tr>
               );
             })}

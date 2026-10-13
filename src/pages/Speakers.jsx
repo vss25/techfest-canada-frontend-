@@ -187,13 +187,14 @@ function FilterDropdown({ label, value, options, onSelect, dark, accent, border,
 // src/lib/logoArt.js cleans it). The name stays underneath, hidden, so
 // the line takes exactly the space it always did and the card's size
 // doesn't change. Parts with no logo, or a past role
-// ("Ex. CIA"), stay as text. Until the logo is ready, or if it can't be
-// read, the line shows the company name as before.
+// ("Ex. CIA"), stay as text. Emblem + small-text logos (government
+// signatures, crests) show the emblem and the name. Until the logo is
+// ready, or if it can't be read, the line shows the company name as before.
 function CompanyLine({ company, parts, dark, mutedText }) {
   var s1 = useState(null); var arts = s1[0]; var setArts = s1[1];
   useEffect(function () {
     var live = true;
-    Promise.all(parts.map(function (p) { return p.logo ? logoArt(p.logo.src) : null; }))
+    Promise.all(parts.map(function (p) { return p.logo ? logoArt(p.logo.src, p.logo.mark || undefined) : null; }))
       .then(function (a) { if (live) setArts(a); });
     return function () { live = false; };
   }, [parts]);
@@ -213,6 +214,21 @@ function CompanyLine({ company, parts, dark, mutedText }) {
         var art = p.logo && arts[n];
         if (!art) {
           return <span key={n} style={Object.assign({ overflow: "hidden", textOverflow: "ellipsis" }, textStyle)}>{p.text}</span>;
+        }
+        if (p.logo.mark) {
+          return (
+            <span key={n} style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+              <img src={dark ? art.dark : art.light} alt={p.logo.mark.label === "" ? p.text : ""} style={{
+                display: "block", height: 22, width: "auto", maxWidth: p.logo.mark.label === "" ? 80 : 44,
+                objectFit: "contain", flexShrink: 0,
+              }} />
+              {p.logo.mark.label !== "" && (
+                <span style={Object.assign({ overflow: "hidden", textOverflow: "ellipsis", fontWeight: 600 }, textStyle)}>
+                  {p.logo.mark.label || p.text}
+                </span>
+              )}
+            </span>
+          );
         }
         // Squarer marks a little taller so they read as well as wordmarks.
         var height = art.aspect < 1.6 ? 28 : art.aspect < 3 ? 24 : 20;

@@ -19,8 +19,44 @@ import { client, urlFor } from "../utils/sanity";
 
 const QUERY = `*[_type in ["partner", "sponsor", "sponsorMarquee"] && defined(logo.asset)]{ _type, name, logo }`;
 
-/** Our own name has no CMS logo: use the site's. */
-const OWN = { name: "The Tech Festival Canada", src: "/Tech_Festival_Canada_Logo_Light_Transparent.webp" };
+/** Our own name has no CMS logo: use the site's "C" mark, in its own colours. */
+const OWN = { name: "The Tech Festival Canada", src: "/updatednavlogotrans.png", mark: { crop: "left", recolor: false } };
+
+/**
+ * Logos that are an emblem plus lines of small text (government signatures,
+ * crests, shields) can't be read at the size of one line of text. These show
+ * the emblem alone, followed by the name in the site's font (`label`, or the
+ * speaker's own company text; "" for none). Keyed by companyKey(CMS name).
+ * crop: where the emblem is: "left" of the text, on "top" of it, or the
+ * "colour" part of the art; gap: which clear gap ends it (default the first).
+ */
+const MARKS = {
+  "financial consumer agency of": { crop: "left" },
+  "innovation science and economic development": { crop: "left", label: "ISED Canada" },
+  "public health agency of": { crop: "left" },
+  "office of privacy commissioner of": { crop: "left" },
+  "ministry of external affairs": { crop: "left" },
+  "rbc capital markets": { crop: "left" },
+  "aerial evolution association of": { crop: "left" },
+  "doctors without borders": { crop: "colour" },
+  osfi: { crop: "top", label: "OSFI" },
+  "womens health collective": { crop: "left" },
+  "northeastern university": { crop: "left" },
+  "canadian manufacturers exporters": { crop: "left" },
+  nejm: { crop: "left" },
+  "womens college hospital": { crop: "left" },
+  resonance: { crop: "left" },
+  "transient ai": { crop: "left" },
+  "mackay ceo forums": { crop: "left" },
+  "open quantum design": { crop: "left" },
+  "fusion collective": { crop: "left" },
+  "quantum bridge technologies": { crop: "colour" },
+  inclusifai: { crop: "top" },
+  kraken: { crop: "top" },
+  "hyivy health": { crop: "top" },
+  // The EY mark (beam + letters) without its tagline: up to the second gap; no name after it.
+  ey: { crop: "top", gap: 2, label: "" },
+};
 
 /** Speaker-side spellings → the CMS name (as keys). */
 const ALIASES = {
@@ -58,8 +94,8 @@ export function buildLogoIndex(docs) {
   for (const d of sorted) {
     if (!d?.logo?.asset || !d.name) continue;
     // PNG keeps transparency (and rasterises SVGs) for src/lib/logoArt.js.
-    const entry = { name: d.name.trim(), src: urlFor(d.logo).width(640).fit("max").format("png").url() };
     const k = companyKey(d.name);
+    const entry = { name: d.name.trim(), src: urlFor(d.logo).width(640).fit("max").format("png").url(), mark: MARKS[k] || null };
     put(k, entry);
     put("#" + compact(k), entry);
     put(acronym(d.name), entry);
@@ -87,7 +123,8 @@ function lookup(index, text) {
 
 /**
  * The parts of a speaker's company line, each with its logo when there is one:
- * [{ text, logo: { name, src } | null }]. Empty when nothing has a logo.
+ * [{ text, logo: { name, src, mark } | null }]. Empty when nothing has a logo.
+ * `mark` (emblem + name logos): { crop, recolor?, label? }.
  */
 export function companyLogos(company, index) {
   const text = String(company || "").trim();

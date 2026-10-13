@@ -22,10 +22,14 @@ const isNearWhite = (r, g, b) => Math.min(r, g, b) >= 232;
 const spread = (r, g, b) => Math.max(r, g, b) - Math.min(r, g, b);
 const luminance = (r, g, b) => (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
 
-/** Dark-card version of a pixel: grey/black → white, other dark colours → lighter tint. */
+/**
+ * Dark-card version of a pixel: grey/black (up to mid grey) → white, deep colours (navy, dark
+ * green) → a lighter tint. Bright colours (flag red, brand pink) stay as they are.
+ */
 function forDark(r, g, b) {
+  if (spread(r, g, b) < 40 && luminance(r, g, b) < 0.5) return [255, 255, 255];
   if (luminance(r, g, b) >= 0.35) return [r, g, b];
-  if (spread(r, g, b) < 40) return [255, 255, 255];
+  if (Math.max(r, g, b) >= 180) return [r, g, b];
   return [r + (255 - r) * 0.6, g + (255 - g) * 0.6, b + (255 - b) * 0.6].map(Math.round);
 }
 
@@ -61,7 +65,7 @@ function edgeBackground(d, w, h, box = { x0: 0, y0: 0, x1: w - 1, y1: h - 1 }, i
   return { rgb, light: luminance(...rgb) > 0.78 };
 }
 
-function process(img) {
+function process(img, { crop, gap, recolor }) {
   const scale = Math.min(1, 640 / Math.max(img.naturalWidth, img.naturalHeight));
   const w = Math.max(1, Math.round(img.naturalWidth * scale));
   const h = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -94,41 +98,49 @@ function process(img) {
     }
   }
 
-  // 2. Trim to the artwork.
-  let x0 = w, y0 = h, x1 = -1, y1 = -1;
-  let solid = 0, white = 0;
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      if (d[i + 3] <= 24) continue;
-      if (x < x0) x0 = x;
-      if (x > x1) x1 = x;
-      if (y < y0) y0 = y;
-      if (y > y1) y1 = y;
-      if (d[i + 3] > 128) {
-        solid++;
-        if (isNearWhite(d[i], d[i + 1], d[i + 2])) white++;
-      }
-    }
+  // 2. Trim to the artwork, then (for emblem + small-text logos) to the emblem.
+  const full = inkBox(d, w, { x0: 0, y0: 0, x1: w - 1, y1: h - 1 });
+  if (!full) return null;
+  let box = full;
+  if (crop === "colour") {
+    // The emblem is the coloured part (Doctors Without Borders' red figure).
+    for (let i = 0; i < d.length; i += 4) if (spread(d[i], d[i + 1], d[i + 2]) < 60) d[i + 3] = 0;
+    box = inkBox(d, w, full) || full;
+  } else if (crop === "left" || crop === "top") {
+    box = emblemBox(d, w, full, crop, gap) || full;
   }
-  if (x1 < 0) return null;
+  const { x0, y0, x1, y1 } = box;
   const cw = x1 - x0 + 1;
   const ch = y1 - y0 + 1;
+
   // A dark or coloured block with transparent margins (rounded corners) is a badge too.
   if (!badge && cw > 8 && ch > 8) {
-    const inner = edgeBackground(d, w, h, { x0, y0, x1, y1 }, 2);
+    const inner = edgeBackground(d, w, h, box, 2);
     badge = !!inner && !inner.light;
   }
+  let solid = 0, white = 0, darkGrey = 0;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const i = (y * w + x) * 4;
+      if (d[i + 3] <= 128) continue;
+      solid++;
+      if (isNearWhite(d[i], d[i + 1], d[i + 2])) white++;
+      else if (spread(d[i], d[i + 1], d[i + 2]) < 40 && luminance(d[i], d[i + 1], d[i + 2]) < 0.35) darkGrey++;
+    }
+  }
   const allWhite = solid > 0 && white / solid > 0.6;
+  // Dark single-colour art with white details (Unified's octopus): invert it,
+  // so the details stay visible instead of the whole mark turning white.
+  const monoDark = solid > 0 && (darkGrey + white) / solid > 0.9 && darkGrey / solid > 0.5;
 
-  const variant = (recolor) => {
+  const variant = (recolorPixel) => {
     const out = ctx.createImageData(cw, ch);
     const o = out.data;
     for (let y = 0; y < ch; y++) {
       for (let x = 0; x < cw; x++) {
         const i = ((y + y0) * w + (x + x0)) * 4;
         const j = (y * cw + x) * 4;
-        const [r, g, b] = recolor(d[i], d[i + 1], d[i + 2]);
+        const [r, g, b] = recolorPixel(d[i], d[i + 1], d[i + 2]);
         o[j] = r; o[j + 1] = g; o[j + 2] = b; o[j + 3] = d[i + 3];
       }
     }
@@ -139,16 +151,70 @@ function process(img) {
     return c.toDataURL("image/png");
   };
 
-  const light = variant((r, g, b) => (!badge && allWhite && isNearWhite(r, g, b) ? INK : [r, g, b]));
-  const dark = variant((r, g, b) => (badge || allWhite ? [r, g, b] : forDark(r, g, b)));
+  const keep = badge || recolor === false;
+  const light = variant((r, g, b) => (!keep && allWhite && isNearWhite(r, g, b) ? INK : [r, g, b]));
+  const dark = variant((r, g, b) => {
+    if (keep || allWhite) return [r, g, b];
+    if (monoDark && spread(r, g, b) < 40) return [255 - r, 255 - g, 255 - b];
+    return forDark(r, g, b);
+  });
   return { light, dark, aspect: cw / ch };
 }
 
-/** → Promise<{ light, dark, aspect } | null>, once per image per page load. */
-export function logoArt(src) {
-  if (!src) return Promise.resolve(null);
-  if (!cache.has(src)) {
-    cache.set(src, load(src).then(process).catch(() => null));
+/** Bounding box of the visible pixels inside `box`, or null. */
+function inkBox(d, w, box) {
+  let x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1;
+  for (let y = box.y0; y <= box.y1; y++) {
+    for (let x = box.x0; x <= box.x1; x++) {
+      if (d[(y * w + x) * 4 + 3] <= 24) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
   }
-  return cache.get(src);
+  return x1 < 0 ? null : { x0, y0, x1, y1 };
+}
+
+/**
+ * The emblem of an "emblem + text" logo: everything before the first clear gap,
+ * scanning columns from the left (flag, crest, shield) or rows from the top (OSFI).
+ */
+function emblemBox(d, w, box, from, nth = 1) {
+  const along = from === "left" ? [box.x0, box.x1] : [box.y0, box.y1];
+  const across = from === "left" ? [box.y0, box.y1] : [box.x0, box.x1];
+  const minGap = Math.max(3, Math.round((along[1] - along[0]) * 0.025));
+  const empty = (k) => {
+    for (let a = across[0]; a <= across[1]; a++) {
+      const i = from === "left" ? (a * w + k) * 4 : (k * w + a) * 4;
+      if (d[i + 3] > 24) return false;
+    }
+    return true;
+  };
+  let run = 0;
+  let seenInk = false;
+  let gaps = 0;
+  for (let k = along[0]; k <= along[1]; k++) {
+    if (!empty(k)) { seenInk = true; run = 0; continue; }
+    if (seenInk && ++run === minGap && ++gaps === nth) {
+      const end = k - run;
+      const part = from === "left" ? { ...box, x1: end } : { ...box, y1: end };
+      return inkBox(d, w, part);
+    }
+  }
+  return null;
+}
+
+/**
+ * → Promise<{ light, dark, aspect } | null>, once per image + options per page load.
+ * crop: "left" | "top" | "colour" keeps only the emblem (gap: which clear gap ends it);
+ * recolor: false keeps its colours.
+ */
+export function logoArt(src, { crop = null, gap = 1, recolor = true } = {}) {
+  if (!src) return Promise.resolve(null);
+  const key = `${src}|${crop || ""}|${gap}|${recolor}`;
+  if (!cache.has(key)) {
+    cache.set(key, load(src).then((img) => process(img, { crop, gap, recolor })).catch(() => null));
+  }
+  return cache.get(key);
 }

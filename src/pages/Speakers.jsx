@@ -13,6 +13,7 @@ import { submitForm, useFormGuard, FORMS_FALLBACK_EMAIL } from "../lib/forms";
 import { client, speakerPhotoUrl } from "../utils/sanity";
 import useAgenda from "../hooks/useAgenda";
 import SpeakerMarquee from "../components/SpeakerMarquee";
+import { useCompanyLogoIndex, companyLogos } from "../lib/companyLogos";
 import { sessionsForSpeaker, buildSpeakerCategoryMap, slugifyName, formatTime12, DAYS } from "../data/agenda";
 
 // ─── Protection ──────────────────────────────────────────────────
@@ -179,6 +180,38 @@ function FilterDropdown({ label, value, options, onSelect, dark, accent, border,
   );
 }
 
+// ─── Company logo(s) on a speaker card ───────────────────────────
+// Logos come from the CMS partner/sponsor logos (src/lib/companyLogos.js).
+// They sit as small white badges in the photo's top-left corner, so the
+// card keeps its size and its company line; parts with no logo, or a
+// past role ("Ex. CIA"), only appear in that company line.
+function CompanyLogoBadges({ parts }) {
+  var logos = parts.filter(function (p) { return p.logo; });
+  if (!logos.length) return null;
+  return (
+    <div style={{
+      position: "absolute", top: 12, left: 12, right: 12, zIndex: 1,
+      display: "flex", flexWrap: "wrap", gap: 6, pointerEvents: "none",
+    }}>
+      {logos.map(function (p, n) {
+        var logoHeight = Math.round(Math.min(26, Math.max(16, 22 * p.logo.scale)));
+        return (
+          <span key={n} title={p.text} style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            height: 36, padding: "0 10px", borderRadius: 8, background: "#fff",
+            boxShadow: "0 2px 10px rgba(10,3,26,0.22)",
+          }}>
+            <img src={p.logo.src} alt={p.text} loading="lazy" decoding="async" style={{
+              display: "block", width: "auto", height: "auto",
+              maxHeight: logoHeight, maxWidth: 110, objectFit: "contain",
+            }} />
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Speaker Card ────────────────────────────────────────────────
 function SpeakerCard({ speaker, dark, i }) {
   var ref = useRef(null);
@@ -192,6 +225,9 @@ function SpeakerCard({ speaker, dark, i }) {
   var agenda = useAgenda().sessions;
   var mySessions = useMemo(function () { return sessionsForSpeaker(speaker.name, agenda); }, [speaker.name, agenda]);
   var firstSession = mySessions[0] || null;
+
+  var logoIndex = useCompanyLogoIndex();
+  var companyParts = useMemo(function () { return companyLogos(speaker.company, logoIndex); }, [speaker.company, logoIndex]);
 
   var accent = dark ? "#b99eff" : "#7a3fd1";
 
@@ -245,6 +281,7 @@ function SpeakerCard({ speaker, dark, i }) {
               <Mic size={52} />
             </div>
           )}
+          <CompanyLogoBadges parts={companyParts} />
           <div style={{
             position: "absolute", bottom: 0, left: 0, right: 0, height: "45%",
             background: "linear-gradient(to top, rgba(10,3,26,0.92) 0%, transparent 100%)",

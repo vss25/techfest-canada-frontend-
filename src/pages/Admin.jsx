@@ -36,6 +36,7 @@ import BrochureDownloads from "../admin/leads/BrochureDownloads";
 import IndiaPavilion from "../admin/leads/IndiaPavilion";
 import FormSubmissions from "../admin/leads/FormSubmissions";
 import Rsvps from "../admin/leads/Rsvps";
+import CatalystNominations from "../admin/awards/CatalystNominations";
 import AttendingCampaign from "../admin/marketing/AttendingCampaign";
 import RsvpReminders from "../admin/marketing/RsvpReminders";
 
@@ -191,6 +192,7 @@ export default function Admin() {
             <Route path="india-pavilion" element={<IndiaPavilion />} />
             <Route path="form-submissions" element={<FormSubmissions />} />
             <Route path="rsvps" element={<Rsvps />} />
+            <Route path="awards" element={<CatalystNominations />} />
 
             <Route path="marketing/attending" element={<AttendingCampaign />} />
             <Route path="marketing/rsvp-reminders" element={<RsvpReminders />} />

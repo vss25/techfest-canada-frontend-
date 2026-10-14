@@ -3,6 +3,7 @@ import {
   LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
   Megaphone, ScrollText, UserCog, Power, KeyRound, FileDown, Landmark, Inbox, CalendarCheck, IdCard, Share2, TicketPlus, BellRing,
+  Award,
 } from "lucide-react";
 
 /** Sidebar structure. `to` is relative to /admin. */
@@ -33,6 +34,10 @@ export const NAV = [
       { to: "content/home-sponsors", label: "Home sponsors", icon: House },
       { to: "content/settings", label: "Site settings", icon: Settings2 },
     ],
+  },
+  {
+    title: "Catalyst Awards",
+    items: [{ to: "awards", label: "Nominations", icon: Award }],
   },
   {
     title: "Leads",

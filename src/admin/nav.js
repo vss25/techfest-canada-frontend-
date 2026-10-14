@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
   Megaphone, ScrollText, UserCog, Power, KeyRound, FileDown, Landmark, Inbox, CalendarCheck, IdCard, Share2, TicketPlus, BellRing,
-  Award,
+  Award, Store,
 } from "lucide-react";
 
 /** Sidebar structure. `to` is relative to /admin. */
@@ -17,7 +17,6 @@ export const NAV = [
     items: [
       { to: "attendees", label: "Tickets", icon: Users },
       { to: "speaker-passes", label: "Speaker passes", icon: IdCard },
-      { to: "issued-passes", label: "Issue passes", icon: TicketPlus },
       { to: "analytics", label: "Sales analytics", icon: BarChart3, management: true },
       { to: "inventory", label: "Inventory", icon: Package },
       { to: "check-in", label: "Check-in", icon: ScanLine },
@@ -53,6 +52,8 @@ export const NAV = [
     items: [
       { to: "marketing/attending", label: "I'm attending campaign", icon: Share2 },
       { to: "marketing/rsvp-reminders", label: "RSVP reminders", icon: BellRing },
+      { to: "issued-passes", label: "Issue passes", icon: TicketPlus },
+      { to: "exhibitor-passes", label: "Exhibitor passes", icon: Store },
     ],
   },
   {

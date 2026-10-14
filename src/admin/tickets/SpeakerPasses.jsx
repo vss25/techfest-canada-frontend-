@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle, CalendarCheck, CalendarClock, CheckCircle2, ChevronDown, Copy, Eye, IdCard, Info, Mail, MailCheck, PenLine, Search, Send,
-  Smartphone, UserPlus, X,
+  AlertTriangle, BellRing, CalendarCheck, CalendarClock, CheckCircle2, ChevronDown, Copy, Eye, IdCard, Info, Mail, MailCheck, PenLine, Save,
+  Search, Send, Smartphone, UserPlus, X,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
@@ -32,6 +32,11 @@ import { listText, useLivePreview } from "./speakerEmailHooks";
      GET  /:id/preview, GET /preview-sample → { to, subject, html, text }
      POST /:id/send         → { row }   (management)
      POST /send-all { confirm: "SEND" } → { sent, failed, skipped, failures } (management)
+     Nudges (a reminder to RSVP; RSVP'd speakers are skipped):
+       GET /nudge/defaults, POST /:id/nudge/preview, POST /:id/nudge, POST /nudge { confirm: "SEND", ids? }
+   Rows follow the website: name/title/company from Admin → Speakers, sessions from the agenda
+   (sessionsSource "agenda"; "saved" = the run of show staff saved, for speakers not on the agenda).
+   Manual passes (manual: true, speakers not on the website) can be renamed here.
    Nothing is emailed without an explicit confirm.
 ========================================================= */
 
@@ -125,7 +130,13 @@ function Status({ row }) {
     <div className="flex flex-col items-start gap-1">
       <span className="flex flex-wrap items-center gap-1.5">
         <span title={row.emailSentAt ? `Last sent ${when(row.emailSentAt)}${row.emailSentTo ? ` to ${row.emailSentTo}` : ""}` : undefined}>{pill}</span>
-        {row.sessions > 0 && <Badge tone="purple" icon={CalendarClock}>{plural(row.sessions, "session")}</Badge>}
+        {row.sessions > 0 && (
+          <span title={row.sessionsSource === "agenda" ? "From the agenda: updates when the agenda changes" : "Saved run of show (this speaker isn't on the agenda)"}>
+            <Badge tone="purple" icon={CalendarClock}>{plural(row.sessions, "session")}{row.sessionsSource === "agenda" ? " · agenda" : ""}</Badge>
+          </span>
+        )}
+        {row.nudgedAt && <Badge tone="neutral" icon={BellRing}>Nudged {shortDay(row.nudgedAt)}{row.nudgeCount > 1 ? ` · ×${row.nudgeCount}` : ""}</Badge>}
+        {row.manual && <span title="Added by hand: this speaker isn't on the website"><Badge tone="neutral">Not on website</Badge></span>}
         {row.contact === "handler" && <Badge tone="neutral">Via assistant</Badge>}
         {row.invitesSentAt && <Badge tone="good" icon={CalendarCheck}>Invite sent</Badge>}
         {row.claimed && <Badge tone="neutral" icon={Smartphone}>In app</Badge>}
@@ -200,28 +211,78 @@ function PassPreview({ preview }) {
   );
 }
 
+/** Name, title and company on the pass. A website speaker's come from Admin → Speakers; a manual pass's are edited here. */
+function PassDetails({ row, onSaved }) {
+  const toast = useToast();
+  const [form, setForm] = useState({ name: row.name || "", title: row.title || "", company: row.company || "" });
+  const [saving, setSaving] = useState(false);
+  if (!row.manual) {
+    return (
+      <p className="mb-4 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-xs text-ttfc-muted">
+        <b className="text-ttfc-text">{[row.name, row.title, row.company].filter(Boolean).join(" · ")}</b>
+        <span className="mt-1 block">Name, title and company come from this speaker in Admin → Speakers: change them there and the pass follows.</span>
+      </p>
+    );
+  }
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const dirty = form.name !== (row.name || "") || form.title !== (row.title || "") || form.company !== (row.company || "");
+  const save = async () => {
+    setSaving(true);
+    try {
+      const r = await api.patch(`${BASE}/${encodeURIComponent(row.id)}`, form);
+      if (r?.row) onSaved?.(r.row);
+      toast.success("Details saved");
+    } catch (err) {
+      toast.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="mb-4 grid gap-3 rounded-xl border border-ttfc-line px-4 py-3 sm:grid-cols-3">
+      <Field label="Name on the pass">{(fid) => <Input id={fid} value={form.name} onChange={set("name")} maxLength={120} />}</Field>
+      <Field label="Title">{(fid) => <Input id={fid} value={form.title} onChange={set("title")} maxLength={200} />}</Field>
+      <Field label="Company">{(fid) => <Input id={fid} value={form.company} onChange={set("company")} maxLength={200} />}</Field>
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:col-span-3">
+        <p className="text-xs text-ttfc-dim">This speaker isn't on the website, so their details are edited here.</p>
+        <Button size="sm" icon={Save} loading={saving} disabled={!dirty || form.name.trim().length < 3} onClick={save}>Save details</Button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Right-side drawer with one speaker's email (`id`), or the sample (`id` null). Mounted per open.
+ * mode "nudge": the reminder to RSVP instead of the pass email.
  * For management it's also where you send: To, Cc and the wording can be changed for this send,
  * and the preview follows the edits.
  */
-function PreviewDrawer({ id, row, canSend, onSend, onClose }) {
+function PreviewDrawer({ id, row, canSend, mode = "pass", onSend, onClose, onRowSaved }) {
+  const nudge = mode === "nudge";
   const composing = !!(id && canSend && row);
   const [tpl, setTpl] = useState(null);
   const [to, setTo] = useState(() => listText(row?.emails?.length ? row.emails : row?.email ? [row.email] : []));
   const [cc, setCc] = useState("");
   const [copy, setCopy] = useState({ subject: "", headline: "", message: "" });
-  const [showWording, setShowWording] = useState(false);
+  const [showWording, setShowWording] = useState(true);
   useEffect(() => {
     if (!composing) return;
+    if (nudge) {
+      api.get(`${BASE}/nudge/defaults`).then((r) => {
+        setTpl({ template: { cc: r.cc || [] }, defaults: r.defaults || {} });
+        setCc(listText(r.cc));
+      }, () => setTpl({ template: { cc: [] }, defaults: {} }));
+      return;
+    }
     api.get(`${BASE}/template`).then((r) => {
       setTpl(r);
       setCc(listText(r.template.cc));
       setCopy({ subject: r.template.subject, headline: r.template.headline, message: r.template.message });
     }, () => setTpl({ template: { cc: [] }, defaults: {} }));
-  }, [composing]);
+  }, [composing, nudge]);
   const body = composing ? { ...(to.trim() ? { to } : {}), cc, ...copy } : {};
-  const live = useLivePreview(id ? `${BASE}/${encodeURIComponent(id)}/preview` : `${BASE}/preview-sample`, body, { enabled: !composing || !!tpl });
+  const previewUrl = id ? `${BASE}/${encodeURIComponent(id)}/${nudge ? "nudge/preview" : "preview"}` : `${BASE}/preview-sample`;
+  const live = useLivePreview(previewUrl, body, { enabled: !composing || !!tpl });
   const data = live.data;
   const loading = live.loading && !data;
   const error = !data ? live.error : null;
@@ -229,7 +290,7 @@ function PreviewDrawer({ id, row, canSend, onSend, onClose }) {
   const footer = composing ? (
     <>
       {to.trim()
-        ? <Button variant="primary" icon={Send} disabled={!tpl || live.loading || !!live.error} onClick={() => onSend(row, body, data)}>{alreadySent(row) ? "Resend" : "Send"}</Button>
+        ? <Button variant="primary" icon={nudge ? BellRing : Send} disabled={!tpl || live.loading || !!live.error} onClick={() => onSend(row, body, data, mode)}>{nudge ? "Send nudge" : alreadySent(row) ? "Resend" : "Send"}</Button>
         : <p className="text-sm text-ttfc-muted">Add an address in To (or in the list) to send this.</p>}
       <Button variant="ghost" onClick={onClose}>Close</Button>
       {live.error && data && <p className="text-xs text-red-200">{live.error.message}</p>}
@@ -240,9 +301,11 @@ function PreviewDrawer({ id, row, canSend, onSend, onClose }) {
       open
       onClose={onClose}
       width="max-w-2xl"
-      title={id ? `${row?.name || "Speaker"}'s Speaker Pass` : "Speaker Pass email"}
+      title={id ? (nudge ? `Nudge ${row?.name || "this speaker"}` : `${row?.name || "Speaker"}'s Speaker Pass`) : "Speaker Pass email"}
       description={id
-        ? (row?.ticketId ? `Ticket ${row.ticketId}` : undefined)
+        ? (nudge
+          ? "A reminder to RSVP: their Speaker Pass email again, with the reminder wording below (change it for this send)."
+          : row?.ticketId ? `Ticket ${row.ticketId}` : undefined)
         : "An example of the email every speaker gets, each with their own name and ticket ID."}
       footer={footer}
     >
@@ -255,6 +318,7 @@ function PreviewDrawer({ id, row, canSend, onSend, onClose }) {
               {id && !data?.to && !row?.email && (
                 <p className="mb-4 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm text-ttfc-muted">No email on this pass yet. Add one in the list before sending.</p>
               )}
+              {composing && !nudge && row && <PassDetails row={row} onSaved={onRowSaved} />}
               {composing && (
                 <div className="mb-4 flex flex-col gap-3 rounded-xl border border-ttfc-line px-4 py-3">
                   <ListField label="To" hint="Commas between addresses. Everyone in To gets the same email and calendar invites."
@@ -262,13 +326,13 @@ function PreviewDrawer({ id, row, canSend, onSend, onClose }) {
                   <ListField label="Cc" hint="For this send. The usual list is set in Edit email." value={cc} onChange={setCc} placeholder="Nobody" />
                   <button type="button" onClick={() => setShowWording((v) => !v)} aria-expanded={showWording}
                     className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-ttfc-pink hover:text-white">
-                    <PenLine className="h-4 w-4" aria-hidden="true" /> Edit the wording for this send
+                    <PenLine className="h-4 w-4" aria-hidden="true" /> {nudge ? "Reminder wording" : "Email wording for this send"}
                     <ChevronDown className={`h-4 w-4 transition ${showWording ? "rotate-180" : ""}`} aria-hidden="true" />
                   </button>
                   {showWording && <CopyFields value={copy} onChange={setCopy} defaults={tpl?.defaults || {}} />}
                 </div>
               )}
-              {id && row && <WhatGoesOut row={row} to={data?.to} cc={data?.cc} />}
+              {id && row && !nudge && <WhatGoesOut row={row} to={data?.to} cc={data?.cc} />}
               <PassPreview preview={data} />
             </>
           )}
@@ -300,9 +364,11 @@ function SendAllDialog({ rows, mode = "all", onClose, onDone }) {
     setSending(true);
     setErr("");
     try {
-      const r = mode === "selected"
-        ? await api.post(`${BASE}/send-selected`, { confirm: "SEND", ids: rows.map((x) => x.id), cc: cc ?? undefined })
-        : await api.post(`${BASE}/send-all`, { confirm: "SEND" });
+      const r = mode === "nudge"
+        ? await api.post(`${BASE}/nudge`, { confirm: "SEND", ids: rows.map((x) => x.id), cc: cc ?? undefined })
+        : mode === "selected"
+          ? await api.post(`${BASE}/send-selected`, { confirm: "SEND", ids: rows.map((x) => x.id), cc: cc ?? undefined })
+          : await api.post(`${BASE}/send-all`, { confirm: "SEND" });
       setResult(r || {});
       const summary = `Sent ${num(r?.sent ?? 0)}, failed ${num(r?.failed ?? 0)}`;
       if (r?.failed) toast.error(summary); else toast.success(summary);
@@ -320,8 +386,10 @@ function SendAllDialog({ rows, mode = "all", onClose, onDone }) {
       onClose={close}
       size="lg"
       tone="danger"
-      title={result ? "Done" : `Send ${plural(n, "Speaker Pass", "Speaker Passes")} now?`}
-      description={result ? undefined : `This emails ${plural(n, "speaker")} their Speaker Pass${mode === "selected" ? " (everyone you ticked)" : ""} now, with the wording from Edit email. This cannot be undone.`}
+      title={result ? "Done" : mode === "nudge" ? `Nudge ${plural(n, "speaker")} now?` : `Send ${plural(n, "Speaker Pass", "Speaker Passes")} now?`}
+      description={result ? undefined : mode === "nudge"
+        ? `This emails ${plural(n, "speaker")} who haven't RSVP'd a reminder with their Speaker Pass and RSVP button (the standard reminder wording; to change it, nudge one speaker at a time). This cannot be undone.`
+        : `This emails ${plural(n, "speaker")} their Speaker Pass${mode === "selected" ? " (everyone you ticked)" : ""} now, with the wording from Edit email. This cannot be undone.`}
       footer={result
         ? <Button variant="primary" onClick={close} data-autofocus>Close</Button>
         : (
@@ -362,7 +430,7 @@ function SendAllDialog({ rows, mode = "all", onClose, onDone }) {
               ))}
             </ul>
           </div>
-          {mode === "selected"
+          {mode === "selected" || mode === "nudge"
             ? <ListField label="Cc on each email and invite" hint="Commas between addresses. Empty = nobody." value={cc ?? ""} onChange={setCc} placeholder="Nobody" disabled={sending || cc === null} />
             : <p className="text-xs text-ttfc-muted">Cc on each: {cc === null ? "…" : cc || "nobody"} (change it in Edit email).</p>}
           <Field label={<>Type <span className="font-mono">SEND</span> to confirm</>}>
@@ -386,7 +454,7 @@ export default function SpeakerPasses() {
   const [q, setQ] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
-  const [preview, setPreview] = useState(null); // { id } for one speaker, { id: null } for the sample
+  const [preview, setPreview] = useState(null); // { id, mode } for one speaker, { id: null } for the sample
   const [previewN, setPreviewN] = useState(0);
   const [sendTarget, setSendTarget] = useState(null); // the row being confirmed
   const [sendAllOpen, setSendAllOpen] = useState(false); // false | "all" | "selected"
@@ -404,6 +472,8 @@ export default function SpeakerPasses() {
     rsvpd: rows.filter((r) => r.rsvp).length,
   }), [rows]);
   const readyRows = useMemo(() => rows.filter((r) => r.status === "ready"), [rows]);
+  // Nudge targets: sent their pass, still have an address, no RSVP yet.
+  const nudgeRows = useMemo(() => rows.filter((r) => r.emailSentAt && !r.rsvp && (r.emails?.length || r.email)), [rows]);
   const selectedRows = useMemo(() => rows.filter((r) => selected.has(r.id) && (r.emails?.length || r.email)), [rows, selected]);
   const needle = q.trim().toLowerCase();
   const shown = useMemo(() => {
@@ -422,7 +492,7 @@ export default function SpeakerPasses() {
   });
   const updateRow = (row) => setData((d) => (d ? { ...d, rows: (d.rows || []).map((r) => (r.id === row.id ? { ...r, ...row } : r)) } : d));
   const markSaving = (id, on) => setSavingIds((s) => ({ ...s, [id]: on }));
-  const openPreview = (id) => { setPreview({ id }); setPreviewN((n) => n + 1); };
+  const openPreview = (id, mode = "pass") => { setPreview({ id, mode }); setPreviewN((n) => n + 1); };
   const previewRow = preview?.id ? rows.find((r) => r.id === preview.id) || null : null;
 
   const copy = (text) => navigator.clipboard?.writeText(text).then(
@@ -441,7 +511,14 @@ export default function SpeakerPasses() {
   };
 
   const sendOne = async () => {
-    const { row, body } = sendTarget;
+    const { row, body, mode } = sendTarget;
+    if (mode === "nudge") {
+      const r = await api.post(`${BASE}/${encodeURIComponent(row.id)}/nudge`, body);
+      if (r?.row) updateRow({ ...r.row, rsvp: row.rsvp });
+      setPreview(null);
+      toast.success(`Nudge sent to ${sendTarget.preview?.to || row.email}`);
+      return;
+    }
     const r = await api.post(`${BASE}/${encodeURIComponent(row.id)}/send`, body);
     if (r?.row) updateRow({ ...r.row, rsvp: row.rsvp });
     setPreview(null);
@@ -452,6 +529,8 @@ export default function SpeakerPasses() {
 
   const syncSummary = syncResult && [
     `${num(syncResult.created ?? 0)} created`,
+    ...(syncResult.mergedNames?.length ? [`${num(syncResult.mergedNames.length)} duplicate${syncResult.mergedNames.length === 1 ? "" : "s"} merged (${syncResult.mergedNames.join(", ")})`] : []),
+    ...(syncResult.linkedNames?.length ? [`${num(syncResult.linkedNames.length)} linked to the website (${syncResult.linkedNames.join(", ")})`] : []),
     `${num(syncResult.existing ?? 0)} already had a pass`,
     `${num(syncResult.excluded ?? 0)} excluded${syncResult.excludedNames?.length ? ` (${syncResult.excludedNames.join(", ")})` : ""}`,
   ].join(" · ");
@@ -476,6 +555,12 @@ export default function SpeakerPasses() {
               <Button icon={Send} disabled={!selectedRows.length} onClick={() => setSendAllOpen("selected")}
                 title={selectedRows.length ? "Email the speakers you ticked" : "None of the ticked speakers has an email"}>
                 Send to selected ({num(selectedRows.length)})
+              </Button>
+            )}
+            {isManagement && (
+              <Button icon={BellRing} disabled={!nudgeRows.length} onClick={() => setSendAllOpen("nudge")}
+                title={nudgeRows.length ? "Remind every speaker who was sent their pass and hasn't RSVP'd" : "Everyone who was sent a pass has RSVP'd"}>
+                Nudge everyone not RSVP'd{nudgeRows.length ? ` (${num(nudgeRows.length)})` : ""}
               </Button>
             )}
             {isManagement && (
@@ -573,6 +658,12 @@ export default function SpeakerPasses() {
                           </Button>
                         </span>
                       )}
+                      {isManagement && r.emailSentAt && !r.rsvp && (
+                        <Button size="sm" variant="ghost" icon={BellRing} disabled={busy} onClick={() => openPreview(r.id, "nudge")}
+                          title="Remind them to RSVP: preview, change the wording if you like, then send">
+                          Nudge
+                        </Button>
+                      )}
                     </div>
                   </td>
                   <td className="whitespace-nowrap">
@@ -598,8 +689,10 @@ export default function SpeakerPasses() {
           key={previewN}
           id={preview.id}
           row={previewRow}
+          mode={preview.mode}
           canSend={isManagement}
-          onSend={(row, body, preview) => setSendTarget({ row, body, preview })}
+          onSend={(row, body, preview, mode) => setSendTarget({ row, body, preview, mode })}
+          onRowSaved={updateRow}
           onClose={() => setPreview(null)}
         />
       )}
@@ -608,8 +701,13 @@ export default function SpeakerPasses() {
         open={!!sendTarget}
         onClose={() => setSendTarget(null)}
         tone="primary"
-        title={sendTarget ? `Send ${sendTarget.row.name || "this speaker"}'s Speaker Pass?` : ""}
-        body={sendTarget && [
+        title={sendTarget ? (sendTarget.mode === "nudge" ? `Nudge ${sendTarget.row.name || "this speaker"}?` : `Send ${sendTarget.row.name || "this speaker"}'s Speaker Pass?`) : ""}
+        body={sendTarget && sendTarget.mode === "nudge" ? [
+          `To: ${sendTarget.preview?.to || sendTarget.row.email}.`,
+          `Cc: ${listText(sendTarget.preview?.cc) || "nobody"}.`,
+          "They'll get the reminder you see in the preview, with their Speaker Pass and RSVP button.",
+          sendTarget.row.nudgedAt ? `They were last nudged on ${shortDay(sendTarget.row.nudgedAt)}.` : "",
+        ].filter(Boolean).join(" ") : sendTarget && [
           `To: ${sendTarget.preview?.to || sendTarget.row.email}.`,
           `Cc: ${listText(sendTarget.preview?.cc) || "nobody"}.`,
           alreadySent(sendTarget.row)
@@ -617,14 +715,14 @@ export default function SpeakerPasses() {
             : "They'll get the email you see in the preview.",
           sendTarget.row.sessions ? `Plus ${plural(sendTarget.row.sessions, "calendar invite")} for their ${sendTarget.row.sessions > 1 ? "sessions" : "session"}.` : "",
         ].filter(Boolean).join(" ")}
-        confirmLabel={sendTarget && alreadySent(sendTarget.row) ? "Resend" : "Send"}
+        confirmLabel={sendTarget?.mode === "nudge" ? "Send nudge" : sendTarget && alreadySent(sendTarget.row) ? "Resend" : "Send"}
         onConfirm={sendOne}
       />
 
       {sendAllOpen && (
         <SendAllDialog
           mode={sendAllOpen}
-          rows={sendAllOpen === "selected" ? selectedRows : readyRows}
+          rows={sendAllOpen === "selected" ? selectedRows : sendAllOpen === "nudge" ? nudgeRows : readyRows}
           onClose={() => setSendAllOpen(false)}
           onDone={() => { reload(); if (sendAllOpen === "selected") setSelected(new Set()); }}
         />

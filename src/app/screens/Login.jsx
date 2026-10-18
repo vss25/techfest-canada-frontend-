@@ -71,6 +71,14 @@ export default function Login() {
     })();
   }, [navigate]);
 
+  // The sign-in screen is always dark: match the browser chrome / status bar to it.
+  useEffect(() => {
+    const metas = [...document.querySelectorAll('meta[name="theme-color"]')];
+    const prev = metas.map((m) => m.getAttribute("content"));
+    metas.forEach((m) => m.setAttribute("content", "#0B0823"));
+    return () => metas.forEach((m, i) => m.setAttribute("content", prev[i]));
+  }, []);
+
   // Resend countdown.
   useEffect(() => {
     if (mode !== "code") return undefined;

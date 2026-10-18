@@ -1,15 +1,12 @@
-import { useEffect, useState } from "react";
-import { API } from "./forms";
 
 /* =========================================================
-   Promo links: /tickets?promo=APP50 (the web app's guest offer).
-   The code is remembered for this browser session so it survives
-   moving between pages, checked against every pass with the public
-   POST /api/promos/validate, and dropped once it ends or is refused.
+   Promo codes people were given. A ?promo= link only pre-fills the
+   code at checkout (remembered for this browser session); the site
+   never advertises a discount.
+   Also: the admin's promo end-date field (Toronto time).
 ========================================================= */
 
 const KEY = "ttfc.promo";
-const PASSES = ["connect", "influence", "power", "apex"];
 
 export function promoFromUrl() {
   if (typeof window === "undefined") return "";
@@ -25,55 +22,6 @@ export function promoFromUrl() {
 export function forgetPromo() {
   try { sessionStorage.removeItem(KEY); } catch { /* private mode */ }
 }
-
-/** { code, discount, expiresAt, tiers: Set } for a live promo link, else null. */
-export function usePromoOffer() {
-  const [offer, setOffer] = useState(null);
-  useEffect(() => {
-    const code = promoFromUrl();
-    if (!code) return undefined;
-    let cancelled = false;
-    Promise.all(PASSES.map((tier) =>
-      fetch(`${API}/promos/validate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, tier }) })
-        .then((r) => r.json().then((d) => ({ tier, ok: r.ok && d.valid, d })))
-        .catch(() => ({ tier, ok: false, d: {} })),
-    )).then((rows) => {
-      if (cancelled) return;
-      const live = rows.filter((r) => r.ok);
-      if (!live.length) { forgetPromo(); setOffer(null); return; }
-      const first = live[0].d;
-      setOffer({ code: first.code || code, discount: Number(first.discount) || 0, expiresAt: first.expiresAt || null, tiers: new Set(live.map((r) => r.tier)) });
-    });
-    return () => { cancelled = true; };
-  }, []);
-  return offer;
-}
-
-/** Ticks every second until `iso`; null when there's no end date. */
-export function useCountdown(iso) {
-  const end = iso ? new Date(iso).getTime() : NaN;
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!Number.isFinite(end)) return undefined;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [end]);
-  if (!Number.isFinite(end)) return null;
-  const left = Math.max(0, end - now);
-  const s = Math.floor(left / 1000);
-  return { left, days: Math.floor(s / 86400), hours: Math.floor((s % 86400) / 3600), minutes: Math.floor((s % 3600) / 60), seconds: s % 60 };
-}
-
-/** "Wed 21 Oct, 11:59 PM ET" */
-export function endsLabel(iso) {
-  if (!iso) return "";
-  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Toronto", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit",
-  }).formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
-  return `${parts.weekday} ${parts.day} ${parts.month}, ${parts.hour}:${parts.minute} ${parts.dayPeriod} ET`;
-}
-
-export const discounted = (price, pct) => Math.round(price * (1 - pct / 100) * 100) / 100;
 
 /* Toronto wall-clock time ↔ ISO, for the admin's end-date field (an <input type="datetime-local">). */
 function torontoOffsetMs(utcMs) {
@@ -98,4 +46,13 @@ export function isoToTorontoLocal(iso) {
   const t = new Date(iso).getTime();
   if (!Number.isFinite(t)) return "";
   return new Date(t + torontoOffsetMs(t)).toISOString().slice(0, 16);
+}
+
+/** "Wed 21 Oct, 11:59 PM ET" (admin list and hints). */
+export function endsLabel(iso) {
+  if (!iso) return "";
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Toronto", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit",
+  }).formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
+  return `${parts.weekday} ${parts.day} ${parts.month}, ${parts.hour}:${parts.minute} ${parts.dayPeriod} ET`;
 }

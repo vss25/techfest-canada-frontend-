@@ -14,18 +14,20 @@ export default function Toaster({ children }) {
   const idRef = useRef(0);
 
   const dismiss = useCallback((id) => setItems((xs) => xs.filter((x) => x.id !== id)), []);
-  const push = useCallback((type, message) => {
+  // opts.action = { label, onClick } adds a button (e.g. "Undo") and keeps the toast up longer.
+  const push = useCallback((type, message, opts = {}) => {
     const id = ++idRef.current;
     let text = message instanceof Error ? message.message : String(message ?? "");
     if (/^management only$/i.test(text)) text = "Only management can do that.";
-    setItems((xs) => [...xs.slice(-3), { id, type, text }]);
-    setTimeout(() => dismiss(id), type === "error" ? 6500 : 3200);
+    const action = opts.action?.label && typeof opts.action.onClick === "function" ? opts.action : null;
+    setItems((xs) => [...xs.slice(-3), { id, type, text, action }]);
+    setTimeout(() => dismiss(id), opts.duration || (action ? 15000 : type === "error" ? 6500 : 3200));
   }, [dismiss]);
 
   const api = useMemo(() => ({
-    success: (m) => push("success", m),
-    error: (m) => push("error", m),
-    info: (m) => push("info", m),
+    success: (m, opts) => push("success", m, opts),
+    error: (m, opts) => push("error", m, opts),
+    info: (m, opts) => push("info", m, opts),
   }), [push]);
 
   return (
@@ -45,6 +47,15 @@ export default function Toaster({ children }) {
             >
               <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <p className="flex-1 leading-snug">{t.text}</p>
+              {t.action && (
+                <button
+                  type="button"
+                  onClick={() => { dismiss(t.id); t.action.onClick(); }}
+                  className="-my-0.5 shrink-0 rounded-md px-2 py-0.5 text-sm font-semibold underline underline-offset-2 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ttfc-purple"
+                >
+                  {t.action.label}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => dismiss(t.id)}

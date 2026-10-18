@@ -1,17 +1,18 @@
 import { useId, useMemo, useState } from "react";
 import {
-  AlertTriangle, ArrowDown, ArrowUp, CalendarDays, Coffee, Copy, Download, Mic, Pencil, Plus, Star, Trash2, UserRound, X,
+  AlertTriangle, ArrowDown, ArrowUp, CalendarDays, Clock, Coffee, Copy, Download, Mic, Pencil, Plus, Star, Trash2, UserRound, X,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import {
-  Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, PageHeader, Select, SkeletonGrid,
+  Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, IconButton, Input, Modal, PageHeader, Select, SkeletonGrid,
   Switch, Tabs, Textarea, focusRing,
 } from "../ui";
 import { CmsBanners } from "./CmsParts";
 import { LIVE_NOTE } from "./cmsMeta";
 import useCmsStatus from "./useCmsStatus";
+import { EARLIER_STEPS, LATER_STEPS, planShift, stageOf } from "./agendaShift";
 import { SESSIONS, DAYS, buildSpeakerIndex, matchSpeaker, formatTime12, getDuration } from "../../data/agenda";
 import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS, SESSION_TYPE_SUGGESTIONS } from "../../data/sessionFormats";
 
@@ -231,7 +232,7 @@ function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNa
   );
 }
 
-function SessionRow({ s, speakerIndex, readOnly, onEdit, onDuplicate, onDelete }) {
+function SessionRow({ s, speakerIndex, readOnly, onEdit, onDuplicate, onDelete, onShift }) {
   const people = (s.speakers || []).map((p) => p.name).filter(Boolean);
   const unmatched = [...(s.speakers || []), ...(s.moderator?.name ? [s.moderator] : [])].filter((p) => p.name && !matchSpeaker(speakerIndex, p.name));
   return (
@@ -268,6 +269,10 @@ function SessionRow({ s, speakerIndex, readOnly, onEdit, onDuplicate, onDelete }
         )}
       </div>
       <div className="flex gap-1 sm:justify-end">
+        {onShift && s.time && (
+          <IconButton icon={Clock} label="Shift times" aria-label={`Running late: shift times from ${s.title}`}
+            onClick={() => onShift(s)} disabled={readOnly} className="h-8 w-8 rounded-lg" />
+        )}
         <Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit(s)}>Edit</Button>
         <Button size="sm" variant="ghost" icon={Copy} onClick={() => onDuplicate(s)} disabled={readOnly}>Duplicate</Button>
         <Button size="sm" variant="ghost" icon={Trash2} onClick={() => onDelete(s)} disabled={readOnly} className="text-red-300/80 hover:text-red-200" aria-label={`Delete ${s.title}`}>
@@ -275,6 +280,131 @@ function SessionRow({ s, speakerIndex, readOnly, onEdit, onDuplicate, onDelete }
         </Button>
       </div>
     </li>
+  );
+}
+
+const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+const signed = (m) => `${m > 0 ? "+" : "\u2212"}${Math.abs(m)}`;
+const range12 = (a, b) => (b ? `${formatTime12(a)}\u2013${formatTime12(b)}` : formatTime12(a));
+const SHIFT_NOTE = "The app and website update within a minute. Reminders move with the new times.";
+
+/** "Running late": pick minutes and scope, preview what moves, then one server call. */
+function ShiftDialog({ session, all, readOnly, onClose, onShifted, onStale }) {
+  const minutesName = useId();
+  const scopeName = useId();
+  const [minutes, setMinutes] = useState(5);
+  const [scope, setScope] = useState("stage");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const plans = useMemo(() => ({
+    stage: planShift(all, session._id, minutes, "stage"),
+    day: planShift(all, session._id, minutes, "day"),
+  }), [all, session._id, minutes]);
+  const plan = plans[scope];
+  const n = plan.changes?.length || 0;
+  const stage = stageOf(session.stage);
+
+  const close = () => { if (!busy) onClose(); };
+  const confirm = async () => {
+    setBusy(true); setError("");
+    try {
+      const r = await api.post("/cms/session/shift", { id: session._id, minutes, scope });
+      onShifted(r, { id: session._id, minutes, scope });
+    } catch (err) {
+      setBusy(false);
+      setError(err?.message || "Something went wrong");
+      if (err?.status === 409) onStale();
+    }
+  };
+
+  const segment = (steps, label) => (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ttfc-dim">{label}</span>
+      <div className="inline-flex overflow-hidden rounded-xl border border-ttfc-line bg-ttfc-ink/40">
+        {steps.map((m) => (
+          <label key={m}
+            className={`relative inline-flex h-9 min-w-[3rem] cursor-pointer items-center justify-center border-r border-ttfc-line px-2.5 text-sm font-semibold tabular-nums transition last:border-r-0 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-ttfc-purple ${
+              minutes === m ? "bg-ttfc-purple/30 text-white" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text"}`}>
+            <input type="radio" name={minutesName} value={m} checked={minutes === m} onChange={() => setMinutes(m)} disabled={busy} className="sr-only" />
+            {signed(m)}<span className="sr-only"> minutes {m > 0 ? "later" : "earlier"}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+
+  const scopeOption = (value, label) => {
+    const count = plans[value].changes?.length;
+    return (
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-ttfc-line p-3 transition hover:bg-white/[0.02] has-[:checked]:border-ttfc-purple/60 has-[:checked]:bg-ttfc-purple/10">
+        <input type="radio" name={scopeName} value={value} checked={scope === value} onChange={() => setScope(value)} disabled={busy}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-[#E8458B]" />
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold text-ttfc-text">{label}</span>
+          {count !== undefined && <span className="block text-xs text-ttfc-dim">{plural(count, "session")} change</span>}
+        </span>
+      </label>
+    );
+  };
+
+  return (
+    <Modal
+      open
+      onClose={close}
+      title={`Shift times from \u201c${session.title || "this session"}\u201d`}
+      description={SHIFT_NOTE}
+      footer={<>
+        <Button onClick={close} disabled={busy}>Cancel</Button>
+        <Button variant="primary" icon={Clock} loading={busy} onClick={confirm} disabled={readOnly || !!plan.error || !n}>
+          {plan.error || !n ? "Shift times" : `Shift ${plural(n, "session")}`}
+        </Button>
+      </>}
+    >
+      <fieldset>
+        <legend className="mb-2 text-[13px] font-semibold text-ttfc-text/90">Move by (minutes)</legend>
+        <div className="flex flex-wrap gap-3">
+          {segment(LATER_STEPS, "Later")}
+          {segment(EARLIER_STEPS, "Earlier")}
+        </div>
+      </fieldset>
+
+      <fieldset className="mt-5">
+        <legend className="mb-2 text-[13px] font-semibold text-ttfc-text/90">Which sessions</legend>
+        <div className="grid gap-2">
+          {scopeOption("stage", `Only ${stage}`)}
+          {scopeOption("day", `All stages on ${DAYS[Number(session.day)]?.label || `Day ${session.day}`}`)}
+        </div>
+      </fieldset>
+
+      <div className="mt-5">
+        <p className="mb-2 text-[13px] font-semibold text-ttfc-text/90">What changes</p>
+        {plan.error ? (
+          <p role="alert" className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">{plan.error}</p>
+        ) : (
+          <ul className="overflow-hidden rounded-xl border border-ttfc-line bg-ttfc-ink/40">
+            {plan.changes.map((c) => (
+              <li key={c._id} className="border-b border-ttfc-line/70 px-3 py-2 last:border-0">
+                <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-ttfc-text">
+                  {c.isBreak && <Coffee className="h-3.5 w-3.5 shrink-0 text-ttfc-dim" aria-label="Break" />}
+                  <span className="truncate">{c.title || "Untitled session"}</span>
+                </p>
+                <p className="mt-0.5 text-xs tabular-nums text-ttfc-muted">
+                  {c.anchor ? (
+                    <>Ends <span className="text-ttfc-dim">{formatTime12(c.from.endTime)}</span> → <span className="font-semibold text-ttfc-text">{formatTime12(c.endTime)}</span>
+                      <span className="text-ttfc-dim"> · starts at {formatTime12(c.time)} as before</span></>
+                  ) : (
+                    <><span className="text-ttfc-dim">{range12(c.from.time, c.from.endTime)}</span> → <span className="font-semibold text-ttfc-text">{range12(c.time, c.endTime)}</span>
+                      {scope === "day" && stageOf(c.stage) !== stage && <span className="text-ttfc-dim"> · {stageOf(c.stage)}</span>}</>
+                  )}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!plan.error && n === 1 && <p className="mt-2 text-xs text-ttfc-dim">Nothing comes after it, so only its end time changes.</p>}
+      </div>
+      {error && <p role="alert" className="mt-3 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error}</p>}
+    </Modal>
   );
 }
 
@@ -288,6 +418,7 @@ export default function Agenda() {
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [shifting, setShifting] = useState(null);
 
   const list = useMemo(() => [...(data || [])].sort(byTime), [data]);
   const speakerIndex = useMemo(() => buildSpeakerIndex(speakers.data || []), [speakers.data]);
@@ -316,6 +447,31 @@ export default function Agenda() {
       setData((xs) => [...(xs || []), { ...body, ...(saved || {}) }]);
       toast.success("Session duplicated — edit the copy to change it");
     } catch (err) { toast.error(err); }
+  };
+
+  const applyMoved = (moved = []) => {
+    const byId = new Map(moved.map((m) => [m._id, m]));
+    setData((xs) => (xs || []).map((x) => (byId.has(x._id) ? { ...x, time: byId.get(x._id).time, endTime: byId.get(x._id).endTime } : x)));
+  };
+
+  // Undo = the same shift with the opposite minutes, limited to exactly the sessions that moved.
+  const undoShift = async (req, only) => {
+    try {
+      const r = await api.post("/cms/session/shift", { id: req.id, minutes: -req.minutes, scope: req.scope, only });
+      applyMoved(r.moved);
+      toast.success("Shift undone. The times are back to how they were.");
+    } catch (err) { toast.error(err); } finally { reload(); }
+  };
+
+  const onShifted = (r, req) => {
+    setShifting(null);
+    applyMoved(r.moved);
+    reload();
+    const n = r.moved?.length || 0;
+    const only = (r.moved || []).map((m) => m._id).filter((x) => x !== req.id);
+    toast.success(`${plural(n, "session")} moved ${Math.abs(req.minutes)} min ${req.minutes > 0 ? "later" : "earlier"}.`, {
+      action: { label: "Undo", onClick: () => undoShift(req, only) },
+    });
   };
 
   const onSaved = (doc) => {
@@ -374,7 +530,8 @@ export default function Agenda() {
             <ul className="overflow-hidden rounded-[18px] border border-ttfc-line bg-ttfc-panel">
               {dayList.map((s) => (
                 <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly}
-                  onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} onDuplicate={duplicate} onDelete={setDeleting} />
+                  onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} onDuplicate={duplicate} onDelete={setDeleting}
+                  onShift={(doc) => setShifting(doc)} />
               ))}
             </ul>
           ) : (
@@ -399,6 +556,18 @@ export default function Agenda() {
           readOnly={readOnly}
           onClose={() => setEditing(null)}
           onSaved={onSaved}
+        />
+      )}
+
+      {shifting && (
+        <ShiftDialog
+          key={shifting._id}
+          session={shifting}
+          all={list}
+          readOnly={readOnly}
+          onClose={() => setShifting(null)}
+          onShifted={onShifted}
+          onStale={reload}
         />
       )}
 

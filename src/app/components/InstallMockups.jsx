@@ -1,7 +1,11 @@
+import { useEffect, useRef, useState } from "react";
+
 /* =========================================================
    Phone illustrations for the install guide: the real Share,
    ••• and ⋮ buttons drawn where they sit on screen, with a
-   pulsing ring on the one to tap. Plain inline SVG.
+   pulsing ring on the one to tap. Two-tap steps show the
+   menu already open, with the taps numbered 1 and 2.
+   Plain inline SVG.
 ========================================================= */
 
 const HI = "#8B52E0";
@@ -24,6 +28,33 @@ function PulseRect({ x, y, w, h, rx = 8 }) {
     <g aria-hidden="true">
       <rect className="pulse" x={x} y={y} width={w} height={h} rx={rx} fill="none" stroke={HI} strokeWidth="3" />
       <rect x={x} y={y} width={w} height={h} rx={rx} fill="rgba(139,82,224,0.10)" stroke={HI} strokeWidth="2.5" />
+    </g>
+  );
+}
+
+/** A numbered tap badge (1, 2) beside a highlighted control. */
+function Num({ x, y, n }) {
+  return (
+    <g aria-hidden="true">
+      <circle cx={x} cy={y} r="8.5" fill={HI} stroke="#fff" strokeWidth="2" />
+      <text x={x} y={Number(y) + 3.6} fontSize="10" fontWeight="800" fill="#fff" textAnchor="middle" fontFamily="-apple-system, BlinkMacSystemFont, sans-serif">{n}</text>
+    </g>
+  );
+}
+
+/** Rows of a share sheet / menu, with one highlighted (tap 2). */
+function SheetList({ x = 22, y, w = 176, rows, hi, icon }) {
+  return (
+    <g>
+      {rows.map((l, i) => (
+        <g key={l}>
+          <rect x={x} y={y + i * 30} width={w} height="27" rx={6} fill="#fff" />
+          <T x={x + 12} y={y + i * 30 + 17.5} size={10} weight={i === hi ? 700 : 400}>{l}</T>
+        </g>
+      ))}
+      {icon && <g fill="none" stroke={INK} strokeWidth="1.5"><rect x={x + w - 24} y={y + hi * 30 + 6} width="15" height="15" rx="4" /><path d={`M${x + w - 16.5} ${y + hi * 30 + 10} v7 M${x + w - 20} ${y + hi * 30 + 13.5} h7`} /></g>}
+      <PulseRect x={x - 2} y={y + hi * 30 - 2} w={w + 4} h="31" rx="7" />
+      <Num x={x + w - 2} y={y + hi * 30 - 2} n="2" />
     </g>
   );
 }
@@ -89,7 +120,202 @@ const T = ({ x, y, children, size = 11, weight = 400, color = INK, anchor = "sta
   <text x={x} y={y} fontSize={size} fontWeight={weight} fill={color} textAnchor={anchor} fontFamily="-apple-system, BlinkMacSystemFont, sans-serif">{children}</text>
 );
 
+const SHEET_ROWS = ["Copy", "Add to Reading List", "Add Bookmark", "Add to Home Screen"];
+
 const MOCKS = {
+  // iPhone Safari (iOS 18 and earlier): 1 Share in the toolbar, 2 Add to Home Screen in the sheet.
+  "ios-share-add": () => (
+    <Phone crop={[150, 290]} title="Safari: tap the Share button at the bottom (1), then Add to Home Screen in the list (2)">
+      <rect x="12" y="12" width="196" height="416" rx="27" fill="rgba(0,0,0,0.18)" />
+      <rect x="16" y="168" width="188" height="186" rx="16" fill="#efeef3" />
+      <AppIcon x="28" y="180" s="26" />
+      <T x="62" y="192" size={10.5} weight={700}>TTFC 2026</T>
+      <T x="62" y="205" size={8.5} color={GREY}>thetechfestival.com</T>
+      <SheetList y={222} rows={SHEET_ROWS} hi={3} icon />
+      <rect x="12" y="364" width="196" height="64" fill="#f9f9fb" />
+      <g fill="none" stroke="#0a84ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M38 392 l-6 6 l6 6" /><path d="M66 392 l6 6 l-6 6" />
+        <path d="M140 391 h12 v14 h-12 z M146 391 v14" /><rect x="168" y="392" width="13" height="13" rx="3" /><rect x="172" y="388" width="13" height="13" rx="3" />
+      </g>
+      <ShareIcon x="110" y="399" />
+      <Pulse x="110" y="397" r="16" />
+      <Num x="128" y="383" n="1" />
+    </Phone>
+  ),
+  // iPhone Safari on iOS 26: 1 ••• at the right of the address bar, 2 Share at the top of the menu.
+  "ios26-more-share": () => (
+    <Phone crop={[200, 240]} title="Safari on iOS 26: tap ••• at the bottom right (1), then Share at the top of the menu (2)">
+      <Content y="60" n={4} />
+      <rect x="62" y="226" width="140" height="140" rx="16" fill="#ffffff" stroke={LINE} />
+      {["Share", "Add to Bookmarks", "Add Bookmark to…", "New Tab"].map((l, i) => (
+        <T key={l} x="78" y={252 + i * 30} size={10} weight={i === 0 ? 700 : 400}>{l}</T>
+      ))}
+      <ShareIcon x="188" y="250" s={0.75} color={INK} />
+      <PulseRect x="66" y="232" w="132" h="30" rx="8" />
+      <Num x="196" y="232" n="2" />
+      <rect x="24" y="378" width="140" height="38" rx="19" fill="#ffffff" stroke={LINE} />
+      <T x="94" y="401" size={10} anchor="middle">thetechfestival.com</T>
+      <circle cx="184" cy="397" r="19" fill="#ffffff" stroke={LINE} />
+      <Dots x="184" y="397" />
+      <Pulse x="184" y="397" r="17" />
+      <Num x="199" y="380" n="1" />
+    </Phone>
+  ),
+  // iOS 26 share sheet: 1 View More, 2 Add to Home Screen.
+  "ios26-viewmore-add": () => (
+    <Phone crop={[196, 236]} title="The Share sheet: tap View More (1), then Add to Home Screen (2)">
+      <rect x="12" y="200" width="196" height="228" rx="18" fill="#efeef3" />
+      <AppIcon x="26" y="214" s="28" />
+      <T x="62" y="226" size={11} weight={700}>TTFC 2026</T>
+      <T x="62" y="240" size={9} color={GREY}>thetechfestival.com</T>
+      {["Copy", "Bookmarks", "Reading List", "View More"].map((l, i) => (
+        <g key={l}>
+          <circle cx={40 + i * 47} cy="284" r="17" fill="#e3e1e8" />
+          <T x={40 + i * 47} y="316" size={7.5} anchor="middle">{l}</T>
+        </g>
+      ))}
+      <path d="M175 280 l6 6 l6 -6" fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round" />
+      <Pulse x={181} y={284} r={19} />
+      <Num x="198" y="266" n="1" />
+      <SheetList y={334} rows={["Find on Page", "Add to Home Screen", "Markup"]} hi={1} icon />
+    </Phone>
+  ),
+  // Chrome on iPhone: 1 Share in the address bar, 2 Add to Home Screen.
+  "ios-chrome-share-add": () => (
+    <Phone crop={[24, 330]} title="Chrome on iPhone: tap the Share icon in the address bar (1), then Add to Home Screen (2)">
+      <rect x="12" y="40" width="196" height="40" fill="#f9f9fb" />
+      <Address y="47" x="24" w="140" />
+      <ShareIcon x="186" y="62" color={INK} />
+      <Pulse x="186" y="60" r="15" />
+      <Num x="201" y="44" n="1" />
+      <rect x="12" y="12" width="196" height="416" rx="27" fill="rgba(0,0,0,0.12)" />
+      <rect x="16" y="206" width="188" height="148" rx="16" fill="#efeef3" />
+      <SheetList y={222} rows={SHEET_ROWS} hi={3} icon />
+    </Phone>
+  ),
+  // Edge on iPhone: 1 Share in the bottom toolbar, 2 Add to Home Screen.
+  "ios-edge-share-add": () => (
+    <Phone crop={[150, 290]} title="Edge on iPhone: tap the Share icon at the bottom (1), then Add to Home Screen (2)">
+      <rect x="12" y="12" width="196" height="416" rx="27" fill="rgba(0,0,0,0.12)" />
+      <rect x="16" y="190" width="188" height="164" rx="16" fill="#efeef3" />
+      <SheetList y={222} rows={SHEET_ROWS} hi={3} icon />
+      <rect x="12" y="368" width="196" height="60" fill="#f9f9fb" />
+      <ShareIcon x="110" y="398" color={INK} />
+      <Pulse x="110" y="396" r="16" />
+      <Num x="128" y="381" n="1" />
+      <Dots x="176" y="396" />
+    </Phone>
+  ),
+  // Android Chrome (and Firefox): 1 ⋮ at the top right, 2 Install app in the menu.
+  "android-dots-install": ({ item = "Install app" } = {}) => (
+    <Phone crop={[30, 260]} title={`The browser: tap ⋮ at the top right (1), then ${item} (2)`}>
+      <rect x="12" y="40" width="196" height="40" fill="#ffffff" />
+      <Address y="47" x="22" w="120" />
+      <Dots x="196" y="60" vertical />
+      <Pulse x="196" y="60" r="12" />
+      <Num x="180" y="46" n="1" />
+      <Content y="96" />
+      <rect x="64" y="84" width="138" height="186" rx="8" fill="#fff" stroke={LINE} />
+      {["New tab", "History", "Downloads"].map((l, i) => <T key={l} x="78" y={108 + i * 30}>{l}</T>)}
+      <T x="78" y="198" weight={700}>{item}</T>
+      <g fill="none" stroke={INK} strokeWidth="1.6"><rect x="178" y="186" width="14" height="16" rx="3" /><path d="M185 190 v7 M182 194 l3 3 l3 -3" /></g>
+      <T x="78" y="234">Settings</T>
+      <PulseRect x="68" y="180" w="130" h="28" rx="6" />
+      <Num x="200" y="180" n="2" />
+    </Phone>
+  ),
+  // Edge on Android: 1 ••• at the bottom, 2 Add to phone / Install app.
+  "android-edge-install": () => (
+    <Phone crop={[200, 240]} title="Edge on Android: tap ••• at the bottom (1), then Install app (2)">
+      <Content y="60" n={4} />
+      <rect x="12" y="12" width="196" height="416" rx="27" fill="rgba(0,0,0,0.18)" />
+      <rect x="12" y="246" width="196" height="128" rx="16" fill="#fff" />
+      {["Favourites", "History", "Install app", "Settings"].map((l, i) => <T key={l} x="30" y={272 + i * 28} weight={i === 2 ? 700 : 400}>{l}</T>)}
+      <PulseRect x="22" y="314" w="176" h="26" rx="6" />
+      <Num x="196" y="314" n="2" />
+      <rect x="12" y="380" width="196" height="48" fill="#ffffff" />
+      <Dots x="110" y="404" />
+      <Pulse x="110" y="404" r="15" />
+      <Num x="126" y="389" n="1" />
+    </Phone>
+  ),
+  // Samsung Internet: 1 ≡ at the bottom right, 2 Add page to › Home screen.
+  "android-samsung-install": () => (
+    <Phone crop={[200, 240]} title="Samsung Internet: tap ≡ at the bottom right (1), then Add page to › Home screen (2)">
+      <Content y="60" n={4} />
+      <rect x="12" y="12" width="196" height="416" rx="27" fill="rgba(0,0,0,0.18)" />
+      <rect x="12" y="246" width="196" height="128" rx="16" fill="#fff" />
+      {["Bookmarks", "Downloads", "Add page to", "Settings"].map((l, i) => <T key={l} x="30" y={272 + i * 28} weight={i === 2 ? 700 : 400}>{l}</T>)}
+      <T x="190" y="328" size={10} color={GREY} anchor="end">Home screen ›</T>
+      <PulseRect x="22" y="314" w="176" h="26" rx="6" />
+      <Num x="196" y="314" n="2" />
+      <rect x="12" y="380" width="196" height="48" fill="#ffffff" />
+      <g fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round">
+        <path d="M34 398 l-6 6 l6 6" /><path d="M64 398 l6 6 l-6 6" /><path d="M100 410 v-8 l10 -8 l10 8 v8 z" />
+        <rect x="136" y="397" width="14" height="14" rx="3" />
+        <path d="M174 398 h16 M174 404 h16 M174 410 h16" />
+      </g>
+      <Pulse x="182" y="404" r="15" />
+      <Num x="198" y="389" n="1" />
+    </Phone>
+  ),
+  // In-app browsers: 1 ••• / ⋮, 2 Open in Safari / Chrome.
+  "inapp-ios-open": () => (
+    <Phone crop={[24, 220]} title="An app's built-in browser: tap ••• at the top right (1), then Open in Safari (2)">
+      <rect x="12" y="40" width="196" height="40" fill="#ffffff" />
+      <g stroke={INK} strokeWidth="2" strokeLinecap="round"><path d="M26 54 l10 10 M36 54 l-10 10" /></g>
+      <T x="104" y="64" size={10} anchor="middle">thetechfestival.com</T>
+      <Dots x="190" y="60" />
+      <Pulse x="190" y="60" r="14" />
+      <Num x="174" y="46" n="1" />
+      <Content y="96" />
+      <rect x="70" y="84" width="132" height="120" rx="10" fill="#fff" stroke={LINE} />
+      <T x="84" y="112" weight={700}>Open in Safari</T>
+      <T x="84" y="146">Copy link</T>
+      <T x="84" y="180">Share via…</T>
+      <PulseRect x="74" y="94" w="124" h="28" rx="6" />
+      <Num x="200" y="94" n="2" />
+    </Phone>
+  ),
+  "inapp-android-open": () => (
+    <Phone crop={[24, 220]} title="An app's built-in browser: tap ⋮ at the top right (1), then Open in Chrome (2)">
+      <rect x="12" y="40" width="196" height="40" fill="#ffffff" />
+      <g stroke={INK} strokeWidth="2" strokeLinecap="round"><path d="M26 54 l10 10 M36 54 l-10 10" /></g>
+      <T x="104" y="64" size={10} anchor="middle">thetechfestival.com</T>
+      <Dots x="192" y="60" vertical />
+      <Pulse x="192" y="60" r="13" />
+      <Num x="176" y="46" n="1" />
+      <Content y="96" />
+      <rect x="70" y="84" width="132" height="120" rx="8" fill="#fff" stroke={LINE} />
+      <T x="84" y="112" weight={700}>Open in Chrome</T>
+      <T x="84" y="146">Copy link</T>
+      <T x="84" y="180">Share</T>
+      <PulseRect x="74" y="94" w="124" h="28" rx="6" />
+      <Num x="200" y="94" n="2" />
+    </Phone>
+  ),
+  // Chrome on a computer: 1 the install icon in the address bar, 2 Install in the box.
+  "desktop-install-combo": () => (
+    <svg viewBox="0 0 320 210" role="img" aria-label="Click the install icon in the address bar (1), then Install in the box that opens (2)">
+      <rect x="10" y="10" width="300" height="180" rx="12" fill="#16112a" />
+      <rect x="18" y="18" width="284" height="164" rx="7" fill={PAGE} />
+      <rect x="18" y="18" width="284" height="30" rx="7" fill="#fff" />
+      <rect x="40" y="24" width="220" height="18" rx="9" fill={PAGE} />
+      <text x="52" y="37" fontSize="9" fill={INK} fontFamily="-apple-system, sans-serif">thetechfestival.com/app/</text>
+      <g fill="none" stroke={INK} strokeWidth="1.5"><rect x="240" y="28" width="12" height="10" rx="2" /><path d="M246 30 v5 M244 33 l2 2 l2 -2" /></g>
+      <Pulse x="246" y="33" r="11" />
+      <Num x="262" y="22" n="1" />
+      <rect x="150" y="54" width="148" height="92" rx="10" fill="#fff" stroke={LINE} />
+      <T x="162" y="74" size={11} weight={700}>Install app?</T>
+      <AppIcon x="162" y="84" s="26" />
+      <T x="196" y="96" size={10} weight={600}>TTFC</T>
+      <T x="196" y="108" size={8} color={GREY}>thetechfestival.com</T>
+      <rect x="200" y="120" width="44" height="18" rx="9" fill="#e7e5ec" /><T x="222" y="133" size={9} anchor="middle">Cancel</T>
+      <rect x="248" y="120" width="44" height="18" rx="9" fill={HI} /><T x="270" y="133" size={9} weight={700} color="#fff" anchor="middle">Install</T>
+      <PulseRect x={245} y={117} w={50} h={24} rx={12} />
+      <Num x="296" y="116" n="2" />
+    </svg>
+  ),
   open: () => (
     <Phone title="The TTFC app page open in the browser">
       <AppIcon x="80" y="96" s="60" />
@@ -98,112 +324,6 @@ const MOCKS = {
       <rect x="40" y="222" width="140" height="30" rx="10" fill={HI} />
       <T x="110" y="241" size={11} weight={700} color="#fff" anchor="middle">Install the app</T>
       <Address y="380" />
-    </Phone>
-  ),
-  "ios-share": () => (
-    <Phone crop={[250, 190]} title="Safari: the Share button in the middle of the bottom toolbar">
-      <Content />
-      <rect x="12" y="352" width="196" height="76" fill="#f9f9fb" />
-      <Address y="358" x="30" w="160" />
-      <g fill="none" stroke="#0a84ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M38 398 l-6 6 l6 6" /><path d="M66 398 l6 6 l-6 6" />
-        <path d="M140 397 h12 v14 h-12 z M146 397 v14" /><rect x="168" y="398" width="13" height="13" rx="3" /><rect x="172" y="394" width="13" height="13" rx="3" />
-      </g>
-      <ShareIcon x="110" y="405" />
-      <Pulse x="110" y="403" r="17" />
-    </Phone>
-  ),
-  "ios26-more": () => (
-    <Phone crop={[270, 170]} title="Safari on iOS 26: the ••• button at the right of the address bar at the bottom">
-      <Content />
-      <rect x="24" y="376" width="172" height="38" rx="19" fill="#ffffff" stroke={LINE} />
-      <g fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round"><path d="M44 389 l-6 6 l6 6" /></g>
-      <T x="110" y="399" size={10} anchor="middle">thetechfestival.com</T>
-      <Dots x="176" y="395" />
-      <Pulse x="176" y="395" r="15" />
-    </Phone>
-  ),
-  "ios-sheet": () => (
-    <Phone crop={[110, 330]} title="The Share sheet: Add to Home Screen in the list">
-      <rect x="12" y="120" width="196" height="308" rx="18" fill="#efeef3" />
-      <AppIcon x="26" y="134" s="30" />
-      <T x="64" y="146" size={11} weight={700}>TTFC 2026</T>
-      <T x="64" y="160" size={9} color={GREY}>thetechfestival.com</T>
-      {[30, 76, 122, 168].map((cx, i) => <circle key={cx} cx={cx + 6} cy="196" r="16" fill={["#34c759", "#0a84ff", "#5856d6", "#ff9500"][i]} />)}
-      {["Copy", "Add to Reading List", "Add Bookmark", "Add to Favourites"].map((l, i) => (
-        <g key={l}><rect x="22" y={226 + i * 34} width="176" height="30" rx={i === 0 ? 10 : 2} fill="#fff" /><T x="34" y={245 + i * 34}>{l}</T></g>
-      ))}
-      <rect x="22" y="364" width="176" height="34" rx="10" fill="#fff" />
-      <T x="34" y="385" weight={700}>Add to Home Screen</T>
-      <g fill="none" stroke={INK} strokeWidth="1.6"><rect x="172" y="372" width="16" height="16" rx="4" /><path d="M180 376 v8 M176 380 h8" /></g>
-      <PulseRect x="20" y="362" w="180" h="38" rx="10" />
-    </Phone>
-  ),
-  "ios-add": () => (
-    <Phone crop={[30, 190]} title="Add to Home Screen: Open as Web App on, then Add at the top right">
-      <rect x="12" y="44" width="196" height="384" fill="#efeef3" />
-      <T x="24" y="70" color="#0a84ff">Cancel</T>
-      <T x="110" y="70" size={10.5} weight={700} anchor="middle">Add to Home Screen</T>
-      <T x="196" y="70" weight={700} color="#0a84ff" anchor="end">Add</T>
-      <Pulse x="186" y="66" r="15" />
-      <rect x="22" y="92" width="176" height="64" rx="10" fill="#fff" />
-      <AppIcon x="32" y="102" s="44" />
-      <T x="86" y="120" size={12} weight={600}>TTFC</T>
-      <T x="86" y="138" size={9} color={GREY}>thetechfestival.com/app/</T>
-      <rect x="22" y="166" width="176" height="36" rx="10" fill="#fff" />
-      <T x="32" y="188" size={10.5}>Open as Web App</T>
-      <rect x="160" y="175" width="30" height="18" rx="9" fill="#34c759" /><circle cx="181" cy="184" r="7.5" fill="#fff" />
-    </Phone>
-  ),
-  "ios-chrome-share": () => (
-    <Phone crop={[20, 180]} title="Chrome on iPhone: the Share icon at the right of the address bar">
-      <rect x="12" y="40" width="196" height="40" fill="#f9f9fb" />
-      <Address y="47" x="24" w="140" />
-      <ShareIcon x="186" y="62" color={INK} />
-      <Pulse x="186" y="60" r="15" />
-      <Content y="96" />
-    </Phone>
-  ),
-  "ios-edge-share": () => (
-    <Phone crop={[270, 170]} title="Edge on iPhone: the Share icon in the toolbar">
-      <Content />
-      <rect x="12" y="372" width="196" height="56" fill="#f9f9fb" />
-      <ShareIcon x="110" y="398" color={INK} />
-      <Pulse x="110" y="396" r="16" />
-      <Dots x="176" y="396" />
-    </Phone>
-  ),
-  "android-menu-dots": () => (
-    <Phone crop={[20, 180]} title="Chrome on Android: the ⋮ menu at the top right">
-      <rect x="12" y="40" width="196" height="40" fill="#ffffff" />
-      <Address y="47" x="22" w="140" />
-      <rect x="168" y="51" width="16" height="16" rx="4" fill="none" stroke={INK} strokeWidth="1.8" />
-      <Dots x="196" y="60" vertical />
-      <Pulse x="196" y="60" r="13" />
-      <Content y="96" />
-    </Phone>
-  ),
-  "android-menu-samsung": () => (
-    <Phone crop={[270, 170]} title="Samsung Internet: the ≡ menu at the bottom right">
-      <Content />
-      <rect x="12" y="380" width="196" height="48" fill="#ffffff" />
-      <g fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round">
-        <path d="M34 398 l-6 6 l6 6" /><path d="M64 398 l6 6 l-6 6" /><path d="M100 410 v-8 l10 -8 l10 8 v8 z" />
-        <rect x="136" y="397" width="14" height="14" rx="3" />
-        <path d="M174 398 h16 M174 404 h16 M174 410 h16" />
-      </g>
-      <Pulse x="182" y="404" r="15" />
-    </Phone>
-  ),
-  "android-menu-install": () => (
-    <Phone crop={[30, 260]} title="The browser menu: Install app">
-      <Content y="96" />
-      <rect x="70" y="46" width="132" height="226" rx="8" fill="#fff" stroke={LINE} />
-      {["New tab", "History", "Downloads", "Bookmarks"].map((l, i) => <T key={l} x="84" y={74 + i * 34}>{l}</T>)}
-      <T x="84" y="210" weight={700}>Install app</T>
-      <g fill="none" stroke={INK} strokeWidth="1.6"><rect x="178" y="198" width="14" height="16" rx="3" /><path d="M185 202 v7 M182 206 l3 3 l3 -3" /></g>
-      <T x="84" y="248">Settings</T>
-      <PulseRect x="74" y="190" w="124" h="30" rx="6" />
     </Phone>
   ),
   "android-dialog": () => (
@@ -218,47 +338,6 @@ const MOCKS = {
       <T x="118" y="262" color={HI} weight={600} anchor="middle">Cancel</T>
       <T x="168" y="262" color={HI} weight={700} anchor="middle">Install</T>
       <Pulse x="168" y="258" r="18" />
-    </Phone>
-  ),
-  "inapp-ios": () => (
-    <Phone crop={[20, 180]} title="An app's built-in browser: the ••• menu at the top right">
-      <rect x="12" y="40" width="196" height="40" fill="#ffffff" />
-      <g stroke={INK} strokeWidth="2" strokeLinecap="round"><path d="M26 54 l10 10 M36 54 l-10 10" /></g>
-      <T x="110" y="64" size={10} anchor="middle">thetechfestival.com</T>
-      <Dots x="190" y="60" />
-      <Pulse x="190" y="60" r="14" />
-      <Content y="96" />
-    </Phone>
-  ),
-  "inapp-ios-menu": () => (
-    <Phone crop={[260, 180]} title="The menu: Open in Safari">
-      <Content y="60" />
-      <rect x="12" y="12" width="196" height="416" rx="27" fill="rgba(0,0,0,0.3)" />
-      <rect x="12" y="290" width="196" height="138" rx="18" fill="#fff" />
-      <T x="32" y="324" weight={700}>Open in Safari</T>
-      <T x="32" y="360">Copy link</T>
-      <T x="32" y="396">Share via…</T>
-      <PulseRect x="22" y="304" w="176" h="30" rx="8" />
-    </Phone>
-  ),
-  "inapp-android": () => (
-    <Phone crop={[20, 180]} title="An app's built-in browser: the ⋮ menu at the top right">
-      <rect x="12" y="40" width="196" height="40" fill="#ffffff" />
-      <g stroke={INK} strokeWidth="2" strokeLinecap="round"><path d="M26 54 l10 10 M36 54 l-10 10" /></g>
-      <T x="110" y="64" size={10} anchor="middle">thetechfestival.com</T>
-      <Dots x="192" y="60" vertical />
-      <Pulse x="192" y="60" r="13" />
-      <Content y="96" />
-    </Phone>
-  ),
-  "inapp-android-menu": () => (
-    <Phone crop={[20, 180]} title="The menu: Open in Chrome">
-      <Content y="96" />
-      <rect x="70" y="46" width="132" height="120" rx="8" fill="#fff" stroke={LINE} />
-      <T x="84" y="76" weight={700}>Open in Chrome</T>
-      <T x="84" y="110">Copy link</T>
-      <T x="84" y="144">Share</T>
-      <PulseRect x="74" y="58" w="124" h="28" rx="6" />
     </Phone>
   ),
   "home-ios": () => (
@@ -297,25 +376,6 @@ const MOCKS = {
       <PulseRect x="46" y="294" w="128" h="38" rx="11" />
     </Phone>
   ),
-  "ios26-sheet": () => (
-    <Phone crop={[200, 240]} title="The Share sheet: tap View More, then Add to Home Screen">
-      <rect x="12" y="200" width="196" height="228" rx="18" fill="#efeef3" />
-      <AppIcon x="26" y="214" s="28" />
-      <T x="62" y="226" size={11} weight={700}>TTFC 2026</T>
-      <T x="62" y="240" size={9} color={GREY}>thetechfestival.com</T>
-      {["Copy", "Bookmarks", "Reading List", "View More"].map((l, i) => (
-        <g key={l}>
-          <circle cx={40 + i * 47} cy="290" r="17" fill="#e3e1e8" />
-          <T x={40 + i * 47} y="322" size={7.5} anchor="middle">{l}</T>
-        </g>
-      ))}
-      <path d="M175 286 l6 6 l6 -6" fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round" />
-      <Pulse x={181} y={290} r={19} />
-      <rect x="22" y="340" width="176" height="30" rx="8" fill="#fff" />
-      <T x="34" y="359" weight={700}>Add to Home Screen</T>
-      <g fill="none" stroke={INK} strokeWidth="1.6"><rect x="172" y="347" width="15" height="15" rx="4" /><path d="M179.5 351 v7 M176 354.5 h7" /></g>
-    </Phone>
-  ),
   "desktop-dialog": () => (
     <svg viewBox="0 0 320 210" role="img" aria-label="The browser's Install app box: click Install">
       <rect x="10" y="10" width="300" height="180" rx="12" fill="#16112a" />
@@ -338,6 +398,8 @@ const MOCKS = {
       <rect x="18" y="18" width="284" height="30" rx="7" fill="#fff" />
       <Address y={20} x={40} w={200} text="thetechfestival.com/app/" />
       <Dots x={286} y={33} />
+      <Pulse x={286} y={33} r={10} />
+      <Num x={272} y={24} n="1" />
       <rect x="150" y="50" width="146" height="70" rx="6" fill="#fff" stroke={LINE} />
       <T x="160" y="68" size={10}>New tab</T>
       <T x="160" y="88" size={10} weight={700}>Apps ›</T>
@@ -345,6 +407,7 @@ const MOCKS = {
       <rect x="120" y="92" width="170" height="26" rx="6" fill="#fff" stroke={LINE} />
       <T x="130" y="109" size={9.5} weight={700}>Install this site as an app</T>
       <PulseRect x={118} y={90} w={174} h={30} rx={7} />
+      <Num x={292} y={90} n="2" />
     </svg>
   ),
   "mac-file-menu": () => (
@@ -354,26 +417,15 @@ const MOCKS = {
       <rect x="18" y="18" width="284" height="16" fill="#e9e7ee" />
       <T x="28" y="30" size={9} weight={700}>Safari</T>
       <T x="66" y="30" size={9} weight={700} color={HI}>File</T>
+      <PulseRect x={60} y={20} w={28} h={13} rx={4} />
+      <Num x={92} y={22} n="1" />
       <T x="92" y="30" size={9}>Edit</T>
       <T x="116" y="30" size={9}>View</T>
       <rect x="58" y="36" width="130" height="96" rx="6" fill="#fff" stroke={LINE} />
       {["New Window", "New Tab", "Open File…", "Share"].map((l, i) => <T key={l} x={68} y={52 + i * 16} size={9}>{l}</T>)}
       <T x="68" y="122" size={9.5} weight={700}>Add to Dock…</T>
       <PulseRect x={60} y={110} w={126} h={18} rx={4} />
-    </svg>
-  ),
-  "mac-add-dock": () => (
-    <svg viewBox="0 0 320 210" role="img" aria-label="Add to Dock: click Add">
-      <rect x="10" y="10" width="300" height="180" rx="12" fill="#16112a" />
-      <rect x="18" y="18" width="284" height="164" rx="7" fill={PAGE} />
-      <rect x="70" y="44" width="180" height="110" rx="10" fill="#fff" stroke={LINE} />
-      <T x="160" y="64" size={11} weight={700} anchor="middle">Add to Dock</T>
-      <AppIcon x="86" y="76" s="34" />
-      <rect x="128" y="80" width="108" height="18" rx="4" fill="#f2f1f5" /><T x="134" y="93" size={9.5}>TTFC</T>
-      <T x="128" y="110" size={7.5} color={GREY}>thetechfestival.com/app/</T>
-      <rect x="140" y="124" width="44" height="18" rx="5" fill="#e7e5ec" /><T x="162" y="137" size={9} anchor="middle">Cancel</T>
-      <rect x="190" y="124" width="44" height="18" rx="5" fill="#0a84ff" /><T x="212" y="137" size={9} weight={700} color="#fff" anchor="middle">Add</T>
-      <PulseRect x={187} y={121} w={50} h={24} rx={7} />
+      <Num x={190} y={110} n="2" />
     </svg>
   ),
   "mac-dock": () => (
@@ -415,7 +467,34 @@ const MOCKS = {
   ),
 };
 
-export default function InstallMockup({ name }) {
+/** Sizes of the clips in public/app/guide/ (so the box is right before the video loads). */
+const CLIP_SIZE = { "ios26-share": [360, 484], "ios26-add": [340, 550], "android-menu": [300, 646], "android-install": [300, 646] };
+
+/** A short screen recording of the real steps, played like a GIF (the poster frame instead with reduced motion). */
+export function GuideClip({ name, label }) {
+  const ref = useRef(null);
+  const [reduce] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    v.muted = true;
+    v.defaultMuted = true;
+    v.play?.().catch(() => { /* the poster stays; it's only a demo */ });
+  }, [name]);
+  const poster = `/app/guide/${name}.webp`;
+  const [w, h] = CLIP_SIZE[name] || [320, 560];
+  return (
+    <div className="mock mock--clip">
+      {reduce
+        ? <img src={poster} alt={label} width={w} height={h} />
+        : <video ref={ref} key={name} poster={poster} width={w} height={h} autoPlay muted loop playsInline preload="auto" aria-label={label} disablePictureInPicture>
+            <source src={`/app/guide/${name}.mp4`} type="video/mp4" />
+          </video>}
+    </div>
+  );
+}
+
+export default function InstallMockup({ name, item }) {
   const M = MOCKS[name] || MOCKS.open;
-  return <div className="mock"><M /></div>;
+  return <div className="mock"><M item={item} /></div>;
 }

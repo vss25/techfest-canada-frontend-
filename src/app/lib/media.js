@@ -1,5 +1,6 @@
 import { post } from "./api";
 import { isDemoApi } from "./api";
+import { beginTask } from "./busy";
 
 /* =========================================================
    Photos and videos: shrink photos in the browser, then upload
@@ -70,6 +71,11 @@ export function videoInfo(file) {
  * Demo mode keeps a local object URL instead (nothing leaves the device).
  */
 export async function uploadMedia(item) {
+  const done = beginTask();
+  try { return await upload(item); } finally { done(); }
+}
+
+async function upload(item) {
   if (isDemoApi()) {
     return { type: item.type, url: item.previewUrl, publicId: "", width: item.width || 0, height: item.height || 0, duration: item.duration || 0 };
   }

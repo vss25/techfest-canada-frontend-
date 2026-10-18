@@ -31,7 +31,7 @@ function useProtection() {
 }
 
 const STATS = [
-  ["1000+", "Attendees"],
+  ["1000+", "Attendees across 2 days"],
   ["100+",  "Speakers"],
   ["2",     "Days"],
   ["5",     "Tech Pillars"],
@@ -791,7 +791,7 @@ function ApplyToSpeak({ dark, border, accent, text, secondary, mutedText }) {
           fontSize: "0.95rem", color: secondary,
           maxWidth: 520, margin: "0 auto 1.75rem", lineHeight: 1.7,
         }}>
-          Share your expertise with 1000+ attendees. We're looking for forward-thinking leaders in AI, cybersecurity, fintech, and beyond.
+          Share your expertise with 1000+ attendees across 2 days. We're looking for forward-thinking leaders in AI, cybersecurity, fintech, and beyond.
         </p>
         <button
           onClick={function () { setOpen(true); }}

@@ -6,6 +6,12 @@ import { useToast } from "../toastContext";
 import { Badge, Button, Card, ConfirmDialog, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, PasswordInput, Select, TableWrap, focusRing } from "../ui";
 import { ago, initials } from "../format";
 
+const TYPES = [
+  { value: "admin", label: "Staff" },
+  { value: "volunteer", label: "Volunteer" },
+];
+const VOLUNTEER_HINT = "Volunteers can use the app's staff sign-in for door check-in. They can't open this admin panel.";
+
 const LEVELS = [
   { value: "staff", label: "Staff", help: "Everything except sales, revenue, promo codes and staff settings." },
   { value: "management", label: "Management", help: "Everything, including sales, revenue, promo codes and staff settings." },
@@ -13,7 +19,9 @@ const LEVELS = [
 
 function AddStaff({ onAdded }) {
   const toast = useToast();
-  const [f, setF] = useState({ email: "", name: "", password: "", staffRole: "staff" });
+  const blank = { email: "", name: "", password: "", role: "admin", staffRole: "staff" };
+  const [f, setF] = useState(blank);
+  const volunteer = f.role === "volunteer";
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
@@ -27,12 +35,17 @@ function AddStaff({ onAdded }) {
     if (Object.keys(errs).length) return;
     setBusy(true);
     try {
-      const body = { email: f.email.trim().toLowerCase(), name: f.name.trim(), staffRole: f.staffRole };
+      const body = { email: f.email.trim().toLowerCase(), name: f.name.trim(), role: f.role };
+      if (!volunteer) body.staffRole = f.staffRole;
       if (f.password) body.password = f.password;
       const r = await api.post("/console/staff", body);
-      const lvl = f.staffRole === "management" ? "management" : "staff";
-      toast.success(r.created ? `${r.email} can now sign in (${lvl} access)` : `${r.email} now has ${lvl} access`);
-      setF({ email: "", name: "", password: "", staffRole: "staff" });
+      if (volunteer) {
+        toast.success(r.created ? `${r.email} can now use the app's staff sign-in as a volunteer` : `${r.email} is now a volunteer`);
+      } else {
+        const lvl = f.staffRole === "management" ? "management" : "staff";
+        toast.success(r.created ? `${r.email} can now sign in (${lvl} access)` : `${r.email} now has ${lvl} access`);
+      }
+      setF(blank);
       onAdded();
     } catch (err) {
       setErrors({ form: err.message });
@@ -43,11 +56,23 @@ function AddStaff({ onAdded }) {
   return (
     <Card as="form" onSubmit={submit} className="space-y-4" noValidate>
       <div>
-        <h2 className="flex items-center gap-2 text-base font-semibold"><UserPlus className="h-4 w-4 text-ttfc-pink" aria-hidden="true" /> Add staff</h2>
+        <h2 className="flex items-center gap-2 text-base font-semibold"><UserPlus className="h-4 w-4 text-ttfc-pink" aria-hidden="true" /> Add staff or a volunteer</h2>
         <p className="mt-1 text-xs leading-relaxed text-ttfc-muted">
           New people need a password (8+ characters) — share it with them privately. If the email already has an account, they're promoted and the password is optional. To reset a staff member's password, add them again with a new one.
         </p>
       </div>
+      <fieldset>
+        <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">Type</legend>
+        <div role="radiogroup" className="grid grid-cols-2 gap-2">
+          {TYPES.map((t) => (
+            <button key={t.value} type="button" role="radio" aria-checked={f.role === t.value} onClick={() => setF((x) => ({ ...x, role: t.value }))}
+              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${f.role === t.value ? "border-ttfc-pink bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {volunteer && <p className="mt-1.5 text-xs text-ttfc-dim">{VOLUNTEER_HINT}</p>}
+      </fieldset>
       <Field label="Email" required error={errors.email}>
         {(id) => <Input id={id} type="email" autoComplete="off" value={f.email} onChange={set("email")} placeholder="name@company.com" />}
       </Field>
@@ -55,7 +80,7 @@ function AddStaff({ onAdded }) {
       <Field label="Password" error={errors.password} hint="Required for brand-new accounts.">
         {(id) => <PasswordInput id={id} value={f.password} onChange={set("password")} />}
       </Field>
-      <fieldset>
+      {!volunteer && <fieldset>
         <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">Access level</legend>
         <div role="radiogroup" className="grid grid-cols-2 gap-2">
           {LEVELS.map((l) => (
@@ -66,9 +91,9 @@ function AddStaff({ onAdded }) {
           ))}
         </div>
         <p className="mt-1.5 text-xs text-ttfc-dim">{LEVELS.find((l) => l.value === f.staffRole)?.help}</p>
-      </fieldset>
+      </fieldset>}
       {errors.form && <p role="alert" className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{errors.form}</p>}
-      <Button variant="primary" type="submit" icon={UserPlus} loading={busy} className="w-full">Give staff access</Button>
+      <Button variant="primary" type="submit" icon={UserPlus} loading={busy} className="w-full">{volunteer ? "Add volunteer" : "Give staff access"}</Button>
     </Card>
   );
 }
@@ -128,7 +153,7 @@ export default function StaffAccounts() {
 
   return (
     <>
-      <PageHeader eyebrow="Staff & safety" title="Staff accounts" description="People who can sign in to this panel. Management sees everything; staff can't see sales, revenue, promo codes or staff settings." />
+      <PageHeader eyebrow="Staff & safety" title="Staff accounts" description="People who can sign in to this panel. Management sees everything; staff can't see sales, revenue, promo codes or staff settings. Volunteers only use the app's staff sign-in for door check-in." />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0">
           {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !data?.length ? (
@@ -149,14 +174,21 @@ export default function StaffAccounts() {
                       </div>
                     </td>
                     <td>
-                      <div className="flex flex-col items-start gap-1.5">
-                        <Badge tone={s.staffRole === "management" ? "orange" : "neutral"}>{s.staffRole === "management" ? "Management" : "Staff"}</Badge>
-                        <Select value={s.staffRole === "management" ? "management" : "staff"} disabled={levelBusy === s.id || (s.isMe && s.staffRole === "management")}
-                          onChange={(e) => changeLevel(s, e.target.value)} aria-label={`Access level for ${s.name}`} className="h-8 w-36 py-1 text-xs"
-                          title={s.isMe ? "You can't remove your own management access" : undefined}>
-                          {LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-                        </Select>
-                      </div>
+                      {s.role === "volunteer" ? (
+                        <div className="flex flex-col items-start gap-1.5">
+                          <Badge tone="purple">Volunteer</Badge>
+                          <span className="text-xs text-ttfc-dim">App check-in only</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-start gap-1.5">
+                          <Badge tone={s.staffRole === "management" ? "orange" : "neutral"}>{s.staffRole === "management" ? "Management" : "Staff"}</Badge>
+                          <Select value={s.staffRole === "management" ? "management" : "staff"} disabled={levelBusy === s.id || (s.isMe && s.staffRole === "management")}
+                            onChange={(e) => changeLevel(s, e.target.value)} aria-label={`Access level for ${s.name}`} className="h-8 w-36 py-1 text-xs"
+                            title={s.isMe ? "You can't remove your own management access" : undefined}>
+                            {LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+                          </Select>
+                        </div>
+                      )}
                     </td>
                     <td>
                       <div className="flex flex-wrap gap-1">
@@ -184,13 +216,15 @@ export default function StaffAccounts() {
       <ConfirmDialog
         open={!!removing}
         onClose={() => setRemoving(null)}
-        title={`Remove ${removing?.name || "this person"}'s staff access?`}
-        body="Their account stays, but they can no longer sign in to the staff panel. You can add them back any time."
+        title={`Remove ${removing?.name || "this person"}'s ${removing?.role === "volunteer" ? "volunteer" : "staff"} access?`}
+        body={removing?.role === "volunteer"
+          ? "Their account stays, but they can no longer use the app's staff sign-in or check people in. You can add them back any time."
+          : "Their account stays, but they can no longer sign in to the staff panel. You can add them back any time."}
         confirmLabel="Remove access"
         onConfirm={async () => {
           await api.del(`/console/staff/${removing.id}`);
           setData((xs) => (xs || []).filter((x) => x.id !== removing.id));
-          toast.success(`${removing.name} is no longer staff`);
+          toast.success(`${removing.name} is no longer ${removing.role === "volunteer" ? "a volunteer" : "staff"}`);
         }}
       />
     </>

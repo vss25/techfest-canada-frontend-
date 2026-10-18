@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
-import { Banner, Card, ErrorState, LoadingState, PageHeader, Switch } from "../ui";
+import { Banner, Button, Card, ErrorState, Input, LoadingState, PageHeader, Switch } from "../ui";
 import ContentSettings from "../content/ContentSettings";
 import { Globe, Lock } from "lucide-react";
 import { LIVE_NOTE } from "./cmsMeta";
@@ -78,8 +78,72 @@ export default function SiteSettings() {
         )}
       </section>
 
+      <AboutNumbers readOnly={readOnly} />
+
       <WebsiteOptions />
     </>
+  );
+}
+
+/* The numbers on the About page (Sanity `aboutContent.stats`): value, suffix and label. */
+function AboutNumbers({ readOnly }) {
+  const toast = useToast();
+  const { data, error, loading, reload, setData } = useApi("/cms/aboutContent");
+  const doc = data?.[0] || null;
+  const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const stats = draft ?? (doc?.stats || []);
+  const change = (i, key) => (e) => setDraft(stats.map((s, j) => (j === i ? { ...s, [key]: e.target.value } : s)));
+  const invalid = stats.some((s) => !String(s.label || "").trim() || s.value === "" || !Number.isFinite(Number(s.value)));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const body = { stats: stats.map((s) => ({ ...s, label: String(s.label).trim(), value: Number(s.value), suffix: String(s.suffix || "").trim() })) };
+      const saved = await api.patch(`/cms/aboutContent/${doc._id}`, body);
+      setData([{ ...doc, stats: saved?.stats || body.stats }, ...data.slice(1)]);
+      setDraft(null);
+      toast.success(`Saved. ${LIVE_NOTE}`);
+    } catch (err) {
+      toast.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section aria-labelledby="about-numbers-h" className="mb-10">
+      <h2 id="about-numbers-h" className="mb-1 text-base font-semibold">About page numbers</h2>
+      <p className="mb-4 text-sm text-ttfc-muted">The figures in the About section, for example 1000+ attendees across 2 days. Stored in Sanity.</p>
+      {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !doc ? (
+        <Card className="max-w-2xl"><p className="text-sm text-ttfc-muted">There's no About content in the CMS yet.</p></Card>
+      ) : (
+        <Card className="max-w-2xl">
+          <div className="hidden grid-cols-[6rem_4rem_1fr] gap-3 pb-2 text-[13px] font-semibold text-ttfc-text/90 sm:grid" aria-hidden="true">
+            <span>Number</span><span>After it</span><span>Label</span>
+          </div>
+          <div className="flex flex-col gap-3">
+            {stats.map((s, i) => (
+              <div key={s._key || i} className="grid grid-cols-[6rem_4rem_1fr] gap-3">
+                <Input type="number" min="0" inputMode="numeric" value={s.value ?? ""} onChange={change(i, "value")} disabled={readOnly || saving}
+                  aria-label={`Number ${i + 1}`} />
+                <Input value={s.suffix || ""} maxLength={4} onChange={change(i, "suffix")} disabled={readOnly || saving}
+                  aria-label={`What follows number ${i + 1}, for example +`} placeholder="+" />
+                <Input value={s.label || ""} maxLength={60} onChange={change(i, "label")} disabled={readOnly || saving}
+                  aria-label={`Label for number ${i + 1}`} />
+              </div>
+            ))}
+          </div>
+          {draft && (
+            <div className="mt-4 flex items-center justify-end gap-2">
+              {invalid && <p className="mr-auto text-xs text-red-300" role="alert">Every number needs a value and a label.</p>}
+              <Button variant="ghost" onClick={() => setDraft(null)} disabled={saving}>Cancel</Button>
+              <Button variant="primary" onClick={save} loading={saving} disabled={invalid || readOnly}>Save</Button>
+            </div>
+          )}
+        </Card>
+      )}
+    </section>
   );
 }
 

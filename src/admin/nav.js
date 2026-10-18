@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
   Megaphone, ScrollText, UserCog, Power, KeyRound, FileDown, Landmark, Inbox, CalendarCheck, IdCard, Share2, TicketPlus, BellRing,
-  Award, Store,
+  Award, Store, ShieldCheck,
 } from "lucide-react";
 
 /** Sidebar structure. `to` is relative to /admin. */
@@ -64,6 +64,7 @@ export const NAV = [
       { to: "app/activity", label: "Live activity", icon: Activity },
       { to: "app/moderation", label: "Moderation", icon: ShieldAlert },
       { to: "app/text", label: "App text & switches", icon: ToggleRight },
+      { to: "app/rights", label: "App rights", icon: ShieldCheck },
       { to: "app/broadcast", label: "Broadcast", icon: Megaphone },
       { to: "app/audit", label: "Audit log", icon: ScrollText },
     ],

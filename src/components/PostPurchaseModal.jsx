@@ -31,7 +31,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
   const PERKS = [
     { icon: "🎟", title: "Ticket Confirmed", desc: "Check your email for your digital pass" },
     { icon: "📍", title: "The Westin Harbour Castle", desc: "Mon–Tue, October 26–27, 2026 · Toronto" },
-    { icon: "🤝", title: "500+ Decision Makers", desc: "You're now part of the inner circle" },
+    { icon: "🤝", title: "1000+ Attendees", desc: "Across 2 days. You're now part of the inner circle" },
     { icon: "📱", title: "The TTFC App", desc: "Your pass, agenda and networking. Coming soon to iPhone & Android" },
   ];
 

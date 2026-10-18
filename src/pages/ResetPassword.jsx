@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import PasswordField from "../components/PasswordField";
 
 const API = "https://techfest-canada-backend.onrender.com/api/auth";
 
@@ -84,8 +85,8 @@ Reset Password
 
 <form onSubmit={handleReset}>
 
-<input
-type="password"
+<PasswordField
+iconColor="#fff"
 placeholder="Enter new password"
 value={password}
 onChange={(e)=>setPassword(e.target.value)}

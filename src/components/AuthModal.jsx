@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import PasswordField from "./PasswordField";
 import { getPendingPurchase, clearPendingPurchase } from "../utils/purchase";
 import { maskEmail, cleanCode, requestEmailLink, verifyEmailCode } from "../utils/emailLink";
 
@@ -310,7 +311,7 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
         {view === "login" && (
           <form onSubmit={handleLogin}>
             <input style={inputStyle} name="email" type="email" placeholder="Email address" value={form.email} onChange={handleChange} required />
-            <input style={inputStyle} name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
+            <PasswordField style={inputStyle} iconColor={textMain} name="password" placeholder="Password" value={form.password} onChange={handleChange} required />
             <div style={{ textAlign: "right", marginBottom: 16 }}>
               <span style={{ color: "#f5a623", cursor: "pointer", fontSize: "0.82rem", fontWeight: 600 }} onClick={() => setView("forgot")}>
                 Forgot password?
@@ -339,7 +340,7 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
           <form onSubmit={handleSignup}>
             <input style={inputStyle} name="name" type="text" placeholder="Full name" value={form.name} onChange={handleChange} required />
             <input style={inputStyle} name="email" type="email" placeholder="Email address" value={form.email} onChange={handleChange} required />
-            <input style={inputStyle} name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
+            <PasswordField style={inputStyle} iconColor={textMain} name="password" placeholder="Password" value={form.password} onChange={handleChange} required />
             <button type="submit" disabled={loading} style={{
               width: "100%", padding: "14px",
               background: "linear-gradient(135deg, #7a3fd1, #f5a623)",

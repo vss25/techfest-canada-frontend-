@@ -139,9 +139,9 @@ export default function ContactCard({ org, country }) {
               </>
             )}
             <hr className="hairline" />
-            <Link to="/profile/edit" className="contact-row"><Building2 aria-hidden="true" /><span>Organization</span><b className="ellipsis">{org || "—"}</b></Link>
+            <Link to="/profile/edit" className="contact-row"><Building2 aria-hidden="true" /><span>Organization</span><b className="ellipsis">{org || "Not added"}</b></Link>
             <hr className="hairline" />
-            <Link to="/profile/edit" className="contact-row"><MapPin aria-hidden="true" /><span>Residence</span><b className="ellipsis">{country || "—"}</b></Link>
+            <Link to="/profile/edit" className="contact-row"><MapPin aria-hidden="true" /><span>Residence</span><b className="ellipsis">{country || "Not added"}</b></Link>
             <button type="button" className="share-contact pressable" onClick={() => shareMyVCard()}><Share aria-hidden="true" />Share my contact</button>
           </div>
         )}

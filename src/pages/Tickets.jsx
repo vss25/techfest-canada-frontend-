@@ -5,6 +5,38 @@ import Footer from "../components/Footer";
 import { API } from "../utils/api";
 import useSiteSettings from "../hooks/useSiteSettings";
 import { TicketSalesNotice } from "../components/SiteNotices";
+import { usePromoOffer, useCountdown, endsLabel, discounted } from "../lib/promoOffer";
+
+/* /tickets?promo=APP50: what the code takes off, which passes, and the time left. */
+function PromoBanner({ offer, passLabels, dark, onSale }) {
+  const left = useCountdown(offer.expiresAt);
+  // Only passes still on sale are named (a sold-out pass can't be bought at any price)
+  const names = [...offer.tiers].filter(onSale).map((t) => passLabels[t]).filter(Boolean);
+  if ((left && left.left <= 0) || !names.length) return null;
+  const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
+  const lastDay = left && left.days === 0;
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    <div role="status" style={{ margin:"28px auto 0", maxWidth:640, borderRadius:18, padding:"18px 20px", textAlign:"left",
+      background: dark ? "linear-gradient(135deg, rgba(122,63,209,0.32), rgba(245,166,35,0.16))" : "linear-gradient(135deg, rgba(122,63,209,0.10), rgba(245,166,35,0.10))",
+      border: dark ? "1px solid rgba(245,166,35,0.45)" : "1px solid rgba(122,63,209,0.30)" }}>
+      <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:"6px 10px" }}>
+        <span style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"1.05rem", color: dark ? "#f5a623" : "#c4780a" }}>{offer.discount}% off</span>
+        <span style={{ fontWeight:700 }}>{list} {names.length > 1 ? "passes" : "pass"}</span>
+        <span style={{ fontFamily:"monospace", fontWeight:800, letterSpacing:"1px", fontSize:"0.8rem", padding:"2px 8px", borderRadius:6, background: dark ? "rgba(255,255,255,0.10)" : "rgba(122,63,209,0.10)" }}>{offer.code}</span>
+      </div>
+      {left && (
+        <p style={{ margin:"8px 0 0", fontSize:"0.9rem", fontWeight:600 }}>
+          {lastDay ? "Last day. " : ""}Ends {endsLabel(offer.expiresAt)}
+          <span style={{ fontVariantNumeric:"tabular-nums", marginLeft:8, color: dark ? "#f5a623" : "#c4780a" }}>
+            {left.days > 0 ? `${left.days}d ` : ""}{pad(left.hours)}h {pad(left.minutes)}m {pad(left.seconds)}s left
+          </span>
+        </p>
+      )}
+      <p style={{ margin:"6px 0 0", fontSize:"0.78rem", opacity:0.75 }}>Applied at checkout. Prices below include the discount.</p>
+    </div>
+  );
+}
 
 function CheckIcon() {
   return (
@@ -235,10 +267,11 @@ function trackMetaPurchase(params) {
   try { sessionStorage.removeItem(PENDING_ORDER_KEY); } catch (e) {}
 }
 
-function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded, salesClosed }) {
+function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded, salesClosed, promo }) {
   const [hovered, setHovered] = useState(false);
 
-  const price = inventoryItem?.price ?? meta.defaultPrice;
+  const fullPrice = inventoryItem?.price ?? meta.defaultPrice;
+  const price = promo ? discounted(fullPrice, promo.discount) : fullPrice;
   const remaining = inventoryItem ? Math.max(inventoryItem.total - inventoryItem.sold, 0) : null;
   // Hard flag in PASS_META wins over inventory
   const soldOut = meta.soldOut === true || (remaining !== null && remaining <= 0);
@@ -266,8 +299,9 @@ function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded, sale
       <div style={{ display:"flex", alignItems:"baseline", gap:6, marginBottom:2, minHeight:"2.6rem" }}>
         {inventoryLoaded ? (
           <>
-            <PriceWithAsterisk price={price} color={textMain} fontSize="2.6rem" fontWeight={900} />
+            <PriceWithAsterisk price={Number.isInteger(price) ? price : price.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} color={textMain} fontSize="2.6rem" fontWeight={900} />
             <span style={{ fontFamily:"'Orbitron', sans-serif", fontSize:"0.95rem", fontWeight:800, color:textLight, letterSpacing:"1px", textTransform:"uppercase" }}>CAD</span>
+            {promo && <s aria-label={`was $${fullPrice.toLocaleString()}`} style={{ fontSize:"0.95rem", fontWeight:700, color:textLight, marginLeft:4 }}>${fullPrice.toLocaleString()}</s>}
           </>
         ) : (
           <div aria-label="Loading price" style={{ width:160, height:"2.4rem", borderRadius:8, background: dark?"linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04))":"linear-gradient(90deg, rgba(122,63,209,0.05), rgba(122,63,209,0.12), rgba(122,63,209,0.05))", backgroundSize:"200% 100%", animation:"ttfcShimmer 1.4s ease-in-out infinite" }} />
@@ -306,6 +340,14 @@ export default function Tickets() {
 
   const passes = ["connect","influence","power","apex"];
   const passLabels = { connect:"Connect", influence:"Influence", power:"Power", apex:"Apex" };
+  const offer = usePromoOffer();   // /tickets?promo=CODE
+  const promoFor = (tier) => (offer && offer.tiers.has(tier) ? offer : null);
+  // Same rule as PassCard: a hard flag in PASS_META, or nothing left in the inventory
+  const onSale = (tier) => {
+    if (PASS_META[tier]?.soldOut === true) return false;
+    const item = inventory.find((i) => i.tier === tier);
+    return !item || item.total - item.sold > 0;
+  };
 
   /* ── Mobile swipe rail ── */
   const railRef = useRef(null);
@@ -375,7 +417,8 @@ export default function Tickets() {
     if (PASS_META[tier]?.soldOut) return;   // belt-and-braces: never route a sold-out tier
 
     const item = getTier(tier);
-    const price = item?.price ?? PASS_META[tier].defaultPrice;
+    const promo = promoFor(tier);
+    const price = promo ? discounted(item?.price ?? PASS_META[tier].defaultPrice, promo.discount) : (item?.price ?? PASS_META[tier].defaultPrice);
     try {
       sessionStorage.setItem(PENDING_ORDER_KEY, JSON.stringify({
         tier,
@@ -385,7 +428,7 @@ export default function Tickets() {
       }));
     } catch (e) {}
 
-    navigate(`/tickets/checkout?tier=${tier}`);
+    navigate(`/tickets/checkout?tier=${tier}${promo ? `&promo=${encodeURIComponent(promo.code)}` : ""}`);
   };
 
   const allFeatures = ["2x Day Conference Access","Expo Floor Access","Networking Breaks","2x CxO Breakfasts","2x Luncheons","1x Gala Dinner & Networking Reception","1x Awards Night","Preferential Seating","2x Pre-Matched Business Meetings","Private Scotch & Cocktail Lounge (19+)"];
@@ -464,10 +507,11 @@ export default function Tickets() {
             <h1 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"clamp(2rem, 5vw, 3.2rem)", letterSpacing:"-1px", lineHeight:1.15, marginBottom:20, color:textMain }}>Choose Your Pass</h1>
             <p style={{ fontSize:"1rem", color:textMuted, lineHeight:1.75, textAlign:"justify", hyphens:"auto" }}>Whether you are coming to learn, connect, explore partnerships, or experience the event at the highest level, The Tech Festival Canada offers a pass designed for every kind of delegate.</p>
             {salesClosed && <TicketSalesNotice dark={dark} message={site["site.ticket_sales_message"]} style={{ marginTop:28 }} />}
+            {offer && !salesClosed && <PromoBanner offer={offer} passLabels={passLabels} dark={dark} onSale={onSale} />}
           </div>
 
           <div ref={railRef} className="pass-rail">
-            {passes.map(key => <PassCard key={key} meta={PASS_META[key]} inventoryItem={getTier(key)} onPurchase={handlePurchase} dark={dark} inventoryLoaded={inventoryLoaded} salesClosed={salesClosed} />)}
+            {passes.map(key => <PassCard key={key} meta={PASS_META[key]} inventoryItem={getTier(key)} onPurchase={handlePurchase} dark={dark} inventoryLoaded={inventoryLoaded} salesClosed={salesClosed} promo={promoFor(key)} />)}
           </div>
 
           {/* Mobile-only: dots + swipe hint */}

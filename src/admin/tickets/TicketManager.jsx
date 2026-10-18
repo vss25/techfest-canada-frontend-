@@ -171,7 +171,8 @@ export default function TicketManager() {
   const [params, setParams] = useSearchParams();
   const promo = (params.get("promo") || "").trim().toUpperCase(); // "" | "ANY" | a code
   const [show, setShow] = useState("visible");
-  const [q, setQ] = useState("");
+  // ?q= opens the list searched (Admin → People links a pass here by its ticket ID).
+  const [q, setQ] = useState(() => params.get("q") || "");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(() => new Set());
   const [allMatching, setAllMatching] = useState(false);

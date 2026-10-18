@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  BadgeCheck, Bell, Building2, ChevronRight, Navigation, Download, FileText, HelpCircle, Link2, LogOut, MapPin, Moon, Pencil, QrCode, RotateCcw,
+  BadgeCheck, Bell, Building2, ChevronRight, Download, FileText, HelpCircle, Link2, LogOut, MapPin, Moon, Pencil, QrCode, RotateCcw,
   ScanLine, Share, ShieldCheck, Smartphone, Sun, Ticket, Trophy, UserPlus, Users,
 } from "lucide-react";
 import { useStore } from "../lib/store";
@@ -204,10 +204,6 @@ export default function Profile() {
             {me?.jobTitle && <div className="profile-title">{me.jobTitle}</div>}
             {org && <div className="profile-org">{org}</div>}
             {me?.tagline && <div className="profile-tagline">“{me.tagline}”</div>}
-          </div>
-          <div className="row" style={{ gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-            <span className="info-pill"><Navigation aria-hidden="true" fill="currentColor" />{country || "—"}</span>
-            {(me?.fieldOfWork || user?.fieldOfWork) && <span className="info-pill"><Building2 aria-hidden="true" />{me?.fieldOfWork || user?.fieldOfWork}</span>}
           </div>
           <Link to="/profile/edit" className="edit-link"><Pencil aria-hidden="true" />Edit profile</Link>
         </section>

@@ -47,7 +47,7 @@ export default function SessionRow({ session, cmsState, saved, highlighted, onNo
         type="button"
         className="icon-btn tl-bookmark pressable"
         aria-pressed={!!saved}
-        aria-label={saved ? `Remove ${session.title} from my schedule` : `Save ${session.title} to my schedule`}
+        aria-label={saved ? `Remove ${session.title} from My Sessions` : `Save ${session.title} to My Sessions`}
         onClick={() => onToggle(session)}
       >
         <Bookmark aria-hidden="true" />

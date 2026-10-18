@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import AuthModal from "./AuthModal";
 import useSiteSettings from "../hooks/useSiteSettings";
+import { track } from "../lib/pwaEvents";
 
 const PARTNERS_DROPDOWN = [
   { label: "2026 Partners", path: "/partners2026" },
@@ -403,6 +404,23 @@ export default function Navbar() {
                 variants={{ show: { transition: { staggerChildren: 0.035 } } }}
                 style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "8px 20px 24px" }}
               >
+                {/* Always here, for people who closed the install prompt. /app is its own page, so a plain link. */}
+                <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
+                  <a href="/app/?install=1"
+                    onClick={() => { track("pwa_guide_open", { where: "drawer" }); setMobileOpen(false); }}
+                    style={{ display: "flex", alignItems: "center", gap: 12, margin: "8px 0 6px", padding: "12px 14px", borderRadius: 16, textDecoration: "none", color: textMain,
+                      background: dark ? "linear-gradient(135deg, rgba(122,63,209,0.28), rgba(245,166,35,0.12))" : "linear-gradient(135deg, rgba(122,63,209,0.10), rgba(245,166,35,0.08))",
+                      border: "1px solid " + (dark ? "rgba(155,135,245,0.35)" : "rgba(122,63,209,0.25)") }}
+                  >
+                    <img src="/app/icons/icon-96.png" alt="" width={44} height={44} style={{ borderRadius: 11, flexShrink: 0 }} />
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontWeight: 800, fontSize: "0.95rem" }}>Get the TTFC app</span>
+                      <span style={{ display: "block", fontSize: "0.78rem", lineHeight: 1.35, color: textMuted }}>Your pass, the schedule, live polls and chat. Installs in seconds.</span>
+                    </span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ opacity: 0.6, flexShrink: 0 }}><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                  </a>
+                </motion.div>
+
                 {navItems.filter((item) => !item.hasDropdown).map((item) => {
                   const active = location.pathname === item.path;
                   return (

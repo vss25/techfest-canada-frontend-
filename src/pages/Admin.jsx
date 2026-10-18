@@ -24,6 +24,7 @@ import AppText from "../admin/app/AppText";
 import AppRights from "../admin/app/AppRights";
 import Broadcast from "../admin/app/Broadcast";
 import AuditLog from "../admin/app/AuditLog";
+import PwaInstalls from "../admin/app/PwaInstalls";
 import StaffAccounts from "../admin/staff/StaffAccounts";
 import KillSwitch from "../admin/staff/KillSwitch";
 import TicketManager from "../admin/tickets/TicketManager";
@@ -208,6 +209,7 @@ export default function Admin() {
             <Route path="app/rights" element={<AppRights />} />
             <Route path="app/broadcast" element={<Broadcast />} />
             <Route path="app/audit" element={<AuditLog />} />
+            <Route path="app/pwa" element={<PwaInstalls />} />
 
             <Route path="staff" element={<ManagementOnly><StaffAccounts /></ManagementOnly>} />
             <Route path="kill-switch" element={<KillSwitch />} />

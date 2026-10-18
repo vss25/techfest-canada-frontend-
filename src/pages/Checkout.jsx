@@ -95,7 +95,11 @@ function CheckoutInner() {
   const site = useSiteSettings();
   const salesClosed = site["site.ticket_sales_open"] === false;   // paused from the admin panel
 
-  const [promoInput, setPromoInput] = useState("");
+  // /tickets/checkout?tier=…&promo=APP50 (from a promo link): filled in and checked on arrival
+  const urlPromo = (typeof window !== "undefined")
+    ? String(new URLSearchParams(window.location.search).get("promo") || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 40)
+    : "";
+  const [promoInput, setPromoInput] = useState(urlPromo);
   const [promoCode, setPromoCode] = useState("");
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoStatus, setPromoStatus] = useState(null);
@@ -161,8 +165,8 @@ function CheckoutInner() {
   const handlePhoneChange = (val) => { set("businessNumber", val.replace(/[^\d\s()+-]/g, "").slice(0, 15)); };
   const handleLinkedInBlur = () => { const v = form.linkedin.trim(); if (v && !v.startsWith("http") && !v.startsWith("linkedin")) set("linkedin", "https://linkedin.com/in/"+v); else if (v && v.startsWith("linkedin.com")) set("linkedin", "https://"+v); };
 
-  const applyPromo = useCallback(async () => {
-    const code = promoInput.trim().toUpperCase();
+  const applyPromo = useCallback(async (given) => {
+    const code = (typeof given === "string" ? given : promoInput).trim().toUpperCase();
     if (!code) return;
     setPromoStatus("loading");
     setPromoError("");
@@ -177,14 +181,23 @@ function CheckoutInner() {
         setPromoError("");
       } else {
         setPromoStatus("error");
-        setPromoError(data.error || "Invalid code");
+        // From a promo link the code is real, so a refusal means this pass isn't covered
+        setPromoError(typeof given === "string" && res.status === 404 ? `${code} doesn't cover the ${tierLabel} pass.` : (data.error || "Invalid code"));
       }
     } catch (err) {
       console.error("Promo validation failed", err);
       setPromoStatus("error");
       setPromoError("Couldn't check that code right now. Please try again.");
     }
-  }, [promoInput, tier]);
+  }, [promoInput, tier, tierLabel]);
+
+  // A promo link applies its code straight away (the buyer can still remove it).
+  const urlPromoTried = useRef(false);
+  useEffect(() => {
+    if (!urlPromo || urlPromoTried.current) return;
+    urlPromoTried.current = true;
+    applyPromo(urlPromo);
+  }, [urlPromo, applyPromo]);
 
   const removePromo = () => { setPromoCode(""); setPromoDiscount(0); setPromoInput(""); setPromoStatus(null); setPromoError(""); };
 

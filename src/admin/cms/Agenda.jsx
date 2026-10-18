@@ -1,17 +1,21 @@
 import { useId, useMemo, useState } from "react";
 import {
-  AlertTriangle, ArrowDown, ArrowUp, CalendarDays, Coffee, Copy, Download, Mic, Pencil, Plus, Star, Trash2, UserRound, X,
+  AlertTriangle, ArrowDown, ArrowUp, CalendarDays, Clock, Coffee, Copy, Download, Mic, Pencil, Plus, Star, Trash2, UserRound, X,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import {
-  Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, PageHeader, Select, SkeletonGrid,
+  Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, IconButton, Input, Modal, PageHeader, Select, SkeletonGrid,
   Switch, Tabs, Textarea, focusRing,
 } from "../ui";
 import { CmsBanners } from "./CmsParts";
 import { LIVE_NOTE } from "./cmsMeta";
 import useCmsStatus from "./useCmsStatus";
+import { EARLIER_STEPS, LATER_STEPS, planShift, stageOf } from "./agendaShift";
+import {
+  AUTO_HINTS, BADGE_LABELS, FEATURE_LABELS, LIVE_FEATURES, LIVE_MODES, MODE_LABELS, autoReason, globalSwitches, liveMode, sessionLive,
+} from "./sessionLive";
 import { SESSIONS, DAYS, buildSpeakerIndex, matchSpeaker, formatTime12, getDuration } from "../../data/agenda";
 import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS, SESSION_TYPE_SUGGESTIONS } from "../../data/sessionFormats";
 
@@ -33,6 +37,7 @@ function FormatBadge({ format }) {
 const blank = (day) => ({
   title: "", day, time: "09:00", endTime: "09:30", type: "", format: "keynote", featured: false, isBreak: false,
   pillar: "", sector: "", stage: "", description: "", speakers: [], moderator: { name: "", org: "" },
+  polls: "auto", qa: "auto",
 });
 
 const toForm = (d) => ({
@@ -41,6 +46,7 @@ const toForm = (d) => ({
   pillar: d.pillar || "", sector: d.sector || "", stage: d.stage || "", description: d.description || "",
   speakers: (d.speakers || []).map((p) => ({ name: p.name || "", org: p.org || "", tentative: !!p.tentative })),
   moderator: { name: d.moderator?.name || "", org: d.moderator?.org || "" },
+  polls: liveMode(d.polls), qa: liveMode(d.qa),
 });
 
 /** Form → request body. Speakers/moderator are sent as plain objects (the server adds _key). */
@@ -58,6 +64,8 @@ function toBody(form, original) {
     // Creating: drop empty optional fields instead of "unsetting" them.
     for (const k of Object.keys(body)) if (body[k] === null) delete body[k];
   }
+  // Live switches: always on create; on edit only when changed (missing = "auto").
+  for (const k of LIVE_FEATURES) if (!original || liveMode(original[k]) !== form[k]) body[k] = form[k];
   return body;
 }
 
@@ -87,7 +95,33 @@ function PersonName({ value, onChange, listId, index, label, placeholder }) {
   );
 }
 
-function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNames, readOnly, onClose, onSaved }) {
+/** Auto / On / Off for one live feature, with what Auto resolves to for the form as it is now. */
+function LiveModeControl({ feature, value, onChange, reason, globalOff, readOnly }) {
+  const name = useId();
+  const hintId = useId();
+  return (
+    <fieldset className="min-w-0" aria-describedby={hintId}>
+      <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">{FEATURE_LABELS[feature]}</legend>
+      <div className="inline-flex overflow-hidden rounded-xl border border-ttfc-line bg-ttfc-ink/40">
+        {LIVE_MODES.map((m) => (
+          <label key={m}
+            className={`relative inline-flex h-9 min-w-[3.5rem] items-center justify-center border-r border-ttfc-line px-3 text-sm font-semibold transition last:border-r-0 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-ttfc-purple ${
+              readOnly ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${
+              value === m ? "bg-ttfc-purple/30 text-white" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text"}`}>
+            <input type="radio" name={name} value={m} checked={value === m} onChange={() => onChange(m)} disabled={readOnly} className="sr-only" />
+            {MODE_LABELS[m]}
+          </label>
+        ))}
+      </div>
+      <p id={hintId} className="mt-1.5 text-xs text-ttfc-dim">
+        {AUTO_HINTS[reason]}
+        {globalOff && <span className="block text-amber-200/90">Switched off for the whole app in App text &amp; switches, so it's off here too.</span>}
+      </p>
+    </fieldset>
+  );
+}
+
+function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNames, readOnly, globalLive, onClose, onSaved }) {
   const toast = useToast();
   const listId = useId();
   const typeListId = useId();
@@ -223,6 +257,17 @@ function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNa
           </div>
         </fieldset>
 
+        <fieldset className="rounded-2xl border border-ttfc-line p-4">
+          <legend className="px-1 text-xs font-bold uppercase tracking-[0.12em] text-ttfc-dim">Live features</legend>
+          <p className="mb-3 text-xs text-ttfc-muted">What the app offers during this session. Auto turns them on for moderated sessions, not keynotes or breaks.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {LIVE_FEATURES.map((k) => (
+              <LiveModeControl key={k} feature={k} value={form[k]} onChange={set(k)} reason={autoReason(form)}
+                globalOff={globalLive?.[k] === false} readOnly={readOnly} />
+            ))}
+          </div>
+        </fieldset>
+
         <Field label="Description" hint={`${form.description.length}/1500 — optional.`}>
           {(id) => <Textarea id={id} rows={4} value={form.description} onChange={set("description")} maxLength={1500} disabled={readOnly} />}
         </Field>
@@ -231,8 +276,9 @@ function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNa
   );
 }
 
-function SessionRow({ s, speakerIndex, readOnly, onEdit, onDuplicate, onDelete }) {
+function SessionRow({ s, speakerIndex, readOnly, globalLive, onEdit, onDuplicate, onDelete, onShift }) {
   const people = (s.speakers || []).map((p) => p.name).filter(Boolean);
+  const live = sessionLive(s, globalLive);
   const unmatched = [...(s.speakers || []), ...(s.moderator?.name ? [s.moderator] : [])].filter((p) => p.name && !matchSpeaker(speakerIndex, p.name));
   return (
     <li className={`grid gap-3 border-b border-ttfc-line/70 px-4 py-4 last:border-0 sm:grid-cols-[120px_minmax(0,1fr)_auto] sm:items-start sm:px-5 ${s.isBreak ? "bg-white/[0.02]" : ""}`}>
@@ -253,6 +299,8 @@ function SessionRow({ s, speakerIndex, readOnly, onEdit, onDuplicate, onDelete }
           <FormatBadge format={s.format} />
           {s.type && <span className="text-xs text-ttfc-muted">{s.type}</span>}
           {s.stage && <Badge>{s.stage}</Badge>}
+          {live.pollsOn && <Badge>{BADGE_LABELS.polls}<span className="sr-only"> on in the app</span></Badge>}
+          {live.qaOn && <Badge>{BADGE_LABELS.qa}<span className="sr-only"> on in the app</span></Badge>}
         </div>
         <p className="mt-1 font-semibold text-ttfc-text">{s.title}</p>
         {(people.length > 0 || s.moderator?.name) && (
@@ -268,6 +316,10 @@ function SessionRow({ s, speakerIndex, readOnly, onEdit, onDuplicate, onDelete }
         )}
       </div>
       <div className="flex gap-1 sm:justify-end">
+        {onShift && s.time && (
+          <IconButton icon={Clock} label="Shift times" aria-label={`Running late: shift times from ${s.title}`}
+            onClick={() => onShift(s)} disabled={readOnly} className="h-8 w-8 rounded-lg" />
+        )}
         <Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit(s)}>Edit</Button>
         <Button size="sm" variant="ghost" icon={Copy} onClick={() => onDuplicate(s)} disabled={readOnly}>Duplicate</Button>
         <Button size="sm" variant="ghost" icon={Trash2} onClick={() => onDelete(s)} disabled={readOnly} className="text-red-300/80 hover:text-red-200" aria-label={`Delete ${s.title}`}>
@@ -278,19 +330,147 @@ function SessionRow({ s, speakerIndex, readOnly, onEdit, onDuplicate, onDelete }
   );
 }
 
+const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+const signed = (m) => `${m > 0 ? "+" : "\u2212"}${Math.abs(m)}`;
+const range12 = (a, b) => (b ? `${formatTime12(a)}\u2013${formatTime12(b)}` : formatTime12(a));
+const SHIFT_NOTE = "The app and website update within a minute. Reminders move with the new times.";
+
+/** "Running late": pick minutes and scope, preview what moves, then one server call. */
+function ShiftDialog({ session, all, readOnly, onClose, onShifted, onStale }) {
+  const minutesName = useId();
+  const scopeName = useId();
+  const [minutes, setMinutes] = useState(5);
+  const [scope, setScope] = useState("stage");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const plans = useMemo(() => ({
+    stage: planShift(all, session._id, minutes, "stage"),
+    day: planShift(all, session._id, minutes, "day"),
+  }), [all, session._id, minutes]);
+  const plan = plans[scope];
+  const n = plan.changes?.length || 0;
+  const stage = stageOf(session.stage);
+
+  const close = () => { if (!busy) onClose(); };
+  const confirm = async () => {
+    setBusy(true); setError("");
+    try {
+      const r = await api.post("/cms/session/shift", { id: session._id, minutes, scope });
+      onShifted(r, { id: session._id, minutes, scope });
+    } catch (err) {
+      setBusy(false);
+      setError(err?.message || "Something went wrong");
+      if (err?.status === 409) onStale();
+    }
+  };
+
+  const segment = (steps, label) => (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ttfc-dim">{label}</span>
+      <div className="inline-flex overflow-hidden rounded-xl border border-ttfc-line bg-ttfc-ink/40">
+        {steps.map((m) => (
+          <label key={m}
+            className={`relative inline-flex h-9 min-w-[3rem] cursor-pointer items-center justify-center border-r border-ttfc-line px-2.5 text-sm font-semibold tabular-nums transition last:border-r-0 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-ttfc-purple ${
+              minutes === m ? "bg-ttfc-purple/30 text-white" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text"}`}>
+            <input type="radio" name={minutesName} value={m} checked={minutes === m} onChange={() => setMinutes(m)} disabled={busy} className="sr-only" />
+            {signed(m)}<span className="sr-only"> minutes {m > 0 ? "later" : "earlier"}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+
+  const scopeOption = (value, label) => {
+    const count = plans[value].changes?.length;
+    return (
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-ttfc-line p-3 transition hover:bg-white/[0.02] has-[:checked]:border-ttfc-purple/60 has-[:checked]:bg-ttfc-purple/10">
+        <input type="radio" name={scopeName} value={value} checked={scope === value} onChange={() => setScope(value)} disabled={busy}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-[#E8458B]" />
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold text-ttfc-text">{label}</span>
+          {count !== undefined && <span className="block text-xs text-ttfc-dim">{plural(count, "session")} change</span>}
+        </span>
+      </label>
+    );
+  };
+
+  return (
+    <Modal
+      open
+      onClose={close}
+      title={`Shift times from \u201c${session.title || "this session"}\u201d`}
+      description={SHIFT_NOTE}
+      footer={<>
+        <Button onClick={close} disabled={busy}>Cancel</Button>
+        <Button variant="primary" icon={Clock} loading={busy} onClick={confirm} disabled={readOnly || !!plan.error || !n}>
+          {plan.error || !n ? "Shift times" : `Shift ${plural(n, "session")}`}
+        </Button>
+      </>}
+    >
+      <fieldset>
+        <legend className="mb-2 text-[13px] font-semibold text-ttfc-text/90">Move by (minutes)</legend>
+        <div className="flex flex-wrap gap-3">
+          {segment(LATER_STEPS, "Later")}
+          {segment(EARLIER_STEPS, "Earlier")}
+        </div>
+      </fieldset>
+
+      <fieldset className="mt-5">
+        <legend className="mb-2 text-[13px] font-semibold text-ttfc-text/90">Which sessions</legend>
+        <div className="grid gap-2">
+          {scopeOption("stage", `Only ${stage}`)}
+          {scopeOption("day", `All stages on ${DAYS[Number(session.day)]?.label || `Day ${session.day}`}`)}
+        </div>
+      </fieldset>
+
+      <div className="mt-5">
+        <p className="mb-2 text-[13px] font-semibold text-ttfc-text/90">What changes</p>
+        {plan.error ? (
+          <p role="alert" className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">{plan.error}</p>
+        ) : (
+          <ul className="overflow-hidden rounded-xl border border-ttfc-line bg-ttfc-ink/40">
+            {plan.changes.map((c) => (
+              <li key={c._id} className="border-b border-ttfc-line/70 px-3 py-2 last:border-0">
+                <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-ttfc-text">
+                  {c.isBreak && <Coffee className="h-3.5 w-3.5 shrink-0 text-ttfc-dim" aria-label="Break" />}
+                  <span className="truncate">{c.title || "Untitled session"}</span>
+                </p>
+                <p className="mt-0.5 text-xs tabular-nums text-ttfc-muted">
+                  {c.anchor ? (
+                    <>Ends <span className="text-ttfc-dim">{formatTime12(c.from.endTime)}</span> → <span className="font-semibold text-ttfc-text">{formatTime12(c.endTime)}</span>
+                      <span className="text-ttfc-dim"> · starts at {formatTime12(c.time)} as before</span></>
+                  ) : (
+                    <><span className="text-ttfc-dim">{range12(c.from.time, c.from.endTime)}</span> → <span className="font-semibold text-ttfc-text">{range12(c.time, c.endTime)}</span>
+                      {scope === "day" && stageOf(c.stage) !== stage && <span className="text-ttfc-dim"> · {stageOf(c.stage)}</span>}</>
+                  )}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!plan.error && n === 1 && <p className="mt-2 text-xs text-ttfc-dim">Nothing comes after it, so only its end time changes.</p>}
+      </div>
+      {error && <p role="alert" className="mt-3 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error}</p>}
+    </Modal>
+  );
+}
+
 export default function Agenda() {
   const toast = useToast();
   const { configured } = useCmsStatus();
   const readOnly = configured === false;
   const { data, error, loading, reload, setData } = useApi("/cms/session");
   const speakers = useApi("/cms/speaker");
+  const appContent = useApi("/console/app-content");   // the global polls / Q&A switches (on if it can't be read)
   const [day, setDay] = useState(1);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [shifting, setShifting] = useState(null);
 
   const list = useMemo(() => [...(data || [])].sort(byTime), [data]);
   const speakerIndex = useMemo(() => buildSpeakerIndex(speakers.data || []), [speakers.data]);
+  const globalLive = useMemo(() => globalSwitches(appContent.data), [appContent.data]);
   const speakerNames = useMemo(() => (speakers.data || []).map((d) => d.name).filter(Boolean).sort(), [speakers.data]);
   const dayList = list.filter((s) => Number(s.day) === day && s.time);
   // Sessions made elsewhere (e.g. Sanity Studio) without a day or time don't show on the site.
@@ -316,6 +496,31 @@ export default function Agenda() {
       setData((xs) => [...(xs || []), { ...body, ...(saved || {}) }]);
       toast.success("Session duplicated — edit the copy to change it");
     } catch (err) { toast.error(err); }
+  };
+
+  const applyMoved = (moved = []) => {
+    const byId = new Map(moved.map((m) => [m._id, m]));
+    setData((xs) => (xs || []).map((x) => (byId.has(x._id) ? { ...x, time: byId.get(x._id).time, endTime: byId.get(x._id).endTime } : x)));
+  };
+
+  // Undo = the same shift with the opposite minutes, limited to exactly the sessions that moved.
+  const undoShift = async (req, only) => {
+    try {
+      const r = await api.post("/cms/session/shift", { id: req.id, minutes: -req.minutes, scope: req.scope, only });
+      applyMoved(r.moved);
+      toast.success("Shift undone. The times are back to how they were.");
+    } catch (err) { toast.error(err); } finally { reload(); }
+  };
+
+  const onShifted = (r, req) => {
+    setShifting(null);
+    applyMoved(r.moved);
+    reload();
+    const n = r.moved?.length || 0;
+    const only = (r.moved || []).map((m) => m._id).filter((x) => x !== req.id);
+    toast.success(`${plural(n, "session")} moved ${Math.abs(req.minutes)} min ${req.minutes > 0 ? "later" : "earlier"}.`, {
+      action: { label: "Undo", onClick: () => undoShift(req, only) },
+    });
   };
 
   const onSaved = (doc) => {
@@ -362,7 +567,7 @@ export default function Agenda() {
               <p className="mt-1 text-xs text-ttfc-dim">These don't appear on the website or in the app until they have a day, start and end time. Edit them, or delete them if they were tests.</p>
               <ul className="mt-3 overflow-hidden rounded-[14px] border border-ttfc-line bg-ttfc-panel">
                 {unscheduled.map((s) => (
-                  <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly}
+                  <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly} globalLive={globalLive}
                     onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} onDuplicate={duplicate} onDelete={setDeleting} />
                 ))}
               </ul>
@@ -373,8 +578,9 @@ export default function Agenda() {
           {dayList.length ? (
             <ul className="overflow-hidden rounded-[18px] border border-ttfc-line bg-ttfc-panel">
               {dayList.map((s) => (
-                <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly}
-                  onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} onDuplicate={duplicate} onDelete={setDeleting} />
+                <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly} globalLive={globalLive}
+                  onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} onDuplicate={duplicate} onDelete={setDeleting}
+                  onShift={(doc) => setShifting(doc)} />
               ))}
             </ul>
           ) : (
@@ -397,8 +603,21 @@ export default function Agenda() {
           speakerIndex={speakerIndex}
           speakerNames={speakerNames}
           readOnly={readOnly}
+          globalLive={globalLive}
           onClose={() => setEditing(null)}
           onSaved={onSaved}
+        />
+      )}
+
+      {shifting && (
+        <ShiftDialog
+          key={shifting._id}
+          session={shifting}
+          all={list}
+          readOnly={readOnly}
+          onClose={() => setShifting(null)}
+          onShifted={onShifted}
+          onStale={reload}
         />
       )}
 

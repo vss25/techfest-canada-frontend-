@@ -26,12 +26,16 @@ function TierCard({ item, onSaved, onArchive, canEdit }) {
   const toast = useToast();
   const [price, setPrice] = useState(String(item.price ?? 0));
   const [total, setTotal] = useState(String(item.total ?? 0));
+  // Scheduled price change (both empty = none)
+  const [nextPrice, setNextPrice] = useState(item.nextPrice != null ? String(item.nextPrice) : "");
+  const [nextAt, setNextAt] = useState(isoToTorontoLocal(item.nextPriceAt));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const sold = item.sold || 0;
   const remaining = Math.max(0, (item.total || 0) - sold);
   const pct = item.total > 0 ? Math.min(100, Math.round((sold / item.total) * 100)) : 0;
-  const dirty = price !== String(item.price ?? 0) || total !== String(item.total ?? 0);
+  const scheduleDirty = nextPrice !== (item.nextPrice != null ? String(item.nextPrice) : "") || nextAt !== isoToTorontoLocal(item.nextPriceAt);
+  const dirty = price !== String(item.price ?? 0) || total !== String(item.total ?? 0) || scheduleDirty;
   const soldOut = item.total > 0 && remaining === 0;
 
   const save = async (e) => {
@@ -40,11 +44,17 @@ function TierCard({ item, onSaved, onArchive, canEdit }) {
     if (!Number.isFinite(p) || p < 0) { setErr("Price must be 0 or more"); return; }
     if (!Number.isInteger(t) || t < 0) { setErr("Allocation must be a whole number"); return; }
     if (t < sold) { setErr(`Allocation can't be below the ${sold} already sold`); return; }
+    if (scheduleDirty && (nextPrice === "") !== (nextAt === "")) { setErr("A price change needs both the new price and when it starts"); return; }
+    if (nextPrice !== "" && !(Number(nextPrice) > 0)) { setErr("New price must be more than 0"); return; }
     setErr(""); setSaving(true);
     try {
       const body = {};
       if (p !== item.price) body.price = p;
       if (t !== item.total) body.total = t;
+      if (scheduleDirty) {
+        body.nextPrice = nextPrice === "" ? null : Number(nextPrice);
+        body.nextPriceAt = nextAt === "" ? null : torontoLocalToIso(nextAt);
+      }
       await api.put(`/admin/inventory/${encodeURIComponent(item.tier)}`, body);
       toast.success(`${label(item.tier)} updated`);
       onSaved();
@@ -57,6 +67,9 @@ function TierCard({ item, onSaved, onArchive, canEdit }) {
         <div>
           <h3 className="text-base font-bold text-ttfc-text">{label(item.tier)}</h3>
           {canEdit && <p className="text-sm text-ttfc-muted">{cad(item.price)} <span className="text-ttfc-dim">+ HST</span></p>}
+          {canEdit && item.nextPrice != null && item.nextPriceAt && (
+            <p className="mt-0.5 text-xs font-semibold text-ttfc-orange">Goes to {cad(item.nextPrice)} on {endsLabel(item.nextPriceAt)}</p>
+          )}
         </div>
         {soldOut ? <Badge tone="warn">Sold out</Badge> : <Badge tone="good">On sale</Badge>}
       </div>
@@ -77,11 +90,20 @@ function TierCard({ item, onSaved, onArchive, canEdit }) {
         <Field label="Price (CAD)">{(id) => <Input id={id} type="number" min={0} step="1" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} />}</Field>
         <Field label="Allocation">{(id) => <Input id={id} type="number" min={sold} step="1" inputMode="numeric" value={total} onChange={(e) => setTotal(e.target.value)} />}</Field>
       </div>
+      <fieldset className="grid grid-cols-2 gap-3">
+        <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">Price change (optional)</legend>
+        <Field label="New price (CAD)">{(id) => <Input id={id} type="number" min={1} step="1" inputMode="numeric" value={nextPrice} onChange={(e) => setNextPrice(e.target.value)} placeholder="None" />}</Field>
+        <Field label="From (Toronto time)">{(id) => <Input id={id} type="datetime-local" value={nextAt} onChange={(e) => setNextAt(e.target.value)} />}</Field>
+        <p className="col-span-2 -mt-1 text-xs text-ttfc-dim">
+          {nextPrice && nextAt ? `Switches to ${cad(nextPrice)} by itself on ${endsLabel(torontoLocalToIso(nextAt))}: website, checkout and upgrades.` : "Set both to change the price automatically at that moment."}
+          {(nextPrice || nextAt) && <> <button type="button" className="font-semibold text-ttfc-pink hover:underline" onClick={() => { setNextPrice(""); setNextAt(""); }}>Clear</button></>}
+        </p>
+      </fieldset>
       {err && <p role="alert" className="-mt-2 text-xs text-red-300">{err}</p>}
 
       <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-ttfc-line pt-4">
         <Button type="submit" size="sm" variant="primary" icon={Save} disabled={!dirty} loading={saving}>Save</Button>
-        {dirty && <Button size="sm" variant="ghost" onClick={() => { setPrice(String(item.price ?? 0)); setTotal(String(item.total ?? 0)); setErr(""); }}>Undo</Button>}
+        {dirty && <Button size="sm" variant="ghost" onClick={() => { setPrice(String(item.price ?? 0)); setTotal(String(item.total ?? 0)); setNextPrice(item.nextPrice != null ? String(item.nextPrice) : ""); setNextAt(isoToTorontoLocal(item.nextPriceAt)); setErr(""); }}>Undo</Button>}
         <span className="flex-1" />
         <Button size="sm" variant="ghost" icon={Archive} onClick={() => onArchive(item)}>Remove from sale</Button>
       </div>
@@ -412,7 +434,7 @@ export default function Inventory() {
 
   const grid = (items, emptyTitle) => items.length ? (
     <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-      {items.map((t) => <TierCard key={`${t.tier}:${t.price}:${t.total}:${t.sold}`} item={t} onSaved={reload} onArchive={setArchiving} canEdit={isManagement} />)}
+      {items.map((t) => <TierCard key={`${t.tier}:${t.price}:${t.total}:${t.sold}:${t.nextPrice}:${t.nextPriceAt}`} item={t} onSaved={reload} onArchive={setArchiving} canEdit={isManagement} />)}
     </div>
   ) : <EmptyState title={emptyTitle} className="py-10" />;
 

@@ -63,6 +63,9 @@ export default function People() {
                         <span className="font-semibold">{u.name}</span>
                         {u.role === "admin" && <Badge tone="pink">Staff</Badge>}
                         {u.banned && <Badge tone="bad">Suspended</Badge>}
+                        {u.directoryHidden && <Badge>Hidden</Badge>}
+                        {u.messagesOff && <Badge>No messages</Badge>}
+                        {u.requestsOff && <Badge>No requests</Badge>}
                       </div>
                     </td>
                     <td className="font-mono text-xs text-ttfc-muted">{u.email}</td>

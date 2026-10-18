@@ -15,6 +15,8 @@ const fromUser = (u) => ({
   ...Object.fromEntries(TEXT.map((k) => [k, u[k] ?? ""])),
   ...Object.fromEntries(LISTS.map((k) => [k, Array.isArray(u[k]) ? u[k] : []])),
   showInList: !u.directoryHidden,
+  canMessage: !u.messagesOff,
+  canRequest: !u.requestsOff,
   appOnboarded: !!u.appOnboarded,
   role: u.role === "admin" ? "admin" : "user",
   banned: !!u.banned,
@@ -26,6 +28,8 @@ function diff(form, orig) {
   for (const k of TEXT) if (String(form[k]).trim() !== String(orig[k]).trim()) out[k] = String(form[k]).trim();
   for (const k of LISTS) if (JSON.stringify(form[k]) !== JSON.stringify(orig[k])) out[k] = form[k];
   if (form.showInList !== orig.showInList) out.directoryHidden = !form.showInList;
+  if (form.canMessage !== orig.canMessage) out.messagesOff = !form.canMessage;
+  if (form.canRequest !== orig.canRequest) out.requestsOff = !form.canRequest;
   if (form.appOnboarded !== orig.appOnboarded) out.appOnboarded = form.appOnboarded;
   if (form.role !== orig.role) out.role = form.role;
   if (form.banned !== orig.banned) out.banned = form.banned;
@@ -200,6 +204,9 @@ export default function ProfileEditor({ id, user, onSaved, onDelete }) {
         <Section title="Visibility & access">
           <div className="space-y-4">
             <Switch label="Show in the attendee list" description="Other attendees can find them in the app's directory." checked={form.showInList} onChange={set("showInList")} />
+            <Switch label="Can be messaged" description="Other attendees can send them a message in the app." checked={form.canMessage} onChange={set("canMessage")} />
+            <Switch label="Can receive connection requests" description="Other attendees can ask to connect in the app. Scanning their badge in person still works." checked={form.canRequest} onChange={set("canRequest")} />
+            <p className="text-xs leading-relaxed text-ttfc-muted">For VIPs such as ministers who may not reply. People they've accepted or written to can still message them; staff always can. Hiding them from the list is separate.</p>
             <Switch label="Finished app profile" description="Off sends them through the app's profile set-up again next time they open it." checked={form.appOnboarded} onChange={set("appOnboarded")} />
             {isManagement ? (
               <Switch label="Staff (admin) access" description="Can sign in to this admin panel. New staff get the Staff level; change it under Staff accounts." checked={form.role === "admin"} onChange={(v) => set("role")(v ? "admin" : "user")} />

@@ -52,7 +52,7 @@ export default function Notifications() {
       <main id="main" className="pad mt-16 stack">
         <div className="row">
           <span className="eyebrow" style={{ flex: 1 }}>{unread === 0 ? "All caught up" : `${unread} unread`}</span>
-          <button type="button" className="link-btn" disabled={unread === 0} style={{ opacity: unread ? 1 : 0.5 }} onClick={() => markNotificationsRead(items.map((n) => n.id))}>Mark all as read</button>
+          <button type="button" className="link-btn" disabled={unread === 0} style={{ opacity: unread ? 1 : 0.5, fontSize: 12.5 }} onClick={() => markNotificationsRead(items.map((n) => n.id))}>Mark all as read</button>
         </div>
 
         {incoming.length > 0 && (
@@ -79,15 +79,15 @@ export default function Notifications() {
           const u = isUnread(n, s.readNotifs);
           const label = n.kind === "personal" ? linkLabel(n.link) : "";
           return (
-            <button key={n.id} type="button" className="list-row pressable" style={{ alignItems: "flex-start" }} onClick={() => open(n)}>
-              <span className="lead-icon"><Icon aria-hidden="true" /></span>
+            <button key={n.id} type="button" className="notif pressable" onClick={() => open(n)} aria-label={u ? `Unread: ${n.title}` : undefined}>
+              <span className={u ? "notif-ico notif-ico--on" : "notif-ico"}><Icon aria-hidden="true" /></span>
               <span style={{ flex: 1, minWidth: 0 }}>
-                <span className="row" style={{ gap: 6 }}>
-                  <b className="ellipsis" style={{ fontSize: 14, flex: 1 }}>{n.title}</b>
-                  {u && <span className="live-dot" style={{ color: "var(--pur-alt)", animation: "none" }} aria-label="Unread" />}
+                <span className="row" style={{ gap: 6, alignItems: "baseline" }}>
+                  <b className="ellipsis" style={{ flex: 1, fontWeight: u ? 700 : 600 }}>{n.title}</b>
+                  {n.kind !== "session" && <time className="notif-time">{timeAgo(n.date)}</time>}
                 </span>
-                <span className="small muted clamp-2" style={{ display: "-webkit-box" }}>{n.detail}</span>
-                <span className="tiny muted">{n.kind === "session" ? "" : timeAgo(n.date)}{n.from ? ` · ${n.from}` : ""}{label ? ` · ${label}` : ""}</span>
+                <span className="notif-detail clamp-3">{n.detail}</span>
+                {(n.from || label) && <span className="notif-meta">{[n.from, label].filter(Boolean).join(" · ")}</span>}
               </span>
             </button>
           );

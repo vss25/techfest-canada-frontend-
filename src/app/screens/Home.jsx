@@ -15,7 +15,7 @@ import { PeopleFill, TrophyFill } from "../components/Glyphs";
 import { points, refreshPoints } from "../lib/points";
 import { theme, setTheme, THEME_LABEL } from "../lib/theme";
 import { WelcomeCard } from "../components/AppNotices";
-import { OfferBanner } from "../components/GuestOffer";
+import SiteAnnouncement from "../components/SiteAnnouncement";
 import PostCard from "../components/PostCard";
 import Composer from "../components/Composer";
 
@@ -261,7 +261,7 @@ export default function Home() {
           </div>
         </div>
       )}
-      {!signedIn && <OfferBanner wrap="offer-bar-wrap" />}
+      {!signedIn && <div className="site-ann-wrap"><SiteAnnouncement where="home" /></div>}
       <TopChrome total={signedIn ? pts.me?.total ?? null : null} unread={unread}
         onChecklist={checklistWaiting ? () => { local.set(CHECKLIST_KEY, null); setChecklistHidden(false); } : null}
         onNotifications={() => navigate("/notifications")} />

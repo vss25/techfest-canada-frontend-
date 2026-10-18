@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle2, MinusCircle, Share2, Sun, Ticket } from "lucide-react";
+import { BadgeCheck, CheckCircle2, Link2, MinusCircle, Share2, Sun, Ticket } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useStore } from "../lib/store";
 import { auth, bestTicket, cleanTicketId, loadAccount } from "../lib/auth";
@@ -52,6 +52,16 @@ function PassCode({ ticket, name }) {
     } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
 
+  const form = (
+    <form className="stack" onSubmit={claim}>
+      <label className="field"><span className="field-label">Last name on the pass</span><input className="input" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} /></label>
+      <label className="field"><span className="field-label">Pass ID</span><input className="input" autoCapitalize="characters" spellCheck="false" placeholder="a1b2c3d4e5f6" value={id} onChange={(e) => setId(e.target.value)} /></label>
+      <p className="tiny muted" style={{ margin: "-4px 0 0" }}>12 characters, in your pass email under the QR code (e.g. a1b2c3d4e5f6).</p>
+      {error && <p className="error-text" role="alert" style={{ margin: 0 }}>{error}</p>}
+      <Button type="submit" variant="primary" size="lg" block icon={Link2} loading={busy} disabled={lastName.trim().length < 2 || cleanTicketId(id).length < 6}>Link pass</Button>
+    </form>
+  );
+
   if (!ticket) {
     return (
       <div className="stack">
@@ -60,30 +70,31 @@ function PassCode({ ticket, name }) {
           <h2 style={{ margin: 0, fontSize: 19 }}>Link your pass</h2>
           <p className="muted" style={{ margin: 0 }}>Bought your pass with another email? Enter the last name and pass ID from the pass email.</p>
         </div>
-        <form className="stack" onSubmit={claim}>
-          <label className="field"><span className="field-label">Last name on the pass</span><input className="input" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} /></label>
-          <label className="field"><span className="field-label">Pass ID</span><input className="input" autoCapitalize="characters" spellCheck="false" placeholder="e.g. a1b2c3d4e5f6" value={id} onChange={(e) => setId(e.target.value)} /></label>
-          {error && <p className="error-text" role="alert" style={{ margin: 0 }}>{error}</p>}
-          <Button type="submit" variant="primary" size="lg" block loading={busy} disabled={lastName.trim().length < 2 || cleanTicketId(id).length < 6}>Link pass</Button>
-        </form>
+        {form}
         <a className="btn btn-block" href={LINKS.tickets} target="_blank" rel="noopener noreferrer">Get a pass</a>
       </div>
     );
   }
 
   return (
-    <div className="stack" style={{ alignItems: "center", textAlign: "center" }}>
-      <div className="pass-card" style={{ width: "100%" }}>
-        <div className="small" style={{ opacity: 0.9 }}>TTFC 2026 · Oct 26–27 · Toronto</div>
-        <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{ticket.tierName}</div>
-        <div style={{ opacity: 0.92 }}>{name}</div>
+    <div className="stack-lg">
+      <section className="ticket" aria-label="Your pass">
+        <span className="ticket-tier">{ticket.tierName}</span>
+        <h2>{name}</h2>
+        <span className="ticket-date">TTFC 2026 · Oct 26–27</span>
+        <span className="ticket-linked"><BadgeCheck aria-hidden="true" />LINKED · {ticket.ticketId.toUpperCase()}</span>
         <div className="pass-qr" role="img" aria-label={`Pass QR code for ${ticket.ticketId}`}>
-          <QRCodeSVG value={passPayload(ticket.ticketId)} size={240} level="M" marginSize={0} />
+          <QRCodeSVG value={passPayload(ticket.ticketId)} size={208} level="M" marginSize={0} />
         </div>
-        <div className="pass-id">{ticket.ticketId.toUpperCase()}</div>
-        {ticket.checkedIn && <div className="row small" style={{ justifyContent: "center", gap: 6, marginTop: 6 }}><CheckCircle2 aria-hidden="true" style={{ width: 15, height: 15 }} />Checked in</div>}
-      </div>
-      <p className="muted small row" style={{ gap: 6, margin: 0 }}><Sun aria-hidden="true" style={{ width: 15, height: 15 }} />Show this at the door. Turn your screen brightness up.</p>
+        {ticket.checkedIn && <span className="ticket-linked"><CheckCircle2 aria-hidden="true" />Checked in</span>}
+        <span className="ticket-venue">The Westin Harbour Castle · Toronto, Canada</span>
+        <span className="tiny muted row" style={{ gap: 6, justifyContent: "center" }}><Sun aria-hidden="true" style={{ width: 13, height: 13 }} />Show this at the door. Turn your screen brightness up.</span>
+      </section>
+      <section className="stack-sm" aria-labelledby="link-h">
+        <h3 id="link-h" className="ticket-link-h">Link another pass</h3>
+        <p className="tiny muted" style={{ margin: 0 }}>Bought with a different email? Enter the last name and ticket ID from that ticket email.</p>
+        {form}
+      </section>
     </div>
   );
 }

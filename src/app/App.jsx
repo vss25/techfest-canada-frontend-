@@ -10,7 +10,6 @@ import { FEATURES } from "./lib/config";
 import { ToastHost, Spinner } from "./components/ui";
 import { InstallNudges, OfflineBar, UpdatePrompt } from "./components/AppNotices";
 import { onScreenChange } from "./lib/pwa";
-import { OfferModal } from "./components/GuestOffer";
 
 /* =========================================================
    The TTFC attendee app at /app/ (installable PWA).
@@ -147,7 +146,6 @@ function Shell() {
       </Suspense>
       {showTabs && <TabBar chatsDot={FEATURES.chats && chatsHasNew(s)} />}
       {!signedOut && <InstallNudges />}
-      {mode === "guest" && <OfferModal />}
       <UpdatePrompt />
     </div>
   );

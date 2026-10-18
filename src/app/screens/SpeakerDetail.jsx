@@ -1,12 +1,12 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ChevronRight, Linkedin, Mic, UserPlus, UserCheck, Undo2, MessageCircle, Smartphone } from "lucide-react";
+import { ChevronRight, Link2, Mic, UserPlus, UserCheck, Undo2, MessageCircle, Smartphone } from "lucide-react";
 import { useStore } from "../lib/store";
 import { cms, dayLabel, nameKeys, sessionsForSpeaker, speakerById, timeRange } from "../lib/cms";
 import { auth, firstName, isSignedIn } from "../lib/auth";
 import { canMessage, canRequest, connectionWith, requestConnection, respondConnection, social, withdrawConnection } from "../lib/social";
 import { confirmDialog, safeHref, showAlert } from "../lib/ui";
 import { FEATURES } from "../lib/config";
-import { Avatar, Button, Empty, Kicker, Spinner, TopBar } from "../components/ui";
+import { Avatar, Button, Empty, Spinner, TopBar } from "../components/ui";
 
 /* Speaker profile (iOS SpeakerDetailView), with Connect / Message when they're on the app. */
 
@@ -41,13 +41,16 @@ export default function SpeakerDetail() {
     <div className="page">
       <TopBar title="Speaker" />
       <main id="main">
-        <div className="profile-hero">
-          <Avatar name={sp.name} src={sp.photo} size={112} round />
-          <h1>{sp.name}</h1>
-          <div className="muted">{[sp.title, sp.company].filter(Boolean).join(" · ")}</div>
-          {sp.isKeynote && <Kicker tone="accent" icon={Mic}>Keynote speaker</Kicker>}
-        </div>
-        <div className="pad stack-lg">
+        <div className="pad stack-lg" style={{ paddingTop: 18 }}>
+          <div className="speaker-head">
+            <Avatar name={sp.name} src={sp.photo} size={90} round />
+            <div>
+              {sp.isKeynote && <span className="speaker-keynote">Keynote speaker</span>}
+              <h1>{sp.name}</h1>
+              {sp.title && <div className="speaker-title">{sp.title}</div>}
+              {sp.company && <div className="speaker-company">{sp.company}</div>}
+            </div>
+          </div>
           {FEATURES.network && isSignedIn(a) && account && (
             <div className="stack-sm">
               {state?.status === "accepted" ? (
@@ -66,13 +69,13 @@ export default function SpeakerDetail() {
             <div className="note row-top"><Smartphone aria-hidden="true" style={{ width: 18, height: 18, flex: "none" }} /><span>{given} hasn't joined the TTFC app yet. You'll be able to connect and message once they sign in.</span></div>
           )}
           <section className="stack-sm">
-            <h2 className="section-title">About</h2>
-            <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{sp.bio}</p>
-            {linkedin && <a className="btn btn-block" href={linkedin} target="_blank" rel="noopener noreferrer"><Linkedin aria-hidden="true" />View LinkedIn profile</a>}
+            <h2 className="eyebrow eyebrow--muted">About</h2>
+            <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 14 }}>{sp.bio}</p>
+            {linkedin && <a className="edit-link" href={linkedin} target="_blank" rel="noopener noreferrer"><Link2 aria-hidden="true" />View LinkedIn profile</a>}
           </section>
           {sessions.length > 0 && (
             <section className="stack-sm">
-              <h2 className="section-title">Appearing in</h2>
+              <h2 className="eyebrow eyebrow--muted">Appearing in</h2>
               {sessions.map((x) => (
                 <Link key={x.id} to={`/session/${encodeURIComponent(x.id)}`} className="list-row pressable">
                   <span style={{ flex: 1, minWidth: 0 }}>

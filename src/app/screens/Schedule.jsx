@@ -10,7 +10,7 @@ import { showAlert, useNow } from "../lib/ui";
 import { Chip, Empty, Segmented, Spinner } from "../components/ui";
 import SessionRow from "../components/SessionRow";
 import { EVENT, LINKS } from "../lib/config";
-import { OfferBanner } from "../components/GuestOffer";
+import SiteAnnouncement from "../components/SiteAnnouncement";
 
 /* =========================================================
    Schedule (iOS ScheduleView): Day 1 / Day 2 / Venue, type
@@ -91,7 +91,7 @@ export default function Schedule() {
     <div className="page" style={{ paddingTop: 0 }}>
       <div className="sched-head" ref={headRef}>
         <div className="column">
-          {!isSignedIn(a) && <OfferBanner wrap="pad" />}
+          {!isSignedIn(a) && <div className="pad"><SiteAnnouncement where="schedule" /></div>}
           <h1 className="page-title pad">{text(ct, "schedule.title", "Schedule")}</h1>
           <div className="pad">
             <Segmented

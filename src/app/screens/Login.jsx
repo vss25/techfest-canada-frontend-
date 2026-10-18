@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, Eye, HelpCircle, Mail, Ticket, ArrowRight, Send, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, Download, Eye, EyeOff, HelpCircle, KeyRound, Ticket, ArrowRight, Send, CheckCircle2, Loader2 } from "lucide-react";
 import { useStore, session } from "../lib/store";
-import { auth, enterGuest, requestEmailLink, ticketLogin, verifyEmailCode, verifyEmailToken, cleanTicketId, isSignedIn } from "../lib/auth";
+import { auth, enterGuest, requestEmailLink, ticketLogin, staffSignIn, verifyEmailCode, verifyEmailToken, cleanTicketId, isSignedIn } from "../lib/auth";
 import { pwa } from "../lib/pwa";
 import { EVENT } from "../lib/config";
-import { Button } from "../components/ui";
 import { WelcomeCard } from "../components/AppNotices";
 
 /* =========================================================
@@ -31,11 +30,47 @@ function takeHandoffToken() {
   return t;
 }
 
+/** The sign-in screen's 54-pt buttons: icon, label, then an arrow on the right. */
+function BigButton({ children, icon, filled, loading, type = "button", ...rest }) {
+  const Icon = icon;
+  return (
+    <button type={type} className={filled ? "big-btn big-btn--filled pressable" : "big-btn pressable"} disabled={loading || rest.disabled} aria-busy={loading || undefined} {...rest}>
+      {loading ? <Loader2 aria-hidden="true" className="big-btn-icon" style={{ animation: "spin .8s linear infinite" }} /> : <Icon aria-hidden="true" className="big-btn-icon" />}
+      <span className="big-btn-label">{children}</span>
+      {!loading && <ArrowRight aria-hidden="true" className="big-btn-arrow" />}
+    </button>
+  );
+}
+
+/** "Where's my pass ID?": where it is and what it looks like, as the pass email shows it. */
+function PassIdHelp({ id, onClose, anchorRef, below }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") { onClose(); anchorRef.current?.focus(); } };
+    const onDown = (e) => { if (!ref.current?.contains(e.target) && !anchorRef.current?.contains(e.target)) onClose(); };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => { document.removeEventListener("keydown", onKey); document.removeEventListener("pointerdown", onDown); };
+  }, [onClose, anchorRef]);
+  return (
+    <div ref={ref} id={id} className={below ? "pass-pop pass-pop--below" : "pass-pop"} role="dialog" aria-label="Where's my pass ID?">
+      <b className="pass-pop-title">Where's my pass ID?</b>
+      <p>It's in the email with your pass, labelled “Ticket ID”, next to your QR code.</p>
+      <div className="pass-pop-sample"><span>TICKET ID</span><code>A1B2C3D4E5F6</code></div>
+      <p className="pass-pop-note">12 letters and numbers. Capitals don't matter.</p>
+    </div>
+  );
+}
+
 export default function Login() {
   const a = useStore(auth);
-  const { standalone } = useStore(pwa);
+  const p = useStore(pwa);
+  const { standalone } = p;
   const navigate = useNavigate();
-  const [mode, setMode] = useState("choose"); // choose | email | code | pass | verifying
+  const [mode, setMode] = useState("choose"); // choose | email | code | pass | staff | verifying
+  const [staffEmail, setStaffEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [reveal, setReveal] = useState(false);
   const [email, setEmail] = useState("");
   const [sentTo, setSentTo] = useState("");
   const [sentAt, setSentAt] = useState(0);
@@ -45,6 +80,9 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showHelp, setShowHelp] = useState(false);
+  const [showChooserHelp, setShowChooserHelp] = useState(false);
+  const helpBtnRef = useRef(null);
+  const fieldHelpRef = useRef(null);
   const [resent, setResent] = useState(false);
   const [, setTick] = useState(0);
   const codeRef = useRef(null);
@@ -71,12 +109,16 @@ export default function Login() {
     })();
   }, [navigate]);
 
-  // The sign-in screen is always dark: match the browser chrome / status bar to it.
+  // The sign-in screen is always dark: match the browser chrome / status bar (and the page ground) to it.
   useEffect(() => {
     const metas = [...document.querySelectorAll('meta[name="theme-color"]')];
     const prev = metas.map((m) => m.getAttribute("content"));
     metas.forEach((m) => m.setAttribute("content", "#0B0823"));
-    return () => metas.forEach((m, i) => m.setAttribute("content", prev[i]));
+    document.documentElement.classList.add("dark-ground");
+    return () => {
+      metas.forEach((m, i) => m.setAttribute("content", prev[i]));
+      if (!document.getElementById("boot-splash")) document.documentElement.classList.remove("dark-ground");
+    };
   }, []);
 
   // Resend countdown.
@@ -86,7 +128,7 @@ export default function Login() {
     return () => clearInterval(t);
   }, [mode]);
 
-  const go = (m) => { setError(""); setMode(m); };
+  const go = (m) => { setError(""); setShowHelp(false); setShowChooserHelp(false); setMode(m); };
 
   const sendLink = async (e, resend = false) => {
     e?.preventDefault();
@@ -132,18 +174,28 @@ export default function Login() {
     } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
 
+  const submitStaff = async (e) => {
+    e.preventDefault();
+    setBusy(true); setError("");
+    try {
+      await staffSignIn(staffEmail, password);
+      setPassword("");
+      navigate("/", { replace: true });
+    } catch (err) { setError(err.message); } finally { setBusy(false); }
+  };
+
   const guest = () => { enterGuest(); navigate("/", { replace: true }); };
   const left = Math.max(0, Math.ceil(RESEND_SECONDS - (Date.now() - sentAt) / 1000));
   const canPass = lastName.trim().length >= 2 && cleanTicketId(passId).length >= 6;
+  const canStaff = plausibleEmail(staffEmail) && password.length > 0;
   const compact = mode !== "choose";
 
   return (
     <div className="login">
       <div className="auth-backdrop" aria-hidden="true" />
-      <div className="login-hero" style={compact ? { flex: "none", padding: "8px 0 22px" } : undefined}>
-        <img src="/app/icons/icon-192.png" alt="The Tech Festival Canada" className={compact ? "login-logo login-logo--small app-icon" : "login-logo app-icon"} style={{ width: compact ? 88 : 150 }} />
-        <div className="login-tagline">{EVENT.tagline}</div>
-        {!compact && <p className="muted" style={{ margin: "14px 0 0" }}>Oct 26–27, 2026 · Westin Harbour Castle, Toronto</p>}
+      <div className={compact ? "login-hero login-hero--compact" : "login-hero"}>
+        <img src="/app/brand/logo.webp" alt="The Tech Festival Canada" className="login-brand" width="870" height="429" decoding="async" fetchpriority="high" />
+        {!compact && <div className="login-tagline">{EVENT.tagline}</div>}
       </div>
 
       <main id="main" className="login-panel" aria-live="polite">
@@ -159,111 +211,127 @@ export default function Login() {
 
         {mode === "choose" && (
           <>
-            <Button variant="primary" size="lg" block icon={Send} onClick={() => go("email")}>Email me a sign-in link</Button>
-            <Button size="lg" block icon={Ticket} onClick={() => go("pass")}>Sign in with pass ID</Button>
+            <h1 className="sr-only">Sign in to The Tech Festival Canada</h1>
+            <BigButton filled icon={Send} onClick={() => go("email")}>Email me a sign-in link</BigButton>
+            <div className="big-btn">
+              <button type="button" className="big-btn-hit" aria-label="Sign in with pass ID" onClick={() => go("pass")} />
+              <Ticket aria-hidden="true" className="big-btn-icon" />
+              <span className="big-btn-label">
+                <span aria-hidden="true">Sign in with </span>
+                <button type="button" ref={helpBtnRef} className="dotted-term" aria-label="What's a pass ID?" aria-expanded={showChooserHelp} aria-controls="pass-help-pop"
+                  onClick={() => setShowChooserHelp((v) => !v)}>pass ID</button>
+              </span>
+              <ArrowRight aria-hidden="true" className="big-btn-arrow" />
+              {showChooserHelp && <PassIdHelp id="pass-help-pop" onClose={() => setShowChooserHelp(false)} anchorRef={helpBtnRef} />}
+            </div>
             <div className="or">Or</div>
-            <Button size="lg" block icon={Eye} className="btn-ghost" onClick={guest}>Browse as guest</Button>
+            <button type="button" className="guest-link pressable" onClick={guest}><Eye aria-hidden="true" />Browse as guest</button>
           </>
         )}
 
-        {(mode === "email" || mode === "code" || mode === "pass") && (
-          <button type="button" className="link-btn" style={{ alignSelf: "flex-start", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }} onClick={() => go(mode === "code" ? "email" : "choose")}>
-            <ChevronLeft aria-hidden="true" style={{ width: 16, height: 16 }} /> Back
+        {(mode === "email" || mode === "code" || mode === "pass" || mode === "staff") && (
+          <button type="button" className="login-back pressable" onClick={() => go(mode === "code" ? "email" : "choose")}>
+            <ChevronLeft aria-hidden="true" /> Back
           </button>
         )}
 
         {mode === "email" && (
-          <form className="stack" onSubmit={sendLink} noValidate>
-            <h1 style={{ fontSize: 22, margin: 0 }}>Sign in with your email</h1>
-            <label className="field">
-              <span className="field-label" style={{ color: "rgba(255,255,255,.8)" }}>Email</span>
-              <input className="input" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck="false" required
-                value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" autoFocus />
-            </label>
+          <form className="login-form" onSubmit={sendLink} noValidate>
+            <h1 className="sr-only">Sign in with your email</h1>
+            <input className="login-input" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck="false" required
+              value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" aria-label="Email" autoFocus />
             {email && (
-              <div className="note note--gold row-top" style={{ fontSize: 14 }}>
-                <Ticket aria-hidden="true" style={{ width: 18, height: 18, flex: "none", marginTop: 1 }} />
+              <div className="gold-hint">
+                <Ticket aria-hidden="true" />
                 <span>Use the same email you bought or registered your pass with.</span>
               </div>
             )}
             {error && <p className="error-text" role="alert" style={{ margin: 0 }}>{error}</p>}
-            <Button type="submit" variant="primary" size="lg" block icon={Send} loading={busy} disabled={!plausibleEmail(email)}>Send sign-in link</Button>
-            <div className="row" style={{ justifyContent: "center" }}>
-              <button type="button" className="link-btn" onClick={() => go("pass")}>Use pass ID instead</button>
+            <BigButton type="submit" filled icon={Send} loading={busy} disabled={!plausibleEmail(email)}>Send sign-in link</BigButton>
+            <div className="login-links">
+              <button type="button" className="login-link" onClick={() => go("pass")}>Use pass ID instead</button>
             </div>
           </form>
         )}
 
         {mode === "code" && (
-          <div className="stack">
-            <h1 style={{ fontSize: 22, margin: 0 }}>Check your email</h1>
+          <div className="login-form">
+            <h1 className="sr-only">Check your email</h1>
             <label className="code-boxes" aria-label="6-digit code">
               <input ref={codeRef} value={code} onChange={(e) => onCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength={6} aria-label="6-digit code from the email" disabled={busy} />
               {Array.from({ length: 6 }, (_, i) => (
                 <span key={i} aria-hidden="true" className={"code-box" + (i === Math.min(code.length, 5) ? " code-box--active" : "")}>{code[i] || ""}</span>
               ))}
             </label>
-            <p className="center" style={{ margin: 0 }}>
+            <p className="login-copy">
               We emailed a code and a sign-in link to <b>{maskEmail(sentTo)}</b>.
             </p>
-            <p className="center muted small" style={{ margin: 0 }}>
-              {standalone
-                ? "Type the 6-digit code here. The link in the email opens in your browser, not in this app."
-                : "Type the 6-digit code, or tap the link in the email on this device."}
-            </p>
-            {resent && !error && <p className="center small" style={{ margin: 0 }}><CheckCircle2 aria-hidden="true" style={{ width: 15, height: 15, verticalAlign: "-3px" }} /> New link sent. The old one no longer works.</p>}
+            {standalone && <p className="login-copy login-copy--small">Type the 6-digit code here. The link in the email opens in your browser, not in this app.</p>}
+            {resent && !error && <p className="login-resent"><CheckCircle2 aria-hidden="true" /> New link sent. The old one no longer works.</p>}
             {busy && <div className="row" style={{ justifyContent: "center" }}><div className="spinner" /></div>}
             {error && <p className="error-text center" role="alert" style={{ margin: 0 }}>{error}</p>}
-            <div className="row" style={{ justifyContent: "center", gap: 18 }}>
-              <button type="button" className="link-btn" disabled={left > 0 || busy} onClick={(e) => sendLink(e, true)} style={left > 0 ? { opacity: 0.6, textDecoration: "none" } : undefined}>
+            <div className="login-links">
+              <button type="button" className="login-link" disabled={left > 0 || busy} onClick={(e) => sendLink(e, true)} style={left > 0 ? { opacity: 0.55 } : undefined}>
                 {left > 0 ? `Resend in ${left}s` : "Resend"}
               </button>
-              <button type="button" className="link-btn" onClick={() => { setCode(""); setSentTo(""); go("email"); }}>Use a different email</button>
+              <button type="button" className="login-link" onClick={() => { setCode(""); setSentTo(""); go("email"); }}>Use a different email</button>
             </div>
           </div>
         )}
 
         {mode === "pass" && (
-          <form className="stack" onSubmit={submitPass} noValidate>
-            <h1 style={{ fontSize: 22, margin: 0 }}>Sign in with your pass</h1>
-            <label className="field">
-              <span className="field-label" style={{ color: "rgba(255,255,255,.8)" }}>Last name on the pass</span>
-              <input className="input" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} autoFocus />
-            </label>
-            <div className="field">
-              <label htmlFor="pass-id" className="field-label" style={{ color: "rgba(255,255,255,.8)" }}>Pass ID</label>
-              <div style={{ position: "relative" }}>
-                <input id="pass-id" className="input" autoCapitalize="characters" autoComplete="off" spellCheck="false" placeholder="e.g. a1b2c3d4e5f6"
-                  value={passId} onChange={(e) => setPassId(e.target.value)} style={{ paddingRight: 48 }} aria-describedby={showHelp ? "pass-help" : undefined} />
-                <button type="button" className="icon-btn" aria-label="Where's my pass ID?" aria-expanded={showHelp} onClick={() => setShowHelp((v) => !v)} style={{ position: "absolute", right: 2, top: 2, color: "#fff" }}>
-                  <HelpCircle aria-hidden="true" />
-                </button>
-              </div>
-              {showHelp && (
-                <div id="pass-help" className="note" style={{ background: "rgba(255,255,255,.1)" }}>
-                  <b>Where's my pass ID?</b>
-                  <div className="small" style={{ marginTop: 4 }}>It's in the email with your pass, labelled “Ticket ID”, next to your QR code.</div>
-                  <div className="figure" style={{ marginTop: 8, letterSpacing: "0.12em", fontWeight: 700 }}>TICKET ID · A1B2C3D4E5F6</div>
-                  <div className="small muted" style={{ marginTop: 4 }}>12 letters and numbers. Capitals don't matter.</div>
-                </div>
-              )}
+          <form className="login-form" onSubmit={submitPass} noValidate>
+            <h1 className="sr-only">Sign in with your pass</h1>
+            <input className="login-input" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name on the pass" aria-label="Last name on the pass" autoFocus />
+            <div style={{ position: "relative" }}>
+              <input id="pass-id" className="login-input" autoCapitalize="characters" autoComplete="off" spellCheck="false" placeholder="Pass ID (e.g. a1b2c3d4e5f6)" aria-label="Pass ID"
+                value={passId} onChange={(e) => setPassId(e.target.value)} style={{ paddingRight: 52 }} />
+              <button type="button" ref={fieldHelpRef} className="field-help pressable" aria-label="Where's my pass ID?" aria-expanded={showHelp} aria-controls="pass-help-field" onClick={() => setShowHelp((v) => !v)}>
+                <HelpCircle aria-hidden="true" />
+              </button>
+              {showHelp && <PassIdHelp id="pass-help-field" onClose={() => setShowHelp(false)} anchorRef={fieldHelpRef} below />}
             </div>
             {error && <p className="error-text" role="alert" style={{ margin: 0 }}>{error}</p>}
-            <Button type="submit" variant="primary" size="lg" block icon={ArrowRight} loading={busy} disabled={!canPass}>Sign in</Button>
-            <div className="row" style={{ justifyContent: "center" }}>
-              <button type="button" className="link-btn" onClick={() => go("email")}><Mail aria-hidden="true" style={{ width: 15, height: 15, verticalAlign: "-3px", marginRight: 4 }} />Email me a sign-in link instead</button>
+            <BigButton type="submit" filled icon={ArrowRight} loading={busy} disabled={!canPass}>Sign in</BigButton>
+            <div className="login-links">
+              <button type="button" className="login-link" onClick={() => go("email")}>Email me a sign-in link instead</button>
             </div>
           </form>
         )}
 
+        {mode === "staff" && (
+          <form className="login-form" onSubmit={submitStaff} noValidate>
+            <div>
+              <h1 className="staff-title"><KeyRound aria-hidden="true" />Staff sign-in</h1>
+              <p className="login-copy" style={{ textAlign: "left", fontSize: 13, marginTop: 4 }}>For TTFC staff and volunteers.</p>
+            </div>
+            <input className="login-input" type="email" inputMode="email" autoComplete="username" autoCapitalize="none" spellCheck="false"
+              value={staffEmail} onChange={(e) => setStaffEmail(e.target.value)} placeholder="Staff email" aria-label="Staff email" autoFocus />
+            <div style={{ position: "relative" }}>
+              <input className="login-input" type={reveal ? "text" : "password"} autoComplete="current-password" autoCapitalize="none" spellCheck="false"
+                value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" aria-label="Password" style={{ paddingRight: 52 }} />
+              <button type="button" className="field-help pressable" aria-label={reveal ? "Hide password" : "Show password"} aria-pressed={reveal} onClick={() => setReveal((v) => !v)}>
+                {reveal ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+              </button>
+            </div>
+            {error && <p className="error-text" role="alert" style={{ margin: 0 }}>{error}</p>}
+            <BigButton type="submit" filled icon={ArrowRight} loading={busy} disabled={!canStaff}>Sign in</BigButton>
+          </form>
+        )}
+      </main>
+
+      <footer className="login-foot">
+        {(mode === "email" || mode === "pass") && (
+          <button type="button" className="staff-link" onClick={() => go("staff")}>Staff sign-in</button>
+        )}
+        {!p.installed && !standalone && mode === "choose" && (
+          <Link to="/install" className="login-install"><Download aria-hidden="true" />Install the app</Link>
+        )}
         <p className="legal">
           By continuing, you confirm you're 18+ and agree to The&nbsp;Tech&nbsp;Festival&nbsp;Canada's{" "}
           <Link to="/legal/terms">Terms&nbsp;of&nbsp;Use</Link> and <Link to="/legal/privacy">Privacy&nbsp;Policy</Link>.
         </p>
-        <p className="legal" style={{ marginTop: 0 }}>
-          <Link to="/install" style={{ fontWeight: 500 }}>Install the app on your phone</Link>
-        </p>
-      </main>
+      </footer>
     </div>
   );
 }

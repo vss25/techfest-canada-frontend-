@@ -157,6 +157,21 @@ export async function ticketLogin(lastName, ticketId) {
   return r;
 }
 
+/** iOS AuthService.staffOnlyMessage. */
+export const STAFF_ONLY_MESSAGE = "This sign-in is for TTFC staff and volunteers. Attendees: use a sign-in link or your pass ID.";
+/** Staff or volunteer: the TTFC team on the day (iOS RemoteUser.isTeam). */
+export const isTeam = (u) => !!u && (u.isAdmin === true || u.role === "admin" || u.role === "volunteer");
+
+/** "Staff sign-in": email + password, staff and volunteer accounts only (the server refuses others too). */
+export async function staffSignIn(email, password) {
+  const r = await post("auth/login", { email: String(email || "").trim().toLowerCase(), password, staffOnly: true }, { auth: false });
+  // Checked before the app switches over, so an attendee account never lands in the app this way.
+  const me = await get("auth/me", { token: r.token });
+  if (!isTeam(me?.user || me)) throw new ApiError(STAFF_ONLY_MESSAGE, 403);
+  await signInWithToken(r.token, { method: "staff" });
+  return r;
+}
+
 // ---------- Helpers for screens ----------
 
 export const isSignedIn = (s = auth.get()) => s.mode === "user" || s.mode === "demo";

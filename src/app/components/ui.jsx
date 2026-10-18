@@ -12,15 +12,17 @@ import { cx, initialsOf, toasts, dismissToast } from "../lib/ui";
 
 // ---------- Avatar ----------
 
-export function Avatar({ name, src, size = 40, tile = false, ring = false, badge = null, label }) {
+/** People: the iOS AvatarView monogram tile. Speakers: `round` (SpeakerAvatar). */
+export function Avatar({ name, src, size = 40, tile = false, round = false, ring = false, badge = null, label }) {
   const [failed, setFailed] = useState(false);
   const show = src && !failed;
   const crossOrigin = show && /^https?:/.test(src) ? "anonymous" : undefined;
+  const radius = round ? "50%" : Math.min(14, Math.round(size * 0.3));
   return (
     <span className="avatar-wrap" style={{ width: size, height: size }}>
       <span
-        className={cx("avatar", tile && "avatar--tile", ring && "avatar-ring")}
-        style={{ width: size, height: size, fontSize: Math.max(11, size * 0.36) }}
+        className={cx("avatar", tile && "avatar--tile", round && "avatar--round", ring && "avatar-ring")}
+        style={{ width: size, height: size, borderRadius: radius, fontSize: Math.max(10, size * 0.34) }}
         role={label ? "img" : undefined}
         aria-label={label}
         aria-hidden={label ? undefined : true}
@@ -80,9 +82,9 @@ export function Chip({ children, on, onClick, icon, count, ...rest }) {
 }
 
 /** Day 1 / Day 2 / Venue style picker. */
-export function Segmented({ options, value, onChange, label, scroll }) {
+export function Segmented({ options, value, onChange, label, scroll, capsule }) {
   return (
-    <div className={cx("seg", scroll && "seg--scroll")} role="tablist" aria-label={label}>
+    <div className={cx("seg", scroll && "seg--scroll", capsule && "seg--capsule")} role="tablist" aria-label={label}>
       {options.map((o) => (
         <button
           key={o.value}

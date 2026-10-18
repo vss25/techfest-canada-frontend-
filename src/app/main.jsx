@@ -14,6 +14,12 @@ if (window.location.pathname === "/app") {
 
 registerServiceWorker();
 
+// The launch screen never outstays a slow or failed first load.
+setTimeout(() => {
+  const el = document.getElementById("boot-splash");
+  if (el) { el.classList.add("is-done"); setTimeout(() => el.remove(), 300); }
+}, 8000);
+
 createRoot(document.getElementById("app-root")).render(
   <StrictMode>
     <App />

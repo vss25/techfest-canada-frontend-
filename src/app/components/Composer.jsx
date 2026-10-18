@@ -147,7 +147,7 @@ export default function Composer({ onClose }) {
           <div className="mention-list" role="listbox" aria-label="Tag someone">
             {suggestions.map((x) => (
               <button key={x.type + x.id} type="button" role="option" aria-selected="false" onClick={() => tag(x)}>
-                <Avatar name={x.name} src={x.photo} size={30} />
+                <Avatar name={x.name} src={x.photo} size={30} round={x.type === "speaker"} />
                 <span style={{ minWidth: 0 }}><b className="small" style={{ display: "block" }}>{x.name}{x.type === "speaker" ? " · Speaker" : ""}</b><span className="tiny muted ellipsis" style={{ display: "block" }}>{x.detail}</span></span>
               </button>
             ))}
@@ -189,7 +189,7 @@ export default function Composer({ onClose }) {
             <div className="mention-list">
               {pickList.map((x) => (
                 <button key={x.type + x.id} type="button" onClick={() => tag(x, true)}>
-                  <Avatar name={x.name} src={x.photo} size={34} />
+                  <Avatar name={x.name} src={x.photo} size={34} round={x.type === "speaker"} />
                   <span style={{ minWidth: 0 }}><b className="small" style={{ display: "block" }}>{x.name}{x.type === "speaker" ? " · Speaker" : ""}</b><span className="tiny muted ellipsis" style={{ display: "block" }}>{x.detail}</span></span>
                 </button>
               ))}

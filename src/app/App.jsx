@@ -9,6 +9,8 @@ import TabBar from "./components/TabBar";
 import { FEATURES } from "./lib/config";
 import { ToastHost, Spinner } from "./components/ui";
 import { InstallNudges, OfflineBar, UpdatePrompt } from "./components/AppNotices";
+import { onScreenChange } from "./lib/pwa";
+import { OfferModal } from "./components/GuestOffer";
 
 /* =========================================================
    The TTFC attendee app at /app/ (installable PWA).
@@ -37,6 +39,7 @@ const Pass = lazy(() => import("./screens/Pass"));
 const Install = lazy(() => import("./screens/Install"));
 const Legal = lazy(() => import("./screens/Legal"));
 const PostPage = lazy(() => import("./screens/PostPage"));
+const Points = lazy(() => import("./screens/Points"));
 
 /** Pages that fill the screen with their own composer: no tab bar. */
 const NO_TABS = [/^\/chat\//, /^\/group\//, /^\/discussion\//, /^\/session\/[^/]+\/live/, /^\/install/, /^\/login/];
@@ -74,8 +77,20 @@ function Boot() {
     }
   }, [location.pathname, location.search, navigate]);
 
-  // Scroll to top on page changes (not on tab-internal state).
-  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
+  // Scroll to top on page changes (not on tab-internal state); a quiet moment for a waiting update.
+  useEffect(() => { window.scrollTo(0, 0); onScreenChange(); }, [location.pathname]);
+  return null;
+}
+
+/** Fades out the launch screen from app/index.html once a real screen has rendered. */
+function hideSplash() {
+  const el = document.getElementById("boot-splash");
+  if (!el || el.classList.contains("is-done")) return;
+  el.classList.add("is-done");
+  setTimeout(() => { el.remove(); if (!document.querySelector(".login")) document.documentElement.classList.remove("dark-ground"); }, 300);
+}
+function SplashDone() {
+  useEffect(() => { requestAnimationFrame(hideSplash); }, []);
   return null;
 }
 
@@ -90,6 +105,7 @@ function Shell() {
     return (
       <Suspense fallback={<Spinner />}>
         <Login />
+        <SplashDone />
       </Suspense>
     );
   }
@@ -121,14 +137,17 @@ function Shell() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/profile/pass" element={<Pass />} />
+          <Route path="/points" element={<Points />} />
           <Route path="/install" element={<Install />} />
           <Route path="/legal/:doc" element={<Legal />} />
           <Route path="/login" element={signedOut ? <Login /> : <Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <SplashDone />
       </Suspense>
       {showTabs && <TabBar chatsDot={FEATURES.chats && chatsHasNew(s)} />}
       {!signedOut && <InstallNudges />}
+      {mode === "guest" && <OfferModal />}
       <UpdatePrompt />
     </div>
   );

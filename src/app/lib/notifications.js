@@ -1,6 +1,7 @@
 import { bestTicket } from "./auth";
 import { dayLabel, roomOf, sessionById } from "./cms";
 import { bookmarks } from "./social";
+import { FEATURES } from "./config";
 
 /* =========================================================
    The Notifications list (iOS NotificationsListView.items):
@@ -24,7 +25,7 @@ export function notificationItems({ social: s, cms: c, auth: a, now }) {
     out.push({
       id: `acc-${conn.id}`, kind: "connection", title: inPerson ? `You met ${u.name}` : `Connected with ${u.name}`,
       detail: inPerson ? "Badge scanned. Contact details saved to their card." : "You're in each other's network. Say hello in Chats.",
-      date: conn.respondedAt || conn.createdAt, link: `/chat/${encodeURIComponent(u.id)}`,
+      date: conn.respondedAt || conn.createdAt, link: FEATURES.chats ? `/chat/${encodeURIComponent(u.id)}` : "",
     });
   }
   for (const id of bookmarks(s)) {

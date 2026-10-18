@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Check, X, MessageCircle, UserPlus, UserCheck, UserRoundCheck, Clock, Smartphone, Hand, Mic, Store, BadgeCheck, Star, Package, CalendarClock, Sparkles } from "lucide-react";
-import { fileURL } from "../lib/config";
+import { fileURL, FEATURES } from "../lib/config";
 import { firstName } from "../lib/auth";
 import { canMessage, canRequest, connectionWith, requestConnection, respondConnection, social, withdrawConnection } from "../lib/social";
 import { confirmDialog, showAlert } from "../lib/ui";
@@ -44,7 +44,7 @@ export function ConnectionRow({ conn, mode = "invite", unread = 0, lastMessage }
         <div className="row" style={{ gap: 6 }}>
           <IconButton icon={Check} label={`Accept ${u.name}`} round filled small onClick={accept} />
           <IconButton icon={X} label={`Decline ${u.name}`} round small onClick={decline} />
-          <IconButton icon={MessageCircle} label={unread ? `${unread} unread from ${u.name}. Reply without accepting` : `Message ${u.name} without accepting`} round small badge={unread} onClick={() => navigate(`/chat/${encodeURIComponent(u.id)}`)} />
+          {FEATURES.chats && <IconButton icon={MessageCircle} label={unread ? `${unread} unread from ${u.name}. Reply without accepting` : `Message ${u.name} without accepting`} round small badge={unread} onClick={() => navigate(`/chat/${encodeURIComponent(u.id)}`)} />}
         </div>
       )}
       {mode === "sent" && <button type="button" className="btn btn-sm pressable" onClick={withdraw} aria-label={`Withdraw request to ${u.name}`}>Withdraw</button>}

@@ -8,7 +8,7 @@ import { content, flag, liveFlags, optionalText, text } from "../lib/content";
 import { refreshFeed, social, bookmarks } from "../lib/social";
 import { notificationItems, unreadCount } from "../lib/notifications";
 import { countdownTarget, EVENT_END, parts, shortCountdown, showsSessionHero, twoDigits } from "../lib/time";
-import { fileURL } from "../lib/config";
+import { fileURL, FEATURES } from "../lib/config";
 import { safeHref, useNow } from "../lib/ui";
 import { Avatar, Button, IconButton, Spinner } from "../components/ui";
 import { WelcomeCard } from "../components/AppNotices";
@@ -47,7 +47,7 @@ function SessionHero({ pick, now, c, flags }) {
   const speakers = session.speakerIds.map((id) => speakerById(id, c)).filter(Boolean);
   const names = speakers.length <= 2 ? speakers.map((s) => s.name).join(" & ") : `${speakers.slice(0, 2).map((s) => s.name).join(", ")} +${speakers.length - 2}`;
   const p = parts(session.start - now);
-  const polls = pollsOn(session, flags), qa = qaOn(session, flags);
+  const polls = FEATURES.live && pollsOn(session, flags), qa = FEATURES.live && qaOn(session, flags);
   return (
     <div className="stack" style={{ gap: 16 }}>
       {isOn ? (

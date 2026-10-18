@@ -6,6 +6,7 @@ import { refreshCMS } from "./lib/cms";
 import { refreshContent } from "./lib/content";
 import { social, startSocial, stopSocial, chatsHasNew } from "./lib/social";
 import TabBar from "./components/TabBar";
+import { FEATURES } from "./lib/config";
 import { ToastHost, Spinner } from "./components/ui";
 import { InstallNudges, OfflineBar, UpdatePrompt } from "./components/AppNotices";
 
@@ -126,7 +127,7 @@ function Shell() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-      {showTabs && <TabBar chatsDot={chatsHasNew(s)} />}
+      {showTabs && <TabBar chatsDot={FEATURES.chats && chatsHasNew(s)} />}
       {!signedOut && <InstallNudges />}
       <UpdatePrompt />
     </div>

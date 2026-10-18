@@ -5,6 +5,7 @@ import { cms, dayLabel, nameKeys, sessionsForSpeaker, speakerById, timeRange } f
 import { auth, firstName, isSignedIn } from "../lib/auth";
 import { canMessage, canRequest, connectionWith, requestConnection, respondConnection, social, withdrawConnection } from "../lib/social";
 import { confirmDialog, safeHref, showAlert } from "../lib/ui";
+import { FEATURES } from "../lib/config";
 import { Avatar, Button, Empty, Kicker, Spinner, TopBar } from "../components/ui";
 
 /* Speaker profile (iOS SpeakerDetailView), with Connect / Message when they're on the app. */
@@ -47,7 +48,7 @@ export default function SpeakerDetail() {
           {sp.isKeynote && <Kicker tone="accent" icon={Mic}>Keynote speaker</Kicker>}
         </div>
         <div className="pad stack-lg">
-          {isSignedIn(a) && account && (
+          {FEATURES.network && isSignedIn(a) && account && (
             <div className="stack-sm">
               {state?.status === "accepted" ? (
                 <Button size="lg" block icon={UserCheck} onClick={() => showAlert("Already connected", `You and ${sp.name} are in each other's network. Your chat is in the Chats tab.`)}>Connected</Button>
@@ -61,7 +62,7 @@ export default function SpeakerDetail() {
               {canMessage(account, s) && <Button size="lg" block icon={MessageCircle} onClick={() => navigate(`/chat/${encodeURIComponent(account.id)}`)}>Message</Button>}
             </div>
           )}
-          {isSignedIn(a) && !account && anyListing && (
+          {FEATURES.network && isSignedIn(a) && !account && anyListing && (
             <div className="note row-top"><Smartphone aria-hidden="true" style={{ width: 18, height: 18, flex: "none" }} /><span>{given} hasn't joined the TTFC app yet. You'll be able to connect and message once they sign in.</span></div>
           )}
           <section className="stack-sm">

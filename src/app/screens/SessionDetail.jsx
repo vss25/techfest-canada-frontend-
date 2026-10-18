@@ -10,7 +10,7 @@ import { clockFaked } from "../lib/time";
 import { showAlert, useNow } from "../lib/ui";
 import { Avatar, Button, Empty, Spinner, TopBar } from "../components/ui";
 import { TypeIcon } from "../components/SessionRow";
-import { EVENT } from "../lib/config";
+import { EVENT, FEATURES } from "../lib/config";
 
 /* Session page (iOS SessionDetailView). */
 
@@ -38,7 +38,7 @@ export default function SessionDetail() {
   const room = roomOf(session.stage);
   const speakers = session.speakerIds.map((x) => speakerById(x, c)).filter(Boolean);
   const flags = liveFlags(ct);
-  const hasLive = session.type !== "break" && session.type !== "ceremony" && liveOn(session, flags);
+  const hasLive = FEATURES.live && session.type !== "break" && session.type !== "ceremony" && liveOn(session, flags);
   const open = isLiveWindow(session, now) || clockFaked();
 
   const openLive = () => {

@@ -5,7 +5,7 @@ import { useStore } from "../lib/store";
 import { cms } from "../lib/cms";
 import { auth, can, firstName, isSignedIn } from "../lib/auth";
 import { blockUser, deletePost, report, social, toggleLike } from "../lib/social";
-import { fileURL } from "../lib/config";
+import { fileURL, FEATURES } from "../lib/config";
 import { mentionPath, splitMentions } from "../lib/mentions";
 import { postTime } from "../lib/time";
 import { confirmDialog, safeHref, showAlert } from "../lib/ui";
@@ -114,7 +114,7 @@ export default function PostCard({ post }) {
           badge={post.kind === "announcement" ? <span className="avatar-badge"><Megaphone aria-hidden="true" /></span> : null} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="row" style={{ gap: 6 }}>
-            {post.authorId && post.kind !== "announcement" ? <Link to={`/people/${encodeURIComponent(post.authorId)}`} className="post-author ellipsis" style={{ color: "inherit", textDecoration: "none" }}>{post.authorName}</Link> : <span className="post-author ellipsis">{post.authorName}</span>}
+            {FEATURES.network && post.authorId && post.kind !== "announcement" ? <Link to={`/people/${encodeURIComponent(post.authorId)}`} className="post-author ellipsis" style={{ color: "inherit", textDecoration: "none" }}>{post.authorName}</Link> : <span className="post-author ellipsis">{post.authorName}</span>}
             {post.kind === "announcement" ? <BadgeCheck aria-label="Official" style={{ width: 14, height: 14, color: "var(--pur-alt)", flex: "none" }} /> : badge ? <Kicker tone="accent">{badge}</Kicker> : null}
           </div>
           <div className="post-sub ellipsis">{subtitle} · <time dateTime={post.createdAt}>{postTime(post.createdAt)}</time>{post.status === "held" ? " · Held for review" : ""}</div>
@@ -134,7 +134,7 @@ export default function PostCard({ post }) {
         <div className={"post-body" + (!hasMedia && post.body.length < 120 ? " post-body--big" : "")} style={!expanded && long ? { display: "-webkit-box", WebkitLineClamp: hasMedia ? 4 : 10, WebkitBoxOrient: "vertical", overflow: "hidden" } : undefined}>
           {parts.map((p, i) => {
             if (!p.mention) return <span key={i}>{p.text}</span>;
-            const to = mentionPath(p.mention, c);
+            const to = p.mention.type === "speaker" || FEATURES.network ? mentionPath(p.mention, c) : null;
             return to ? <Link key={i} to={to} className="mention">{p.text}</Link> : <span key={i} className="mention">{p.text}</span>;
           })}
         </div>

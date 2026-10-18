@@ -9,6 +9,7 @@ import { LINKS } from "../lib/config";
 import { connectPayload, passPayload } from "../lib/qr";
 import { showAlert } from "../lib/ui";
 import { Button, Segmented, Switch, TopBar } from "../components/ui";
+import AppleWalletButton from "../components/AppleWallet";
 
 /* =========================================================
    My pass: the door QR ("TECHFEST:<ticketId>", the same code
@@ -90,6 +91,8 @@ function PassCode({ ticket, name }) {
         <span className="ticket-venue">The Westin Harbour Castle · Toronto, Canada</span>
         <span className="tiny muted row" style={{ gap: 6, justifyContent: "center" }}><Sun aria-hidden="true" style={{ width: 13, height: 13 }} />Show this at the door. Turn your screen brightness up.</span>
       </section>
+      {/* As on iOS (TicketDetailView): Apple devices only; the same badge as on the Profile. */}
+      <AppleWalletButton ticketId={ticket.ticketId} />
       <section className="stack-sm" aria-labelledby="link-h">
         <h3 id="link-h" className="ticket-link-h">Link another pass</h3>
         <p className="tiny muted" style={{ margin: 0 }}>Bought with a different email? Enter the last name and ticket ID from that ticket email.</p>

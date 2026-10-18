@@ -572,6 +572,31 @@ a { color: var(--pur-alt); }
 .level-bar i { display: block; height: 100%; background: #fff; border-radius: 3px; }
 .accent-text { color: var(--pur); }
 :root:not([data-theme="light"]) .accent-text { color: var(--pur-alt); }
+/* Points: Your activity (iOS PointsView.activity) and How to earn more */
+.activity-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.activity-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; min-height: 96px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); text-align: center; }
+.activity-tile b { font-size: 20px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.activity-tile > span:last-child { font-size: 11px; font-weight: 600; color: var(--tx2); line-height: 1.25; }
+.activity-ico { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--pur-tint); color: var(--pur); }
+:root:not([data-theme="light"]) .activity-ico { color: var(--pur-alt); }
+.activity-ico svg { width: 15px; height: 15px; }
+.rule-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); }
+.rule-points { flex: none; min-width: 44px; height: 26px; padding: 0 8px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--pur-tint); color: var(--pur); font-size: 13px; font-weight: 700; }
+:root:not([data-theme="light"]) .rule-points { color: var(--pur-alt); }
+.rule-go { flex: none; display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--elevated); border: 1px solid var(--border); color: var(--tx); font-size: 12.5px; font-weight: 600; text-decoration: none; white-space: nowrap; position: relative; }
+.rule-go::after { content: ""; position: absolute; inset: -4px 0; }
+.rule-progress { display: flex; flex-direction: column; gap: 5px; }
+.rule-bar { height: 4px; border-radius: 2px; background: var(--elevated); overflow: hidden; }
+.rule-bar i { display: block; height: 100%; background: var(--pur); border-radius: 2px; }
+/* Apple's "Add to Apple Wallet" badge (Profile, under the pass strip; My pass) */
+.apple-wallet { display: block; width: fit-content; max-width: 100%; margin: 0 auto; padding: 0; border: 0; background: none; border-radius: 12px; cursor: pointer; line-height: 0; }
+.apple-wallet svg { display: block; width: auto; max-width: 100%; height: 52px; }
+.apple-wallet:disabled { opacity: 0.6; cursor: progress; }
+.apple-wallet:focus-visible { outline: 2px solid var(--pur-alt); outline-offset: 3px; }
+/* Profile's top bar: the points pill on the left, the gear on the right, the title centred between. */
+.topbar-inner:has(> .topbar-side .points-pill) > .topbar-side { flex: 1 1 0; }
+.topbar .gear-btn { width: 40px; height: 40px; }
+.topbar .gear-btn svg { width: 17px; height: 17px; }
 .hero h1 { font-size: 24.5px; line-height: 1.2; margin: 0; font-weight: 700; letter-spacing: -0.01em; }
 .hero .lockup { font-size: 22px; font-weight: 700; letter-spacing: 0.07em; margin: 0; }
 .countdown { display: flex; gap: clamp(10px, 4vw, 16px); align-items: flex-end; }
@@ -807,7 +832,6 @@ a { color: var(--pur-alt); }
 
 /* Profile (iOS ProfileView) */
 .profile-block { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
-.profile-gear { align-self: stretch; display: flex; justify-content: flex-end; margin-bottom: -6px; }
 .gear-btn { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--elevated); border: 1px solid var(--border); color: var(--tx); padding: 0; position: relative; }
 .gear-btn::after { content: ""; position: absolute; inset: -4px; }
 .gear-btn svg { width: 16px; height: 16px; }
@@ -822,10 +846,6 @@ a { color: var(--pur-alt); }
 .edit-link { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; color: var(--pur); font-size: 12.5px; font-weight: 600; text-decoration: none; }
 :root:not([data-theme="light"]) .edit-link { color: var(--pur-alt); }
 .edit-link svg { width: 12px; height: 12px; stroke-width: 2.6; }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.stat { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 4px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); }
-.stat b { font-size: 22px; font-weight: 700; line-height: 1.1; }
-.stat span { font-size: 9.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--tx2); }
 .pass-cta { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: var(--r-card); color: #fff; text-decoration: none; background: linear-gradient(135deg, var(--pur-core), #8b52e0); }
 .pass-cta-qr { width: 30px; height: 30px; flex: none; }
 .pass-cta-label { display: block; font-size: 11.5px; font-weight: 600; opacity: 0.85; }

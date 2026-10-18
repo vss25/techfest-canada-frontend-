@@ -1,34 +1,35 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  BadgeCheck, Bell, Building2, ChevronRight, Download, FileText, HelpCircle, Link2, LogOut, MapPin, Moon, Pencil, QrCode, RotateCcw,
+  BadgeCheck, Bell, Building2, ChevronRight, Download, FileText, HelpCircle, Landmark, Link2, LogOut, MapPin, Moon, Pencil, QrCode, RotateCcw,
   ScanLine, Share, ShieldCheck, Smartphone, Sun, Ticket, Trophy, UserPlus, Users,
 } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, bestTicket, isSignedIn, isTeam, loadAccount, signOut } from "../lib/auth";
-import { bookmarks, social } from "../lib/social";
+import { social } from "../lib/social";
 import { pwa, promptInstall } from "../lib/pwa";
 import { theme, setTheme, THEME_LABEL } from "../lib/theme";
+import { points, refreshPoints } from "../lib/points";
 import { resetDemo } from "../lib/demo";
 import { patch } from "../lib/api";
 import { fileURL, LINKS, shortTopic } from "../lib/config";
-import { EVENT_START, now as clockNow } from "../lib/time";
 import { confirmDialog, safeHref, showAlert } from "../lib/ui";
 import { Avatar, Button, Sheet, Switch, TopBar } from "../components/ui";
-import { GearFill } from "../components/Glyphs";
+import { GearFill, TrophyFill } from "../components/Glyphs";
+import AppleWalletButton from "../components/AppleWallet";
 
 const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 
 /* =========================================================
-   Profile (iOS ProfileView): the gear (settings), your tile,
-   name, stats, the pass strip (pass, connect QR, Scan),
-   the contact card, connections, quick links, topics, then
-   points, notifications, theme and sign out. Guests get the
-   sign-in card.
+   Profile (iOS ProfileView): points (top left) and the gear
+   (top right), your tile and name, the pass strip (pass,
+   connect QR, Scan) with Add to Apple Wallet under it on Apple
+   devices, the contact card, availability, connections, Awards,
+   and Interests last. Notifications, theme, About and sign out
+   are in Settings (the gear). Guests get the sign-in card.
 ========================================================= */
 
 const THEME_ICON = { system: Smartphone, light: Sun, dark: Moon };
-const NEXT_THEME = { system: "dark", dark: "light", light: "system" };
 
 function Row({ to, href, icon, title, onClick, tone }) {
   const Icon = icon;
@@ -44,7 +45,9 @@ function Row({ to, href, icon, title, onClick, tone }) {
   return <button type="button" className="list-row pressable" onClick={onClick}>{inner}</button>;
 }
 
-/** iOS SettingsSheet: appearance, account (and the attendee-list switch), then links. */
+/** iOS SettingsSheet, most used first: notifications, theme, About AtlasLink; then account
+    (and the attendee-list switch), links, and sign out last. (Session reminders are app-only:
+    a browser can't alert you when the web app is closed.) */
 function SettingsSheet({ onClose }) {
   const a = useStore(auth);
   const p = useStore(pwa);
@@ -66,12 +69,20 @@ function SettingsSheet({ onClose }) {
       await loadAccount();
     } catch (e) { showAlert("Couldn't save", e.message); }
   };
+  const doSignOut = async () => {
+    const ok = await confirmDialog({ title: "Sign out of TTFC?", message: "Your schedule and chats stay on your account. Sign in again any time.", confirm: "Sign out", destructive: true });
+    if (ok) signOut();
+  };
   const passes = user?.tickets?.length || 0;
   const role = user?.isAdmin || user?.role === "admin" ? " · staff" : user?.role === "volunteer" ? " · volunteer" : "";
 
   return (
     <Sheet open onClose={onClose} title="Settings" full>
       <div className="sheet-body stack" style={{ overflow: "auto", flex: 1, paddingBottom: 24 }}>
+        <div className="settings-group">
+          <Row icon={Bell} title="Notifications" to="/notifications" />
+        </div>
+
         <section className="card stack-sm" aria-labelledby="appearance-h">
           <h2 id="appearance-h" className="eyebrow">Appearance</h2>
           <div className="theme-tiles" role="radiogroup" aria-label="Appearance">
@@ -85,6 +96,10 @@ function SettingsSheet({ onClose }) {
             })}
           </div>
         </section>
+
+        <div className="settings-group">
+          <Row icon={Landmark} title="About AtlasLink" href={`${LINKS.website}/about`} />
+        </div>
 
         <section className="card stack-sm" aria-labelledby="account-h">
           <h2 id="account-h" className="eyebrow">Account</h2>
@@ -112,25 +127,17 @@ function SettingsSheet({ onClose }) {
           {a.mode === "demo" && (
             <Row icon={RotateCcw} title="Reset demo" onClick={() => { resetDemo(); loadAccount(); window.location.reload(); }} />
           )}
+          <Row icon={LogOut} title={a.mode === "demo" ? "Leave the demo" : "Sign out"} onClick={doSignOut} tone="danger" />
         </div>
       </div>
     </Sheet>
   );
 }
 
-function Stat({ value, label }) {
-  return (
-    <div className="stat">
-      <b className="figure">{value}</b>
-      <span>{label}</span>
-    </div>
-  );
-}
-
 export default function Profile() {
   const a = useStore(auth);
   const s = useStore(social);
-  const t = useStore(theme);
+  const pts = useStore(points);
   const navigate = useNavigate();
   const [settings, setSettings] = useState(false);
   const [scan, setScan] = useState(false);
@@ -138,10 +145,7 @@ export default function Profile() {
   const me = a.me;
   const user = a.user;
 
-  const doSignOut = async () => {
-    const ok = await confirmDialog({ title: "Sign out of TTFC?", message: "Your schedule and chats stay on your account. Sign in again any time.", confirm: "Sign out", destructive: true });
-    if (ok) signOut();
-  };
+  useEffect(() => { if (signedIn) refreshPoints(); }, [signedIn]);
 
   if (!signedIn) {
     return (
@@ -170,11 +174,9 @@ export default function Profile() {
   const topics = me?.topics || user?.topics || [];
   const ticket = bestTicket(user);
   const accepted = s.connections.accepted;
-  const saved = bookmarks(s).length;
-  const daysToGo = Math.max(0, Math.floor((EVENT_START.getTime() - clockNow().getTime()) / 86400000));
   const country = me?.country || user?.country || "";
   const org = me?.organization || user?.organization || "";
-  const ThemeIcon = THEME_ICON[t.value] || Smartphone;
+  const total = pts.me?.total;
 
   const shareContact = async () => {
     const lines = [name];
@@ -190,12 +192,21 @@ export default function Profile() {
 
   return (
     <div className="page">
-      <TopBar title="Profile" back={false} right={a.mode === "demo" ? <span className="demo-pill">Demo</span> : null} />
+      {/* Points top left (as on Home), Settings top right: both always in reach. */}
+      <TopBar title="Profile" back={false}
+        left={(
+          <Link to="/points" className="points-pill pressable" aria-label={total != null ? `${total} festival points. Opens your points and the leaderboard` : "Festival points. Opens your points and the leaderboard"}>
+            <TrophyFill />{total != null && <span className="figure">{total}</span>}
+          </Link>
+        )}
+        right={(
+          <span className="row" style={{ gap: 8 }}>
+            {a.mode === "demo" && <span className="demo-pill">Demo</span>}
+            <button type="button" className="gear-btn pressable" aria-label="Settings" onClick={() => setSettings(true)}><GearFill /></button>
+          </span>
+        )} />
       <main id="main" className="pad stack-lg" style={{ paddingTop: 8 }}>
         <section className="profile-block" aria-label="You">
-          <div className="profile-gear">
-            <button type="button" className="gear-btn pressable" aria-label="Settings" onClick={() => setSettings(true)}><GearFill /></button>
-          </div>
           <Avatar name={name} src={fileURL(me?.avatarUrl)} size={110} />
           <div className="profile-names">
             <h1>{name}</h1>
@@ -213,23 +224,21 @@ export default function Profile() {
           </div>
         )}
 
-        <div className="stats">
-          <Stat value={accepted.length} label="Connections" />
-          <Stat value={saved} label="Saved" />
-          <Stat value={daysToGo} label="Days to go" />
-        </div>
-
-        {/* One strip (as on iOS and Android): the pass opens the ticket; then My QR and Scan */}
-        <div className="pass-strip">
-          <Link to="/profile/pass" className="pass-strip-pass pressable" aria-label={ticket ? `Your pass: ${ticket.tierName}${ticket ? ", linked" : ""}` : "Your pass: not linked yet. Tap to link it"}>
-            <span className="pass-strip-ico"><Ticket aria-hidden="true" /></span>
-            <span style={{ minWidth: 0 }}>
-              <span className="pass-strip-tier">{ticket ? ticket.tierName : "No pass yet"}{ticket && <BadgeCheck aria-hidden="true" />}</span>
-              {!ticket && <span className="pass-strip-sub">Link your pass</span>}
-            </span>
-          </Link>
-          <Link to="/profile/pass?tab=connect" className="pass-strip-btn pressable" aria-label="My connect QR"><span><QrCode aria-hidden="true" /></span>My QR</Link>
-          <button type="button" className="pass-strip-btn pressable" onClick={() => setScan(true)} aria-label="Scan a badge"><span><ScanLine aria-hidden="true" /></span>Scan</button>
+        {/* One strip (as on iOS and Android): the pass opens the ticket; then My QR and Scan.
+            Apple devices: Add to Apple Wallet right under it, once a pass is linked. */}
+        <div className="stack-sm">
+          <div className="pass-strip">
+            <Link to="/profile/pass" className="pass-strip-pass pressable" aria-label={ticket ? `Your pass: ${ticket.tierName}${ticket ? ", linked" : ""}` : "Your pass: not linked yet. Tap to link it"}>
+              <span className="pass-strip-ico"><Ticket aria-hidden="true" /></span>
+              <span style={{ minWidth: 0 }}>
+                <span className="pass-strip-tier">{ticket ? ticket.tierName : "No pass yet"}{ticket && <BadgeCheck aria-hidden="true" />}</span>
+                {!ticket && <span className="pass-strip-sub">Link your pass</span>}
+              </span>
+            </Link>
+            <Link to="/profile/pass?tab=connect" className="pass-strip-btn pressable" aria-label="My connect QR"><span><QrCode aria-hidden="true" /></span>My QR</Link>
+            <button type="button" className="pass-strip-btn pressable" onClick={() => setScan(true)} aria-label="Scan a badge"><span><ScanLine aria-hidden="true" /></span>Scan</button>
+          </div>
+          {ticket && <AppleWalletButton ticketId={ticket.ticketId} />}
         </div>
 
         <section className="stack-sm" aria-labelledby="contact-h">
@@ -274,13 +283,6 @@ export default function Profile() {
               : <p className="small muted" style={{ margin: 0 }}>No topics yet — tap Edit to pick what you're here for.</p>}
           </div>
         </section>
-
-        <div className="settings-group">
-          <Row icon={Trophy} title="Points & leaderboard" to="/points" />
-          <Row icon={Bell} title="Notifications" to="/notifications" />
-          <Row icon={ThemeIcon} title={`Theme · ${THEME_LABEL[t.value]}`} onClick={() => setTheme(NEXT_THEME[t.value] || "system")} />
-          <Row icon={LogOut} title={a.mode === "demo" ? "Leave the demo" : "Sign out"} onClick={doSignOut} tone="danger" />
-        </div>
       </main>
       {settings && <SettingsSheet onClose={() => setSettings(false)} />}
       {scan && <Suspense fallback={null}><BadgeScanner onClose={() => setScan(false)} onConnected={() => navigate("/network/connected")} /></Suspense>}

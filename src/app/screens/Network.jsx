@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Building2, Cpu, QrCode, ScanLine, Sparkles, Users, UserX, X, Heart, IdCard, Bookmark, SlidersHorizontal, Eye, MessageCircle } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, isSignedIn, signOut } from "../lib/auth";
@@ -229,8 +229,13 @@ export default function Network() {
   const { section } = useParams();
   const navigate = useNavigate();
   const people = useDirectory();
-  const [scan, setScan] = useState(false);
+  const location = useLocation();
   const signedIn = isSignedIn(a);
+  // Points › "Scan a badge" lands here with { scan: true }: open the scanner straight away.
+  const [scan, setScan] = useState(() => signedIn && !!location.state?.scan);
+  useEffect(() => {
+    if (location.state?.scan) navigate(location.pathname, { replace: true, state: null });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const tab = signedIn ? (SECTIONS.find((x) => x.id === section)?.id || "recommended") : "speakers";
 
   useEffect(() => {

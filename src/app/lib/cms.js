@@ -396,4 +396,10 @@ export function eventDay(at) {
   return null;
 }
 
+/** "Vic Fedeli, Christy Clark +2" */
+export function speakerLine(speakers) {
+  const names = speakers.slice(0, 2).map((s) => s.name).join(", ");
+  return speakers.length > 2 ? `${names} +${speakers.length - 2}` : names;
+}
+
 export { EVENT_START, EVENT_END };

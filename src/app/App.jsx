@@ -1,0 +1,144 @@
+import { lazy, Suspense, useEffect } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { useStore } from "./lib/store";
+import { auth, loadAccount } from "./lib/auth";
+import { refreshCMS } from "./lib/cms";
+import { refreshContent } from "./lib/content";
+import { social, startSocial, stopSocial, chatsHasNew } from "./lib/social";
+import TabBar from "./components/TabBar";
+import { ToastHost, Spinner } from "./components/ui";
+import { InstallNudges, OfflineBar, UpdatePrompt } from "./components/AppNotices";
+
+/* =========================================================
+   The TTFC attendee app at /app/ (installable PWA).
+   Five tabs like the iOS app: Home · Network · Chats ·
+   Schedule · Profile. Signed out → the sign-in screen (guests
+   can browse the agenda and speakers).
+========================================================= */
+
+const Login = lazy(() => import("./screens/Login"));
+const Home = lazy(() => import("./screens/Home"));
+const Notifications = lazy(() => import("./screens/Notifications"));
+const Schedule = lazy(() => import("./screens/Schedule"));
+const SessionDetail = lazy(() => import("./screens/SessionDetail"));
+const SessionLive = lazy(() => import("./screens/SessionLive"));
+const Network = lazy(() => import("./screens/Network"));
+const PersonProfile = lazy(() => import("./screens/PersonProfile"));
+const SpeakerDetail = lazy(() => import("./screens/SpeakerDetail"));
+const Organisations = lazy(() => import("./screens/Organisations"));
+const Chats = lazy(() => import("./screens/Chats"));
+const ChatThread = lazy(() => import("./screens/ChatThread"));
+const GroupDetail = lazy(() => import("./screens/GroupDetail"));
+const DiscussionDetail = lazy(() => import("./screens/DiscussionDetail"));
+const Profile = lazy(() => import("./screens/Profile"));
+const EditProfile = lazy(() => import("./screens/EditProfile"));
+const Pass = lazy(() => import("./screens/Pass"));
+const Install = lazy(() => import("./screens/Install"));
+const Legal = lazy(() => import("./screens/Legal"));
+const PostPage = lazy(() => import("./screens/PostPage"));
+
+/** Pages that fill the screen with their own composer: no tab bar. */
+const NO_TABS = [/^\/chat\//, /^\/group\//, /^\/discussion\//, /^\/session\/[^/]+\/live/, /^\/install/, /^\/login/];
+
+function Boot() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { mode } = useStore(auth);
+
+  // Agenda, speakers, app switches: for everyone, guests included.
+  useEffect(() => {
+    refreshCMS();
+    refreshContent();
+    const onVisible = () => { if (document.visibilityState === "visible") { refreshCMS(); refreshContent(); } };
+    document.addEventListener("visibilitychange", onVisible);
+    const t = setInterval(() => refreshCMS(), 5 * 60 * 1000);
+    return () => { document.removeEventListener("visibilitychange", onVisible); clearInterval(t); };
+  }, []);
+
+  // Signed in: account + the social layer (feed, people, chats…).
+  useEffect(() => {
+    if (mode === "user" || mode === "demo") {
+      loadAccount();
+      startSocial();
+      return () => stopSocial();
+    }
+    return undefined;
+  }, [mode]);
+
+  // /app/?install=1 (from the website's prompt) → the guide.
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    if (q.get("install") === "1" && !location.pathname.startsWith("/install")) {
+      navigate(`/install?from=${encodeURIComponent(q.get("from") || "link")}`, { replace: true });
+    }
+  }, [location.pathname, location.search, navigate]);
+
+  // Scroll to top on page changes (not on tab-internal state).
+  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
+  return null;
+}
+
+function Shell() {
+  const { mode } = useStore(auth);
+  const s = useStore(social);
+  const { pathname } = useLocation();
+  const signedOut = mode === "out";
+  const publicPage = /^\/(install|legal|login)/.test(pathname);
+
+  if (signedOut && !publicPage) {
+    return (
+      <Suspense fallback={<Spinner />}>
+        <Login />
+      </Suspense>
+    );
+  }
+
+  const showTabs = !signedOut && !NO_TABS.some((re) => re.test(pathname));
+  return (
+    <div className="shell">
+      <a className="skip-link" href="#main">Skip to content</a>
+      <div className="backdrop" aria-hidden="true" />
+      <OfflineBar />
+      <Suspense fallback={<div className="page"><Spinner /></div>}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/post/:id" element={<PostPage />} />
+          <Route path="/schedule" element={<Schedule />} />
+          <Route path="/session/:id" element={<SessionDetail />} />
+          <Route path="/session/:id/live" element={<SessionLive />} />
+          <Route path="/network" element={<Network />} />
+          <Route path="/network/:section" element={<Network />} />
+          <Route path="/people/:id" element={<PersonProfile />} />
+          <Route path="/speakers/:id" element={<SpeakerDetail />} />
+          <Route path="/organisations" element={<Organisations />} />
+          <Route path="/chats" element={<Chats />} />
+          <Route path="/chats/:section" element={<Chats />} />
+          <Route path="/chat/:userId" element={<ChatThread />} />
+          <Route path="/group/:id" element={<GroupDetail />} />
+          <Route path="/discussion/:id" element={<DiscussionDetail />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/edit" element={<EditProfile />} />
+          <Route path="/profile/pass" element={<Pass />} />
+          <Route path="/install" element={<Install />} />
+          <Route path="/legal/:doc" element={<Legal />} />
+          <Route path="/login" element={signedOut ? <Login /> : <Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+      {showTabs && <TabBar chatsDot={chatsHasNew(s)} />}
+      {!signedOut && <InstallNudges />}
+      <UpdatePrompt />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter basename="/app">
+      <Boot />
+      <Shell />
+      <ToastHost />
+    </BrowserRouter>
+  );
+}

@@ -6,6 +6,7 @@ import { auth, enterGuest, requestEmailLink, ticketLogin, verifyEmailCode, verif
 import { pwa } from "../lib/pwa";
 import { EVENT } from "../lib/config";
 import { Button } from "../components/ui";
+import { WelcomeCard } from "../components/AppNotices";
 
 /* =========================================================
    Sign-in, as in the apps: an emailed sign-in link + 6-digit
@@ -69,6 +70,14 @@ export default function Login() {
       }
     })();
   }, [navigate]);
+
+  // The sign-in screen is always dark: match the browser chrome / status bar to it.
+  useEffect(() => {
+    const metas = [...document.querySelectorAll('meta[name="theme-color"]')];
+    const prev = metas.map((m) => m.getAttribute("content"));
+    metas.forEach((m) => m.setAttribute("content", "#0B0823"));
+    return () => metas.forEach((m, i) => m.setAttribute("content", prev[i]));
+  }, []);
 
   // Resend countdown.
   useEffect(() => {
@@ -138,6 +147,7 @@ export default function Login() {
       </div>
 
       <main id="main" className="login-panel" aria-live="polite">
+        <div style={{ color: "var(--tx)" }}><WelcomeCard /></div>
         {a.notice && <div className="note note--gold" role="alert">{a.notice}</div>}
 
         {mode === "verifying" && (

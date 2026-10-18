@@ -76,11 +76,14 @@ function ttfcAppPwa() {
       if (!entry) return
       const files = new Set()
       const seen = new Set()
+      // The camera scanner (badge scan) is big and rarely used: fetched on first use, not precached.
+      const ONDEMAND = /react-qr-scanner|zxing-wasm|barcode-detector/
       const walk = (fileName) => {
         if (seen.has(fileName)) return
         seen.add(fileName)
         const c = bundle[fileName]
         if (!c) return
+        if (c.type === 'chunk' && c.moduleIds.some((id) => ONDEMAND.test(id)) && !c.moduleIds.some((id) => id.includes('/src/app/main.jsx'))) return
         files.add('/' + fileName)
         if (c.type !== 'chunk') return
         for (const css of c.viteMetadata?.importedCss || []) files.add('/' + css)

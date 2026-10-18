@@ -297,6 +297,110 @@ const MOCKS = {
       <PulseRect x="46" y="294" w="128" h="38" rx="11" />
     </Phone>
   ),
+  "ios26-sheet": () => (
+    <Phone crop={[200, 240]} title="The Share sheet: tap View More, then Add to Home Screen">
+      <rect x="12" y="200" width="196" height="228" rx="18" fill="#efeef3" />
+      <AppIcon x="26" y="214" s="28" />
+      <T x="62" y="226" size={11} weight={700}>TTFC 2026</T>
+      <T x="62" y="240" size={9} color={GREY}>thetechfestival.com</T>
+      {["Copy", "Bookmarks", "Reading List", "View More"].map((l, i) => (
+        <g key={l}>
+          <circle cx={40 + i * 47} cy="290" r="17" fill="#e3e1e8" />
+          <T x={40 + i * 47} y="322" size={7.5} anchor="middle">{l}</T>
+        </g>
+      ))}
+      <path d="M175 286 l6 6 l6 -6" fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round" />
+      <Pulse x={181} y={290} r={19} />
+      <rect x="22" y="340" width="176" height="30" rx="8" fill="#fff" />
+      <T x="34" y="359" weight={700}>Add to Home Screen</T>
+      <g fill="none" stroke={INK} strokeWidth="1.6"><rect x="172" y="347" width="15" height="15" rx="4" /><path d="M179.5 351 v7 M176 354.5 h7" /></g>
+    </Phone>
+  ),
+  "desktop-dialog": () => (
+    <svg viewBox="0 0 320 210" role="img" aria-label="The browser's Install app box: click Install">
+      <rect x="10" y="10" width="300" height="180" rx="12" fill="#16112a" />
+      <rect x="18" y="18" width="284" height="164" rx="7" fill={PAGE} />
+      <rect x="18" y="18" width="284" height="30" rx="7" fill="#fff" />
+      <rect x="150" y="52" width="148" height="92" rx="10" fill="#fff" stroke={LINE} />
+      <T x="162" y="72" size={11} weight={700}>Install app?</T>
+      <AppIcon x="162" y="82" s="26" />
+      <T x="196" y="94" size={10} weight={600}>TTFC</T>
+      <T x="196" y="106" size={8} color={GREY}>thetechfestival.com</T>
+      <rect x="200" y="118" width="44" height="18" rx="9" fill="#e7e5ec" /><T x="222" y="131" size={9} anchor="middle">Cancel</T>
+      <rect x="248" y="118" width="44" height="18" rx="9" fill={HI} /><T x="270" y="131" size={9} weight={700} color="#fff" anchor="middle">Install</T>
+      <PulseRect x={245} y={115} w={50} h={24} rx={12} />
+    </svg>
+  ),
+  "edge-menu": () => (
+    <svg viewBox="0 0 320 210" role="img" aria-label="Edge's ••• menu: Apps, then Install this site as an app">
+      <rect x="10" y="10" width="300" height="180" rx="12" fill="#16112a" />
+      <rect x="18" y="18" width="284" height="164" rx="7" fill={PAGE} />
+      <rect x="18" y="18" width="284" height="30" rx="7" fill="#fff" />
+      <Address y={20} x={40} w={200} text="thetechfestival.com/app/" />
+      <Dots x={286} y={33} />
+      <rect x="150" y="50" width="146" height="70" rx="6" fill="#fff" stroke={LINE} />
+      <T x="160" y="68" size={10}>New tab</T>
+      <T x="160" y="88" size={10} weight={700}>Apps ›</T>
+      <T x="160" y="108" size={10}>Settings</T>
+      <rect x="120" y="92" width="170" height="26" rx="6" fill="#fff" stroke={LINE} />
+      <T x="130" y="109" size={9.5} weight={700}>Install this site as an app</T>
+      <PulseRect x={118} y={90} w={174} h={30} rx={7} />
+    </svg>
+  ),
+  "mac-file-menu": () => (
+    <svg viewBox="0 0 320 210" role="img" aria-label="Safari's File menu: Add to Dock">
+      <rect x="10" y="10" width="300" height="180" rx="12" fill="#16112a" />
+      <rect x="18" y="18" width="284" height="164" rx="7" fill={PAGE} />
+      <rect x="18" y="18" width="284" height="16" fill="#e9e7ee" />
+      <T x="28" y="30" size={9} weight={700}>Safari</T>
+      <T x="66" y="30" size={9} weight={700} color={HI}>File</T>
+      <T x="92" y="30" size={9}>Edit</T>
+      <T x="116" y="30" size={9}>View</T>
+      <rect x="58" y="36" width="130" height="96" rx="6" fill="#fff" stroke={LINE} />
+      {["New Window", "New Tab", "Open File…", "Share"].map((l, i) => <T key={l} x={68} y={52 + i * 16} size={9}>{l}</T>)}
+      <T x="68" y="122" size={9.5} weight={700}>Add to Dock…</T>
+      <PulseRect x={60} y={110} w={126} h={18} rx={4} />
+    </svg>
+  ),
+  "mac-add-dock": () => (
+    <svg viewBox="0 0 320 210" role="img" aria-label="Add to Dock: click Add">
+      <rect x="10" y="10" width="300" height="180" rx="12" fill="#16112a" />
+      <rect x="18" y="18" width="284" height="164" rx="7" fill={PAGE} />
+      <rect x="70" y="44" width="180" height="110" rx="10" fill="#fff" stroke={LINE} />
+      <T x="160" y="64" size={11} weight={700} anchor="middle">Add to Dock</T>
+      <AppIcon x="86" y="76" s="34" />
+      <rect x="128" y="80" width="108" height="18" rx="4" fill="#f2f1f5" /><T x="134" y="93" size={9.5}>TTFC</T>
+      <T x="128" y="110" size={7.5} color={GREY}>thetechfestival.com/app/</T>
+      <rect x="140" y="124" width="44" height="18" rx="5" fill="#e7e5ec" /><T x="162" y="137" size={9} anchor="middle">Cancel</T>
+      <rect x="190" y="124" width="44" height="18" rx="5" fill="#0a84ff" /><T x="212" y="137" size={9} weight={700} color="#fff" anchor="middle">Add</T>
+      <PulseRect x={187} y={121} w={50} h={24} rx={7} />
+    </svg>
+  ),
+  "mac-dock": () => (
+    <svg viewBox="0 0 320 210" role="img" aria-label="The Dock with the TTFC icon">
+      <rect x="10" y="10" width="300" height="180" rx="12" fill="#16112a" />
+      <rect x="18" y="18" width="284" height="164" rx="7" fill="#3b2f6b" />
+      <rect x="60" y="146" width="200" height="30" rx="10" fill="rgba(255,255,255,0.25)" />
+      {[0, 1, 2, 4].map((i) => <rect key={i} x={70 + i * 38} y="150" width="22" height="22" rx="6" fill={["#5a8cff", "#34c759", "#ff9f0a", "#bf5af2"][i % 4]} />)}
+      <AppIcon x={146} y={150} s={22} />
+      <Pulse x={157} y={161} r={17} />
+      <T x="157" y="140" size={9} color="#fff" anchor="middle">TTFC</T>
+    </svg>
+  ),
+  "win-start": () => (
+    <svg viewBox="0 0 320 210" role="img" aria-label="The Start menu: search TTFC">
+      <rect x="10" y="10" width="300" height="180" rx="12" fill="#16112a" />
+      <rect x="18" y="18" width="284" height="164" rx="7" fill="#1f3b63" />
+      <rect x="80" y="36" width="160" height="120" rx="8" fill="#f3f3f3" />
+      <rect x="92" y="46" width="136" height="18" rx="9" fill="#fff" stroke={LINE} /><T x="102" y="59" size={9}>TTFC</T>
+      <AppIcon x={96} y={76} s={26} />
+      <T x="130" y="88" size={10} weight={700}>TTFC</T>
+      <T x="130" y="100" size={8} color={GREY}>App</T>
+      <PulseRect x={92} y={72} w={136} h={34} rx={6} />
+      <rect x="18" y="164" width="284" height="18" fill="#e9eef5" />
+      <rect x="150" y="167" width="12" height="12" rx="2" fill="#0a64c8" />
+    </svg>
+  ),
   desktop: () => (
     <svg viewBox="0 0 320 210" role="img" aria-label="A computer browser with the install icon in the address bar">
       <rect x="10" y="10" width="300" height="180" rx="12" fill="#16112a" />

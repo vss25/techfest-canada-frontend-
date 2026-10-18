@@ -9,7 +9,7 @@ import { ApiError } from "./api";
 ========================================================= */
 
 export const DEMO_TOKEN = "demo";
-const KEY = "ttfc.demo.state.v2";
+const KEY = "ttfc.demo.state.v3";
 const ME = "demo-me";
 
 const hoursAgo = (h) => new Date(Date.now() - h * 3600000).toISOString();
@@ -29,7 +29,7 @@ function seed() {
   const people = [
     person("p-hannah", "Hannah Liu", "Product Manager", "Shopify", { topics: ["Sustainability & CleanTech", "Artificial Intelligence"], tagline: "Commerce, climate and the tools in between" }),
     person("p-connor", "Connor O'Brien", "Quantum Hardware Lead", "Xanadu", { topics: ["Quantum Computing"] }),
-    person("p-priya", "Priya Raman", "Director, Supply Chain AI", "DHL", { topics: ["Artificial Intelligence", "Supply Chain, Manufacturing & Infrastructure"], availabilitySlots: ["d1-am"] }),
+    person("p-priya", "Priya Raman", "Director, Supply Chain AI", "DHL", { topics: ["Artificial Intelligence", "Supply Chain, Manufacturing & Infrastructure"], availabilitySlots: ["d1-10", "d2-14"], meetingSpot: "Expo floor" }),
     person("p-marcus", "Marcus Chen", "Founder", "Qubit Labs", { topics: ["Quantum Computing", "Startups & Capital"] }),
     person("p-sofia", "Sofia Martins", "Chief Information Security Officer", "Maple Health Network", { topics: ["Cybersecurity", "Healthcare & Lifesciences"] }),
     person("p-daniel", "Daniel Okafor", "VP, Data & AI", "Lakeshore Insurance", { topics: ["Banking, Financial Services & Insurance", "Artificial Intelligence"] }),

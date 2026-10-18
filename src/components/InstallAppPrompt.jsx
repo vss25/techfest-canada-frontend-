@@ -1,25 +1,30 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { isStandalone, markInstalled, markedInstalled } from "../lib/pwaPlatform";
+import { detectOS, isStandalone, markInstalled, markedInstalled } from "../lib/pwaPlatform";
 import { track } from "../lib/pwaEvents";
 
 /* =========================================================
-   "Get the TTFC app" bottom sheet for phone visitors on the
-   marketing site. Loaded only on phones (App.jsx), shown only
-   when staff switch it on (App content › flag.pwaPrompt) or
-   with ?pwa-preview=1. "Show me how" opens /app/?install=1,
-   where the step-by-step guide takes over.
+   "Get the TTFC app" for website visitors: a bottom sheet on
+   phones, a compact centred card on computers that can install
+   apps (App.jsx decides who loads this at all). Shown once per
+   browser session after 5 s of visible time (counted across
+   page views), only when staff switch it on (App content ›
+   flag.pwaPrompt) or with ?pwa-preview=1. "Show me how" opens
+   /app/?install=1, where the step-by-step guide (and Chrome's
+   own install prompt) takes over, so installs land on /app/.
 ========================================================= */
 
 const API = import.meta.env.VITE_ADMIN_API_URL || "https://techfest-canada-backend.onrender.com/api";
 const FLAG_KEY = "ttfc.pwa.promptFlag";
 const PREVIEW_KEY = "ttfc.pwa.preview";
 const SEEN_KEY = "ttfc.pwa.promptSeen";
+const VISIBLE_KEY = "ttfc.pwa.visibleMs";
 const SNOOZE_KEY = "ttfc.pwa.snoozeUntil";
 const SNOOZE_MS = 7 * 24 * 3600 * 1000;
+const DELAY_MS = 5000;
 
-/** Never interrupt staff, payments, sign-in links or forms. */
-const BLOCKED = [/^\/admin/, /^\/admin-login/, /checkout/, /\/pay(\/|$)/, /^\/app-login/, /^\/reset-password/, /^\/auth-success/, /^\/rsvp/, /^\/complete-profile/, /^\/kyc/, /^\/app(\/|$)/];
+/** Never interrupt staff, payments, sign-in links or forms, or the app itself. */
+const BLOCKED = [/^\/admin/, /checkout/, /\/pay(\/|$)/, /^\/app-login/, /^\/reset-password/, /^\/auth-success/, /^\/rsvp/, /^\/complete-profile/, /^\/kyc/, /^\/app(\/|$)/];
 
 const ss = {
   get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },
@@ -49,7 +54,7 @@ async function promptSwitchOn() {
     ss.set(FLAG_KEY, on ? "1" : "0");
     return on;
   } catch {
-    return false; // not cached: try again next page load
+    return false; // not cached: asked again on the next page load
   }
 }
 
@@ -58,10 +63,9 @@ export default function InstallAppPrompt() {
   const [eligible, setEligible] = useState(false);
   const [open, setOpen] = useState(false);
   const preview = useRef(previewForced());
-  const start = useRef(0);
-  const scrolled = useRef(false);
+  const [isDesktop] = useState(() => detectOS() === "desktop");
 
-  // Switch + "already installed" / snooze checks, once.
+  // Switch + "already installed" / snooze / once-per-session checks.
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -77,27 +81,27 @@ export default function InstallAppPrompt() {
     return () => { alive = false; };
   }, []);
 
-  // After a short delay or the first scroll, once the cookie banner is answered.
+  // 5 s of visible time this session, across page views; paused while the tab is hidden.
   useEffect(() => {
     if (!eligible || open) return undefined;
-    const blocked = BLOCKED.some((re) => re.test(pathname.toLowerCase()));
-    if (blocked) return undefined;
-    if (!start.current) start.current = Date.now();
-    const onScroll = () => { if (window.scrollY > 160) scrolled.current = true; };
-    window.addEventListener("scroll", onScroll, { passive: true });
+    if (BLOCKED.some((re) => re.test(pathname.toLowerCase()))) return undefined;
+    const need = preview.current ? 1200 : DELAY_MS;
+    let last = Date.now();
     const tick = setInterval(() => {
-      const waited = Date.now() - start.current;
-      const ready = preview.current ? waited > 1200 : (waited > 9000 || (scrolled.current && waited > 2500));
-      const consentAnswered = preview.current || ls.get("tfc_cookie_consent") !== null;
-      if (ready && consentAnswered) {
+      const t = Date.now();
+      const visible = document.visibilityState === "visible";
+      const total = Number(ss.get(VISIBLE_KEY) || 0) + (visible ? Math.min(t - last, 1000) : 0);
+      last = t;
+      ss.set(VISIBLE_KEY, String(total));
+      if (total >= need) {
         clearInterval(tick);
         ss.set(SEEN_KEY, "1");
         setOpen(true);
-        track("pwa_prompt_shown", { page: pathname });
+        track("pwa_prompt_shown", { page: pathname, layout: isDesktop ? "desktop" : "phone" });
       }
-    }, 700);
-    return () => { clearInterval(tick); window.removeEventListener("scroll", onScroll); };
-  }, [eligible, open, pathname]);
+    }, 250);
+    return () => clearInterval(tick);
+  }, [eligible, open, pathname, isDesktop]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -132,10 +136,13 @@ export default function InstallAppPrompt() {
 
   const font = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
   const link = { background: "none", border: 0, color: "rgba(255,255,255,0.82)", font: `600 15px/1.2 ${font}`, minHeight: 44, padding: "0 10px", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 };
+  const panel = isDesktop
+    ? { width: "min(440px, calc(100vw - 32px))", padding: "26px 24px 18px", borderRadius: 22, boxShadow: "0 24px 70px rgba(0,0,0,0.55)" }
+    : { width: "100%", maxWidth: 520, padding: "22px 20px calc(18px + env(safe-area-inset-bottom))", borderRadius: "24px 24px 0 0", boxShadow: "0 -12px 40px rgba(0,0,0,0.45)" };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 99998, display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: font }}>
-      <style>{"@keyframes ttfcSheetIn{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}@media (prefers-reduced-motion: reduce){.ttfc-sheet{animation:none!important}}"}</style>
+    <div style={{ position: "fixed", inset: 0, zIndex: 100000, display: "flex", alignItems: isDesktop ? "center" : "flex-end", justifyContent: "center", fontFamily: font }}>
+      <style>{"@keyframes ttfcSheetIn{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}@media (prefers-reduced-motion: reduce){.ttfc-sheet{animation:none!important}}.ttfc-sheet button:focus-visible{outline:2.5px solid #fff;outline-offset:2px}"}</style>
       <div onClick={notNow} aria-hidden="true" style={{ position: "absolute", inset: 0, background: "rgba(6,2,15,0.55)" }} />
       <section
         className="ttfc-sheet"
@@ -143,10 +150,8 @@ export default function InstallAppPrompt() {
         aria-modal="true"
         aria-labelledby="ttfc-install-title"
         style={{
-          position: "relative", width: "100%", maxWidth: 520, boxSizing: "border-box",
-          padding: "22px 20px calc(18px + env(safe-area-inset-bottom))", borderRadius: "24px 24px 0 0",
-          background: "radial-gradient(120% 90% at 100% 0%, rgba(139,82,224,0.45), transparent 60%), #160d34",
-          color: "#fff", boxShadow: "0 -12px 40px rgba(0,0,0,0.45)", animation: "ttfcSheetIn .28s ease-out",
+          position: "relative", boxSizing: "border-box", color: "#fff", animation: "ttfcSheetIn .28s ease-out",
+          background: "radial-gradient(120% 90% at 100% 0%, rgba(139,82,224,0.45), transparent 60%), #160d34", ...panel,
         }}
       >
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
@@ -159,7 +164,9 @@ export default function InstallAppPrompt() {
           </div>
         </div>
         <p style={{ margin: "14px 0 18px", font: `400 15px/1.45 ${font}`, color: "rgba(219,206,255,0.78)" }}>
-          Free, no app store needed. It takes about 30 seconds and we'll show you every tap.
+          {isDesktop
+            ? "Install it on this computer: it opens in its own window, straight to your schedule. Free, and it takes a few seconds."
+            : "Free, no app store needed. It takes about 30 seconds and we'll show you every tap."}
         </p>
         <button
           type="button"
@@ -167,7 +174,7 @@ export default function InstallAppPrompt() {
           autoFocus
           style={{ width: "100%", minHeight: 56, border: 0, borderRadius: 14, background: "#8B52E0", color: "#fff", font: `700 18px/1 ${font}`, cursor: "pointer" }}
         >
-          Show me how
+          {isDesktop ? "Install app" : "Show me how"}
         </button>
         <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
           <button type="button" onClick={notNow} style={link}>Not now</button>

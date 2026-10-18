@@ -4,6 +4,7 @@ import "./app.css";
 // Order matters: auth configures the API/event clients before pwa records the launch.
 import "./lib/auth";
 import { registerServiceWorker } from "./lib/pwa";
+import "./lib/theme";
 import App from "./App.jsx";
 
 // /app (no slash) → /app/ so the page sits inside the service worker's scope.

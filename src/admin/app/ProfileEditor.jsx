@@ -8,6 +8,20 @@ import { FIELDS_OF_WORK, GENDERS, JOB_LEVELS, OBJECTIVES, SALUTATIONS, TOPICS } 
 
 /* Full profile editor for an app user (PATCH /api/console/users/:id, only changed fields). */
 
+const ROLES = [
+  { value: "user", label: "Attendee", hint: "A regular app account." },
+  { value: "admin", label: "Staff", hint: "Can sign in to this admin panel. New staff get the Staff level; change it under Staff accounts." },
+  { value: "volunteer", label: "Volunteer", hint: "Volunteers can use the app's staff sign-in for door check-in. They can't open this admin panel." },
+];
+const roleLabel = (r) => ROLES.find((x) => x.value === r)?.label || "Attendee";
+
+/** What a role change does, for the confirm dialog. */
+function roleChangeText(from, to) {
+  if (to === "admin") return "give them staff access to this admin panel";
+  if (to === "volunteer") return from === "admin" ? "replace their staff access with volunteer access (app check-in only)" : "make them a volunteer (app staff sign-in and door check-in)";
+  return from === "volunteer" ? "remove their volunteer access" : "remove their staff access";
+}
+
 const TEXT = ["salutation", "name", "email", "gender", "tagline", "jobTitle", "organization", "jobLevel", "fieldOfWork", "linkedinUrl", "country", "meetingSpot", "bannedReason"];
 const LISTS = ["topics", "objectives", "availabilitySlots"];
 
@@ -18,7 +32,7 @@ const fromUser = (u) => ({
   canMessage: !u.messagesOff,
   canRequest: !u.requestsOff,
   appOnboarded: !!u.appOnboarded,
-  role: u.role === "admin" ? "admin" : "user",
+  role: ROLES.some((r) => r.value === u.role) ? u.role : "user",
   banned: !!u.banned,
 });
 
@@ -145,7 +159,7 @@ export default function ProfileEditor({ id, user, onSaved, onDelete }) {
     const body = { ...changes };
     if (body.banned === true || ("bannedReason" in body && form.banned)) body.bannedReason = form.bannedReason.trim();
     const sensitive = [];
-    if ("role" in body) sensitive.push(body.role === "admin" ? "give them staff access to this admin panel" : "remove their staff access");
+    if ("role" in body) sensitive.push(roleChangeText(orig.role, body.role));
     if ("banned" in body) sensitive.push(body.banned ? "suspend their account" : "reinstate their account");
     if (sensitive.length) { setConfirm({ body, sensitive }); return; }
     try { await send(body); } catch { /* toast shown */ }
@@ -209,9 +223,15 @@ export default function ProfileEditor({ id, user, onSaved, onDelete }) {
             <p className="text-xs leading-relaxed text-ttfc-muted">For VIPs such as ministers who may not reply. People they've accepted or written to can still message them; staff always can. Hiding them from the list is separate.</p>
             <Switch label="Finished app profile" description="Off sends them through the app's profile set-up again next time they open it." checked={form.appOnboarded} onChange={set("appOnboarded")} />
             {isManagement ? (
-              <Switch label="Staff (admin) access" description="Can sign in to this admin panel. New staff get the Staff level; change it under Staff accounts." checked={form.role === "admin"} onChange={(v) => set("role")(v ? "admin" : "user")} />
+              <Field label="Role" hint={ROLES.find((r) => r.value === form.role)?.hint}>
+                {(fid) => (
+                  <Select id={fid} value={form.role} onChange={set("role")} className="sm:max-w-xs">
+                    {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  </Select>
+                )}
+              </Field>
             ) : (
-              <p className="text-xs text-ttfc-muted">Staff access: <b className="text-ttfc-text">{form.role === "admin" ? "Yes" : "No"}</b> — only management can change this.</p>
+              <p className="text-xs text-ttfc-muted">Role: <b className="text-ttfc-text">{roleLabel(form.role)}</b>. Only management can change this.</p>
             )}
             <Switch label="Suspended" description="Suspended accounts can't use the app's community features." checked={form.banned} onChange={set("banned")} />
             {form.banned && (

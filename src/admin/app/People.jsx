@@ -16,6 +16,7 @@ export default function People() {
   const qs = new URLSearchParams({ page: String(page) });
   if (dq) qs.set("q", dq);
   if (filter === "admin") qs.set("role", "admin");
+  if (filter === "volunteer") qs.set("role", "volunteer");
   if (filter === "banned") qs.set("banned", "true");
   const { data, error, loading, reload, refreshing } = useApi(`/console/users?${qs}`);
 
@@ -41,6 +42,7 @@ export default function People() {
         <Select value={filter} onChange={(e) => update({ f: e.target.value, page: 0 })} aria-label="Filter people" className="sm:w-48">
           <option value="">Everyone</option>
           <option value="admin">Staff</option>
+          <option value="volunteer">Volunteers</option>
           <option value="banned">Suspended</option>
         </Select>
       </div>
@@ -62,6 +64,7 @@ export default function People() {
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-semibold">{u.name}</span>
                         {u.role === "admin" && <Badge tone="pink">Staff</Badge>}
+                        {u.role === "volunteer" && <Badge tone="purple">Volunteer</Badge>}
                         {u.banned && <Badge tone="bad">Suspended</Badge>}
                         {u.directoryHidden && <Badge>Hidden</Badge>}
                         {u.messagesOff && <Badge>No messages</Badge>}

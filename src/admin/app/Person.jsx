@@ -173,6 +173,7 @@ function PersonView({ id }) {
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{u.name}</h1>
             {u.role === "admin" && <Badge tone="pink">Staff</Badge>}
+            {u.role === "volunteer" && <Badge tone="purple">Volunteer</Badge>}
             {u.banned && <Badge tone="bad">Suspended</Badge>}
           </div>
           <p className="mt-1 text-sm text-ttfc-muted">

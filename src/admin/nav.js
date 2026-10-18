@@ -1,9 +1,10 @@
+import { Contact } from "lucide-react";
 import {
   CalendarDays,
   LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
   Megaphone, ScrollText, UserCog, Power, KeyRound, FileDown, Landmark, Inbox, CalendarCheck, IdCard, Share2, TicketPlus, BellRing,
-  Award, Store, ShieldCheck, Contact,
+  Award, Store, ShieldCheck,
 } from "lucide-react";
 
 /** Sidebar structure. `to` is relative to /admin. */

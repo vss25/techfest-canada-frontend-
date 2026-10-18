@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Check, Copy, Download, Search } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { TopBar, Button } from "../components/ui";
-import InstallMockup from "../components/InstallMockups";
+import InstallMockup, { GuideClip } from "../components/InstallMockups";
 import { useStore } from "../lib/store";
 import { pwa, promptInstall } from "../lib/pwa";
 import { flowFor, APP_URL } from "../lib/installFlows";
@@ -106,7 +106,7 @@ export default function Install() {
           </div>
         )}
         <p className="lead">{step.lead}</p>
-        <InstallMockup name={step.mock} />
+        {step.clip ? <GuideClip name={step.clip} label={`Screen recording: ${step.title}`} /> : <InstallMockup name={step.mock} item={step.item} />}
         {step.hint && <p className="hint">{step.hint}</p>}
 
         {step.action === "install-prompt" && (

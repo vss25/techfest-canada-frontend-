@@ -8,11 +8,18 @@ import { APPLIED_SECTORS, CONSENT_VERSION, TECH_PILLARS, fileURL } from "../lib/
 import { blobToDataURL, compressImage } from "../lib/media";
 import { refreshPeople } from "../lib/social";
 import { showAlert } from "../lib/ui";
-import { Avatar, Button, Chip, TopBar } from "../components/ui";
+import { Avatar, Button, Chip, Spinner, TopBar } from "../components/ui";
 
 /* Edit profile (iOS EditProfileView): saved with PATCH /api/profile, photo with PUT /api/profile/avatar. */
 
 export default function EditProfile() {
+  const a = useStore(auth);
+  // Opened straight from a link: wait for the account so the form starts filled in.
+  if (!a.me) return <div className="page"><TopBar title="Edit profile" /><Spinner label="Loading your profile" /></div>;
+  return <EditForm key={a.me.id || "me"} />;
+}
+
+function EditForm() {
   const a = useStore(auth);
   const navigate = useNavigate();
   const me = a.me || {};

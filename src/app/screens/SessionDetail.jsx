@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { BarChart3, Bookmark, BookmarkCheck, CalendarDays, ChevronRight, Clock, CheckCircle2, MapPin, Share2, Tag, Layers } from "lucide-react";
+import { BarChart3, Bookmark, BookmarkCheck, CalendarDays, ChevronRight, Clock, CheckCircle2, MapPin, Share, Tag, Layers } from "lucide-react";
 import { useStore } from "../lib/store";
 import { cms, dayLabel, isLiveWindow, liveOn, refreshCMS, roomOf, sessionById, speakerById, timeRange, typeLabel, liveWindow } from "../lib/cms";
 import { content, liveFlags } from "../lib/content";
@@ -119,7 +119,7 @@ export default function SessionDetail() {
             {saved ? (isSignedIn(a) ? "Registered · Remove" : "Saved · Remove") : (isSignedIn(a) ? "Register & add to schedule" : "Save to my schedule")}
           </Button>
           {!isSignedIn(a) && <p className="tiny muted center" style={{ margin: 0 }}>Saved on this device. Sign in to join sessions, polls and Q&A.</p>}
-          <Button size="lg" block icon={Share2} onClick={share}>Share session</Button>
+          <Button size="lg" block icon={Share} onClick={share}>Share session</Button>
         </div>
       </main>
     </div>

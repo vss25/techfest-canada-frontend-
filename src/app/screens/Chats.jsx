@@ -33,7 +33,7 @@ function ThreadRow({ t, s }) {
         <span className="row" style={{ gap: 6 }}>
           <span className="person-name ellipsis">{u.name}</span>
           {unread && <span className="live-dot" style={{ color: "var(--pur-alt)", animation: "none" }} aria-label="New message" />}
-          {conn?.status !== "accepted" && <span className="kicker kicker--muted" style={{ fontSize: 10.5 }}>Not connected</span>}
+          {conn?.status !== "accepted" && <span className="pill-outline">Not connected</span>}
           <span className="spacer" />
           <time className="tiny muted" dateTime={t.lastMessage?.createdAt}>{timeAgo(t.lastMessage?.createdAt)}</time>
         </span>
@@ -153,7 +153,7 @@ function Discussions() {
   return (
     <div className="stack">
       <div className="pad row">
-        <div style={{ flex: 1 }}><div className="eyebrow">Ask the community</div><h2 style={{ margin: 0, fontSize: 20 }}>Discussions</h2></div>
+        <div style={{ flex: 1 }}><div className="eyebrow eyebrow--muted">Ask the community</div><h2 className="section-h">Discussions</h2></div>
         {can("startDiscussions", a) && <IconButton icon={Plus} label="New discussion" round filled onClick={() => setComposer(true)} />}
       </div>
       <div className="chips">
@@ -239,7 +239,7 @@ export default function Chats() {
     <div className="page">
       <TopBar title="Chats" back={false} right={(canNewChat || canNewGroup) && (
         <div style={{ position: "relative" }}>
-          <IconButton icon={SquarePen} label="Start a chat" onClick={() => setMenu((v) => !v)} aria-expanded={menu} />
+          <IconButton icon={SquarePen} label="Start a chat" className="glass-tint" onClick={() => setMenu((v) => !v)} aria-expanded={menu} />
           {menu && (
             <div className="menu" role="menu" style={{ top: 44, right: 0 }} onMouseLeave={() => setMenu(false)}>
               {canNewChat && <button type="button" role="menuitem" onClick={() => { setMenu(false); setNewChat(true); }}><MessagesSquare aria-hidden="true" width={16} />New message</button>}
@@ -274,9 +274,13 @@ export default function Chats() {
                 <Empty icon={MessagesSquare} title="No chats yet">Start one with the pencil above, or message anyone from their profile in Network. You don't need an accepted connection.</Empty>
               ) : items.map((x) => x.el)}
             </div>
-            {otherGroups.length > 0 && (
+            {(otherGroups.length > 0 || canNewGroup) && (
               <section className="pad stack-sm" aria-labelledby="browse-h">
-                <div><div className="eyebrow">Join a group chat on a topic</div><h2 id="browse-h" style={{ margin: 0, fontSize: 18 }}>Browse groups</h2></div>
+                <div className="row">
+                  <div style={{ flex: 1 }}><div className="eyebrow eyebrow--muted">Join a group chat on a topic</div><h2 id="browse-h" className="section-h">Browse groups</h2></div>
+                  {canNewGroup && <IconButton icon={Plus} label="New group" round filled onClick={() => setNewGroup(true)} />}
+                </div>
+                {otherGroups.length === 0 && <p className="small muted" style={{ margin: 0 }}>No groups yet. Start one with +.</p>}
                 {otherGroups.map((g) => (
                   <div key={g.id} className="person-card">
                     <Link to={`/group/${encodeURIComponent(g.id)}`} className="row" style={{ flex: 1, minWidth: 0, gap: 12, color: "inherit", textDecoration: "none" }}>

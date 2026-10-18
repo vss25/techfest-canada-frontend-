@@ -1,34 +1,42 @@
+import { lazy, Suspense, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Bell, ChevronRight, Download, FileText, HelpCircle, LogOut, Moon, Pencil, QrCode, RotateCcw, ShieldCheck, Ticket, Trophy, Users, Eye, Linkedin, Smartphone } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import {
+  BadgeCheck, Bell, Building2, ChevronRight, Navigation, Download, FileText, HelpCircle, Link2, LogOut, MapPin, Moon, Pencil, QrCode, RotateCcw,
+  ScanLine, Share, ShieldCheck, Smartphone, Sun, Ticket, Trophy, UserPlus, Users,
+} from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, bestTicket, isSignedIn, isTeam, loadAccount, signOut } from "../lib/auth";
-import { social } from "../lib/social";
+import { bookmarks, social } from "../lib/social";
 import { pwa, promptInstall } from "../lib/pwa";
-import { theme, setTheme } from "../lib/theme";
+import { theme, setTheme, THEME_LABEL } from "../lib/theme";
 import { resetDemo } from "../lib/demo";
 import { patch } from "../lib/api";
 import { fileURL, LINKS, shortTopic } from "../lib/config";
-import { passPayload } from "../lib/qr";
+import { EVENT_START, now as clockNow } from "../lib/time";
 import { confirmDialog, safeHref, showAlert } from "../lib/ui";
-import { Avatar, Button, Segmented, Switch, TopBar } from "../components/ui";
+import { Avatar, Button, Sheet, Switch, TopBar } from "../components/ui";
+import { GearFill } from "../components/Glyphs";
+
+const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 
 /* =========================================================
-   Profile (iOS ProfileView): who you are, your pass QR, your
-   topics, settings (theme, install, notifications, privacy,
-   sign out). Guests get a sign-in card instead.
+   Profile (iOS ProfileView): the gear (settings), your tile,
+   name and pills, stats, the pass, your connect QR and Scan,
+   the contact card, connections, quick links, topics, then
+   points, notifications, theme and sign out. Guests get the
+   sign-in card.
 ========================================================= */
 
-function Row({ to, href, icon, title, subtitle, onClick, tone }) {
+const THEME_ICON = { system: Smartphone, light: Sun, dark: Moon };
+const NEXT_THEME = { system: "dark", dark: "light", light: "system" };
+
+function Row({ to, href, icon, title, onClick, tone }) {
   const Icon = icon;
   const inner = (
     <>
-      <span className="lead-icon" style={tone === "danger" ? { background: "rgba(213,43,30,.14)", color: "var(--red)" } : undefined}><Icon aria-hidden="true" /></span>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <b style={{ display: "block", fontSize: 14.5, fontWeight: 600, color: tone === "danger" ? "var(--red)" : undefined }}>{title}</b>
-        {subtitle && <span className="tiny muted">{subtitle}</span>}
-      </span>
-      {(to || href) && <ChevronRight className="chev" aria-hidden="true" />}
+      <span className="lead-icon" style={tone === "danger" ? { color: "var(--red)" } : undefined}><Icon aria-hidden="true" /></span>
+      <b style={{ flex: 1, minWidth: 0, color: tone === "danger" ? "var(--red)" : undefined }}>{title}</b>
+      <ChevronRight className="chev" aria-hidden="true" />
     </>
   );
   if (to) return <Link to={to} className="list-row pressable">{inner}</Link>;
@@ -36,17 +44,13 @@ function Row({ to, href, icon, title, subtitle, onClick, tone }) {
   return <button type="button" className="list-row pressable" onClick={onClick}>{inner}</button>;
 }
 
-export default function Profile() {
+/** iOS SettingsSheet: appearance, account (and the attendee-list switch), then links. */
+function SettingsSheet({ onClose }) {
   const a = useStore(auth);
-  const s = useStore(social);
   const p = useStore(pwa);
   const t = useStore(theme);
   const navigate = useNavigate();
-  const signedIn = isSignedIn(a);
-  const me = a.me;
   const user = a.user;
-  const ticket = bestTicket(user);
-  const accepted = s.connections.accepted.length;
 
   const install = async () => {
     if (p.canPrompt) {
@@ -56,100 +60,157 @@ export default function Profile() {
     }
     navigate("/install?from=profile");
   };
-
-  const doSignOut = async () => {
-    const ok = await confirmDialog({ title: "Sign out of TTFC?", message: "Your schedule and chats stay on your account. Sign in again any time.", confirm: "Sign out", destructive: true });
-    if (ok) signOut();
-  };
-
   const toggleHidden = async (hidden) => {
     try {
       await patch("profile", { directoryHidden: hidden });
       await loadAccount();
     } catch (e) { showAlert("Couldn't save", e.message); }
   };
+  const passes = user?.tickets?.length || 0;
+  const role = user?.isAdmin || user?.role === "admin" ? " · staff" : user?.role === "volunteer" ? " · volunteer" : "";
 
-  const settings = (
-    <section className="stack-sm" aria-labelledby="settings-h">
-      <h2 id="settings-h" className="section-title">Settings</h2>
-      <div className="card">
-        <div className="row" style={{ marginBottom: 10 }}><Moon aria-hidden="true" style={{ width: 17, height: 17, color: "var(--pur-alt)" }} /><b style={{ fontSize: 14.5 }}>Appearance</b></div>
-        <Segmented label="Appearance" value={t.value} onChange={setTheme}
-          options={[{ value: "system", label: "System" }, { value: "light", label: "Light" }, { value: "dark", label: "Dark" }]} />
+  return (
+    <Sheet open onClose={onClose} title="Settings" full>
+      <div className="sheet-body stack" style={{ overflow: "auto", flex: 1, paddingBottom: 24 }}>
+        <section className="card stack-sm" aria-labelledby="appearance-h">
+          <h2 id="appearance-h" className="eyebrow">Appearance</h2>
+          <div className="theme-tiles" role="radiogroup" aria-label="Appearance">
+            {["system", "light", "dark"].map((v) => {
+              const Icon = THEME_ICON[v];
+              return (
+                <button key={v} type="button" role="radio" aria-checked={t.value === v} className="theme-tile pressable" onClick={() => setTheme(v)}>
+                  <Icon aria-hidden="true" />{THEME_LABEL[v]}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="card stack-sm" aria-labelledby="account-h">
+          <h2 id="account-h" className="eyebrow">Account</h2>
+          {a.mode === "demo" ? (
+            <>
+              <b>Demo account</b>
+              <span className="tiny muted">Data stays on this device. Sign out and sign in with your TTFC account to sync passes.</span>
+            </>
+          ) : (
+            <>
+              <b>{user?.name || user?.email}</b>
+              <span className="tiny muted">{user?.email}{` · ${passes} pass${passes === 1 ? "" : "es"}`}{role}</span>
+              <Switch label="Show me in the attendee list" description="Name, title, company and pass only. Never your email."
+                checked={!user?.directoryHidden} onChange={(on) => toggleHidden(!on)} />
+            </>
+          )}
+        </section>
+
+        <div className="settings-group">
+          {!p.standalone && <Row icon={Download} title={p.installed ? "Open the installed app" : "Install the app"} onClick={install} />}
+          {p.standalone && <Row icon={Smartphone} title="Find TTFC on your Home Screen" to="/install?find=1" />}
+          <Row icon={Trophy} title="Catalyst Awards" href={LINKS.awards} />
+          <Row icon={FileText} title="Brochure" href={LINKS.brochure} />
+          <Row icon={ShieldCheck} title="Privacy Policy" to="/legal/privacy" />
+          <Row icon={FileText} title="Terms of Use" to="/legal/terms" />
+          <Row icon={HelpCircle} title="Help & support" href={`mailto:${LINKS.support}?subject=${encodeURIComponent("TTFC app support")}`} />
+          {a.mode === "demo" && (
+            <Row icon={RotateCcw} title="Reset demo" onClick={() => { resetDemo(); loadAccount(); window.location.reload(); }} />
+          )}
+        </div>
       </div>
-      <div className="settings-group">
-        {!p.standalone && (
-          <Row icon={Download} title="Install app" subtitle={p.installed ? "Already installed? Open it from your Home Screen." : "Add TTFC to your Home Screen"} onClick={install} />
-        )}
-        {p.standalone && <Row icon={Smartphone} title="Can't find the app later?" subtitle="How to find TTFC on your Home Screen" to="/install?find=1" />}
-        {signedIn && <Row icon={Bell} title="Notifications" to="/notifications" />}
-        <Row icon={ShieldCheck} title="Privacy Policy" to="/legal/privacy" />
-        <Row icon={FileText} title="Terms of Use" to="/legal/terms" />
-        <Row icon={HelpCircle} title="Help & support" subtitle={LINKS.support} href={`mailto:${LINKS.support}`} />
-        {a.mode === "demo" && (
-          <Row icon={RotateCcw} title="Reset demo" subtitle="Back to the sample data" onClick={() => { resetDemo(); loadAccount(); window.location.reload(); }} />
-        )}
-        {signedIn ? <Row icon={LogOut} title={a.mode === "demo" ? "Leave the demo" : "Sign out"} onClick={doSignOut} tone="danger" />
-          : <Row icon={LogOut} title="Sign in" onClick={() => signOut()} />}
-      </div>
-    </section>
+    </Sheet>
   );
+}
+
+function Stat({ value, label }) {
+  return (
+    <div className="stat">
+      <b className="figure">{value}</b>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+export default function Profile() {
+  const a = useStore(auth);
+  const s = useStore(social);
+  const t = useStore(theme);
+  const navigate = useNavigate();
+  const [settings, setSettings] = useState(false);
+  const [scan, setScan] = useState(false);
+  const signedIn = isSignedIn(a);
+  const me = a.me;
+  const user = a.user;
+
+  const doSignOut = async () => {
+    const ok = await confirmDialog({ title: "Sign out of TTFC?", message: "Your schedule and chats stay on your account. Sign in again any time.", confirm: "Sign out", destructive: true });
+    if (ok) signOut();
+  };
 
   if (!signedIn) {
     return (
       <div className="page">
         <TopBar title="Profile" back={false} />
-        <main id="main" className="pad mt-16 stack-lg">
-          <div className="card stack" style={{ textAlign: "center", alignItems: "center" }}>
-            <Eye aria-hidden="true" style={{ width: 30, height: 30, color: "var(--pur-alt)" }} />
-            <h1 style={{ fontSize: 20, margin: 0 }}>You're browsing as a guest</h1>
-            <p className="muted" style={{ margin: 0 }}>Sign in with your pass to build a contact card, connect with attendees, save sessions to your account, and unlock your feed.</p>
-            <Button variant="primary" size="lg" block onClick={() => signOut()}>Sign up / Sign in</Button>
+        <main id="main" className="pad guest-gate">
+          <span className="guest-logo" role="img" aria-label="The Tech Festival Canada">
+            <img src="/app/brand/logo.webp" alt="" width="182" height="90" className="logo-for-dark" />
+            <img src="/app/brand/logo-dark.webp" alt="" width="182" height="104" className="logo-for-light" loading="lazy" />
+          </span>
+          <h1>You're browsing as a guest</h1>
+          <p>Create your free profile to build a contact card, connect with attendees, save sessions, and unlock your personalised feed.</p>
+          <Button variant="primary" size="lg" block icon={UserPlus} onClick={() => signOut()}>Sign up / Sign in</Button>
+          <div className="settings-group" style={{ width: "100%", marginTop: 18 }}>
+            <Row icon={ShieldCheck} title="Privacy Policy" to="/legal/privacy" />
+            <Row icon={FileText} title="Terms of Use" to="/legal/terms" />
+            <Row icon={HelpCircle} title="Help & support" href={`mailto:${LINKS.support}`} />
           </div>
-          {settings}
         </main>
       </div>
     );
   }
 
+  const name = me?.name || user?.name || "Your profile";
   const linkedin = safeHref(me?.linkedinUrl || user?.linkedinUrl);
   const topics = me?.topics || user?.topics || [];
+  const ticket = bestTicket(user);
+  const accepted = s.connections.accepted;
+  const saved = bookmarks(s).length;
+  const daysToGo = Math.max(0, Math.floor((EVENT_START.getTime() - clockNow().getTime()) / 86400000));
+  const country = me?.country || user?.country || "";
+  const org = me?.organization || user?.organization || "";
+  const ThemeIcon = THEME_ICON[t.value] || Smartphone;
+
+  const shareContact = async () => {
+    const lines = [name];
+    if (me?.jobTitle) lines.push([me.jobTitle, org].filter(Boolean).join(" · "));
+    if (linkedin) lines.push(`LinkedIn: ${linkedin}`);
+    lines.push("Met at The Tech Festival Canada 2026 · Toronto");
+    const text = lines.join("\n");
+    try {
+      if (navigator.share) await navigator.share({ text });
+      else { await navigator.clipboard.writeText(text); showAlert("Contact copied", "Paste it into a message or email."); }
+    } catch { /* cancelled */ }
+  };
+
   return (
     <div className="page">
       <TopBar title="Profile" back={false} right={a.mode === "demo" ? <span className="demo-pill">Demo</span> : null} />
-      <main id="main" className="pad mt-16 stack-lg">
-        <section className="stack" style={{ alignItems: "center", textAlign: "center" }}>
-          <Avatar name={me?.name || user?.name} src={fileURL(me?.avatarUrl)} size={96} />
-          <div>
-            <h1 style={{ fontSize: 23, margin: 0 }}>{me?.name || user?.name || "Your profile"}</h1>
-            {(me?.jobTitle || me?.organization) && <div className="muted">{[me.jobTitle, me.organization].filter(Boolean).join(" · ")}</div>}
-            {me?.tagline && <div className="small" style={{ marginTop: 4 }}>“{me.tagline}”</div>}
+      <main id="main" className="pad stack-lg" style={{ paddingTop: 8 }}>
+        <section className="profile-block" aria-label="You">
+          <div className="profile-gear">
+            <button type="button" className="gear-btn pressable" aria-label="Settings" onClick={() => setSettings(true)}><GearFill /></button>
           </div>
-          <div className="row">
-            <Link to="/profile/edit" className="btn btn-sm"><Pencil aria-hidden="true" />Edit profile</Link>
-            {linkedin && <a href={linkedin} target="_blank" rel="noopener noreferrer" className="btn btn-sm"><Linkedin aria-hidden="true" />LinkedIn</a>}
+          <Avatar name={name} src={fileURL(me?.avatarUrl)} size={110} />
+          <div className="profile-names">
+            <h1>{name}</h1>
+            {me?.jobTitle && <div className="profile-title">{me.jobTitle}</div>}
+            {org && <div className="profile-org">{org}</div>}
+            {me?.tagline && <div className="profile-tagline">“{me.tagline}”</div>}
           </div>
+          <div className="row" style={{ gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            <span className="info-pill"><Navigation aria-hidden="true" fill="currentColor" />{country || "—"}</span>
+            {(me?.fieldOfWork || user?.fieldOfWork) && <span className="info-pill"><Building2 aria-hidden="true" />{me?.fieldOfWork || user?.fieldOfWork}</span>}
+          </div>
+          <Link to="/profile/edit" className="edit-link"><Pencil aria-hidden="true" />Edit profile</Link>
         </section>
-
-        <Link to="/profile/pass" className="pass-card card-link pressable" aria-label="Your pass. Opens the QR code for the door">
-          <div className="row">
-            <Ticket aria-hidden="true" style={{ width: 18, height: 18 }} />
-            <b style={{ flex: 1 }}>Your pass</b>
-            <span className="small" style={{ opacity: 0.85 }}>TTFC 2026 · Oct 26–27</span>
-          </div>
-          {ticket ? (
-            <div className="row" style={{ marginTop: 12, alignItems: "center" }}>
-              <div style={{ background: "#fff", borderRadius: 10, padding: 6, lineHeight: 0 }}><QRCodeSVG value={passPayload(ticket.ticketId)} size={72} level="M" /></div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 20, fontWeight: 700 }}>{ticket.tierName}</div>
-                <div className="pass-id small" style={{ opacity: 0.9 }}>LINKED · {ticket.ticketId.toUpperCase()}</div>
-                <div className="tiny" style={{ opacity: 0.85, marginTop: 4 }}>Tap to show your QR at the door</div>
-              </div>
-            </div>
-          ) : (
-            <div style={{ marginTop: 10 }} className="small">No pass linked to this account yet. Tap to link one.</div>
-          )}
-        </Link>
 
         {isTeam(user) && (
           <div className="note" role="note">
@@ -158,39 +219,83 @@ export default function Profile() {
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-          <Link to="/network/connected" className="list-row pressable" style={{ flexDirection: "column", alignItems: "flex-start", justifyContent: "flex-start", gap: 4 }}>
-            <Users aria-hidden="true" style={{ width: 18, height: 18, color: "var(--pur-alt)" }} />
-            <b style={{ fontSize: 14 }}>Network</b><span className="tiny muted">{accepted} connection{accepted === 1 ? "" : "s"}</span>
+        <div className="stats">
+          <Stat value={accepted.length} label="Connections" />
+          <Stat value={saved} label="Saved" />
+          <Stat value={daysToGo} label="Days to go" />
+        </div>
+
+        <Link to="/profile/pass" className="pass-cta pressable" aria-label={ticket ? `Your pass: ${ticket.tierName}. Opens the QR code for the door` : "Your pass: not linked yet. Tap to link it"}>
+          <QrCode aria-hidden="true" className="pass-cta-qr" />
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span className="pass-cta-label">Your pass</span>
+            <span className="pass-cta-tier">{ticket ? ticket.tierName : "No pass yet"}</span>
+            {ticket
+              ? <span className="pass-cta-id"><BadgeCheck aria-hidden="true" />LINKED · {ticket.ticketId.toUpperCase()}</span>
+              : <span className="pass-cta-id" style={{ fontWeight: 600 }}>Not linked yet — tap to link your real pass</span>}
+          </span>
+          <ChevronRight aria-hidden="true" className="pass-cta-chev" />
+        </Link>
+
+        <div className="row" style={{ gap: 10, alignItems: "stretch" }}>
+          <Link to="/profile/pass?tab=connect" className="connect-row pressable">
+            <span className="connect-ico"><QrCode aria-hidden="true" /></span>
+            <span><b>My connect QR</b><small>Show to connect in person</small></span>
           </Link>
-          <Link to="/profile/pass?tab=connect" className="list-row pressable" style={{ flexDirection: "column", alignItems: "flex-start", justifyContent: "flex-start", gap: 4 }}>
-            <QrCode aria-hidden="true" style={{ width: 18, height: 18, color: "var(--pur-alt)" }} />
-            <b style={{ fontSize: 14 }}>Connect QR</b><span className="tiny muted">Meet in person</span>
-          </Link>
-          <a href={LINKS.awards} target="_blank" rel="noopener noreferrer" className="list-row pressable" style={{ flexDirection: "column", alignItems: "flex-start", justifyContent: "flex-start", gap: 4 }}>
-            <Trophy aria-hidden="true" style={{ width: 18, height: 18, color: "var(--pur-alt)" }} />
-            <b style={{ fontSize: 14 }}>Awards</b><span className="tiny muted">28 categories</span>
-          </a>
+          <button type="button" className="scan-tile pressable" onClick={() => setScan(true)} aria-label="Scan a badge">
+            <ScanLine aria-hidden="true" /><span>SCAN</span>
+          </button>
+        </div>
+
+        <section className="stack-sm" aria-labelledby="contact-h">
+          <h2 id="contact-h" className="eyebrow">Contact card</h2>
+          <div className="card contact-card">
+            {linkedin
+              ? <a href={linkedin} target="_blank" rel="noopener noreferrer" className="contact-row"><Link2 aria-hidden="true" /><span>LinkedIn</span><b className="ellipsis">{linkedin.replace(/^https?:\/\/(www\.)?/, "")}</b></a>
+              : <Link to="/profile/edit" className="contact-row"><Link2 aria-hidden="true" /><span>LinkedIn</span><b>Not added</b></Link>}
+            <hr className="hairline" />
+            <Link to="/profile/edit" className="contact-row"><Building2 aria-hidden="true" /><span>Organization</span><b className="ellipsis">{org || "—"}</b></Link>
+            <hr className="hairline" />
+            <Link to="/profile/edit" className="contact-row"><MapPin aria-hidden="true" /><span>Residence</span><b className="ellipsis">{country || "—"}</b></Link>
+            <button type="button" className="share-contact pressable" onClick={shareContact}><Share aria-hidden="true" />Share my contact</button>
+          </div>
+        </section>
+
+        <Link to="/network/connected" className="list-row pressable" style={{ padding: 14 }}>
+          {accepted.length ? (
+            <span className="avatar-stack" aria-hidden="true">{accepted.slice(0, 4).map((c) => <Avatar key={c.id} name={c.user?.name} src={fileURL(c.user?.avatarUrl)} size={34} ring />)}</span>
+          ) : <span className="lead-icon lead-icon--accent" style={{ width: 34, height: 34 }}><Users aria-hidden="true" /></span>}
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <b style={{ display: "block" }}>Connections</b>
+            <span className="tiny muted">{accepted.length ? `${accepted.length} at TTFC · tap to view` : "Start building your TTFC network"}</span>
+          </span>
+          <ChevronRight className="chev" aria-hidden="true" />
+        </Link>
+
+        <div className="quick-grid">
+          <Link to="/network/connected" className="quick pressable"><span className="quick-ico"><Users aria-hidden="true" /></span><span className="row"><b>Network</b><span className="spacer" /><b className="accent-text tiny">{accepted.length}</b></span></Link>
+          <Link to="/profile/pass" className="quick pressable"><span className="quick-ico"><Ticket aria-hidden="true" /></span><b>My pass</b>{ticket && <small>{ticket.tierName}</small>}</Link>
+          <a href={LINKS.brochure} target="_blank" rel="noopener noreferrer" className="quick pressable"><span className="quick-ico"><FileText aria-hidden="true" /></span><b>Brochure</b></a>
+          <a href={LINKS.awards} target="_blank" rel="noopener noreferrer" className="quick pressable"><span className="quick-ico"><Trophy aria-hidden="true" /></span><b>Awards</b><small>28 categories</small></a>
         </div>
 
         <section className="stack-sm" aria-labelledby="topics-h">
-          <div className="row"><h2 id="topics-h" className="section-title" style={{ flex: 1 }}>My topics</h2><Link to="/profile/edit" className="link-btn" style={{ padding: 0, minHeight: 0 }}>Edit</Link></div>
-          {topics.length ? <div className="tag-list">{topics.map((x) => <span key={x} className="tag">{shortTopic(x)}</span>)}</div>
-            : <p className="small muted" style={{ margin: 0 }}>No topics yet. Tap Edit to pick what you're here for.</p>}
+          <div className="row"><h2 id="topics-h" className="eyebrow" style={{ flex: 1 }}>My topics</h2><Link to="/profile/edit" className="small bold muted" style={{ textDecoration: "none" }}>Edit</Link></div>
+          <div className="card" style={{ padding: 14, borderRadius: 14 }}>
+            {topics.length ? <div className="tag-list">{topics.map((x) => <span key={x} className="chip" style={{ minHeight: 28 }}>{shortTopic(x)}</span>)}</div>
+              : <p className="small muted" style={{ margin: 0 }}>No topics yet — tap Edit to pick what you're here for.</p>}
+          </div>
         </section>
 
-        <section className="card" aria-label="Directory">
-          <Switch
-            label="Show me in the attendee list"
-            description="Name, title, company and pass only. Never your email."
-            checked={!user?.directoryHidden}
-            onChange={(on) => toggleHidden(!on)}
-          />
-          <div className="tiny muted">{user?.email || me?.email}{user?.tickets ? ` · ${user.tickets.length} pass${user.tickets.length === 1 ? "" : "es"}` : ""}</div>
-        </section>
-
-        {settings}
+        <div className="settings-group">
+          <Row icon={Trophy} title="Points & leaderboard" to="/points" />
+          <Row icon={Bell} title="Notifications" to="/notifications" />
+          <Row icon={ThemeIcon} title={`Theme · ${THEME_LABEL[t.value]}`} onClick={() => setTheme(NEXT_THEME[t.value] || "system")} />
+          <Row icon={LogOut} title={a.mode === "demo" ? "Leave the demo" : "Sign out"} onClick={doSignOut} tone="danger" />
+        </div>
       </main>
+      {settings && <SettingsSheet onClose={() => setSettings(false)} />}
+      {scan && <Suspense fallback={null}><BadgeScanner onClose={() => setScan(false)} onConnected={() => navigate("/network/connected")} /></Suspense>}
     </div>
   );
 }

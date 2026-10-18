@@ -154,9 +154,11 @@ export function TopBar({ title, back = true, onBack, right, left, titleLeft }) {
   return (
     <header className="topbar">
       <div className="topbar-inner">
-        <div className="topbar-side">
-          {left || (back && <IconButton icon={ChevronLeft} label="Back" onClick={goBack} />)}
-        </div>
+        {(left || back || !titleLeft) && (
+          <div className="topbar-side">
+            {left || (back && <IconButton icon={ChevronLeft} label="Back" onClick={goBack} />)}
+          </div>
+        )}
         <h1 className={cx("topbar-title", titleLeft && "topbar-title--left")}>{title}</h1>
         <div className="topbar-side topbar-side--end">{right}</div>
       </div>

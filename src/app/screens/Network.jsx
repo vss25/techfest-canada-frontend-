@@ -239,15 +239,15 @@ export default function Network() {
   }, [signedIn]);
 
   const right = signedIn ? (
-    <div className="row" style={{ gap: 0 }}>
+    <div className="glass-group">
       <IconButton icon={QrCode} label="My connect QR" onClick={() => navigate("/profile/pass?tab=connect")} />
-      <button type="button" className="btn btn-sm btn-ghost" style={{ border: 0, padding: "0 8px" }} onClick={() => setScan(true)} aria-label="Scan a badge"><ScanLine aria-hidden="true" />Scan</button>
+      <button type="button" className="glass-item pressable" onClick={() => setScan(true)} aria-label="Scan a badge"><ScanLine aria-hidden="true" />Scan</button>
     </div>
   ) : null;
 
   return (
     <div className="page">
-      <TopBar title="Network" back={false} right={right} />
+      <TopBar title="Network" back={false} right={right} titleLeft={!!right} />
       <main id="main" className="mt-16 stack">
         {signedIn ? (
           <Segmented scroll label="Network sections" value={tab} onChange={(v) => navigate(`/network/${v}`, { replace: true })}

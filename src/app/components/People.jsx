@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Check, X, MessageCircle, UserPlus, UserCheck, UserRoundCheck, Clock, Smartphone, Hand, Mic, Store, BadgeCheck, Star, Package, CalendarClock, Sparkles } from "lucide-react";
+import { Check, X, MessageCircle, UserCheck, UserRoundCheck, Clock, Smartphone, Hand, Mic, Store, BadgeCheck, Star, Package, CalendarClock, Sparkles } from "lucide-react";
 import { fileURL, FEATURES } from "../lib/config";
 import { firstName } from "../lib/auth";
 import { canMessage, canRequest, connectionWith, requestConnection, respondConnection, social, withdrawConnection } from "../lib/social";
 import { confirmDialog, showAlert } from "../lib/ui";
 import { Avatar, IconButton } from "./ui";
+import { BubbleFill, PersonPlusFill } from "./Glyphs";
 
 /* =========================================================
    People rows: an invitation / sent request (ConnectionRow) and
@@ -87,36 +88,38 @@ export function PersonCard({ person: p, state, rec, onWhy, kind }) {
         {conn?.status === "accepted" && <IconButton icon={UserRoundCheck} label={`Connected with ${p.name}`} round small disabled />}
         {conn?.status === "pending" && <IconButton icon={Clock} label="Request sent. Withdraw" round small onClick={withdraw} />}
         {conn?.status === "incoming" && <IconButton icon={UserCheck} label={`Accept ${p.name}`} round filled small onClick={() => respondConnection(conn.conn, true)} />}
-        {!conn && canRequest(p, s) && <IconButton icon={UserPlus} label={`Connect with ${p.name}`} round filled small onClick={connect} />}
-        {canMessage(p, s) && <IconButton icon={MessageCircle} label={`Message ${p.name}`} round small onClick={() => navigate(`/chat/${encodeURIComponent(p.id)}`)} />}
+        {!conn && canRequest(p, s) && <IconButton icon={PersonPlusFill} label={`Connect with ${p.name}`} round filled small onClick={connect} />}
+        {canMessage(p, s) && <IconButton icon={BubbleFill} label={`Message ${p.name}`} round small onClick={() => navigate(`/chat/${encodeURIComponent(p.id)}`)} />}
       </div>
     );
   }
 
   return (
     <div className="person-card">
-      <Link to={`/people/${encodeURIComponent(p.id)}`} className="row" style={{ flex: 1, minWidth: 0, color: "inherit", textDecoration: "none", gap: 12 }}>
+      <Link to={`/people/${encodeURIComponent(p.id)}`} tabIndex={-1} aria-hidden="true" className="avatar-link">
         <Avatar name={p.name} src={fileURL(p.avatarUrl)} size={40}
           badge={BadgeIcon ? <span className="avatar-badge" aria-label={k === "speaker" ? "Speaker" : "Exhibitor"}><BadgeIcon aria-hidden="true" /></span> : null} />
-        <span className="info">
+      </Link>
+      <span className="info">
+        <Link to={`/people/${encodeURIComponent(p.id)}`} className="person-link">
           <span className="row" style={{ gap: 6 }}>
             <span className="person-name ellipsis">{p.name}</span>
             {k === "exhibitor" && p.booth && <span className="booth">Booth {p.booth}</span>}
           </span>
-          {p.organization && <span className="small muted ellipsis" style={{ display: "block" }}>{p.organization}</span>}
-          {(meta || p.availabilitySlots?.length > 0 || rec) && (
-            <span className="meta-icons">
-              {meta && <span className="row" style={{ gap: 3 }}><MetaIcon aria-hidden="true" />{meta.text}</span>}
-              {p.availabilitySlots?.length > 0 && <CalendarClock aria-label="Free to meet" />}
-            </span>
-          )}
-        </span>
-      </Link>
-      {rec && (
-        <button type="button" className="dashed" onClick={() => onWhy?.(p, rec)} aria-label={`Why ${p.name} is recommended`}>
-          <Sparkles aria-hidden="true" style={{ width: 11, height: 11 }} />Why
-        </button>
-      )}
+          {p.organization && <span className="person-org ellipsis">{p.organization}</span>}
+        </Link>
+        {(meta || p.availabilitySlots?.length > 0 || rec) && (
+          <span className="meta-icons">
+            {meta && <span className="row" style={{ gap: 3 }}><MetaIcon aria-hidden="true" />{meta.text}</span>}
+            {p.availabilitySlots?.length > 0 && <CalendarClock aria-label="Free to meet" />}
+            {rec && (
+              <button type="button" className="dashed" onClick={() => onWhy?.(p, rec)} aria-label={`Recommended. Why ${p.name} is recommended`}>
+                <Sparkles aria-hidden="true" style={{ width: 10, height: 10 }} />Recommended
+              </button>
+            )}
+          </span>
+        )}
+      </span>
       {actions}
     </div>
   );

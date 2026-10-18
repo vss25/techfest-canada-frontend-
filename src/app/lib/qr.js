@@ -31,3 +31,25 @@ export function connectPayload({ name, title, org, linkedIn, email, userId }) {
 }
 
 export const sessionLivePayload = (id) => `ttfc://session/${id}/live`;
+
+const unesc = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
+
+/** Any TTFC code → { kind: "pass" | "connect" | "session", … } or null (bad check digit = null). */
+export function parseQR(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return null;
+  const live = text.match(/^ttfc:\/\/session\/([^/]+)\/live/i);
+  if (live) return { kind: "session", id: unesc(live[1]) };
+  if (/^techfest:/i.test(text)) {
+    const id = text.slice(9).trim();
+    return id ? { kind: "pass", ticketId: id } : null;
+  }
+  const parts = text.split("|");
+  if (parts.length < 3 || parts[0] !== TAG) return null;
+  const body = parts.slice(0, -1);
+  if (parts[parts.length - 1] !== check(body)) return null;
+  if (parts[1] === "C" && (parts.length === 8 || parts.length === 9)) {
+    return { kind: "connect", name: unesc(parts[2]), title: unesc(parts[3]), org: unesc(parts[4]), linkedIn: unesc(parts[5]), email: unesc(parts[6]), userId: parts.length === 9 ? unesc(parts[7]) : "" };
+  }
+  return null;
+}

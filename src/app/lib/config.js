@@ -4,7 +4,7 @@
 ========================================================= */
 
 /** Parts of the app that are switched on in this web release (the rest show "Coming soon"). */
-export const FEATURES = { network: false, chats: false, live: false };
+export const FEATURES = { network: true, chats: false, live: false };
 
 export const API = import.meta.env.VITE_ADMIN_API_URL || "https://techfest-canada-backend.onrender.com/api";
 /** Origin of the API, for server paths like /api/files/avatar/<id>. */

@@ -255,9 +255,9 @@ a { color: var(--pur-alt); }
 .chip--on .chip-count, .chip[aria-pressed="true"] .chip-count { color: rgba(255,255,255,.8); }
 .seg { display: flex; gap: 6px; }
 .seg-btn {
-  flex: 1; min-height: 40px; padding: 0 8px; border-radius: var(--r-control);
+  flex: 1; min-width: 0; min-height: 40px; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; border-radius: var(--r-control);
   background: var(--elevated); border: 1px solid var(--border); color: var(--tx);
-  font-size: 13.5px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: clamp(12px, 3.5vw, 13.5px); font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .seg-btn[aria-selected="true"], .seg-btn[aria-pressed="true"] { background: var(--pur); border-color: transparent; color: #fff; }
 .seg-btn .pill-count { background: var(--pur); color: #fff; border-radius: 999px; font-size: 11px; padding: 0 6px; line-height: 17px; }

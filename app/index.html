@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark-ground">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -21,6 +21,13 @@
     <meta name="application-name" content="TTFC" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no" />
+    <!-- Home Screen launch images (iOS): the app's LaunchBackground, glow and logo. -->
+    <link rel="apple-touch-startup-image" href="/app/splash/splash-1320x2868.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/app/splash/splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/app/splash/splash-1206x2622.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/app/splash/splash-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/app/splash/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/app/splash/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
 
     <!-- Paint the brand ground before any script runs (no white flash). -->
     <style>
@@ -30,6 +37,20 @@
       @media (prefers-color-scheme: light) { html:not([data-theme="dark"]) { background: #FCF8FB; } }
       html[data-theme="light"] { background: #FCF8FB; }
       html[data-theme="dark"] { background: #0E0828; }
+      /* The launch screen and sign-in are always dark: so is any strip the page doesn't cover (iOS standalone). */
+      html.dark-ground { background: #0B0823 !important; }
+      /* Launch screen until the first screen has rendered (as the iOS app's LaunchBackground). */
+      #boot-splash {
+        position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+        background:
+          radial-gradient(100vmax 100vmax at 90% 0%, rgba(242, 84, 158, 0.42), transparent 60%),
+          radial-gradient(95vmax 95vmax at 0% 30%, rgba(140, 82, 224, 0.42), transparent 60%),
+          radial-gradient(90vmax 90vmax at 92% 100%, rgba(245, 135, 51, 0.26), transparent 60%),
+          #0B0823;
+        transition: opacity 0.25s ease;
+      }
+      #boot-splash img { width: min(64vw, 291px); height: auto; margin-top: -6vh; }
+      #boot-splash.is-done { opacity: 0; pointer-events: none; }
     </style>
     <script>
       // Theme chosen in Profile (system / light / dark), applied before first paint.
@@ -53,8 +74,9 @@
     </script>
   </head>
   <body>
+    <div id="boot-splash" aria-hidden="true"><img src="/app/brand/logo.webp" alt="" width="870" height="429" /></div>
     <div id="app-root"></div>
-    <noscript>The TTFC app needs JavaScript. You can still see the agenda at https://www.thetechfestival.com/agenda</noscript>
+    <noscript><style>#boot-splash { display: none; }</style>The TTFC app needs JavaScript. You can still see the agenda at https://www.thetechfestival.com/agenda</noscript>
     <script type="module" src="/src/app/main.jsx"></script>
   </body>
 </html>

@@ -164,6 +164,39 @@ const match = (q) => (p) => {
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
+const DEMO_LEVELS = [
+  { key: "explorer", name: "Explorer", min: 0 }, { key: "connector", name: "Connector", min: 100 },
+  { key: "insider", name: "Insider", min: 300 }, { key: "trailblazer", name: "Trailblazer", min: 600 },
+  { key: "catalyst", name: "Catalyst", min: 1000 },
+];
+const DEMO_RULES = [
+  { key: "profile.linkedin", label: "Add your LinkedIn", description: "Add your LinkedIn profile to your TTFC profile.", points: 20 },
+  { key: "session.saved", label: "Save a session", description: "Each session you save to your agenda (up to 10).", points: 5 },
+  { key: "session.attended", label: "Take part in a session", description: "Each session where you vote in a poll or ask a question (up to 40).", points: 20 },
+  { key: "network.connection", label: "Make a connection", description: "Each accepted connection.", points: 15 },
+  { key: "feed.post", label: "Post on the feed", description: "Each post (up to 3 a day).", points: 10 },
+];
+/** Sample standing worked out from the demo account's own data. */
+function demoPoints(s) {
+  const saved = Math.min(10, (s.registrations || []).length);
+  const conns = (s.connections || []).filter((c) => c.status === "accepted").length;
+  const posts = (s.posts || []).filter((p) => p.authorId === ME).length;
+  const breakdown = [
+    { key: "session.saved", label: "Saved sessions", points: saved * 5, count: saved },
+    { key: "network.connection", label: "Connections", points: conns * 15, count: conns },
+    { key: "feed.post", label: "Posts", points: posts * 10, count: posts },
+    { key: "profile.topics", label: "Topics picked", points: 10, count: 1 },
+  ];
+  const total = 70 + breakdown.reduce((n, b) => n + b.points, 0);
+  const i = DEMO_LEVELS.reduce((k, l, j) => (total >= l.min ? j : k), 0);
+  const next = DEMO_LEVELS[i + 1] || null;
+  return {
+    total, level: DEMO_LEVELS[i], nextLevel: next, toNext: next ? next.min - total : 0,
+    breakdown: [{ key: "network.request", label: "Requests sent", points: 70, count: 14 }, ...breakdown],
+    rank: s.pointsHidden ? null : 4, rules: DEMO_RULES, levels: DEMO_LEVELS, hideFromLeaderboard: !!s.pointsHidden,
+  };
+}
+
 // ---------- Router ----------
 
 /** request(path, {method, body}) in demo mode. */
@@ -195,6 +228,20 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
   if (is("POST", "app/block")) { s.blocks = [...new Set([...(s.blocks || []), String(body.userId)])]; return done({ ok: true }); }
   if ((m = is("DELETE", "app/block/:id"))) { s.blocks = (s.blocks || []).filter((x) => x !== m.id); return done({ ok: true }); }
   if (is("POST", "app/report")) return { ok: true };
+
+  // Points (services/points.js on the backend)
+  if (is("GET", "social/points/me")) return done(demoPoints(s));
+  if (is("GET", "social/points/leaderboard")) {
+    const me = demoPoints(s);
+    const entries = [
+      { rank: 1, user: { id: "p1", name: "Daniel Okafor", organization: "Lakeshore Insurance" }, points: 640, level: DEMO_LEVELS[3] },
+      { rank: 2, user: { id: "p2", name: "Dr. Maya Singh", organization: "Aurora Financial" }, points: 410, level: DEMO_LEVELS[2] },
+      { rank: 3, user: { id: "p3", name: "Priya Raman", organization: "DHL" }, points: 255, level: DEMO_LEVELS[1] },
+    ];
+    if (!me.hideFromLeaderboard) entries.push({ rank: 4, user: { id: ME, name: s.me.name, organization: s.me.organization }, points: me.total, level: me.level });
+    return done({ entries, me: { rank: me.rank, points: me.total } });
+  }
+  if (is("PATCH", "social/points/prefs")) { s.pointsHidden = !!body.hideFromLeaderboard; return done({ hideFromLeaderboard: s.pointsHidden }); }
 
   // Account
   if (is("GET", "social/me")) return done(s.me);

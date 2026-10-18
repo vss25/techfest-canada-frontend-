@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Bell, BarChart3, Building2, CalendarDays, ChevronRight, ChevronUp, Circle, Eye, ImagePlus, Megaphone, MessageSquareQuote, Users, X, UserRoundPen } from "lucide-react";
+import { Bell, BarChart3, Building2, CalendarDays, ChevronRight, ChevronUp, Circle, Eye, ImagePlus, ListChecks, Megaphone, MessageSquareQuote, Moon, Smartphone, Sun, X, UserRoundPen } from "lucide-react";
 import { useStore, local } from "../lib/store";
 import { auth, can, firstName, isSignedIn, signOut } from "../lib/auth";
 import { cms, featuredOrganisations, featuredSpeakers, heroSession, pollsOn, qaOn, speakerById, timeRange, speakerLine } from "../lib/cms";
@@ -11,7 +11,11 @@ import { countdownTarget, EVENT_END, parts, shortCountdown, showsSessionHero, tw
 import { fileURL, FEATURES } from "../lib/config";
 import { safeHref, useNow } from "../lib/ui";
 import { Avatar, Button, IconButton, Spinner } from "../components/ui";
+import { PeopleFill, TrophyFill } from "../components/Glyphs";
+import { points, refreshPoints } from "../lib/points";
+import { theme, setTheme, THEME_LABEL } from "../lib/theme";
 import { WelcomeCard } from "../components/AppNotices";
+import { OfferBanner } from "../components/GuestOffer";
 import PostCard from "../components/PostCard";
 import Composer from "../components/Composer";
 
@@ -69,7 +73,7 @@ function SessionHero({ pick, now, c, flags }) {
       </Link>
       {speakers.length > 0 && (
         <div className="row">
-          <span className="avatar-stack">{speakers.slice(0, 3).map((s) => <Avatar key={s.id} name={s.name} src={s.photo} size={28} ring />)}</span>
+          <span className="avatar-stack">{speakers.slice(0, 3).map((s) => <Avatar key={s.id} name={s.name} src={s.photo} size={28} ring round />)}</span>
           <span className="small bold clamp-2">{names}</span>
         </div>
       )}
@@ -95,18 +99,18 @@ function SessionHero({ pick, now, c, flags }) {
 function Checklist({ steps, onDismiss }) {
   const remaining = steps.filter((x) => !x.done);
   return (
-    <section className="card stack" aria-labelledby="todo-h">
+    <section className="card todo" aria-labelledby="todo-h">
       <div className="row">
         <span className="eyebrow" style={{ flex: 1 }}>Get started</span>
-        <span className="tiny muted bold">{steps.length - remaining.length}/{steps.length}</span>
-        <IconButton icon={X} label="Hide checklist" round small onClick={onDismiss} />
+        <span className="todo-count">{steps.length - remaining.length}/{steps.length}</span>
+        <button type="button" className="todo-x pressable" aria-label="Hide checklist" title="Hide checklist. It stays in the menu under the bell until it's done." onClick={onDismiss}><X aria-hidden="true" /></button>
       </div>
-      <h2 id="todo-h" style={{ fontSize: 17, margin: 0 }}>Your first-day checklist</h2>
+      <h2 id="todo-h">Your first-day checklist</h2>
       {remaining.map((x) => (
-        <Link key={x.id} to={x.to} className="row" style={{ color: "inherit", textDecoration: "none", minHeight: 40 }}>
-          <Circle aria-hidden="true" style={{ width: 17, height: 17, color: "var(--pur-alt)" }} />
-          <span style={{ flex: 1, fontWeight: 500 }}>{x.title}</span>
-          <ChevronRight aria-hidden="true" style={{ width: 14, height: 14, color: "var(--tx2)" }} />
+        <Link key={x.id} to={x.to} className="todo-step pressable">
+          <Circle aria-hidden="true" className="todo-circle" />
+          <span style={{ flex: 1 }}>{x.title}</span>
+          <ChevronRight aria-hidden="true" className="todo-chev" />
         </Link>
       ))}
     </section>
@@ -140,6 +144,51 @@ function MiniBar({ now, c, onTap }) {
 }
 
 const CHECKLIST_KEY = "ttfc.app.checklistDismissed";
+const THEME_ICON = { system: Smartphone, light: Sun, dark: Moon };
+const NEXT_THEME = { system: "dark", dark: "light", light: "system" };
+
+/** iOS TopBarChrome: points on the left; the bell capsule opens a small menu
+    (checklist if hidden, theme, notifications) that closes itself after 6 s. */
+function TopChrome({ total, unread, onChecklist, onNotifications }) {
+  const [open, setOpen] = useState(false);
+  const t = useStore(theme);
+  useEffect(() => {
+    if (!open) return undefined;
+    const id = setTimeout(() => setOpen(false), 6000);
+    return () => clearTimeout(id);
+  }, [open, t.value]);
+  const ThemeIcon = THEME_ICON[t.value] || Smartphone;
+  return (
+    <div className="home-top">
+      {total != null && (
+        <Link to="/points" className="points-pill pressable" aria-label={`${total} festival points. Opens your points and the leaderboard`}>
+          <TrophyFill /><span className="figure">{total}</span>
+        </Link>
+      )}
+      <span className="spacer" />
+      <div className="bell-pill">
+        {open && (
+          <span className="bell-menu">
+            {onChecklist && (
+              <><button type="button" className="icon-btn pressable" aria-label="First-day checklist, steps left" onClick={() => { setOpen(false); onChecklist(); }}>
+                <ListChecks aria-hidden="true" /><span className="dot-badge" aria-hidden="true" />
+              </button><span className="divider" /></>
+            )}
+            <button type="button" className="icon-btn pressable" aria-label={`Theme: ${THEME_LABEL[t.value]}. Tap to change`} onClick={() => setTheme(NEXT_THEME[t.value] || "system")}>
+              <ThemeIcon aria-hidden="true" />
+            </button>
+            <span className="divider" />
+            <IconButton icon={Bell} label={unread ? `Notifications, ${unread} unread` : "Notifications"} badge={unread} onClick={() => { setOpen(false); onNotifications(); }} />
+            <span className="divider" />
+          </span>
+        )}
+        <IconButton icon={open ? X : Bell} badge={open ? 0 : unread} aria-expanded={open}
+          label={open ? "Close menu" : unread ? `Notifications and settings, ${unread} unread` : "Notifications and settings"}
+          onClick={() => setOpen((v) => !v)} />
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const a = useStore(auth);
@@ -154,8 +203,9 @@ export default function Home() {
   const sentinel = useRef(null);
   const signedIn = isSignedIn(a);
   const me = a.me;
+  const pts = useStore(points);
 
-  useEffect(() => { if (signedIn) refreshFeed(); }, [signedIn]);
+  useEffect(() => { if (signedIn) { refreshFeed(); refreshPoints(); } }, [signedIn]);
 
   // The feed's bar pins once Organisations has scrolled under it.
   useEffect(() => {
@@ -187,6 +237,7 @@ export default function Home() {
     { id: "bookmarks", title: saved > 0 && saved < 3 ? `Bookmark ${3 - saved} more session${3 - saved === 1 ? "" : "s"}` : "Bookmark 3 sessions", done: saved >= 3, to: "/schedule" },
   ] : [];
   const showChecklist = signedIn && !checklistHidden && steps.some((x) => !x.done);
+  const checklistWaiting = signedIn && checklistHidden && steps.some((x) => !x.done);
   const needsProfile = signedIn && a.user && a.user.appOnboarded === false;
 
   const bell = (
@@ -210,20 +261,19 @@ export default function Home() {
           </div>
         </div>
       )}
-      <div className="home-top">
-        {a.mode === "demo" && <span className="demo-pill">Demo</span>}
-        <span className="spacer" />
-        {signedIn && <div className="bell-pill">{bell}</div>}
-      </div>
+      {!signedIn && <OfferBanner wrap="offer-bar-wrap" />}
+      <TopChrome total={signedIn ? pts.me?.total ?? null : null} unread={unread}
+        onChecklist={checklistWaiting ? () => { local.set(CHECKLIST_KEY, null); setChecklistHidden(false); } : null}
+        onNotifications={() => navigate("/notifications")} />
 
       <main id="main" className="stack-lg" style={{ paddingTop: 10 }}>
         <div className="pad stack">
           <WelcomeCard />
           {!signedIn && (
             <div className="banner">
-              <Eye aria-hidden="true" style={{ width: 20, height: 20, flex: "none" }} />
-              <div style={{ flex: 1 }}><b className="small">You're browsing as a guest</b><p>Sign in to connect, chat, and join groups.</p></div>
-              <button type="button" className="btn" onClick={() => signOut()}>Sign in</button>
+              <Eye aria-hidden="true" style={{ width: 18, height: 18, flex: "none" }} fill="currentColor" stroke="var(--pur)" />
+              <div style={{ flex: 1 }}><b className="small">You're browsing as a guest</b><p>Sign up to connect, chat, and join groups.</p></div>
+              <button type="button" className="btn" onClick={() => signOut()}>Sign up</button>
             </div>
           )}
           {needsProfile && (
@@ -249,16 +299,16 @@ export default function Home() {
         <div className="pad stack">
           {showChecklist && <Checklist steps={steps} onDismiss={() => { local.set(CHECKLIST_KEY, "1"); setChecklistHidden(true); }} />}
           <Link to="/network/speakers" className="speakers-tile card-link pressable" aria-label="See all speakers">
-            <span className="row" style={{ gap: 8, fontWeight: 700, fontSize: 16 }}><Users aria-hidden="true" style={{ width: 18, height: 18 }} />Speakers</span>
+            <span className="row" style={{ gap: 8, fontWeight: 600, fontSize: 16 }}><PeopleFill />Speakers</span>
             <span className="row" style={{ marginTop: 14 }}>
-              <span className="avatar-stack" aria-hidden="true" style={{ gap: 0 }}>{faces.map((f) => <Avatar key={f.id} name={f.name} src={f.photo} size={44} />)}</span>
+              <span className="avatar-stack" aria-hidden="true" style={{ gap: 0 }}>{faces.map((f) => <Avatar key={f.id} name={f.name} src={f.photo} size={44} round />)}</span>
               <span className="spacer" />
               <span className="see-all">See all speakers <ChevronRight aria-hidden="true" style={{ width: 14, height: 14 }} /></span>
             </span>
           </Link>
           <Link to="/organisations" className="orgs-tile pressable" aria-label="See all attending organisations">
             <span style={{ flex: 1 }}>
-              <span className="row" style={{ gap: 8, fontWeight: 600 }}><Building2 aria-hidden="true" style={{ width: 17, height: 17 }} />Organisations</span>
+              <span className="row" style={{ gap: 8, fontWeight: 600, fontSize: 15 }}><Building2 aria-hidden="true" style={{ width: 18, height: 18 }} />Organisations</span>
               <span className="row" style={{ gap: 8, marginTop: 10 }}>
                 {orgs.map((o) => <span key={o.id} className="logo-tile"><img src={o.logo} alt={o.displayName} loading="lazy" crossOrigin="anonymous" /></span>)}
               </span>

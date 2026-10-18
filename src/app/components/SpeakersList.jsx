@@ -45,7 +45,7 @@ export default function SpeakersList() {
         <div className="pad stack-sm">
           {list.map((sp) => (
             <Link key={sp.id} to={`/speakers/${encodeURIComponent(sp.id)}`} className="person-card pressable" style={{ color: "inherit", textDecoration: "none" }}>
-              <Avatar name={sp.name} src={sp.photo} size={48} />
+              <Avatar name={sp.name} src={sp.photo} size={48} round />
               <span className="info">
                 <span className="row" style={{ gap: 6 }}><span className="person-name ellipsis">{sp.name}</span>{sp.isKeynote && <Kicker tone="accent">Keynote</Kicker>}</span>
                 <span className="small muted clamp-2" style={{ display: "-webkit-box" }}>{[sp.title, sp.company].filter(Boolean).join(" · ")}</span>

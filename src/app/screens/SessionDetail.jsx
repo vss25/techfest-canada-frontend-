@@ -94,7 +94,7 @@ export default function SessionDetail() {
             <h2 id="spk" className="section-title">Speakers</h2>
             {speakers.map((sp) => (
               <Link key={sp.id} to={sp.agendaOnly ? "#" : `/speakers/${encodeURIComponent(sp.id)}`} className="list-row pressable" onClick={(e) => { if (sp.agendaOnly) e.preventDefault(); }}>
-                <Avatar name={sp.name} src={sp.photo} size={44} />
+                <Avatar name={sp.name} src={sp.photo} size={44} round />
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <b style={{ display: "block", fontSize: 14 }}>{sp.name}</b>
                   <span className="small muted ellipsis" style={{ display: "block" }}>{[sp.title, sp.company].filter(Boolean).join(" · ")}</span>

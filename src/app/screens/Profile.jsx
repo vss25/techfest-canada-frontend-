@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Bell, ChevronRight, Download, FileText, HelpCircle, LogOut, Moon, Pencil, QrCode, RotateCcw, ShieldCheck, Ticket, Trophy, Users, Eye, Linkedin, Smartphone } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useStore } from "../lib/store";
-import { auth, bestTicket, isSignedIn, loadAccount, signOut } from "../lib/auth";
+import { auth, bestTicket, isSignedIn, isTeam, loadAccount, signOut } from "../lib/auth";
 import { social } from "../lib/social";
 import { pwa, promptInstall } from "../lib/pwa";
 import { theme, setTheme } from "../lib/theme";
@@ -150,6 +150,13 @@ export default function Profile() {
             <div style={{ marginTop: 10 }} className="small">No pass linked to this account yet. Tap to link one.</div>
           )}
         </Link>
+
+        {isTeam(user) && (
+          <div className="note" role="note">
+            <b>{user.role === "volunteer" ? "Volunteer account" : "Staff account"}</b>
+            <div className="small">Door check-in is in the TTFC app for now.</div>
+          </div>
+        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
           <Link to="/network/connected" className="list-row pressable" style={{ flexDirection: "column", alignItems: "flex-start", justifyContent: "flex-start", gap: 4 }}>

@@ -37,7 +37,7 @@ export default function SessionRow({ session, cmsState, saved, highlighted, onNo
         {first && (
           <div className="tl-meta" style={{ marginTop: 7 }}>
             <span className="avatar-stack">
-              {speakers.slice(0, 3).map((s) => <Avatar key={s.id} name={s.name} src={s.photo} size={22} ring />)}
+              {speakers.slice(0, 3).map((s) => <Avatar key={s.id} name={s.name} src={s.photo} size={22} ring round />)}
             </span>
             <span className="ellipsis">{first.name}{speakers.length > 1 ? ` +${speakers.length - 1}` : ""}</span>
           </div>

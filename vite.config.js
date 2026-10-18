@@ -49,7 +49,7 @@ function appFallback(req, res, next) {
  */
 function ttfcAppPwa() {
   const template = () => readFileSync(new URL('./src/app/sw/sw.js', import.meta.url), 'utf8')
-  const STATIC = ['/app/manifest.webmanifest', '/app/icons/icon-192.png', '/app/icons/apple-touch-icon.png', '/app/icons/icon-96.png']
+  const STATIC = ['/app/manifest.webmanifest', '/app/brand/logo.webp', '/app/icons/icon-192.png', '/app/icons/apple-touch-icon.png', '/app/icons/icon-96.png']
   const render = (files, version) => template()
     .replace('self.__TTFC_PRECACHE__', JSON.stringify(files))
     .replace('self.__TTFC_VERSION__', JSON.stringify(version))

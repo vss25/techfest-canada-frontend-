@@ -42,7 +42,7 @@ export default function SpeakerDetail() {
       <TopBar title="Speaker" />
       <main id="main">
         <div className="profile-hero">
-          <Avatar name={sp.name} src={sp.photo} size={112} />
+          <Avatar name={sp.name} src={sp.photo} size={112} round />
           <h1>{sp.name}</h1>
           <div className="muted">{[sp.title, sp.company].filter(Boolean).join(" · ")}</div>
           {sp.isKeynote && <Kicker tone="accent" icon={Mic}>Keynote speaker</Kicker>}

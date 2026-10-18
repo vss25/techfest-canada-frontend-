@@ -768,7 +768,7 @@ export default function IndiaPavilion() {
                     <ul style={{ margin: 0, paddingLeft: 18, color: textMuted, fontSize: "0.85rem", lineHeight: 1.7 }}>
                       <li>Exhibition space inside the India Country Pavilion</li>
                       <li>2 full-access exhibitor passes</li>
-                      <li>Inclusion in the TTFC Startup Catalogue (1,000+ delegates)</li>
+                      <li>Inclusion in the TTFC Startup Catalogue (1000+ attendees across 2 days)</li>
                       <li>Access to the India Business Forum & B2B matchmaking</li>
                       <li>Post-event lead report with Canadian buyer introductions</li>
                       <li>Consulate welcome lounge & networking reception access</li>

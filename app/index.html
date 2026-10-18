@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>TTFC 2026</title>
+    <meta name="description" content="The Tech Festival Canada 2026 attendee app: schedule, speakers, live polls, Q&amp;A and chat. Oct 26–27, Westin Harbour Castle, Toronto." />
+    <meta name="robots" content="noindex" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <!-- Installable app: only /app advertises these (the marketing pages don't). -->
+    <link rel="manifest" href="/app/manifest.webmanifest" />
+    <meta name="theme-color" content="#0E0828" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#FCF8FB" media="(prefers-color-scheme: light)" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/app/icons/icon-96.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/app/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="TTFC" />
+    <meta name="application-name" content="TTFC" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Paint the brand ground before any script runs (no white flash). -->
+    <style>
+      html, body { margin: 0; background: #0E0828; }
+      @media (prefers-color-scheme: light) { html:not([data-theme="dark"]), html:not([data-theme="dark"]) body { background: #FCF8FB; } }
+      html[data-theme="light"], html[data-theme="light"] body { background: #FCF8FB; }
+      html[data-theme="dark"], html[data-theme="dark"] body { background: #0E0828; }
+    </style>
+    <script>
+      // Theme chosen in Profile (system / light / dark), applied before first paint.
+      (function () {
+        try {
+          var t = localStorage.getItem("ttfc.app.theme");
+          if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        } catch (e) { /* storage blocked */ }
+        // A sign-in link handed over from /app-login: take the token out of the address bar
+        // before anything else reads the URL (src/app/screens/Login.jsx picks it up).
+        try {
+          var h = location.hash.replace(/^#/, "");
+          if (h.indexOf("token=") !== -1) {
+            var p = new URLSearchParams(h);
+            var tk = p.get("token");
+            if (tk) window.__ttfcLoginToken = tk;
+            history.replaceState(history.state, "", location.pathname + location.search);
+          }
+        } catch (e) { /* Login.jsx falls back to the hash */ }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app-root"></div>
+    <noscript>The TTFC app needs JavaScript. You can still see the agenda at https://www.thetechfestival.com/agenda</noscript>
+    <script type="module" src="/src/app/main.jsx"></script>
+  </body>
+</html>

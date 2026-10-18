@@ -1,0 +1,26 @@
+{
+  "id": "/app/",
+  "name": "TTFC 2026",
+  "short_name": "TTFC",
+  "description": "The Tech Festival Canada 2026 attendee app: schedule, speakers, live polls, Q&A and chat.",
+  "start_url": "/app/?source=pwa",
+  "scope": "/app/",
+  "display": "standalone",
+  "display_override": ["standalone"],
+  "orientation": "portrait",
+  "background_color": "#0E0828",
+  "theme_color": "#0E0828",
+  "lang": "en-CA",
+  "dir": "ltr",
+  "categories": ["business", "events", "productivity"],
+  "icons": [
+    { "src": "/app/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/app/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/app/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/app/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Schedule", "short_name": "Schedule", "url": "/app/schedule", "icons": [{ "src": "/app/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Chats", "short_name": "Chats", "url": "/app/chats", "icons": [{ "src": "/app/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }] }
+  ]
+}

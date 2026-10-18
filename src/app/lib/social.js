@@ -29,6 +29,7 @@ const blank = () => ({
   groups: [], groupsLoaded: false, groupMessages: {},
   discussions: [], discussionsLoaded: false, replies: {},
   media: null,
+  blocked: [],
   readNotifs: local.json(READ_NOTIFS, []),
   chatsSeenAt: Number(local.get(CHATS_SEEN, 0)),
   chatReadAt: local.json(CHAT_READ, {}),
@@ -66,11 +67,47 @@ window.addEventListener("ttfc:signed-out", () => {
 export function refreshAll() {
   return Promise.allSettled([
     refreshPeople(""), refreshConnections(), refreshThreads(), refreshFeed(), refreshRegistrations(),
-    refreshNotifications(), refreshGroups(), refreshDiscussions(), loadMediaConfig(),
+    refreshNotifications(), refreshGroups(), refreshDiscussions(), loadMediaConfig(), refreshBlocks(),
   ]);
 }
 
 const fail = (e) => { set({ lastError: e?.message || "Something went wrong. Try again." }); return false; };
+
+// ---------- Safety: block & report ----------
+
+export async function refreshBlocks() {
+  if (!signedIn()) return;
+  try {
+    const ids = await get("app/blocks");
+    set({ blocked: Array.isArray(ids) ? ids.map(String) : [] });
+  } catch { /* keep */ }
+}
+
+export const isBlocked = (id, s = social.get()) => !!id && s.blocked.includes(id);
+
+export async function blockUser(userId) {
+  try {
+    await post("app/block", { userId });
+    set({ blocked: [...new Set([...social.get().blocked, userId])] });
+    return true;
+  } catch (e) { return fail(e); }
+}
+
+export async function unblockUser(userId) {
+  try {
+    await del(`app/block/${encodeURIComponent(userId)}`);
+    set({ blocked: social.get().blocked.filter((x) => x !== userId) });
+    return true;
+  } catch (e) { return fail(e); }
+}
+
+/** targetType: post | comment | message | discussion | reply | group | groupMessage | user | question */
+export async function report(targetType, targetId, reason = "") {
+  try {
+    await post("app/report", { targetType, targetId, reason });
+    return true;
+  } catch (e) { return fail(e); }
+}
 
 // ---------- People ----------
 

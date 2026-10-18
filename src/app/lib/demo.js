@@ -9,10 +9,12 @@ import { ApiError } from "./api";
 ========================================================= */
 
 export const DEMO_TOKEN = "demo";
-const KEY = "ttfc.demo.state.v1";
+const KEY = "ttfc.demo.state.v2";
 const ME = "demo-me";
 
 const hoursAgo = (h) => new Date(Date.now() - h * 3600000).toISOString();
+/** Website pictures, as absolute URLs (demo posts only). */
+const site = (path) => (typeof window !== "undefined" ? window.location.origin : "") + path;
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 function person(id, name, jobTitle, organization, extra = {}) {
@@ -73,7 +75,7 @@ function seed() {
         topicTags: [], linkUrl: "", media: [], mentions: [], likes: ["p-hannah", "p-priya"], likeBase: 82, comments: [], createdAt: hoursAgo(2) },
       { id: "post-2", authorId: "p-marcus", authorName: "Marcus Chen", authorTitle: "Founder", authorOrg: "Qubit Labs", authorTier: "", kind: "member",
         body: "Setting up our demo for the Quantum Builders meetup on Day 2. If you're building real quantum systems, come say hi. @Priya Raman, your supply-chain use case would be a great fit.",
-        topicTags: ["Quantum Computing"], linkUrl: "", media: [{ type: "image", url: "/ft-conference.jpg", posterUrl: "", width: 1600, height: 1067, duration: 0 }, { type: "image", url: "/venue2.jpg", posterUrl: "", width: 1600, height: 1067, duration: 0 }],
+        topicTags: ["Quantum Computing"], linkUrl: "", media: [{ type: "image", url: site("/ft-conference.jpg"), posterUrl: "", width: 1600, height: 1067, duration: 0 }, { type: "image", url: site("/venue2.jpg"), posterUrl: "", width: 1600, height: 1067, duration: 0 }],
         mentions: [{ type: "user", id: "p-priya", name: "Priya Raman" }], likes: [], likeBase: 37, comments: [
           { id: "cm-1", authorId: "p-priya", authorName: "Priya Raman", authorTier: "", body: "Count me in. I'll bring our routing benchmarks.", status: "approved", createdAt: hoursAgo(4) },
         ], createdAt: hoursAgo(5) },
@@ -189,6 +191,10 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
   if (is("GET", "app/content")) return { "flag.polls": true, "flag.qa": true, "flag.allow_posts": true, "flag.allow_groups": true, "feed.empty": "Be the first to post. Everyone at TTFC will see it." };
   if (is("GET", "status")) return { live: true, message: "" };
   if (is("POST", "app/events")) return { accepted: 0 };
+  if (is("GET", "app/blocks")) return done(s.blocks || []);
+  if (is("POST", "app/block")) { s.blocks = [...new Set([...(s.blocks || []), String(body.userId)])]; return done({ ok: true }); }
+  if ((m = is("DELETE", "app/block/:id"))) { s.blocks = (s.blocks || []).filter((x) => x !== m.id); return done({ ok: true }); }
+  if (is("POST", "app/report")) return { ok: true };
 
   // Account
   if (is("GET", "social/me")) return done(s.me);

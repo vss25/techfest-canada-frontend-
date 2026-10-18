@@ -173,7 +173,11 @@ export function Sheet({ open, onClose, title, children, full, actions, labelledB
     const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
-    const t = setTimeout(() => ref.current?.querySelector("[autofocus], input, textarea, button")?.focus(), 30);
+    const t = setTimeout(() => {
+      const el = ref.current;
+      if (!el || el.contains(document.activeElement)) return;
+      (el.querySelector("[autofocus]") || el.querySelector("input:not([type=hidden]):not([hidden]), textarea") || el.querySelector("button"))?.focus();
+    }, 30);
     return () => {
       clearTimeout(t);
       document.removeEventListener("keydown", onKey);

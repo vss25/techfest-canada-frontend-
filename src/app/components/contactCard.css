@@ -58,3 +58,23 @@
 .shared-main .cc-text > span { color: var(--pur-alt); }
 :root[data-theme="light"] .shared-main .cc-text > span { color: var(--pur); }
 .shared-row .icon-btn { color: var(--tx2); }
+
+/* Profile: the collapsed contact card (spec section 10) */
+:root { --brand-pink: #f2559f; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --brand-pink: #e5298f; } }
+:root[data-theme="light"] { --brand-pink: #e5298f; }
+.cc-acc { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); color: inherit; font: inherit; text-align: left; }
+.cc-acc .cc-text > span { font-size: 13px; }
+.cc-acc .cc-text > .cc-acc-title { display: flex; align-items: center; gap: 7px; color: var(--tx); font-size: 15px; }
+.cc-acc-title b { font-size: 15px; }
+.cc-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--brand-pink); }
+.cc-needs, .cc-acc .cc-text > .cc-needs { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--pur); }
+:root:not([data-theme="light"]) .cc-needs, :root:not([data-theme="light"]) .cc-acc .cc-text > .cc-needs { color: var(--pur-alt); }
+.cc-empty .cc-needs { margin-top: 2px; }
+.cc-chev { flex: none; width: 18px; height: 18px; color: var(--tx2); transition: transform 0.22s cubic-bezier(.2,.8,.2,1); }
+.cc-acc--open .cc-chev { transform: rotate(180deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .cc-panel { animation: ccOpen 0.24s cubic-bezier(.2,.8,.2,1); }
+}
+@keyframes ccOpen { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.tab-dot--pink { background: var(--brand-pink); }

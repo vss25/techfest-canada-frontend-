@@ -4,7 +4,7 @@ import { connectInPerson, connectionWith, refreshConnections, requestConnection,
 import { createStore, local } from "./store";
 import { showAlert } from "./ui";
 import {
-  accountEmailOf, buildVCard, derivedItems, firstLinkedIn, itemsForSave, MAX_CONTACT_ITEMS, sharedSentence, vcfFileName,
+  accountEmailOf, buildVCard, derivedItems, detailCount, firstLinkedIn, itemsForSave, MAX_CONTACT_ITEMS, sharedSentence, vcfFileName,
 } from "./contactCard";
 
 /* =========================================================
@@ -17,12 +17,16 @@ import {
 ========================================================= */
 
 const CACHE = "ttfc.app.contactCard";
+const OPEN = "ttfc.contactCard.open";   // the Profile card expanded (per device, closed by default)
+const SEEN = "ttfc.contactCard.seen";   // expanded at least once (the Profile tab dot stops)
 
 /** card: { items, accountEmail, canShare, saved, max, kinds, qrShare, qrSharePicked } */
 export const myCard = createStore({
   card: null, owner: "", loading: false, failed: false,
   sheet: null,     // the open share sheet: { moment, person, conn, onConfirm, resolve }
   wantAdd: 0,      // bumped when a share sheet's "Add contact details" asks the Profile card to open the picker
+  open: local.get(OPEN) === "1",
+  seen: local.get(SEEN) === "1",
 });
 
 const ownerId = () => auth.get().me?.id || "";
@@ -170,8 +174,25 @@ export async function copyText(text) {
   showAlert("Copied");
 }
 
-/** Asks the Profile contact card to open "Add a contact detail" (from a share sheet with nothing to share). */
+/** Expands / collapses the Profile card (remembered on this device); the first expand counts as seen. */
+export function setCardOpen(open) {
+  local.set(OPEN, open ? "1" : "0");
+  if (open) local.set(SEEN, "1");
+  myCard.set({ open, seen: myCard.get().seen || open });
+}
+
+/** Whether the card is known yet (server, cache, or the server didn't answer): no dots while it loads. */
+const cardKnown = (s) => !!s.card || s.failed;
+
+/** Fewer than 2 ways to reach me: the dot and "Add at least 2 ways to reach you". */
+export const needsDetails = (s = myCard.get()) => cardKnown(s) && detailCount(cardOf(s).items) < 2;
+
+/** The Profile tab dot: needs details and the card was never expanded on this device. */
+export const profileTabDot = (s = myCard.get()) => needsDetails(s) && !s.seen;
+
+/** Asks the Profile contact card to open "Add a contact detail" (from a share sheet with nothing to share), expanded. */
 export function requestAddDetail() {
+  setCardOpen(true);
   myCard.set({ wantAdd: myCard.get().wantAdd + 1 });
 }
 export function clearAddRequest() {

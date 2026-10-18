@@ -292,6 +292,17 @@ export function qrContactFields(items, ticked, { local = false } = {}) {
   return { linkedIn: first("linkedin"), email: local ? first("email") : "" };
 }
 
+// ---------- The collapsed Profile card (spec section 10) ----------
+
+/** Details that count towards "at least 2": items with a value (the account email only as an item). */
+export const detailCount = (items) => (items || []).filter((it) => String(it?.value || "").trim()).length;
+
+/** "Add how people can reach you" / "1 way to reach you" / "3 ways to reach you" */
+export const waysSummary = (n) => (!n ? "Add how people can reach you" : n === 1 ? "1 way to reach you" : `${n} ways to reach you`);
+
+/** The collapsed row's accessible name. */
+export const cardRowLabel = (n) => (n < 2 ? "Contact card, needs 2 details" : `Contact card, ${n} details`);
+
 /** "You shared 2 contact details." / "You shared 1 contact detail." / "You didn't share contact details." */
 export function sharedSentence(n) {
   if (!n) return "You didn't share contact details.";

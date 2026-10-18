@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowUp, Building2, IdCard, MapPin, Plus, Share, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Building2, ChevronDown, IdCard, MapPin, Plus, Share, Trash2 } from "lucide-react";
 import { useStore } from "../lib/store";
-import { cardOf, clearAddRequest, myCard, refreshCard, saveItems, shareMyVCard } from "../lib/myCard";
+import { cardOf, clearAddRequest, myCard, needsDetails, refreshCard, saveItems, setCardOpen, shareMyVCard } from "../lib/myCard";
 import {
-  cleanLabel, cleanValue, displayValue, itemTitle, kindName, KIND_META, CONTACT_KINDS, LABEL_CHIPS, MAX_CONTACT_ITEMS, newItemId, TOO_MANY_ERROR,
+  cardRowLabel, cleanLabel, cleanValue, detailCount, displayValue, itemTitle, kindName, KIND_META, CONTACT_KINDS, LABEL_CHIPS, MAX_CONTACT_ITEMS,
+  newItemId, TOO_MANY_ERROR, waysSummary,
 } from "../lib/contactCard";
 import { confirmDialog, showAlert } from "../lib/ui";
 import { Button, Chip, IconButton, Sheet, Switch } from "./ui";
@@ -12,7 +13,10 @@ import { KindBubble } from "./ContactGlyphs";
 import "./contactCard.css";
 
 /* =========================================================
-   Profile › Contact card (spec section 4): the ways people can
+   Profile › Contact card (spec sections 4 and 10): one accordion
+   row, collapsed by default (remembered on this device), with a
+   pink dot and "Add at least 2 ways to reach you" while fewer
+   than 2 details are filled in. Expanded: the ways people can
    reach you, each with a "Share by default" switch, then
    Organization / Residence and "Share my contact". Every change
    saves the whole list (PUT /social/contact-card).
@@ -30,7 +34,10 @@ export default function ContactCard({ org, country }) {
   const [editor, setEditor] = useState(null);   // { item, isNew }
   const [reorder, setReorder] = useState(false);
   const ref = useRef(null);
-  // A share sheet's "Add contact details" sends people here with the picker open.
+  const count = detailCount(items);
+  const needs = needsDetails(st);
+  const open = st.open;
+  // A share sheet's "Add contact details" sends people here, expanded, with the picker open.
   const showPicker = (picker || st.wantAdd > 0) && !full;
 
   useEffect(() => { refreshCard(); }, []);
@@ -67,61 +74,82 @@ export default function ContactCard({ org, country }) {
     </div>
   );
 
+  const atLeastTwo = needs && <p className="cc-needs">Add at least 2 ways to reach you</p>;
+
   return (
-    <>
-      <div ref={ref} className="card contact-card">
-        {items.length === 0 ? (
-          <div className="cc-empty">
-            <span className="cc-empty-ico" aria-hidden="true"><IdCard /></span>
-            <b>Add the ways people can reach you</b>
-            <p>Email, phone, WhatsApp, LinkedIn and more. You pick what to share each time you connect.</p>
-            <Button size="sm" icon={Plus} onClick={() => setPicker(true)}>Add contact detail</Button>
-          </div>
-        ) : null}
-        {items.length === 0 && suggestion}
-        {items.length > 0 && (
-          <>
-            <div className="cc-head">
-              <b>Your details</b>
-              <small aria-hidden="true">Share by default</small>
-            </div>
-            <div className="cc-rows">
-              {items.map((it) => (
-                <div key={it.id} className="cc-row">
-                  <button type="button" className="cc-row-main pressable" onClick={() => setEditor({ isNew: false, item: it })} aria-label={`${itemTitle(it)}: ${displayValue(it)}. Edit`}>
-                    <KindBubble kind={it.kind} />
-                    <span className="cc-text">
-                      <b className="ellipsis">{itemTitle(it)}</b>
-                      <span className="ellipsis">{displayValue(it)}</span>
-                    </span>
-                  </button>
-                  <span className="switch">
-                    <input type="checkbox" role="switch" aria-label="Share by default" checked={!!it.shareByDefault} onChange={(e) => toggleDefault(it.id, e.target.checked)} />
-                    <span />
-                  </span>
+    <section className="stack-sm" aria-labelledby="cc-acc-title">
+      <button type="button" className={"cc-acc pressable" + (open ? " cc-acc--open" : "")} aria-expanded={open} aria-controls="cc-panel"
+        aria-label={cardRowLabel(count)} onClick={() => setCardOpen(!open)}>
+        <span className="kind-bubble" style={{ width: 36, height: 36 }} aria-hidden="true"><IdCard width={18} height={18} /></span>
+        <span className="cc-text">
+          <span className="cc-acc-title">
+            <b id="cc-acc-title">Contact card</b>
+            {needs && !open && <span className="cc-dot" aria-hidden="true" />}
+          </span>
+          <span>{waysSummary(count)}</span>
+          {needs && !open && <span className="cc-needs">Add at least 2 ways to reach you</span>}
+        </span>
+        <ChevronDown className="cc-chev" aria-hidden="true" />
+      </button>
+      <div id="cc-panel" hidden={!open}>
+        {open && (
+          <div ref={ref} className="card contact-card cc-panel">
+            {items.length === 0 ? (
+              <div className="cc-empty">
+                <span className="cc-empty-ico" aria-hidden="true"><IdCard /></span>
+                <b>Add the ways people can reach you</b>
+                <p>Email, phone, WhatsApp, LinkedIn and more. You pick what to share each time you connect.</p>
+                {atLeastTwo}
+                <Button size="sm" icon={Plus} onClick={() => setPicker(true)}>Add contact detail</Button>
+              </div>
+            ) : null}
+            {items.length === 0 && suggestion}
+            {items.length > 0 && (
+              <>
+                <div className="cc-head">
+                  <b>Your details</b>
+                  <small aria-hidden="true">Share by default</small>
                 </div>
-              ))}
-            </div>
-            <p className="tiny muted" style={{ margin: 0 }}>Switched-on details are ticked for you each time you share. You still choose every time.</p>
-            {suggestion}
-            <div className="row" style={{ gap: 8 }}>
-              <Button size="sm" icon={Plus} onClick={() => setPicker(true)} disabled={full}>Add contact detail</Button>
-              <span className="spacer" />
-              {items.length >= 2 && <button type="button" className="link-btn" style={{ minHeight: 36, padding: "0 4px" }} onClick={() => setReorder(true)}>Reorder</button>}
-            </div>
-            {full && <p className="tiny muted" style={{ margin: "-4px 0 0" }}>{TOO_MANY_ERROR}</p>}
-          </>
+                <div className="cc-rows">
+                  {items.map((it) => (
+                    <div key={it.id} className="cc-row">
+                      <button type="button" className="cc-row-main pressable" onClick={() => setEditor({ isNew: false, item: it })} aria-label={`${itemTitle(it)}: ${displayValue(it)}. Edit`}>
+                        <KindBubble kind={it.kind} />
+                        <span className="cc-text">
+                          <b className="ellipsis">{itemTitle(it)}</b>
+                          <span className="ellipsis">{displayValue(it)}</span>
+                        </span>
+                      </button>
+                      <span className="switch">
+                        <input type="checkbox" role="switch" aria-label="Share by default" checked={!!it.shareByDefault} onChange={(e) => toggleDefault(it.id, e.target.checked)} />
+                        <span />
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="tiny muted" style={{ margin: 0 }}>Switched-on details are ticked for you each time you share. You still choose every time.</p>
+                {suggestion}
+                {atLeastTwo}
+                <div className="row" style={{ gap: 8 }}>
+                  <Button size="sm" icon={Plus} onClick={() => setPicker(true)} disabled={full}>Add contact detail</Button>
+                  <span className="spacer" />
+                  {items.length >= 2 && <button type="button" className="link-btn" style={{ minHeight: 36, padding: "0 4px" }} onClick={() => setReorder(true)}>Reorder</button>}
+                </div>
+                {full && <p className="tiny muted" style={{ margin: "-4px 0 0" }}>{TOO_MANY_ERROR}</p>}
+              </>
+            )}
+            <hr className="hairline" />
+            <Link to="/profile/edit" className="contact-row"><Building2 aria-hidden="true" /><span>Organization</span><b className="ellipsis">{org || "—"}</b></Link>
+            <hr className="hairline" />
+            <Link to="/profile/edit" className="contact-row"><MapPin aria-hidden="true" /><span>Residence</span><b className="ellipsis">{country || "—"}</b></Link>
+            <button type="button" className="share-contact pressable" onClick={() => shareMyVCard()}><Share aria-hidden="true" />Share my contact</button>
+          </div>
         )}
-        <hr className="hairline" />
-        <Link to="/profile/edit" className="contact-row"><Building2 aria-hidden="true" /><span>Organization</span><b className="ellipsis">{org || "—"}</b></Link>
-        <hr className="hairline" />
-        <Link to="/profile/edit" className="contact-row"><MapPin aria-hidden="true" /><span>Residence</span><b className="ellipsis">{country || "—"}</b></Link>
-        <button type="button" className="share-contact pressable" onClick={() => shareMyVCard()}><Share aria-hidden="true" />Share my contact</button>
       </div>
       {showPicker && <KindPicker accountEmail={suggestAccount ? card.accountEmail : ""} onPick={pick} onClose={closePicker} />}
       {editor && <Editor key={editor.item.id} item={editor.item} isNew={editor.isNew} items={items} onClose={closeEditor} />}
       {reorder && <Reorder items={items} onClose={closeReorder} />}
-    </>
+    </section>
   );
 }
 

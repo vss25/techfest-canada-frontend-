@@ -220,10 +220,7 @@ export default function Profile() {
           <button type="button" className="pass-strip-btn pressable" onClick={() => setScan(true)} aria-label="Scan a badge"><span><ScanLine aria-hidden="true" /></span>Scan</button>
         </div>
 
-        <section className="stack-sm" aria-labelledby="contact-h">
-          <h2 id="contact-h" className="eyebrow">Contact card</h2>
-          <ContactCard org={org} country={country} />
-        </section>
+        <ContactCard org={org} country={country} />
 
         <Link to="/network/connected" className="list-row pressable" style={{ padding: 14 }}>
           {accepted.length ? (

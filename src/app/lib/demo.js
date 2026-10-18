@@ -171,12 +171,35 @@ function seed() {
   };
 }
 
+/* Screenshot hook: /app/?demo=1&card=one starts the demo user's card with one detail
+   (card=empty: none, card=full: the sample card again), and forgets on this device that
+   the Profile card was ever opened, so the "add at least 2" dots show. Demo only. */
+let cardHook = "";
+try {
+  const u = new URL(window.location.href);
+  cardHook = ["one", "empty", "full"].includes(u.searchParams.get("card")) ? u.searchParams.get("card") : "";
+  if (cardHook) {
+    u.searchParams.delete("card");
+    window.history.replaceState(window.history.state, "", u.pathname + u.search + u.hash);
+    for (const k of ["ttfc.contactCard.seen", "ttfc.contactCard.open", "ttfc.app.contactCard"]) localStorage.removeItem(k);
+  }
+} catch { /* no window (tests) */ }
+
+function applyCardHook(s, hook) {
+  const full = demoMyCard();
+  s.me.contactItems = hook === "full" ? full.contactItems : hook === "one" ? full.contactItems.filter((it) => it.id === "m-phone") : [];
+  s.me.contactCardSavedAt = full.contactCardSavedAt;
+  s.me.linkedinUrl = hook === "full" ? "https://www.linkedin.com/in/alex-morgan-demo" : "";
+  delete s.me.contactQrShare;
+}
+
 let state = null;
 function load() {
   if (state) return state;
   try { state = JSON.parse(localStorage.getItem(KEY)) || null; } catch { state = null; }
   if (!state) state = seed();
   if (!state.cardV) addContactCards(state);
+  if (cardHook) { applyCardHook(state, cardHook); cardHook = ""; save(); }
   return state;
 }
 

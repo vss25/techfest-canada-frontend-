@@ -6,6 +6,7 @@ import {
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
+import { torontoLocalToIso, isoToTorontoLocal, endsLabel } from "../../lib/promoOffer";
 import {
   Badge, Banner, Button, Card, ConfirmDialog, EmptyState, ErrorState, Field, Input, LoadingState, Modal, PageHeader, Select, StatTile, Switch,
   TableWrap, focusRing,
@@ -119,7 +120,7 @@ const PROMO_SORTS = {
 };
 
 /** Discount, scope and usage limit: shared by the create form and the edit dialog. */
-function PromoTermsFields({ passes, discount, setDiscount, tiers, setTiers, maxUses, setMaxUses, used }) {
+function PromoTermsFields({ passes, discount, setDiscount, tiers, setTiers, maxUses, setMaxUses, used, ends, setEnds }) {
   const over = used != null && limitValue(maxUses) != null && !limitError(maxUses) && used >= limitValue(maxUses);
   return (
     <>
@@ -147,6 +148,14 @@ function PromoTermsFields({ passes, discount, setDiscount, tiers, setTiers, maxU
       </fieldset>
       <Field label="Usage limit" hint="How many times this code can be used. Leave empty for unlimited." error={limitError(maxUses) || (over ? `Already used ${num(used)} times, so the code will stop working right away.` : "")}>
         {(id) => <Input id={id} type="number" min={1} step="1" inputMode="numeric" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="Unlimited" className="w-40" />}
+      </Field>
+      <Field label="Ends (Toronto time)" hint={ends ? `Stops working after ${endsLabel(torontoLocalToIso(ends))}.` : "Leave empty to keep the code running until you turn it off."}>
+        {(id) => (
+          <div className="flex items-center gap-2">
+            <Input id={id} type="datetime-local" value={ends} onChange={(e) => setEnds(e.target.value)} className="w-56" />
+            {ends && <Button size="sm" variant="ghost" onClick={() => setEnds("")}>Clear</Button>}
+          </div>
+        )}
       </Field>
     </>
   );
@@ -176,6 +185,7 @@ function EditPromo({ promo, passes, onClose, onSaved }) {
   const [discount, setDiscount] = useState(String(promo.discount ?? ""));
   const [tiers, setTiers] = useState(Array.isArray(promo.tiers) ? promo.tiers : []);
   const [maxUses, setMaxUses] = useState(promo.maxUses ? String(promo.maxUses) : "");
+  const [ends, setEnds] = useState(isoToTorontoLocal(promo.expiresAt));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
@@ -186,9 +196,12 @@ function EditPromo({ promo, passes, onClose, onSaved }) {
     if (limitError(maxUses)) { setErr(limitError(maxUses)); return; }
     setErr(""); setBusy(true);
     try {
-      const out = await api.put(`/admin/promos/${promo._id}`, { discount: d, tiers, maxUses: limitValue(maxUses) });
+      const expiresAt = torontoLocalToIso(ends);
+      const out = await api.put(`/admin/promos/${promo._id}`, { discount: d, tiers, maxUses: limitValue(maxUses), expiresAt });
       toast.success(`${promo.code} updated`);
-      onSaved({ discount: out?.discount ?? d, tiers: out?.tiers ?? tiers, maxUses: out?.maxUses ?? limitValue(maxUses) });
+      const endsAt = out?.expiresAt ?? expiresAt;
+      onSaved({ discount: out?.discount ?? d, tiers: out?.tiers ?? tiers, maxUses: out?.maxUses ?? limitValue(maxUses), expiresAt: endsAt,
+        expired: !!endsAt && new Date(endsAt).getTime() < Date.now() });
       onClose();
     } catch (e2) { setErr(e2.message); toast.error(e2); } finally { setBusy(false); }
   };
@@ -203,7 +216,7 @@ function EditPromo({ promo, passes, onClose, onSaved }) {
       </>}>
       <form id={formId} onSubmit={save} className="space-y-4" noValidate>
         <PromoTermsFields passes={passes} discount={discount} setDiscount={setDiscount} tiers={tiers} setTiers={setTiers}
-          maxUses={maxUses} setMaxUses={setMaxUses} used={usedOf(promo)} />
+          maxUses={maxUses} setMaxUses={setMaxUses} used={usedOf(promo)} ends={ends} setEnds={setEnds} />
         {err && <p role="alert" className="text-xs text-red-300">{err}</p>}
       </form>
     </Modal>
@@ -217,6 +230,7 @@ function PromoCodes({ passes }) {
   const [discount, setDiscount] = useState("10");
   const [tiers, setTiers] = useState([]);
   const [maxUses, setMaxUses] = useState("");
+  const [ends, setEnds] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [deleting, setDeleting] = useState(null);
@@ -237,10 +251,11 @@ function PromoCodes({ passes }) {
     if (limitError(maxUses)) { setErr(limitError(maxUses)); return; }
     setErr(""); setBusy(true);
     try {
-      const out = await api.post("/admin/promos", { code: c, discount: d, tiers, maxUses: limitValue(maxUses) });
+      const expiresAt = torontoLocalToIso(ends);
+      const out = await api.post("/admin/promos", { code: c, discount: d, tiers, maxUses: limitValue(maxUses), expiresAt });
       const lim = limitValue(maxUses);
-      toast.success(`Created ${out.code || c}: ${out.discount ?? d}% off ${tiers.length ? tiers.map(label).join(", ") : "all passes"}${lim ? `, ${num(lim)} uses` : ""}`);
-      setCode(""); setDiscount("10"); setTiers([]); setMaxUses(""); reload();
+      toast.success(`Created ${out.code || c}: ${out.discount ?? d}% off ${tiers.length ? tiers.map(label).join(", ") : "all passes"}${lim ? `, ${num(lim)} uses` : ""}${expiresAt ? `, ends ${endsLabel(expiresAt)}` : ""}`);
+      setCode(""); setDiscount("10"); setTiers([]); setMaxUses(""); setEnds(""); reload();
     } catch (e2) { setErr(e2.message); toast.error(e2); } finally { setBusy(false); }
   };
 
@@ -263,7 +278,7 @@ function PromoCodes({ passes }) {
               <Button icon={Sparkles} onClick={() => setCode(genCode())}>Generate</Button>
             </div>
           )}</Field>
-          <PromoTermsFields passes={passes} discount={discount} setDiscount={setDiscount} tiers={tiers} setTiers={setTiers} maxUses={maxUses} setMaxUses={setMaxUses} />
+          <PromoTermsFields passes={passes} discount={discount} setDiscount={setDiscount} tiers={tiers} setTiers={setTiers} maxUses={maxUses} setMaxUses={setMaxUses} ends={ends} setEnds={setEnds} />
           {err && <p role="alert" className="text-xs text-red-300">{err}</p>}
           <Button type="submit" variant="primary" icon={Plus} loading={busy} className="w-full">Create promo code</Button>
         </Card>
@@ -299,10 +314,12 @@ function PromoCodes({ passes }) {
                           <p className="flex flex-wrap items-center gap-2 font-mono text-base font-bold tracking-wider text-ttfc-text">
                             {p.code}
                             {full && <Badge tone="warn" className="font-sans tracking-normal">Full</Badge>}
+                            {p.expired && <Badge tone="warn" className="font-sans tracking-normal">Expired</Badge>}
                           </p>
                           <div className="mt-1 flex flex-wrap items-center gap-1.5">
                             <Badge tone="pink">{p.discount}% off</Badge>
                             {Array.isArray(p.tiers) && p.tiers.length ? p.tiers.map((t) => <Badge key={t} tone="purple">{label(t)}</Badge>) : <Badge tone="good">All passes</Badge>}
+                            {p.expiresAt && !p.expired && <Badge tone="neutral">Ends {endsLabel(p.expiresAt)}</Badge>}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { withOrdinals } from "../../lib/ordinals";
 import { ChevronRight, Megaphone, X } from "lucide-react";
 import { track } from "../../lib/pwaEvents";
 import { useStore, session } from "../lib/store";
@@ -27,7 +28,7 @@ export default function SiteAnnouncement({ where }) {
     <div className="site-ann" role="region" aria-label="Announcement">
       <Body {...(link ? { type: "button", onClick: open } : {})} className="site-ann-body">
         <Megaphone aria-hidden="true" className="site-ann-ico" />
-        <span className="site-ann-text">{text}</span>
+        <span className="site-ann-text">{withOrdinals(text)}</span>
         {link && <ChevronRight aria-hidden="true" className="site-ann-chev" />}
       </Body>
       <button type="button" className="site-ann-x" aria-label="Dismiss announcement" onClick={dismiss}><X aria-hidden="true" /></button>

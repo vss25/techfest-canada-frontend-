@@ -21,6 +21,7 @@ import Person from "../admin/app/Person";
 import LiveActivity from "../admin/app/LiveActivity";
 import Moderation from "../admin/app/Moderation";
 import AppText from "../admin/app/AppText";
+import AppRights from "../admin/app/AppRights";
 import Broadcast from "../admin/app/Broadcast";
 import AuditLog from "../admin/app/AuditLog";
 import StaffAccounts from "../admin/staff/StaffAccounts";
@@ -204,6 +205,7 @@ export default function Admin() {
             <Route path="app/activity" element={<LiveActivity />} />
             <Route path="app/moderation" element={<Moderation />} />
             <Route path="app/text" element={<AppText />} />
+            <Route path="app/rights" element={<AppRights />} />
             <Route path="app/broadcast" element={<Broadcast />} />
             <Route path="app/audit" element={<AuditLog />} />
 

@@ -4,12 +4,14 @@ import { Search, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { Badge, Button, EmptyState, ErrorState, Input, LoadingState, PageHeader, Select, TableWrap } from "../ui";
 import { ago } from "../format";
+import { PERSON_TYPES, TYPE_LABELS, TYPE_TONE, typeTags } from "./personTypes";
 
 export default function People() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState(params.get("q") || "");
   const filter = params.get("f") || "";
+  const typeFilter = PERSON_TYPES.includes(params.get("t")) ? params.get("t") : "";
   const page = Math.max(0, Number(params.get("page")) || 0);
   const dq = useDebounced(q.trim(), 300);
 
@@ -18,6 +20,7 @@ export default function People() {
   if (filter === "admin") qs.set("role", "admin");
   if (filter === "volunteer") qs.set("role", "volunteer");
   if (filter === "banned") qs.set("banned", "true");
+  if (typeFilter) qs.set("type", typeFilter);
   const { data, error, loading, reload, refreshing } = useApi(`/console/users?${qs}`);
 
   const update = (next) => {
@@ -39,11 +42,15 @@ export default function People() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
           <Input type="search" value={q} onChange={(e) => onSearch(e.target.value)} placeholder="Search name, email, company or ticket ID" className="pl-9" aria-label="Search people" />
         </div>
-        <Select value={filter} onChange={(e) => update({ f: e.target.value, page: 0 })} aria-label="Filter people" className="sm:w-48">
-          <option value="">Everyone</option>
-          <option value="admin">Staff</option>
-          <option value="volunteer">Volunteers</option>
+        <Select value={filter} onChange={(e) => update({ f: e.target.value, page: 0 })} aria-label="Filter people by account" className="sm:w-48">
+          <option value="">Every account</option>
+          <option value="admin">Staff accounts</option>
+          <option value="volunteer">Volunteer accounts</option>
           <option value="banned">Suspended</option>
+        </Select>
+        <Select value={typeFilter} onChange={(e) => update({ t: e.target.value, page: 0 })} aria-label="Filter people by type" className="sm:w-44">
+          <option value="">Any type</option>
+          {PERSON_TYPES.map((t) => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
         </Select>
       </div>
 
@@ -65,6 +72,7 @@ export default function People() {
                         <span className="font-semibold">{u.name}</span>
                         {u.role === "admin" && <Badge tone="pink">Staff</Badge>}
                         {u.role === "volunteer" && <Badge tone="purple">Volunteer</Badge>}
+                        {typeTags(u.types, u.role).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}
                         {u.banned && <Badge tone="bad">Suspended</Badge>}
                         {u.directoryHidden && <Badge>Hidden</Badge>}
                         {u.messagesOff && <Badge>No messages</Badge>}

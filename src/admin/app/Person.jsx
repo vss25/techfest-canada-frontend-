@@ -11,6 +11,7 @@ import {
 import { when, initials } from "../format";
 import { EventRow, StatusBadge } from "./parts";
 import ProfileEditor from "./ProfileEditor";
+import { TYPE_LABELS, TYPE_TONE, typeTags } from "./personTypes";
 
 function MessagesPane({ id }) {
   const [revealed, setRevealed] = useState(false);
@@ -174,6 +175,7 @@ function PersonView({ id }) {
             <h1 className="text-2xl font-bold tracking-tight">{u.name}</h1>
             {u.role === "admin" && <Badge tone="pink">Staff</Badge>}
             {u.role === "volunteer" && <Badge tone="purple">Volunteer</Badge>}
+            {typeTags(u.effectiveTypes, u.role).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}
             {u.banned && <Badge tone="bad">Suspended</Badge>}
           </div>
           <p className="mt-1 text-sm text-ttfc-muted">

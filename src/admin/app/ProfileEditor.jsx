@@ -1,10 +1,15 @@
 import { useMemo, useState } from "react";
-import { Check, Plus, Save, Trash2, X } from "lucide-react";
+import { Check, Minus, Plus, Save, Trash2, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { api } from "../api";
+import { useApi } from "../hooks";
 import { useToast } from "../toastContext";
 import { Button, Card, ConfirmDialog, Field, Input, Select, Switch, focusRing } from "../ui";
 import { useAdmin } from "../adminContext";
 import { FIELDS_OF_WORK, GENDERS, JOB_LEVELS, OBJECTIVES, SALUTATIONS, TOPICS } from "./profileOptions";
+import {
+  PERSON_TYPES, RIGHTS, RIGHT_LABELS, TEAM_TYPES, TYPE_LABELS, effectiveRights, effectiveTypes, toggleType,
+} from "./personTypes";
 
 /* Full profile editor for an app user (PATCH /api/console/users/:id, only changed fields). */
 
@@ -34,7 +39,10 @@ const fromUser = (u) => ({
   appOnboarded: !!u.appOnboarded,
   role: ROLES.some((r) => r.value === u.role) ? u.role : "user",
   banned: !!u.banned,
+  types: Array.isArray(u.types) ? u.types.filter((t) => PERSON_TYPES.includes(t)) : [],
+  typesOff: Array.isArray(u.typesOff) ? u.typesOff.filter((t) => PERSON_TYPES.includes(t)) : [],
 });
+const sameList = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
 
 /** Only what changed, in the shape the backend expects. */
 function diff(form, orig) {
@@ -47,7 +55,63 @@ function diff(form, orig) {
   if (form.appOnboarded !== orig.appOnboarded) out.appOnboarded = form.appOnboarded;
   if (form.role !== orig.role) out.role = form.role;
   if (form.banned !== orig.banned) out.banned = form.banned;
+  if (!sameList(form.types, orig.types)) out.types = form.types;
+  if (!sameList(form.typesOff, orig.typesOff)) out.typesOff = form.typesOff;
   return out;
+}
+
+/* Automatic types (from the person's role or pass), as they'd be with the role in the form. */
+function autoFor(user, role) {
+  const fromServer = Array.isArray(user.autoTypes) ? user.autoTypes.filter((a) => a.from === "pass") : [];
+  const fromRole = role === "admin" ? [{ type: "staff", from: "role" }] : role === "volunteer" ? [{ type: "volunteer", from: "role" }] : [];
+  return [...fromRole, ...fromServer];
+}
+
+function TypeChips({ form, auto, holdsPass, onChange, canTeam }) {
+  const state = { types: form.types, typesOff: form.typesOff, auto, holdsPass };
+  const effective = effectiveTypes(state);
+  const autoOf = (t) => auto.find((a) => a.type === t) || (t === "attendee" && holdsPass && !effective.some((x) => x !== "attendee") ? { type: t, from: "pass" } : null);
+  return (
+    <div role="group" aria-label="Type" className="flex flex-wrap gap-2">
+      {PERSON_TYPES.map((t) => {
+        const on = effective.includes(t);
+        const a = autoOf(t);
+        const switchedOff = !on && form.typesOff.includes(t) && (a || (t === "attendee" && holdsPass));
+        const locked = TEAM_TYPES.includes(t) && !canTeam;
+        const note = on && a && !form.types.includes(t) ? (a.from === "role" ? "from role" : "from pass") : switchedOff ? "switched off" : "";
+        return (
+          <button
+            key={t}
+            type="button"
+            aria-pressed={on}
+            disabled={locked}
+            title={locked ? "Only management can change the Staff and Volunteer types" : undefined}
+            onClick={() => onChange(toggleType(t, state, !on))}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}
+          >
+            {on && <Check className="h-3 w-3" aria-hidden="true" />}
+            {TYPE_LABELS[t]}
+            {note && <span className={`font-normal ${switchedOff ? "text-ttfc-dim line-through" : "text-ttfc-muted"}`}>· {note}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function RightsSummary({ rights }) {
+  return (
+    <ul className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2" aria-label="What they can do in the app">
+      {RIGHTS.map((r) => (
+        <li key={r} className={`flex items-center gap-2 text-sm ${rights[r] ? "text-ttfc-text" : "text-ttfc-dim"}`}>
+          {rights[r]
+            ? <Check className="h-4 w-4 shrink-0 text-emerald-300" aria-hidden="true" />
+            : <Minus className="h-4 w-4 shrink-0 text-ttfc-dim" aria-hidden="true" />}
+          <span>{RIGHT_LABELS[r]}<span className="sr-only">{rights[r] ? ": yes" : ": no"}</span></span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function Section({ title, hint, children }) {
@@ -142,6 +206,14 @@ export default function ProfileEditor({ id, user, onSaved, onDelete }) {
   const dirty = Object.keys(changes).length > 0;
   const emailBad = form.email.trim() && !/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(form.email.trim());
   const nameBad = !form.name.trim();
+  // Live preview of their rights from the App rights matrix (the server decides on save).
+  const matrix = useApi("/console/app-rights");
+  const auto = autoFor(user, form.role);
+  const holdsPass = !!user.holdsPass;
+  const liveTypes = effectiveTypes({ types: form.types, typesOff: form.typesOff, auto, holdsPass });
+  const rights = matrix.data?.matrix
+    ? effectiveRights(liveTypes, matrix.data.matrix, { role: form.role, messagesOff: !form.canMessage, requestsOff: !form.canRequest }, matrix.data.flags)
+    : user.rights || {};
 
   const send = async (body) => {
     setSaving(true);
@@ -161,6 +233,8 @@ export default function ProfileEditor({ id, user, onSaved, onDelete }) {
     const sensitive = [];
     if ("role" in body) sensitive.push(roleChangeText(orig.role, body.role));
     if ("banned" in body) sensitive.push(body.banned ? "suspend their account" : "reinstate their account");
+    const before = effectiveTypes({ types: orig.types, typesOff: orig.typesOff, auto: autoFor(user, orig.role), holdsPass });
+    if (liveTypes.includes("staff") && !before.includes("staff")) sensitive.push("give them the Staff type (moderation, post removal and check-in in the app)");
     if (sensitive.length) { setConfirm({ body, sensitive }); return; }
     try { await send(body); } catch { /* toast shown */ }
   };
@@ -180,6 +254,25 @@ export default function ProfileEditor({ id, user, onSaved, onDelete }) {
           <Field className="mt-4" label="Tagline" hint={`${form.tagline.length}/140 — a one-line intro on their profile.`}>
             {(fid) => <Input id={fid} value={form.tagline} onChange={(e) => set("tagline")(e.target.value.slice(0, 140))} maxLength={140} placeholder="e.g. Building AI tools for hospitals" />}
           </Field>
+        </Section>
+
+        <Section title="Type" hint="What they are at TTFC. Their types decide what they can do in the app.">
+          <TypeChips form={form} auto={auto} holdsPass={holdsPass} canTeam={isManagement}
+            onChange={(next) => setForm((f) => ({ ...f, ...next }))} />
+          <p className="mt-3 text-xs leading-relaxed text-ttfc-muted">
+            Types marked from pass or from role are automatic. Switch one off to hide it for this person, for example to show a speaker as VIP only.
+            {holdsPass && " Attendee is automatic for pass holders with no other type; add it to give them attendee abilities as well."}
+          </p>
+          <div className="mt-5 rounded-2xl border border-ttfc-line bg-ttfc-panel2/60 p-4">
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+              <h4 className="text-sm font-semibold text-ttfc-text">What they can do in the app</h4>
+              <Link to="/admin/app/rights" className="text-xs font-semibold text-ttfc-muted hover:text-ttfc-text hover:underline">Edit app rights by type</Link>
+            </div>
+            <RightsSummary rights={rights} />
+            <p className="mt-3 text-xs text-ttfc-dim">
+              {dirty ? "Preview with your unsaved changes, including the contact switches below." : "From their types, the App rights screen and the contact switches below."}
+            </p>
+          </div>
         </Section>
 
         <Section title="Work">

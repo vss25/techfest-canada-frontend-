@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   AlertTriangle, BadgeCheck, CalendarCheck, ChevronLeft, ChevronRight, Coffee, Download, GitMerge, Handshake, Info, PartyPopper,
   Presentation, Search, Split, Store, Trash2, Trophy, Utensils, Wine,
@@ -12,6 +12,7 @@ import {
   Badge, Banner, Bars, Button, Card, ConfirmDialog, Drawer, EmptyState, ErrorState, Input, LoadingState, PageHeader, SectionTitle, Select, StatTile, TableWrap,
 } from "../ui";
 import { when } from "../format";
+import { personPath } from "../people/peopleMeta";
 
 /* Admin → Leads → RSVPs
    TTFC 2026 RSVPs from the unlinked website page /rsvp (POST /api/rsvp).
@@ -272,7 +273,10 @@ function RsvpDrawer({ id, onClose, onOpen, onResolved, cat }) {
             </Banner>
           )}
           <DetailSection title="Person">
-            <Row label="Name">{r.name}</Row>
+            <Row label="Name">
+              {r.name}
+              <Link to={personPath(`r-${r.id}`)} className="ml-2 text-xs font-semibold text-ttfc-pink underline-offset-2 hover:underline">Open profile</Link>
+            </Row>
             <Row label="Email">{r.email ? <a href={`mailto:${r.email}`} className="text-ttfc-pink underline-offset-2 hover:underline">{r.email}</a> : <Dash />}</Row>
             <Row label="Ticket ID">{r.ticketId ? <span className="font-mono text-xs">{r.ticketId.toUpperCase()}{r.ticketVerified ? "" : " (didn't match)"}</span> : <Dash />}</Row>
           </DetailSection>
@@ -299,6 +303,12 @@ function RsvpDrawer({ id, onClose, onOpen, onResolved, cat }) {
             <Row label="First RSVP">{when(r.createdAt)}</Row>
             <Row label="Last change">{when(r.updatedAt)}</Row>
             <Row label="Times sent">{r.submissions}</Row>
+            <Row label="Entered by">
+              {r.source === "staff"
+                ? <>Staff{r.staffUpdatedBy ? `: ${r.staffUpdatedBy}` : ""}{r.staffUpdatedAt ? `, ${when(r.staffUpdatedAt)}` : ""}{r.staffOverride ? " (overrode the attendee's RSVP)" : ""}</>
+                : "The attendee"}
+              {r.passLimitOverride && <Badge tone="warn" className="ml-2">Outside their pass</Badge>}
+            </Row>
             {r.fillMs != null && <Row label="Form open for">{r.fillMs < 60000 ? `${Math.round(r.fillMs / 1000)} s` : `${Math.round(r.fillMs / 60000)} min`}</Row>}
             {r.userAgent && <Row label="Browser"><span className="text-xs text-ttfc-muted">{r.userAgent}</span></Row>}
           </DetailSection>
@@ -527,6 +537,8 @@ export default function Rsvps() {
                     </button>
                     {r.email && <span className="block truncate font-mono text-ttfc-muted" title={r.email}>{r.email}</span>}
                     {r.duplicateOf && <Badge tone="warn" icon={AlertTriangle} className="mt-1.5">Possible duplicate</Badge>}
+                    {r.source === "staff" && <Badge tone="purple" className="mt-1.5">Set by staff</Badge>}
+                    <Link to={personPath(`r-${r.id}`)} onClick={(e) => e.stopPropagation()} className="mt-1 block text-[11px] font-semibold text-ttfc-pink hover:underline">Profile</Link>
                   </td>
                   <td className="whitespace-nowrap"><PassBadge tier={r.tier} verified={r.tierVerified} cat={cat} /></td>
                   <td className="whitespace-nowrap">

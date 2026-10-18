@@ -41,6 +41,8 @@ import Rsvps from "../admin/leads/Rsvps";
 import CatalystNominations from "../admin/awards/CatalystNominations";
 import AttendingCampaign from "../admin/marketing/AttendingCampaign";
 import RsvpReminders from "../admin/marketing/RsvpReminders";
+import PeopleDirectory from "../admin/people/PeopleDirectory";
+import PersonProfile from "../admin/people/PersonProfile";
 
 // Existing admin features — wrapped and restyled, logic unchanged.
 import CheckIn from "../components/CheckIn";
@@ -162,6 +164,8 @@ export default function Admin() {
           <Routes>
             <Route index element={<Overview />} />
 
+            <Route path="people" element={<PeopleDirectory />} />
+            <Route path="people/:id" element={<PersonProfile />} />
             <Route path="attendees" element={<TicketManager />} />
             <Route path="speaker-passes" element={<SpeakerPasses />} />
             <Route path="issued-passes" element={<IssuedPasses />} />

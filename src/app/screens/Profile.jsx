@@ -21,7 +21,7 @@ const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 
 /* =========================================================
    Profile (iOS ProfileView): the gear (settings), your tile,
-   name and pills, stats, the pass, your connect QR and Scan,
+   name, stats, the pass strip (pass, connect QR, Scan),
    the contact card, connections, quick links, topics, then
    points, notifications, theme and sign out. Guests get the
    sign-in card.
@@ -106,8 +106,6 @@ function SettingsSheet({ onClose }) {
         <div className="settings-group">
           {!p.standalone && <Row icon={Download} title={p.installed ? "Open the installed app" : "Install the app"} onClick={install} />}
           {p.standalone && <Row icon={Smartphone} title="Find TTFC on your Home Screen" to="/install?find=1" />}
-          <Row icon={Trophy} title="Catalyst Awards" href={LINKS.awards} />
-          <Row icon={FileText} title="Brochure" href={LINKS.brochure} />
           <Row icon={ShieldCheck} title="Privacy Policy" to="/legal/privacy" />
           <Row icon={FileText} title="Terms of Use" to="/legal/terms" />
           <Row icon={HelpCircle} title="Help & support" href={`mailto:${LINKS.support}?subject=${encodeURIComponent("TTFC app support")}`} />
@@ -221,26 +219,17 @@ export default function Profile() {
           <Stat value={daysToGo} label="Days to go" />
         </div>
 
-        <Link to="/profile/pass" className="pass-cta pressable" aria-label={ticket ? `Your pass: ${ticket.tierName}. Opens the QR code for the door` : "Your pass: not linked yet. Tap to link it"}>
-          <QrCode aria-hidden="true" className="pass-cta-qr" />
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span className="pass-cta-label">Your pass</span>
-            <span className="pass-cta-tier">{ticket ? ticket.tierName : "No pass yet"}</span>
-            {ticket
-              ? <span className="pass-cta-id"><BadgeCheck aria-hidden="true" />LINKED · {ticket.ticketId.toUpperCase()}</span>
-              : <span className="pass-cta-id" style={{ fontWeight: 600 }}>Not linked yet — tap to link your real pass</span>}
-          </span>
-          <ChevronRight aria-hidden="true" className="pass-cta-chev" />
-        </Link>
-
-        <div className="row" style={{ gap: 10, alignItems: "stretch" }}>
-          <Link to="/profile/pass?tab=connect" className="connect-row pressable">
-            <span className="connect-ico"><QrCode aria-hidden="true" /></span>
-            <span><b>My connect QR</b><small>Show to connect in person</small></span>
+        {/* One strip (as on iOS and Android): the pass opens the ticket; then My QR and Scan */}
+        <div className="pass-strip">
+          <Link to="/profile/pass" className="pass-strip-pass pressable" aria-label={ticket ? `Your pass: ${ticket.tierName}${ticket ? ", linked" : ""}` : "Your pass: not linked yet. Tap to link it"}>
+            <span className="pass-strip-ico"><Ticket aria-hidden="true" /></span>
+            <span style={{ minWidth: 0 }}>
+              <span className="pass-strip-tier">{ticket ? ticket.tierName : "No pass yet"}{ticket && <BadgeCheck aria-hidden="true" />}</span>
+              {!ticket && <span className="pass-strip-sub">Link your pass</span>}
+            </span>
           </Link>
-          <button type="button" className="scan-tile pressable" onClick={() => setScan(true)} aria-label="Scan a badge">
-            <ScanLine aria-hidden="true" /><span>SCAN</span>
-          </button>
+          <Link to="/profile/pass?tab=connect" className="pass-strip-btn pressable" aria-label="My connect QR"><span><QrCode aria-hidden="true" /></span>My QR</Link>
+          <button type="button" className="pass-strip-btn pressable" onClick={() => setScan(true)} aria-label="Scan a badge"><span><ScanLine aria-hidden="true" /></span>Scan</button>
         </div>
 
         <section className="stack-sm" aria-labelledby="contact-h">
@@ -268,15 +257,18 @@ export default function Profile() {
           <ChevronRight className="chev" aria-hidden="true" />
         </Link>
 
-        <div className="quick-grid">
-          <Link to="/network/connected" className="quick pressable"><span className="quick-ico"><Users aria-hidden="true" /></span><span className="row"><b>Network</b><span className="spacer" /><b className="accent-text tiny">{accepted.length}</b></span></Link>
-          <Link to="/profile/pass" className="quick pressable"><span className="quick-ico"><Ticket aria-hidden="true" /></span><b>My pass</b>{ticket && <small>{ticket.tierName}</small>}</Link>
-          <a href={LINKS.brochure} target="_blank" rel="noopener noreferrer" className="quick pressable"><span className="quick-ico"><FileText aria-hidden="true" /></span><b>Brochure</b></a>
-          <a href={LINKS.awards} target="_blank" rel="noopener noreferrer" className="quick pressable"><span className="quick-ico"><Trophy aria-hidden="true" /></span><b>Awards</b><small>28 categories</small></a>
-        </div>
+        {/* Awards as a row like Connections (Network, My pass and the brochure repeated the tabs and the pass strip) */}
+        <a href={LINKS.awards} target="_blank" rel="noopener noreferrer" className="list-row pressable" style={{ padding: 14 }}>
+          <span className="lead-icon lead-icon--accent" style={{ width: 34, height: 34 }}><Trophy aria-hidden="true" /></span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <b style={{ display: "block" }}>Catalyst Awards</b>
+            <span className="tiny muted">28 categories</span>
+          </span>
+          <ChevronRight className="chev" aria-hidden="true" />
+        </a>
 
         <section className="stack-sm" aria-labelledby="topics-h">
-          <div className="row"><h2 id="topics-h" className="eyebrow" style={{ flex: 1 }}>My topics</h2><Link to="/profile/edit" className="small bold muted" style={{ textDecoration: "none" }}>Edit</Link></div>
+          <div className="row"><h2 id="topics-h" className="eyebrow" style={{ flex: 1 }}>Interests</h2><Link to="/profile/edit" className="small bold muted" style={{ textDecoration: "none" }}>Edit</Link></div>
           <div className="card" style={{ padding: 14, borderRadius: 14 }}>
             {topics.length ? <div className="tag-list">{topics.map((x) => <span key={x} className="chip" style={{ minHeight: 28 }}>{shortTopic(x)}</span>)}</div>
               : <p className="small muted" style={{ margin: 0 }}>No topics yet — tap Edit to pick what you're here for.</p>}

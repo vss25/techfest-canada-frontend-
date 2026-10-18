@@ -911,3 +911,15 @@ a { color: var(--pur-alt); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* Profile: pass strip (pass + My QR + Scan in one card, as on iOS) */
+.pass-strip { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: var(--r-card); color: #fff; background: linear-gradient(135deg, var(--pur-core), #8b52e0); }
+.pass-strip-pass { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; border-radius: var(--r-control); }
+.pass-strip-ico { width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,0.18); }
+.pass-strip-ico svg { width: 20px; height: 20px; }
+.pass-strip-tier { display: flex; align-items: center; gap: 5px; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pass-strip-tier svg { width: 14px; height: 14px; flex: none; opacity: 0.9; }
+.pass-strip-sub { display: block; font-size: 11px; font-weight: 600; opacity: 0.8; }
+.pass-strip-btn { flex: none; display: flex; flex-direction: column; align-items: center; gap: 3px; font: inherit; font-size: 10px; font-weight: 600; color: #fff; text-decoration: none; background: none; border: 0; padding: 0; cursor: pointer; }
+.pass-strip-btn > span { width: 44px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,0.16); }
+.pass-strip-btn svg { width: 19px; height: 19px; }

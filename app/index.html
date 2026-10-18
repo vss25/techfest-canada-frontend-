@@ -24,10 +24,12 @@
 
     <!-- Paint the brand ground before any script runs (no white flash). -->
     <style>
-      html, body { margin: 0; background: #0E0828; }
-      @media (prefers-color-scheme: light) { html:not([data-theme="dark"]), html:not([data-theme="dark"]) body { background: #FCF8FB; } }
-      html[data-theme="light"], html[data-theme="light"] body { background: #FCF8FB; }
-      html[data-theme="dark"], html[data-theme="dark"] body { background: #0E0828; }
+      /* Only <html> gets the ground: <body> stays transparent so the app's fixed backdrops show. */
+      html { background: #0E0828; }
+      body { margin: 0; }
+      @media (prefers-color-scheme: light) { html:not([data-theme="dark"]) { background: #FCF8FB; } }
+      html[data-theme="light"] { background: #FCF8FB; }
+      html[data-theme="dark"] { background: #0E0828; }
     </style>
     <script>
       // Theme chosen in Profile (system / light / dark), applied before first paint.

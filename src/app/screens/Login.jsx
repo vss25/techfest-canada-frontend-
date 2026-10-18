@@ -6,6 +6,7 @@ import { auth, enterGuest, requestEmailLink, ticketLogin, verifyEmailCode, verif
 import { pwa } from "../lib/pwa";
 import { EVENT } from "../lib/config";
 import { Button } from "../components/ui";
+import { WelcomeCard } from "../components/AppNotices";
 
 /* =========================================================
    Sign-in, as in the apps: an emailed sign-in link + 6-digit
@@ -138,6 +139,7 @@ export default function Login() {
       </div>
 
       <main id="main" className="login-panel" aria-live="polite">
+        <div style={{ color: "var(--tx)" }}><WelcomeCard /></div>
         {a.notice && <div className="note note--gold" role="alert">{a.notice}</div>}
 
         {mode === "verifying" && (

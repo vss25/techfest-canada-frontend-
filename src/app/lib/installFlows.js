@@ -1,4 +1,4 @@
-import { iosVersion } from "../../lib/pwaPlatform";
+import { desktopKind, iosVersion, isChromium, safariVersion } from "../../lib/pwaPlatform";
 
 /* =========================================================
    Step-by-step "install the app" instructions for every phone
@@ -71,16 +71,20 @@ export function flowFor({ os, browser, canPrompt, onAppPage = true }) {
           {
             id: "share", mock: iv >= 26 ? "ios26-more" : "ios-share", title: "Tap the Share button",
             lead: iv >= 26
-              ? "At the bottom of the screen, tap the ••• button, then tap Share."
+              ? "At the bottom right of the screen, tap the ••• button, then tap Share at the top of the menu."
               : "At the bottom of the screen, tap the Share button: a square with an arrow pointing up.",
             hint: iv >= 26
               ? "Already see a Share button (a square with an arrow pointing up)? Tap that instead."
-              : "Don't see it? Tap the bottom of the screen to show the toolbar. On iOS 26, tap the ••• button first.",
+              : "Don't see it? Tap the bottom of the screen to show the toolbar. If you see ••• instead, tap it, then Share.",
           },
-          {
+          iv >= 26 ? {
+            id: "add", mock: "ios26-sheet", title: "Tap \"Add to Home Screen\"",
+            lead: "Tap View More (the round button with a down arrow), then tap Add to Home Screen. It has a square with a + sign.",
+            hint: "Already see Add to Home Screen in the list? Tap it straight away.",
+          } : {
             id: "add", mock: "ios-sheet", title: "Tap \"Add to Home Screen\"",
             lead: "Scroll down the list and tap Add to Home Screen. It has a square with a + sign.",
-            hint: iv >= 26 ? "If you only see a row of icons, tap More or View More to see the full list." : "It's below Copy and Add Bookmark. Keep scrolling if you don't see it.",
+            hint: "It's below Copy and Add Bookmark. Keep scrolling if you don't see it.",
           },
           {
             id: "confirm", mock: "ios-add", title: "Tap \"Add\"",
@@ -185,24 +189,53 @@ export function flowFor({ os, browser, canPrompt, onAppPage = true }) {
     };
   }
 
-  // Computers
+  // Computers (installs land on /app/, so the app opens in its own window).
+  const mac = desktopKind() === "mac";
+  const FIND_DESKTOP = mac
+    ? { id: "find", mock: "mac-dock", title: "Find the TTFC app", showIcon: true,
+        lead: "Look for this icon in your Dock. Click it to open TTFC in its own window.",
+        hint: "Not in the Dock? Open Launchpad or the Applications folder, or press Command + Space and type TTFC." }
+    : { id: "find", mock: "win-start", title: "Find the TTFC app", showIcon: true,
+        lead: "Open the Start menu and type TTFC. Click it to open the app in its own window.",
+        hint: "To keep it handy, right-click TTFC in the Start menu and choose Pin to taskbar." };
+  const edge = browser === "edge";
   if (canPrompt) {
     return {
       kind: "desktop-prompt",
       title: "Install the TTFC app",
-      steps: [{ id: "install", mock: "desktop", title: "Install on this computer", lead: "Click Install app, then Install in the box that pops up. TTFC opens in its own window.", hint: "On your phone? Scan the code below instead.", action: "install-prompt", qr: true }],
+      steps: [
+        { id: "install", mock: "desktop-dialog", title: "Click \"Install app\"", lead: "Click Install app below, then Install in the box your browser shows.", hint: "On your phone instead? Scan the code below.", action: "install-prompt", qr: true },
+        FIND_DESKTOP,
+      ],
     };
   }
-  if (browser === "safari") {
+  if (isChromium()) {
+    return {
+      kind: edge ? "desktop-edge" : "desktop-chromium",
+      title: "Install the TTFC app",
+      steps: [
+        edge
+          ? { id: "menu", mock: "edge-menu", title: "Open Edge's ••• menu", lead: "Click ••• at the top right, then Apps, then Install this site as an app.", hint: "Or click the install icon (a box with a +) at the right of the address bar." }
+          : { id: "menu", mock: "desktop", title: "Click the install icon", lead: "At the right of the address bar, click the install icon (a screen with a down arrow).", hint: "Don't see it? Click ⋮ at the top right, then Cast, save and share, then Install page as app." },
+        { id: "confirm", mock: "desktop-dialog", title: "Click \"Install\"", lead: "Click Install in the box that appears.", hint: "TTFC opens in its own window straight away." },
+        FIND_DESKTOP,
+      ],
+    };
+  }
+  if (browser === "safari" && mac && safariVersion() >= 17) {
     return {
       kind: "desktop-safari",
       title: "Add TTFC to your Dock",
-      steps: [{ id: "dock", mock: "desktop", title: "File › Add to Dock", lead: "In Safari's menu bar, choose File, then Add to Dock, then Add.", hint: "Needs macOS Sonoma or later. On your phone? Scan the code below.", qr: true }],
+      steps: [
+        { id: "file", mock: "mac-file-menu", title: "File › Add to Dock", lead: "In the menu bar at the top of the screen, click File, then Add to Dock.", hint: "Or click the Share button in Safari's toolbar, then Add to Dock." },
+        { id: "confirm", mock: "mac-add-dock", title: "Click \"Add\"", lead: "Keep the name TTFC and click Add.", hint: "TTFC opens in its own window, separate from Safari." },
+        FIND_DESKTOP,
+      ],
     };
   }
   return {
     kind: "desktop-other",
     title: "Get the TTFC app on your phone",
-    steps: [{ id: "phone", mock: "desktop", title: "Scan with your phone", lead: "Point your phone's camera at the code to open the app page, then follow the steps there.", hint: "In Chrome or Edge you can also install it here: look for the install icon at the right of the address bar.", qr: true }],
+    steps: [{ id: "phone", mock: "desktop", title: "Scan with your phone", lead: "Point your phone's camera at the code to open the app page, then follow the steps there.", hint: "This browser can't install apps. Chrome, Edge or Safari on a Mac can.", qr: true }],
   };
 }

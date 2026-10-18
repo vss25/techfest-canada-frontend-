@@ -49,11 +49,53 @@ export function detectBrowser() {
   return "other";
 }
 
-/** iOS major.minor (e.g. 17.4), or 0 when unknown. */
+/**
+ * iOS major.minor (e.g. 17.4), or 0 when unknown. Safari on iOS 26 freezes
+ * the OS token at 18_x, but its Version/ token is the real one (26.4).
+ */
 export function iosVersion() {
-  const m = ua().match(/OS (\d+)[_.](\d+)/);
-  if (!m) return forced().startsWith("ios") ? 26 : 0;
-  return Number(m[1]) + Number(m[2]) / 10;
+  const u = ua();
+  const os = u.match(/OS (\d+)[_.](\d+)/);
+  const ver = /Safari\//.test(u) && !/CriOS|FxiOS|EdgiOS/.test(u) ? u.match(/Version\/(\d+)\.(\d+)/) : null;
+  const n = (m) => (m ? Number(m[1]) + Number(m[2]) / 10 : 0);
+  const v = Math.max(n(os), n(ver));
+  if (!v) return forced().startsWith("ios") ? 26 : 0;
+  return v;
+}
+
+/** Desktop Safari major version (17 = macOS Sonoma's "Add to Dock"), or 0. */
+export function safariVersion() {
+  const f = forced();
+  if (f) return f.endsWith("safari") ? 17 : 0;
+  const u = ua();
+  if (!/Safari\//.test(u) || /Chrome|Chromium|Edg|OPR|Firefox/.test(u)) return 0;
+  const m = u.match(/Version\/(\d+)/);
+  return m ? Number(m[1]) : 0;
+}
+
+/** Chrome, Edge, Brave, Opera, Arc…: browsers with an "Install app" prompt. */
+export function isChromium() {
+  const f = forced();
+  if (f) return /chrome|edge|opera/.test(f);
+  return /Chrome\/|Chromium\/|Edg\/|OPR\//.test(ua()) && !/Firefox|FxiOS/.test(ua());
+}
+
+/** "mac" | "windows" | "linux" | "chromeos" | "" (computers only). */
+export function desktopKind() {
+  const u = ua();
+  if (/CrOS/.test(u)) return "chromeos";
+  if (/Macintosh/.test(u)) return "mac";
+  if (/Windows/.test(u)) return "windows";
+  if (/Linux|X11/.test(u)) return "linux";
+  return "";
+}
+
+/** A computer whose browser can install the app (Chromium, or Safari 17+ on a Mac). */
+export function desktopCanInstall() {
+  const f = forced();
+  if (f) return f.startsWith("desktop") && !f.includes("firefox");
+  if (detectOS() !== "desktop") return false;
+  return isChromium() || (desktopKind() === "mac" && safariVersion() >= 17);
 }
 
 /** Running as the installed app (Home Screen / app drawer). */

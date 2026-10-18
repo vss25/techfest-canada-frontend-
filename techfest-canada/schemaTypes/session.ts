@@ -38,6 +38,17 @@ const SECTORS = [
   { title: "Startups & Capital", value: "startups" },
 ];
 
+// Per-session live polls / audience Q&A. Missing = "auto". The rule (backend
+// services/sessionLive.js, admin src/admin/cms/sessionLive.js): "auto" is on when
+// the session has a moderator and isn't a keynote or a break.
+const LIVE_MODES = [
+  { title: "Auto (on when there's a moderator)", value: "auto" },
+  { title: "On", value: "on" },
+  { title: "Off", value: "off" },
+];
+const liveModeRule = (Rule: any) => Rule.custom((v: string | undefined) =>
+  (v === undefined || LIVE_MODES.some((m) => m.value === v) ? true : "Pick Auto, On or Off"));
+
 const timeRule = (Rule: any) =>
   Rule.required().custom((v: string | undefined) => (!v || TIME.test(v) ? true : "Use 24-hour time like 09:30"));
 
@@ -45,6 +56,13 @@ export default defineType({
   name: "session",
   title: "Agenda Session",
   type: "document",
+  fieldsets: [
+    {
+      name: "live",
+      title: "Live features",
+      description: "What the app offers during this session. Auto never turns them on for keynotes or breaks. The global switches in the admin panel still apply.",
+    },
+  ],
   fields: [
     defineField({
       name: "title",
@@ -115,6 +133,24 @@ export default defineType({
     }),
     defineField({ name: "stage", title: "Stage / room", type: "string", validation: (Rule) => Rule.max(80) }),
     defineField({ name: "description", title: "Description", type: "text", rows: 4, validation: (Rule) => Rule.max(1500) }),
+    defineField({
+      name: "polls",
+      title: "Live polls",
+      type: "string",
+      fieldset: "live",
+      options: { list: LIVE_MODES, layout: "radio", direction: "horizontal" },
+      initialValue: "auto",
+      validation: liveModeRule,
+    }),
+    defineField({
+      name: "qa",
+      title: "Audience Q&A",
+      type: "string",
+      fieldset: "live",
+      options: { list: LIVE_MODES, layout: "radio", direction: "horizontal" },
+      initialValue: "auto",
+      validation: liveModeRule,
+    }),
   ],
   orderings: [
     {

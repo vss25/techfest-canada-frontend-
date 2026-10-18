@@ -13,6 +13,9 @@ import { CmsBanners } from "./CmsParts";
 import { LIVE_NOTE } from "./cmsMeta";
 import useCmsStatus from "./useCmsStatus";
 import { EARLIER_STEPS, LATER_STEPS, planShift, stageOf } from "./agendaShift";
+import {
+  AUTO_HINTS, BADGE_LABELS, FEATURE_LABELS, LIVE_FEATURES, LIVE_MODES, MODE_LABELS, autoReason, globalSwitches, liveMode, sessionLive,
+} from "./sessionLive";
 import { SESSIONS, DAYS, buildSpeakerIndex, matchSpeaker, formatTime12, getDuration } from "../../data/agenda";
 import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS, SESSION_TYPE_SUGGESTIONS } from "../../data/sessionFormats";
 
@@ -34,6 +37,7 @@ function FormatBadge({ format }) {
 const blank = (day) => ({
   title: "", day, time: "09:00", endTime: "09:30", type: "", format: "keynote", featured: false, isBreak: false,
   pillar: "", sector: "", stage: "", description: "", speakers: [], moderator: { name: "", org: "" },
+  polls: "auto", qa: "auto",
 });
 
 const toForm = (d) => ({
@@ -42,6 +46,7 @@ const toForm = (d) => ({
   pillar: d.pillar || "", sector: d.sector || "", stage: d.stage || "", description: d.description || "",
   speakers: (d.speakers || []).map((p) => ({ name: p.name || "", org: p.org || "", tentative: !!p.tentative })),
   moderator: { name: d.moderator?.name || "", org: d.moderator?.org || "" },
+  polls: liveMode(d.polls), qa: liveMode(d.qa),
 });
 
 /** Form → request body. Speakers/moderator are sent as plain objects (the server adds _key). */
@@ -59,6 +64,8 @@ function toBody(form, original) {
     // Creating: drop empty optional fields instead of "unsetting" them.
     for (const k of Object.keys(body)) if (body[k] === null) delete body[k];
   }
+  // Live switches: always on create; on edit only when changed (missing = "auto").
+  for (const k of LIVE_FEATURES) if (!original || liveMode(original[k]) !== form[k]) body[k] = form[k];
   return body;
 }
 
@@ -88,7 +95,33 @@ function PersonName({ value, onChange, listId, index, label, placeholder }) {
   );
 }
 
-function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNames, readOnly, onClose, onSaved }) {
+/** Auto / On / Off for one live feature, with what Auto resolves to for the form as it is now. */
+function LiveModeControl({ feature, value, onChange, reason, globalOff, readOnly }) {
+  const name = useId();
+  const hintId = useId();
+  return (
+    <fieldset className="min-w-0" aria-describedby={hintId}>
+      <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">{FEATURE_LABELS[feature]}</legend>
+      <div className="inline-flex overflow-hidden rounded-xl border border-ttfc-line bg-ttfc-ink/40">
+        {LIVE_MODES.map((m) => (
+          <label key={m}
+            className={`relative inline-flex h-9 min-w-[3.5rem] items-center justify-center border-r border-ttfc-line px-3 text-sm font-semibold transition last:border-r-0 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-ttfc-purple ${
+              readOnly ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${
+              value === m ? "bg-ttfc-purple/30 text-white" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text"}`}>
+            <input type="radio" name={name} value={m} checked={value === m} onChange={() => onChange(m)} disabled={readOnly} className="sr-only" />
+            {MODE_LABELS[m]}
+          </label>
+        ))}
+      </div>
+      <p id={hintId} className="mt-1.5 text-xs text-ttfc-dim">
+        {AUTO_HINTS[reason]}
+        {globalOff && <span className="block text-amber-200/90">Switched off for the whole app in App text &amp; switches, so it's off here too.</span>}
+      </p>
+    </fieldset>
+  );
+}
+
+function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNames, readOnly, globalLive, onClose, onSaved }) {
   const toast = useToast();
   const listId = useId();
   const typeListId = useId();
@@ -224,6 +257,17 @@ function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNa
           </div>
         </fieldset>
 
+        <fieldset className="rounded-2xl border border-ttfc-line p-4">
+          <legend className="px-1 text-xs font-bold uppercase tracking-[0.12em] text-ttfc-dim">Live features</legend>
+          <p className="mb-3 text-xs text-ttfc-muted">What the app offers during this session. Auto turns them on for moderated sessions, not keynotes or breaks.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {LIVE_FEATURES.map((k) => (
+              <LiveModeControl key={k} feature={k} value={form[k]} onChange={set(k)} reason={autoReason(form)}
+                globalOff={globalLive?.[k] === false} readOnly={readOnly} />
+            ))}
+          </div>
+        </fieldset>
+
         <Field label="Description" hint={`${form.description.length}/1500 — optional.`}>
           {(id) => <Textarea id={id} rows={4} value={form.description} onChange={set("description")} maxLength={1500} disabled={readOnly} />}
         </Field>
@@ -232,8 +276,9 @@ function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNa
   );
 }
 
-function SessionRow({ s, speakerIndex, readOnly, onEdit, onDuplicate, onDelete, onShift }) {
+function SessionRow({ s, speakerIndex, readOnly, globalLive, onEdit, onDuplicate, onDelete, onShift }) {
   const people = (s.speakers || []).map((p) => p.name).filter(Boolean);
+  const live = sessionLive(s, globalLive);
   const unmatched = [...(s.speakers || []), ...(s.moderator?.name ? [s.moderator] : [])].filter((p) => p.name && !matchSpeaker(speakerIndex, p.name));
   return (
     <li className={`grid gap-3 border-b border-ttfc-line/70 px-4 py-4 last:border-0 sm:grid-cols-[120px_minmax(0,1fr)_auto] sm:items-start sm:px-5 ${s.isBreak ? "bg-white/[0.02]" : ""}`}>
@@ -254,6 +299,8 @@ function SessionRow({ s, speakerIndex, readOnly, onEdit, onDuplicate, onDelete, 
           <FormatBadge format={s.format} />
           {s.type && <span className="text-xs text-ttfc-muted">{s.type}</span>}
           {s.stage && <Badge>{s.stage}</Badge>}
+          {live.pollsOn && <Badge>{BADGE_LABELS.polls}<span className="sr-only"> on in the app</span></Badge>}
+          {live.qaOn && <Badge>{BADGE_LABELS.qa}<span className="sr-only"> on in the app</span></Badge>}
         </div>
         <p className="mt-1 font-semibold text-ttfc-text">{s.title}</p>
         {(people.length > 0 || s.moderator?.name) && (
@@ -414,6 +461,7 @@ export default function Agenda() {
   const readOnly = configured === false;
   const { data, error, loading, reload, setData } = useApi("/cms/session");
   const speakers = useApi("/cms/speaker");
+  const appContent = useApi("/console/app-content");   // the global polls / Q&A switches (on if it can't be read)
   const [day, setDay] = useState(1);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -422,6 +470,7 @@ export default function Agenda() {
 
   const list = useMemo(() => [...(data || [])].sort(byTime), [data]);
   const speakerIndex = useMemo(() => buildSpeakerIndex(speakers.data || []), [speakers.data]);
+  const globalLive = useMemo(() => globalSwitches(appContent.data), [appContent.data]);
   const speakerNames = useMemo(() => (speakers.data || []).map((d) => d.name).filter(Boolean).sort(), [speakers.data]);
   const dayList = list.filter((s) => Number(s.day) === day && s.time);
   // Sessions made elsewhere (e.g. Sanity Studio) without a day or time don't show on the site.
@@ -518,7 +567,7 @@ export default function Agenda() {
               <p className="mt-1 text-xs text-ttfc-dim">These don't appear on the website or in the app until they have a day, start and end time. Edit them, or delete them if they were tests.</p>
               <ul className="mt-3 overflow-hidden rounded-[14px] border border-ttfc-line bg-ttfc-panel">
                 {unscheduled.map((s) => (
-                  <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly}
+                  <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly} globalLive={globalLive}
                     onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} onDuplicate={duplicate} onDelete={setDeleting} />
                 ))}
               </ul>
@@ -529,7 +578,7 @@ export default function Agenda() {
           {dayList.length ? (
             <ul className="overflow-hidden rounded-[18px] border border-ttfc-line bg-ttfc-panel">
               {dayList.map((s) => (
-                <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly}
+                <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly} globalLive={globalLive}
                   onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} onDuplicate={duplicate} onDelete={setDeleting}
                   onShift={(doc) => setShifting(doc)} />
               ))}
@@ -554,6 +603,7 @@ export default function Agenda() {
           speakerIndex={speakerIndex}
           speakerNames={speakerNames}
           readOnly={readOnly}
+          globalLive={globalLive}
           onClose={() => setEditing(null)}
           onSaved={onSaved}
         />

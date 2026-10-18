@@ -192,6 +192,11 @@ export const REGISTRY = {
     scope: "app", group: "flags", type: "switch",
     label: "Audience Q&A", description: "Turn off to hide session Q&A in the app and stop new questions.",
   },
+  "flag.pwaPrompt": {
+    scope: "app", group: "flags", type: "switch",
+    label: "Install-the-app prompt on the website",
+    description: "Shows phone visitors to thetechfestival.com a \"Get the TTFC app\" sheet with step-by-step install help. The web app at /app works either way.",
+  },
 };
 
 /** Scope for a key that isn't in the registry yet (keeps new backend keys editable). */

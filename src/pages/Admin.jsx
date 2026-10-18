@@ -6,7 +6,7 @@ import "../admin/admin.css";
 import AdminShell from "../admin/AdminShell";
 import Toaster from "../admin/Toaster";
 import { AdminContext } from "../admin/adminContext";
-import { adminFetch, signOut } from "../admin/api";
+import { adminFetch, signOut, PASSWORD_REQUIRED } from "../admin/api";
 import { Button, ErrorState, ManagementOnly, Spinner } from "../admin/ui";
 
 import Overview from "../admin/sections/Overview";
@@ -96,8 +96,12 @@ export default function Admin() {
     let alive = true;
     adminFetch("/console/me").then(
       (a) => { if (alive) setAccess({ staffRole: a.staffRole || (a.isManagement ? "management" : "staff"), isManagement: !!a.isManagement }); },
-      // Older servers without access levels: show everything (the server still enforces its own rules).
-      (err) => { if (alive) setAccess({ staffRole: err?.status === 404 ? "management" : "staff", isManagement: err?.status === 404 }); },
+      (err) => {
+        // Signed in with an emailed code: the panel wants the password (handled below).
+        if (!alive || err?.code === PASSWORD_REQUIRED) return;
+        // Older servers without access levels: show everything (the server still enforces its own rules).
+        setAccess({ staffRole: err?.status === 404 ? "management" : "staff", isManagement: err?.status === 404 });
+      },
     );
     return () => { alive = false; };
   }, [me]);
@@ -108,8 +112,15 @@ export default function Admin() {
       signOut();
       navigate("/admin-login", { replace: true, state: { expired: true } });
     };
+    // Signed in elsewhere with an emailed code (apps, website): fine for the rest of the site,
+    // but the panel only takes a password sign-in. They stay signed in to the site.
+    const onPasswordRequired = () => navigate("/admin-login", { replace: true, state: { passwordRequired: true } });
     window.addEventListener("ttfc:admin-unauthorized", onUnauthorized);
-    return () => window.removeEventListener("ttfc:admin-unauthorized", onUnauthorized);
+    window.addEventListener("ttfc:admin-password-required", onPasswordRequired);
+    return () => {
+      window.removeEventListener("ttfc:admin-unauthorized", onUnauthorized);
+      window.removeEventListener("ttfc:admin-password-required", onPasswordRequired);
+    };
   }, [navigate]);
 
   // Website / app status for the top bar (every 60 s)

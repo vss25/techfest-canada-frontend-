@@ -1,4 +1,7 @@
 {
+  "git": {
+    "deploymentEnabled": { "main": true, "**": false }
+  },
   "headers": [
     {
       "source": "/:path([Rr][Ss][Vv][Pp]/?)",

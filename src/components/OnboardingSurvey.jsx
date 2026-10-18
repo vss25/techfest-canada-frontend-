@@ -316,7 +316,7 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
 
             {[
               { emoji: "🎟", text: "Early access to speaker announcements" },
-              { emoji: "🤝", text: "Connect with 500+ innovators & decision-makers" },
+              { emoji: "🤝", text: "Connect with 1000+ attendees across 2 days" },
               { emoji: "📍", text: "The Carlu, Toronto · October 5, 2026" },
             ].map(p => (
               <div key={p.text} style={{

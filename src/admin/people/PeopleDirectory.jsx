@@ -133,8 +133,8 @@ export default function PeopleDirectory() {
           <StatTile label="RSVP'd" value={((c.byRsvp.attendee || 0) + (c.byRsvp.staff || 0)).toLocaleString()} icon={CalendarCheck} tone="good" to="?rsvp=any"
             hint={`${(c.byRsvp.staff || 0).toLocaleString()} set by staff`} />
           <StatTile label="Speakers" value={(c.byType.speaker || 0).toLocaleString()} icon={Contact} tone="orange" to="?type=speaker" />
-          <StatTile label="Exhibitors (marked Yes)" value={(c.exhibitors || 0).toLocaleString()} icon={Store} tone="neutral" to="?exhibitor=yes"
-            hint={`${(c.byType.exhibitor || 0).toLocaleString()} with the exhibitor type`} />
+          <StatTile label="Exhibitors" value={(c.exhibitors || 0).toLocaleString()} icon={Store} tone="neutral" to="?exhibitor=yes"
+            hint="Exhibitor pass holders and anyone staff marked" />
         </div>
       )}
 

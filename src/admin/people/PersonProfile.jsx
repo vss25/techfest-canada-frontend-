@@ -70,9 +70,10 @@ function DetailsCard({ p, onSaved }) {
       </div>
       <div className="mt-5 rounded-2xl border border-ttfc-line p-4">
         <Switch checked={exhibitor} onChange={setExhibitor} disabled={disabled || !e.canEditExhibitor} label="Exhibitor"
-          description={p.exhibitorPass
-            ? "They have an exhibitor pass, so the apps show them as an exhibitor whatever this says. To change that, switch the exhibitor type off on their app account."
-            : "No for everyone until staff say Yes. Yes also gives them the exhibitor type in the apps; No takes the one staff gave away."} />
+          description="Yes for exhibitor pass holders and anyone staff mark, No for everyone else. The apps use the same answer." />
+        {p.exhibitor && !exhibitor && p.exhibitorPass && (
+          <p className="mt-2 text-xs text-amber-200/90">This also removes their exhibitor badge and booth in the app.</p>
+        )}
       </div>
       {error && <p role="alert" className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error.message}</p>}
       {!disabled && (
@@ -248,7 +249,6 @@ function ProfileView({ id }) {
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{p.name}</h1>
             {p.types.map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}
-            {p.exhibitor && <Badge tone="purple" icon={Store}>Exhibitor</Badge>}
           </div>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-ttfc-muted">
             <CompanyMark url={p.logoUrl} name={p.company} size="sm" />

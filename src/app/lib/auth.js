@@ -149,7 +149,7 @@ export async function verifyEmailCode(email, code) {
 }
 
 /** Pass IDs are 12 letters/numbers; the "TECHFEST:" QR prefix is fine too. */
-export const cleanTicketId = (raw) => String(raw || "").trim().replace(/^techfest:/i, "").replace(/[^a-z0-9-]/gi, "");
+export const cleanTicketId = (raw) => String(raw || "").trim().replace(/^techfest:/i, "").replace(/\s+/g, "").toLowerCase();
 
 export async function ticketLogin(lastName, ticketId) {
   const r = await post("auth/ticket-login", { lastName: String(lastName || "").trim(), ticketId: cleanTicketId(ticketId) }, { auth: false });

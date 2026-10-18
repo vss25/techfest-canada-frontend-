@@ -8,10 +8,11 @@ import {
 /* ============================================================
    /app-login?token=…
    Where the "Your TTFC sign-in link" email lands. On a phone it
-   hands the one-time token to the app (ttfc://login?token=…); on a
-   computer it explains how to sign in with the app instead (the
-   website has no signed-in area any more). Nothing is verified here,
-   so the single-use token stays usable by the app.
+   hands the one-time token to the app (ttfc://login?token=…) and
+   offers the web app (/app) if the app isn't installed; on a
+   computer it offers the web app. Nothing is verified here, so the
+   single-use token stays usable by whichever app opens it. The web
+   app reads it from sessionStorage (same tab), never from the URL.
    index.html moves the token into sessionStorage before analytics
    scripts can read the URL.
    ============================================================ */
@@ -25,6 +26,17 @@ function readToken() {
   const fromUrl = new URLSearchParams(window.location.search).get("token");
   if (fromUrl) return fromUrl;
   try { return sessionStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; }
+}
+
+/** Hands the token to the web app at /app/login (same tab, via sessionStorage). */
+function openWebApp(token) {
+  try {
+    sessionStorage.setItem(TOKEN_KEY, token);
+    window.location.assign("/app/login");
+  } catch {
+    // Storage blocked: the fragment never reaches a server; /app moves it out of the address bar.
+    window.location.assign("/app/login#token=" + encodeURIComponent(token));
+  }
 }
 
 function useBodyDark() {
@@ -100,6 +112,7 @@ export default function AppLogin() {
   const lead = { margin: "0 auto", maxWidth: 400, color: textMuted, lineHeight: 1.6, fontSize: "1rem" };
   const btnBase = { display: "flex", alignItems: "center", justifyContent: "center", width: "100%", minHeight: 54, padding: "15px 18px", borderRadius: 14, fontFamily: ORBITRON, fontWeight: 800, fontSize: "0.72rem", letterSpacing: "1.2px", textTransform: "uppercase", textDecoration: "none", cursor: "pointer", boxSizing: "border-box" };
   const primary = { ...btnBase, border: "none", background: GRADIENT, color: "#fff", boxShadow: "0 6px 24px rgba(122,63,209,0.35)" };
+  const secondary = { ...btnBase, border: `1px solid ${inputBorder}`, background: "transparent", color: textMain };
   const spinner = <div aria-hidden="true" style={{ width: 38, height: 38, margin: "0 auto 20px", borderRadius: 999, border: `3px solid ${divider}`, borderTopColor: "#7a3fd1", animation: "alSpin 0.8s linear infinite" }} />;
   const badge = (
     <div aria-hidden="true" style={{ width: 64, height: 64, margin: "0 auto 18px", borderRadius: 20, background: GRADIENT, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 30px rgba(122,63,209,0.35)" }}>
@@ -123,13 +136,23 @@ export default function AppLogin() {
         <h1 style={h1}>{mobile ? "Opening the TTFC app…" : "Sign in to the TTFC app"}</h1>
         <p style={lead}>
           {mobile
-            ? "If the app didn't open, tap the button below."
-            : "This link signs you in to the TTFC app. Open the email on your phone, or type the 6-digit code from the email into the app."}
+            ? "If the app didn't open, tap a button below."
+            : "Sign in to the TTFC web app on this computer, or open the email on your phone and use the app there."}
         </p>
-        {mobile && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 24 }}>
-            <a href={appLoginUrl(token)} style={primary}>Open the TTFC app</a>
-          </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 24 }}>
+          {mobile ? (
+            <>
+              <a href={appLoginUrl(token)} style={primary}>Open the TTFC app</a>
+              <button type="button" onClick={() => openWebApp(token)} style={secondary}>Continue in the browser</button>
+            </>
+          ) : (
+            <button type="button" onClick={() => openWebApp(token)} style={primary}>Sign in on this computer</button>
+          )}
+        </div>
+        {!mobile && (
+          <p style={{ margin: "16px 0 0", color: textMuted, fontSize: "0.9rem", lineHeight: 1.5 }}>
+            Using the app on your phone? Type the 6-digit code from the email there instead.
+          </p>
         )}
         <p style={{ margin: "22px 0 0", color: textDim, fontSize: "0.82rem", lineHeight: 1.5 }}>
           The link works once and expires 15 minutes after it was sent.

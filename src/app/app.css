@@ -70,11 +70,12 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--bg); }
+/* Transparent body: the fixed backdrops (z-index −1) paint between html and the page. */
 body {
   margin: 0;
   min-height: 100dvh;
-  background: var(--bg);
+  background: transparent;
   color: var(--tx);
   font: 400 15px/1.45 var(--font);
   -webkit-font-smoothing: antialiased;

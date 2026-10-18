@@ -135,7 +135,7 @@ function Shell() {
 
 export default function App() {
   return (
-    <BrowserRouter basename="/app">
+    <BrowserRouter basename="/app/">
       <Boot />
       <Shell />
       <ToastHost />

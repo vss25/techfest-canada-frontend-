@@ -3,11 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { CalendarClock, Flag, Hand, Linkedin, MessageCircle, MoreHorizontal, Smartphone, Sparkles, Undo2, UserCheck, UserPlus, UserRoundCheck, UserX } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, firstName } from "../lib/auth";
-import { blockUser, canMessage, canRequest, connectionWith, fetchPerson, report, requestConnection, respondConnection, social, unblockUser, withdrawConnection } from "../lib/social";
+import { blockUser, canMessage, canRequest, connectionWith, fetchPerson, report, social, unblockUser, withdrawConnection } from "../lib/social";
+import { acceptWithSharing, connectWithSharing } from "../lib/myCard";
 import { fileURL } from "../lib/config";
 import { recoSignals, slotSummary } from "../lib/people";
 import { confirmDialog, safeHref, showAlert } from "../lib/ui";
 import { Avatar, Button, Empty, IconButton, Kicker, Spinner, TopBar } from "../components/ui";
+import SharedContact from "../components/SharedContact";
 
 /* Someone's public profile (iOS PersonProfileView): what they share, and Connect / Message. */
 
@@ -46,10 +48,8 @@ export default function PersonProfile() {
   const linkedin = safeHref(p.linkedinUrl);
   const kindLabel = p.kind === "exhibitor" ? (p.booth ? `Exhibitor · Booth ${p.booth}` : "Exhibitor") : KIND_LABEL[p.kind];
 
-  const connect = async () => {
-    if (await requestConnection(p)) showAlert("Request sent", `${given} will see your request in the app.`);
-    else showAlert("Couldn't send", social.get().lastError || "Try again.");
-  };
+  // Both go through "Share your contact details" (lib/myCard.js).
+  const connect = () => connectWithSharing(p, { given });
   const withdraw = async () => {
     const ok = await confirmDialog({ title: `Withdraw your request to ${p.name}?`, message: "They won't be told. You can send a new request later.", confirm: "Withdraw request", destructive: true });
     if (ok) await withdrawConnection(conn.conn);
@@ -95,13 +95,14 @@ export default function PersonProfile() {
               <div className="stack-sm">
                 {conn?.status === "accepted" && <Button size="lg" block icon={UserRoundCheck} disabled>Connected</Button>}
                 {conn?.status === "pending" && <Button size="lg" block icon={Undo2} onClick={withdraw}>Withdraw request</Button>}
-                {conn?.status === "incoming" && <Button variant="primary" size="lg" block icon={UserCheck} onClick={() => respondConnection(conn.conn, true)}>Accept invite</Button>}
+                {conn?.status === "incoming" && <Button variant="primary" size="lg" block icon={UserCheck} onClick={() => acceptWithSharing(conn.conn)}>Accept invite</Button>}
                 {!conn && canRequest(p, s) && <Button variant="primary" size="lg" block icon={UserPlus} onClick={connect}>Connect</Button>}
                 {canMessage(p, s) && <Button size="lg" block icon={MessageCircle} onClick={() => navigate(`/chat/${encodeURIComponent(p.id)}`)}>Message</Button>}
                 {!conn && !canRequest(p, s) && !canMessage(p, s) && <p className="small muted center" style={{ margin: 0 }}>{given} connects in person only. Say hello at the festival.</p>}
               </div>
             )
           )}
+          {!me && !blocked && <SharedContact person={p} state={conn} />}
           {(slotSummary(p.availabilitySlots) || p.meetingSpot) && (
             <section className="card stack-sm">
               <h2 className="section-title row" style={{ gap: 6 }}><CalendarClock aria-hidden="true" style={{ width: 15, height: 15 }} />Free to meet</h2>
@@ -116,7 +117,6 @@ export default function PersonProfile() {
             </section>
           )}
           {linkedin && <a className="btn btn-block" href={linkedin} target="_blank" rel="noopener noreferrer"><Linkedin aria-hidden="true" />LinkedIn profile</a>}
-          {conn?.status === "accepted" && conn.conn.email && <p className="small center" style={{ margin: 0 }}>Email: <a href={`mailto:${conn.conn.email}`}>{conn.conn.email}</a></p>}
         </div>
       </main>
     </div>

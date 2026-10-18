@@ -19,7 +19,8 @@ import {
    passes, RSVP and the speaker list (GET /console/people/:id).
    Staff edit name, email (management), LinkedIn, company, job
    title and exhibitor yes/no (PATCH), the RSVP (RsvpEditor) and
-   the company logo (LogoPicker). The pass is read-only here:
+   the company logo (LogoPicker). The pass and their app contact
+   card (contactCard) are read-only here:
    it links to Tickets. Emails and LinkedIn are staff-only (the
    whole panel is).
 ========================================================= */
@@ -163,6 +164,34 @@ function PassesCard({ p }) {
   );
 }
 
+const CONTACT_KIND = {
+  email: "Email", phone: "Phone", whatsapp: "WhatsApp", linkedin: "LinkedIn", website: "Website",
+  x: "X", instagram: "Instagram", wechat: "WeChat", other: "Other",
+};
+const bareLink = (v) => String(v || "").replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "");
+
+/* Their app contact card, read only: each person picks per connection what they share. */
+function ContactCardCard({ items, hasAccount }) {
+  return (
+    <Card>
+      <SectionTitle hint="From their app contact card. They choose what to share with each person they connect with.">Contact card</SectionTitle>
+      {!hasAccount ? <p className="text-sm text-ttfc-muted">Not on the app, so no contact card.</p> : !items?.length ? (
+        <p className="text-sm text-ttfc-muted">No contact details added yet.</p>
+      ) : (
+        <ul className="divide-y divide-ttfc-line text-sm">
+          {items.map((it, i) => (
+            <li key={i} className="flex flex-wrap items-baseline gap-x-3 py-2">
+              <span className="w-28 shrink-0 text-ttfc-muted">{it.label || CONTACT_KIND[it.kind] || "Other"}</span>
+              <span className="min-w-0 flex-1 break-all font-medium">{["linkedin", "website"].includes(it.kind) ? bareLink(it.value) : it.value}</span>
+              {it.shareByDefault && <Badge>Shared by default</Badge>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
 const dayName = (n) => (n === 1 ? "Day 1" : n === 2 ? "Day 2" : "");
 const clock = (hhmm) => {
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || ""));
@@ -284,6 +313,7 @@ function ProfileView({ id }) {
           <DetailsCard key={JSON.stringify([p.name, p.email, p.linkedinUrl, p.company, p.jobTitle, p.exhibitor])} p={p} onSaved={reload} />
           <LogoCard p={p} onSaved={reload} />
           <PassesCard p={p} />
+          <ContactCardCard items={data.contactCard} hasAccount={!!p.userId} />
           {!isManagement && <p className="text-xs text-ttfc-dim">Email changes and the CSV download are for management.</p>}
         </div>
       </div>

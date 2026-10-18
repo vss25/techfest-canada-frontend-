@@ -1,4 +1,7 @@
 import { ApiError } from "./api";
+import {
+  accountEmailOf, cleanItems, CONTACT_KINDS, cleanValue, firstLinkedIn, keepKnown, MAX_CONTACT_ITEMS, resolveItems, SHARE_OFF_ERROR,
+} from "./contactCard";
 
 /* =========================================================
    Demo backend (/app?demo=1). Answers the same routes, with the
@@ -25,6 +28,60 @@ function person(id, name, jobTitle, organization, extra = {}) {
   };
 }
 
+/* Contact cards (all fake: example.com, 555 numbers). `theirShare` on a connection =
+   what that person shares with the demo user; `myShare` = what the demo user picked
+   (missing = never picked: share-by-default items in person, nothing online). */
+const DEMO_CARDS = {
+  "p-hannah": [
+    { id: "h-email", kind: "email", label: "Work", value: "hannah.liu@example.com", shareByDefault: true },
+    { id: "h-phone", kind: "phone", label: "Mobile", value: "+1 647 555 0118", shareByDefault: true },
+    { id: "h-li", kind: "linkedin", label: "", value: "https://www.linkedin.com/in/hannah-liu-demo", shareByDefault: true },
+    { id: "h-x", kind: "x", label: "", value: "@hannahliu_demo", shareByDefault: false },
+  ],
+  "p-marcus": [
+    { id: "mc-wa", kind: "whatsapp", label: "", value: "+1 416 555 0127", shareByDefault: true },
+    { id: "mc-wechat", kind: "wechat", label: "", value: "marcus_qubit", shareByDefault: true },
+    { id: "mc-web", kind: "website", label: "Work", value: "https://example.com/qubit-labs", shareByDefault: false },
+  ],
+  "p-daniel": [
+    { id: "d-email", kind: "email", label: "Work", value: "daniel.okafor@example.com", shareByDefault: false },
+  ],
+  "p-connor": [
+    { id: "c-email", kind: "email", label: "", value: "connor.obrien@example.com", shareByDefault: true },
+    { id: "c-li", kind: "linkedin", label: "", value: "https://www.linkedin.com/in/connor-obrien-demo", shareByDefault: true },
+  ],
+  "p-priya": [
+    { id: "p-email", kind: "email", label: "Work", value: "priya.raman@example.com", shareByDefault: true },
+    { id: "p-phone", kind: "phone", label: "", value: "+1 647 555 0131", shareByDefault: true },
+  ],
+  "p-raj": [
+    { id: "r-phone", kind: "phone", label: "Mobile", value: "+1 416 555 0164", shareByDefault: true },
+    { id: "r-insta", kind: "instagram", label: "", value: "@raj.builds.demo", shareByDefault: true },
+  ],
+};
+
+const DEMO_CONNECTIONS = [
+  { id: "c-hannah", userId: "p-hannah", direction: "outgoing", status: "accepted", kind: "online", note: "", hoursAgo: 40, theirShare: ["h-email", "h-phone", "h-li"], myShare: ["m-phone", "m-li"] },
+  { id: "c-marcus", userId: "p-marcus", direction: "incoming", status: "accepted", kind: "inPerson", note: "", hoursAgo: 28, theirShare: ["mc-wa", "mc-wechat"] },
+  { id: "c-daniel", userId: "p-daniel", direction: "outgoing", status: "accepted", kind: "online", note: "", hoursAgo: 52, theirShare: [], myShare: [] },
+  { id: "c-connor", userId: "p-connor", direction: "incoming", status: "pending", kind: "online", note: "Would love to compare notes on quantum-safe crypto.", hoursAgo: 3, theirShare: ["c-email", "c-li"] },
+  { id: "c-grace", userId: "p-grace", direction: "outgoing", status: "pending", kind: "online", note: "", hoursAgo: 20, myShare: ["m-li"] },
+];
+
+/** The demo user's card (spec section 6), saved, so every exchange moment has something to tick. */
+function demoMyCard() {
+  return {
+    contactItems: [
+      { id: "m-acct", kind: "email", label: "", value: "", shareByDefault: false, account: true },
+      { id: "m-phone", kind: "phone", label: "Mobile", value: "+1 416 555 0142", shareByDefault: true },
+      { id: "m-wa", kind: "whatsapp", label: "", value: "+1 416 555 0142", shareByDefault: false },
+      { id: "m-li", kind: "linkedin", label: "", value: "https://www.linkedin.com/in/alex-morgan-demo", shareByDefault: true },
+      { id: "m-web", kind: "website", label: "Work", value: "https://example.com", shareByDefault: false },
+    ],
+    contactCardSavedAt: "2026-10-12T15:00:00.000Z",
+  };
+}
+
 function seed() {
   const people = [
     person("p-hannah", "Hannah Liu", "Product Manager", "Shopify", { topics: ["Sustainability & CleanTech", "Artificial Intelligence"], tagline: "Commerce, climate and the tools in between" }),
@@ -46,21 +103,21 @@ function seed() {
     person("p-olivia", "Olivia Chen", "Deputy Minister", "Department of Digital Affairs", { kind: "vip", types: ["vip"], acceptsMessages: false, acceptsRequests: false }),
     person("guest:sam", "Sam Rivera", "Operations Director", "Lakeshore Insurance", { onApp: false }),
   ];
+  for (const p of people) p.contactItems = DEMO_CARDS[p.id] || [];
   return {
     me: {
       ...person(ME, "Alex Morgan", "Director of Innovation", "Northwind Bank", {
         topics: ["Artificial Intelligence", "Cybersecurity", "Banking, Financial Services & Insurance"],
-        tier: "Connect Pass", linkedinUrl: "", tagline: "Bringing AI from pilots to production in banking",
+        tier: "Connect Pass", linkedinUrl: "https://www.linkedin.com/in/alex-morgan-demo", tagline: "Bringing AI from pilots to production in banking",
       }),
       email: "alex.morgan@example.com", role: "user", types: ["attendee"],
+      ...demoMyCard(),
       rights: { sendMessages: true, receiveMessages: true, sendRequests: true, receiveRequests: true, post: true, comment: true, startDiscussions: true, createGroups: true, shareContact: true, deleteAnyPost: false, moderate: false, checkIn: false },
     },
     tickets: [{ ticketId: "A1B2C3D4E5F6", type: "connect", purchaseDate: "2026-09-02T14:10:00.000Z", checkedIn: false }],
     people,
     connections: [
-      { id: "c-hannah", userId: "p-hannah", direction: "outgoing", status: "accepted", kind: "online", note: "", createdAt: hoursAgo(40) },
-      { id: "c-connor", userId: "p-connor", direction: "incoming", status: "pending", kind: "online", note: "Would love to compare notes on quantum-safe crypto.", createdAt: hoursAgo(3) },
-      { id: "c-grace", userId: "p-grace", direction: "outgoing", status: "pending", kind: "online", note: "", createdAt: hoursAgo(20) },
+      ...DEMO_CONNECTIONS.map(({ hoursAgo: h, ...c }) => ({ ...c, createdAt: hoursAgo(h) })),
     ],
     messages: [
       { id: uid(), peer: "p-hannah", body: "Hey! Loved your question at the AI panel. Coffee tomorrow?", sentByMe: false, createdAt: hoursAgo(18) },
@@ -110,6 +167,7 @@ function seed() {
     ],
     questions: {},
     votes: {},
+    cardV: 1,
   };
 }
 
@@ -118,7 +176,22 @@ function load() {
   if (state) return state;
   try { state = JSON.parse(localStorage.getItem(KEY)) || null; } catch { state = null; }
   if (!state) state = seed();
+  if (!state.cardV) addContactCards(state);
   return state;
+}
+
+/** Demo data saved before the contact card existed: add the sample cards and connections. */
+function addContactCards(s) {
+  const fresh = seed();
+  if (!Array.isArray(s.me.contactItems)) Object.assign(s.me, demoMyCard());
+  if (!s.me.linkedinUrl) s.me.linkedinUrl = fresh.me.linkedinUrl;
+  for (const p of s.people) if (!Array.isArray(p.contactItems)) p.contactItems = DEMO_CARDS[p.id] || [];
+  for (const c of fresh.connections) {
+    const have = s.connections.find((x) => x.userId === c.userId);
+    if (!have) s.connections.push(c);
+    else if (!Array.isArray(have.theirShare) && have.id === c.id) have.theirShare = c.theirShare;
+  }
+  s.cardV = 1;
 }
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* full */ }
@@ -130,15 +203,109 @@ export function resetDemo() {
 
 // ---------- DTOs ----------
 
+/** A person as others see them: never their contact card items (only what they share, via shareFields). */
 const card = (id) => {
   const s = load();
-  if (id === ME) return { ...s.me };
-  return s.people.find((p) => p.id === id) || null;
+  const p = id === ME ? s.me : s.people.find((x) => x.id === id);
+  if (!p) return null;
+  const { contactItems: _items, contactCardSavedAt: _saved, contactQrShare: _qr, ...rest } = p;
+  return rest;
 };
+
+// ---------- Contact card (services/contactCard.js on the backend) ----------
+
+const myAccountEmail = () => accountEmailOf(load().me.email);
+const myItems = () => resolveItems(load().me.contactItems, myAccountEmail());
+const meCanShare = () => !!load().me.rights?.shareContact;
+const theirItems = (p) => resolveItems(p?.contactItems, "");
+
+function qrShareOf() {
+  const items = myItems();
+  const picked = Array.isArray(load().me.contactQrShare);
+  return { ids: picked ? keepKnown(load().me.contactQrShare, items) : items.filter((it) => it.shareByDefault).map((it) => it.id), picked };
+}
+
+function contactCardDTO() {
+  const qr = qrShareOf();
+  return { qrShare: qr.ids, qrSharePicked: qr.picked, items: myItems(), accountEmail: myAccountEmail(), canShare: meCanShare(), saved: !!load().me.contactCardSavedAt, max: MAX_CONTACT_ITEMS, kinds: CONTACT_KINDS };
+}
+
+/** What the demo user shares on `c` now (resolved): their pick, else defaults in person, else nothing. */
+function myShareIds(c) {
+  if (!meCanShare()) return [];
+  const items = myItems();
+  if (Array.isArray(c.myShare)) return keepKnown(c.myShare, items);
+  return c.kind === "inPerson" ? items.filter((it) => it.shareByDefault).map((it) => it.id) : [];
+}
+
+/** What the other person shares with the demo user: accepted only, never across a block. */
+function sharedWithMe(c, p) {
+  if (c.status !== "accepted" || (load().blocks || []).includes(c.userId)) return [];
+  const items = theirItems(p);
+  const ids = Array.isArray(c.theirShare) ? keepKnown(c.theirShare, items) : c.kind === "inPerson" ? items.filter((it) => it.shareByDefault).map((it) => it.id) : [];
+  return items.filter((it) => ids.includes(it.id)).map((it) => ({ kind: it.kind, label: it.label || "", value: it.value }));
+}
+
+const shareFields = (c, p) => (c ? { sharedContact: sharedWithMe(c, p), myShare: myShareIds(c), mySharePicked: Array.isArray(c.myShare) } : { sharedContact: [], myShare: [], mySharePicked: false });
+
+/** A `share` list from a request body: only my current item ids. null = nothing to change. */
+function shareFromBody(body) {
+  if (!meCanShare() || !Array.isArray(body?.share)) return null;
+  return keepKnown(body.share.filter((x) => typeof x === "string"), myItems());
+}
+
+/** PATCH /profile linkedinUrl → the same change on the saved card's first LinkedIn item. */
+function syncLinkedInItem(me, linkedinUrl) {
+  if (!me.contactCardSavedAt || !Array.isArray(me.contactItems)) return;
+  const i = me.contactItems.findIndex((it) => it.kind === "linkedin" && !it.account);
+  if (!linkedinUrl) { if (i >= 0) me.contactItems.splice(i, 1); return; }
+  const v = cleanValue("linkedin", linkedinUrl).value;
+  if (!v) return;
+  if (i >= 0) me.contactItems[i] = { ...me.contactItems[i], value: v };
+  else if (me.contactItems.length < MAX_CONTACT_ITEMS) me.contactItems.push({ id: "li" + uid(), kind: "linkedin", label: "", value: v, shareByDefault: true });
+}
+
+/** Whether a user id is one of the demo's sample people. */
+export const demoKnows = (id) => id === ME || load().people.some((p) => p.id === id);
+
+/**
+ * A connect code without a user id (another phone in demo mode, an older QR), scanned here:
+ * recorded on this device only, with the details the code carried. → the connection DTO.
+ */
+export async function demoConnectFromCode(code, share) {
+  await wait(150);
+  const s = load();
+  const key = String(code.name || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "contact";
+  const id = `qr-${key}`;
+  let p = s.people.find((x) => x.id === id);
+  if (!p) {
+    p = person(id, String(code.name || "Attendee"), code.title || "", code.org || "", { linkedinUrl: code.linkedIn || "" });
+    s.people.push(p);
+  }
+  const items = [];
+  const email = cleanValue("email", code.email || "").value;
+  const li = cleanValue("linkedin", code.linkedIn || "").value;
+  if (email) items.push({ id: `${id}-email`, kind: "email", label: "", value: email, shareByDefault: true });
+  if (li) items.push({ id: `${id}-li`, kind: "linkedin", label: "", value: li, shareByDefault: true });
+  p.contactItems = items;
+  let c = s.connections.find((x) => x.userId === id);
+  if (!c) { c = { id: "c-" + uid(), userId: id, direction: "outgoing", note: "", createdAt: new Date().toISOString() }; s.connections.push(c); }
+  Object.assign(c, { status: "accepted", kind: "inPerson", theirShare: items.map((it) => it.id) });
+  const picked = shareFromBody({ share });
+  if (picked) c.myShare = picked;
+  save();
+  return JSON.parse(JSON.stringify(connectionDTO(c)));
+}
 
 function connectionDTO(c) {
   const user = card(c.userId);
-  return { id: c.id, user, direction: c.direction, status: c.status, kind: c.kind, note: c.note, createdAt: c.createdAt, respondedAt: null, ...(c.kind === "inPerson" ? { email: `${user.name.split(" ")[0].toLowerCase()}@example.com` } : {}) };
+  const share = shareFields(c, load().people.find((x) => x.id === c.userId));
+  const inPerson = c.status === "accepted" && c.kind === "inPerson";
+  const email = share.sharedContact.find((it) => it.kind === "email")?.value || "";
+  return {
+    id: c.id, user, direction: c.direction, status: c.status, kind: c.kind, note: c.note, createdAt: c.createdAt, respondedAt: null,
+    ...share, ...(inPerson ? { email, contactShared: share.sharedContact.length > 0 } : {}),
+  };
 }
 
 function postDTO(p) {
@@ -244,22 +411,53 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
   if (is("PATCH", "social/points/prefs")) { s.pointsHidden = !!body.hideFromLeaderboard; return done({ hideFromLeaderboard: s.pointsHidden }); }
 
   // Account
-  if (is("GET", "social/me")) return done(s.me);
+  if (is("GET", "social/me")) return done({ ...card(ME), email: s.me.email, contactCard: contactCardDTO() });
   if (is("GET", "auth/me")) return done({ _id: ME, name: s.me.name, email: s.me.email, role: "user", jobTitle: s.me.jobTitle, organization: s.me.organization, linkedinUrl: s.me.linkedinUrl, country: s.me.country, topics: s.me.topics, tagline: s.me.tagline, appOnboarded: true, termsVersion: "2026-10-09", tickets: s.tickets, rights: s.me.rights });
   if (is("POST", "auth/refresh")) return { token: DEMO_TOKEN };
   if (is("PATCH", "profile")) {
     const allowed = ["name", "jobTitle", "organization", "linkedinUrl", "country", "tagline", "topics", "meetingSpot", "availabilitySlots"];
     for (const k of allowed) if (body[k] !== undefined) s.me[k] = body[k];
-    return done({ success: true, user: { ...s.me } });
+    if (body.linkedinUrl !== undefined) syncLinkedInItem(s.me, String(body.linkedinUrl || "").trim());
+    return done({ success: true, user: { ...card(ME), email: s.me.email } });
   }
   if (is("PUT", "profile/avatar")) { s.me.avatarUrl = body.avatarData || ""; return done({ avatarUrl: s.me.avatarUrl }); }
 
+  // My contact card
+  if (is("GET", "social/contact-card")) return done(contactCardDTO());
+  if (is("PUT", "social/contact-card")) {
+    const out = cleanItems(body.items, { accountEmail: myAccountEmail() });
+    if (out.error) throw new ApiError(out.error, 400, { error: out.error, index: out.index });
+    const hadLinkedIn = myItems().some((it) => it.kind === "linkedin");
+    s.me.contactItems = out.items;
+    s.me.contactCardSavedAt = new Date().toISOString();
+    const li = firstLinkedIn(out.items);
+    if (li) s.me.linkedinUrl = li;
+    else if (hadLinkedIn) s.me.linkedinUrl = "";
+    return done({ ...contactCardDTO(), linkedinUrl: s.me.linkedinUrl || "" });
+  }
+  if (is("PUT", "social/contact-card/qr-share")) {
+    if (!meCanShare()) throw new ApiError(SHARE_OFF_ERROR, 403);
+    if (!Array.isArray(body.share)) throw new ApiError("share must be a list of contact detail ids", 400);
+    s.me.contactQrShare = keepKnown(body.share, myItems());
+    return done(contactCardDTO());
+  }
+  if ((m = is("PUT", "social/users/:id/share"))) {
+    if (!meCanShare()) throw new ApiError(SHARE_OFF_ERROR, 403);
+    if (!Array.isArray(body.share)) throw new ApiError("share must be a list of contact detail ids", 400);
+    const c = s.connections.find((x) => x.userId === m.id && x.status !== "declined");
+    if (!c) throw new ApiError("Connect first, then you can share your contact details.", 404);
+    c.myShare = keepKnown(body.share, myItems());
+    return done(connectionDTO(c));
+  }
+
   // People
-  if (is("GET", "social/attendees") || is("GET", "social/users")) return done(s.people.filter(match(q.get("q"))));
+  if (is("GET", "social/attendees") || is("GET", "social/users")) return done(s.people.filter(match(q.get("q"))).map((p) => card(p.id)));
   if ((m = is("GET", "social/users/:id"))) {
     const p = card(m.id);
     if (!p) throw new ApiError("Not found", 404);
-    return done({ ...p, fieldOfWork: "", jobLevel: "", objectives: [] });
+    const c = m.id === ME ? null : s.connections.find((x) => x.userId === m.id && x.status !== "declined") || null;
+    const full = s.people.find((x) => x.id === m.id);
+    return done({ ...p, fieldOfWork: "", jobLevel: "", objectives: [], connectionId: c?.id || "", connectionStatus: c?.status || "", ...shareFields(c, full) });
   }
 
   // Connections
@@ -273,12 +471,17 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     if (!p.onApp) throw new ApiError("They haven't joined the app yet. You can connect once they do.", 409);
     const existing = s.connections.find((c) => c.userId === p.id);
     const inPerson = rawPath.endsWith("in-person");
+    const share = shareFromBody(body);
     if (existing) {
       if (existing.direction === "incoming" || inPerson) { existing.status = "accepted"; if (inPerson) existing.kind = "inPerson"; }
+      if (share) existing.myShare = share;
       return done(connectionDTO(existing));
     }
     if (!inPerson && !p.acceptsRequests) throw new ApiError(`${p.name.split(" ")[0]} isn't taking connection requests in the app.`, 403);
     const c = { id: "c-" + uid(), userId: p.id, direction: "outgoing", status: inPerson ? "accepted" : "pending", kind: inPerson ? "inPerson" : "online", note: body.note || "", createdAt: new Date().toISOString() };
+    if (share) c.myShare = share;
+    // Sample people share their defaults once connected (online too, so the demo shows details after a request).
+    c.theirShare = theirItems(s.people.find((x) => x.id === p.id)).filter((it) => it.shareByDefault).map((it) => it.id);
     s.connections.push(c);
     return done(connectionDTO(c));
   }
@@ -286,6 +489,8 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     const c = s.connections.find((x) => x.id === m.id);
     if (!c) throw new ApiError("Not found", 404);
     c.status = body.accept ? "accepted" : "declined";
+    const share = body.accept ? shareFromBody(body) : null;
+    if (share) c.myShare = share;
     if (!body.accept) s.connections = s.connections.filter((x) => x.id !== c.id);
     return done(connectionDTO(c));
   }

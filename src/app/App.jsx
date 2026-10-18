@@ -8,6 +8,7 @@ import { social, startSocial, stopSocial, chatsHasNew } from "./lib/social";
 import TabBar from "./components/TabBar";
 import { FEATURES } from "./lib/config";
 import { ToastHost, Spinner } from "./components/ui";
+import ShareSheetHost from "./components/ShareSheet";
 import { InstallNudges, OfflineBar, UpdatePrompt } from "./components/AppNotices";
 import { onScreenChange } from "./lib/pwa";
 
@@ -156,6 +157,7 @@ export default function App() {
     <BrowserRouter basename="/app/">
       <Boot />
       <Shell />
+      <ShareSheetHost />
       <ToastHost />
     </BrowserRouter>
   );

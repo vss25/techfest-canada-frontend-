@@ -3,7 +3,8 @@ import { ChevronRight, Link2, Mic, UserPlus, UserCheck, Undo2, MessageCircle, Sm
 import { useStore } from "../lib/store";
 import { cms, dayLabel, nameKeys, sessionsForSpeaker, speakerById, timeRange } from "../lib/cms";
 import { auth, firstName, isSignedIn } from "../lib/auth";
-import { canMessage, canRequest, connectionWith, requestConnection, respondConnection, social, withdrawConnection } from "../lib/social";
+import { canMessage, canRequest, connectionWith, social, withdrawConnection } from "../lib/social";
+import { acceptWithSharing, connectWithSharing } from "../lib/myCard";
 import { confirmDialog, safeHref, showAlert } from "../lib/ui";
 import { FEATURES } from "../lib/config";
 import { Avatar, Button, Empty, Spinner, TopBar } from "../components/ui";
@@ -29,8 +30,7 @@ export default function SpeakerDetail() {
 
   const connect = async () => {
     if (!isSignedIn(a)) { showAlert("Sign up to connect", "Sign in to send connection requests."); return; }
-    if (await requestConnection(account)) showAlert("Request sent", `${given} will see your request in the app.`);
-    else showAlert("Couldn't send", social.get().lastError || "Try again.");
+    connectWithSharing(account, { given });
   };
   const withdraw = async () => {
     const ok = await confirmDialog({ title: `Withdraw your request to ${sp.name}?`, message: "They won't be told. You can send a new request later.", confirm: "Withdraw request", destructive: true });
@@ -58,7 +58,7 @@ export default function SpeakerDetail() {
               ) : state?.status === "pending" ? (
                 <Button size="lg" block icon={Undo2} onClick={withdraw}>Request sent · Withdraw</Button>
               ) : state?.status === "incoming" ? (
-                <Button variant="primary" size="lg" block icon={UserCheck} onClick={() => respondConnection(state.conn, true)}>Accept their invite</Button>
+                <Button variant="primary" size="lg" block icon={UserCheck} onClick={() => acceptWithSharing(state.conn)}>Accept their invite</Button>
               ) : canRequest(account, s) ? (
                 <Button variant="primary" size="lg" block icon={UserPlus} onClick={connect}>Connect with {given}</Button>
               ) : null}

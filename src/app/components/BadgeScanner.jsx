@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import { connectInPerson, social } from "../lib/social";
+import { isDemoApi } from "../lib/api";
+import { demoConnectFromCode, demoKnows } from "../lib/demo";
+import { scanWithSharing } from "../lib/myCard";
 import { parseQR } from "../lib/qr";
-import { showAlert } from "../lib/ui";
 import { Sheet } from "./ui";
 
 /* =========================================================
@@ -24,17 +25,13 @@ export default function BadgeScanner({ onClose, onConnected }) {
     if (!p) { setError("That isn't a TTFC code. Try their connect QR in the TTFC app."); return; }
     if (p.kind === "session") { onClose(); navigate(`/session/${encodeURIComponent(p.id)}/live`); return; }
     if (p.kind === "pass") { setError("That's a door pass. Ask for their connect QR (Profile › Connect QR)."); return; }
-    if (p.kind === "connect" && !p.userId) { setError(`${p.name} needs the latest TTFC app for in-person connect.`); return; }
+    // Demo mode keeps codes it can't look up (no user id, or someone outside the demo) on this device.
+    const local = isDemoApi() && (!p.userId || !demoKnows(p.userId));
+    if (p.kind === "connect" && !p.userId && !local) { setError(`${p.name} needs the latest TTFC app for in-person connect.`); return; }
+    // Pick what to share ("Share your contact details"), then connect in person (lib/myCard.js).
     setBusy(true);
-    const conn = await connectInPerson(p.userId);
-    setBusy(false);
-    if (conn) {
-      onClose();
-      showAlert("Connected in person", `${conn.user?.name || p.name} is now in your network, on both your phones.`);
-      onConnected?.();
-    } else {
-      setError(social.get().lastError || "Couldn't connect. Check your connection and try again.");
-    }
+    onClose();
+    if (await scanWithSharing({ userId: local ? "" : p.userId, name: p.name, connectLocal: local ? (share) => demoConnectFromCode(p, share) : null })) onConnected?.();
   };
 
   return (

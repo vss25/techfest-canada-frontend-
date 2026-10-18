@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowUp, Flag, Hand, MoreHorizontal } from "lucide-react";
+import { ArrowUp, Flag, Hand, IdCard, MoreHorizontal } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, firstName } from "../lib/auth";
 import { blockUser, canMessage, connectionWith, fetchPerson, markChatRead, refreshMessages, report, sendMessage, social } from "../lib/social";
+import { manageSharing } from "../lib/myCard";
 import { fileURL } from "../lib/config";
 import { confirmDialog, showAlert, usePolling } from "../lib/ui";
 import { Avatar, IconButton, Spinner, TopBar } from "../components/ui";
@@ -87,6 +88,7 @@ export default function ChatThread() {
             <IconButton icon={MoreHorizontal} label="More options" onClick={() => setMenu((v) => !v)} aria-expanded={menu} />
             {menu && (
               <div className="menu" role="menu" style={{ top: 44, right: 0 }}>
+                {conn && <button type="button" role="menuitem" onClick={() => { setMenu(false); manageSharing(peer || { id, name }, conn.conn); }}><IdCard aria-hidden="true" width={16} /><span style={{ whiteSpace: "nowrap" }}>What I share with {given}</span></button>}
                 <button type="button" role="menuitem" onClick={doReport}><Flag aria-hidden="true" width={16} />Report {given}</button>
                 <button type="button" role="menuitem" className="danger" onClick={doBlock}><Hand aria-hidden="true" width={16} />Block {given}</button>
               </div>

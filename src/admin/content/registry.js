@@ -184,6 +184,14 @@ export const REGISTRY = {
     scope: "app", group: "flags", type: "switch",
     label: "Allow groups", description: "Turn off to hide community groups in the app.",
   },
+  "flag.polls": {
+    scope: "app", group: "flags", type: "switch",
+    label: "Live polls", description: "Turn off to hide session polls in the app and stop new votes.",
+  },
+  "flag.qa": {
+    scope: "app", group: "flags", type: "switch",
+    label: "Audience Q&A", description: "Turn off to hide session Q&A in the app and stop new questions.",
+  },
 };
 
 /** Scope for a key that isn't in the registry yet (keeps new backend keys editable). */

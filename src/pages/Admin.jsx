@@ -190,11 +190,15 @@ export default function Admin() {
             <Route path="content/speakers" element={<Speakers />} />
             <Route path="content/partners" element={
               <LogoCollection key="partner" type="partner" title="Partners" singular="partner" withCategory
-                description="Partner logos on the Partners page, grouped by category. Switch a logo off to hide it without deleting it." />
+                description="Partner logos on the Partners page and in the apps' Organisations, grouped by category. Partners in the Featured Partners row are the sponsors. Each partner has its own website and app switches; Active off hides it everywhere without deleting it." />
             } />
             <Route path="content/sponsors" element={
-              <LogoCollection key="sponsor" type="sponsor" title="Sponsors" singular="sponsor"
-                description="The sponsor logo strip on the Home, Sponsors, Sponsor and Awards pages." />
+              <LogoCollection key="sponsors" type="partner" title="Sponsors" singular="sponsor" withCategory sponsorsOnly
+                description="The paid partners: the Featured Partners row on the Partners page, and the Sponsors section shown first in the apps' Organisations. These are the same records as on the Partners page, so the website and the apps always read one copy. Add a description and choose where each sponsor shows." />
+            } />
+            <Route path="content/alumni-logos" element={
+              <LogoCollection key="sponsor" type="sponsor" title="Alumni logo strip" singular="logo"
+                description={'The "Our team includes alumni from" logo strip on the Home and Sponsors pages. These are not event sponsors: sponsors are under Sponsors.'} />
             } />
             <Route path="content/sponsor-marquee" element={
               <LogoCollection key="sponsorMarquee" type="sponsorMarquee" title="Sponsor marquee" singular="logo"

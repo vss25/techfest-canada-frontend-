@@ -46,6 +46,14 @@ export const roleWords = (title) => {
   return fold(title).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 1 && !filler.has(w));
 };
 
+/** iOS TierStyle.publicBadge: only speakers and exhibitors show a pass badge (and the avatar ring). */
+export function publicBadge(p, kind = p?.kind) {
+  const k = String(kind || "").toLowerCase(), t = String(p?.tier || "").toLowerCase();
+  if (k === "speaker" || t.includes("speaker")) return "Speaker";
+  if (k === "exhibitor" || t.includes("exhibitor")) return "Exhibitor";
+  return null;
+}
+
 // ---------- Signals ----------
 
 const SIG_KEY = "ttfc.reco.signals.v1";

@@ -1,88 +1,132 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ChevronRight, Inbox, MessagesSquare, Plus, SquarePen, Users, Bell, Lock } from "lucide-react";
+import { Bell, ChevronRight, Inbox, Lock, MessageCircle, MessagesSquare, Plus, SquarePen, UserRoundSearch, Users } from "lucide-react";
 import { useStore } from "../lib/store";
-import { auth, can, isSignedIn, signOut } from "../lib/auth";
+import { auth, can, isSignedIn } from "../lib/auth";
 import { content, flag } from "../lib/content";
 import {
-  canMessage, chatsHasNew, connectionWith, createDiscussion, createGroup, isMessageRequest, markChatsSeen,
-  refreshConnections, refreshDiscussions, refreshGroups, refreshThreads, social, toggleJoinGroup,
+  canMessage, connectionWith, createDiscussion, createGroup, groupUnread, isMessageRequest, markActivitySeen, markChatsSeen,
+  refreshActivity, refreshConnections, refreshDiscussions, refreshGroupMessages, refreshGroups, refreshPeople, refreshThreads, social, threadUnread, toggleJoinGroup,
 } from "../lib/social";
-import { APPLIED_SECTORS, TECH_PILLARS, fileURL, shortTopic } from "../lib/config";
-import { timeAgo } from "../lib/time";
+import { APPLIED_SECTORS, TECH_PILLARS, fileURL } from "../lib/config";
+import { listTime } from "../lib/time";
 import { showAlert } from "../lib/ui";
-import { Avatar, Button, Chip, Empty, IconButton, Segmented, Sheet, Spinner, TopBar } from "../components/ui";
+import { Avatar, Chip, Segmented, Sheet, Spinner, TopBar } from "../components/ui";
 import { ConnectionRow } from "../components/People";
+import { MoreMenu } from "../components/Safety";
 import { SearchField } from "../components/Filters";
 
 /* =========================================================
    Chats (iOS ChatsView): Chats (1:1 and your groups, newest
-   first, then groups to browse), Requests (invitations and
-   messages from people you're not connected with) and
-   Discussions (with Follow).
+   first, then every other group to browse and join), Requests
+   (invitations and messages from people you're not connected
+   with) and Discussions (with Follow). The picker is pinned
+   under the title; guests see the same tab with sign-up
+   prompts, as on iOS.
 ========================================================= */
 
+const GROUP_TAGS = [...TECH_PILLARS, ...APPLIED_SECTORS, "Networking", "Founders", "Investors"];
+
+/** iOS ChatRow: name, unread dot, "Not connected", time; the last message underneath. */
 function ThreadRow({ t, s }) {
   const u = t.user || {};
   const conn = connectionWith(u.id, s);
-  const unread = t.unread > 0 && !t.lastMessage?.sentByMe;
+  const unread = threadUnread(t, s);
   return (
-    <Link to={`/chat/${encodeURIComponent(u.id)}`} className="person-card pressable" style={{ color: "inherit", textDecoration: "none" }}>
+    <Link to={`/chat/${encodeURIComponent(u.id)}`} className="conn-card pressable">
       <Avatar name={u.name} src={fileURL(u.avatarUrl)} size={46} />
-      <span className="info">
+      <span className="info" style={{ gap: 4 }}>
         <span className="row" style={{ gap: 6 }}>
-          <span className="person-name ellipsis">{u.name}</span>
-          {unread && <span className="live-dot" style={{ color: "var(--pur-alt)", animation: "none" }} aria-label="New message" />}
+          <span className="conn-name ellipsis">{u.name}</span>
+          {unread && <span className="unread-dot" role="img" aria-label="New message" />}
           {conn?.status !== "accepted" && <span className="pill-outline">Not connected</span>}
           <span className="spacer" />
-          <time className="tiny muted" dateTime={t.lastMessage?.createdAt}>{timeAgo(t.lastMessage?.createdAt)}</time>
+          {t.lastMessage?.createdAt && <time className="row-time" dateTime={t.lastMessage.createdAt}>{listTime(t.lastMessage.createdAt)}</time>}
         </span>
-        <span className={"small ellipsis" + (unread ? " bold" : " muted")} style={{ display: "block" }}>{t.lastMessage?.sentByMe ? "You: " : ""}{t.lastMessage?.body || "Say hello —"}</span>
+        <span className={"ellipsis" + (unread ? " bold" : " muted")} style={{ fontSize: 12 }}>{t.lastMessage?.body || "Say hello —"}</span>
       </span>
     </Link>
   );
 }
 
-function GroupRow({ g, last }) {
+/** iOS GroupRow: gradient tile, name, time, last message; an unread count capsule. */
+function GroupRow({ g, last, unread }) {
   return (
-    <Link to={`/group/${encodeURIComponent(g.id)}`} className="person-card pressable" style={{ color: "inherit", textDecoration: "none" }}>
-      <span className="avatar avatar--tile" style={{ width: 44, height: 44, fontSize: 17 }} aria-hidden="true">{g.name.slice(0, 1).toUpperCase()}</span>
+    <Link to={`/group/${encodeURIComponent(g.id)}`} className="conn-card pressable" style={{ borderRadius: 16 }}>
+      <span className="group-tile" aria-hidden="true">{g.name.slice(0, 1).toUpperCase()}</span>
       <span className="info">
-        <span className="row"><span className="person-name ellipsis" style={{ flex: 1 }}>{g.name}</span>{last && <time className="tiny muted">{timeAgo(last.createdAt)}</time>}</span>
-        <span className="small muted ellipsis" style={{ display: "block" }}>{last ? `${last.mine ? "You" : last.authorName}: ${last.body}` : `${g.memberCount} members · open the group chat`}</span>
+        <span className="row"><span className="conn-name ellipsis" style={{ flex: 1 }}>{g.name}</span>{last && <time className="row-time">{listTime(last.createdAt)}</time>}</span>
+        <span className="muted ellipsis" style={{ fontSize: 12 }}>{last ? `${last.mine ? "You" : last.authorName}: ${last.body}` : `${g.memberCount} members · open the group chat`}</span>
       </span>
+      {unread > 0 && <span className="count-pill" aria-label={`${unread} unread`}>{unread}</span>}
     </Link>
   );
 }
 
+/** "New message": pick anyone on the app you can message (iOS NewChatSheet). */
 function NewChat({ onClose }) {
   const s = useStore(social);
   const a = useStore(auth);
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+  useEffect(() => { if (!social.get().people.length) refreshPeople(""); }, []);
+  const t = q.trim().toLowerCase();
   const people = s.people.filter((p) => p.onApp !== false && p.id !== a.me?.id && !s.blocked.includes(p.id) && canMessage(p, s))
-    .filter((p) => !q || [p.name, p.organization, p.jobTitle].some((x) => String(x || "").toLowerCase().includes(q.toLowerCase())))
-    .sort((x, y) => x.name.localeCompare(y.name));
+    .filter((p) => !t || [p.name, p.organization, p.jobTitle].some((x) => String(x || "").toLowerCase().includes(t)))
+    .sort((x, y) => x.name.localeCompare(y.name, undefined, { sensitivity: "base" }));
   return (
-    <Sheet open onClose={onClose} title="New message" full>
+    <Sheet open onClose={onClose} title="New message" full actions={{ left: <button type="button" className="link-btn sheet-cancel" onClick={onClose}>Cancel</button>, right: <span /> }}>
       <div className="sheet-body stack-sm" style={{ flex: 1, overflow: "auto" }}>
         <SearchField value={q} onChange={setQ} placeholder="Name or company" />
-        {people.length === 0 ? <Empty icon={Users}>{q ? "No one matches" : "No one to message yet"}</Empty> : people.map((p) => (
-          <button key={p.id} type="button" className="list-row pressable" onClick={() => { onClose(); navigate(`/chat/${encodeURIComponent(p.id)}`); }}>
-            <Avatar name={p.name} src={fileURL(p.avatarUrl)} size={36} />
-            <span style={{ minWidth: 0 }}><b style={{ display: "block", fontSize: 14.5 }}>{p.name}</b><span className="small muted ellipsis" style={{ display: "block" }}>{[p.jobTitle, p.organization].filter(Boolean).join(" · ")}</span></span>
-          </button>
-        ))}
+        {people.length === 0 ? (
+          <div className="net-empty" style={{ padding: "60px 20px" }}><UserRoundSearch aria-hidden="true" /><h3>{q ? "No one matches" : "No one to message yet"}</h3></div>
+        ) : (
+          <div className="inset-list">
+            {people.map((p) => (
+              <button key={p.id} type="button" className="inset-row pressable" onClick={() => { onClose(); navigate(`/chat/${encodeURIComponent(p.id)}`); }}>
+                <Avatar name={p.name} src={fileURL(p.avatarUrl)} size={36} />
+                <span style={{ minWidth: 0 }}>
+                  <span className="ellipsis" style={{ display: "block", fontSize: 15, fontWeight: 600 }}>{p.name}</span>
+                  {(p.jobTitle || p.organization) && <span className="ellipsis muted" style={{ display: "block", fontSize: 12.5 }}>{[p.jobTitle, p.organization].filter(Boolean).join(" · ")}</span>}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </Sheet>
   );
 }
 
-function TopicPicker({ value, onChange, max = 6 }) {
+function TagPicker({ options, value, onChange }) {
   return (
     <div className="chips chips--wrap">
-      {[...TECH_PILLARS, ...APPLIED_SECTORS].map((t) => <Chip key={t} on={value.includes(t)} onClick={() => onChange(value.includes(t) ? value.filter((x) => x !== t) : [...value, t].slice(0, max))}>{shortTopic(t)}</Chip>)}
+      {options.map((t) => <Chip key={t} on={value.includes(t)} onClick={() => onChange(value.includes(t) ? value.filter((x) => x !== t) : [...value, t])}>{t}</Chip>)}
     </div>
+  );
+}
+
+/** iOS FieldGroup: a 14pt label with a purple * when required. */
+function Field({ label, required, children }) {
+  return (
+    <label className="field">
+      <span className="field-label field-label--ios">{label}{required && <span className="req" aria-hidden="true">*</span>}</span>
+      {children}
+    </label>
+  );
+}
+
+/** A composer sheet with Cancel on the left and the action (bold, purple when ready) on the right. */
+function ComposerSheet({ title, action, busyAction, ready, busy, onSubmit, onClose, children }) {
+  return (
+    <Sheet open onClose={onClose} title={title} full actions={{
+      left: <button type="button" className="link-btn sheet-cancel" onClick={onClose}>Cancel</button>,
+      right: <button type="submit" form="composer-form" className="link-btn sheet-action" disabled={!ready || busy}>{busy ? busyAction : action}</button>,
+    }}>
+      <form id="composer-form" className="sheet-body stack" style={{ flex: 1, overflow: "auto", padding: "4px 20px 20px", gap: 16 }} onSubmit={(e) => { e.preventDefault(); if (ready && !busy) onSubmit(); }}>
+        {children}
+      </form>
+    </Sheet>
   );
 }
 
@@ -91,26 +135,22 @@ function NewGroup({ onClose }) {
   const [desc, setDesc] = useState("");
   const [tags, setTags] = useState([]);
   const [busy, setBusy] = useState(false);
-  const submit = async (e) => {
-    e.preventDefault();
+  const ready = name.trim().length >= 3 && desc.trim().length >= 10;
+  const submit = async () => {
     setBusy(true);
     try {
       await createGroup({ name: name.trim(), description: desc.trim(), tags });
       onClose();
-      showAlert("Group submitted", "Groups are reviewed by the TTFC team before they're listed.");
-    } catch (err) { showAlert("Couldn't create the group", err.message); } finally { setBusy(false); }
+    } catch (err) { showAlert("Couldn't create", err?.message || "Try again."); } finally { setBusy(false); }
   };
   return (
-    <Sheet open onClose={onClose} title="New group" full>
-      <form className="sheet-body stack" onSubmit={submit} style={{ flex: 1, overflow: "auto" }}>
-        <label className="field"><span className="field-label">Name</span><input className="input" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} autoFocus /></label>
-        <label className="field"><span className="field-label">What's it for?</span><textarea className="textarea" value={desc} maxLength={500} onChange={(e) => setDesc(e.target.value)} /></label>
-        <span className="section-title">Tags</span>
-        <TopicPicker value={tags} onChange={setTags} />
-        <p className="tiny muted" style={{ margin: 0 }}>Groups are reviewed by the TTFC team before they're listed.</p>
-        <Button type="submit" variant="primary" size="lg" block loading={busy} disabled={name.trim().length < 3}>Create group</Button>
-      </form>
-    </Sheet>
+    <ComposerSheet title="New group" action="Create" busyAction="Creating…" ready={ready} busy={busy} onSubmit={submit} onClose={onClose}>
+      <Field label="Group name" required><input className="input input--ios" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder="e.g. Quantum Builders" autoCapitalize="words" autoFocus /></Field>
+      <Field label="What's it for?" required><input className="input input--ios" value={desc} maxLength={500} onChange={(e) => setDesc(e.target.value)} placeholder="One or two sentences" /></Field>
+      <span className="eyebrow eyebrow--muted">Tags</span>
+      <TagPicker options={GROUP_TAGS} value={tags} onChange={setTags} />
+      <p className="muted" style={{ margin: 0, fontSize: 11 }}>Groups are reviewed by the TTFC team before they're listed.</p>
+    </ComposerSheet>
   );
 }
 
@@ -119,30 +159,79 @@ function NewDiscussion({ onClose }) {
   const [body, setBody] = useState("");
   const [tags, setTags] = useState([]);
   const [busy, setBusy] = useState(false);
-  const submit = async (e) => {
-    e.preventDefault();
+  const ready = title.trim().length >= 8 && body.trim().length >= 10;
+  const submit = async () => {
     setBusy(true);
     try {
       await createDiscussion({ title: title.trim(), body: body.trim(), tags });
       onClose();
-      showAlert("Discussion submitted", "New discussions are reviewed by the TTFC team before they're visible to everyone.");
-    } catch (err) { showAlert("Couldn't post it", err.message); } finally { setBusy(false); }
+    } catch (err) { showAlert("Couldn't post", err?.message || "Try again."); } finally { setBusy(false); }
   };
   return (
-    <Sheet open onClose={onClose} title="New discussion" full>
-      <form className="sheet-body stack" onSubmit={submit} style={{ flex: 1, overflow: "auto" }}>
-        <label className="field"><span className="field-label">Question or topic</span><input className="input" value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} autoFocus /></label>
-        <label className="field"><span className="field-label">Details</span><textarea className="textarea" value={body} maxLength={4000} onChange={(e) => setBody(e.target.value)} /></label>
-        <span className="section-title">Tags</span>
-        <TopicPicker value={tags} onChange={setTags} />
-        <p className="tiny muted" style={{ margin: 0 }}>New discussions are reviewed by the TTFC team before they're visible to everyone.</p>
-        <Button type="submit" variant="primary" size="lg" block loading={busy} disabled={title.trim().length < 4 || !body.trim()}>Post discussion</Button>
-      </form>
-    </Sheet>
+    <ComposerSheet title="New discussion" action="Post" busyAction="Posting…" ready={ready} busy={busy} onSubmit={submit} onClose={onClose}>
+      <Field label="Question or topic" required><input className="input input--ios" value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} placeholder="What do you want to ask?" autoFocus /></Field>
+      <Field label="Details" required><textarea className="textarea input--ios" value={body} maxLength={4000} onChange={(e) => setBody(e.target.value)} /></Field>
+      <span className="eyebrow eyebrow--muted">Tags</span>
+      <TagPicker options={[...TECH_PILLARS, ...APPLIED_SECTORS]} value={tags} onChange={setTags} />
+      <p className="muted" style={{ margin: 0, fontSize: 11 }}>New discussions are reviewed by the TTFC team before they're visible to everyone.</p>
+    </ComposerSheet>
   );
 }
 
-function Discussions() {
+/** SectionHeader (eyebrow + 18 bold title) with the round purple "+" (a lock for guests). */
+function SectionHead({ id, eyebrow, title, plus }) {
+  return (
+    <div className="pad row">
+      <div style={{ flex: 1 }}><span className="section-eyebrow">{eyebrow}</span><h2 id={id} className="section-h">{title}</h2></div>
+      {plus && <button type="button" className="plus-btn pressable" aria-label={plus.label} onClick={plus.onClick}>{plus.locked ? <Lock aria-hidden="true" /> : <Plus aria-hidden="true" />}</button>}
+    </div>
+  );
+}
+
+/** "Browse groups" (iOS GroupsView, hideJoined): every other group, with its description, tags and Join. */
+function BrowseGroups({ signedIn, canNewGroup, onNewGroup }) {
+  const s = useStore(social);
+  const a = useStore(auth);
+  const navigate = useNavigate();
+  const visible = s.groups.filter((g) => (g.status === "approved" || g.ownerId === a.me?.id) && !g.joined)
+    .sort((x, y) => (y.memberCount || 0) - (x.memberCount || 0));
+  const anyJoined = s.groups.some((g) => g.joined);
+  const join = async (g) => {
+    if (!signedIn) { showAlert("Sign up to join", "Create a free profile to join groups."); return; }
+    const r = await toggleJoinGroup(g);
+    if (r?.joined) navigate(`/group/${encodeURIComponent(g.id)}`);
+    else showAlert("Couldn't join", social.get().lastError || "Try again.");
+  };
+  return (
+    <section className="stack" aria-labelledby="browse-h">
+      <SectionHead id="browse-h" eyebrow="Join a group chat on a topic" title="Browse groups"
+        plus={canNewGroup ? { label: "New group", locked: !signedIn, onClick: () => (signedIn ? onNewGroup() : showAlert("Sign up to create a group", "Create a free profile to start a group.")) } : null} />
+      {visible.length === 0 && (
+        <p className="pad muted" style={{ margin: 0, fontSize: 14 }}>
+          {anyJoined ? (canNewGroup ? "You're in every group so far. Start one with +." : "You're in every group so far.") : (canNewGroup ? "No groups yet. Start one with +." : "No groups yet.")}
+        </p>
+      )}
+      {visible.map((g) => (
+        <div key={g.id} className="pad">
+          <div className="group-card">
+            <div className="row" style={{ alignItems: "flex-start" }}>
+              <Link to={`/group/${encodeURIComponent(g.id)}`} className="group-card-link">
+                <span className="row" style={{ gap: 6 }}><b>{g.name}</b>{g.status === "pending" && <span className="pending-label">Pending review</span>}</span>
+                <span className="muted" style={{ fontSize: 11 }}>{g.memberCount} member{g.memberCount === 1 ? "" : "s"} · by {g.ownerName}</span>
+              </Link>
+              <button type="button" className="join-btn pressable" disabled={g.status !== "approved"} onClick={() => join(g)}>Join</button>
+            </div>
+            {g.description && <p className="muted" style={{ margin: 0, fontSize: 12 }}>{g.description}</p>}
+            {(g.tags || []).length > 0 && <div className="chips chips--wrap" style={{ gap: 6 }}>{g.tags.map((t) => <span key={t} className="chip">{t}</span>)}</div>}
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+/** iOS DiscussionsView + DiscussionRow. */
+function Discussions({ signedIn }) {
   const s = useStore(social);
   const a = useStore(auth);
   const [filter, setFilter] = useState(null);
@@ -150,42 +239,38 @@ function Discussions() {
   const [composer, setComposer] = useState(false);
   useEffect(() => { refreshDiscussions(); }, []);
   const list = s.discussions.filter((d) => (d.status === "approved" || d.mine) && (!filter || (d.tags || []).includes(filter)) && (!following || d.following));
+  const canStart = !signedIn || can("startDiscussions", a);
   return (
     <div className="stack">
-      <div className="pad row">
-        <div style={{ flex: 1 }}><div className="eyebrow eyebrow--muted">Ask the community</div><h2 className="section-h">Discussions</h2></div>
-        {can("startDiscussions", a) && <IconButton icon={Plus} label="New discussion" round filled onClick={() => setComposer(true)} />}
-      </div>
+      <SectionHead eyebrow="Ask the community" title="Discussions"
+        plus={canStart ? { label: "New discussion", locked: !signedIn, onClick: () => (signedIn ? setComposer(true) : showAlert("Sign up to post", "Create a free profile to start a discussion.")) } : null} />
       <div className="chips">
         <Chip on={!filter && !following} onClick={() => { setFilter(null); setFollowing(false); }}>All</Chip>
         <Chip on={following} onClick={() => setFollowing((v) => !v)}>Following</Chip>
-        {[...TECH_PILLARS, ...APPLIED_SECTORS].map((t) => <Chip key={t} on={filter === t} onClick={() => setFilter(filter === t ? null : t)}>{t}</Chip>)}
+        {[...TECH_PILLARS, ...APPLIED_SECTORS].map((t) => <Chip key={t} on={filter === t} onClick={() => setFilter(t)}>{t}</Chip>)}
       </div>
-      {!s.discussionsLoaded ? <Spinner /> : list.length === 0 ? (
-        <p className="muted center small" style={{ padding: 30 }}>{following ? "Follow a discussion to keep up with its replies." : "No discussions here yet."}</p>
-      ) : (
-        <div className="pad stack-sm">
-          {list.map((d) => (
-            <Link key={d.id} to={`/discussion/${encodeURIComponent(d.id)}`} className="card card--tight card-link pressable stack-sm">
-              <span className="row" style={{ gap: 6 }}>
-                <Avatar name={d.authorName} size={26} />
-                <b className="small">{d.authorName}</b>
-                {d.status === "pending" && <span className="kicker kicker--gold">Pending review</span>}
-                <span className="spacer" />
-                <time className="tiny muted">{timeAgo(d.createdAt)}</time>
-              </span>
-              <b style={{ fontSize: 15 }}>{d.title}</b>
-              <span className="small muted clamp-2" style={{ display: "-webkit-box" }}>{d.body}</span>
-              <span className="row" style={{ gap: 6 }}>
-                {(d.tags || []).slice(0, 2).map((t) => <span key={t} className="tag" style={{ fontSize: 11 }}>{shortTopic(t)}</span>)}
-                <span className="spacer" />
-                {d.following && <Bell aria-label="Following" style={{ width: 13, height: 13, color: "var(--pur-alt)" }} />}
-                <span className="row tiny bold" style={{ gap: 4, color: "var(--pur-alt)" }}><MessagesSquare aria-hidden="true" style={{ width: 13, height: 13 }} />{d.replyCount}</span>
-              </span>
-            </Link>
-          ))}
+      {signedIn && !s.discussionsLoaded ? <Spinner /> : list.length === 0 ? (
+        <p className="muted center" style={{ padding: "30px 16px", margin: 0, fontSize: 13 }}>{following ? "Follow a discussion to keep up with its replies." : "No discussions here yet."}</p>
+      ) : list.map((d) => (
+        <div key={d.id} className="pad">
+          <Link to={`/discussion/${encodeURIComponent(d.id)}`} className="disc-card pressable">
+            <span className="row" style={{ gap: 6 }}>
+              <Avatar name={d.authorName} size={26} />
+              <b style={{ fontSize: 12, fontWeight: 600 }}>{d.authorName}</b>
+              {d.status === "pending" && <span className="pending-label">Pending review</span>}
+              <span className="spacer" />
+              <time className="row-time">{listTime(d.createdAt)}</time>
+            </span>
+            <b style={{ fontSize: 15, fontWeight: 600 }}>{d.title}</b>
+            <span className="muted clamp-2" style={{ fontSize: 12 }}>{d.body}</span>
+            <span className="row" style={{ gap: 6 }}>
+              <span className="chips chips--wrap" style={{ gap: 6, flex: 1 }}>{(d.tags || []).slice(0, 2).map((t) => <span key={t} className="chip">{t}</span>)}</span>
+              {d.following && <Bell aria-label="Following" role="img" className="disc-bell" />}
+              <span className="row disc-count" style={{ gap: 4 }}><MessagesSquare aria-hidden="true" />{d.replyCount}</span>
+            </span>
+          </Link>
         </div>
-      )}
+      ))}
       {composer && <NewDiscussion onClose={() => setComposer(false)} />}
     </div>
   );
@@ -198,17 +283,17 @@ export default function Chats() {
   const navigate = useNavigate();
   const { section: param } = useParams();
   const section = ["requests", "discussions"].includes(param) ? param : "chats";
-  const [menu, setMenu] = useState(false);
   const [newChat, setNewChat] = useState(false);
   const [newGroup, setNewGroup] = useState(false);
   const signedIn = isSignedIn(a);
 
   useEffect(() => {
     if (!signedIn) return undefined;
-    refreshThreads(); refreshGroups(); refreshConnections();
+    refreshThreads(); refreshGroups(); refreshConnections(); refreshActivity();
     markChatsSeen();
     return () => markChatsSeen();
   }, [signedIn]);
+  useEffect(() => { if (section === "discussions") markActivitySeen("discussions"); }, [section, s.activity.discussions]);
 
   const threads = useMemo(() => s.threads.filter((t) => t.user && !s.blocked.includes(t.user.id)), [s.threads, s.blocked]);
   const invites = s.connections.incoming.filter((c) => !s.blocked.includes(c.user?.id));
@@ -216,104 +301,78 @@ export default function Chats() {
   const requests = threads.filter((t) => !inviteIds.has(t.user.id) && isMessageRequest(t, s));
   const direct = threads.filter((t) => !inviteIds.has(t.user.id) && !isMessageRequest(t, s));
   const myGroups = s.groups.filter((g) => g.joined);
-  const otherGroups = s.groups.filter((g) => !g.joined && g.status === "approved");
+  const myGroupIds = myGroups.map((g) => g.id).join(",");
+  // Your groups' last messages (for the row preview and unread count).
+  useEffect(() => { if (myGroupIds) myGroupIds.split(",").forEach((id) => { if (!social.get().groupMessages[id]) refreshGroupMessages(id); }); }, [myGroupIds]);
   const lastOf = (g) => { const m = s.groupMessages[g.id]; return Array.isArray(m) && m.length ? m[m.length - 1] : null; };
   const items = [
     ...direct.map((t) => ({ key: "c" + t.user.id, at: Date.parse(t.lastMessage?.createdAt) || 0, el: <ThreadRow key={"c" + t.user.id} t={t} s={s} /> })),
-    ...myGroups.map((g) => ({ key: "g" + g.id, at: Date.parse(lastOf(g)?.createdAt || g.createdAt) || 0, el: <GroupRow key={"g" + g.id} g={g} last={lastOf(g)} /> })),
+    ...myGroups.map((g) => ({ key: "g" + g.id, at: Date.parse(lastOf(g)?.createdAt || g.createdAt) || 0, el: <GroupRow key={"g" + g.id} g={g} last={lastOf(g)} unread={groupUnread(g, s)} /> })),
   ].sort((x, y) => y.at - x.at);
   const requestCount = invites.length + requests.length;
-
-  if (!signedIn) {
-    return (
-      <div className="page">
-        <TopBar title="Chats" back={false} />
-        <main id="main" className="pad mt-16"><Empty icon={Lock} title="Sign in to chat" action={<Button variant="primary" onClick={() => signOut()}>Sign in</Button>}>Message attendees and speakers, join group chats and ask the community.</Empty></main>
-      </div>
-    );
-  }
+  const chatsNew = threads.some((t) => threadUnread(t, s)) || myGroups.some((g) => groupUnread(g, s) > 0);
+  const discussionsNew = s.activity.discussions > 0;
 
   const canNewChat = can("sendMessages", a);
-  const canNewGroup = flag(ct, "flag.allow_groups") && can("createGroups", a);
+  const canNewGroup = flag(ct, "flag.allow_groups") && (!signedIn || can("createGroups", a));
+  const pencil = signedIn && (canNewChat || canNewGroup) ? (
+    <MoreMenu label="Start a chat" icon={SquarePen} items={[
+      canNewChat && { label: "New message", icon: MessageCircle, onClick: () => setNewChat(true) },
+      canNewGroup && { label: "New group", icon: Users, onClick: () => setNewGroup(true) },
+    ]} />
+  ) : null;
+  const picker = (
+    <Segmented label="Chats sections" value={section} onChange={(v) => navigate(v === "chats" ? "/chats" : `/chats/${v}`, { replace: true })}
+      options={[
+        { value: "chats", label: "Chats", dot: chatsNew, ariaLabel: "Chats" + (chatsNew && section !== "chats" ? ", new" : "") },
+        { value: "requests", label: "Requests", count: requestCount, ariaLabel: "Requests" + (requestCount ? `, ${requestCount} open` : "") },
+        { value: "discussions", label: "Discussions", dot: discussionsNew, ariaLabel: "Discussions" + (discussionsNew && section !== "discussions" ? ", new" : "") },
+      ]} />
+  );
+
   return (
     <div className="page">
-      <TopBar title="Chats" back={false} right={(canNewChat || canNewGroup) && (
-        <div style={{ position: "relative" }}>
-          <IconButton icon={SquarePen} label="Start a chat" className="glass-tint" onClick={() => setMenu((v) => !v)} aria-expanded={menu} />
-          {menu && (
-            <div className="menu" role="menu" style={{ top: 44, right: 0 }} onMouseLeave={() => setMenu(false)}>
-              {canNewChat && <button type="button" role="menuitem" onClick={() => { setMenu(false); setNewChat(true); }}><MessagesSquare aria-hidden="true" width={16} />New message</button>}
-              {canNewGroup && <button type="button" role="menuitem" onClick={() => { setMenu(false); setNewGroup(true); }}><Users aria-hidden="true" width={16} />New group</button>}
-            </div>
-          )}
-        </div>
-      )} />
-      <main id="main" className="mt-16 stack">
-        <div className="pad">
-          <Segmented label="Chats sections" value={section} onChange={(v) => navigate(v === "chats" ? "/chats" : `/chats/${v}`, { replace: true })}
-            options={[
-              { value: "chats", label: "Chats", dot: chatsHasNew(s) },
-              { value: "requests", label: "Requests", count: requestCount },
-              { value: "discussions", label: "Discussions" },
-            ]} />
-        </div>
-
+      <TopBar title="Chats" back={false} right={pencil} below={picker} />
+      <main id="main" className="stack" style={{ paddingTop: 8, gap: 10 }}>
         {section === "chats" && (
           <>
             {requestCount > 0 && (
               <div className="pad">
-                <Link to="/chats/requests" className="list-row pressable">
-                  <Inbox aria-hidden="true" style={{ width: 18, height: 18, color: "var(--pur-alt)" }} />
-                  <b style={{ flex: 1, fontSize: 14 }}>{requestCount === 1 ? "1 request" : `${requestCount} requests`}</b>
+                <Link to="/chats/requests" className="requests-row pressable">
+                  <Inbox aria-hidden="true" />
+                  <b>{requestCount === 1 ? "1 request" : `${requestCount} requests`}</b>
                   <ChevronRight className="chev" aria-hidden="true" />
                 </Link>
               </div>
             )}
-            <div className="pad stack-sm">
-              {!s.threadsLoaded ? <Spinner /> : items.length === 0 ? (
-                <Empty icon={MessagesSquare} title="No chats yet">Start one with the pencil above, or message anyone from their profile in Network. You don't need an accepted connection.</Empty>
+            <div className="pad stack-sm" style={{ gap: 10, paddingBottom: 8 }}>
+              {signedIn && !s.threadsLoaded ? <Spinner /> : items.length === 0 ? (
+                <div className="chats-empty"><MessagesSquare aria-hidden="true" /><h3>No chats yet</h3><p>Start one with the pencil above, or message anyone from their profile in Network. You don't need an accepted connection.</p></div>
               ) : items.map((x) => x.el)}
             </div>
-            {(otherGroups.length > 0 || canNewGroup) && (
-              <section className="pad stack-sm" aria-labelledby="browse-h">
-                <div className="row">
-                  <div style={{ flex: 1 }}><div className="eyebrow eyebrow--muted">Join a group chat on a topic</div><h2 id="browse-h" className="section-h">Browse groups</h2></div>
-                  {canNewGroup && <IconButton icon={Plus} label="New group" round filled onClick={() => setNewGroup(true)} />}
-                </div>
-                {otherGroups.length === 0 && <p className="small muted" style={{ margin: 0 }}>No groups yet. Start one with +.</p>}
-                {otherGroups.map((g) => (
-                  <div key={g.id} className="person-card">
-                    <Link to={`/group/${encodeURIComponent(g.id)}`} className="row" style={{ flex: 1, minWidth: 0, gap: 12, color: "inherit", textDecoration: "none" }}>
-                      <span className="avatar avatar--tile" style={{ width: 44, height: 44, fontSize: 17 }} aria-hidden="true">{g.name.slice(0, 1).toUpperCase()}</span>
-                      <span className="info"><span className="person-name ellipsis" style={{ display: "block" }}>{g.name}</span><span className="tiny muted ellipsis" style={{ display: "block" }}>{g.memberCount} member{g.memberCount === 1 ? "" : "s"} · by {g.ownerName}</span></span>
-                    </Link>
-                    <Button size="sm" variant="primary" onClick={async () => { const r = await toggleJoinGroup(g); if (r?.joined) navigate(`/group/${encodeURIComponent(g.id)}`); }}>Join</Button>
-                  </div>
-                ))}
-              </section>
-            )}
+            <BrowseGroups signedIn={signedIn} canNewGroup={canNewGroup} onNewGroup={() => setNewGroup(true)} />
           </>
         )}
 
         {section === "requests" && (
-          <div className="pad stack-sm">
-            {requestCount === 0 && <Empty icon={Inbox} title="No requests">Invitations to connect and messages from people you're not connected with show up here.</Empty>}
-            {invites.length > 0 && <h2 className="section-title">Invitations · {invites.length}</h2>}
+          <div className="pad stack-sm" style={{ gap: 10 }}>
+            {requestCount === 0 && <div className="chats-empty"><Inbox aria-hidden="true" /><h3>No requests</h3><p>Invitations to connect and messages from people you're not connected with show up here.</p></div>}
+            {invites.length > 0 && <h2 className="list-label">Invitations · {invites.length}</h2>}
             {invites.map((c) => {
               const t = threads.find((x) => x.user.id === c.user?.id);
-              return <ConnectionRow key={c.id} conn={c} mode="invite" unread={t?.unread || 0} lastMessage={t && !t.lastMessage?.sentByMe ? t.lastMessage.body : undefined} />;
+              return <ConnectionRow key={c.id} conn={c} mode="invite" showMessage unread={t && threadUnread(t, s) ? t.unread : 0} lastMessage={t && !t.lastMessage?.sentByMe ? t.lastMessage.body : undefined} />;
             })}
             {requests.length > 0 && (
               <>
-                <h2 className="section-title" style={{ marginTop: invites.length ? 8 : 0 }}>Message requests · {requests.length}</h2>
-                <p className="tiny muted" style={{ margin: 0 }}>They'll move to Chats when you reply.</p>
+                <h2 className="list-label" style={{ marginTop: invites.length ? 8 : 0 }}>Message requests · {requests.length}</h2>
+                <p className="muted" style={{ margin: 0, fontSize: 12 }}>They'll move to Chats when you reply.</p>
                 {requests.map((t) => <ThreadRow key={t.user.id} t={t} s={s} />)}
               </>
             )}
           </div>
         )}
 
-        {section === "discussions" && <Discussions />}
+        {section === "discussions" && <Discussions signedIn={signedIn} />}
       </main>
       {newChat && <NewChat onClose={() => setNewChat(false)} />}
       {newGroup && <NewGroup onClose={() => setNewGroup(false)} />}

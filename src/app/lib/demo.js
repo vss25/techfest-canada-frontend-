@@ -359,30 +359,52 @@ const DEMO_LEVELS = [
   { key: "insider", name: "Insider", min: 300 }, { key: "trailblazer", name: "Trailblazer", min: 600 },
   { key: "catalyst", name: "Catalyst", min: 1000 },
 ];
+/** The server's rules (backend services/points.js RULES). */
 const DEMO_RULES = [
-  { key: "profile.linkedin", label: "Add your LinkedIn", description: "Add your LinkedIn profile to your TTFC profile.", points: 20 },
-  { key: "session.saved", label: "Save a session", description: "Each session you save to your agenda (up to 10).", points: 5 },
-  { key: "session.attended", label: "Take part in a session", description: "Each session where you vote in a poll or ask a question (up to 40).", points: 20 },
-  { key: "network.connection", label: "Make a connection", description: "Each accepted connection.", points: 15 },
-  { key: "feed.post", label: "Post on the feed", description: "Each post (up to 3 a day).", points: 10 },
+  { key: "profile.linkedin", label: "Add your LinkedIn", description: "Add your LinkedIn profile to your TTFC profile.", points: 20, max: 1, per: "total", maxTotal: null },
+  { key: "profile.topics", label: "Pick your topics", description: "Choose 3 or more topics of interest.", points: 10, max: 1, per: "total", maxTotal: null },
+  { key: "session.saved", label: "Save a session", description: "Each session you save to your agenda (up to 10).", points: 5, max: 10, per: "total", maxTotal: null },
+  { key: "session.attended", label: "Take part in a session", description: "Each session where you vote in a poll or ask a question (up to 40).", points: 20, max: 40, per: "total", maxTotal: null },
+  { key: "live.vote", label: "Vote in a poll", description: "Each live poll you vote in (up to 3 per session, 60 in all).", points: 5, max: 3, per: "session", maxTotal: 60 },
+  { key: "live.question", label: "Ask a question", description: "Each question you ask that's published.", points: 10, max: null, per: null, maxTotal: null },
+  { key: "live.upvoted", label: "Get upvoted", description: "Each upvote your questions get from others (up to 10 per question).", points: 2, max: 10, per: "question", maxTotal: null },
+  { key: "network.request", label: "Reach out", description: "Each connection request you send (up to 20).", points: 5, max: 20, per: "total", maxTotal: null },
+  { key: "network.connection", label: "Make a connection", description: "Each accepted connection.", points: 15, max: null, per: null, maxTotal: null },
+  { key: "network.inPerson", label: "Meet in person", description: "Extra for each connection made by scanning a badge (up to 30).", points: 10, max: 30, per: "total", maxTotal: null },
+  { key: "feed.post", label: "Post on the feed", description: "Each post (up to 3 a day).", points: 10, max: 3, per: "day", maxTotal: null },
+  { key: "feed.comment", label: "Comment", description: "Each comment (up to 10 a day).", points: 3, max: 10, per: "day", maxTotal: null },
+  { key: "feed.likes", label: "Get likes", description: "Each like your posts get from others (up to 25 per post).", points: 1, max: 25, per: "post", maxTotal: null },
 ];
-/** Sample standing worked out from the demo account's own data. */
+/** Sample standing worked out from the demo account's own data (live polls and Q&A are samples). */
 function demoPoints(s) {
-  const saved = Math.min(10, (s.registrations || []).length);
-  const conns = (s.connections || []).filter((c) => c.status === "accepted").length;
-  const posts = (s.posts || []).filter((p) => p.authorId === ME).length;
-  const breakdown = [
-    { key: "session.saved", label: "Saved sessions", points: saved * 5, count: saved },
-    { key: "network.connection", label: "Connections", points: conns * 15, count: conns },
-    { key: "feed.post", label: "Posts", points: posts * 10, count: posts },
-    { key: "profile.topics", label: "Topics picked", points: 10, count: 1 },
-  ];
-  const total = 70 + breakdown.reduce((n, b) => n + b.points, 0);
+  const conns = s.connections || [];
+  const myPosts = (s.posts || []).filter((p) => p.authorId === ME);
+  const done = {
+    "profile.linkedin": s.me.linkedinUrl ? 1 : 0,
+    "profile.topics": (s.me.topics || []).length,
+    "session.saved": (s.registrations || []).length,
+    "session.attended": 2,
+    "live.vote": 3,
+    "live.question": 1,
+    "live.upvoted": 2,
+    "network.request": conns.filter((c) => c.direction === "outgoing").length,
+    "network.connection": conns.filter((c) => c.status === "accepted").length,
+    "network.inPerson": conns.filter((c) => c.status === "accepted" && c.kind === "inPerson").length,
+    "feed.post": myPosts.length,
+    "feed.comment": (s.posts || []).reduce((n, p) => n + (p.comments || []).filter((c) => c.authorId === ME).length, 0),
+    "feed.likes": myPosts.reduce((n, p) => n + (p.likes || []).filter((id) => id !== ME).length, 0),
+  };
+  const breakdown = DEMO_RULES.map((r) => {
+    const n = done[r.key] || 0;
+    const count = r.key === "profile.topics" ? (n >= 3 ? 1 : 0) : r.per === "total" && r.max ? Math.min(n, r.max) : r.maxTotal ? Math.min(n, r.maxTotal) : n;
+    return { key: r.key, label: r.label, points: count * r.points, count };
+  });
+  const total = breakdown.reduce((n, b) => n + b.points, 0);
   const i = DEMO_LEVELS.reduce((k, l, j) => (total >= l.min ? j : k), 0);
   const next = DEMO_LEVELS[i + 1] || null;
   return {
     total, level: DEMO_LEVELS[i], nextLevel: next, toNext: next ? next.min - total : 0,
-    breakdown: [{ key: "network.request", label: "Requests sent", points: 70, count: 14 }, ...breakdown],
+    breakdown, activity: done,
     rank: s.pointsHidden ? null : 4, rules: DEMO_RULES, levels: DEMO_LEVELS, hideFromLeaderboard: !!s.pointsHidden,
   };
 }
@@ -432,6 +454,9 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     return done({ entries, me: { rank: me.rank, points: me.total } });
   }
   if (is("PATCH", "social/points/prefs")) { s.pointsHidden = !!body.hideFromLeaderboard; return done({ hideFromLeaderboard: s.pointsHidden }); }
+
+  // Apple Wallet (GET /api/wallet/link/:ticketId): demo passes can't be signed.
+  if (is("GET", "wallet/link/:id")) throw new ApiError("Demo passes can't be added to Apple Wallet. Sign in with your TTFC account to add your real pass.", 409);
 
   // Account
   if (is("GET", "social/me")) return done({ ...card(ME), email: s.me.email, contactCard: contactCardDTO() });
@@ -638,8 +663,19 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     for (const n of s.notifications) if (body.all || (body.ids || []).includes(n.id)) n.readAt = n.readAt || new Date().toISOString();
     return done({ ok: true, updated: 1 });
   }
-  if (is("GET", "social/activity/unread")) return { feed: 0, discussions: 0 };
-  if (is("POST", "social/activity/seen")) return { ok: true };
+  if (is("GET", "social/activity/unread")) return { feed: 0, discussions: s.activitySeen?.discussions ? 0 : 1 };
+  if (is("POST", "social/activity/seen")) { s.activitySeen = { ...(s.activitySeen || {}), [body.section]: true }; return done({ ok: true }); }
+  // Typing: someone in the Quantum Builders chat, now and then.
+  if (is("POST", "community/typing")) return { ok: true };
+  if (is("GET", "community/typing")) return { typing: q.get("scope") === "group" && q.get("id") === "g-quantum" && Math.floor(Date.now() / 8000) % 3 === 0 ? ["Connor O'Brien"] : [] };
+  if ((m = is("GET", "community/groups/:id/members"))) {
+    const g = s.groups.find((x) => x.id === m.id);
+    if (!g) throw new ApiError("Not found", 404);
+    const ids = [...new Set([g.ownerId, ...s.groupMessages.filter((x) => x.groupId === g.id).map((x) => x.authorId), ...(g.joined ? [ME] : [])])];
+    const extra = s.people.filter((p) => !ids.includes(p.id) && (p.topics || []).some((t) => (g.tags || []).includes(t)));
+    const cards = [...ids.map((id) => card(id)).filter(Boolean), ...extra].slice(0, Math.max(3, Math.min(g.memberCount, 12)));
+    return done(cards.map((c) => ({ ...c, isOwner: c.id === g.ownerId, isMe: c.id === ME })).sort((a, b) => (b.isOwner - a.isOwner) || a.name.localeCompare(b.name)));
+  }
 
   // Community
   if (is("GET", "community/discussions")) return done(s.discussions.map(discussionDTO));

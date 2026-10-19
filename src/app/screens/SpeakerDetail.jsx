@@ -1,15 +1,23 @@
+import { useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ChevronRight, Link2, Mic, UserPlus, UserCheck, Undo2, MessageCircle, Smartphone } from "lucide-react";
+import { ChevronRight, CircleCheck, Link as LinkIcon, MessagesSquare, Mic, Undo2, UserRoundCheck, UserRoundPlus } from "lucide-react";
 import { useStore } from "../lib/store";
-import { cms, dayLabel, nameKeys, sessionsForSpeaker, speakerById, timeRange } from "../lib/cms";
-import { auth, firstName, isSignedIn } from "../lib/auth";
-import { canMessage, canRequest, connectionWith, social, withdrawConnection } from "../lib/social";
+import { cms, dayLabel, nameKeys, roomOf, sessionsForSpeaker, speakerById } from "../lib/cms";
+import { auth, isSignedIn } from "../lib/auth";
+import { canMessage, canRequest, connectionWith, refreshPeople, social, withdrawConnection } from "../lib/social";
 import { acceptWithSharing, connectWithSharing } from "../lib/myCard";
-import { confirmDialog, safeHref, showAlert } from "../lib/ui";
+import { confirmDialog, givenName, safeHref, showAlert } from "../lib/ui";
 import { FEATURES } from "../lib/config";
 import { Avatar, Button, Empty, Spinner, TopBar } from "../components/ui";
+import { ContactLimitNote } from "../components/People";
+import { PhoneSlash } from "../components/Glyphs";
 
-/* Speaker profile (iOS SpeakerDetailView), with Connect / Message when they're on the app. */
+/* =========================================================
+   Speaker profile (iOS SpeakerDetailView): Connect and
+   "Ask {given} a question" (guests see them too, with sign-up
+   prompts), what their switches allow, topics, About and the
+   sessions they're in.
+========================================================= */
 
 export default function SpeakerDetail() {
   const { id } = useParams();
@@ -17,74 +25,90 @@ export default function SpeakerDetail() {
   const c = useStore(cms);
   const a = useStore(auth);
   const s = useStore(social);
+  const signedIn = isSignedIn(a);
+  useEffect(() => { if (signedIn && !social.get().people.length) refreshPeople(""); }, [signedIn]);
   const sp = speakerById(decodeURIComponent(id), c);
   if (!sp) return <div className="page"><TopBar title="Speaker" />{c.loaded ? <Empty icon={Mic} title="Speaker not found" /> : <Spinner />}</div>;
 
   const keys = nameKeys(sp.name);
   const account = s.people.find((p) => p.onApp !== false && nameKeys(p.name).some((k) => keys.includes(k))) || null;
-  const anyListing = s.people.find((p) => nameKeys(p.name).some((k) => keys.includes(k)));
   const state = account ? connectionWith(account.id, s) : null;
   const sessions = sessionsForSpeaker(sp.id, c);
   const linkedin = safeHref(sp.linkedin);
-  const given = firstName(sp.name.replace(/^(Dr\.|Hon\.|Prof\.)\s*/i, ""));
+  const given = givenName(sp.name);
+  // iOS SyncService.canReach: guests (and anyone not signed in) see the buttons; signed in, only with an app account.
+  const reach = FEATURES.network && (!signedIn || !!account);
+  const mayRequest = !account || !!state || canRequest(account, s);
+  const mayMessage = !account || canMessage(account, s);
 
-  const connect = async () => {
-    if (!isSignedIn(a)) { showAlert("Sign up to connect", "Sign in to send connection requests."); return; }
+  const connect = () => {
+    if (!signedIn) { showAlert("Sign up to connect", "Create a free profile to send connection requests."); return; }
     connectWithSharing(account, { given });
+  };
+  const message = () => {
+    if (!signedIn) { showAlert("Sign up to message", "Guests can browse speakers. Create a free profile to send a question."); return; }
+    navigate(`/chat/${encodeURIComponent(account.id)}`);
   };
   const withdraw = async () => {
     const ok = await confirmDialog({ title: `Withdraw your request to ${sp.name}?`, message: "They won't be told. You can send a new request later.", confirm: "Withdraw request", destructive: true });
-    if (ok) await withdrawConnection(state.conn);
+    if (ok && !(await withdrawConnection(state.conn))) showAlert("Couldn't withdraw", social.get().lastError || "Try again.");
   };
 
   return (
     <div className="page">
       <TopBar title="Speaker" />
       <main id="main">
-        <div className="pad stack-lg" style={{ paddingTop: 18 }}>
+        <div className="speaker-page">
           <div className="speaker-head">
-            <Avatar name={sp.name} src={sp.photo} size={90} round />
+            <Avatar name={sp.name} src={sp.photo} size={90} round={!!sp.photo} />
             <div>
               {sp.isKeynote && <span className="speaker-keynote">Keynote speaker</span>}
               <h1>{sp.name}</h1>
-              {sp.title && <div className="speaker-title">{sp.title}</div>}
-              {sp.company && <div className="speaker-company">{sp.company}</div>}
+              <div className="speaker-title">{sp.title}</div>
+              <div className="speaker-company">{sp.company}</div>
             </div>
           </div>
-          {FEATURES.network && isSignedIn(a) && account && (
-            <div className="stack-sm">
-              {state?.status === "accepted" ? (
-                <Button size="lg" block icon={UserCheck} onClick={() => showAlert("Already connected", `You and ${sp.name} are in each other's network. Your chat is in the Chats tab.`)}>Connected</Button>
+          {reach ? (
+            <>
+              {mayRequest && (state?.status === "accepted" ? (
+                <Button size="lg" block icon={CircleCheck} onClick={() => showAlert("Already connected", `You and ${sp.name} are in each other's network. Your chat is in the Chats tab.`)}>Connected</Button>
               ) : state?.status === "pending" ? (
                 <Button size="lg" block icon={Undo2} onClick={withdraw}>Request sent · Withdraw</Button>
               ) : state?.status === "incoming" ? (
-                <Button variant="primary" size="lg" block icon={UserCheck} onClick={() => acceptWithSharing(state.conn)}>Accept their invite</Button>
-              ) : canRequest(account, s) ? (
-                <Button variant="primary" size="lg" block icon={UserPlus} onClick={connect}>Connect with {given}</Button>
-              ) : null}
-              {canMessage(account, s) && <Button size="lg" block icon={MessageCircle} onClick={() => navigate(`/chat/${encodeURIComponent(account.id)}`)}>Message</Button>}
-            </div>
+                <Button variant="primary" size="lg" block icon={UserRoundCheck} onClick={() => acceptWithSharing(state.conn)}>Accept their invite</Button>
+              ) : (
+                <Button variant="primary" size="lg" block icon={UserRoundPlus} onClick={connect}>Connect with {given}</Button>
+              ))}
+              {FEATURES.chats && mayMessage && (
+                <Button size="lg" block icon={MessagesSquare} onClick={message}>{state?.status === "accepted" ? `Message ${given}` : `Ask ${given} a question`}</Button>
+              )}
+              {account && <ContactLimitNote name={sp.name} canMsg={mayMessage} canReq={mayRequest} />}
+            </>
+          ) : FEATURES.network && (
+            <div className="info-note"><PhoneSlash /><span>{given} hasn't joined the TTFC app yet. You'll be able to connect and message once they sign in.</span></div>
           )}
-          {FEATURES.network && isSignedIn(a) && !account && anyListing && (
-            <div className="note row-top"><Smartphone aria-hidden="true" style={{ width: 18, height: 18, flex: "none" }} /><span>{given} hasn't joined the TTFC app yet. You'll be able to connect and message once they sign in.</span></div>
-          )}
+          {(sp.topics || []).length > 0 && <div className="chips chips--wrap" style={{ gap: 6 }}>{sp.topics.map((t) => <span key={t} className="chip">{t}</span>)}</div>}
           <section className="stack-sm">
             <h2 className="eyebrow eyebrow--muted">About</h2>
             <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 14 }}>{sp.bio}</p>
-            {linkedin && <a className="edit-link" href={linkedin} target="_blank" rel="noopener noreferrer"><Link2 aria-hidden="true" />View LinkedIn profile</a>}
+            {linkedin && <a className="li-link" href={linkedin} target="_blank" rel="noopener noreferrer"><LinkIcon aria-hidden="true" />View LinkedIn profile</a>}
           </section>
           {sessions.length > 0 && (
-            <section className="stack-sm">
+            <section className="stack-sm" style={{ gap: 10 }}>
               <h2 className="eyebrow eyebrow--muted">Appearing in</h2>
-              {sessions.map((x) => (
-                <Link key={x.id} to={`/session/${encodeURIComponent(x.id)}`} className="list-row pressable">
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span className="tiny bold" style={{ color: "var(--pur-alt)" }}>{dayLabel(x)} · {timeRange(x)}</span>
-                    <b style={{ display: "block", fontSize: 14.5 }}>{x.title}</b>
-                  </span>
-                  <ChevronRight className="chev" aria-hidden="true" />
-                </Link>
-              ))}
+              {sessions.map((x) => {
+                const room = roomOf(x.stage);
+                return (
+                  <Link key={x.id} to={`/session/${encodeURIComponent(x.id)}`} className="mini-session pressable">
+                    <span className="mini-when"><span>{dayLabel(x)}</span><b>{x.startTime}</b></span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <b className="clamp-2">{x.title}</b>
+                      {room && <span className="ellipsis">{room}</span>}
+                    </span>
+                    <ChevronRight className="chev" aria-hidden="true" />
+                  </Link>
+                );
+              })}
             </section>
           )}
         </div>

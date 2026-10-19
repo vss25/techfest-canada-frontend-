@@ -3,7 +3,7 @@ import { ArrowUp } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, can, isSignedIn } from "../lib/auth";
 import { addComment, fetchComments } from "../lib/social";
-import { postTime } from "../lib/time";
+import { listTime } from "../lib/time";
 import { showAlert } from "../lib/ui";
 import { Avatar, IconButton, Sheet, Spinner } from "./ui";
 
@@ -53,7 +53,7 @@ export default function Comments({ post, onClose }) {
                 </div>
                 <div style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{c.body}</div>
               </div>
-              <time className="tiny muted" dateTime={c.createdAt} style={{ marginLeft: 12 }}>{postTime(c.createdAt)}</time>
+              <time className="tiny muted" dateTime={c.createdAt} style={{ marginLeft: 12 }}>{listTime(c.createdAt)}</time>
             </div>
           </div>
         ))}

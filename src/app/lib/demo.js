@@ -95,7 +95,7 @@ function seed() {
     person("p-grace", "Grace Kim", "Partner", "Harbourfront Ventures", { topics: ["Startups & Capital", "Artificial Intelligence"] }),
     person("p-lucas", "Lucas Moreau", "CTO", "VoltGrid Energy", { topics: ["Energy & Utilities", "Sustainability & CleanTech"] }),
     person("p-fatima", "Fatima Haddad", "Research Scientist", "Lakeview University AI Lab", { topics: ["Artificial Intelligence", "Healthcare & Lifesciences"] }),
-    person("p-maya", "Dr. Maya Singh", "Chief AI Officer", "Aurora Financial", { topics: ["Artificial Intelligence", "Banking, Financial Services & Insurance"], kind: "speaker", types: ["speaker"], tier: "Power Pass" }),
+    person("p-maya", "Dr. Maya Singh", "Chief AI Officer", "Aurora Financial", { topics: ["Artificial Intelligence", "Banking, Financial Services & Insurance"], kind: "speaker", types: ["speaker"], tier: "Speaker Pass" }),
     person("p-tom", "Tom Becker", "Solutions Engineer", "CyberShield", { topics: ["Cybersecurity"], kind: "exhibitor", types: ["exhibitor"], booth: "12", tier: "Connect Pass" }),
     person("p-jordan", "Jordan Lee", "Head of Partnerships", "QuantumLeap Systems", { topics: ["Quantum Computing"], kind: "exhibitor", types: ["exhibitor"], booth: "7", tier: "Connect Pass" }),
     person("p-nina", "Nina Alvarez", "Attendee Experience", "TTFC", { kind: "staff", types: ["staff"] }),
@@ -139,7 +139,7 @@ function seed() {
       { id: "post-3", authorId: "p-hannah", authorName: "Hannah Liu", authorTitle: "Product Manager", authorOrg: "Shopify", authorTier: "", kind: "member",
         body: "Organising an informal CleanTech founders coffee on Day 2 morning before the keynote. Reply if you want in. Aiming for 8–10 people.",
         topicTags: ["Sustainability & CleanTech"], linkUrl: "", media: [], mentions: [], likes: [], likeBase: 21, comments: [], createdAt: hoursAgo(26) },
-      { id: "post-4", authorId: "p-maya", authorName: "Dr. Maya Singh", authorTitle: "Chief AI Officer", authorOrg: "Aurora Financial", authorTier: "Power Pass", kind: "member",
+      { id: "post-4", authorId: "p-maya", authorName: "Dr. Maya Singh", authorTitle: "Chief AI Officer", authorOrg: "Aurora Financial", authorTier: "Speaker Pass", kind: "member",
         body: "Our panel on model governance at scale will get practical: what we stopped doing, what we automated, and what still needs a human. Bring hard questions.",
         topicTags: ["Artificial Intelligence", "Banking, Financial Services & Insurance"], linkUrl: "https://www.thetechfestival.com/agenda", media: [], mentions: [], likes: [], likeBase: 54, comments: [], createdAt: hoursAgo(30) },
     ],
@@ -185,9 +185,9 @@ try {
   }
 } catch { /* no window (tests) */ }
 
-/* Screenshot hook: /app/?demo=1&pass=speaker shows My pass as a speaker whose ticket is still on
-   the old "speaker" tier (it shows as a Power Pass), pass=exhibitor as an exhibitor (a Connect
-   Pass), pass=default as the sample attendee again. Saved in the demo data. Demo only. */
+/* Screenshot hook: /app/?demo=1&pass=speaker shows My pass as a speaker (the internal Speaker
+   Pass, tier "speaker"), pass=exhibitor as an exhibitor (a Connect Pass), pass=default as the
+   sample attendee again. Saved in the demo data. Demo only. */
 let passHook = "";
 try {
   const u = new URL(window.location.href);
@@ -206,7 +206,7 @@ function applyPassHook(s, hook) {
   s.me.types = hook === "speaker" ? ["attendee", "speaker"] : hook === "exhibitor" ? ["attendee", "exhibitor"] : fresh.me.types;
   s.me.kind = hook === "speaker" || hook === "exhibitor" ? hook : "";
   s.me.booth = hook === "exhibitor" ? "12" : "";
-  s.me.tier = hook === "exhibitor" ? "Connect Pass" : hook === "speaker" ? "Power Pass" : fresh.me.tier;
+  s.me.tier = hook === "exhibitor" ? "Connect Pass" : hook === "speaker" ? "Speaker Pass" : fresh.me.tier;
 }
 
 function applyCardHook(s, hook) {

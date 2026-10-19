@@ -85,14 +85,14 @@ export const TOPIC_COMPANIES = {
 export const POST_TAGS = [...TECH_PILLARS, "Networking", "Hiring", "Fundraising"];
 
 /**
- * The passes are strictly Connect, Influence, Power and Apex (Oct 19 2026), same as the apps
- * (iOS TicketTier.key(for:)). Speaker and exhibitor are person types, never passes: an older
- * "speaker" ticket (old server or cache, "Speaker Pass" / "All Access") is a Power Pass and an
- * exhibitor's pass a Connect Pass. Takes a backend key ("power") or a name ("Power Pass").
+ * The passes (Oct 19 2026), same as the apps (iOS TicketTier.key(for:)): Connect, Influence, Power
+ * and Apex are sold; the Speaker Pass ("speaker") is internal, never sold or upgraded. Older labels
+ * map onto them: "All Access" is the Power Pass, an "Exhibitor Pass" a Connect Pass (exhibitor is a
+ * person type), "VIP" Apex. Takes a backend key ("power") or a name ("Power Pass").
  */
 export function tierKey(raw = "") {
   const k = String(raw).trim().toLowerCase().replace(/ pass$/, "");
-  if (k === "speaker" || k === "all access" || k === "all-access" || k === "allaccess") return "power";
+  if (k === "all access" || k === "all-access" || k === "allaccess") return "power";
   if (k === "exhibitor") return "connect";
   if (k === "vip") return "apex";
   return k;
@@ -106,6 +106,7 @@ export function tierName(key = "") {
   if (k === "influence") return "Influence Pass";
   if (k === "power") return "Power Pass";
   if (k === "apex") return "Apex Pass";
+  if (k === "speaker") return "Speaker Pass";
   if (k === "session") return "Session Pass";
   if (k.startsWith("booth")) return "Exhibition booth"; // a booth, not a pass
   if (!k) return "";
@@ -113,7 +114,7 @@ export function tierName(key = "") {
 }
 
 export function tierRank(key = "") {
-  return { discover: 1, connect: 2, influence: 3, power: 4, apex: 5 }[tierKey(key)] || 0;
+  return { discover: 1, connect: 2, influence: 3, power: 4, apex: 5, speaker: 6 }[tierKey(key)] || 0;
 }
 
 /** Server file path ("/api/files/avatar/…") or full URL → absolute URL. */

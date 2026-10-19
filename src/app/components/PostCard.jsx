@@ -67,7 +67,7 @@ export default function PostCard({ post }) {
   const mine = a.me?.id && post.authorId === a.me.id;
   const staffCanRemove = !mine && (post.canRemove || can("deleteAnyPost", a));
   const author = s.people.find((p) => p.id === post.authorId);
-  // Person types, never a pass name (an older post may still carry "Speaker Pass").
+  // Person types as badges ("Speaker", "Exhibitor"); a post may carry "Speaker Pass" as its tier.
   const badge = publicBadge({ tier: post.authorTier }, author?.kind);
   const media = post.media?.length ? post.media : post.imageUrl ? [{ type: "image", url: post.imageUrl }] : [];
   const hasMedia = media.length > 0;

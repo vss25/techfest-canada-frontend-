@@ -48,8 +48,8 @@ export const roleWords = (title) => {
 
 /**
  * iOS TierStyle.publicBadge: only speakers and exhibitors show a badge (and the avatar ring). It is
- * their person type, never a pass name (the passes are Connect, Influence, Power and Apex, and
- * everyone's pass is private); an older server or post may still say "Speaker Pass" in `tier`.
+ * their person type, never a pass name (everyone's pass is private); a server or post may say
+ * "Speaker Pass" in `tier`.
  */
 export function publicBadge(p, kind = p?.kind) {
   const k = String(kind || "").toLowerCase(), t = String(p?.tier || "").toLowerCase();

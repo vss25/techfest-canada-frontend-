@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ArrowDown, ArrowUp, BellRing, CalendarCheck, CalendarX, ChevronLeft, ChevronRight, Contact, Crown, Download, ImagePlus, Info, Linkedin, Search, Store, Users,
+  ArrowDown, ArrowUp, BellRing, CalendarCheck, CalendarX, ChevronLeft, ChevronRight, Contact, Crown, Download, ImagePlus, Info, Linkedin, Mail, Search, Store, Users,
 } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { ADMIN_API, getToken } from "../api";
@@ -13,9 +13,10 @@ import LogoPicker, { CompanyMark } from "./LogoPicker";
 import ReminderDialog from "./ReminderDialog";
 import NudgeDialog from "./NudgeDialog";
 import {
-  ATTENDING_HINT, ATTENDING_LABELS, ATTENDING_TONE, DAY_SHORT, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_TIERS, RSVP_EMAIL_HINT, RSVP_STATUSES, RSVP_STATUS_LABELS, RSVP_STATUS_TONE,
-  TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VALUE_BANDS, VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL, VIP_TONE, extrasSummary,
-  nudgeCount, passExtras, personPath,
+  ATTENDING_FILTER_OPTIONS, ATTENDING_HINT, ATTENDING_LABELS, ATTENDING_STAGE_HINTS, ATTENDING_STAGE_LABELS, ATTENDING_STAGE_TONE, ATTENDING_TONE, DAY_SHORT,
+  OPENS_NOTE, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_TIERS, RSVP_EMAIL_FILTER_OPTIONS, RSVP_EMAIL_HINT, RSVP_FORM_FILTER, RSVP_STATUSES, RSVP_STATUS_LABELS,
+  RSVP_STATUS_TONE, TRACKED_FROM, TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VALUE_BANDS, VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL,
+  VIP_TONE, extrasSummary, nudgeCount, passExtras, personPath,
 } from "./peopleMeta";
 
 /* =========================================================
@@ -30,8 +31,12 @@ import {
    Unconfirmed people (ReminderDialog) and "Send LinkedIn nudge"
    the "I'm attending" email (NudgeDialog): both management only;
    staff send either to one person from the profile. The I'm
-   attending column: that email's status (opens, clicks and posts
-   aren't tracked).
+   attending column: that email's status, and (emails sent from
+   Oct 19) the furthest step: opened it, opened their page, posted.
+   Engagement (who opened, clicked, posted, opened the RSVP form) is
+   summed up above the filters, and its values are part of the
+   existing filters (I'm Attending, RSVP Email Sent?, RSVP Status),
+   not filters of their own.
 ========================================================= */
 
 const PAGE = 50;
@@ -47,16 +52,17 @@ const COLUMNS = [
   { key: "exhibitor", label: "Exhibitor", sort: "exhibitor" },
 ];
 const YES_NO = [{ key: "yes", label: "Yes" }, { key: "no", label: "No" }];
-/* The organiser's filters, in their words and order (Oct 19 2026). */
+/* The organiser's filters, in their words and order (Oct 19 2026). Engagement (who opened, posted, opened the
+   form) adds values to RSVP Status, RSVP Email Sent? and I'm Attending rather than filters of its own. */
 const FILTER_DEFS = [
   { key: "type", label: "Attendee Type", options: TYPE_FILTER_OPTIONS },
   { key: "pass", label: "Pass Type", options: PASS_TIERS },
   { key: "value", label: "Ticket Value After Payment", options: VALUE_BANDS },
-  { key: "rsvp", label: "RSVP Status", options: RSVP_STATUSES.map((k) => ({ key: k, label: RSVP_STATUS_LABELS[k] })) },
+  { key: "rsvp", label: "RSVP Status", options: [...RSVP_STATUSES.map((k) => ({ key: k, label: RSVP_STATUS_LABELS[k] })), RSVP_FORM_FILTER] },
   { key: "exhibitor", label: "Is Exhibitor?", options: YES_NO },
-  { key: "rsvpEmail", label: "RSVP Email Sent?", options: YES_NO },
+  { key: "rsvpEmail", label: "RSVP Email Sent?", options: RSVP_EMAIL_FILTER_OPTIONS },
   { key: "vip", label: "VIP?", options: YES_NO },
-  { key: "attending", label: "I'm Attending Email Sent?", options: YES_NO },
+  { key: "attending", label: "I'm Attending", options: ATTENDING_FILTER_OPTIONS },
 ];
 const FILTERS = ["q", ...FILTER_DEFS.map((f) => f.key)];
 
@@ -71,6 +77,49 @@ function SortHeader({ col, sort, dir, onSort }) {
         <Icon className={`h-3 w-3 ${active ? "opacity-100" : "opacity-0"}`} aria-hidden="true" />
       </button>
     </th>
+  );
+}
+
+/* "12 opened": a count that opens the matching view. */
+function Count({ n, label, to }) {
+  return (
+    <Link to={to} className="rounded font-semibold text-ttfc-text hover:text-ttfc-pink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttfc-purple">
+      {(n || 0).toLocaleString()} <span className="font-normal text-ttfc-muted">{label}</span>
+    </Link>
+  );
+}
+const Dot = () => <span className="text-ttfc-dim" aria-hidden="true"> · </span>;
+
+/* Who opened, clicked, posted and opened the RSVP form (backend services/engagement.js: people, not events). */
+function EngagementSummary({ c }) {
+  if (typeof c?.attendingOpened !== "number") return null; // an older server: nothing to show yet
+  const unnamed = c.unattributedPosts || 0;
+  return (
+    <section aria-label="Who opened and posted" className="mb-6 rounded-[18px] border border-ttfc-line bg-ttfc-panel p-4">
+      <div className="grid gap-3 lg:grid-cols-2">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-sm font-semibold"><Linkedin className="h-4 w-4 text-ttfc-pink" aria-hidden="true" /> I'm attending</p>
+          <p className="mt-1 text-sm leading-relaxed">
+            <Count n={c.attendingSent} label="sent" to="?attending=yes" /><Dot />
+            <Count n={c.attendingOpened} label="opened" to="?attending=opened" /><Dot />
+            <Count n={c.attendingVisited} label="opened their page" to="?attending=visited" /><Dot />
+            <Count n={c.attendingPosted} label="posted on LinkedIn" to="?attending=posted" />
+            {unnamed > 0 && <span className="text-ttfc-muted"> (+{unnamed.toLocaleString()} from older links, names not known)</span>}
+            {c.attendingMaybe > 0 && <><Dot /><Count n={c.attendingMaybe} label="shared or opened LinkedIn (not confirmed)" to="?attending=maybe" /></>}
+          </p>
+        </div>
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-sm font-semibold"><Mail className="h-4 w-4 text-ttfc-pink" aria-hidden="true" /> RSVP</p>
+          <p className="mt-1 text-sm leading-relaxed">
+            <Count n={c.rsvpEmailOpened} label="opened an RSVP email" to="?rsvpEmail=opened" /><Dot />
+            <Count n={c.rsvpFormOpened} label="opened the form" to="?rsvp=form" />
+            {c.rsvpFormNotSent > 0 && <span className="text-ttfc-muted"> ({c.rsvpFormNotSent.toLocaleString()} didn't submit)</span>}<Dot />
+            <Count n={c.byRsvp?.attendee} label="submitted" to="?rsvp=attendee" />
+          </p>
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-ttfc-dim">{OPENS_NOTE} {TRACKED_FROM}</p>
+    </section>
   );
 }
 
@@ -90,8 +139,15 @@ function ExtrasBadge({ pass }) {
   );
 }
 
-function RsvpCell({ r }) {
-  if (!r || r.status === "none") return <span className="text-ttfc-dim">{RSVP_STATUS_LABELS.none}</span>;
+function RsvpCell({ r, e }) {
+  if (!r || r.status === "none") {
+    return (
+      <span className="block">
+        <span className="text-ttfc-dim">{RSVP_STATUS_LABELS.none}</span>
+        {e?.formOpened && <span className="block text-[11px] text-amber-200/90" title={`Opened the RSVP form ${when(e.lastFormAt)}${e.formOpens > 1 ? ` (${e.formOpens} times)` : ""}, didn't submit`}>Opened the form</span>}
+      </span>
+    );
+  }
   return (
     <span className="block space-y-1">
       <Badge tone={RSVP_STATUS_TONE[r.status]}>{RSVP_STATUS_LABELS[r.status]}</Badge>
@@ -194,6 +250,7 @@ export default function PeopleDirectory() {
           <StatTile label="VIPs" value={(c.vips || 0).toLocaleString()} icon={Crown} tone="orange" to="?vip=yes" />
         </div>
       )}
+      <EngagementSummary c={c} />
 
       {data?.stripe && data.stripe !== "ok" && (
         <Banner tone="info" icon={Info} className="mb-4">
@@ -289,11 +346,13 @@ export default function PeopleDirectory() {
                       </span>
                     )}
                   </td>
-                  <td className="whitespace-nowrap"><RsvpCell r={r.rsvp} /></td>
+                  <td className="whitespace-nowrap"><RsvpCell r={r.rsvp} e={r.engagement?.rsvp} /></td>
                   <td className="whitespace-nowrap" title={r.rsvpEmail?.via?.join(", ")}>
                     {r.rsvpEmail?.sent ? (
                       <span className="block"><Badge tone="good">Yes</Badge><span className="block text-[11px] text-ttfc-muted">{r.rsvpEmail.mark === true ? "marked by staff" : when(r.rsvpEmail.at)}</span></span>
                     ) : <span className="text-ttfc-muted">No{r.rsvpEmail?.mark === false && <span className="block text-[11px]">marked by staff</span>}</span>}
+                    {r.engagement?.rsvp?.emailOpened ? <span className="block text-[11px] text-emerald-200/90" title={`Last opened ${when(r.engagement.rsvp.lastOpenAt)}`}>Opened</span>
+                      : r.rsvpEmail?.sent && r.engagement?.rsvp?.tracked ? <span className="block text-[11px] text-ttfc-dim">Not opened</span> : null}
                   </td>
                   <td className="whitespace-nowrap" title={ATTENDING_HINT}>
                     {r.attending && r.attending.status !== "none" ? (
@@ -303,6 +362,11 @@ export default function PeopleDirectory() {
                         {r.attending.nudges > 0 && <span className="block text-[11px] text-ttfc-dim">{nudgeCount(r.attending.nudges)}</span>}
                       </span>
                     ) : <span className="text-ttfc-muted">{ATTENDING_LABELS.none}</span>}
+                    {r.engagement?.attending?.stage && (
+                      <span className="mt-1 block" title={ATTENDING_STAGE_HINTS[r.engagement.attending.stage]}>
+                        <Badge tone={ATTENDING_STAGE_TONE[r.engagement.attending.stage]}>{ATTENDING_STAGE_LABELS[r.engagement.attending.stage]}</Badge>
+                      </span>
+                    )}
                   </td>
                   <td>{r.exhibitor ? <Badge tone="purple">Yes</Badge> : <span className="text-ttfc-muted">No</span>}</td>
                   <td className="whitespace-nowrap text-right">
@@ -324,7 +388,7 @@ export default function PeopleDirectory() {
       <p className="mt-4 text-xs text-ttfc-dim">
         Extras: the meals and events on their main pass (CxO Breakfasts, luncheons, Gala, Awards); + was added by staff, struck through was taken off.
         Ticket value is what they paid for the pass after promo codes, before HST. RSVP email: {RSVP_EMAIL_HINT}{" "}
-        I'm attending: {ATTENDING_HINT}
+        I'm attending: {ATTENDING_HINT} {OPENS_NOTE}
         {!isManagement && " Downloading the list and sending to everyone in a view are for management; open someone to send them an RSVP reminder or a LinkedIn nudge."}
       </p>
       <ReminderDialog key={reminding ? view.toString() : "closed"} open={reminding} onClose={() => setReminding(false)} view={view} canSend={isManagement} onSent={reload} />

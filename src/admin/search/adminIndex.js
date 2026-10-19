@@ -7,7 +7,7 @@
    sidebar does. Settings open their page with ?highlight=<key>
    (AdminShell scrolls to it and flashes it).
 ========================================================= */
-import { CalendarClock, Tag, KeyRound, LayoutGrid, ToggleRight, TicketPlus, UserPlus, BellRing, Hash } from "lucide-react";
+import { CalendarClock, Tag, KeyRound, LayoutGrid, ToggleRight, TicketPlus, UserPlus, BellRing, Hash, Linkedin, MailOpen } from "lucide-react";
 import { NAV } from "../nav";
 import { REGISTRY, SCOPES } from "../content/registry";
 import { score } from "./match";
@@ -15,7 +15,8 @@ import { score } from "./match";
 /* Words staff might type for each page (by its path under /admin), besides its name and section. */
 const KEYWORDS = {
   "": ["dashboard", "home", "stats", "summary"],
-  people: ["directory", "attendees", "delegates", "contacts", "persons", "vip", "edit person", "delete person", "rsvp status", "exhibitor"],
+  people: ["directory", "attendees", "delegates", "contacts", "persons", "vip", "edit person", "delete person", "rsvp status", "exhibitor",
+    "opened email", "email opens", "who opened", "posted on linkedin", "linkedin posts", "rsvp form opened"],
   attendees: ["tickets", "ticket holders", "orders", "passes", "hide duplicates", "complimentary ticket", "comp", "missing details", "profile request", "export"],
   "speaker-passes": ["speaker pass", "speakers passes", "run of show", "speaker email", "nudge", "sync speakers"],
   "purchase-email": ["confirmation email", "receipt", "order email", "ticket email"],
@@ -59,6 +60,8 @@ const ACTIONS = [
   { title: "Give a pass", where: "People & passes › Give a pass", to: "issued-passes", icon: TicketPlus, keywords: ["give someone a pass", "new pass"] },
   { title: "Running late: shift sessions", where: "Website & app › Agenda", to: "content/agenda", icon: CalendarClock, keywords: ["delay", "push back", "move sessions", "late"] },
   { title: "Send RSVP reminder", where: "RSVPs & meals › RSVP reminders", to: "marketing/rsvp-reminders", icon: BellRing, keywords: ["remind", "unconfirmed"] },
+  { title: "Who posted on LinkedIn (I'm attending)", where: "People & passes › People", to: "people?attending=posted", icon: Linkedin, keywords: ["linkedin posts", "posted", "shared", "i'm attending"] },
+  { title: "Opened the RSVP form, didn't submit", where: "People & passes › People", to: "people?rsvp=form", icon: MailOpen, keywords: ["rsvp form opened", "started rsvp", "email opened", "not opened"] },
   { title: "Add a staff member or volunteer", where: "More › Settings › Staff accounts", to: "staff", icon: UserPlus, management: true, keywords: ["new staff", "invite staff"] },
   { title: "Change my password", where: "Your name (top bar) › My account", to: "account", icon: KeyRound, keywords: ["password"] },
   { title: "Homepage sections (Featured Speakers, Featured Attendees)", where: "Website & app › Website switches", to: "content/settings", highlight: "speakersEnabled", icon: LayoutGrid, keywords: ["speakers section", "attendees carousel", "coming soon"] },

@@ -86,7 +86,7 @@ export const RSVP_STATUS_LABELS = { attendee: "Confirmed by Individual", staff: 
 export const RSVP_STATUS_TONE = { none: "neutral", attendee: "good", staff: "purple" };
 
 /** What "RSVP Email Sent" counts (the server works it out from these records). */
-export const RSVP_EMAIL_HINT = "Yes when an email with their RSVP link went to them: their Speaker Pass, issued or exhibitor pass email with the RSVP button, a speaker reminder, or an RSVP reminder. Bulk campaigns aren't counted. Staff can mark it Yes or No by hand on the profile.";
+export const RSVP_EMAIL_HINT = "Yes when an email with their RSVP link went to them: their Speaker Pass, issued or exhibitor pass email with the RSVP button, a speaker reminder, or an RSVP reminder. Bulk campaigns aren't counted. Staff can mark it Yes or No by hand on the profile. Opened / not opened: RSVP reminders sent from Oct 19, and pass emails sent then without a cc (a cc'd copy would count as theirs).";
 
 export const DAY_SHORT = { day1: "Day 1", day2: "Day 2" };
 
@@ -105,5 +105,48 @@ export const shortDate = (d) => (d ? new Date(d).toLocaleDateString([], { month:
 /** The "I'm attending" email per person (backend services/attendingNudge.js): status → label and colour. */
 export const ATTENDING_LABELS = { none: "Not sent", sent: "Sent", failed: "Failed", sending: "Unconfirmed" };
 export const ATTENDING_TONE = { none: "neutral", sent: "good", failed: "bad", sending: "warn" };
-export const ATTENDING_HINT = "The \"I'm attending\" email (Marketing's LinkedIn campaign) or a LinkedIn nudge from here went to one of their addresses. Opens, clicks and LinkedIn posts aren't tracked, so they can't show.";
+export const ATTENDING_HINT = "The \"I'm attending\" email (Marketing's LinkedIn campaign) or a LinkedIn nudge from here went to one of their addresses. For emails sent from Oct 19 we also see whether they opened it, opened their page and posted on LinkedIn.";
 export const nudgeCount = (n) => (n > 0 ? `${n} ${n === 1 ? "nudge" : "nudges"}` : "");
+
+/* What they did with it (backend services/engagement.js): the furthest step, best first. Only a post made
+   with "Post to LinkedIn" is confirmed; a phone's share sheet can't say which app it went to. */
+export const ATTENDING_STAGE_LABELS = {
+  posted: "Posted on LinkedIn",
+  shared: "Shared from phone",
+  manual: "Opened LinkedIn",
+  visited: "Opened the page",
+  opened: "Opened the email",
+};
+export const ATTENDING_STAGE_TONE = { posted: "good", shared: "purple", manual: "purple", visited: "orange", opened: "neutral" };
+export const ATTENDING_STAGE_HINTS = {
+  posted: "Posted with “Post to LinkedIn”. LinkedIn confirmed it.",
+  shared: "Their phone's share sheet finished. It can't tell us the app was LinkedIn, so the post isn't confirmed.",
+  manual: "They downloaded the image and opened LinkedIn. We can't see whether they posted.",
+  visited: "They opened their page from the email, and haven't posted yet.",
+  opened: "Their mail app loaded the email's images.",
+};
+
+/** The I'm Attending filter: the email's status, then what they did with it. */
+export const ATTENDING_FILTER_OPTIONS = [
+  { key: "yes", label: "Email sent" },
+  { key: "no", label: "Email not sent" },
+  { key: "opened", label: "Opened the email" },
+  { key: "noPost", label: "Opened, didn't post" },
+  { key: "visited", label: "Opened the page" },
+  { key: "maybe", label: "Shared or opened LinkedIn (not confirmed)" },
+  { key: "posted", label: "Posted on LinkedIn" },
+];
+/** RSVP Email Sent?: yes / no as before, and whether one with the open pixel was opened. */
+export const RSVP_EMAIL_FILTER_OPTIONS = [
+  { key: "yes", label: "Yes" },
+  { key: "no", label: "No" },
+  { key: "opened", label: "Yes, opened" },
+  { key: "unopened", label: "Yes, not opened" },
+];
+/** RSVP Status: the three statuses, and people who opened the form but haven't sent their RSVP. */
+export const RSVP_FORM_FILTER = { key: "form", label: "Opened the form, didn't submit" };
+
+export const OPENS_NOTE = "Opens are estimates: some mail apps (e.g. Apple Mail) load images automatically, others block them.";
+export const TRACKED_FROM = "Opens, clicks and posts count for emails sent from Oct 19. RSVP form opens count for every RSVP link.";
+/** "3 times" ("" for none or once). */
+export const times = (n) => (n > 1 ? `${n.toLocaleString()} times` : "");

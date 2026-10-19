@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Copy } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Copy, Info } from "lucide-react";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Banner, Button, Drawer, Field, Input, Select } from "../ui";
@@ -8,7 +9,8 @@ import { Banner, Button, Drawer, Field, Input, Select } from "../ui";
 const TIERS = [["connect", "Connect"], ["influence", "Influence"], ["power", "Power"], ["apex", "Apex"]];
 const EMPTY = { name: "", email: "", tier: "power" };
 
-/** Management: issue a free pass (speakers, guests, the App Review account). */
+/** Management: a quick free pass with no email (speakers, guests, the App Review account). To email someone their
+    pass (with the PDF, Wallet and RSVP button), use People & passes › Give a pass instead. */
 export function CompTicketDrawer({ open, onClose, onCreated }) {
   const toast = useToast();
   const [form, setForm] = useState(EMPTY);
@@ -36,15 +38,15 @@ export function CompTicketDrawer({ open, onClose, onCreated }) {
     <Drawer
       open={open}
       onClose={close}
-      title="Complimentary ticket"
-      description="A free pass for a speaker, guest or the App Review account. It works in the app, on the website and at the door."
+      title="Quick free pass (no email)"
+      description="A free pass for a speaker, guest or the App Review account, with no email. It works in the app, on the website and at the door."
       footer={made
         ? <Button variant="primary" onClick={close}>Done</Button>
-        : <><Button variant="primary" loading={saving} onClick={create}>Create ticket</Button><Button variant="ghost" onClick={close}>Cancel</Button></>}
+        : <><Button variant="primary" loading={saving} onClick={create}>Create pass</Button><Button variant="ghost" onClick={close}>Cancel</Button></>}
     >
       {made ? (
         <div className="space-y-4">
-          <Banner tone="good" title="Ticket created">
+          <Banner tone="good" title="Pass created">
             {made.name} can sign in to the app with <b>Sign in with ticket ID</b>, or with a sign-in link sent to {made.email}.
           </Banner>
           <dl className="grid grid-cols-[auto,1fr,auto] items-center gap-x-4 gap-y-3 text-sm">
@@ -56,6 +58,10 @@ export function CompTicketDrawer({ open, onClose, onCreated }) {
         </div>
       ) : (
         <div className="space-y-4">
+          <Banner tone="info" icon={Info} title="Want them to get an email?">
+            Nothing is emailed from here. To send someone their pass with the PDF, Apple Wallet and the RSVP button, use{" "}
+            <Link to="/admin/issued-passes" onClick={close} className="font-semibold text-ttfc-pink hover:underline">Give a pass</Link>.
+          </Banner>
           <Field label="Full name" hint="First and last name. They sign in with the last name.">
             {(id) => <Input id={id} value={form.name} onChange={set("name")} placeholder="App Review" />}
           </Field>

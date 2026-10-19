@@ -37,7 +37,7 @@ export default function People() {
 
   return (
     <>
-      <PageHeader eyebrow="App" title="People" description="Every account on the app. Open someone to see and change everything about them." />
+      <PageHeader eyebrow="More › Records" title="App accounts" description="Every account on the app. Open someone to see and change everything about them. For their passes, meals and RSVP, open their full profile in People." />
       <div className="mb-5 flex flex-col gap-3 rounded-[18px] border border-ttfc-line bg-ttfc-panel p-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />

@@ -48,7 +48,8 @@ import PersonProfile from "../admin/people/PersonProfile";
 // Existing admin features — wrapped and restyled, logic unchanged.
 import CheckIn from "../components/CheckIn";
 
-const T = "Tickets & attendees";
+const EVENT_DAY = "Event day"; // the sidebar section (admin/nav.js)
+const LOGO_STRIPS = "More › Logo strips";
 
 /** The panel is always dark: existing components read body.dark-mode. */
 function useAdminBody() {
@@ -184,7 +185,7 @@ export default function Admin() {
             <Route path="issued-passes" element={<IssuedPasses />} />
             <Route path="exhibitor-passes" element={<ExhibitorPasses />} />
             <Route path="inventory" element={<Inventory />} />
-            <Route path="check-in" element={<Legacy eyebrow={T} title="Check-in" description="Point the camera at a ticket's QR code to check the attendee in. Allow camera access when your browser asks."><CheckIn /></Legacy>} />
+            <Route path="check-in" element={<Legacy eyebrow={EVENT_DAY} title="Check-in" description="Point the camera at a ticket's QR code to check the attendee in. Allow camera access when your browser asks."><CheckIn /></Legacy>} />
             <Route path="analytics" element={<ManagementOnly><SalesAnalytics /></ManagementOnly>} />
 
             <Route path="content" element={<Navigate to="/admin/content/speakers" replace />} />
@@ -192,23 +193,23 @@ export default function Admin() {
             <Route path="content/speakers" element={<Speakers />} />
             <Route path="content/partners" element={
               <LogoCollection key="partner" type="partner" title="Partners" singular="partner" withCategory
-                description="Partner logos on the Partners page and in the apps' Organisations, grouped by category. Partners in the Featured Partners row are the sponsors. Each partner has its own website and app switches; Active off hides it everywhere without deleting it." />
+                description="Partner logos on the Partners page and in the apps' Organisations, grouped by category. Partners in the Featured Partners row are the paid partners (also on the Featured Partners page). Each partner has its own website and app switches; Active off hides it everywhere without deleting it." />
             } />
             <Route path="content/sponsors" element={
-              <LogoCollection key="sponsors" type="partner" title="Sponsors" singular="sponsor" withCategory sponsorsOnly
-                description="The paid partners: the Featured Partners row on the Partners page, and the Sponsors section shown first in the apps' Organisations. These are the same records as on the Partners page, so the website and the apps always read one copy. Add a description and choose where each sponsor shows." />
+              <LogoCollection key="sponsors" type="partner" title="Featured Partners" singular="Featured Partner" withCategory sponsorsOnly
+                description="The paid partners: the Featured Partners row on the Partners page, and the Featured Partners section shown first in the apps' Organisations. These are the same records as on the Partners page, so the website and the apps always read one copy. Add a description and choose where each one shows." />
             } />
             <Route path="content/alumni-logos" element={
-              <LogoCollection key="sponsor" type="sponsor" title="Alumni logo strip" singular="logo"
-                description={'The "Our team includes alumni from" logo strip on the Home and Sponsors pages. These are not event sponsors: sponsors are under Sponsors.'} />
+              <LogoCollection key="sponsor" type="sponsor" title="Team alumni" singular="logo" eyebrow={LOGO_STRIPS}
+                description={'The "Our team includes alumni from" logo strip on the Home and Sponsors pages. These aren\'t the paid partners: those are under Website & app › Featured Partners.'} />
             } />
             <Route path="content/sponsor-marquee" element={
-              <LogoCollection key="sponsorMarquee" type="sponsorMarquee" title="Sponsor marquee" singular="logo"
-                description="The scrolling logo strip on the Home and Speakers pages." />
+              <LogoCollection key="sponsorMarquee" type="sponsorMarquee" title="Community & speakers' companies" singular="logo" eyebrow={LOGO_STRIPS}
+                description={'The scrolling logo strips: "Our Community" on the Home page and "Where our speakers work at" on the Speakers page. Not sponsors.'} />
             } />
             <Route path="content/home-sponsors" element={
-              <LogoCollection key="homeSponsor" type="homeSponsor" title="Home sponsors" singular="home sponsor"
-                description="Home sponsor logos." />
+              <LogoCollection key="homeSponsor" type="homeSponsor" title="Home sponsors" singular="home sponsor" eyebrow="Not in the sidebar"
+                description="These logos aren't shown anywhere on the website or in the apps; they only feed the company-logo picker in People. Hidden from the sidebar, kept for that." />
             } />
             <Route path="content/settings" element={<SiteSettings />} />
 

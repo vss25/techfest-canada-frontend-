@@ -1,99 +1,119 @@
-import { Contact } from "lucide-react";
-import { MailOpen } from "lucide-react";
 import {
-  CalendarDays,
-  LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
-  Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
-  Megaphone, ScrollText, UserCog, Power, KeyRound, FileDown, Landmark, Inbox, CalendarCheck, IdCard, Share2, TicketPlus, BellRing,
-  Award, Store, ShieldCheck, Download, GraduationCap,
+  Activity, Award, BarChart3, BellRing, CalendarCheck, CalendarDays, Contact, Download, FileDown, Gem, GalleryHorizontal, GraduationCap,
+  Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, Power, ScanLine,
+  ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
 
-/** Sidebar structure. `to` is relative to /admin. */
+/* =========================================================
+   Sidebar structure (the admin review, Oct 19 2026): five sections
+   named for event-week jobs plus a folded "More". `to` is relative
+   to /admin, and every address is the same as before.
+     management: true  management only (Sales, Staff accounts)
+     hidden: true      not in the sidebar, the address still works
+                       (Home sponsors; My account is under your name
+                       in the top bar)
+     sub               a small heading inside More
+   The section titles are also the pages' small section headings
+   (PageHeader eyebrow; "More › Records" and so on in More).
+========================================================= */
 export const NAV = [
   {
     title: null,
     items: [{ to: "", label: "Overview", icon: LayoutDashboard, end: true }],
   },
   {
-    title: "Tickets & attendees",
+    title: "People & passes",
     items: [
       { to: "people", label: "People", icon: Contact },
-      { to: "attendees", label: "Tickets", icon: Users },
+      { to: "issued-passes", label: "Give a pass", icon: TicketPlus },
       { to: "speaker-passes", label: "Speaker passes", icon: IdCard },
-      { to: "purchase-email", label: "Purchase email", icon: MailOpen },
-      { to: "analytics", label: "Sales analytics", icon: BarChart3, management: true },
-      { to: "inventory", label: "Inventory", icon: Package },
-      { to: "check-in", label: "Check-in", icon: ScanLine },
-    ],
-  },
-  {
-    title: "Website content",
-    items: [
-      { to: "content/agenda", label: "Agenda", icon: CalendarDays },
-      { to: "content/speakers", label: "Speakers", icon: Mic2 },
-      { to: "content/partners", label: "Partners", icon: Handshake },
-      { to: "content/sponsors", label: "Sponsors", icon: Gem },
-      { to: "content/alumni-logos", label: "Alumni logo strip", icon: GraduationCap },
-      { to: "content/sponsor-marquee", label: "Sponsor marquee", icon: GalleryHorizontal },
-      { to: "content/home-sponsors", label: "Home sponsors", icon: House },
-      { to: "content/settings", label: "Site settings", icon: Settings2 },
-    ],
-  },
-  {
-    title: "Catalyst Awards",
-    items: [{ to: "awards", label: "Nominations", icon: Award }],
-  },
-  {
-    title: "Leads",
-    items: [
-      { to: "brochure-downloads", label: "Brochure downloads", icon: FileDown },
-      { to: "india-pavilion", label: "India Pavilion", icon: Landmark },
-      { to: "form-submissions", label: "Form submissions", icon: Inbox },
-      { to: "rsvps", label: "RSVPs", icon: CalendarCheck },
-    ],
-  },
-  {
-    title: "Marketing",
-    items: [
-      { to: "marketing/attending", label: "I'm attending campaign", icon: Share2 },
-      { to: "marketing/rsvp-reminders", label: "RSVP reminders", icon: BellRing },
-      { to: "issued-passes", label: "Issue passes", icon: TicketPlus },
       { to: "exhibitor-passes", label: "Exhibitor passes", icon: Store },
     ],
   },
   {
-    title: "App",
+    title: "RSVPs & meals",
     items: [
-      { to: "app", label: "App overview", icon: Smartphone, end: true },
-      { to: "app/people", label: "People", icon: Users },
-      { to: "app/activity", label: "Live activity", icon: Activity },
-      { to: "app/moderation", label: "Moderation", icon: ShieldAlert },
-      { to: "app/text", label: "App text & switches", icon: ToggleRight },
-      { to: "app/pwa", label: "PWA installs", icon: Download },
-      { to: "app/rights", label: "App rights", icon: ShieldCheck },
-      { to: "app/broadcast", label: "Broadcast", icon: Megaphone },
-      { to: "app/audit", label: "Audit log", icon: ScrollText },
+      { to: "rsvps", label: "Headcounts & RSVPs", icon: CalendarCheck },
+      { to: "marketing/rsvp-reminders", label: "RSVP reminders", icon: BellRing },
     ],
   },
   {
-    title: "Staff & safety",
+    title: "Event day",
     items: [
-      { to: "staff", label: "Staff accounts", icon: UserCog, management: true },
-      { to: "email-tracking", label: "Email tracking", icon: MailCheck },
-      { to: "account", label: "My account", icon: KeyRound },
-      { to: "kill-switch", label: "Kill switch", icon: Power, danger: true },
+      { to: "check-in", label: "Check-in", icon: ScanLine },
+      { to: "app/moderation", label: "App moderation", icon: ShieldAlert },
+      { to: "app/broadcast", label: "Send an app update", icon: Megaphone },
+    ],
+  },
+  {
+    title: "Website & app",
+    items: [
+      { to: "content/agenda", label: "Agenda", icon: CalendarDays },
+      { to: "content/speakers", label: "Speakers", icon: Mic2 },
+      { to: "content/partners", label: "Partners", icon: Handshake },
+      { to: "content/sponsors", label: "Featured Partners", icon: Gem },
+      { to: "content/settings", label: "Website switches", icon: Settings2 },
+      { to: "app/text", label: "App text & switches", icon: ToggleRight },
+    ],
+  },
+  {
+    title: "Sales & emails",
+    items: [
+      { to: "analytics", label: "Sales", icon: BarChart3, management: true },
+      { to: "inventory", label: "Prices & stock", icon: Package },
+      { to: "purchase-email", label: "Purchase email", icon: MailOpen },
+    ],
+  },
+  {
+    title: "More",
+    collapsible: true,
+    items: [
+      { to: "attendees", label: "Ticket records", icon: Ticket, sub: "Records" },
+      { to: "app/people", label: "App accounts", icon: Users, sub: "Records" },
+      { to: "form-submissions", label: "Form submissions", icon: Inbox, sub: "Records" },
+      { to: "brochure-downloads", label: "Brochure downloads", icon: FileDown, sub: "Records" },
+      { to: "india-pavilion", label: "India Pavilion", icon: Landmark, sub: "Records" },
+      { to: "awards", label: "Award nominations", icon: Award, sub: "Records" },
+      { to: "marketing/attending", label: "I'm attending campaign", icon: Share2, sub: "Records" },
+      { to: "content/alumni-logos", label: "Team alumni", icon: GraduationCap, sub: "Logo strips" },
+      { to: "content/sponsor-marquee", label: "Community & speakers' companies", icon: GalleryHorizontal, sub: "Logo strips" },
+      { to: "app", label: "App overview", icon: Smartphone, end: true, sub: "App reports" },
+      { to: "app/activity", label: "Live activity", icon: Activity, sub: "App reports" },
+      { to: "app/pwa", label: "Web app installs", icon: Download, sub: "App reports" },
+      { to: "staff", label: "Staff accounts", icon: UserCog, management: true, sub: "Settings" },
+      { to: "app/rights", label: "App rights", icon: ShieldCheck, sub: "Settings" },
+      { to: "app/audit", label: "Audit log", icon: ScrollText, sub: "Settings" },
+      { to: "email-tracking", label: "Where website forms go", icon: MailCheck, sub: "Settings" },
+      { to: "kill-switch", label: "Kill switch", icon: Power, danger: true, sub: "Settings" },
+    ],
+  },
+  {
+    // Not in the sidebar (their addresses still work); kept here for the top bar's title.
+    title: "Not in the sidebar",
+    hidden: true,
+    items: [
+      { to: "content/home-sponsors", label: "Home sponsors", icon: House, hidden: true },
+      { to: "account", label: "My account", icon: KeyRound, hidden: true },
     ],
   },
 ];
 
-/** Page title for the top bar, from the current path. */
-export function titleFor(pathname) {
+/** { item, group } of the sidebar link for a path under /admin ("" = Overview): the longest match, or null. */
+export function navItemFor(pathname) {
   const rest = pathname.replace(/^\/admin\/?/, "").replace(/\/$/, "");
   let best = null;
   for (const g of NAV) for (const it of g.items) {
     if (rest === it.to || (it.to && rest.startsWith(it.to + "/"))) {
-      if (!best || it.to.length > best.to.length) best = it;
+      if (!best || it.to.length > best.item.to.length) best = { item: it, group: g };
     }
   }
-  return best?.label || "Overview";
+  return best;
 }
+
+/** Page title for the top bar, from the current path. */
+export function titleFor(pathname) {
+  return navItemFor(pathname)?.item.label || "Overview";
+}
+
+/** "More › Records": the small section heading of a page in the folded section. */
+export const moreEyebrow = (sub) => `More › ${sub}`;

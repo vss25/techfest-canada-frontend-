@@ -245,8 +245,8 @@ export default function CatalystNominations() {
   return (
     <>
       <PageHeader
-        eyebrow="Catalyst Awards"
-        title="Nominations"
+        eyebrow="More › Records"
+        title="Award nominations"
         description="Every nomination from the website's Catalyst Awards form, newest first. Open one to read it in full, shortlist it, pick winners and keep jury notes. Staff still get each one by email."
         actions={isManagement && (
           <div className="flex flex-wrap gap-2">

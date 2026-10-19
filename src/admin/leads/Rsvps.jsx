@@ -28,7 +28,10 @@ import { personPath } from "../people/peopleMeta";
    (services/rsvp.js in the backend). Read from the staff list's `catalog`
    when the backend sends it (it keeps working while the kill switch has the
    public site, GET /api/rsvp/options included, switched off); otherwise from
-   GET /api/rsvp/options, and failing that from the summary's own keys. */
+   GET /api/rsvp/options, and failing that from the summary's own keys.
+   The pass extras' tiles (CxO Breakfasts, luncheons, Gala, Awards) also say
+   how many passes are eligible: their pass includes it, or staff switched
+   it on in People (GET /console/people/eligible). */
 
 const PAGE = 50;
 const TIER_TONE = { connect: "neutral", influence: "pink", power: "orange", apex: "purple", speaker: "good" };
@@ -365,6 +368,9 @@ export default function Rsvps() {
   qs.set("page", String(page));
   const { data, error, loading, reload, refreshing } = useApi(`/console/rsvps?${qs}`);
   const cat = useCatalog(data);
+  // Passes eligible for each pass extra (their pass, or staff's Yes in People); none when it can't be read.
+  const eligibleApi = useApi("/console/people/eligible");
+  const eligible = eligibleApi.data?.byOption || null;
 
   const update = (next) => {
     const p = new URLSearchParams(params);
@@ -402,8 +408,8 @@ export default function Rsvps() {
   return (
     <>
       <PageHeader
-        eyebrow="Leads"
-        title="RSVPs"
+        eyebrow="RSVPs & meals"
+        title="Headcounts & RSVPs"
         description="RSVPs for 26–27 October from the unlinked page thetechfestival.com/rsvp, one row per person (sending it again from the same browser, or with the same ticket ID, updates their row). Headcounts cover everyone, whatever the filters. Click a tile to list who's coming to that, or a row for everything they told us."
         actions={isManagement && <Button icon={Download} loading={exporting} onClick={exportCsv} disabled={!total} title="Every RSVP matching the search and filters">Download CSV</Button>}
       />
@@ -426,6 +432,11 @@ export default function Rsvps() {
       {s && (
         <>
           <SectionTitle hint={`${s.total.toLocaleString()} RSVP${s.total === 1 ? "" : "s"} counted · ${s.unverified.toLocaleString()} unverified pass${s.unverified === 1 ? "" : "es"}`}>Headcounts</SectionTitle>
+          {eligible && (
+            <p className="-mt-2 mb-4 text-sm text-ttfc-muted">
+              Eligible: passes that include it, by their pass or because staff switched it on for that pass in People.
+            </p>
+          )}
           {duplicates > 0 && (
             <p className="-mt-2 mb-4 text-sm text-ttfc-muted">
               The list below has {listed.toLocaleString()} RSVPs: the {s.total.toLocaleString()} counted here plus {duplicates.toLocaleString()} possible duplicate{duplicates === 1 ? "" : "s"}, counted once staff merge {duplicates === 1 ? "it" : "them"} or keep {duplicates === 1 ? "it" : "them"} separate.
@@ -442,6 +453,7 @@ export default function Rsvps() {
                     <StatTile key={o.key} label={cat.shortName(o.key)} value={(counts[o.key] || 0).toLocaleString()}
                       icon={o.kind === "day" ? CalendarCheck : ICON[baseKey(o.key)] || PartyPopper}
                       tone={o.kind === "day" ? "purple" : o.key === option ? "orange" : "pink"}
+                      hint={eligible && typeof eligible[o.key] === "number" ? `of ${eligible[o.key].toLocaleString()} eligible` : undefined}
                       to={`?option=${o.key}`} />
                   ))}
                 </div>

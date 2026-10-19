@@ -23,9 +23,9 @@ export default function AppOverview() {
   return (
     <>
       <PageHeader
-        eyebrow="App"
+        eyebrow="More › App reports"
         title="App overview"
-        description="Everything happening in the TTFC iOS app."
+        description="Everything happening in the TTFC apps: iPhone, Android and the web app."
         actions={<Button icon={RefreshCw} onClick={reload} loading={refreshing && !loading}>Refresh</Button>}
       />
       {loading ? <SkeletonGrid count={8} className="h-28" /> : error && !s ? <ErrorState error={error} onRetry={reload} /> : (

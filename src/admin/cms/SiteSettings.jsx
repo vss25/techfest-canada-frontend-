@@ -7,6 +7,7 @@ import ContentSettings from "../content/ContentSettings";
 import { Globe, Lock } from "lucide-react";
 import { LIVE_NOTE } from "./cmsMeta";
 import useCmsStatus from "./useCmsStatus";
+import LargeSiteFiles from "./LargeSiteFiles";
 
 const SETTINGS = [
   {
@@ -50,7 +51,7 @@ export default function SiteSettings() {
 
   return (
     <>
-      <PageHeader eyebrow="Website content" title="Site settings" description="Switch parts of the website on or off and edit site-wide text. Every change saves on its own and reaches the website within about a minute." />
+      <PageHeader eyebrow="Website & app" title="Website switches" description="Switch parts of the website on or off (selling, forms, the agenda, homepage sections) and edit site-wide text. Every change saves on its own and reaches the website within about a minute." />
 
       <section aria-labelledby="sections-h" className="mb-10">
         <h2 id="sections-h" className="mb-1 text-base font-semibold">Homepage sections</h2>
@@ -63,7 +64,7 @@ export default function SiteSettings() {
         {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : (
           <Card className="max-w-2xl divide-y divide-ttfc-line p-0 sm:p-0">
             {SETTINGS.map((s) => (
-              <div key={s.key} className="p-5 sm:p-6">
+              <div key={s.key} data-highlight={s.key} className="p-5 sm:p-6">
                 <Switch
                   size="lg"
                   label={s.label}
@@ -79,6 +80,8 @@ export default function SiteSettings() {
       </section>
 
       <AboutNumbers readOnly={readOnly} />
+
+      <LargeSiteFiles />
 
       <WebsiteOptions />
     </>
@@ -112,7 +115,7 @@ function AboutNumbers({ readOnly }) {
   };
 
   return (
-    <section aria-labelledby="about-numbers-h" className="mb-10">
+    <section aria-labelledby="about-numbers-h" data-highlight="aboutNumbers" className="mb-10">
       <h2 id="about-numbers-h" className="mb-1 text-base font-semibold">About page numbers</h2>
       <p className="mb-4 text-sm text-ttfc-muted">The figures in the About section, for example 1000+ attendees across 2 days. Stored in Sanity.</p>
       {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !doc ? (

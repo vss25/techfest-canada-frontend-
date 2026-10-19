@@ -85,7 +85,7 @@ export default function BrochureDownloads() {
   return (
     <>
       <PageHeader
-        eyebrow="Leads"
+        eyebrow="More › Records"
         title="Brochure downloads"
         description="Everyone who filled in the form on the Brochure page, newest first. Each person is emailed the brochure, and sales@thetechfestival.com gets a receipt."
         actions={isManagement && (

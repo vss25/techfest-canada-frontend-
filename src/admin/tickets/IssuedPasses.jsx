@@ -4,6 +4,7 @@ import { useApi } from "../hooks";
 import { api } from "../api";
 import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
+import { useInitialQuery } from "../search/deepLink";
 import {
   Badge, Banner, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, IconButton, Input, LoadingState, PageHeader,
   Select, StatTile, TableWrap,
@@ -14,12 +15,15 @@ import { listText, useLivePreview } from "./speakerEmailHooks";
 import { ManualDrawer, PdfModal } from "./ExhibitorManual";
 import { PassTemplateDrawer } from "./PassEmailTemplates";
 import { EmailCopyEditor, EmailPreview } from "./EmailCopyEditor";
+import { EXTRAS } from "../people/peopleMeta";
 
 /* =========================================================
-   Admin → Marketing → Issue passes / Exhibitor passes
+   Admin → People & passes → Give a pass / Exhibitor passes
    A pass for anyone, like the Speaker Pass: staff choose the
    person, their email(s), the pass (Connect, Influence, Power,
-   Apex or the internal Speaker Pass), the name printed on it, whether the email
+   Apex or the internal Speaker Pass), the name printed on it, its
+   meals and events (CxO Breakfasts, luncheons, the Gala Dinner,
+   the Awards Night: each Automatic, Yes or No), whether the email
    has an RSVP button, and the email's wording, with a live
    preview. Then Preview & send (To / Cc can change per send).
    The pass gets a new ticket ID that works everywhere: the apps
@@ -32,14 +36,19 @@ import { EmailCopyEditor, EmailPreview } from "./EmailCopyEditor";
      GET /tiers, GET /, POST /preview, POST /, PATCH /:id,
      GET|POST /:id/preview, POST /:id/send, DELETE /:id
      exhibitors: GET|PUT /email, GET|PUT /manual, POST /manual/preview, GET /:id/manual.pdf
-   Nothing is emailed without a send click.
+   Nothing is emailed without a send click. After Create pass the
+   send preview opens straight away.
+   Staff (not management) may give a single pass on Give a pass:
+   create it, then send it (GET / answers canIssue; the server limits
+   them to one at a time). Editing, deleting, the email template and
+   exhibitor passes are management only.
 ========================================================= */
 
 const KINDS = {
   issued: {
     base: "/console/issued-passes",
-    title: "Issue passes",
-    description: "Give anyone a pass: pick the pass, the name on it and the email's wording, preview it, then send. Each pass gets its own ticket ID for the apps, RSVP, Apple Wallet and check-in.",
+    title: "Give a pass",
+    description: "Give anyone a pass: pick the pass, the name on it and the email's wording, create it, check the preview, then send. Each pass gets its own ticket ID for the apps, RSVP, Apple Wallet and check-in.",
     create: "Issue a pass",
     who: "pass",
     booth: false,
@@ -56,19 +65,15 @@ const KINDS = {
 
 const plural = (n, one, many = `${one}s`) => `${num(n || 0)} ${n === 1 ? one : many}`;
 const shortDay = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "");
-const EMPTY = { name: "", email: "", title: "", company: "", tier: "", label: "", rsvp: true, cxo: "auto", subject: "", headline: "", message: "", booth: "", zone: "", passes: "" };
-// "CxO Breakfast included": automatic (Apex and Speaker Passes, and speakers), or Yes / No for this pass.
-const CXO_INCLUDE = ["2× CxO Breakfasts", "Senior-leader breakfasts, both mornings"];
-const cxoKey = (v) => (v === true ? "yes" : v === false ? "no" : "auto");
-const cxoValue = (k) => (k === "yes" ? true : k === "no" ? false : null);
-/** The pass's inclusions with the CxO Breakfasts on or off, as the server lists them in the email. */
-function includesFor(tier, cxo) {
-  const list = (tier?.includes || []).filter(([head]) => !/CxO Breakfast/i.test(head));
-  const auto = (tier?.includes || []).some(([head]) => /CxO Breakfast/i.test(head));
-  const on = cxo === "auto" ? auto : cxo === "yes";
-  if (on) list.splice(Math.max(0, list.findIndex(([head]) => !/Pre-Matched|Preferential|Lounge \(19/.test(head))), 0, CXO_INCLUDE);
-  return list;
-}
+const AUTO_EXTRAS = Object.fromEntries(EXTRAS.map((x) => [x.key, "auto"]));
+const EMPTY = { name: "", email: "", title: "", company: "", tier: "", label: "", rsvp: true, extras: AUTO_EXTRAS, subject: "", headline: "", message: "", booth: "", zone: "", passes: "" };
+// The pass's meals and events: Automatic (the pass's rule), or Yes / No for this pass.
+const extraKey = (v) => (v === true ? "yes" : v === false ? "no" : "auto");
+const extraValue = (k) => (k === "yes" ? true : k === "no" ? false : null);
+/** A row's switches → the form's { cxo: "auto" | "yes" | "no", … } (an older server: only cxoBreakfast). */
+const extrasForm = (row) => Object.fromEntries(EXTRAS.map((x) => [x.key, extraKey(row?.extras ? row.extras[x.key]?.override : x.key === "cxo" ? row?.cxoBreakfast : null)]));
+/** On Automatic, does this pass type include it? (GET /tiers autoExtras; an older server: the CxO row in its list.) */
+const autoHas = (tier, key) => (tier?.autoExtras ? !!tier.autoExtras[key] : key === "cxo" && (tier?.includes || []).some(([head]) => /CxO Breakfast/i.test(head)));
 const ZONES = ["Zone A - Harbour Ballroom Foyer", "Zone B - Pier 4 & 5 Foyer"];
 
 const boothText = (b) => [b?.booth && `Booth ${b.booth}`, b?.zone].filter(Boolean).join(" · ");
@@ -81,19 +86,26 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, emailFields =
     // Every field of this pass's own email wording, then the pass itself.
     ...(row.copy || {}),
     name: row.name, email: listText(row.emails), title: row.title, company: row.company, tier: row.tier, label: row.label,
-    rsvp: row.rsvp, cxo: cxoKey(row.cxoBreakfast), subject: row.copy?.subject || "", headline: row.copy?.headline || "", message: row.copy?.message || "",
+    rsvp: row.rsvp, extras: extrasForm(row), subject: row.copy?.subject || "", headline: row.copy?.headline || "", message: row.copy?.message || "",
     booth: row.booth?.booth || "", zone: row.booth?.zone || "", passes: row.booth?.passes || "",
   } : { ...EMPTY, tier: defaultTier || "influence" }));
   const [saving, setSaving] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
   const complete = form.name.trim().split(/\s+/).length >= 2;
-  const { cxo, ...fields } = form;
-  const withCxo = { ...fields, ...(row ? (cxo !== cxoKey(row.cxoBreakfast) ? { cxoBreakfast: cxoValue(cxo) } : {}) : { cxoBreakfast: cxoValue(cxo) }) };
-  const body = kind.booth ? withCxo : (({ booth, zone, passes, ...rest }) => rest)(withCxo); // eslint-disable-line no-unused-vars
-  // The preview always gets the switch (the server shows the pass as it would be saved).
-  const preview = useLivePreview(`${BASE}/preview`, { ...(complete ? body : { ...body, name: "Jane Doe" }), cxoBreakfast: cxoValue(cxo) });
+  const { extras, ...fields } = form;
+  // New passes send every switch; an edit sends the ones that changed.
+  const was = row ? extrasForm(row) : null;
+  const sentExtras = Object.fromEntries(EXTRAS.filter((x) => !was || extras[x.key] !== was[x.key]).map((x) => [x.key, extraValue(extras[x.key])]));
+  const withExtras = { ...fields, ...(Object.keys(sentExtras).length ? { extras: sentExtras } : {}) };
+  const body = kind.booth ? withExtras : (({ booth, zone, passes, ...rest }) => rest)(withExtras); // eslint-disable-line no-unused-vars
+  // The preview always gets every switch (the server shows the pass as it would be saved).
+  const allExtras = Object.fromEntries(EXTRAS.map((x) => [x.key, extraValue(extras[x.key])]));
+  const preview = useLivePreview(`${BASE}/preview`, { ...(complete ? body : { ...body, name: "Jane Doe" }), extras: allExtras });
   const tier = tiers.find((t) => t.key === form.tier);
+  const setExtra = (key) => (e) => setForm((f) => ({ ...f, extras: { ...f.extras, [key]: e.target.value } }));
+  // What the email lists: the server's preview (with these switches), else the pass type's own list.
+  const includes = preview.data?.includes || (tier?.includes || []).map(([head]) => head);
   const attachment = preview.data?.attachments?.[0];
 
   const save = async () => {
@@ -116,7 +128,7 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, emailFields =
       onClose={onClose}
       width="max-w-5xl"
       title={row ? `Edit ${row.name}'s pass` : kind.create}
-      description={row ? `Ticket ${row.ticketId}` : "Creates a pass with its own ticket ID. You send the email afterwards, from the list."}
+      description={row ? `Ticket ${row.ticketId}` : "Creates a pass with its own ticket ID. The send preview opens next; nothing is emailed until you click Send."}
       footer={(
         <>
           <Button variant="primary" icon={row ? Pencil : TicketPlus} loading={saving} disabled={!complete || !form.email.trim()} onClick={save}>
@@ -165,20 +177,28 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, emailFields =
               {(id) => <Input id={id} value={form.label} onChange={set("label")} placeholder={defaultLabel || tier?.label || ""} maxLength={40} />}
             </Field>
           </div>
-          <Field label="CxO Breakfast included" hint={cxo === "auto"
-            ? "Automatic: Apex and Speaker Passes include both CxO Breakfasts, and so does anyone who's a speaker; the others don't."
-            : "For this pass only. It shows in the email, on their ticket in the app and on the RSVP page."}>
-            {(id) => (
-              <Select id={id} value={cxo} onChange={set("cxo")} className="sm:max-w-xs">
-                <option value="auto">Automatic ({includesFor(tier, "auto").some(([h]) => /CxO/.test(h)) ? "Yes" : "No"})</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </Select>
-            )}
-          </Field>
+          <fieldset className="rounded-xl border border-ttfc-line px-3 py-3">
+            <legend className="px-1 text-sm font-semibold">Meals and events</legend>
+            <p className="mb-2.5 text-xs leading-relaxed text-ttfc-muted">
+              Automatic follows the pass. Yes or No is for this pass only: it shows in the email, on their ticket in the app and on the RSVP page.
+            </p>
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {EXTRAS.filter((x) => tier?.autoExtras || x.key === "cxo").map((x) => (
+                <Field key={x.key} label={x.label} hint={extras[x.key] === "auto" ? `Automatic: ${x.auto}.` : undefined}>
+                  {(id) => (
+                    <Select id={id} value={extras[x.key]} onChange={setExtra(x.key)}>
+                      <option value="auto">Automatic ({autoHas(tier, x.key) ? "Yes" : "No"})</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </Select>
+                  )}
+                </Field>
+              ))}
+            </div>
+          </fieldset>
           {tier && (
             <p className="text-xs leading-relaxed text-ttfc-dim">
-              Includes: {includesFor(tier, cxo).map(([head]) => head).join(" · ")}
+              Includes: {includes.join(" · ")}
             </p>
           )}
           <label className="flex items-start gap-2.5 text-sm">
@@ -291,7 +311,8 @@ function PassesPage({ kindName }) {
   const { data, error, loading, reload, setData } = useApi(BASE);
   const tiersApi = useApi(`${BASE}/tiers`);
   const tiers = tiersApi.data?.tiers || [];
-  const [q, setQ] = useState("");
+  const initialQ = useInitialQuery(); // a pass from the global search (?q=<ticket ID>)
+  const [q, setQ] = useState(initialQ);
   const [editing, setEditing] = useState(null); // { row } or { row: null } for a new pass
   const [sending, setSending] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -304,6 +325,8 @@ function PassesPage({ kindName }) {
     ? rows.filter((r) => [r.name, r.company, r.emailSentTo, r.ticketId, r.tierLabel, r.label, r.booth?.booth, r.booth?.zone, ...(r.emails || [])].some((v) => String(v || "").toLowerCase().includes(needle)))
     : rows), [rows, needle]);
   const counts = data?.counts || { passes: 0, sent: 0, ready: 0, rsvpd: 0 };
+  // Create and send: management, and staff on Give a pass (one at a time; the server says so in canIssue).
+  const canIssue = isManagement || !!data?.canIssue;
 
   const upsert = (row, isNew) => setData((d) => {
     if (!d) return d;
@@ -315,21 +338,25 @@ function PassesPage({ kindName }) {
   return (
     <>
       <PageHeader
-        eyebrow="Marketing"
+        eyebrow="People & passes"
         title={kind.title}
         description={kind.description}
         actions={(
           <div className="flex flex-wrap gap-2">
             {kind.booth && <Button icon={BookOpen} onClick={() => setManualOpen(true)}>{isManagement ? "Edit manual" : "Manual"}</Button>}
             <Button icon={Mail} onClick={() => setEmailOpen(true)}>{isManagement ? "Edit email" : "Email wording"}</Button>
-            {isManagement && <Button variant="primary" icon={TicketPlus} disabled={!tiers.length} onClick={() => setEditing({ row: null })}>{kind.create}</Button>}
+            {canIssue && <Button variant="primary" icon={TicketPlus} disabled={!tiers.length} onClick={() => setEditing({ row: null })}>{kind.create}</Button>}
           </div>
         )}
       />
 
-      {!isManagement && (
+      {!isManagement && (canIssue ? (
+        <Banner tone="info" className="mb-6" title="You can give one pass at a time">
+          Create the pass, check the preview, then send it. Changing or deleting a pass and the email template are for management.
+        </Banner>
+      ) : (
         <Banner tone="info" className="mb-6" title="Issuing passes is for management">You can see the passes and preview their emails.</Banner>
-      )}
+      ))}
 
       {data && (
         <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
@@ -350,8 +377,8 @@ function PassesPage({ kindName }) {
 
       {loading ? <LoadingState label="Loading passes…" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !rows.length ? (
         <EmptyState icon={TicketPlus} title={`No ${kind.who}es issued yet`}
-          body={isManagement ? `Click ${kind.create} to create one.` : "A manager can issue passes here."}
-          action={isManagement && tiers.length > 0 && <Button variant="primary" icon={TicketPlus} onClick={() => setEditing({ row: null })}>{kind.create}</Button>} />
+          body={canIssue ? `Click ${kind.create} to create one.` : "A manager can issue passes here."}
+          action={canIssue && tiers.length > 0 && <Button variant="primary" icon={TicketPlus} onClick={() => setEditing({ row: null })}>{kind.create}</Button>} />
       ) : !shown.length ? (
         <EmptyState icon={Search} title="No passes match" body="Try another name, email or ticket ID." />
       ) : (
@@ -368,7 +395,7 @@ function PassesPage({ kindName }) {
                     {sub && <span className="block truncate text-xs text-ttfc-muted">{sub}</span>}
                     {booth && <span className="block truncate text-xs text-ttfc-dim">{booth}{r.booth?.passes ? ` · ${r.booth.passes} passes` : ""}</span>}
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      <Button size="sm" icon={isManagement ? Send : Eye} onClick={() => setSending(r)}>{isManagement ? (r.sentCount ? "Preview & resend" : "Preview & send") : "Preview"}</Button>
+                      <Button size="sm" icon={canIssue ? Send : Eye} onClick={() => setSending(r)}>{canIssue ? (r.sentCount ? "Preview & resend" : "Preview & send") : "Preview"}</Button>
                       {isManagement && <Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditing({ row: r })}>Edit</Button>}
                       {isManagement && !r.claimed && !r.checkedIn && (
                         <IconButton icon={Trash2} label={`Delete ${r.name}'s pass`} onClick={() => setDeleting(r)} className="h-8 w-8" />
@@ -379,7 +406,10 @@ function PassesPage({ kindName }) {
                     <span className="block font-semibold">{r.label || r.tierLabel}</span>
                     {r.label && <span className="block text-xs text-ttfc-muted">{r.tierLabel}</span>}
                     {!r.rsvp && <span className="block text-[11px] text-ttfc-dim">No RSVP button</span>}
-                    {typeof r.cxoBreakfast === "boolean" && <span className="block text-[11px] text-ttfc-dim">CxO Breakfast: {r.cxoBreakfast ? "Yes" : "No"}</span>}
+                    {EXTRAS.filter((x) => typeof (r.extras ? r.extras[x.key]?.override : x.key === "cxo" ? r.cxoBreakfast : null) === "boolean").map((x) => {
+                      const on = r.extras ? r.extras[x.key].override : r.cxoBreakfast;
+                      return <span key={x.key} className="block text-[11px] text-ttfc-dim">{x.label}: {on ? "Yes" : "No"}</span>;
+                    })}
                   </td>
                   <td className="whitespace-nowrap">
                     <span className="inline-flex items-center gap-1">
@@ -406,9 +436,10 @@ function PassesPage({ kindName }) {
 
       {editing && tiers.length > 0 && (
         <PassDrawer kind={kind} row={editing.row} tiers={tiers} defaultTier={tiersApi.data?.defaultTier} defaultLabel={tiersApi.data?.defaultLabel || ""}
-          emailFields={tiersApi.data || {}} onClose={() => setEditing(null)} onSaved={upsert} />
+          emailFields={tiersApi.data || {}} onClose={() => setEditing(null)}
+          onSaved={(row, isNew) => { upsert(row, isNew); if (isNew) { setSending(row); reload(); } }} />
       )}
-      {sending && <SendDrawer kind={kind} row={sending} canSend={isManagement} onClose={() => setSending(null)} onSent={(row) => upsert(row, false)} />}
+      {sending && <SendDrawer kind={kind} row={sending} canSend={canIssue} onClose={() => setSending(null)} onSent={(row) => { upsert(row, false); reload(); }} />}
       {manualOpen && <ManualDrawer base={BASE} canEdit={isManagement} onClose={() => setManualOpen(false)} />}
       {emailOpen && (
         <PassTemplateDrawer base={BASE} title={kind.booth ? "Exhibitor pass email" : "Issued pass email"} canEdit={isManagement}

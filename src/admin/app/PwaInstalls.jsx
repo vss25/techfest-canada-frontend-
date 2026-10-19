@@ -108,8 +108,8 @@ export default function PwaInstalls() {
   return (
     <>
       <PageHeader
-        eyebrow="App"
-        title="PWA installs"
+        eyebrow="More › App reports"
+        title="Web app installs"
         description="The TTFC web app at thetechfestival.com/app: who saw the install prompt, opened the guide, installed it and opens it from their Home Screen."
         actions={
           <div className="flex gap-2">

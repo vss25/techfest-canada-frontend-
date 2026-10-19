@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { LogOut, Menu, X, ExternalLink } from "lucide-react";
-import { NAV, titleFor } from "./nav";
+import { titleFor } from "./nav";
+import SidebarNav from "./SidebarNav";
 import { focusRing, IconButton } from "./ui";
 import { initials } from "./format";
 import { useAdmin } from "./adminContext";
+import GlobalSearch from "./search/GlobalSearch";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
@@ -28,7 +30,6 @@ function SiteStatusChip({ kill }) {
 }
 
 function SidebarContent({ onNavigate }) {
-  const { isManagement } = useAdmin();
   return (
     <nav aria-label="Admin sections" className="adm-sidebar-nav">
       <Link to="/admin" onClick={onNavigate} className={cx("mb-6 flex items-center gap-3 rounded-xl px-2 py-1", focusRing)}>
@@ -38,36 +39,7 @@ function SidebarContent({ onNavigate }) {
           <span className="block text-[11px] font-medium text-ttfc-muted">Staff panel</span>
         </span>
       </Link>
-      <div className="-mx-2 flex-1 space-y-6 overflow-y-auto px-2 pb-6">
-        {NAV.map((group, gi) => (
-          <div key={gi}>
-            {group.title && (
-              <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.12em] text-ttfc-dim">{group.title}</p>
-            )}
-            <ul className="space-y-0.5">
-              {group.items.filter((it) => isManagement || !it.management).map((it) => (
-                <li key={it.to}>
-                  <NavLink
-                    to={it.to ? `/admin/${it.to}` : "/admin"}
-                    end={it.end}
-                    onClick={onNavigate}
-                    className={({ isActive }) => cx(
-                      "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition",
-                      isActive
-                        ? "bg-gradient-to-r from-ttfc-pink/20 to-ttfc-purple/10 text-white shadow-[inset_2px_0_0_0_#E8458B]"
-                        : it.danger ? "text-red-300/80 hover:bg-red-500/10 hover:text-red-200" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text",
-                      focusRing,
-                    )}
-                  >
-                    <it.icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
-                    <span className="truncate">{it.label}</span>
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+      <SidebarNav onNavigate={onNavigate} />
       <a
         href="/"
         target="_blank"
@@ -80,11 +52,39 @@ function SidebarContent({ onNavigate }) {
   );
 }
 
+/* ?highlight=<key> (links from the global search to a setting or a staff row): scroll to the element with that
+   data-highlight once the page has drawn it, flash it and focus a setting's control. DOM only, no page state. */
+function useHighlightFromUrl(location, nonce) {
+  useEffect(() => {
+    const target = new URLSearchParams(location.search).get("highlight");
+    if (!target) return undefined;
+    let el = null;
+    let tries = 0;
+    let retry;
+    let unflash;
+    const find = () => {
+      el = [...document.querySelectorAll("[data-highlight]")].find((x) => x.getAttribute("data-highlight") === target) || null;
+      if (!el) { if (tries++ < 40) retry = setTimeout(find, 150); return; }
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.classList.add("adm-flash");
+      // A setting's own control gets focus; a table row (a staff account) is only shown, never a control in it.
+      if (el.tagName !== "TR") el.querySelector('[role="switch"], input, textarea')?.focus({ preventScroll: true });
+      unflash = setTimeout(() => el?.classList.remove("adm-flash"), 2600);
+    };
+    find();
+    return () => { clearTimeout(retry); clearTimeout(unflash); el?.classList.remove("adm-flash"); };
+  }, [location.pathname, location.search, nonce]);
+}
+
 export default function AdminShell({ me, kill, onSignOut, children }) {
   const { isManagement } = useAdmin();
   const [drawer, setDrawer] = useState(false);
+  // Bumped when the global search opens a link: the page starts fresh from its URL (search, drawer, highlight),
+  // even when it's the page already open.
+  const [searchNonce, setSearchNonce] = useState(0);
   const location = useLocation();
   const title = titleFor(location.pathname);
+  useHighlightFromUrl(location, searchNonce);
 
   useEffect(() => {
     if (!drawer) return undefined;
@@ -121,8 +121,11 @@ export default function AdminShell({ me, kill, onSignOut, children }) {
           <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-10">
             <IconButton icon={Menu} label="Open menu" onClick={() => setDrawer(true)} className="lg:hidden" aria-expanded={drawer} />
             <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ttfc-text">{title}</p>
+            <GlobalSearch onNavigated={() => setSearchNonce((n) => n + 1)} />
             <SiteStatusChip kill={kill} />
             <div className="flex items-center gap-3 border-l border-ttfc-line pl-3">
+              {/* Your name opens My account (your level, change your password). */}
+              <NavLink to="/admin/account" aria-label={`My account: ${me?.name || "Staff"}`} title={`My account${me?.email ? ` (${me.email})` : ""}`} className={cx("flex min-w-0 items-center gap-3 rounded-xl hover:opacity-90", focusRing)}>
               <span
                 className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ttfc-pink via-ttfc-purple to-ttfc-orange text-xs font-bold text-white"
                 aria-hidden="true"
@@ -131,8 +134,9 @@ export default function AdminShell({ me, kill, onSignOut, children }) {
               </span>
               <div className="hidden min-w-0 leading-tight md:block">
                 <p className="truncate text-sm font-semibold text-ttfc-text">{me?.name || "Staff"}</p>
-                <p className="truncate text-xs text-ttfc-dim">{isManagement ? "Management" : "Staff"} · {me?.email}</p>
+                <p className="truncate text-xs text-ttfc-dim">{isManagement ? "Management" : "Staff"} · My account</p>
               </div>
+              </NavLink>
               <button
                 type="button"
                 onClick={onSignOut}
@@ -146,7 +150,7 @@ export default function AdminShell({ me, kill, onSignOut, children }) {
         </header>
 
         <main id="admin-main" className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10" tabIndex={-1}>
-          {children}
+          <Fragment key={searchNonce}>{children}</Fragment>
         </main>
       </div>
     </div>

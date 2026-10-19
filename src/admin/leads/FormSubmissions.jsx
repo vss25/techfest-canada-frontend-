@@ -236,7 +236,7 @@ export default function FormSubmissions() {
   return (
     <>
       <PageHeader
-        eyebrow="Leads"
+        eyebrow="More › Records"
         title="Form submissions"
         description="Volunteer, speaker, booth, sponsor, partnership and general enquiries from the website, newest first. Each one is saved here, then emailed to baldeep@thetechfestival.com with reply-to set to the person. Click a row to see everything they sent."
         actions={isManagement && <Button icon={Download} loading={exporting} onClick={exportCsv} disabled={!total} title="Every submission in this tab, search and filter">Download CSV</Button>}

@@ -112,8 +112,8 @@ export default function SalesAnalytics() {
   return (
     <>
       <PageHeader
-        eyebrow="Tickets & attendees"
-        title="Sales analytics"
+        eyebrow="Sales & emails"
+        title="Sales"
         description="Ticket revenue comes from Stripe (what buyers actually paid). Ticket counts, buyers and check-ins come from ticket records; tickets hidden from staff lists aren't counted."
         actions={
           <>

@@ -11,6 +11,7 @@ import NewsletterBar from "../components/NewsletterBar";
 import CommunityCarousel from "../components/CommunityCarousel";
 import SpeakerMarquee from "../components/SpeakerMarquee";
 import useSiteSettings from "../hooks/useSiteSettings";
+import { HERO_POSTER, heroStillOnly, siteFileUrl } from "../lib/siteFiles";
 
 var containerVariants = {
   hidden: {},
@@ -124,6 +125,38 @@ function CTAReveal(props) {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M17 7H7M17 7v10" /></svg>
       </motion.a>
     </motion.div>
+  );
+}
+
+/* The hero's background. Phones, tablets, data saver and reduced motion get the still frame
+   (hero-poster.jpg, the video's first frame) and no <video> element at all, so the 26 MB video
+   is never requested there. Desktops get the looping video with the same frame as its poster.
+   The video comes from the uploaded copy (site.hero_video_url) once the site settings arrive,
+   or the website's own after 4 s without them; until then the poster shows. */
+var HERO_FILL = { position: "absolute", top: "50%", left: "50%", minWidth: "100%", minHeight: "100%", width: "auto", height: "auto", transform: "translate(-50%, -50%)", objectFit: "cover" };
+
+function HeroBackground() {
+  var stillOnly = useState(heroStillOnly)[0];
+  var site = useSiteSettings();
+  const [waited, setWaited] = useState(false);
+
+  useEffect(function () {
+    if (stillOnly || site.loaded) return undefined;
+    var t = setTimeout(function () { setWaited(true); }, 4000);
+    return function () { clearTimeout(t); };
+  }, [stillOnly, site.loaded]);
+
+  var videoSrc = !stillOnly && (site.loaded || waited) ? siteFileUrl(site, "heroVideo") : "";
+
+  return (
+    <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden" }}>
+      {videoSrc ? (
+        <video key={videoSrc} autoPlay muted loop playsInline poster={HERO_POSTER} src={videoSrc} style={HERO_FILL} />
+      ) : (
+        <img src={HERO_POSTER} alt="" width={2214} height={1080} fetchPriority="high" decoding="async" style={HERO_FILL} />
+      )}
+      <div style={{ position: "absolute", inset: 0, background: "rgba(6,2,15,0.65)" }} />
+    </div>
   );
 }
 
@@ -250,12 +283,7 @@ export default function Home() {
 
       {/* HERO UPPER — always dark regardless of theme */}
       <section style={{ position: "relative", overflow: "hidden", background: "#06020f", minHeight: "76vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden" }}>
-          <video autoPlay muted loop playsInline style={{ position: "absolute", top: "50%", left: "50%", minWidth: "100%", minHeight: "100%", width: "auto", height: "auto", transform: "translate(-50%, -50%)", objectFit: "cover" }}>
-            <source src="/hero-bg.mp4" type="video/mp4" />
-          </video>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(6,2,15,0.65)" }} />
-        </div>
+        <HeroBackground />
         <motion.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ position: "relative", zIndex: 5, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "0 6%", maxWidth: 660, width: "100%" }}
         >

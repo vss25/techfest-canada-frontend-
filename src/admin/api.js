@@ -15,6 +15,8 @@ export const getToken = () => {
 
 export function signOut() {
   try { localStorage.removeItem("token"); } catch { /* ignore */ }
+  // The global search's recent searches and results (search/recents.js) stay with the staff member, not the browser.
+  try { localStorage.removeItem("ttfc.admin.search.v1"); } catch { /* ignore */ }
   window.dispatchEvent(new Event("authChanged"));
 }
 

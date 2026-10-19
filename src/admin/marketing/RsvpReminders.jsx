@@ -186,7 +186,7 @@ export default function RsvpReminders() {
           <Card>
             <SectionTitle hint="Worked out live every time you open this page.">Who gets it</SectionTitle>
             <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-ttfc-muted">
-              <li>Everyone with a ticket (accounts, guest checkouts and speakers' passes with an email), once per email address.</li>
+              <li>Everyone with a ticket (accounts, guest checkouts and Speaker Passes with an email), once per email address.</li>
               <li>Minus anyone whose tickets all have an RSVP (matched by ticket ID, or by full name for RSVPs sent before ticket IDs were required).</li>
               <li>“Remind all due” skips anyone reminded in the last {cooldownHours} hours. “Send” on a row sends right away.</li>
             </ul>

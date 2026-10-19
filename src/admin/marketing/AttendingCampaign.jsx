@@ -262,7 +262,7 @@ export default function AttendingCampaign() {
           <Card>
             <SectionTitle hint="Worked out live from the tickets every time you open this page.">Who gets it</SectionTitle>
             <p className="text-sm leading-relaxed text-ttfc-muted">
-              Everyone with a ticket (accounts and guest checkouts) and every speaker's pass with an email, once per email address.
+              Everyone with a ticket (accounts and guest checkouts) and every Speaker Pass with an email, once per email address.
             </p>
             {skipped.length > 0 && (
               <ul className="mt-3 space-y-1 text-xs text-ttfc-dim">

@@ -72,8 +72,8 @@ export default function CheckIn() {
             <h3>✅ Check-in Successful</h3>
             <p><strong>Name:</strong> {result.name}</p>
             <p><strong>Ticket:</strong> {result.ticketId}</p>
-            {/* One of the four passes; "Speaker" is the person's type (Oct 19 2026). */}
-            <p><strong>Pass:</strong> {result.passName || result.ticketType || result.type}{result.speaker ? " · Speaker" : ""}</p>
+            {/* The pass's name: Connect … Apex Pass, or "Speaker Pass" (never "All Access" or "Exhibitor Pass"). */}
+            <p><strong>Pass:</strong> {result.passName || result.ticketType || result.type}</p>
           </div>
         )}
 

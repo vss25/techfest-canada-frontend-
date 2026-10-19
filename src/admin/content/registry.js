@@ -192,6 +192,11 @@ export const REGISTRY = {
     scope: "app", group: "flags", type: "switch",
     label: "Audience Q&A", description: "Turn off to hide session Q&A in the app and stop new questions.",
   },
+  "flag.upgrades": {
+    scope: "app", group: "flags", type: "switch",
+    label: "Pass upgrades",
+    description: "Off: no upgrade offers anywhere, and the server refuses upgrade checkouts.",
+  },
   "flag.pwaPrompt": {
     scope: "app", group: "flags", type: "switch",
     label: "Install-the-app prompt on the website",

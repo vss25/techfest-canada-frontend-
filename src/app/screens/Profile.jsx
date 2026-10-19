@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   BadgeCheck, Bell, ChevronRight, Download, FileText, HelpCircle, Landmark, LogOut, Moon, Pencil, QrCode, RotateCcw,
-  ScanLine, ShieldCheck, Smartphone, Sun, Ticket, Trophy, UserPlus, Users,
+  LogIn, ScanLine, ShieldCheck, Smartphone, Sun, Ticket, Trophy, Users,
 } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, bestTicket, isSignedIn, isTeam, loadAccount, signOut } from "../lib/auth";
@@ -151,8 +151,8 @@ export default function Profile() {
             <img src="/app/brand/logo-dark.webp" alt="" width="182" height="104" className="logo-for-light" loading="lazy" />
           </span>
           <h1>You're browsing as a guest</h1>
-          <p>Create your free profile to build a contact card, connect with attendees, save sessions, and unlock your personalised feed.</p>
-          <Button variant="primary" size="lg" block icon={UserPlus} onClick={() => signOut()}>Sign up / Sign in</Button>
+          <p>Have a pass? Sign in to build your contact card, connect with attendees, save sessions and get your personalised feed.</p>
+          <Button variant="primary" size="lg" block icon={LogIn} onClick={() => signOut()}>Sign in</Button>
           <GetPassCard where="profile" />
           <div className="settings-group" style={{ width: "100%", marginTop: 18 }}>
             <Row icon={ShieldCheck} title="Privacy Policy" to="/legal/privacy" />

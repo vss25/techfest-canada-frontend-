@@ -461,6 +461,8 @@ a { color: var(--pur-alt); }
 }
 .toast b { display: block; }
 .toast p { margin: 2px 0 0; color: var(--tx2); font-size: 13.5px; }
+.toast--actions { align-items: flex-start; }
+.toast-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 
 .banner {
   display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px;

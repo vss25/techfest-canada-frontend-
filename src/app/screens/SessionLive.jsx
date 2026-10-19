@@ -47,7 +47,7 @@ function PollCard({ poll, result, onVote, guest }) {
         const mine = myVote === i;
         return (
           <button key={o} type="button" className={"poll-opt pressable" + (mine ? " poll-opt--mine" : "")} disabled={voted} aria-pressed={mine}
-            onClick={() => (guest ? guestAlert("Sign up to vote", "Guests can watch the poll. Create a free profile to take part.", "live") : onVote(i))}
+            onClick={() => (guest ? guestAlert("Get a pass to vote", "live") : onVote(i))}
             aria-label={voted ? `${o}, ${pct}%${mine ? ", your vote" : ""}` : `Vote ${o}`}>
             {voted && <span className="fill" style={{ width: `${pct}%` }} aria-hidden="true" />}
             <span className="poll-opt-label">{o}</span>
@@ -112,7 +112,7 @@ export default function SessionLive() {
     } catch (e) { showAlert("Couldn't vote", e.message); }
   };
   const upvote = async (q) => {
-    if (guest) { guestAlert("Sign up to upvote", "Create a free profile to vote questions up.", "live"); return; }
+    if (guest) { guestAlert("Get a pass to upvote questions", "live"); return; }
     setQuestions((list) => list.map((x) => (x.id === q.id ? { ...x, upvotedByMe: !x.upvotedByMe, upvotes: x.upvotes + (x.upvotedByMe ? -1 : 1) } : x)));
     try {
       const r = await post(`social/sessions/questions/${encodeURIComponent(q.id)}/upvote`, {});
@@ -175,7 +175,7 @@ export default function SessionLive() {
       </main>
       {open && shown === "qa" && tabs.includes("qa") && (
         <form className="composer-bar composer-bar--line column" onSubmit={ask}>
-          <input className="input" value={draft} maxLength={600} disabled={guest} onChange={(e) => setDraft(e.target.value)} placeholder={guest ? "Sign up to ask a question" : "Ask the speakers…"} aria-label="Ask the speakers" />
+          <input className="input" value={draft} maxLength={600} disabled={guest} onChange={(e) => setDraft(e.target.value)} placeholder={guest ? "Get a pass to ask a question" : "Ask the speakers…"} aria-label="Ask the speakers" />
           <button type="submit" className="icon-btn icon-btn--filled pressable" aria-label="Submit question" disabled={!draft.trim() || sending || guest}>
             {sending ? <Loader2 aria-hidden="true" style={{ animation: "spin .8s linear infinite" }} /> : <ArrowUp aria-hidden="true" />}
           </button>

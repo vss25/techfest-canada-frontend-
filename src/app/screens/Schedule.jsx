@@ -93,7 +93,7 @@ export default function Schedule() {
   }, [hi, day, filter, now, headH]);
 
   const onToggle = async (x) => {
-    if (!signedIn) { guestAlert("Get a pass to save sessions", "Sign in and choose a pass to join sessions, polls and Q&A.", "schedule"); return; }
+    if (!signedIn) { guestAlert("Get a pass to save sessions", "schedule"); return; }
     await toggleBookmark(x.id);
   };
 

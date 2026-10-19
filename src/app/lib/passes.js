@@ -1,6 +1,6 @@
 import { API } from "./config";
 import { createStore } from "./store";
-import { auth } from "./auth";
+import { auth, signOut } from "./auth";
 import { showAlert } from "./ui";
 import { track } from "../../lib/pwaEvents";
 
@@ -86,7 +86,11 @@ export function trackCheckout(pass) {
   track("guest_buy_checkout", { tier: pass.tier, price: pass.price, where: passesSheet.get().where || "app" });
 }
 
-/** A locked action for guests: the toast, with "See passes". */
-export function guestAlert(title, message = "", where = "locked") {
-  showAlert(title, message, { ms: 7000, action: isGuest() ? { label: "See passes", run: () => openPasses(where) } : undefined });
+/** Only ticket holders can sign in, so a locked action says so (the organiser, Oct 19). */
+export const LOCKED_MESSAGE = "Have a pass? Sign in. Or see the passes.";
+
+/** A locked action for guests ("Get a pass to …"): the toast, with "See passes" and "Sign in" (✕ = not now). */
+export function guestAlert(title, where = "locked", message = LOCKED_MESSAGE) {
+  const actions = isGuest() ? [{ label: "See passes", run: () => openPasses(where) }, { label: "Sign in", run: () => signOut() }] : [];
+  showAlert(title, message, { ms: 8000, actions });
 }

@@ -110,7 +110,7 @@ export default function DiscussionDetail() {
         )}
         <form className="composer-bar column" onSubmit={send}>
           <textarea ref={input} className="input" rows={1} value={draft} maxLength={2000} disabled={!allowed}
-            placeholder={!signedIn ? "Sign up to reply" : replyTo ? "Write your reply…" : "Add to the discussion…"} aria-label="Write a reply"
+            placeholder={!signedIn ? "Get a pass to reply" : replyTo ? "Write your reply…" : "Add to the discussion…"} aria-label="Write a reply"
             onChange={(e) => { setDraft(e.target.value); typingChanged("discussion", id, e.target.value); }} />
           <button type="submit" className="icon-btn icon-btn--filled pressable" aria-label="Send reply" disabled={!draft.trim() || sending || !allowed}>
             {sending ? <Loader2 aria-hidden="true" style={{ animation: "spin .8s linear infinite" }} /> : <ArrowUp aria-hidden="true" />}

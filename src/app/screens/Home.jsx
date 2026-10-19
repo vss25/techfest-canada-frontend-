@@ -293,8 +293,8 @@ export default function Home() {
           {!signedIn && (
             <div className="banner">
               <Eye aria-hidden="true" style={{ width: 18, height: 18, flex: "none" }} fill="currentColor" stroke="var(--pur)" />
-              <div style={{ flex: 1 }}><b className="small">You're browsing as a guest</b><p>Sign up to connect, chat, and join groups.</p></div>
-              <button type="button" className="btn" onClick={() => signOut()}>Sign up</button>
+              <div style={{ flex: 1 }}><b className="small">You're browsing as a guest</b><p>Have a pass? Sign in to connect, chat and join groups.</p></div>
+              <button type="button" className="btn" onClick={() => signOut()}>Sign in</button>
             </div>
           )}
           {!signedIn && <GetPassCard where="home" />}
@@ -346,7 +346,7 @@ export default function Home() {
           {!signedIn ? (
             <div className="pad stack" style={{ textAlign: "center", padding: "30px 24px" }}>
               <MessageSquareQuote aria-hidden="true" style={{ width: 30, height: 30, color: "var(--pur-alt)", margin: "0 auto" }} />
-              <p className="muted" style={{ margin: 0 }}>You're browsing as a guest. Sign in to see the feed, post, comment and connect.</p>
+              <p className="muted" style={{ margin: 0 }}>You're browsing as a guest. Have a pass? Sign in to see the feed, post, comment and connect.</p>
               <Button variant="primary" onClick={() => signOut()}>Sign in</Button>
             </div>
           ) : !s.feedLoaded ? <Spinner label="Loading the feed" /> : posts.length === 0 ? (

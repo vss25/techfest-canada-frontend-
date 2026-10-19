@@ -75,7 +75,7 @@ export default function PostCard({ post }) {
   const link = safeHref(post.linkUrl);
 
   const like = () => {
-    if (!signedIn) { guestAlert("Sign up to react", "Guests can read the feed. Sign in to like and comment.", "feed"); return; }
+    if (!signedIn) { guestAlert("Get a pass to like posts", "feed"); return; }
     toggleLike(post);
   };
   const doubleTap = () => {

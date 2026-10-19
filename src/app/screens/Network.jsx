@@ -256,11 +256,11 @@ export default function Network() {
   }, [signedIn]);
 
   const openScanner = () => {
-    if (!signedIn) { guestAlert("Sign up to connect", "Create a free profile to scan badges and build your network.", "network"); return; }
+    if (!signedIn) { guestAlert("Get a pass to connect", "network"); return; }
     setScan(true);
   };
   const openMyQR = () => {
-    if (!signedIn) { guestAlert("Sign up for a badge QR", "Your connect QR is generated from your profile.", "network"); return; }
+    if (!signedIn) { guestAlert("Get a pass for your badge QR", "network"); return; }
     navigate("/profile/pass?tab=connect");
   };
 

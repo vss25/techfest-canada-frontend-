@@ -63,7 +63,7 @@ export default function Comments({ post, onClose }) {
       ) : (
         <form className="composer-bar" onSubmit={send} style={{ position: "static" }}>
           <textarea className="input" rows={1} value={draft} disabled={!signedIn} onChange={(e) => setDraft(e.target.value)}
-            placeholder={signedIn ? "Write a reply…" : "Sign up to reply"} aria-label="Write a reply" maxLength={2000} />
+            placeholder={signedIn ? "Write a reply…" : "Get a pass to reply"} aria-label="Write a reply" maxLength={2000} />
           <IconButton icon={ArrowUp} label="Send reply" filled type="submit" disabled={!draft.trim() || sending || !signedIn} />
         </form>
       )}

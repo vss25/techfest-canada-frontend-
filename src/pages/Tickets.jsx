@@ -368,6 +368,8 @@ export default function Tickets() {
   const getTier = (tier) => inventory.find((i) => i.tier === tier) || null;
   const site = useSiteSettings();
   const salesClosed = site["site.ticket_sales_open"] === false;
+  // The "Why upgrade" pitch only while staff have pass upgrades on (App text & switches; off by default).
+  const upgradesOn = site["flag.upgrades"] === true;
 
   // Save the chosen tier + total (so we can report it after Stripe redirects back),
   // then navigate to the full-page checkout.
@@ -524,13 +526,15 @@ export default function Tickets() {
             </div>
           </div>
 
-          <div style={{ maxWidth:760, margin:"0 auto 120px", padding:"0 24px", textAlign:"center" }}>
-            <div style={{ backdropFilter:"blur(18px)", WebkitBackdropFilter:"blur(18px)", background: dark?"linear-gradient(135deg, rgba(122,63,209,0.12) 0%, rgba(245,166,35,0.06) 100%)":"linear-gradient(135deg, rgba(122,63,209,0.07) 0%, rgba(245,166,35,0.04) 100%)", border: dark?"1px solid rgba(122,63,209,0.25)":"1px solid rgba(122,63,209,0.14)", borderRadius:24, padding:"48px 40px" }}>
-              <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#f5a623":"#d98a14", marginBottom:14 }}>Why Upgrade Your Pass</div>
-              <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"clamp(1.3rem, 3vw, 1.9rem)", letterSpacing:"-0.5px", color:textMain, marginBottom:20, lineHeight:1.2 }}>Every Level Unlocks<br /><span style={{ color: dark?"#f5a623":"#d98a14" }}>More Opportunity</span></h2>
-              <p style={{ fontSize:"0.88rem", color:textMuted, lineHeight:1.8, textAlign:"justify", hyphens:"auto" }}>Each pass level is designed to unlock a deeper layer of value. As you move up, the experience becomes more curated, more exclusive, and more relationship driven.</p>
+          {upgradesOn && (
+            <div style={{ maxWidth:760, margin:"0 auto 120px", padding:"0 24px", textAlign:"center" }}>
+              <div style={{ backdropFilter:"blur(18px)", WebkitBackdropFilter:"blur(18px)", background: dark?"linear-gradient(135deg, rgba(122,63,209,0.12) 0%, rgba(245,166,35,0.06) 100%)":"linear-gradient(135deg, rgba(122,63,209,0.07) 0%, rgba(245,166,35,0.04) 100%)", border: dark?"1px solid rgba(122,63,209,0.25)":"1px solid rgba(122,63,209,0.14)", borderRadius:24, padding:"48px 40px" }}>
+                <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#f5a623":"#d98a14", marginBottom:14 }}>Why Upgrade Your Pass</div>
+                <h2 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"clamp(1.3rem, 3vw, 1.9rem)", letterSpacing:"-0.5px", color:textMain, marginBottom:20, lineHeight:1.2 }}>Every Level Unlocks<br /><span style={{ color: dark?"#f5a623":"#d98a14" }}>More Opportunity</span></h2>
+                <p style={{ fontSize:"0.88rem", color:textMuted, lineHeight:1.8, textAlign:"justify", hyphens:"auto" }}>Each pass level is designed to unlock a deeper layer of value. As you move up, the experience becomes more curated, more exclusive, and more relationship driven.</p>
+              </div>
             </div>
-          </div>
+          )}
 
           <Footer />
         </div>

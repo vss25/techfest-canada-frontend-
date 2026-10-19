@@ -57,7 +57,7 @@ export default function AppRights() {
   return (
     <>
       <PageHeader
-        eyebrow="App"
+        eyebrow="More › Settings"
         title="App rights"
         description="Choose what each type of person can do in the TTFC app. Set someone's type on their profile under People."
       />

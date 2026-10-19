@@ -17,7 +17,7 @@ export default function LiveActivity() {
   return (
     <>
       <PageHeader
-        eyebrow="App"
+        eyebrow="More › App reports"
         title="Live activity"
         description="Every screen and button press in the app, newest first. Refreshes every 10 seconds."
         actions={

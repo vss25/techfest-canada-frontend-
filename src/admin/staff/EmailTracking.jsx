@@ -10,7 +10,7 @@ const LAST_CHECKED = "Oct 11, 2026";
    (Leads → Form submissions), then emailed (server setting FORMS_INBOX). */
 const SAVED_FORM = {
   to: ["baldeep@thetechfestival.com"],
-  toNote: "Saved in the admin panel first (Leads → Form submissions), then emailed. Reply goes straight to the person.",
+  toNote: "Saved in the admin panel first (More › Form submissions), then emailed. Reply goes straight to the person.",
   via: "backend",
   viaNote: "from noreply@thetechfestival.com",
   reply: null,
@@ -50,7 +50,7 @@ const ROWS = [
   { form: "Volunteer application", what: "People applying to volunteer", path: "/volunteer", ...SAVED_FORM },
   { form: "Institutional partnership enquiry", what: "Organisations asking to partner", path: "/partners2026", ...SAVED_FORM },
   { form: "Newsletter sign-up", what: "Email box in the footer and on some pages", to: [], toNote: "Not emailed to staff — saved as a subscriber.", via: "saved", reply: "Confirmation email from noreply@thetechfestival.com." },
-  { form: "Brochure download", what: "Request a brochure", path: "/brochures", to: ["sales@thetechfestival.com"], toNote: "A receipt for each download. Every download is also listed under Leads → Brochure downloads.", via: "backend", viaNote: "from noreply@thetechfestival.com", reply: "The brochure (download link, or the PDF attached when it's small enough). Replies go to sales@thetechfestival.com." },
+  { form: "Brochure download", what: "Request a brochure", path: "/brochures", to: ["sales@thetechfestival.com"], toNote: "A receipt for each download. Every download is also listed under More › Brochure downloads.", via: "backend", viaNote: "from noreply@thetechfestival.com", reply: "The brochure (download link, or the PDF attached when it's small enough). Replies go to sales@thetechfestival.com." },
   { form: "Ticket purchase", what: "Buying a pass through Stripe", path: "/tickets", to: [], toNote: "No staff email.", via: "stripe", reply: "Their ticket, from tickets@thetechfestival.com." },
 ];
 
@@ -94,12 +94,12 @@ export default function EmailTracking() {
   return (
     <>
       <PageHeader
-        eyebrow="Staff & safety"
-        title="Email tracking"
+        eyebrow="More › Settings"
+        title="Where website forms go"
         description="Who receives each form on the website, how it's sent, and what the person who filled it in gets back. Use it to find a missing enquiry or to know who should be answering."
       />
       <Banner tone="info" icon={Info} className="mb-6" title="Every enquiry is saved before it's emailed">
-        The volunteer, speaker, booth, sponsor, partnership and general enquiry forms no longer use EmailJS. Each one is saved in the admin panel first (Leads → Form submissions), then emailed to baldeep@thetechfestival.com. If an email goes missing, the submission is still there.
+        The volunteer, speaker, booth, sponsor, partnership and general enquiry forms no longer use EmailJS. Each one is saved in the admin panel first (More › Form submissions), then emailed to baldeep@thetechfestival.com. If an email goes missing, the submission is still there.
       </Banner>
 
       {/* Desktop / tablet table */}

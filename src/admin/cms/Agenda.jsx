@@ -535,7 +535,7 @@ export default function Agenda() {
   return (
     <>
       <PageHeader
-        eyebrow="Website content"
+        eyebrow="Website & app"
         title="Agenda"
         description="Every session on the website's Agenda page and in the app: titles, times, formats, speakers and moderators."
         actions={(

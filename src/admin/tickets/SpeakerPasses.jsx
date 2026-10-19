@@ -548,7 +548,7 @@ export default function SpeakerPasses() {
   return (
     <>
       <PageHeader
-        eyebrow="Tickets & attendees"
+        eyebrow="People & passes"
         title="Speaker passes"
         description="Every speaker on the website gets a Speaker Pass: an internal pass, never sold or listed on the website. It has the Power Pass privileges, both CxO Breakfasts and the VIP Lounge. Add each speaker's email, preview, then send."
         actions={

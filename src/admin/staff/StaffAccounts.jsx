@@ -153,7 +153,7 @@ export default function StaffAccounts() {
 
   return (
     <>
-      <PageHeader eyebrow="Staff & safety" title="Staff accounts" description="People who can sign in to this panel. Management sees everything; staff can't see sales, revenue, promo codes or staff settings. Volunteers only use the app's staff sign-in for door check-in." />
+      <PageHeader eyebrow="More › Settings" title="Staff accounts" description="People who can sign in to this panel. Management sees everything; staff can't see sales, revenue, promo codes or staff settings. Volunteers only use the app's staff sign-in for door check-in." />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0">
           {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !data?.length ? (

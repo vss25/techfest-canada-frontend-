@@ -81,7 +81,7 @@ export default function KillSwitch() {
   return (
     <>
       <PageHeader
-        eyebrow="Staff & safety"
+        eyebrow="More › Settings"
         title="Kill switch"
         description="Takes the public website and the iOS app offline in an emergency. Staff pages (this panel) keep working so you can always switch it back."
       />
@@ -145,7 +145,7 @@ export default function KillSwitch() {
             <li>Ticket sales, sign-ups and app features stop until it's switched back on.</li>
             <li>This panel, check-in scanning and payment webhooks keep working.</li>
             <li>You need your own password to switch it either way. Each attempt is in the audit log.</li>
-            <li>Signed in with Google and never set a password? Set one first under Staff accounts → Change my password.</li>
+            <li>Signed in with Google and never set a password? Set one first under My account: click your name at the top right.</li>
           </ul>
         </Card>
       </div>

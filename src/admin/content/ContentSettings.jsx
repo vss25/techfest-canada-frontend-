@@ -1,14 +1,28 @@
 import { useState } from "react";
-import { Info, RotateCcw } from "lucide-react";
+import { Info, Lock, RotateCcw } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Button, Card, ErrorState, Input, LoadingState, Switch, Textarea, focusRing } from "../ui";
 import { when } from "../format";
-import { EMAIL_RE, REGISTRY, SCOPES, URL_RE, humanize, scopeOf } from "./registry";
+import { EMAIL_RE, HIDDEN_KEYS, REGISTRY, SCOPES, URL_RE, humanize, scopeOf } from "./registry";
+import { useAdmin } from "../adminContext";
 
 /* One consistent editor for the texts & switches in GET/PUT /api/console/app-content.
-   Used by Site settings → Website options (scope "website") and App text & switches (scope "app"). */
+   Used by Website switches → Website options (scope "website") and App text & switches (scope "app").
+   Settings only management may change (ticket sales, pass upgrades: REGISTRY `management`, or the
+   server's `managementOnly`) show disabled with "Management only" for everyone else; the server
+   refuses them too. The guest offer's settings (HIDDEN_KEYS) aren't shown at all. */
+const REGISTRY_ORDER = new Map(Object.keys(REGISTRY).map((k, i) => [k, i]));
+const byRegistryOrder = (a, b) => (REGISTRY_ORDER.get(a.key) ?? 1e6) - (REGISTRY_ORDER.get(b.key) ?? 1e6);
+
+function ManagementTag() {
+  return (
+    <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-ttfc-line px-2 py-0.5 align-middle text-[11px] font-semibold text-ttfc-muted">
+      <Lock className="h-3 w-3" aria-hidden="true" /> Management only
+    </span>
+  );
+}
 
 const SAVED = {
   website: "Saved — live on the website within about a minute",
@@ -26,6 +40,8 @@ function TechName({ name }) {
 
 function SettingRow({ item, meta, scope, onSaved }) {
   const toast = useToast();
+  const { isManagement } = useAdmin();
+  const locked = !!(meta.management || item.managementOnly) && !isManagement;
   const isSwitch = meta.type === "switch" || typeof item.default === "boolean";
   const stored = isSwitch ? item.value !== false && item.value !== "false" : String(item.value ?? "");
   const defText = String(item.default ?? "");
@@ -85,14 +101,15 @@ function SettingRow({ item, meta, scope, onSaved }) {
       if (e.key === "Enter" && meta.type !== "textarea" && dirty) { e.preventDefault(); save(); }
     },
     maxLength: meta.type === "textarea" ? 2000 : 500,
+    disabled: locked,
   };
 
   return (
     <div className="grid gap-3 px-4 py-4 sm:px-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:gap-8">
       <div className="min-w-0">
         {isSwitch
-          ? <p className="text-sm font-semibold text-ttfc-text">{meta.label}<TechName name={item.key} /></p>
-          : <label htmlFor={inputId} className="text-sm font-semibold text-ttfc-text">{meta.label}<TechName name={item.key} /></label>}
+          ? <p className="text-sm font-semibold text-ttfc-text">{meta.label}<TechName name={item.key} />{locked && <ManagementTag />}</p>
+          : <label htmlFor={inputId} className="text-sm font-semibold text-ttfc-text">{meta.label}<TechName name={item.key} />{locked && <ManagementTag />}</label>}
         <p id={descId} className="mt-0.5 text-xs leading-relaxed text-ttfc-muted">{meta.description}</p>
       </div>
 
@@ -102,7 +119,7 @@ function SettingRow({ item, meta, scope, onSaved }) {
             <span className="text-sm text-ttfc-muted">{value ? "On" : "Off"}</span>
             <Switch
               checked={!!value}
-              disabled={saving}
+              disabled={saving || locked}
               ariaLabel={meta.label}
               onChange={async (v) => {
                 setValue(v);
@@ -126,7 +143,7 @@ function SettingRow({ item, meta, scope, onSaved }) {
               ) : (
                 <>
                   <p className="min-w-0 flex-1 text-xs text-ttfc-dim">{status}</p>
-                  {!usingDefault && (
+                  {!usingDefault && !locked && (
                     <button type="button" onClick={reset} disabled={saving}
                       className={`inline-flex items-center gap-1 rounded-md text-xs font-semibold text-ttfc-muted hover:text-ttfc-text disabled:opacity-50 ${focusRing}`}>
                       <RotateCcw className="h-3 w-3" aria-hidden="true" /> Reset to default
@@ -149,11 +166,12 @@ export default function ContentSettings({ scope }) {
   if (loading) return <LoadingState />;
   if (error && !data) return <ErrorState error={error} onRetry={reload} />;
 
-  const rows = (data || []).filter((r) => scopeOf(r.key) === scope);
+  const rows = (data || []).filter((r) => !HIDDEN_KEYS.has(r.key) && scopeOf(r.key) === scope);
   if (!rows.length) {
     return <p className="text-sm text-ttfc-muted">These settings aren't available yet — the server needs the latest backend update.</p>;
   }
-  const groups = SCOPES[scope].groups.map((g) => ({ ...g, rows: rows.filter((r) => REGISTRY[r.key]?.group === g.id) }));
+  // In the registry's order, so a moved switch sits where it's listed (Pass upgrades next to Ticket sales open).
+  const groups = SCOPES[scope].groups.map((g) => ({ ...g, rows: rows.filter((r) => REGISTRY[r.key]?.group === g.id).sort(byRegistryOrder) }));
   const other = rows.filter((r) => !REGISTRY[r.key]);
   if (other.length) groups.push({ id: "other", title: "Other", rows: other });
 

@@ -65,7 +65,7 @@ export default function PurchaseEmail() {
   return (
     <>
       <PageHeader
-        eyebrow="Tickets & attendees"
+        eyebrow="Sales & emails"
         title="Purchase email"
         description="The confirmation every buyer gets after checkout, with their ticket PDF, QR code and Apple Wallet button. Change any word of it; the pass name, what's included and the tips are per pass type."
         actions={isManagement ? (

@@ -86,7 +86,7 @@ export default function ReminderDialog({ open, onClose, view, canSend, onSent })
   const done = job && !job.running;
   return (
     <Modal open={open} onClose={onClose} size="lg" title="Send RSVP reminder"
-      description="The RSVP reminder email from Marketing › RSVP reminders, to the people in this view who are Unconfirmed and have an email and a pass. Each email has a personal RSVP button per ticket."
+      description="The RSVP reminder email from RSVPs & meals › RSVP reminders, to the people in this view who are Unconfirmed and have an email and a pass. Each email has a personal RSVP button per ticket."
       footer={done ? <Button variant="primary" onClick={onClose}>Done</Button> : (
         <>
           <Button onClick={onClose} disabled={sending}>Cancel</Button>

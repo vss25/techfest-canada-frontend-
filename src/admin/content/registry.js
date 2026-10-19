@@ -1,18 +1,23 @@
 /* =========================================================
    Every editable text / switch (backend services/adminHelpers.js
    → CONTENT_KEYS), described for non-technical staff. Used by
-   Site settings → Website options and App text & switches.
+   Website switches → Website options and App text & switches.
+   A setting is on the page its scope says, in its group, in the
+   order listed here.
 
    type:      "switch" | "text" | "email" | "url" | "textarea"
    fallback:  what visitors see when the field is empty (the built-in text)
    emptyHides: an empty value hides the thing instead of using a default
+   management: only management may change it (shown disabled with
+               "Management only" to staff; the server refuses it too,
+               backend services/staffPowers.js)
 ========================================================= */
 
 export const SCOPES = {
   website: {
     groups: [
       { id: "announce", title: "Announcement bar", hint: "A slim coloured bar across the top of every page of the website." },
-      { id: "tickets", title: "Ticket sales" },
+      { id: "selling", title: "Selling", hint: "Ticket sales, pass upgrades and the website's install-the-app prompt. Ticket sales and upgrades are management only." },
       { id: "forms", title: "Forms (nominations, volunteers)" },
       { id: "agenda", title: "Agenda" },
       { id: "home", title: "Homepage" },
@@ -26,7 +31,7 @@ export const SCOPES = {
       { id: "feed", title: "Feed & network" },
       { id: "tickets", title: "Tickets & help" },
       { id: "privacy", title: "Privacy & community" },
-      { id: "flags", title: "Feature switches", hint: "Turn parts of the app on or off for everyone." },
+      { id: "flags", title: "Feature switches", hint: "Turn parts of the app on or off for everyone. Pass upgrades and the website's install-the-app prompt are under Website switches › Selling." },
     ],
   },
 };
@@ -52,14 +57,25 @@ export const REGISTRY = {
     placeholder: "https://thetechfestival.com/tickets",
   },
   "site.ticket_sales_open": {
-    scope: "website", group: "tickets", type: "switch",
+    scope: "website", group: "selling", type: "switch", management: true,
     label: "Ticket sales open",
     description: "When off, every “Get your pass” button and the payment step are disabled. Tickets already sold aren't affected.",
   },
   "site.ticket_sales_message": {
-    scope: "website", group: "tickets", type: "text",
+    scope: "website", group: "selling", type: "text", management: true,
     label: "Message while sales are paused",
     description: "Shown on the Tickets and Checkout pages when ticket sales are off.",
+  },
+  // Pass upgrades and the install prompt moved here from App text & switches (Oct 19 2026): the same stored keys.
+  "flag.upgrades": {
+    scope: "website", group: "selling", type: "switch", management: true,
+    label: "Pass upgrades",
+    description: "Off: no upgrade offers anywhere (website, web app and apps), and the server refuses upgrade checkouts.",
+  },
+  "flag.pwaPrompt": {
+    scope: "website", group: "selling", type: "switch",
+    label: "Install-the-app prompt on the website",
+    description: "Shows phone visitors to thetechfestival.com a \"Get the TTFC app\" sheet with step-by-step install help. The web app at /app works either way.",
   },
   "site.nominations_open": {
     scope: "website", group: "forms", type: "switch",
@@ -192,17 +208,12 @@ export const REGISTRY = {
     scope: "app", group: "flags", type: "switch",
     label: "Audience Q&A", description: "Turn off to hide session Q&A in the app and stop new questions.",
   },
-  "flag.upgrades": {
-    scope: "app", group: "flags", type: "switch",
-    label: "Pass upgrades",
-    description: "Off: no upgrade offers anywhere, and the server refuses upgrade checkouts.",
-  },
-  "flag.pwaPrompt": {
-    scope: "app", group: "flags", type: "switch",
-    label: "Install-the-app prompt on the website",
-    description: "Shows phone visitors to thetechfestival.com a \"Get the TTFC app\" sheet with step-by-step install help. The web app at /app works either way.",
-  },
 };
+
+/* Not shown anywhere in the panel (Oct 19 2026): the web app's guest offer (APP50), five settings that were
+   listed under "Other" with no explanation. Promotions are banned, so they're gone from App text & switches;
+   their stored values stay as they are, and the server refuses switching the offer on for anyone. */
+export const HIDDEN_KEYS = new Set(["flag.guestOffer", "offer.guest_code", "offer.guest_discount", "offer.guest_ends", "offer.guest_passes"]);
 
 /** Scope for a key that isn't in the registry yet (keeps new backend keys editable). */
 export const scopeOf = (key) => REGISTRY[key]?.scope || (key.startsWith("site.") ? "website" : "app");

@@ -53,7 +53,7 @@ function PlaceBadges({ doc, withVisibility, showSponsor }) {
   const web = onWebsite(doc), app = inApp(doc);
   return (
     <span className="mt-1 flex flex-wrap gap-1">
-      {showSponsor && isSponsor(doc) && <Badge tone="orange" icon={Star}>Sponsor</Badge>}
+      {showSponsor && isSponsor(doc) && <Badge tone="orange" icon={Star}>Featured Partner</Badge>}
       {web && <Badge tone="purple" icon={Globe}>Website</Badge>}
       {app && <Badge tone="pink" icon={Smartphone}>App</Badge>}
       {!web && !app && <Badge tone="warn">Hidden</Badge>}
@@ -216,8 +216,8 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
         )}
         {withCategory && (
           <Field label="Partners page row" hint={sponsorsOnly
-            ? "Featured Partners = a sponsor (shown first in the apps' Organisations). Pick another row to make it a regular partner."
-            : "Which tech pillar or applied sector row the logo sits in on the Partners page. Featured Partners are the sponsors. Automatic uses the built-in list; new logos default to Ecosystem & Media."}>
+            ? "Featured Partners = a paid partner (shown first in the apps' Organisations). Pick another row to make it a regular partner."
+            : "Which tech pillar or applied sector row the logo sits in on the Partners page. Featured Partners are the paid partners. Automatic uses the built-in list; new logos default to Ecosystem & Media."}>
             {(id) => (
               <Select id={id} value={form.matrixGroup} onChange={set("matrixGroup")} disabled={readOnly}>
                 <option value="">{automaticLabel(doc)}</option>
@@ -234,7 +234,7 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
         </Field>
         {withVisibility && (
           <Field label="Description" error={errors.description}
-            hint={`Optional, up to ${SPONSOR_DESCRIPTION_MAX} characters. A line or two on what they do: shown on the Sponsors cards in the apps and on their organisation page; on the website it appears when someone hovers the logo. ${form.description.length}/${SPONSOR_DESCRIPTION_MAX}`}>
+            hint={`Optional, up to ${SPONSOR_DESCRIPTION_MAX} characters. A line or two on what they do: shown on the Featured Partners cards in the apps and on their organisation page; on the website it appears when someone hovers the logo. ${form.description.length}/${SPONSOR_DESCRIPTION_MAX}`}>
             {(id) => <Textarea id={id} rows={4} value={form.description} onChange={set("description")} maxLength={SPONSOR_DESCRIPTION_MAX} disabled={readOnly}
               placeholder="e.g. Builds autonomous trucks for middle-mile freight." />}
           </Field>
@@ -258,7 +258,7 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
             />
             <Switch
               label="Show in the app"
-              description="The iOS and Android apps and the web app (Organisations, and the Sponsors section for sponsors)."
+              description="The iOS and Android apps and the web app (Organisations, and the Featured Partners section for them)."
               checked={!!form.showInApp}
               onChange={(v) => setForm((f) => ({ ...f, showInApp: v }))}
               disabled={readOnly}
@@ -290,7 +290,7 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
  * Featured Partners row: the same records as the Partners page, listed on their own.
  * Partners and sponsors have a description and separate website / app switches.
  */
-export default function LogoCollection({ type, title, singular, description, withCategory = false, sponsorsOnly = false, eyebrow = "Website content" }) {
+export default function LogoCollection({ type, title, singular, description, withCategory = false, sponsorsOnly = false, eyebrow = "Website & app" }) {
   const withVisibility = type === "partner";
   const toast = useToast();
   const { configured } = useCmsStatus();
@@ -405,7 +405,7 @@ export default function LogoCollection({ type, title, singular, description, wit
         <ErrorState error={error} onRetry={reload} />
       ) : !list.length ? (
         <EmptyState title={`No ${title.toLowerCase()} yet`} body={sponsorsOnly
-          ? "Add a sponsor, or set a partner's Partners page row to Featured Partners. Sponsors show first in the apps' Organisations."
+          ? "Add a Featured Partner, or set a partner's Partners page row to Featured Partners. They show first in the apps' Organisations."
           : `Add the first ${singular} and it'll appear on the website within a minute.`}
           action={!readOnly && <Button variant="primary" icon={Plus} onClick={openNew}>Add {singular}</Button>} />
       ) : !shown.length ? (

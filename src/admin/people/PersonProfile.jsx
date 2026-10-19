@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  AlertTriangle, ArrowLeft, Check, Coffee, Crown, ExternalLink, ImagePlus, Info, Linkedin, Mail, Mic2, Pencil, Smartphone, Store, Ticket, Trash2,
+  AlertTriangle, ArrowLeft, BellRing, Check, Coffee, Crown, ExternalLink, ImagePlus, Info, Linkedin, Mail, Mic2, Pencil, Smartphone, Store, Ticket, Trash2,
   Trophy, Utensils, Wine,
 } from "lucide-react";
 import { useApi } from "../hooks";
@@ -16,6 +16,7 @@ import RsvpEditor from "./RsvpEditor";
 import LogoPicker, { CompanyMark } from "./LogoPicker";
 import { TEAM_TYPES, effectiveTypes, toggleType } from "../app/personTypes";
 import {
+  ATTENDING_HINT, ATTENDING_LABELS, ATTENDING_TONE, nudgeCount,
   DAY_SHORT, EXTRAS, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_STATUS_TONE, PASS_TIERS, PERSON_TYPES, passExtras, passName, RSVP_EMAIL_HINT, RSVP_STATUS_LABELS, RSVP_STATUS_TONE,
   TYPE_LABELS, TYPE_TONE, VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL, VIP_TONE, personPath,
 } from "./peopleMeta";
@@ -40,6 +41,11 @@ import {
    full name). Their app contact card is read-only. Holding a
    Speaker Pass makes someone the Speaker type; exhibitors hold
    Connect Passes and Exhibitor is their type.
+   Emails card (Oct 19 2026, staff too): one RSVP reminder or one
+   "I'm attending" LinkedIn nudge to this person (POST …/reminder,
+   …/nudge), with the same cool-downs and skip rules as the sends
+   to a view; the server says whether each can go now and why not
+   (`outreach`).
 ========================================================= */
 
 const DETAIL_KEYS = ["firstName", "lastName", "email", "phone", "linkedinUrl", "company", "jobTitle"];
@@ -562,6 +568,58 @@ function ContactCardCard({ items, hasAccount }) {
   );
 }
 
+/* One email to this person, after a confirm: the RSVP reminder or the "I'm attending" LinkedIn nudge. */
+function OutreachRow({ icon: Icon, title, status, verdict, button, confirmTitle, confirmBody, path, sentMsg, onSent }) {
+  const toast = useToast();
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <div className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-start">
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-2 text-sm font-semibold"><Icon className="h-4 w-4 text-ttfc-pink" aria-hidden="true" /> {title}</p>
+        <div className="mt-1 text-xs text-ttfc-muted">{status}</div>
+        {!verdict?.canSend && verdict?.label && <p className="mt-1 text-xs text-ttfc-dim">Can't send now: {verdict.label}.</p>}
+      </div>
+      <Button size="sm" icon={Icon} disabled={!verdict?.canSend || verdict?.running} onClick={() => setConfirm(true)}
+        title={verdict?.canSend ? undefined : verdict?.label}>{button}</Button>
+      <ConfirmDialog open={confirm} onClose={() => setConfirm(false)} tone="primary" title={confirmTitle} body={confirmBody} confirmLabel="Send"
+        onConfirm={async () => {
+          const r = await api.post(path, {});
+          toast.success(sentMsg(r.email));
+          onSent?.();
+        }} />
+    </div>
+  );
+}
+
+function OutreachCard({ p, outreach, onSent }) {
+  if (!outreach) return null;
+  const rr = outreach.rsvpReminder || {};
+  const at = outreach.attending || {};
+  const base = `/console/people/${encodeURIComponent(p.id)}`;
+  const to = p.email || "their email";
+  return (
+    <Card>
+      <SectionTitle hint="One email to this person. Sends to a whole list are on the People page (management).">Emails</SectionTitle>
+      <div className="divide-y divide-ttfc-line">
+        <OutreachRow icon={BellRing} title="RSVP reminder" verdict={rr} button="Send RSVP reminder"
+          status={rr.lastSentAt ? `Last reminded ${when(rr.lastSentAt)}. Skipped if reminded in the last ${rr.cooldownHours} hours.` : `Not reminded yet. The email has a personal RSVP button for each of their tickets.`}
+          confirmTitle={`Send ${p.name} the RSVP reminder?`} confirmBody={`To ${to}. The same email as RSVP reminders, with an RSVP button for each ticket still open.`}
+          path={`${base}/reminder`} sentMsg={(e) => `RSVP reminder sent to ${e}`} onSent={onSent} />
+        <OutreachRow icon={Linkedin} title="I'm attending (LinkedIn)" verdict={at} button="Send LinkedIn nudge"
+          status={(
+            <span title={ATTENDING_HINT}>
+              <Badge tone={ATTENDING_TONE[at.status] || "neutral"}>{ATTENDING_LABELS[at.status] || ATTENDING_LABELS.none}{at.sentAt ? ` · ${when(at.sentAt)}` : ""}</Badge>
+              {at.nudges > 0 && <span className="ml-2">{nudgeCount(at.nudges)} from People</span>}
+              <span className="mt-1 block">Opens, clicks and LinkedIn posts aren't tracked. Skipped if emailed in the last {at.cooldownDays} days.</span>
+            </span>
+          )}
+          confirmTitle={`Send ${p.name} the LinkedIn nudge?`} confirmBody={`To ${to}. The “Show the world you're attending” email: their personal page to make an “I'm attending” image and post it on LinkedIn.`}
+          path={`${base}/nudge`} sentMsg={(e) => `LinkedIn nudge sent to ${e}`} onSent={onSent} />
+      </div>
+    </Card>
+  );
+}
+
 const dayName = (n) => (n === 1 ? "Day 1" : n === 2 ? "Day 2" : "");
 const clock = (hhmm) => {
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || ""));
@@ -666,6 +724,11 @@ function ProfileView({ id }) {
                 {p.rsvpEmail?.sent ? `RSVP email sent · ${when(p.rsvpEmail.at)}${p.rsvpEmail.via?.length ? ` · ${p.rsvpEmail.via.join(", ")}` : ""}` : "No RSVP email sent"}
               </Badge>
             </span>
+            <span title={ATTENDING_HINT}>
+              <Badge tone={ATTENDING_TONE[p.attending?.status] || "neutral"} icon={Linkedin}>
+                {`I'm attending: ${ATTENDING_LABELS[p.attending?.status] || ATTENDING_LABELS.none}${p.attending?.sentAt ? ` · ${when(p.attending.sentAt)}` : ""}`}
+              </Badge>
+            </span>
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -686,6 +749,7 @@ function ProfileView({ id }) {
           )}
         </div>
         <div className="space-y-5">
+          <OutreachCard p={p} outreach={data.outreach} onSent={reload} />
           <DetailsCard key={JSON.stringify([p.name, p.firstName, p.lastName, p.email, p.phone, p.linkedinUrl, p.company, p.jobTitle, p.types, p.account, p.exhibitor, p.vip, p.rsvpEmail?.mark, p.rsvpEmail?.sent])} p={p} onSaved={reload} />
           <PassesCard p={p} onSaved={reload} />
           <LogoCard p={p} onSaved={reload} />

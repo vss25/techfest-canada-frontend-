@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AlertTriangle, BellRing, CalendarCheck, CheckCircle2, Clock, Info, MailCheck, MailWarning, Search, Send, Users,
 } from "lucide-react";
@@ -124,7 +125,7 @@ export default function RsvpReminders() {
   return (
     <>
       <PageHeader
-        eyebrow="Marketing"
+        eyebrow="RSVPs & meals"
         title="RSVP reminders"
         description="Ticket holders who haven't RSVP'd yet. The reminder has a pre-filled RSVP button for each of their tickets, so it takes them about a minute."
         actions={isManagement && (
@@ -136,8 +137,10 @@ export default function RsvpReminders() {
       />
 
       {!isManagement && (
-        <Banner tone="info" icon={Info} className="mb-6" title="Sending is for management">
-          You can see who hasn't RSVP'd and preview the email. A manager sends the reminders.
+        <Banner tone="info" icon={Info} className="mb-6" title="Sending to everyone is for management">
+          You can see who hasn't RSVP'd and preview the email. To remind one person, open them in{" "}
+          <Link to="/admin/people?rsvp=none" className="font-semibold text-ttfc-pink hover:underline">People</Link> and use Send RSVP reminder
+          (anyone reminded in the last {cooldownHours} hours is skipped).
         </Banner>
       )}
 

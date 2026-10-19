@@ -8,7 +8,7 @@ import { content, text } from "../lib/content";
 import { bookmarks, canMessage, canRequest, refreshConnections, refreshPeople, refreshThreads, social } from "../lib/social";
 import { APPLIED_SECTORS, TECH_PILLARS } from "../lib/config";
 import { recoSignals, recommend, topicPoints } from "../lib/people";
-import { givenName, showAlert } from "../lib/ui";
+import { givenName } from "../lib/ui";
 import { DoneButton, IconButton, Popover, Segmented, Sheet, Spinner, TopBar } from "../components/ui";
 import { FilterSelect, SearchField } from "../components/Filters";
 import { ConnectedRow, PersonCard } from "../components/People";
@@ -16,6 +16,7 @@ import { AlphaIndexBar } from "../components/AlphaIndex";
 import { jumpToRow, useAlphaTargets } from "../lib/alpha";
 import { PeopleSlash } from "../components/Glyphs";
 import SpeakersList from "../components/SpeakersList";
+import { guestAlert } from "../lib/passes";
 
 const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 
@@ -255,11 +256,11 @@ export default function Network() {
   }, [signedIn]);
 
   const openScanner = () => {
-    if (!signedIn) { showAlert("Sign up to connect", "Create a free profile to scan badges and build your network."); return; }
+    if (!signedIn) { guestAlert("Get a pass to connect", "network"); return; }
     setScan(true);
   };
   const openMyQR = () => {
-    if (!signedIn) { showAlert("Sign up for a badge QR", "Your connect QR is generated from your profile."); return; }
+    if (!signedIn) { guestAlert("Get a pass for your badge QR", "network"); return; }
     navigate("/profile/pass?tab=connect");
   };
 

@@ -15,13 +15,14 @@ import { Avatar, Chip, Segmented, Sheet, Spinner, TopBar } from "../components/u
 import { ConnectionRow } from "../components/People";
 import { MoreMenu } from "../components/Safety";
 import { SearchField } from "../components/Filters";
+import { guestAlert } from "../lib/passes";
 
 /* =========================================================
    Chats (iOS ChatsView): Chats (1:1 and your groups, newest
    first, then every other group to browse and join), Requests
    (invitations and messages from people you're not connected
    with) and Discussions (with Follow). The picker is pinned
-   under the title; guests see the same tab with sign-up
+   under the title; guests see the same tab with "Get a pass"
    prompts, as on iOS.
 ========================================================= */
 
@@ -197,7 +198,7 @@ function BrowseGroups({ signedIn, canNewGroup, onNewGroup }) {
     .sort((x, y) => (y.memberCount || 0) - (x.memberCount || 0));
   const anyJoined = s.groups.some((g) => g.joined);
   const join = async (g) => {
-    if (!signedIn) { showAlert("Sign up to join", "Create a free profile to join groups."); return; }
+    if (!signedIn) { guestAlert("Get a pass to join groups", "chats"); return; }
     const r = await toggleJoinGroup(g);
     if (r?.joined) navigate(`/group/${encodeURIComponent(g.id)}`);
     else showAlert("Couldn't join", social.get().lastError || "Try again.");
@@ -205,7 +206,7 @@ function BrowseGroups({ signedIn, canNewGroup, onNewGroup }) {
   return (
     <section className="stack" aria-labelledby="browse-h">
       <SectionHead id="browse-h" eyebrow="Join a group chat on a topic" title="Browse groups"
-        plus={canNewGroup ? { label: "New group", locked: !signedIn, onClick: () => (signedIn ? onNewGroup() : showAlert("Sign up to create a group", "Create a free profile to start a group.")) } : null} />
+        plus={canNewGroup ? { label: "New group", locked: !signedIn, onClick: () => (signedIn ? onNewGroup() : guestAlert("Get a pass to create a group", "chats")) } : null} />
       {visible.length === 0 && (
         <p className="pad muted" style={{ margin: 0, fontSize: 14 }}>
           {anyJoined ? (canNewGroup ? "You're in every group so far. Start one with +." : "You're in every group so far.") : (canNewGroup ? "No groups yet. Start one with +." : "No groups yet.")}
@@ -243,7 +244,7 @@ function Discussions({ signedIn }) {
   return (
     <div className="stack">
       <SectionHead eyebrow="Ask the community" title="Discussions"
-        plus={canStart ? { label: "New discussion", locked: !signedIn, onClick: () => (signedIn ? setComposer(true) : showAlert("Sign up to post", "Create a free profile to start a discussion.")) } : null} />
+        plus={canStart ? { label: "New discussion", locked: !signedIn, onClick: () => (signedIn ? setComposer(true) : guestAlert("Get a pass to post", "chats")) } : null} />
       <div className="chips">
         <Chip on={!filter && !following} onClick={() => { setFilter(null); setFollowing(false); }}>All</Chip>
         <Chip on={following} onClick={() => setFollowing((v) => !v)}>Following</Chip>

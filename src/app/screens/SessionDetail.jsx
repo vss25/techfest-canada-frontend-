@@ -10,7 +10,8 @@ import { clockFaked } from "../lib/time";
 import { showAlert, useNow } from "../lib/ui";
 import { Avatar, Button, Empty, Spinner, TopBar } from "../components/ui";
 import { TypeIcon } from "../components/SessionRow";
-import { EVENT, FEATURES, LINKS } from "../lib/config";
+import { EVENT, FEATURES } from "../lib/config";
+import { openPasses } from "../lib/passes";
 
 /* Session page (iOS SessionDetailView). */
 
@@ -123,7 +124,7 @@ export default function SessionDetail() {
             </Button>
           ) : (
             <>
-              <a className="btn btn-primary btn-lg btn-block" href={LINKS.tickets} target="_blank" rel="noopener noreferrer">Get a pass<Ticket aria-hidden="true" /></a>
+              <Button variant="primary" size="lg" block onClick={() => openPasses("session")}>Get a pass<Ticket aria-hidden="true" /></Button>
               <p className="center muted" style={{ margin: 0, fontSize: 11 }}>Sign in and choose a pass to join sessions, polls and Q&A.</p>
             </>
           )}

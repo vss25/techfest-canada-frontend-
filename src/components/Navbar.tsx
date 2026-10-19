@@ -1,10 +1,14 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { lazy, Suspense, useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import AuthModal from "./AuthModal";
 import useSiteSettings from "../hooks/useSiteSettings";
 import { track } from "../lib/pwaEvents";
+import { isMobileDevice } from "../lib/pwaPlatform";
+
+// "Get the TTFC app" on a computer: a QR code to the phone (the web app is phone-only). Loaded on first use.
+const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
 
 const PARTNERS_DROPDOWN = [
   { label: "2026 Partners", path: "/partners2026" },
@@ -30,6 +34,7 @@ export default function Navbar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const [navHeight, setNavHeight] = useState(92);
+  const [phoneQr, setPhoneQr] = useState(false);
   const location = useLocation();
   const site = useSiteSettings();
   const showAgenda = site["site.show_agenda"] !== false;
@@ -407,7 +412,11 @@ export default function Navbar() {
                 {/* Always here, for people who closed the install prompt. /app is its own page, so a plain link. */}
                 <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
                   <a href="/app/?install=1"
-                    onClick={() => { track("pwa_guide_open", { where: "drawer" }); setMobileOpen(false); }}
+                    onClick={(e) => {
+                      setMobileOpen(false);
+                      if (!isMobileDevice()) { e.preventDefault(); setPhoneQr(true); track("pwa_phone_qr_open", { where: "drawer" }); return; }
+                      track("pwa_guide_open", { where: "drawer" });
+                    }}
                     style={{ display: "flex", alignItems: "center", gap: 12, margin: "8px 0 6px", padding: "12px 14px", borderRadius: 16, textDecoration: "none", color: textMain,
                       background: dark ? "linear-gradient(135deg, rgba(122,63,209,0.28), rgba(245,166,35,0.12))" : "linear-gradient(135deg, rgba(122,63,209,0.10), rgba(245,166,35,0.08))",
                       border: "1px solid " + (dark ? "rgba(155,135,245,0.35)" : "rgba(122,63,209,0.25)") }}
@@ -467,6 +476,11 @@ export default function Navbar() {
       </nav>
 
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+      {phoneQr && (
+        <Suspense fallback={null}>
+          <PhoneAppPanel where="drawer" onDismiss={() => setPhoneQr(false)} actions={[{ label: "Close", onClick: () => setPhoneQr(false) }]} />
+        </Suspense>
+      )}
     </>
   );
 }

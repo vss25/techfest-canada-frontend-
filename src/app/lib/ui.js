@@ -21,10 +21,10 @@ export function givenName(name = "") {
 export const toasts = createStore({ items: [], confirm: null });
 let toastId = 0;
 
-/** iOS action.showAlert(title, message): a toast that fades after a few seconds. */
-export function showAlert(title, message = "", { action, ms = 4500 } = {}) {
+/** iOS action.showAlert(title, message): a toast that fades after a few seconds. `action` (or several `actions`): { label, run }. */
+export function showAlert(title, message = "", { action, actions, ms = 4500 } = {}) {
   const id = ++toastId;
-  toasts.set((s) => ({ ...s, items: [...s.items, { id, title, message, action }] }));
+  toasts.set((s) => ({ ...s, items: [...s.items, { id, title, message, actions: actions || (action ? [action] : []) }] }));
   if (ms) setTimeout(() => dismissToast(id), ms);
   return id;
 }

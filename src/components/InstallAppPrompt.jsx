@@ -1,17 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { detectOS, isStandalone, markInstalled, markedInstalled } from "../lib/pwaPlatform";
+import { detectOS, isForcedPlatform, isMobileDevice, isStandalone, markInstalled, markedInstalled } from "../lib/pwaPlatform";
 import { track } from "../lib/pwaEvents";
 
+// Computers only (it carries the QR code library): phones never download it.
+const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
+
 /* =========================================================
-   "Get the TTFC app" for website visitors: a bottom sheet on
-   phones, a compact centred card on computers that can install
-   apps (App.jsx decides who loads this at all). Shown once per
-   browser session after 5 s of visible time (counted across
-   page views), only when staff switch it on (App content ›
-   flag.pwaPrompt) or with ?pwa-preview=1. "Show me how" opens
-   /app/?install=1, where the step-by-step guide (and Chrome's
-   own install prompt) takes over, so installs land on /app/.
+   "Get the TTFC app" for website visitors (App.jsx loads this
+   outside the installed app). Shown once per browser session
+   after 5 s of visible time (counted across page views), only
+   when staff switch it on (App content › flag.pwaPrompt) or
+   with ?pwa-preview=1.
+   • Phones and tablets: a bottom sheet; "Show me how" opens
+     /app/?install=1, where the step-by-step guide (and Chrome's
+     own install prompt) takes over, so installs land on /app/.
+   • Computers: the web app is phone-only, so "Get the TTFC app
+     on your phone": a QR code to /app on the phone plus the
+     store badges (PhoneAppPanel). No desktop install.
+   "Not now" (or Escape / the backdrop) snoozes it for 7 days.
 ========================================================= */
 
 const API = import.meta.env.VITE_ADMIN_API_URL || "https://techfest-canada-backend.onrender.com/api";
@@ -63,7 +70,8 @@ export default function InstallAppPrompt() {
   const [eligible, setEligible] = useState(false);
   const [open, setOpen] = useState(false);
   const preview = useRef(previewForced());
-  const [isDesktop] = useState(() => detectOS() === "desktop");
+  // A computer (?pwa-ua=desktop-… previews it on a phone; ?pwa-ua=ios-safari etc. the phone sheet on a computer).
+  const [isDesktop] = useState(() => (isForcedPlatform() ? detectOS() === "desktop" : !isMobileDevice()));
 
   // Switch + "already installed" / snooze / once-per-session checks.
   useEffect(() => {
@@ -97,14 +105,14 @@ export default function InstallAppPrompt() {
         clearInterval(tick);
         ss.set(SEEN_KEY, "1");
         setOpen(true);
-        track("pwa_prompt_shown", { page: pathname, layout: isDesktop ? "desktop" : "phone" });
+        track("pwa_prompt_shown", { page: pathname, layout: isDesktop ? "desktop-qr" : "phone" });
       }
     }, 250);
     return () => clearInterval(tick);
   }, [eligible, open, pathname, isDesktop]);
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open || isDesktop) return undefined; // the desktop panel handles Escape itself
     const onKey = (e) => {
       if (e.key !== "Escape") return;
       ls.set(SNOOZE_KEY, String(Date.now() + SNOOZE_MS));
@@ -114,7 +122,7 @@ export default function InstallAppPrompt() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, isDesktop]);
 
   if (!open) return null;
 
@@ -134,14 +142,21 @@ export default function InstallAppPrompt() {
     window.location.assign("/app/?install=1&from=prompt");
   };
 
+  if (isDesktop) {
+    return (
+      <Suspense fallback={null}>
+        <PhoneAppPanel where="prompt" onDismiss={notNow}
+          actions={[{ label: "Not now", onClick: notNow }, { label: "I already have the app", onClick: already }]} />
+      </Suspense>
+    );
+  }
+
   const font = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
   const link = { background: "none", border: 0, color: "rgba(255,255,255,0.82)", font: `600 15px/1.2 ${font}`, minHeight: 44, padding: "0 10px", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 };
-  const panel = isDesktop
-    ? { width: "min(440px, calc(100vw - 32px))", padding: "26px 24px 18px", borderRadius: 22, boxShadow: "0 24px 70px rgba(0,0,0,0.55)" }
-    : { width: "100%", maxWidth: 520, padding: "22px 20px calc(18px + env(safe-area-inset-bottom))", borderRadius: "24px 24px 0 0", boxShadow: "0 -12px 40px rgba(0,0,0,0.45)" };
+  const panel = { width: "100%", maxWidth: 520, padding: "22px 20px calc(18px + env(safe-area-inset-bottom))", borderRadius: "24px 24px 0 0", boxShadow: "0 -12px 40px rgba(0,0,0,0.45)" };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100000, display: "flex", alignItems: isDesktop ? "center" : "flex-end", justifyContent: "center", fontFamily: font }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 100000, display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: font }}>
       <style>{"@keyframes ttfcSheetIn{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}@media (prefers-reduced-motion: reduce){.ttfc-sheet{animation:none!important}}.ttfc-sheet button:focus-visible{outline:2.5px solid #fff;outline-offset:2px}"}</style>
       <div onClick={notNow} aria-hidden="true" style={{ position: "absolute", inset: 0, background: "rgba(6,2,15,0.55)" }} />
       <section
@@ -164,9 +179,7 @@ export default function InstallAppPrompt() {
           </div>
         </div>
         <p style={{ margin: "14px 0 18px", font: `400 15px/1.45 ${font}`, color: "rgba(219,206,255,0.78)" }}>
-          {isDesktop
-            ? "Install it on this computer: it opens in its own window, straight to your schedule. Free, and it takes a few seconds."
-            : "Free, no app store needed. It takes about 30 seconds and we'll show you every tap."}
+          Free, no app store needed. It takes about 30 seconds and we'll show you every tap.
         </p>
         <button
           type="button"
@@ -174,7 +187,7 @@ export default function InstallAppPrompt() {
           autoFocus
           style={{ width: "100%", minHeight: 56, border: 0, borderRadius: 14, background: "#8B52E0", color: "#fff", font: `700 18px/1 ${font}`, cursor: "pointer" }}
         >
-          {isDesktop ? "Install app" : "Show me how"}
+          Show me how
         </button>
         <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
           <button type="button" onClick={notNow} style={link}>Not now</button>

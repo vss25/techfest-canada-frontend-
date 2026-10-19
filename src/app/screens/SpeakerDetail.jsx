@@ -11,10 +11,11 @@ import { FEATURES } from "../lib/config";
 import { Avatar, Button, Empty, Spinner, TopBar } from "../components/ui";
 import { ContactLimitNote } from "../components/People";
 import { PhoneSlash } from "../components/Glyphs";
+import { guestAlert } from "../lib/passes";
 
 /* =========================================================
    Speaker profile (iOS SpeakerDetailView): Connect and
-   "Ask {given} a question" (guests see them too, with sign-up
+   "Ask {given} a question" (guests see them too, with "Get a pass"
    prompts), what their switches allow, topics, About and the
    sessions they're in.
 ========================================================= */
@@ -42,11 +43,11 @@ export default function SpeakerDetail() {
   const mayMessage = !account || canMessage(account, s);
 
   const connect = () => {
-    if (!signedIn) { showAlert("Sign up to connect", "Create a free profile to send connection requests."); return; }
+    if (!signedIn) { guestAlert("Get a pass to connect", "speaker"); return; }
     connectWithSharing(account, { given });
   };
   const message = () => {
-    if (!signedIn) { showAlert("Sign up to message", "Guests can browse speakers. Create a free profile to send a question."); return; }
+    if (!signedIn) { guestAlert("Get a pass to message speakers", "speaker"); return; }
     navigate(`/chat/${encodeURIComponent(account.id)}`);
   };
   const withdraw = async () => {

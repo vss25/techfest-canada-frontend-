@@ -14,6 +14,7 @@ import { prepareShare, shareSourceOf, sharePrepared } from "../lib/shareCard";
 import { confirmDialog, givenName, safeHref, showAlert } from "../lib/ui";
 import { Avatar, IconButton, Kicker } from "./ui";
 import Comments from "./Comments";
+import { guestAlert } from "../lib/passes";
 
 /* =========================================================
    A feed post (iOS FeedPostCard): text first, then photos /
@@ -76,7 +77,7 @@ export default function PostCard({ post }) {
   const link = safeHref(post.linkUrl);
 
   const like = () => {
-    if (!signedIn) { showAlert("Sign up to react", "Guests can read the feed. Sign in to like and comment."); return; }
+    if (!signedIn) { guestAlert("Get a pass to like posts", "feed"); return; }
     toggleLike(post);
   };
   const doubleTap = () => {

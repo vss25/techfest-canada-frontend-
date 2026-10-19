@@ -268,16 +268,23 @@ export function ToastHost() {
   return (
     <>
       <div className="toast-wrap" aria-live="polite" aria-atomic="false">
-        {items.map((t) => (
-          <div key={t.id} className="toast" role="status">
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <b>{t.title}</b>
-              {t.message && <p>{t.message}</p>}
+        {items.map((t) => {
+          const acts = t.actions || [];
+          const button = (a, i) => (
+            <button key={a.label} type="button" className={i === 0 ? "btn btn-primary btn-sm" : "btn btn-sm"} onClick={() => { a.run(); dismissToast(t.id); }}>{a.label}</button>
+          );
+          return (
+            <div key={t.id} className={cx("toast", acts.length > 1 && "toast--actions")} role="status">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <b>{t.title}</b>
+                {t.message && <p>{t.message}</p>}
+                {acts.length > 1 && <div className="toast-actions">{acts.map(button)}</div>}
+              </div>
+              {acts.length === 1 && button(acts[0], 0)}
+              <IconButton icon={X} label={acts.length > 1 ? "Not now" : "Dismiss"} small onClick={() => dismissToast(t.id)} />
             </div>
-            {t.action && <button type="button" className="btn btn-primary btn-sm" onClick={() => { t.action.run(); dismissToast(t.id); }}>{t.action.label}</button>}
-            <IconButton icon={X} label="Dismiss" small onClick={() => dismissToast(t.id)} />
-          </div>
-        ))}
+          );
+        })}
       </div>
       <Sheet open={!!confirm} onClose={() => close(confirm?.choose ? null : false)} title={confirm?.title}>
         <div className="sheet-body stack">

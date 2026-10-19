@@ -15,6 +15,7 @@ import { Avatar, DoneButton, Empty, Sheet, Spinner, TopBar } from "../components
 import { MoreMenu } from "../components/Safety";
 import { ChatBubble, TypingIndicator } from "../components/ChatBubble";
 import { BubbleFill, PeopleFill } from "../components/Glyphs";
+import { guestAlert } from "../lib/passes";
 
 /* =========================================================
    A group's home (iOS GroupDetailView): who's in it, the
@@ -104,7 +105,7 @@ export default function GroupDetail() {
   const messages = Array.isArray(all) ? all.filter((m) => (m.status !== "held" || m.mine) && !s.blocked.includes(m.authorId)) : all;
 
   const toggleJoin = async () => {
-    if (!signedIn) { showAlert("Sign up to join", "Create a free profile to join groups."); return; }
+    if (!signedIn) { guestAlert("Get a pass to join groups", "group"); return; }
     const r = await toggleJoinGroup(g);
     if (!r) showAlert("Couldn't update", social.get().lastError || "Try again.");
     else if (r.joined) refreshGroupMessages(id);
@@ -163,7 +164,7 @@ export default function GroupDetail() {
         <div className="column join-prompt">
           {g.description && <p>{g.description}</p>}
           <button type="button" className="btn btn-primary btn-lg btn-block ios-primary pressable" onClick={toggleJoin} disabled={g.status !== "approved"}>
-            {signedIn ? "Join group" : "Sign up to join"}<PeopleFill aria-hidden="true" />
+            {signedIn ? "Join group" : "Get a pass to join"}<PeopleFill aria-hidden="true" />
           </button>
           <p className="tiny-note">Members get the group chat and a pinned list of the sessions that matter to it.</p>
         </div>

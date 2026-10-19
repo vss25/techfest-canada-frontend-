@@ -461,6 +461,8 @@ a { color: var(--pur-alt); }
 }
 .toast b { display: block; }
 .toast p { margin: 2px 0 0; color: var(--tx2); font-size: 13.5px; }
+.toast--actions { align-items: flex-start; }
+.toast-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 
 .banner {
   display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px;
@@ -1335,3 +1337,69 @@ textarea.input--ios { min-height: 120px; }
 .scan-denied svg { width: 36px; height: 36px; opacity: 0.6; }
 .scan-denied b { font-size: 15.7px; font-weight: 600; }
 .scan-denied span { font-size: 13px; color: rgba(255, 255, 255, 0.7); }
+
+/* ---------- /app on a computer (screens/DesktopGate.jsx): "TTFC is made for your phone" ---------- */
+.desk-gate { min-height: 100dvh; display: grid; place-items: center; padding: 40px 24px; color: #fff; }
+.desk-gate-inner { display: flex; align-items: center; justify-content: center; gap: 56px; width: 100%; max-width: 920px; }
+.desk-gate-text { flex: 1 1 380px; max-width: 470px; display: flex; flex-direction: column; gap: 18px; }
+.desk-gate-logo { width: 190px; height: auto; display: block; margin-bottom: 6px; }
+.desk-gate h1 { margin: 0; font-size: 40px; line-height: 1.1; font-weight: 700; letter-spacing: -0.5px; }
+.desk-gate-lead { margin: 0; font-size: 17px; line-height: 1.5; color: rgba(255, 255, 255, 0.8); }
+.desk-gate-links { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 6px; }
+.desk-gate-links a { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; color: #fff; font-size: 15px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(255, 255, 255, 0.45); }
+.desk-gate-links a:hover { text-decoration-color: #fff; }
+.desk-gate-links svg { width: 17px; height: 17px; }
+.desk-gate-links a:focus-visible, .desk-gate a:focus-visible { outline: 2.5px solid #fff; outline-offset: 3px; }
+.desk-gate-qr { flex: none; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 26px 26px 20px; border-radius: 28px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35); }
+.desk-gate-code { background: #fff; border-radius: 18px; padding: 16px; line-height: 0; }
+.desk-gate-qr p { margin: 0; font-size: 16px; font-weight: 600; }
+@media (max-width: 760px) {
+  .desk-gate-inner { flex-direction: column; gap: 28px; text-align: center; }
+  .desk-gate-text { align-items: center; flex-basis: auto; }
+  .desk-gate-text > div { justify-content: center !important; }
+  .desk-gate-links { justify-content: center; }
+  .desk-gate h1 { font-size: 30px; }
+}
+
+/* ---------- Guests: "Get your pass" (Home card, Profile entry) and the passes sheet (iOS TicketsView) ---------- */
+.get-pass { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--r-card); color: inherit; text-decoration: none; text-align: left; width: 100%; font: inherit;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--pur) 32%, var(--surface)), var(--surface) 85%);
+  border: 1px solid color-mix(in srgb, var(--pur) 45%, transparent); }
+.get-pass-row { display: flex; gap: 12px; align-items: flex-start; }
+.get-pass-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--pur); color: #fff; }
+.get-pass-ico svg { width: 20px; height: 20px; }
+.get-pass b { display: block; font-size: 17px; }
+.get-pass-text { display: block; margin: 3px 0 0; font-size: 14px; line-height: 1.4; color: var(--tx2); }
+.get-pass .btn { align-self: stretch; }
+.passes { display: flex; flex-direction: column; gap: 14px; padding: 4px 16px calc(24px + var(--safe-bottom)); }
+.passes-head { display: flex; flex-direction: column; gap: 6px; }
+.passes-head .eyebrow { color: var(--pur); }
+:root:not([data-theme="light"]) .passes-head .eyebrow { color: var(--pur-alt); }
+.passes-head h3 { margin: 0; font-size: 20px; font-weight: 800; }
+.passes-head p { margin: 0; font-size: 14px; line-height: 1.45; }
+.passes-live { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--tx2); }
+.passes-live i { width: 6px; height: 6px; border-radius: 50%; background: var(--tx2); }
+.passes-live i.on { background: var(--pur); }
+.buy-card { display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); }
+.buy-card.is-sold { opacity: 0.72; }
+.buy-card-top { display: flex; align-items: center; gap: 8px; }
+.buy-kind { flex: 1; font-size: 9.5px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--tx2); }
+.buy-pill { font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 8px; color: #fff; background: linear-gradient(90deg, var(--pur-core), #c4549e); }
+.buy-pill--sold { background: none; color: var(--tx2); border: 1px solid var(--rule); }
+.buy-name { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.buy-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; }
+.buy-price b { font-size: 22px; font-weight: 700; }
+.buy-price span { font-size: 11.5px; font-weight: 600; color: var(--tx2); }
+.buy-price .buy-tax { flex-basis: 100%; font-weight: 500; }
+.buy-tagline { margin: 0; font-size: 14.5px; font-weight: 600; line-height: 1.4; }
+.buy-features { list-style: none; margin: 0 0 4px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.buy-features li { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; line-height: 1.35; color: var(--tx2); }
+.buy-features svg { width: 14px; height: 14px; flex: none; margin-top: 2px; color: var(--pur); }
+:root:not([data-theme="light"]) .buy-features svg { color: var(--pur-alt); }
+.buy-card .btn-lg { font-size: 15.5px; white-space: nowrap; gap: 8px; padding: 0 14px; }
+.passes-foot { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; }
+.passes-foot p { margin: 0; font-size: 12px; line-height: 1.45; color: var(--tx2); }
+.passes-foot p svg { width: 12px; height: 12px; vertical-align: -1.5px; margin-right: 5px; }
+.passes-foot .link-btn { min-height: 36px; padding: 0 2px; font-size: 13px; }
+.guest-gate .get-pass { margin-top: 4px; max-width: 420px; }
+.guest-gate .get-pass .btn { max-width: none; }

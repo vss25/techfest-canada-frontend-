@@ -6,13 +6,14 @@ import { content, optionalText, text } from "../lib/content";
 import { auth, isSignedIn } from "../lib/auth";
 import { bookmarks, refreshRegistrations, social, toggleBookmark } from "../lib/social";
 import { hourLabel } from "../lib/time";
-import { showAlert, useNow } from "../lib/ui";
+import { useNow } from "../lib/ui";
 import { Chip, Segmented, Spinner } from "../components/ui";
 import SessionRow from "../components/SessionRow";
 import Coachmark from "../components/Coachmark";
 import { EVENT, LINKS } from "../lib/config";
 import SiteAnnouncement from "../components/SiteAnnouncement";
 import { announcement, announcementShown } from "../lib/announcement";
+import { guestAlert } from "../lib/passes";
 
 /* =========================================================
    Schedule (iOS ScheduleView): Day 1 / Day 2 / Venue, type
@@ -92,7 +93,7 @@ export default function Schedule() {
   }, [hi, day, filter, now, headH]);
 
   const onToggle = async (x) => {
-    if (!signedIn) { showAlert("Get a pass to save sessions", "Sign in and choose a pass to join sessions, polls and Q&A."); return; }
+    if (!signedIn) { guestAlert("Get a pass to save sessions", "schedule"); return; }
     await toggleBookmark(x.id);
   };
 

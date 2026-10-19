@@ -10,7 +10,8 @@ import {
    Where the "Your TTFC sign-in link" email lands. On a phone it
    hands the one-time token to the app (ttfc://login?token=…) and
    offers the web app (/app) if the app isn't installed; on a
-   computer it offers the web app. Nothing is verified here, so the
+   computer it sends you to your phone (the web app is phone-only).
+   Nothing is verified here, so the
    single-use token stays usable by whichever app opens it. The web
    app reads it from sessionStorage (same tab), never from the URL.
    index.html moves the token into sessionStorage before analytics
@@ -133,25 +134,21 @@ export default function AppLogin() {
     content = (
       <div style={card}>
         {badge}
-        <h1 style={h1}>{mobile ? "Opening the TTFC app…" : "Sign in to the TTFC app"}</h1>
+        <h1 style={h1}>{mobile ? "Opening the TTFC app…" : "Open this link on your phone"}</h1>
         <p style={lead}>
           {mobile
             ? "If the app didn't open, tap a button below."
-            : "Sign in to the TTFC web app on this computer, or open the email on your phone and use the app there."}
+            : "The TTFC app is made for your phone. Open the email on your phone and tap the sign-in link there."}
         </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 24 }}>
-          {mobile ? (
-            <>
-              <a href={appLoginUrl(token)} style={primary}>Open the TTFC app</a>
-              <button type="button" onClick={() => openWebApp(token)} style={secondary}>Continue in the browser</button>
-            </>
-          ) : (
-            <button type="button" onClick={() => openWebApp(token)} style={primary}>Sign in on this computer</button>
-          )}
-        </div>
+        {mobile && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 24 }}>
+            <a href={appLoginUrl(token)} style={primary}>Open the TTFC app</a>
+            <button type="button" onClick={() => openWebApp(token)} style={secondary}>Continue in the browser</button>
+          </div>
+        )}
         {!mobile && (
           <p style={{ margin: "16px 0 0", color: textMuted, fontSize: "0.9rem", lineHeight: 1.5 }}>
-            Using the app on your phone? Type the 6-digit code from the email there instead.
+            Already in the app on your phone? Type the 6-digit code from the email there instead.
           </p>
         )}
         <p style={{ margin: "22px 0 0", color: textDim, fontSize: "0.82rem", lineHeight: 1.5 }}>

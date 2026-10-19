@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Cpu, Atom, Lock, Settings, Leaf, Heart, Building2, PenTool, Shield, Zap, Users, Star } from "lucide-react";
+import { Cpu, Atom, Lock, Settings, Leaf, Heart, Building2, PenTool, Shield, Zap, Users, Star, Info, X, ExternalLink } from "lucide-react";
 import { client, urlFor, logoScaleOf } from "../utils/sanity";
 import { logoHref } from "../data/logoLinks";
 import { FEATURED_GROUP, PILLAR_GROUPS, SECTOR_GROUPS, ECOSYSTEM_GROUP, matrixGroupOf } from "../data/partnerMatrix";
@@ -62,13 +62,9 @@ function PartnerTile({ partner, i, dark, accentColor }) {
   const linkProps = href
     ? { href, target: "_blank", rel: "noopener noreferrer", "aria-label": partner.name || "Partner" }
     : {};
-  // The admin panel's description (sponsors): a hover tooltip only, the design stays as it is.
-  const about = typeof partner.description === "string" ? partner.description.trim() : "";
-
   return (
     <TileMotion
       {...linkProps}
-      title={about ? `${partner.name}: ${about}` : undefined}
       className="partner-tile"
       initial={{ opacity: 0, y: 18, scale: 0.97 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
@@ -81,6 +77,62 @@ function PartnerTile({ partner, i, dark, accentColor }) {
     >
       {inner}
     </TileMotion>
+  );
+}
+
+/** The admin panel's description (Admin › Website content › Sponsors). */
+function aboutOf(partner) {
+  return typeof partner.description === "string" ? partner.description.trim() : "";
+}
+
+/** A Featured Partner: the logo (links to their site) and its name, which opens the description. */
+function FeaturedPartner({ partner, i, dark, accentColor, onOpen }) {
+  const about = aboutOf(partner);
+  return (
+    <div className="pm-feat">
+      <PartnerTile partner={partner} i={i} dark={dark} accentColor={accentColor} />
+      {about ? (
+        <button type="button" className="pm-feat-name" aria-haspopup="dialog" onClick={(e) => onOpen(partner, e.currentTarget)}>
+          <span>{partner.name}</span>
+          <Info size={15} aria-hidden="true" />
+        </button>
+      ) : (
+        <span className="pm-feat-name pm-feat-name--plain">{partner.name}</span>
+      )}
+    </div>
+  );
+}
+
+function SponsorDialog({ partner, onClose }) {
+  const closeRef = useRef(null);
+  useEffect(() => {
+    closeRef.current?.focus();
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+    };
+  }, [onClose]);
+  const href = logoHref(partner);
+  return (
+    <div className="pm-dialog-backdrop" onClick={onClose}>
+      <div className="pm-dialog" role="dialog" aria-modal="true" aria-labelledby="pm-dialog-title" onClick={(e) => e.stopPropagation()}>
+        <button ref={closeRef} type="button" className="pm-dialog-close" aria-label="Close" onClick={onClose}>
+          <X size={18} aria-hidden="true" />
+        </button>
+        <p className="pm-dialog-eyebrow">Featured Partner</p>
+        <h3 id="pm-dialog-title" className="pm-dialog-title">{partner.name}</h3>
+        <p className="pm-dialog-body">{aboutOf(partner)}</p>
+        {href && (
+          <a className="pm-dialog-link" href={href} target="_blank" rel="noopener noreferrer">
+            Visit website <ExternalLink size={14} aria-hidden="true" />
+          </a>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -112,6 +164,11 @@ function MatrixBlock({ groups, byGroup, dark, accentColor }) {
 export default function PartnerGrid({ dark, accent }) {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
+  // The Featured Partner whose description is open, and the name button that opened it.
+  const [open, setOpen] = useState(null);
+  const opener = useRef(null);
+  const openAbout = useCallback((partner, el) => { opener.current = el; setOpen(partner); }, []);
+  const closeAbout = useCallback(() => { setOpen(null); opener.current?.focus(); }, []);
 
   useEffect(() => {
     client
@@ -186,6 +243,101 @@ export default function PartnerGrid({ dark, accent }) {
           gap: 20px;
         }
         .pm-featured .partner-tile { height: 150px; }
+        .pm-feat { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
+        .pm-feat > .partner-tile { width: 100%; }
+        .pm-feat-name {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          max-width: 100%;
+          padding: 6px 12px;
+          border: 1px solid ${line};
+          border-radius: 999px;
+          background: ${iconBg};
+          color: ${titleColor};
+          font-family: 'Montserrat', sans-serif;
+          font-size: 0.85rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: border-color 0.2s ease, color 0.2s ease;
+        }
+        .pm-feat-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pm-feat-name svg { flex-shrink: 0; color: ${accentColor}; }
+        .pm-feat-name:hover, .pm-feat-name:focus-visible { border-color: ${accentColor}; color: ${accentColor}; }
+        .pm-feat-name:focus-visible { outline: 2px solid ${accentColor}; outline-offset: 2px; }
+        .pm-feat-name--plain { cursor: default; border-color: transparent; background: none; }
+        .pm-dialog-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 10001; /* above the navbar and the announcement bar */
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          background: rgba(8, 3, 22, 0.6);
+          backdrop-filter: blur(4px);
+        }
+        .pm-dialog {
+          position: relative;
+          width: min(520px, 100%);
+          max-height: calc(100vh - 40px);
+          overflow: auto;
+          padding: 28px 28px 24px;
+          border-radius: 20px;
+          background: ${dark ? "#140b2e" : "#ffffff"};
+          border: 1px solid ${line};
+          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+        }
+        .pm-dialog-close {
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          width: 36px;
+          height: 36px;
+          display: grid;
+          place-items: center;
+          border: 1px solid ${line};
+          border-radius: 50%;
+          background: ${iconBg};
+          color: ${titleColor};
+          cursor: pointer;
+        }
+        .pm-dialog-eyebrow {
+          margin: 0 0 6px;
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.65rem;
+          font-weight: 800;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          color: #f5a623;
+        }
+        .pm-dialog-title {
+          margin: 0 44px 12px 0;
+          font-family: 'Orbitron', sans-serif;
+          font-size: clamp(1.1rem, 2.4vw, 1.35rem);
+          font-weight: 800;
+          line-height: 1.3;
+          color: ${titleColor};
+        }
+        .pm-dialog-body {
+          margin: 0 0 18px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 0.98rem;
+          line-height: 1.7;
+          color: ${dark ? "rgba(225,215,255,0.85)" : "rgba(13,5,32,0.75)"};
+          white-space: pre-line;
+        }
+        .pm-dialog-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 0.9rem;
+          font-weight: 700;
+          color: ${accentColor};
+          text-decoration: none;
+        }
+        .pm-dialog-link:hover { text-decoration: underline; }
         .pm-featured .partner-tile img { max-height: min(calc(76px * var(--logo-scale, 1)), 100%); }
 
         .pm-block-label {
@@ -293,7 +445,8 @@ export default function PartnerGrid({ dark, accent }) {
           .pm-wrap { gap: 44px; padding: 0 4%; }
           .pm-block + .pm-block { margin-top: -44px; }
           .pm-featured { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-          .pm-featured > .partner-tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
+          .pm-featured > .pm-feat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+          .pm-feat-name { font-size: 0.78rem; padding: 5px 10px; }
           .pm-featured .partner-tile { height: 110px; }
           .pm-featured .partner-tile img { max-height: min(calc(54px * var(--logo-scale, 1)), 100%); }
           .pm-row { gap: 14px; padding: 24px 0; }
@@ -318,7 +471,7 @@ export default function PartnerGrid({ dark, accent }) {
               <span style={{ color: "#f5a623" }}>{FEATURED_GROUP.title}</span>
             </div>
             <div className="pm-featured" style={{ "--featured-cols": Math.min(Math.max(featured.length, 1), 5) }}>
-              {featured.map((p, i) => <PartnerTile key={p._id} partner={p} i={i} dark={dark} accentColor={accentColor} />)}
+              {featured.map((p, i) => <FeaturedPartner key={p._id} partner={p} i={i} dark={dark} accentColor={accentColor} onOpen={openAbout} />)}
             </div>
           </section>
         )}
@@ -332,6 +485,7 @@ export default function PartnerGrid({ dark, accent }) {
           </section>
         )}
       </div>
+      {open && <SponsorDialog partner={open} onClose={closeAbout} />}
     </>
   );
 }

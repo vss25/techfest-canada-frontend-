@@ -56,14 +56,14 @@ const KEYWORDS = {
 
 /* Things done on a page that people look for by name. */
 const ACTIONS = [
-  { title: "Issue a pass", where: "Marketing › Issue passes", to: "issued-passes", icon: TicketPlus, keywords: ["give someone a pass", "new pass"] },
-  { title: "Running late: shift sessions", where: "Website content › Agenda", to: "content/agenda", icon: CalendarClock, keywords: ["delay", "push back", "move sessions", "late"] },
-  { title: "Send RSVP reminder", where: "Marketing › RSVP reminders", to: "marketing/rsvp-reminders", icon: BellRing, keywords: ["remind", "unconfirmed"] },
-  { title: "Add a staff member or volunteer", where: "Staff & safety › Staff accounts", to: "staff", icon: UserPlus, management: true, keywords: ["new staff", "invite staff"] },
-  { title: "Change my password", where: "Staff & safety › My account", to: "account", icon: KeyRound, keywords: ["password"] },
-  { title: "Homepage sections (Featured Speakers, Featured Attendees)", where: "Website content › Site settings", to: "content/settings", highlight: "speakersEnabled", icon: LayoutGrid, keywords: ["speakers section", "attendees carousel", "coming soon"] },
-  { title: "About page numbers", where: "Website content › Site settings", to: "content/settings", highlight: "aboutNumbers", icon: Hash, keywords: ["stats", "1000+ attendees", "figures"] },
-  { title: "Promo codes", where: "Tickets & attendees › Inventory", to: "inventory", icon: Tag, keywords: ["discount", "code", "coupon"] },
+  { title: "Give a pass", where: "People & passes › Give a pass", to: "issued-passes", icon: TicketPlus, keywords: ["give someone a pass", "new pass"] },
+  { title: "Running late: shift sessions", where: "Website & app › Agenda", to: "content/agenda", icon: CalendarClock, keywords: ["delay", "push back", "move sessions", "late"] },
+  { title: "Send RSVP reminder", where: "RSVPs & meals › RSVP reminders", to: "marketing/rsvp-reminders", icon: BellRing, keywords: ["remind", "unconfirmed"] },
+  { title: "Add a staff member or volunteer", where: "More › Settings › Staff accounts", to: "staff", icon: UserPlus, management: true, keywords: ["new staff", "invite staff"] },
+  { title: "Change my password", where: "Your name (top bar) › My account", to: "account", icon: KeyRound, keywords: ["password"] },
+  { title: "Homepage sections (Featured Speakers, Featured Attendees)", where: "Website & app › Website switches", to: "content/settings", highlight: "speakersEnabled", icon: LayoutGrid, keywords: ["speakers section", "attendees carousel", "coming soon"] },
+  { title: "About page numbers", where: "Website & app › Website switches", to: "content/settings", highlight: "aboutNumbers", icon: Hash, keywords: ["stats", "1000+ attendees", "figures"] },
+  { title: "Promo codes", where: "Sales & emails › Prices & stock", to: "inventory", icon: Tag, keywords: ["discount", "code", "coupon"] },
 ];
 
 const link = (to, highlight) => `${to ? `/admin/${to}` : "/admin"}${highlight ? `?highlight=${encodeURIComponent(highlight)}` : ""}`;
@@ -81,7 +81,7 @@ export const ADMIN_INDEX = (() => {
     }
   }
   for (const [key, meta] of Object.entries(REGISTRY)) {
-    const page = meta.scope === "website" ? "Site settings › Website options" : "App text & switches";
+    const page = meta.scope === "website" ? "Website switches › Website options" : "App text & switches";
     out.push({
       id: `setting:${key}`, type: "setting", title: meta.label, subtitle: [page, groupTitle(meta.scope, meta.group)].filter(Boolean).join(" › "),
       link: link(meta.scope === "website" ? "content/settings" : "app/text", key), icon: ToggleRight, management: false,

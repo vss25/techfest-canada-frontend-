@@ -51,7 +51,7 @@ function MaintenanceScreen({ message }) {
           {message || "We're making some updates. Please check back soon."}
         </p>
         <p style={{ marginTop: 36, fontSize: "0.8rem", color: "rgba(169,161,194,0.8)" }}>
-          Questions? <a href="mailto:info@thetechfestival.com" style={{ color: "#F59E42", textDecoration: "underline" }}>info@thetechfestival.com</a>
+          Questions? <a href="mailto:enquire@thetechfestival.com" style={{ color: "#F59E42", textDecoration: "underline" }}>enquire@thetechfestival.com</a>
         </p>
       </div>
     </main>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertCircle, Camera, Check, Copy, Download, ExternalLink, ImagePlus, Linkedin, Loader2, Lock, Move, RotateCcw, Trash2,
+  AlertCircle, AtSign, Camera, Check, Copy, Download, ExternalLink, ImagePlus, Linkedin, Loader2, Lock, Move, RotateCcw, Trash2,
   ZoomIn, ZoomOut,
 } from "lucide-react";
 import AuroraBackground from "../components/AuroraBackground";
@@ -10,7 +10,7 @@ import {
   loadCardAssets, photoCircle, prepareImage,
 } from "../lib/attendingCard";
 import {
-  ENQUIRE, canShareFile, clearDraft, copyText, copyTextNow, defaultPostText, downloadBlob, isMobileDevice, linkedinShareUrl,
+  ENQUIRE, LINKEDIN_PAGE, canShareFile, clearDraft, copyText, copyTextNow, defaultPostText, downloadBlob, isMobileDevice, linkedinShareUrl,
   peekDraft, readFragment, saveDraft,
 } from "../lib/attending";
 
@@ -543,6 +543,14 @@ export default function Attending() {
             <label className="att-label att-sr" htmlFor="att-text">LinkedIn post text</label>
             <textarea id="att-text" ref={textRef} className="att-input att-textarea" value={text} onChange={(e) => setText(e.target.value.slice(0, 3000))} rows={10} />
             <p className="att-count" aria-live="off">{text.length.toLocaleString()} / 3,000</p>
+            <p className="att-hint">
+              <AtSign size={14} aria-hidden="true" />
+              {mobile ? (
+                <span>To tag us, type <b>@{LINKEDIN_PAGE.name}</b> in LinkedIn and pick our page from the list.</span>
+              ) : (
+                <span>We’ll tag <a className="att-link" href={LINKEDIN_PAGE.url} target="_blank" rel="noopener noreferrer">{LINKEDIN_PAGE.name}</a>’s LinkedIn page in your post.</span>
+              )}
+            </p>
           </Step>
 
           <div className="att-actions">
@@ -593,7 +601,7 @@ export default function Attending() {
                 </li>
                 <li>
                   <span className="att-guide-n">3</span>
-                  <span><b>Attach the image.</b> In LinkedIn’s post box, click the photo icon, choose the image you just downloaded, then Post.</span>
+                  <span><b>Attach the image and tag us.</b> In LinkedIn’s post box, click the photo icon and choose the image you just downloaded. To tag us, type <b>@{LINKEDIN_PAGE.name}</b> and pick our page, then Post.</span>
                 </li>
               </ol>
               <a className="att-text-btn" href={linkedinShareUrl(text)} target="_blank" rel="noopener noreferrer">
@@ -688,6 +696,7 @@ body.att-open { background: #06020f !important; padding-bottom: 0 !important; }
 .att-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px #e8458b; }
 .att-hint { display: flex; align-items: center; gap: 7px; margin: 10px 0 0; font-size: 13px; color: rgba(255,255,255,0.76); line-height: 1.5; }
 .att-hint-center { justify-content: center; margin-top: 14px; }
+.att-hint > svg { flex: none; }
 
 .att-controls { padding: 24px 24px 22px; }
 .att-step + .att-step { margin-top: 24px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,0.08); }

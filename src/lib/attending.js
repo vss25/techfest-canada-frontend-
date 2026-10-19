@@ -14,6 +14,8 @@
 export const SITE_URL = "https://www.thetechfestival.com";
 export const HASHTAGS = "#TTFC2026 #TheTechFestivalCanada";
 export const ENQUIRE = "enquire@thetechfestival.com";
+/** TTFC's LinkedIn page. "Post to LinkedIn" tags it for people (the backend adds the tag). */
+export const LINKEDIN_PAGE = { name: "The Tech Festival Canada", url: "https://www.linkedin.com/company/thetechfestival/" };
 
 /** The pre-written LinkedIn post (people can edit it on the page). */
 export function defaultPostText() {

@@ -28,7 +28,7 @@ export const LINKS = {
   venue: "https://www.thetechfestival.com/venue",
   awards: "https://www.thetechfestival.com/awards",
   brochure: "https://www.thetechfestival.com/brochures",
-  support: "info@thetechfestival.com",
+  support: "enquire@thetechfestival.com",
 };
 
 /** Terms + Privacy version the apps record (iOS Consent.version). */

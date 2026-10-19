@@ -175,9 +175,9 @@ const PASS_META = {
   },
   power: {
     label: "Power Pass",
-    tagline: "The ultimate all-access experience.",
-    description: "Built for senior executives, VIP guests, investors, speakers, and leaders who want to experience The Tech Festival Canada at the highest level. With access to every major element of the event, this pass offers the most complete and elevated way to engage with the festival.",
-    features: ["2x Day Conference Access", "2x CxO Breakfasts", "2x Luncheons", "1x Gala Dinner & Networking Reception", "1x Awards Night", "Expo Floor Access", "Networking Breaks"],
+    tagline: "The conference by day, the Gala and Awards by night.",
+    description: "Built for senior executives, VIP guests, investors, speakers, and leaders who want to experience The Tech Festival Canada at the highest level. With the luncheons, the Gala Dinner and the Awards Night on top of the conference, this pass offers a complete and elevated way to engage with the festival.",
+    features: ["2x Day Conference Access", "2x Luncheons", "1x Gala Dinner & Networking Reception", "1x Awards Night", "Expo Floor Access", "Networking Breaks"],
     tier: "power",
     defaultPrice: 999,
     featured: false,
@@ -186,8 +186,8 @@ const PASS_META = {
   apex: {
     label: "Apex Pass",
     tagline: "Everything, plus the meetings you actually came for.",
-    description: "Our highest tier. Everything in the Power Pass, plus two business meetings matched for you in advance against your objectives, preferential seating at every keynote, panel and dinner, and entry to our private Scotch & cocktail lounge. Built for those who measure an event by the deals it starts.",
-    features: ["2x Pre-Matched Business Meetings", "Preferential Seating", "Private Scotch & Cocktail Lounge (19+)", "2x Day Conference Access", "2x CxO Breakfasts", "2x Luncheons", "1x Gala Dinner & Networking Reception", "1x Awards Night", "Expo Floor Access", "Networking Breaks"],
+    description: "Our highest tier. Everything in the Power Pass, plus both CxO Breakfasts, two business meetings matched for you in advance against your objectives, preferential seating at every keynote, panel and dinner, and entry to our private Scotch & cocktail lounge. Built for those who measure an event by the deals it starts.",
+    features: ["2x Pre-Matched Business Meetings", "2x CxO Breakfasts", "Preferential Seating", "Private Scotch & Cocktail Lounge (19+)", "2x Day Conference Access", "2x Luncheons", "1x Gala Dinner & Networking Reception", "1x Awards Night", "Expo Floor Access", "Networking Breaks"],
     tier: "apex",
     defaultPrice: 1499,
     featured: false,
@@ -391,12 +391,12 @@ export default function Tickets() {
     navigate(`/tickets/checkout?tier=${tier}${promo ? `&promo=${encodeURIComponent(promo)}` : ""}`);
   };
 
-  const allFeatures = ["2x Day Conference Access","Expo Floor Access","Networking Breaks","2x CxO Breakfasts","2x Luncheons","1x Gala Dinner & Networking Reception","1x Awards Night","Preferential Seating","2x Pre-Matched Business Meetings","Private Scotch & Cocktail Lounge (19+)"];
+  const allFeatures = ["2x Day Conference Access","Expo Floor Access","Networking Breaks","2x Luncheons","1x Gala Dinner & Networking Reception","1x Awards Night","2x CxO Breakfasts","Preferential Seating","2x Pre-Matched Business Meetings","Private Scotch & Cocktail Lounge (19+)"];
   const passFeatureMap = {
-    //          conf   expo   break  cxo    lunch  gala   awards seating meetings lounge
+    //          conf   expo   break  lunch  gala   awards cxo    seating meetings lounge
     connect:   [true,  true,  true,  false, false, false, false, false,  false,   false],
-    influence: [true,  true,  true,  false, true,  false, false, false,  false,   false],
-    power:     [true,  true,  true,  true,  true,  true,  true,  false,  false,   false],
+    influence: [true,  true,  true,  true,  false, false, false, false,  false,   false],
+    power:     [true,  true,  true,  true,  true,  true,  false, false,  false,   false],
     apex:      [true,  true,  true,  true,  true,  true,  true,  true,   true,    true ],
   };
 

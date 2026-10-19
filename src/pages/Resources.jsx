@@ -221,7 +221,7 @@ export default function FirstTimers() {
       >
         <h2 style={headingStyle(textMain)}>CxO <GradientSpan>Breakfast</GradientSpan></h2>
         <p style={paraStyle(textMuted)}>
-          An exclusive invitation only breakfast for CxOs and senior leaders. This is where business happens in a quieter, higher trust setting. Think strategic conversations, peer connections, and deal making over breakfast.
+          An exclusive invitation only breakfast for CxOs and senior leaders. This is where business happens in a quieter, higher trust setting. Think strategic conversations, peer connections, and deal making over breakfast. Included with the Apex Pass, and for all our speakers.
         </p>
       </ContentRow>
 

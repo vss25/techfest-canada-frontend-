@@ -49,3 +49,51 @@ export function PersonPlusFill(props) {
     </svg>
   );
 }
+
+/* Outline glyphs for SF Symbols lucide doesn't have (Network cards). */
+const line = { ...base, fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round", strokeLinejoin: "round" };
+
+/** iphone.slash: "Not on the app yet". */
+export function PhoneSlash(props) {
+  return (
+    <svg {...line} {...props}>
+      <path d="M7 9.2v10.3A1.5 1.5 0 0 0 8.5 21h7a1.5 1.5 0 0 0 1.5-1.5v-.3" />
+      <path d="M17 15V4.5A1.5 1.5 0 0 0 15.5 3h-7A1.5 1.5 0 0 0 7 4.5v.6" />
+      <path d="M3.5 3.5l17 17" />
+    </svg>
+  );
+}
+
+/** figure.wave: "In person only". */
+export function FigureWave(props) {
+  return (
+    <svg {...line} {...props}>
+      <circle cx="9.5" cy="4.3" r="2" fill="currentColor" stroke="none" />
+      <path d="M9.6 8v6M9.6 14l-2.6 6.6M9.6 14l3 6.4M9.6 9.2 6 12.6M9.6 9.2l3.6-1.2 2.4-4.2" />
+      <path d="M17.6 2.6c.9.7 1.4 1.7 1.4 2.8M19.8 1.6c1.2 1 1.9 2.4 1.9 3.9" />
+    </svg>
+  );
+}
+
+/** person.badge.clock: request sent (tap to withdraw). */
+export function PersonClock(props) {
+  return (
+    <svg {...line} {...props}>
+      <circle cx="9" cy="7.5" r="3.6" />
+      <path d="M2.6 20.2c0-3.7 2.8-6.4 6.4-6.4 1 0 2 .2 2.8.6" />
+      <circle cx="17.4" cy="16.6" r="4.4" />
+      <path d="M17.4 14.4v2.4l1.6 1" />
+    </svg>
+  );
+}
+
+/** person.2.slash: "No connections yet". */
+export function PeopleSlash(props) {
+  return (
+    <svg {...line} {...props}>
+      <circle cx="9" cy="8" r="3.4" />
+      <path d="M3 19.5c0-3.4 2.7-5.8 6-5.8 1.4 0 2.6.4 3.6 1.1M15.6 5.1a3.3 3.3 0 0 1 2.3 5.1M17.6 14.2c2 .6 3.4 2.6 3.4 5" />
+      <path d="M2.5 2.5l19 19" />
+    </svg>
+  );
+}

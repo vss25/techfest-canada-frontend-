@@ -1,17 +1,22 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { BellOff, CalendarClock, ChevronDown, Mail, Megaphone, ShieldCheck, Ticket, UserPlus, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { CalendarClock, ChevronDown, ChevronRight, Mail, Megaphone, ShieldCheck, Ticket, UserPlus, Users } from "lucide-react";
 import { useStore } from "../lib/store";
-import { auth, isSignedIn } from "../lib/auth";
+import { auth } from "../lib/auth";
 import { cms } from "../lib/cms";
 import { markNotificationsRead, refreshConnections, refreshNotifications, social } from "../lib/social";
 import { isUnread, linkLabel, notificationItems, routeForLink } from "../lib/notifications";
-import { timeAgo } from "../lib/time";
+import { listTime } from "../lib/time";
 import { useNow } from "../lib/ui";
-import { Empty, TopBar } from "../components/ui";
+import { TopBar } from "../components/ui";
 import { ConnectionRow } from "../components/People";
 
-/* Notifications (iOS NotificationsListView), with invitations to act on at the top. */
+/* =========================================================
+   Notifications (iOS NotificationsListView): invitations to act
+   on at the top, then everything else. Tapping a row marks it
+   read; only messages from the TTFC team open their link.
+   Guests see the same list built from what's on this device.
+========================================================= */
 
 const ICON = { invitation: UserPlus, connection: Users, session: CalendarClock, announcement: Megaphone, moderation: ShieldCheck, ticket: Ticket, personal: Mail };
 
@@ -26,13 +31,11 @@ export default function Notifications() {
 
   // Invitations seen here count as read.
   const incoming = s.connections.incoming.filter((x) => !s.blocked.includes(x.user?.id));
-  const outgoing = s.connections.outgoing;
+  const outgoing = s.connections.outgoing.filter((x) => !s.blocked.includes(x.user?.id));
   useEffect(() => {
     const ids = incoming.map((x) => `inv-${x.id}`).filter((id) => !social.get().readNotifs.includes(id));
     if (ids.length) markNotificationsRead(ids);
   }, [incoming]);
-
-  if (!isSignedIn(a)) return <div className="page"><TopBar title="Notifications" /><Empty icon={BellOff} title="Sign in for notifications">Invitations, session reminders and messages from the TTFC team appear here.</Empty></div>;
 
   const items = notificationItems({ social: s, cms: c, auth: a, now });
   const listed = items.filter((n) => n.kind !== "invitation");
@@ -40,6 +43,7 @@ export default function Notifications() {
 
   const open = (n) => {
     markNotificationsRead([n.id]);
+    if (n.kind !== "personal") return;
     const r = routeForLink(n.link);
     if (!r) return;
     if (r.href) window.open(r.href, "_blank", "noopener");
@@ -49,51 +53,48 @@ export default function Notifications() {
   return (
     <div className="page">
       <TopBar title="Notifications" />
-      <main id="main" className="pad mt-16 stack">
-        <div className="row">
-          <span className="eyebrow" style={{ flex: 1 }}>{unread === 0 ? "All caught up" : `${unread} unread`}</span>
-          <button type="button" className="link-btn" disabled={unread === 0} style={{ opacity: unread ? 1 : 0.5, fontSize: 12.5 }} onClick={() => markNotificationsRead(items.map((n) => n.id))}>Mark all as read</button>
-        </div>
-
-        {incoming.length > 0 && (
-          <section className="stack-sm" aria-labelledby="inv-h">
-            <h2 id="inv-h" className="section-title">{incoming.length === 1 ? "1 invitation" : `${incoming.length} invitations`}</h2>
-            {incoming.map((x) => <ConnectionRow key={x.id} conn={x} mode="invite" />)}
-          </section>
-        )}
+      <div className="notif-head">
+        <span className="eyebrow">{unread === 0 ? "All caught up" : `${unread} unread`}</span>
+        <button type="button" className="notif-markall" disabled={unread === 0} onClick={() => markNotificationsRead(items.map((n) => n.id))}>Mark all as read</button>
+      </div>
+      <main id="main" className="pad stack-sm" style={{ gap: 10, paddingTop: 12 }}>
+        {incoming.length > 0 && <h2 className="list-label" style={{ paddingTop: 0 }}>{incoming.length === 1 ? "1 invitation" : `${incoming.length} invitations`}</h2>}
+        {incoming.map((x) => <ConnectionRow key={x.id} conn={x} mode="invite" />)}
         {outgoing.length > 0 && (
-          <section className="stack-sm">
-            <button type="button" className="text-btn row small bold muted" style={{ minHeight: 40 }} aria-expanded={showSent} onClick={() => setShowSent((v) => !v)}>
-              <span style={{ flex: 1 }}>Sent requests · {outgoing.length}</span>
-              <ChevronDown aria-hidden="true" style={{ width: 16, height: 16, transform: showSent ? "rotate(180deg)" : "none" }} />
-            </button>
-            {showSent && outgoing.map((x) => <ConnectionRow key={x.id} conn={x} mode="sent" />)}
-          </section>
+          <button type="button" className="sent-toggle" aria-expanded={showSent} aria-label={`Sent requests, ${outgoing.length}`} onClick={() => setShowSent((v) => !v)}>
+            <span style={{ flex: 1 }}>Sent requests · {outgoing.length}</span>
+            <ChevronDown aria-hidden="true" style={{ transform: showSent ? "rotate(180deg)" : "none" }} />
+          </button>
         )}
-        {(incoming.length > 0 || outgoing.length > 0) && <h2 className="section-title" style={{ marginTop: 6 }}>Notifications</h2>}
+        {showSent && outgoing.map((x) => <ConnectionRow key={x.id} conn={x} mode="sent" />)}
+        {(incoming.length > 0 || outgoing.length > 0) && <h2 className="list-label" style={{ paddingTop: 6 }}>Notifications</h2>}
 
         {listed.length === 0 ? (
-          <p className="muted center" style={{ padding: "30px 20px" }}>Nothing yet. Register sessions and connect with people and it fills up.</p>
+          <p className="muted center" style={{ padding: "40px 30px", margin: 0, fontSize: 13 }}>Nothing yet. Register sessions and connect with people and it fills up.</p>
         ) : listed.map((n) => {
           const Icon = ICON[n.kind] || Mail;
           const u = isUnread(n, s.readNotifs);
-          const label = n.kind === "personal" ? linkLabel(n.link) : "";
+          const personal = n.kind === "personal";
           return (
             <button key={n.id} type="button" className="notif pressable" onClick={() => open(n)} aria-label={u ? `Unread: ${n.title}` : undefined}>
               <span className={u ? "notif-ico notif-ico--on" : "notif-ico"}><Icon aria-hidden="true" /></span>
               <span style={{ flex: 1, minWidth: 0 }}>
-                <span className="row" style={{ gap: 6, alignItems: "baseline" }}>
-                  <b className="ellipsis" style={{ flex: 1, fontWeight: u ? 700 : 600 }}>{n.title}</b>
-                  {n.kind !== "session" && <time className="notif-time">{timeAgo(n.date)}</time>}
+                <span className="row" style={{ gap: 6, alignItems: "flex-start" }}>
+                  <b className="clamp-2" style={{ flex: 1, fontWeight: u ? 700 : 600 }}>{n.title}</b>
+                  <time className="notif-time">{listTime(n.date)}</time>
                 </span>
-                <span className="notif-detail clamp-3">{n.detail}</span>
-                {(n.from || label) && <span className="notif-meta">{[n.from, label].filter(Boolean).join(" · ")}</span>}
+                <span className={personal ? "notif-detail clamp-8" : "notif-detail clamp-3"}>{n.detail}</span>
+                {personal && (
+                  <span className="notif-meta">
+                    From the TTFC team{n.link && n.link !== "ttfc://tab/home" && <> · {linkLabel(n.link)}<ChevronRight aria-hidden="true" /></>}
+                  </span>
+                )}
               </span>
             </button>
           );
         })}
-        <p className="tiny muted center">Session reminders: the web app can't alert you when it's closed. Keep it open, or use the TTFC app on your phone for reminders.</p>
-        <Link to="/schedule" className="btn btn-block">Open the schedule</Link>
+        {/* Web only: a browser tab can't wake itself for a reminder. */}
+        <p className="tiny muted center" style={{ marginTop: 6 }}>Session reminders: the web app can't alert you when it's closed. Keep it open, or use the TTFC app on your phone for reminders.</p>
       </main>
     </div>
   );

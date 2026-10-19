@@ -105,4 +105,19 @@ export function timeAgo(date) {
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
+/** iOS TimeAgo: "Just now", "5 min", "3 h", "Yesterday", "Tue", then "Oct 2". */
+export function listTime(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  const n = new Date(now());
+  const s = Math.max(0, Math.floor((n - d) / 1000));
+  if (Number.isNaN(s)) return "";
+  if (s < 60) return "Just now";
+  if (s < 3600) return `${Math.floor(s / 60)} min`;
+  if (s < 86400) return `${Math.floor(s / 3600)} h`;
+  const y = new Date(n); y.setDate(y.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return "Yesterday";
+  if (s < 6 * 86400) return d.toLocaleDateString([], { weekday: "short" });
+  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
 export const twoDigits = pad;

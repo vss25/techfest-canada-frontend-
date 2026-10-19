@@ -11,6 +11,13 @@ export function initialsOf(name = "") {
   return ((p[0]?.[0] || "") + (p[1]?.[0] || "")).toUpperCase() || "•";
 }
 
+const TITLES = new Set(["dr", "dr.", "prof", "prof.", "professor", "mr", "mr.", "ms", "ms.", "mrs", "mrs.", "mx", "mx.", "hon", "hon.", "sir", "dame", "the"]);
+/** iOS String.givenName: "Dr. Maya Singh" → "Maya". */
+export function givenName(name = "") {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  return parts.find((p) => !TITLES.has(p.toLowerCase())) || String(name).trim();
+}
+
 export const toasts = createStore({ items: [], confirm: null });
 let toastId = 0;
 
@@ -23,6 +30,16 @@ export function showAlert(title, message = "", { action, ms = 4500 } = {}) {
 }
 export function dismissToast(id) {
   toasts.set((s) => ({ ...s, items: s.items.filter((t) => t.id !== id) }));
+}
+
+/** iOS confirmationDialog with several buttons: chooseDialog({ title, message, options: [{ label, value, destructive }] }) → Promise<value | null> */
+export function chooseDialog(opts) {
+  return new Promise((resolve) => toasts.set((s) => ({ ...s, confirm: { ...opts, choose: true, resolve } })));
+}
+
+/** iOS .alert with one OK: alertDialog({ title, message }) → Promise<void> */
+export function alertDialog(opts) {
+  return new Promise((resolve) => toasts.set((s) => ({ ...s, confirm: { ...opts, okOnly: true, resolve } })));
 }
 
 /** confirmDialog({ title, message, confirm: "Delete", destructive }) → Promise<boolean> */

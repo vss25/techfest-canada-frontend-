@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, X, Loader2 } from "lucide-react";
 import { useStore } from "../lib/store";
@@ -13,11 +13,12 @@ import { cx, initialsOf, toasts, dismissToast } from "../lib/ui";
 // ---------- Avatar ----------
 
 /** People: the iOS AvatarView monogram tile. Speakers: `round` (SpeakerAvatar). */
-export function Avatar({ name, src, size = 40, tile = false, round = false, ring = false, badge = null, label }) {
+export function Avatar({ name, src, size = 40, tile = false, round = false, ring = false, tierRing = false, badge = null, label }) {
   const [failed, setFailed] = useState(false);
   const show = src && !failed;
   const crossOrigin = show && /^https?:/.test(src) ? "anonymous" : undefined;
-  const radius = round ? "50%" : Math.min(14, Math.round(size * 0.3));
+  // iOS BrandShape.avatar: a 14pt corner at every size (small tiles read as circles).
+  const radius = round ? "50%" : Math.min(14, size / 2);
   return (
     <span className="avatar-wrap" style={{ width: size, height: size }}>
       <span
@@ -29,6 +30,8 @@ export function Avatar({ name, src, size = 40, tile = false, round = false, ring
       >
         {show ? <img src={src} alt="" loading="lazy" decoding="async" crossOrigin={crossOrigin} onError={() => setFailed(true)} /> : initialsOf(name)}
       </span>
+      {/* iOS MemberAvatar: speakers and exhibitors get a purple ring around the tile. */}
+      {tierRing && <span className="avatar-tier-ring" aria-hidden="true" style={{ borderWidth: Math.max(2, size * 0.05) }} />}
       {badge}
     </span>
   );
@@ -144,7 +147,7 @@ export function Empty({ icon, title, children, action }) {
 
 // ---------- Top bar for pushed pages ----------
 
-export function TopBar({ title, back = true, onBack, right, left, titleLeft }) {
+export function TopBar({ title, back = true, onBack, right, left, titleLeft, below }) {
   const navigate = useNavigate();
   const goBack = () => {
     if (onBack) return onBack();
@@ -162,13 +165,15 @@ export function TopBar({ title, back = true, onBack, right, left, titleLeft }) {
         <h1 className={cx("topbar-title", titleLeft && "topbar-title--left")}>{title}</h1>
         <div className="topbar-side topbar-side--end">{right}</div>
       </div>
+      {/* Pills pinned under the title in the same material (iOS safeAreaInset(edge: .top)). */}
+      {below && <div className="topbar-below">{below}</div>}
     </header>
   );
 }
 
 // ---------- Sheet ----------
 
-export function Sheet({ open, onClose, title, children, full, actions, labelledBy }) {
+export function Sheet({ open, onClose, title, children, full, medium, footer, actions, labelledBy }) {
   const ref = useRef(null);
   const titleId = useId();
   useEffect(() => {
@@ -192,19 +197,65 @@ export function Sheet({ open, onClose, title, children, full, actions, labelledB
   if (!open) return null;
   return (
     <div className="sheet-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
-      <div ref={ref} className={cx("sheet", full && "sheet--full")} role="dialog" aria-modal="true" aria-labelledby={labelledBy || (title ? titleId : undefined)}>
+      <div ref={ref} className={cx("sheet", full && "sheet--full", medium && "sheet--medium")} role="dialog" aria-modal="true" aria-labelledby={labelledBy || (title ? titleId : undefined)}>
         <div className="sheet-grip" aria-hidden="true" />
         {(title || onClose) && (
           <div className="sheet-head">
-            <div style={{ width: 44 }}>{actions?.left}</div>
+            <div style={{ minWidth: 44, flex: actions?.left || actions?.right ? "1 1 0" : undefined }}>{actions?.left}</div>
             <h2 id={titleId}>{title}</h2>
-            <div style={{ minWidth: 44, display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ minWidth: 44, display: "flex", justifyContent: "flex-end", flex: actions?.left || actions?.right ? "1 1 0" : undefined }}>
               {actions?.right || (onClose && <IconButton icon={X} label="Close" onClick={onClose} />)}
             </div>
           </div>
         )}
-        {children}
+        {medium ? <div className="sheet-scroll">{children}</div> : children}
+        {footer && <div className="sheet-footer">{footer}</div>}
       </div>
+    </div>
+  );
+}
+
+/** iOS "Done" in a sheet's top-right corner. */
+export function DoneButton({ onClick, label = "Done" }) {
+  return <button type="button" className="link-btn sheet-done" onClick={onClick}>{label}</button>;
+}
+
+// ---------- Popover (iOS .popover with compact adaptation) ----------
+
+/** A small card anchored under (or over) `anchor` (a DOMRect). Closes on outside tap, Escape or scroll. */
+export function Popover({ anchor, onClose, children, width = 280, label }) {
+  const ref = useRef(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!anchor || !el) return undefined;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const w = Math.min(width, vw - 24);
+    el.style.width = `${w}px`;
+    const h = el.offsetHeight;
+    const left = Math.max(12, Math.min(anchor.left + anchor.width / 2 - w / 2, vw - w - 12));
+    const below = anchor.bottom + 8 + h < vh - 90;
+    el.style.left = `${left}px`;
+    el.style.top = `${below ? anchor.bottom + 8 : Math.max(12, anchor.top - 8 - h)}px`;
+    el.style.setProperty("--arrow", `${Math.max(16, Math.min(anchor.left + anchor.width / 2 - left, w - 16))}px`);
+    el.classList.toggle("popover--above", !below);
+    el.style.visibility = "visible";
+    el.focus();
+    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    const onDown = (e) => { if (!el.contains(e.target)) onClose?.(); };
+    const onScroll = () => onClose?.();
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown, true);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [anchor, width, onClose]);
+  if (!anchor) return null;
+  return (
+    <div ref={ref} className="popover" role="dialog" aria-label={label} tabIndex={-1} style={{ visibility: "hidden", top: 0, left: 0, width }}>
+      {children}
     </div>
   );
 }
@@ -228,13 +279,23 @@ export function ToastHost() {
           </div>
         ))}
       </div>
-      <Sheet open={!!confirm} onClose={() => close(false)} title={confirm?.title}>
+      <Sheet open={!!confirm} onClose={() => close(confirm?.choose ? null : false)} title={confirm?.title}>
         <div className="sheet-body stack">
-          {confirm?.message && <p className="muted center" style={{ margin: 0 }}>{confirm.message}</p>}
-          <Button variant={confirm?.destructive ? undefined : "primary"} className={confirm?.destructive ? "btn-danger" : ""} block size="lg" onClick={() => close(true)} autoFocus>
-            {confirm?.confirm || "OK"}
-          </Button>
-          <Button block onClick={() => close(false)}>Cancel</Button>
+          {confirm?.message && <p className="muted center" style={{ margin: 0, whiteSpace: "pre-line" }}>{confirm.message}</p>}
+          {confirm?.okOnly ? (
+            <Button variant="primary" block size="lg" onClick={() => close(true)} autoFocus>OK</Button>
+          ) : confirm?.choose ? (
+            <div className="stack-sm">
+              {confirm.options.map((o, i) => (
+                <Button key={o.label} block className={o.destructive ? "btn-danger" : ""} onClick={() => close(o.value ?? o.label)} autoFocus={i === 0}>{o.label}</Button>
+              ))}
+            </div>
+          ) : (
+            <Button variant={confirm?.destructive ? undefined : "primary"} className={confirm?.destructive ? "btn-danger" : ""} block size="lg" onClick={() => close(true)} autoFocus>
+              {confirm?.confirm || "OK"}
+            </Button>
+          )}
+          {!confirm?.okOnly && <Button block onClick={() => close(confirm?.choose ? null : false)}>Cancel</Button>}
         </div>
       </Sheet>
     </>

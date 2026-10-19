@@ -1,27 +1,33 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { Building2, Cpu, QrCode, ScanLine, Sparkles, Users, UserX, X, Heart, IdCard, Bookmark, SlidersHorizontal, Eye, MessageCircle } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Building2, Check, Cpu, QrCode, ScanLine, Sparkles, Users, X, Heart, IdCard, Bookmark, ListFilter, Eye } from "lucide-react";
 import { useStore } from "../lib/store";
-import { auth, isSignedIn, signOut } from "../lib/auth";
+import { auth, isSignedIn } from "../lib/auth";
 import { cms, nameKey, sessionById, speakerById, speakerByName } from "../lib/cms";
 import { content, text } from "../lib/content";
 import { bookmarks, canMessage, canRequest, refreshConnections, refreshPeople, refreshThreads, social } from "../lib/social";
-import { APPLIED_SECTORS, TECH_PILLARS, fileURL } from "../lib/config";
+import { APPLIED_SECTORS, TECH_PILLARS } from "../lib/config";
 import { recoSignals, recommend, topicPoints } from "../lib/people";
-import { Avatar, Button, Empty, IconButton, Segmented, Sheet, Spinner, TopBar } from "../components/ui";
+import { givenName, showAlert } from "../lib/ui";
+import { DoneButton, IconButton, Popover, Segmented, Sheet, Spinner, TopBar } from "../components/ui";
 import { FilterSelect, SearchField } from "../components/Filters";
-import { KindBadge, PersonCard } from "../components/People";
+import { ConnectedRow, PersonCard } from "../components/People";
+import { AlphaIndexBar } from "../components/AlphaIndex";
+import { jumpToRow, useAlphaTargets } from "../lib/alpha";
+import { PeopleSlash } from "../components/Glyphs";
 import SpeakersList from "../components/SpeakersList";
 
 const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 
 /* =========================================================
    Network (iOS NetworkView + AttendeeDirectoryView):
-   Recommended · All · Connected · Speakers · Exhibitors · Staff.
-   Everyone at TTFC (GET /social/attendees), A to Z, with search
-   (names and companies), Industry and Tech filters. Cards show
-   name, company and icons; connect / withdraw / accept / message
+   Recommended · All · Connected · Speakers · Exhibitors · Staff,
+   pinned under the title. Everyone at TTFC (GET
+   /social/attendees), A to Z, with search (names and
+   companies), Industry and Tech filters. Cards show name,
+   company and icons; connect / withdraw / accept / message
    follow each person's switches and your account's rights.
+   Guests get Connected and Speakers, as on iOS.
 ========================================================= */
 
 const SECTIONS = [
@@ -32,6 +38,7 @@ const SECTIONS = [
   { id: "exhibitors", label: "Exhibitors" },
   { id: "staff", label: "Staff" },
 ];
+const GUEST_SECTIONS = ["connected", "speakers"];
 
 /** People with speaker details filled in from the CMS where the account doesn't have them. */
 function useDirectory() {
@@ -48,12 +55,46 @@ function useDirectory() {
   }), [s.people, c]);
 }
 
-function Directory({ people, only, emptyText }) {
+/** Recommendations for every card ("Recommended" under the name) and the Recommended section. */
+function useRecommendations(people) {
+  const s = useStore(social);
+  const a = useStore(auth);
+  const c = useStore(cms);
+  return useMemo(() => {
+    const me = a.me || {};
+    const saved = bookmarks(s).map((id) => sessionById(id, c)).filter(Boolean);
+    const keys = new Map();
+    for (const x of saved) for (const id of x.speakerIds) { const sp = speakerById(id, c); if (sp) keys.set(nameKey(sp.name), x.title); }
+    const connected = new Set([...s.connections.accepted, ...s.connections.outgoing, ...s.connections.incoming].map((x) => x.user?.id));
+    return recommend(people, { id: me.id, topics: me.topics || [], jobTitle: me.jobTitle || "", organization: me.organization || "", tagline: me.tagline || "", savedSessions: saved, savedSpeakerKeys: keys },
+      { connectedIds: connected, canContact: (p) => canMessage(p, s) || canRequest(p, s), isBlocked: (id) => s.blocked.includes(id) });
+  }, [people, s, a.me, c]);
+}
+
+/** "Why Maya": the reasons, in a popover by the dashed "Recommended". */
+function useWhy() {
+  const [why, setWhy] = useState(null);
+  const close = useCallback(() => setWhy(null), []);
+  const open = useCallback((p, rec, rect) => setWhy({ p, rec, rect }), []);
+  const popover = why && (
+    <Popover anchor={why.rect} onClose={close} label={`Why ${givenName(why.p.name)}`}>
+      <h3 className="why-title">Why {givenName(why.p.name)}</h3>
+      <ul className="why-list">
+        {why.rec.reasons.slice(0, 4).map((r) => <li key={r}><Check aria-hidden="true" />{r}</li>)}
+      </ul>
+    </Popover>
+  );
+  return [open, popover];
+}
+
+function Directory({ people, recs, only, emptyText }) {
   const s = useStore(social);
   const [q, setQ] = useState("");
   const [industry, setIndustry] = useState(null);
   const [tech, setTech] = useState(null);
   const [company, setCompany] = useState(null);
+  const [onWhy, whyPopover] = useWhy();
+  const recById = useMemo(() => new Map(recs.map((r) => [r.person.id, r])), [recs]);
 
   useEffect(() => {
     const t = q.trim();
@@ -73,6 +114,7 @@ function Directory({ people, only, emptyText }) {
     return [...list].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
   }, [people, s.blocked, only, q, industry, tech, company]);
 
+  // Typing part of a company name offers the companies that match; picking one lists the people there.
   const companies = useMemo(() => {
     const t = q.trim().toLowerCase();
     if (t.length < 2) return [];
@@ -84,18 +126,8 @@ function Directory({ people, only, emptyText }) {
     return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(0, 6);
   }, [people, q]);
 
-  const letters = useMemo(() => {
-    if (q || shown.length < 12) return [];
-    const out = [];
-    for (const p of shown) {
-      const l = (p.name.normalize("NFD").replace(/[̀-ͯ]/g, "")[0] || "#").toUpperCase();
-      const key = /[A-Z]/.test(l) ? l : "#";
-      if (!out.some((x) => x.l === key)) out.push({ l: key, id: p.id });
-    }
-    return out.length >= 4 ? out : [];
-  }, [shown, q]);
-
-  const jump = (id) => document.getElementById(`p-${id}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+  const letters = useAlphaTargets(shown, { enabled: !q });
+  const filtering = !!(q || industry || tech || company);
 
   return (
     <div className="stack">
@@ -103,7 +135,7 @@ function Directory({ people, only, emptyText }) {
       {companies.length > 0 && (
         <div className="chips" aria-label="Companies">
           {companies.map(([name, n]) => (
-            <button key={name} type="button" className="chip pressable" onClick={() => { recoSignals.usedCompany(name); setCompany(name); setQ(""); }} aria-label={`${name}, ${n} ${n === 1 ? "person" : "people"}`}>
+            <button key={name} type="button" className="chip chip--menu chip--suggest pressable" onClick={() => { recoSignals.usedCompany(name); setCompany(name); setQ(""); }} aria-label={`${name}, ${n} ${n === 1 ? "person" : "people"}`}>
               <Building2 aria-hidden="true" />{name}<span className="chip-count">{n}</span>
             </button>
           ))}
@@ -113,115 +145,92 @@ function Directory({ people, only, emptyText }) {
         <div className="chips" role="group" aria-label="Filters">
           <FilterSelect label="Industry" icon={Building2} value={industry} options={APPLIED_SECTORS} onChange={(v) => { setIndustry(v); if (v) recoSignals.usedTopic(v); }} />
           <FilterSelect label="Tech" icon={Cpu} value={tech} options={TECH_PILLARS} onChange={(v) => { setTech(v); if (v) recoSignals.usedTopic(v); }} />
-          {company && <button type="button" className="chip chip--on pressable" onClick={() => setCompany(null)} aria-label={`Company: ${company}. Clear`}><Building2 aria-hidden="true" />{company}<X aria-hidden="true" style={{ width: 11, height: 11 }} /></button>}
+          {company && (
+            <button type="button" className="chip chip--menu chip--on pressable" onClick={() => setCompany(null)} aria-label={`Company: ${company}. Clear`}>
+              <Building2 aria-hidden="true" />{company}<X aria-hidden="true" className="chev" />
+            </button>
+          )}
         </div>
       )}
       {!s.peopleLoaded ? <Spinner label="Loading people" /> : shown.length === 0 ? (
-        <Empty icon={Users}>{q || industry || tech || company ? "No one matches that yet." : emptyText}</Empty>
+        <div className="empty-note"><Users aria-hidden="true" />{filtering ? "No one matches that yet." : emptyText}</div>
       ) : (
-        <div className="stack-sm" style={{ paddingLeft: 16, paddingRight: letters.length ? 30 : 16 }}>
-          {shown.map((p) => <div key={p.id} id={`p-${p.id}`} style={{ scrollMarginTop: 120 }}><PersonCard person={p} state={s} /></div>)}
+        <div className="stack" style={{ paddingLeft: 16, paddingRight: letters.length ? 30 : 16 }}>
+          {shown.map((p) => <div key={p.id} id={`p-${p.id}`}><PersonCard person={p} state={s} rec={recById.get(p.id)} onWhy={onWhy} /></div>)}
         </div>
       )}
-      {letters.length > 0 && (
-        <nav className="az-bar" aria-label="Jump to a letter">
-          {letters.map((x) => <button key={x.l} type="button" onClick={() => jump(x.id)} aria-label={`Names starting with ${x.l}`}>{x.l}</button>)}
-        </nav>
-      )}
+      {letters.length > 0 && <AlphaIndexBar letters={letters} onPick={(x) => jumpToRow(`p-${x.id}`)} />}
+      {whyPopover}
     </div>
   );
 }
 
+const HOW = [
+  [Heart, "The interests you chose for your profile"],
+  [IdCard, "Your title, company and profile description"],
+  [Bookmark, "Sessions you bookmarked, and who's speaking at them"],
+  [ListFilter, "The industry and tech filters you use, and companies you search for"],
+  [Eye, "The roles of people whose profiles you open"],
+];
+
+/** "How we pick" (iOS HowWeRecommendSheet): the signals, with the fine print at the bottom. */
 function HowWePick({ onClose }) {
-  const rows = [
-    [Heart, "The interests you chose for your profile"],
-    [IdCard, "Your title, company and profile description"],
-    [Bookmark, "Sessions you bookmarked, and who's speaking at them"],
-    [SlidersHorizontal, "The industry and tech filters you use, and companies you search for"],
-    [Eye, "The roles of people whose profiles you open"],
-  ];
   return (
-    <Sheet open onClose={onClose} title="How we pick">
-      <div className="sheet-body stack">
-        <p style={{ margin: 0 }}>People at TTFC you're likely to want to meet, picked from:</p>
-        {rows.map(([icon, t]) => { const Icon = icon; return <div key={t} className="row"><Icon aria-hidden="true" style={{ width: 17, height: 17, color: "var(--pur-alt)", flex: "none" }} /><span className="muted">{t}</span></div>; })}
-        <p className="tiny muted" style={{ margin: 0 }}>We leave out people you're already connected with, people who aren't on the app yet, and the TTFC team. The list updates as you use the app. It's worked out on this device and isn't shared with anyone.</p>
+    <Sheet open onClose={onClose} title="How we pick" medium actions={{ right: <DoneButton onClick={onClose} /> }}
+      footer="We leave out people you're already connected with, people who aren't on the app yet, and the TTFC team. The list updates as you use the app. It's worked out on your phone and isn't shared with anyone.">
+      <div className="how-list">
+        <p>People at TTFC you're likely to want to meet, picked from:</p>
+        {HOW.map(([icon, t]) => { const Icon = icon; return <div key={t} className="row"><Icon aria-hidden="true" /><span>{t}</span></div>; })}
       </div>
     </Sheet>
   );
 }
 
-function Recommended({ people }) {
+function Recommended({ recs }) {
   const s = useStore(social);
-  const a = useStore(auth);
-  const c = useStore(cms);
   const [how, setHow] = useState(false);
-  const [why, setWhy] = useState(null);
-  const recs = useMemo(() => {
-    const me = a.me || {};
-    const saved = bookmarks(s).map((id) => sessionById(id, c)).filter(Boolean);
-    const keys = new Map();
-    for (const x of saved) for (const id of x.speakerIds) { const sp = speakerById(id, c); if (sp) keys.set(nameKey(sp.name), x.title); }
-    const connected = new Set([...s.connections.accepted, ...s.connections.outgoing, ...s.connections.incoming].map((x) => x.user?.id));
-    return recommend(people, { id: me.id, topics: me.topics || [], jobTitle: me.jobTitle || "", organization: me.organization || "", tagline: me.tagline || "", savedSessions: saved, savedSpeakerKeys: keys },
-      { connectedIds: connected, canContact: (p) => canMessage(p, s) || canRequest(p, s), isBlocked: (id) => s.blocked.includes(id) });
-  }, [people, s, a.me, c]);
+  const [onWhy, whyPopover] = useWhy();
   return (
     <div className="stack">
-      <div className="pad row">
-        <b style={{ flex: 1 }}>Picked for you</b>
-        <button type="button" className="dashed" onClick={() => setHow(true)}>How we pick</button>
+      <div className="pad row" style={{ alignItems: "baseline" }}>
+        <h2 style={{ flex: 1, margin: 0, fontSize: 14, fontWeight: 600 }}>Picked for you</h2>
+        <button type="button" className="dashed" onClick={() => setHow(true)} aria-description="Explains how recommendations are made">How we pick</button>
       </div>
       {!s.peopleLoaded ? <Spinner /> : recs.length === 0 ? (
-        <Empty icon={Sparkles}>Add your interests in Profile and save a few sessions, and we'll suggest people to meet.</Empty>
+        <div className="empty-note"><Sparkles aria-hidden="true" />Add your interests in Profile and save a few sessions, and we'll suggest people to meet.</div>
       ) : (
-        <div className="pad stack-sm">{recs.map((r) => <PersonCard key={r.person.id} person={r.person} state={s} rec={r} onWhy={(p, rec) => setWhy({ p, rec })} />)}</div>
+        <div className="pad stack">{recs.map((r) => <PersonCard key={r.person.id} person={r.person} state={s} rec={r} onWhy={onWhy} />)}</div>
       )}
       {how && <HowWePick onClose={() => setHow(false)} />}
-      {why && (
-        <Sheet open onClose={() => setWhy(null)} title={`Why ${why.p.name.split(" ")[0]}`}>
-          <ul className="sheet-body stack-sm" style={{ listStyle: "none", margin: 0 }}>
-            {why.rec.reasons.slice(0, 4).map((r) => <li key={r} className="row" style={{ alignItems: "flex-start" }}><Sparkles aria-hidden="true" style={{ width: 15, height: 15, color: "var(--pur-alt)", flex: "none", marginTop: 3 }} /><span className="muted">{r}</span></li>)}
-          </ul>
-        </Sheet>
-      )}
+      {whyPopover}
     </div>
   );
 }
 
-function Connected({ onScan }) {
+function Connected({ onScan, signedIn }) {
   const s = useStore(social);
   const ct = useStore(content);
   const list = [...s.connections.accepted].filter((x) => !s.blocked.includes(x.user?.id))
     .sort((a, b) => (a.kind === "inPerson" ? 0 : 1) - (b.kind === "inPerson" ? 0 : 1) || Date.parse(a.createdAt) - Date.parse(b.createdAt));
-  if (!s.connectionsLoaded) return <Spinner />;
+  if (signedIn && !s.connectionsLoaded) return <Spinner />;
   if (!list.length) {
+    // The one place the scan prompt still helps: before your first connection.
     return (
-      <div className="pad stack">
-        <div className="person-card">
-          <span className="icon-btn icon-btn--round icon-btn--filled" aria-hidden="true"><ScanLine /></span>
-          <div className="info"><b className="small">Met someone? Scan their badge</b><div className="tiny muted">Instant connection, contact details exchanged.</div></div>
-          <Button size="sm" variant="primary" onClick={onScan}>Scan</Button>
+      <div className="pad">
+        <div className="inperson">
+          <span className="inperson-ico" aria-hidden="true"><ScanLine /></span>
+          <div style={{ flex: 1, minWidth: 0 }}><b>Met someone? Scan their badge</b><span>Instant connection, contact details exchanged.</span></div>
+          <button type="button" className="scan-btn pressable" onClick={onScan} aria-label="Scan a badge">SCAN</button>
         </div>
-        <Empty icon={UserX} title="No connections yet">{text(ct, "network.empty", "Scan someone's badge QR when you meet, or open a speaker profile and tap 'Connect'.")}</Empty>
+        <div className="net-empty">
+          <PeopleSlash aria-hidden="true" />
+          <h3>No connections yet</h3>
+          <p>{text(ct, "network.empty", "Scan someone's badge QR when you meet, or open a speaker profile and tap 'Connect'.")}</p>
+        </div>
       </div>
     );
   }
-  return (
-    <div className="pad stack-sm">
-      {list.map((x) => (
-        <Link key={x.id} to={`/chat/${encodeURIComponent(x.user.id)}`} className="person-card pressable" style={{ color: "inherit", textDecoration: "none" }}>
-          <Avatar name={x.user.name} src={fileURL(x.user.avatarUrl)} size={48} />
-          <span className="info">
-            <span className="row" style={{ gap: 6 }}><span className="person-name ellipsis">{x.user.name}</span><KindBadge kind={x.kind} /></span>
-            <span className="tiny muted ellipsis" style={{ display: "block" }}>{[x.user.jobTitle, x.user.organization].filter(Boolean).join(" · ")}</span>
-            {x.kind === "inPerson" && x.email && <span className="tiny bold ellipsis" style={{ display: "block", color: "var(--pur-alt)" }}>{x.email}</span>}
-          </span>
-          <MessageCircle aria-label={`Message ${x.user.name}`} style={{ width: 18, height: 18, color: "var(--pur-alt)" }} />
-        </Link>
-      ))}
-    </div>
-  );
+  return <div className="pad stack-sm" style={{ gap: 10 }}>{list.map((x) => <ConnectedRow key={x.id} conn={x} />)}</div>;
 }
 
 export default function Network() {
@@ -231,42 +240,46 @@ export default function Network() {
   const people = useDirectory();
   const [scan, setScan] = useState(false);
   const signedIn = isSignedIn(a);
-  const tab = signedIn ? (SECTIONS.find((x) => x.id === section)?.id || "recommended") : "speakers";
+  const sections = signedIn ? SECTIONS : SECTIONS.filter((x) => GUEST_SECTIONS.includes(x.id));
+  const tab = sections.find((x) => x.id === section)?.id || sections[0].id;
+  const recs = useRecommendations(signedIn ? people : []);
 
   useEffect(() => {
     if (!signedIn) return;
     refreshConnections(); refreshThreads(); refreshPeople("");
   }, [signedIn]);
 
-  const right = signedIn ? (
+  const openScanner = () => {
+    if (!signedIn) { showAlert("Sign up to connect", "Create a free profile to scan badges and build your network."); return; }
+    setScan(true);
+  };
+  const openMyQR = () => {
+    if (!signedIn) { showAlert("Sign up for a badge QR", "Your connect QR is generated from your profile."); return; }
+    navigate("/profile/pass?tab=connect");
+  };
+
+  const right = (
     <div className="glass-group">
-      <IconButton icon={QrCode} label="My connect QR" onClick={() => navigate("/profile/pass?tab=connect")} />
-      <button type="button" className="glass-item pressable" onClick={() => setScan(true)} aria-label="Scan a badge"><ScanLine aria-hidden="true" />Scan</button>
+      <IconButton icon={QrCode} label="My connect QR" onClick={openMyQR} />
+      {/* Labelled, so it reads as "scan someone" next to your own QR. */}
+      <button type="button" className="glass-item pressable" onClick={openScanner} aria-label="Scan a badge"><ScanLine aria-hidden="true" />Scan</button>
     </div>
-  ) : null;
+  );
+  const pills = (
+    <Segmented scroll label="Network sections" value={tab} onChange={(v) => navigate(`/network/${v}`, { replace: true })}
+      options={sections.map((x) => ({ value: x.id, label: x.icon ? "" : x.label, icon: x.icon, ariaLabel: x.label }))} />
+  );
 
   return (
     <div className="page">
-      <TopBar title="Network" back={false} right={right} titleLeft={!!right} />
-      <main id="main" className="mt-16 stack">
-        {signedIn ? (
-          <Segmented scroll label="Network sections" value={tab} onChange={(v) => navigate(`/network/${v}`, { replace: true })}
-            options={SECTIONS.map((x) => ({ value: x.id, label: x.icon ? "" : x.label, icon: x.icon, ariaLabel: x.label }))} />
-        ) : (
-          <div className="pad">
-            <div className="banner">
-              <Users aria-hidden="true" style={{ width: 20, height: 20, flex: "none" }} />
-              <div style={{ flex: 1 }}><b className="small">Meet the people at TTFC</b><p>Sign in to see who's coming, get recommendations, connect and message.</p></div>
-              <button type="button" className="btn" onClick={() => signOut()}>Sign in</button>
-            </div>
-          </div>
-        )}
-        {tab === "recommended" && <Recommended people={people} />}
-        {tab === "all" && <Directory people={people} emptyText="Pass holders appear here. Check back soon." />}
-        {tab === "connected" && <Connected onScan={() => setScan(true)} />}
+      <TopBar title="Network" back={false} right={right} titleLeft below={pills} />
+      <main id="main" className="stack" style={{ paddingTop: 8 }}>
+        {tab === "recommended" && <Recommended recs={recs} />}
+        {tab === "all" && <Directory people={people} recs={recs} emptyText="Pass holders appear here. Check back soon." />}
+        {tab === "connected" && <Connected onScan={openScanner} signedIn={signedIn} />}
         {tab === "speakers" && <SpeakersList />}
-        {tab === "exhibitors" && <Directory people={people} only={["exhibitor"]} emptyText="Exhibitors appear here once they've joined the app." />}
-        {tab === "staff" && <Directory people={people} only={["staff", "volunteer"]} emptyText="The TTFC team and volunteers appear here." />}
+        {tab === "exhibitors" && <Directory people={people} recs={recs} only={["exhibitor"]} emptyText="Exhibitors appear here once they've joined the app." />}
+        {tab === "staff" && <Directory people={people} recs={recs} only={["staff", "volunteer"]} emptyText="The TTFC team and volunteers appear here." />}
       </main>
       {scan && <Suspense fallback={null}><BadgeScanner onClose={() => setScan(false)} onConnected={() => navigate("/network/connected")} /></Suspense>}
     </div>

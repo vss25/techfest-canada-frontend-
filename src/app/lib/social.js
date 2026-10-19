@@ -16,6 +16,16 @@ const READ_NOTIFS = "ttfc.app.readNotifs";
 const CHATS_SEEN = "ttfc.app.chatsSeenAt";
 const REPLIED = "ttfc.app.repliedTo";
 const CHAT_READ = "ttfc.app.chatReadAt";
+const GROUP_READ = "ttfc.app.groupReadAt";
+const GROUP_BASELINE = "ttfc.app.groupReadBaseline";
+/** Group messages from before read-tracking count as read (iOS ChatReadState baseline). */
+const groupBaseline = (() => {
+  const b = Number(local.get(GROUP_BASELINE, 0));
+  if (b) return b;
+  const t = Date.now();
+  local.set(GROUP_BASELINE, String(t));
+  return t;
+})();
 
 const blank = () => ({
   people: [], peopleLoaded: false,
@@ -33,6 +43,8 @@ const blank = () => ({
   readNotifs: local.json(READ_NOTIFS, []),
   chatsSeenAt: Number(local.get(CHATS_SEEN, 0)),
   chatReadAt: local.json(CHAT_READ, {}),
+  groupReadAt: local.json(GROUP_READ, {}),
+  activity: { feed: 0, discussions: 0 },
   repliedTo: local.json(REPLIED, []),
   lastError: "",
 });
@@ -268,6 +280,45 @@ export function isMessageRequest(thread, s = social.get()) {
   if (msgs) return msgs.length > 0 && !msgs.some((m) => m.sentByMe);
   return !thread.lastMessage?.sentByMe;
 }
+
+/** A 1:1 thread with a message from them you haven't opened (iOS ChatReadState.isUnread). */
+export function threadUnread(t, s = social.get()) {
+  const m = t.lastMessage;
+  if (!m || m.sentByMe || !(t.unread > 0)) return false;
+  return Date.parse(m.createdAt) > (s.chatReadAt[t.user?.id] || 0);
+}
+
+/** Their messages in a joined group since you last opened it. */
+export function groupUnread(g, s = social.get()) {
+  const list = s.groupMessages[g.id];
+  if (!g.joined || !Array.isArray(list)) return 0;
+  const seen = Math.max(s.groupReadAt[g.id] || 0, groupBaseline);
+  return list.filter((m) => !m.mine && Date.parse(m.createdAt) > seen).length;
+}
+
+export function markGroupRead(id) {
+  const next = { ...social.get().groupReadAt, [id]: Date.now() };
+  local.setJSON(GROUP_READ, next);
+  set({ groupReadAt: next });
+}
+
+/** Activity dots (iOS ActivityService): replies in discussions you follow, reactions on your posts. */
+export async function refreshActivity() {
+  if (!signedIn()) return;
+  try {
+    const r = await get("social/activity/unread");
+    set({ activity: { feed: Number(r?.feed) || 0, discussions: Number(r?.discussions) || 0 } });
+  } catch { /* keep */ }
+}
+
+export async function markActivitySeen(section) {
+  const a = social.get().activity;
+  if (!(a[section] > 0)) return;
+  set({ activity: { ...a, [section]: 0 } });
+  post("social/activity/seen", { section }).catch(() => {});
+}
+
+export const fetchGroupMembers = (id) => get(`community/groups/${encodeURIComponent(id)}/members`);
 
 /** The Chats tab's one red dot: something came in since you last looked. */
 export function chatsHasNew(s) {

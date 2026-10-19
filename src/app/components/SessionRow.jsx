@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Bookmark, MapPin, Mic, Users, Flame, Briefcase, Zap, MessagesSquare, Hammer, Trophy, Coffee } from "lucide-react";
-import { roomOf, speakerById, typeLabel } from "../lib/cms";
+import { recentlyMoved, roomOf, speakerById, typeLabel } from "../lib/cms";
 import { Avatar, Kicker } from "./ui";
 
 /* =========================================================
@@ -17,6 +17,9 @@ export function TypeIcon({ type, ...rest }) {
   return <I aria-hidden="true" {...rest} />;
 }
 
+/** iOS TimelineRow.tint: purple for programme talks, the lighter purple for briefings / workshops / ceremonies. */
+const PURPLE = new Set(["keynote", "panel", "dialogue", "fireside", "provocation"]);
+
 export default function SessionRow({ session, cmsState, saved, highlighted, onNow, onToggle }) {
   const [digits, meridiem = ""] = session.startTime.split(" ");
   const room = roomOf(session.stage);
@@ -27,19 +30,21 @@ export default function SessionRow({ session, cmsState, saved, highlighted, onNo
       <Link to={`/session/${encodeURIComponent(session.id)}`} className={"tl-card pressable" + (highlighted ? " tl-card--hi" : "")}>
         <div className="tl-top">
           <span className="tl-time" aria-label={session.startTime}>{digits}<small>{meridiem}</small></span>
-          {session.type !== "break" && <Kicker tone={session.type === "keynote" ? "accent" : undefined}>{typeLabel(session)}</Kicker>}
+          {session.type !== "break" && <Kicker tone={PURPLE.has(session.type) ? "pur" : undefined}>{typeLabel(session)}</Kicker>}
           {highlighted && (onNow
-            ? <Kicker tone="accent"><span className="live-dot" aria-hidden="true" /> On now</Kicker>
-            : <Kicker tone="accent">Up next</Kicker>)}
+            ? <span className="row" style={{ gap: 4 }}><span className="on-dot" aria-hidden="true" /><Kicker tone="pur">On now</Kicker></span>
+            : <Kicker tone="pur">Up next</Kicker>)}
+          {/* Staff moved it on the day (a session ran long). */}
+          {recentlyMoved(session.id, undefined, cmsState) && <Kicker tone="pur">New time</Kicker>}
         </div>
         <h3 className="tl-title">{session.title}</h3>
-        {room && <div className="tl-meta"><MapPin aria-hidden="true" />{room}</div>}
+        {room && <div className="tl-meta"><MapPin aria-hidden="true" /><span className="ellipsis">{room}</span></div>}
         {first && (
           <div className="tl-meta" style={{ marginTop: 7 }}>
             <span className="avatar-stack">
-              {speakers.slice(0, 3).map((s) => <Avatar key={s.id} name={s.name} src={s.photo} size={22} ring round />)}
+              {speakers.slice(0, 3).map((s) => <Avatar key={s.id} name={s.name} src={s.photo} size={22} ring round={!!s.photo} />)}
             </span>
-            <span className="ellipsis">{first.name}{speakers.length > 1 ? ` +${speakers.length - 1}` : ""}</span>
+            <span className="ellipsis" style={{ fontWeight: 500 }}>{first.name}{speakers.length > 1 ? ` +${speakers.length - 1}` : ""}</span>
           </div>
         )}
       </Link>

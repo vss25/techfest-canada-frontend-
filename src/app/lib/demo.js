@@ -638,8 +638,19 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     for (const n of s.notifications) if (body.all || (body.ids || []).includes(n.id)) n.readAt = n.readAt || new Date().toISOString();
     return done({ ok: true, updated: 1 });
   }
-  if (is("GET", "social/activity/unread")) return { feed: 0, discussions: 0 };
-  if (is("POST", "social/activity/seen")) return { ok: true };
+  if (is("GET", "social/activity/unread")) return { feed: 0, discussions: s.activitySeen?.discussions ? 0 : 1 };
+  if (is("POST", "social/activity/seen")) { s.activitySeen = { ...(s.activitySeen || {}), [body.section]: true }; return done({ ok: true }); }
+  // Typing: someone in the Quantum Builders chat, now and then.
+  if (is("POST", "community/typing")) return { ok: true };
+  if (is("GET", "community/typing")) return { typing: q.get("scope") === "group" && q.get("id") === "g-quantum" && Math.floor(Date.now() / 8000) % 3 === 0 ? ["Connor O'Brien"] : [] };
+  if ((m = is("GET", "community/groups/:id/members"))) {
+    const g = s.groups.find((x) => x.id === m.id);
+    if (!g) throw new ApiError("Not found", 404);
+    const ids = [...new Set([g.ownerId, ...s.groupMessages.filter((x) => x.groupId === g.id).map((x) => x.authorId), ...(g.joined ? [ME] : [])])];
+    const extra = s.people.filter((p) => !ids.includes(p.id) && (p.topics || []).some((t) => (g.tags || []).includes(t)));
+    const cards = [...ids.map((id) => card(id)).filter(Boolean), ...extra].slice(0, Math.max(3, Math.min(g.memberCount, 12)));
+    return done(cards.map((c) => ({ ...c, isOwner: c.id === g.ownerId, isMe: c.id === ME })).sort((a, b) => (b.isOwner - a.isOwner) || a.name.localeCompare(b.name)));
+  }
 
   // Community
   if (is("GET", "community/discussions")) return done(s.discussions.map(discussionDTO));

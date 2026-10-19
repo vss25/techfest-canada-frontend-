@@ -216,10 +216,26 @@ function initial() {
   const rawSpeakers = local.json(CACHE.speakers, []);
   const speakers = mapSpeakers(rawSpeakers);
   const { sessions, extras } = mapSessions(local.json(CACHE.sessions, []), speakers);
-  return { sessions, speakers, extras, partners: mapPartners(local.json(CACHE.partners, [])), loaded: sessions.length > 0, live: false, error: false, at: 0 };
+  const movedAt = local.json("ttfc.agenda.movedAt", {});
+  // QA: ?ttfc-moved=<session id,…> shows the "New time" badge on those sessions (like ?ttfc-now).
+  try {
+    const q = new URLSearchParams(window.location.search).get("ttfc-moved");
+    if (q) for (const id of q.split(",")) movedAt[id.trim()] = Date.now();
+  } catch { /* no window */ }
+  return { sessions, speakers, extras, partners: mapPartners(local.json(CACHE.partners, [])), loaded: sessions.length > 0, live: false, error: false, at: 0, movedAt, lastMoved: [], timesVersion: 0 };
 }
 
 export const cms = createStore(initial());
+
+const MOVED_KEY = "ttfc.agenda.movedAt";
+const slotKey = (x) => `${x.day} ${x.startTime}–${x.endTime}`;
+const movedMap = () => cms.get().movedAt || local.json(MOVED_KEY, {});
+
+/** Staff moved this session's time in the last 3 hours (the "New time" badge). */
+export function recentlyMoved(id, at = Date.now(), state = cms.get()) {
+  const t = (state.movedAt || {})[id];
+  return !!t && at - t < 3 * 3600 * 1000;
+}
 
 async function query(q) {
   const res = await fetch(`${SANITY_QUERY_URL}?query=${encodeURIComponent(q)}`);
@@ -242,7 +258,18 @@ export function refreshCMS({ force = false } = {}) {
       let next = { speakers, live: true, error: false, at: Date.now(), loaded: true };
       if (rs.length) {
         local.setJSON(CACHE.sessions, rs);
+        const before = new Map(cms.get().sessions.map((x) => [x.id, slotKey(x)]));
         Object.assign(next, mapSessions(rs, speakers));
+        // Which sessions staff re-timed since the last copy we had (iOS SessionService.movedAt).
+        const moved = next.sessions.filter((x) => before.has(x.id) && before.get(x.id) !== slotKey(x)).map((x) => x.id);
+        if (moved.length) {
+          const t = Date.now();
+          const all = Object.fromEntries(Object.entries({ ...movedMap(), ...Object.fromEntries(moved.map((id) => [id, t])) }).filter(([, at]) => t - at < 24 * 3600 * 1000));
+          local.setJSON(MOVED_KEY, all);
+          next.movedAt = all;
+          next.lastMoved = moved;
+          next.timesVersion = (cms.get().timesVersion || 0) + 1;
+        }
       }
       if (rp && rp.length) {
         local.setJSON(CACHE.partners, rp);

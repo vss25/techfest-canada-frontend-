@@ -1,35 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ArrowUp, Bell, BellOff, CornerDownRight, MessagesSquare, X } from "lucide-react";
+import { ArrowUp, Bell, CircleX, Loader2, MessagesSquare, Reply } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, can, isSignedIn } from "../lib/auth";
 import { followDiscussion, refreshDiscussions, refreshReplies, replyToDiscussion, social } from "../lib/social";
-import { shortTopic } from "../lib/config";
-import { timeAgo } from "../lib/time";
+import { listTime } from "../lib/time";
+import { safetyItems } from "../lib/safety";
+import { typingChanged, typingSent } from "../lib/typing";
 import { showAlert } from "../lib/ui";
-import { Avatar, Button, Empty, IconButton, Spinner, TopBar } from "../components/ui";
+import { Avatar, Empty, Spinner, TopBar } from "../components/ui";
+import { MoreMenu } from "../components/Safety";
+import { ChatBubble, TypingIndicator } from "../components/ChatBubble";
 
-/* A discussion with threaded replies and Follow (iOS DiscussionDetailView). */
-
-function Reply({ r, depth, all, allowed, onReply }) {
-  const kids = all.filter((x) => x.parentId === r.id);
-  return (
-    <div className="stack-sm" style={{ marginLeft: depth ? 22 : 0 }}>
-      <div className="comment">
-        {depth > 0 && <CornerDownRight aria-hidden="true" style={{ width: 14, height: 14, color: "var(--tx2)", flex: "none", marginTop: 8 }} />}
-        <Avatar name={r.authorName} size={30} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="comment-bubble">
-            <div className="row" style={{ gap: 6 }}><b className="small">{r.authorName}</b>{r.mine && <span className="tiny bold" style={{ color: "var(--pur-alt)" }}>You</span>}<span className="spacer" /><time className="tiny muted">{timeAgo(r.createdAt)}</time></div>
-            <div style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{r.body}</div>
-          </div>
-          {allowed && <button type="button" className="link-btn" style={{ minHeight: 32, padding: "2px 12px", fontSize: 12.5 }} onClick={() => onReply(r)}>Reply</button>}
-        </div>
-      </div>
-      {kids.map((c) => <Reply key={c.id} r={c} depth={Math.min(depth + 1, 3)} all={all} allowed={allowed} onReply={onReply} />)}
-    </div>
-  );
-}
+/* =========================================================
+   A discussion (iOS DiscussionDetailView): the question as a
+   card, replies as chat bubbles (answers to a reply indented
+   once, deeper ones quoting who they answer), Follow in the
+   bar and the typing line over the composer.
+========================================================= */
 
 export default function DiscussionDetail() {
   const { id: raw } = useParams();
@@ -39,51 +27,96 @@ export default function DiscussionDetail() {
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState(null);
   const [sending, setSending] = useState(false);
+  const input = useRef(null);
   const d = s.discussions.find((x) => x.id === id);
-  const replies = s.replies[id];
+  const all = s.replies[id];
+  const signedIn = isSignedIn(a);
 
   useEffect(() => { if (!d) refreshDiscussions(); refreshReplies(id); }, [id, d]);
 
-  if (!d) return <div className="page"><TopBar title="Discussion" />{s.discussionsLoaded ? <Empty icon={MessagesSquare} title="Discussion not found" /> : <Spinner />}</div>;
+  if (!d) return <div className="page"><TopBar title="Discussion" />{s.discussionsLoaded || !signedIn ? <Empty icon={MessagesSquare} title="Discussion not found" /> : <Spinner />}</div>;
 
-  const allowed = isSignedIn(a) && can("comment", a);
-  const top = (replies || []).filter((r) => !r.parentId);
+  // Others' held replies and blocked authors stay hidden.
+  const replies = (all || []).filter((r) => (r.status !== "held" || r.mine) && !s.blocked.includes(r.authorId));
+  const byId = new Map(replies.map((r) => [r.id, r]));
+  const parentOf = (r) => (r.parentId ? byId.get(r.parentId) || null : null);
+  const top = replies.filter((r) => !r.parentId || !parentOf(r));
+  const kidsOf = (r) => replies.filter((x) => x.parentId === r.id && x.id !== r.id);
+  const allowed = signedIn && can("comment", a);
+
+  const startReply = (r) => { setReplyTo(r); setTimeout(() => input.current?.focus(), 30); };
+  const thread = (r, depth) => {
+    const kids = kidsOf(r);
+    const parent = parentOf(r);
+    return (
+      <div key={r.id} className="stack-sm">
+        <ChatBubble text={r.body} mine={r.mine} author={r.mine ? null : r.authorName} timestamp={r.createdAt} held={r.status === "held"}
+          quote={depth > 1 && parent ? `${parent.authorName}: ${parent.body}` : null}
+          onReply={signedIn ? () => startReply(r) : null}
+          menu={r.mine || !signedIn ? null : safetyItems({ type: "reply", id: r.id, authorId: r.authorId, authorName: r.authorName })} />
+        {kids.length > 0 && <div className={depth === 0 ? "reply-kids" : "stack-sm"}>{kids.map((k) => thread(k, depth + 1))}</div>}
+      </div>
+    );
+  };
+
   const send = async (e) => {
     e.preventDefault();
     const body = draft.trim();
-    if (!body || sending) return;
+    if (!body || sending || !allowed) return;
     setSending(true);
     try {
       const r = await replyToDiscussion(id, body, replyTo?.id);
-      setDraft(""); setReplyTo(null);
-      if (r.status === "held" || r.status === "rejected") showAlert("Reply held", "It'll appear once the TTFC team has reviewed it.");
-    } catch (err) { showAlert("Couldn't send", err.message); } finally { setSending(false); }
+      setDraft(""); setReplyTo(null); typingSent("discussion", id);
+      if (r.status === "held" || r.status === "rejected") showAlert("Reply held", "Our moderation check held this reply for review. Only you can see it for now.");
+    } catch (err) { showAlert("Couldn't reply", err?.message || "Check your connection and try again."); } finally { setSending(false); }
   };
+
+  const follow = signedIn ? (
+    <button type="button" className={"glass-btn follow-btn pressable" + (d.following ? " follow-btn--on" : "")} onClick={() => followDiscussion(d, !d.following)}
+      aria-description={d.following ? "Stops reply updates" : "Get an update when someone replies"}>
+      <Bell aria-hidden="true" />{d.following ? "Following" : "Follow"}
+    </button>
+  ) : null;
 
   return (
     <div className="chat-page">
-      <TopBar title="Discussion" right={isSignedIn(a) && (
-        <IconButton icon={d.following ? BellOff : Bell} label={d.following ? "Stop following" : "Follow"} onClick={() => followDiscussion(d, !d.following)} />
-      )} />
-      <main id="main" className="column pad stack" style={{ paddingTop: 14, paddingBottom: 20, flex: 1 }}>
-        <div className="row" style={{ gap: 8 }}><Avatar name={d.authorName} size={30} /><b className="small">{d.authorName}</b><span className="tiny muted">{timeAgo(d.createdAt)}</span>{d.status === "pending" && <span className="kicker kicker--gold">Pending review</span>}</div>
-        <h1 style={{ fontSize: 21, margin: 0, lineHeight: 1.25 }}>{d.title}</h1>
-        <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{d.body}</p>
-        <div className="row wrap" style={{ gap: 6 }}>{(d.tags || []).map((t) => <span key={t} className="tag" style={{ fontSize: 11 }}>{shortTopic(t)}</span>)}</div>
-        {isSignedIn(a) && <Button size="sm" icon={Bell} variant={d.following ? undefined : "primary"} aria-pressed={!!d.following} onClick={() => followDiscussion(d, !d.following)} style={{ alignSelf: "flex-start" }}>{d.following ? "Following" : "Follow"}{d.followerCount ? ` · ${d.followerCount}` : ""}</Button>}
-        <hr className="hairline" />
-        <h2 className="section-title">{d.replyCount === 1 ? "1 reply" : `${d.replyCount || 0} replies`}</h2>
-        {replies === undefined ? <Spinner /> : top.length === 0 ? <p className="muted small" style={{ margin: 0 }}>No replies yet. Add the first one.</p> : top.map((r) => <Reply key={r.id} r={r} depth={0} all={replies} allowed={allowed} onReply={setReplyTo} />)}
-      </main>
-      {allowed && d.status === "approved" ? (
-        <form className="composer-bar column" onSubmit={send} style={{ flexDirection: "column", alignItems: "stretch" }}>
-          {replyTo && <div className="row tiny bold" style={{ color: "var(--pur-alt)" }}><span style={{ flex: 1 }}>Replying to {replyTo.mine ? "yourself" : replyTo.authorName}</span><IconButton icon={X} label="Cancel reply" small onClick={() => setReplyTo(null)} /></div>}
-          <div className="row" style={{ alignItems: "flex-end" }}>
-            <textarea className="input" rows={1} value={draft} maxLength={2000} onChange={(e) => setDraft(e.target.value)} placeholder={replyTo ? "Write your reply…" : "Add to the discussion…"} aria-label="Write a reply" />
-            <IconButton icon={ArrowUp} label="Send reply" filled type="submit" disabled={!draft.trim() || sending} />
+      <TopBar title="Discussion" right={follow} />
+      <main id="main" className="column stack" style={{ padding: 16, gap: 14, flex: 1 }}>
+        <article className="q-card">
+          <div className="row" style={{ gap: 10 }}>
+            <Avatar name={d.authorName} size={36} />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <b style={{ display: "block", fontSize: 13, fontWeight: 600 }}>{d.authorName}</b>
+              <time className="muted" style={{ fontSize: 11 }}>{listTime(d.createdAt)}</time>
+            </span>
+            {!d.mine && signedIn && <MoreMenu label="More options" buttonClassName="dots-btn pressable" items={safetyItems({ type: "discussion", id: d.id })} />}
           </div>
+          <h1 className="q-title">{d.title}</h1>
+          <p className="q-body">{d.body}</p>
+          {(d.tags || []).length > 0 && <div className="chips chips--wrap" style={{ gap: 6 }}>{d.tags.map((t) => <span key={t} className="chip">{t}</span>)}</div>}
+        </article>
+        <h2 className="list-label">{replies.length === 0 ? "No replies yet" : `${replies.length} ${replies.length === 1 ? "reply" : "replies"}`}</h2>
+        {all === undefined ? <Spinner /> : top.map((r) => thread(r, 0))}
+      </main>
+      <div className="composer-wrap">
+        <TypingIndicator scope="discussion" id={id} />
+        {replyTo && (
+          <div className="replying">
+            <Reply aria-hidden="true" />
+            <b>Replying to {replyTo.mine ? "yourself" : replyTo.authorName}</b>
+            <span className="ellipsis">{replyTo.body}</span>
+            <button type="button" className="replying-x pressable" aria-label="Cancel reply" onClick={() => setReplyTo(null)}><CircleX aria-hidden="true" /></button>
+          </div>
+        )}
+        <form className="composer-bar column" onSubmit={send}>
+          <textarea ref={input} className="input" rows={1} value={draft} maxLength={2000} disabled={!allowed}
+            placeholder={!signedIn ? "Sign up to reply" : replyTo ? "Write your reply…" : "Add to the discussion…"} aria-label="Write a reply"
+            onChange={(e) => { setDraft(e.target.value); typingChanged("discussion", id, e.target.value); }} />
+          <button type="submit" className="icon-btn icon-btn--filled pressable" aria-label="Send reply" disabled={!draft.trim() || sending || !allowed}>
+            {sending ? <Loader2 aria-hidden="true" style={{ animation: "spin .8s linear infinite" }} /> : <ArrowUp aria-hidden="true" />}
+          </button>
         </form>
-      ) : !isSignedIn(a) ? <p className="composer-bar small muted" style={{ justifyContent: "center" }}>Sign up to reply</p> : null}
+      </div>
     </div>
   );
 }

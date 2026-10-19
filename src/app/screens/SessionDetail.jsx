@@ -1,16 +1,16 @@
 import { useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { BarChart3, Bookmark, BookmarkCheck, CalendarDays, ChevronRight, Clock, CheckCircle2, MapPin, Share, Tag, Layers } from "lucide-react";
+import { BadgeCheck, BarChart3, Bookmark, CalendarDays, ChevronRight, CircleCheck, Clock, MapPin, Share, Tag, Layers, Ticket } from "lucide-react";
 import { useStore } from "../lib/store";
 import { cms, dayLabel, isLiveWindow, liveOn, refreshCMS, roomOf, sessionById, speakerById, timeRange, typeLabel, liveWindow } from "../lib/cms";
 import { content, liveFlags } from "../lib/content";
 import { auth, isSignedIn } from "../lib/auth";
-import { bookmarks, social, toggleBookmark } from "../lib/social";
+import { bookmarks, refreshRegistrations, social, toggleBookmark } from "../lib/social";
 import { clockFaked } from "../lib/time";
 import { showAlert, useNow } from "../lib/ui";
 import { Avatar, Button, Empty, Spinner, TopBar } from "../components/ui";
 import { TypeIcon } from "../components/SessionRow";
-import { EVENT, FEATURES } from "../lib/config";
+import { EVENT, FEATURES, LINKS } from "../lib/config";
 
 /* Session page (iOS SessionDetailView). */
 
@@ -22,7 +22,9 @@ export default function SessionDetail() {
   const a = useStore(auth);
   const s = useStore(social);
   const now = useNow(30000);
+  const signedIn = isSignedIn(a);
   useEffect(() => { refreshCMS(); }, []);
+  useEffect(() => { if (signedIn) refreshRegistrations(); }, [signedIn]);
 
   const session = sessionById(decodeURIComponent(id), c);
   if (!session) {
@@ -46,7 +48,7 @@ export default function SessionDetail() {
     const [opens] = liveWindow(session);
     const mins = Math.ceil((opens - now) / 60000);
     showAlert("Opens 10 minutes before the session", mins > 0
-      ? `Polls and Q&A open at ${new Date(opens).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Toronto" })}.`
+      ? `Polls and Q&A open at ${new Date(opens).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric", timeZone: "America/Toronto" })} at ${new Date(opens).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", timeZone: "America/Toronto" })}.`
       : "This session's live window has closed.");
   };
 
@@ -62,42 +64,42 @@ export default function SessionDetail() {
   return (
     <div className="page">
       <TopBar title={typeLabel(session)} />
-      <main id="main" className="pad mt-16 stack-lg">
-        <header className="detail-head stack-sm">
-          <div className="row small" style={{ gap: 6, color: "var(--pur-alt)", fontWeight: 600 }}>
-            <TypeIcon type={session.type} style={{ width: 14, height: 14 }} />
-            <span>{typeLabel(session)}</span><span aria-hidden="true">·</span><span>{session.track}</span>
+      <main id="main" className="session-page">
+        <header className="detail-head">
+          <div className="detail-kicker">
+            <TypeIcon type={session.type} />
+            <span>{typeLabel(session)}</span><span aria-hidden="true">·</span><span className="detail-track">{session.track}</span>
           </div>
           <h1>{session.title}</h1>
           <div className="detail-meta">
             <span><CalendarDays aria-hidden="true" />{dayLabel(session)}</span>
             <span><Clock aria-hidden="true" />{timeRange(session)}</span>
           </div>
-          {saved && <div className="row small bold" style={{ gap: 6, color: "var(--pur-alt)" }}><CheckCircle2 aria-hidden="true" style={{ width: 15, height: 15 }} />You're going</div>}
+          {saved && <span className="going-pill"><CircleCheck aria-hidden="true" />You're going</span>}
         </header>
 
-        <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{session.description}</p>
+        <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 15 }}>{session.description}</p>
 
         {hasLive && (
           <button type="button" className={"live-card pressable" + (open ? " live-card--open" : "")} onClick={openLive}>
-            <span className="ico"><BarChart3 aria-hidden="true" style={{ width: 18, height: 18 }} /></span>
-            <span style={{ flex: 1 }}>
-              <span className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 6 }}>{open ? "Live now" : "Live polls & Q&A"}{open && <span className="live-dot" aria-hidden="true" />}</span>
-              <b style={{ fontSize: 14 }}>{open ? "Vote in the spot poll and ask the speakers" : "Opens 10 min before start"}</b>
+            <span className="ico"><BarChart3 aria-hidden="true" /></span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span className="live-card-eyebrow">{open ? "Live now" : "Live polls & Q&A"}{open && <span className="on-dot" aria-hidden="true" />}</span>
+              <b>{open ? "Vote in the spot poll and ask the speakers" : "Opens 10 min before start"}</b>
             </span>
-            <ChevronRight aria-hidden="true" style={{ width: 16, height: 16, color: "var(--tx2)" }} />
+            <ChevronRight aria-hidden="true" className="live-card-chev" />
           </button>
         )}
 
         {speakers.length > 0 && (
-          <section className="stack-sm" aria-labelledby="spk">
-            <h2 id="spk" className="section-title">Speakers</h2>
+          <section className="stack-sm" style={{ gap: 12 }} aria-labelledby="spk">
+            <h2 id="spk" className="eyebrow eyebrow--muted">Speakers</h2>
             {speakers.map((sp) => (
-              <Link key={sp.id} to={sp.agendaOnly ? "#" : `/speakers/${encodeURIComponent(sp.id)}`} className="list-row pressable" onClick={(e) => { if (sp.agendaOnly) e.preventDefault(); }}>
-                <Avatar name={sp.name} src={sp.photo} size={44} round />
+              <Link key={sp.id} to={sp.agendaOnly ? "#" : `/speakers/${encodeURIComponent(sp.id)}`} className="speaker-row pressable" onClick={(e) => { if (sp.agendaOnly) e.preventDefault(); }}>
+                <Avatar name={sp.name} src={sp.photo} size={44} round={!!sp.photo} />
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <b style={{ display: "block", fontSize: 14 }}>{sp.name}</b>
-                  <span className="small muted ellipsis" style={{ display: "block" }}>{[sp.title, sp.company].filter(Boolean).join(" · ")}</span>
+                  <b>{sp.name}</b>
+                  <span className="ellipsis">{[sp.title, sp.company].filter(Boolean).join(" · ")}</span>
                 </span>
                 {!sp.agendaOnly && <ChevronRight className="chev" aria-hidden="true" />}
               </Link>
@@ -106,19 +108,25 @@ export default function SessionDetail() {
         )}
 
         <section className="stack-sm" aria-labelledby="det">
-          <h2 id="det" className="section-title">Details</h2>
-          <div className="card card--flat stack-sm">
-            {room && <div className="detail-row"><MapPin aria-hidden="true" /><span className="muted">Room</span><span className="spacer" /><b>{room}</b></div>}
-            <div className="detail-row"><Tag aria-hidden="true" /><span className="muted">Track</span><span className="spacer" /><b style={{ textAlign: "right" }}>{session.track}</b></div>
-            <div className="detail-row"><Layers aria-hidden="true" /><span className="muted">Format</span><span className="spacer" /><b>{typeLabel(session)}</b></div>
+          <h2 id="det" className="eyebrow eyebrow--muted">Details</h2>
+          <div className="card card--flat details-card">
+            {room && <div className="detail-row"><MapPin aria-hidden="true" /><span>Room</span><span className="spacer" /><b>{room}</b></div>}
+            <div className="detail-row"><Tag aria-hidden="true" /><span>Track</span><span className="spacer" /><b style={{ textAlign: "right" }}>{session.track}</b></div>
+            <div className="detail-row"><Layers aria-hidden="true" /><span>Format</span><span className="spacer" /><b>{typeLabel(session)}</b></div>
           </div>
         </section>
 
-        <div className="stack-sm">
-          <Button variant={saved ? undefined : "primary"} size="lg" block icon={saved ? BookmarkCheck : Bookmark} onClick={() => toggleBookmark(session.id)}>
-            {saved ? (isSignedIn(a) ? "Registered · Remove" : "Saved · Remove") : (isSignedIn(a) ? "Register & add to schedule" : "Save to My Sessions")}
-          </Button>
-          {!isSignedIn(a) && <p className="tiny muted center" style={{ margin: 0 }}>Saved on this device. Sign in to join sessions, polls and Q&A.</p>}
+        <div className="stack-sm" style={{ gap: 10 }}>
+          {signedIn ? (
+            <Button variant="primary" size="lg" block icon={saved ? BadgeCheck : Bookmark} onClick={() => toggleBookmark(session.id)} className={saved ? "" : "icon-fill"}>
+              {saved ? "Registered · Remove" : "Register & add to schedule"}
+            </Button>
+          ) : (
+            <>
+              <a className="btn btn-primary btn-lg btn-block" href={LINKS.tickets} target="_blank" rel="noopener noreferrer">Get a pass<Ticket aria-hidden="true" /></a>
+              <p className="center muted" style={{ margin: 0, fontSize: 11 }}>Sign in and choose a pass to join sessions, polls and Q&A.</p>
+            </>
+          )}
           <Button size="lg" block icon={Share} onClick={share}>Share session</Button>
         </div>
       </main>

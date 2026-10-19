@@ -2,15 +2,17 @@ import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useStore } from "./lib/store";
 import { auth, loadAccount } from "./lib/auth";
-import { refreshCMS } from "./lib/cms";
+import { cms, refreshCMS, roomOf } from "./lib/cms";
 import { refreshContent } from "./lib/content";
-import { social, startSocial, stopSocial, chatsHasNew } from "./lib/social";
+import { bookmarks, social, startSocial, stopSocial, chatsHasNew } from "./lib/social";
 import TabBar from "./components/TabBar";
 import { FEATURES } from "./lib/config";
 import { ToastHost, Spinner } from "./components/ui";
 import ShareSheetHost from "./components/ShareSheet";
 import { myCard, profileTabDot } from "./lib/myCard";
 import { InstallNudges, OfflineBar, UpdatePrompt } from "./components/AppNotices";
+import LivePollPill from "./components/LivePollPill";
+import { showAlert } from "./lib/ui";
 import { onScreenChange } from "./lib/pwa";
 
 /* =========================================================
@@ -77,6 +79,15 @@ function Boot() {
       navigate(`/install?from=${encodeURIComponent(q.get("from") || "link")}`, { replace: true });
     }
   }, [location.pathname, location.search, navigate]);
+
+  // New times from the admin panel (iOS MainTabView.agendaTimesChanged): tell people about their saved sessions.
+  const { timesVersion, lastMoved } = useStore(cms);
+  useEffect(() => {
+    if (!timesVersion) return;
+    const saved = bookmarks(social.get());
+    const mine = cms.get().sessions.filter((x) => lastMoved.includes(x.id) && saved.includes(x.id) && x.start > Date.now()).slice(0, 3);
+    for (const x of mine) { const room = roomOf(x.stage); showAlert(`New time: ${x.title}`, `Now ${x.startTime} to ${x.endTime}${room ? ` · ${room}` : ""}`, { ms: 8000 }); }
+  }, [timesVersion, lastMoved]);
 
   // Scroll to top on page changes (not on tab-internal state); a quiet moment for a waiting update.
   useEffect(() => { window.scrollTo(0, 0); onScreenChange(); }, [location.pathname]);

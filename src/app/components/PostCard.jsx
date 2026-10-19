@@ -4,7 +4,8 @@ import { BadgeCheck, Flag, Hand, Heart, Link2, MessageCircle, MoreHorizontal, Se
 import { useStore } from "../lib/store";
 import { cms } from "../lib/cms";
 import { auth, can, firstName, isSignedIn } from "../lib/auth";
-import { blockUser, deletePost, report, social, toggleLike } from "../lib/social";
+import { deletePost, social, toggleLike } from "../lib/social";
+import { blockFlow, reportFlow } from "../lib/safety";
 import { fileURL, FEATURES } from "../lib/config";
 import { mentionPath, splitMentions } from "../lib/mentions";
 import { postTime } from "../lib/time";
@@ -95,16 +96,9 @@ export default function PostCard({ post }) {
     });
     if (ok && !(await deletePost(post))) showAlert("Couldn't remove it", social.get().lastError || "Check your connection and try again.");
   };
-  const reportPost = async () => {
-    setMenu(false);
-    const ok = await confirmDialog({ title: "Report this post?", message: "The TTFC team reviews reports within 24 hours during the event.", confirm: "Report post", destructive: true });
-    if (ok && (await report("post", post.id))) showAlert("Thanks for telling us", "The TTFC team will review it.");
-  };
-  const block = async () => {
-    setMenu(false);
-    const ok = await confirmDialog({ title: `Block ${post.authorName}?`, message: "You won't see each other's posts or messages.", confirm: `Block ${firstName(post.authorName)}`, destructive: true });
-    if (ok && (await blockUser(post.authorId))) showAlert(`${post.authorName} is blocked`);
-  };
+  // iOS SafetyMenu: the reasons sheet, then the block confirmation (lib/safety.js).
+  const reportPost = () => { setMenu(false); reportFlow("post", post.id); };
+  const block = () => { setMenu(false); blockFlow(post.authorId, post.authorName); };
 
   const parts = splitMentions(post.body, post.mentions, s.people);
   return (

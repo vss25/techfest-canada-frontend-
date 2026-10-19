@@ -25,7 +25,7 @@ export function notificationItems({ social: s, cms: c, auth: a, now }) {
     out.push({
       id: `acc-${conn.id}`, kind: "connection", title: inPerson ? `You met ${u.name}` : `Connected with ${u.name}`,
       detail: inPerson ? "Badge scanned. Contact details saved to their card." : "You're in each other's network. Say hello in Chats.",
-      date: conn.respondedAt || conn.createdAt, link: FEATURES.chats ? `/chat/${encodeURIComponent(u.id)}` : "",
+      date: conn.createdAt, link: FEATURES.chats ? `/chat/${encodeURIComponent(u.id)}` : "",
     });
   }
   for (const id of bookmarks(s)) {
@@ -36,7 +36,7 @@ export function notificationItems({ social: s, cms: c, auth: a, now }) {
     const room = roomOf(x.stage);
     out.push({ id: `ses-${x.id}`, kind: "session", title: x.title, detail: `Starts ${when} · ${x.startTime}${room ? ` · ${room}` : ""}.`, date: new Date(x.start - 86400000 * 30).toISOString(), link: `/session/${encodeURIComponent(x.id)}` });
   }
-  for (const p of s.feed.filter((x) => x.kind === "announcement").slice(0, 6)) {
+  for (const p of s.feed.slice(0, 6).filter((x) => x.kind === "announcement")) {
     out.push({ id: `ann-${p.id}`, kind: "announcement", title: "TTFC announcement", detail: p.body, date: p.createdAt, link: `/post/${encodeURIComponent(p.id)}` });
   }
   for (const d of s.discussions.filter((x) => x.mine || x.authorId === meId)) {
@@ -46,10 +46,10 @@ export function notificationItems({ social: s, cms: c, auth: a, now }) {
     out.push({ id: `grp-${g.id}-${g.status}`, kind: "moderation", title: g.status === "approved" ? "Your group is listed" : g.status === "pending" ? "Group under review" : "Group not approved", detail: g.name, date: g.createdAt, link: `/group/${encodeURIComponent(g.id)}` });
   }
   for (const n of s.notifications) {
-    out.push({ id: `pn-${n.id}`, kind: "personal", title: n.title, detail: n.body, date: n.createdAt, link: n.link || "", serverRead: !!n.readAt, from: n.sentByName });
+    out.push({ id: `pn-${n.id}`, kind: "personal", title: n.title, detail: n.body, date: n.createdAt, link: n.link || "ttfc://tab/home", serverRead: !!n.readAt, from: n.sentByName });
   }
   const t = bestTicket(a.user);
-  if (t) out.push({ id: `tkt-${t.ticketId}`, kind: "ticket", title: `${t.tierName} linked`, detail: "Your QR pass is ready in Profile › My pass.", date: t.purchasedAt || "2026-09-01T00:00:00Z", link: "/profile/pass" });
+  if (t) out.push({ id: `tkt-${t.ticketId}`, kind: "ticket", title: `${t.tierName} linked`, detail: "Your QR pass is ready in Profile → My pass.", date: t.purchasedAt || "2026-09-01T00:00:00Z", link: "/profile/pass" });
   return out.sort((x, y) => Date.parse(y.date || 0) - Date.parse(x.date || 0));
 }
 
@@ -76,11 +76,15 @@ export function routeForLink(link) {
   return null;
 }
 
+/** iOS NotificationsListView.linkLabel: where a staff message points. */
 export function linkLabel(link) {
-  const r = routeForLink(link);
-  if (!r) return "";
-  if (r.href) { try { return new URL(r.href).host.replace(/^www\./, ""); } catch { return "Open link"; } }
-  if (r.to.startsWith("/session")) return "Open session";
-  if (r.to === "/profile/pass") return "My pass";
+  const l = String(link || "").trim();
+  if (/^https:\/\//i.test(l)) { try { return new URL(l).host.replace(/^www\./, ""); } catch { return "Open link"; } }
+  const m = l.match(/^ttfc:\/\/([^/?#]+)\/?([^/?#]*)/i);
+  if (!m) return "Open";
+  const [, host, part] = m;
+  if (host === "session") return "Open session";
+  if (host === "tab" && part === "ticket") return "My pass";
+  if (host === "tab" && part) return `Open ${part.charAt(0).toUpperCase()}${part.slice(1).toLowerCase()}`;
   return "Open";
 }

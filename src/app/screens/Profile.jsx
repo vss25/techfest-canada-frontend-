@@ -11,10 +11,9 @@ import { pwa, promptInstall } from "../lib/pwa";
 import { theme, setTheme, THEME_LABEL } from "../lib/theme";
 import { points, refreshPoints } from "../lib/points";
 import { resetDemo } from "../lib/demo";
-import { patch } from "../lib/api";
 import { fileURL, LINKS, shortTopic } from "../lib/config";
 import { confirmDialog, safeHref, showAlert } from "../lib/ui";
-import { Avatar, Button, Sheet, Switch, TopBar } from "../components/ui";
+import { Avatar, Button, Sheet, TopBar } from "../components/ui";
 import { GearFill, TrophyFill } from "../components/Glyphs";
 import AppleWalletButton from "../components/AppleWallet";
 
@@ -45,8 +44,8 @@ function Row({ to, href, icon, title, onClick, tone }) {
   return <button type="button" className="list-row pressable" onClick={onClick}>{inner}</button>;
 }
 
-/** iOS SettingsSheet, most used first: notifications, theme, About AtlasLink; then account
-    (and the attendee-list switch), links, and sign out last. (Session reminders are app-only:
+/** iOS SettingsSheet, most used first: notifications, theme, About AtlasLink; then account,
+    links, and sign out last. (Session reminders are app-only:
     a browser can't alert you when the web app is closed.) */
 function SettingsSheet({ onClose }) {
   const a = useStore(auth);
@@ -62,12 +61,6 @@ function SettingsSheet({ onClose }) {
       return;
     }
     navigate("/install?from=profile");
-  };
-  const toggleHidden = async (hidden) => {
-    try {
-      await patch("profile", { directoryHidden: hidden });
-      await loadAccount();
-    } catch (e) { showAlert("Couldn't save", e.message); }
   };
   const doSignOut = async () => {
     const ok = await confirmDialog({ title: "Sign out of TTFC?", message: "Your schedule and chats stay on your account. Sign in again any time.", confirm: "Sign out", destructive: true });
@@ -112,8 +105,7 @@ function SettingsSheet({ onClose }) {
             <>
               <b>{user?.name || user?.email}</b>
               <span className="tiny muted">{user?.email}{` · ${passes} pass${passes === 1 ? "" : "es"}`}{role}</span>
-              <Switch label="Show me in the attendee list" description="Name, title, company and pass only. Never your email."
-                checked={!user?.directoryHidden} onChange={(on) => toggleHidden(!on)} />
+              {/* No attendee-list switch: everyone is listed and only staff can hide someone (Oct 18). */}
             </>
           )}
         </section>

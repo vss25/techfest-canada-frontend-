@@ -179,7 +179,7 @@ var SECTIONS_APP = [
   },
   {
     title: "3. What other attendees see",
-    body: "Signed-in attendees can see your name, ticket type, profile photo and the profile details you add. They never see your email address unless you connect in person by scanning each other's codes. You can hide yourself from the attendee directory at any time.",
+    body: "Signed-in attendees can see your name, ticket type, profile photo and the profile details you add. They never see your email address unless you connect in person by scanning each other's codes. Everyone with a pass is listed in the attendee directory. To be taken off it, contact the TTFC team at info@thetechfestival.com.",
   },
   {
     title: "4. Community rules (zero tolerance)",

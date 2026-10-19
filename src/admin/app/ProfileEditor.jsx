@@ -310,7 +310,7 @@ export default function ProfileEditor({ id, user, onSaved, onDelete }) {
 
         <Section title="Visibility & access">
           <div className="space-y-4">
-            <Switch label="Show in the attendee list" description="Other attendees can find them in the app's directory." checked={form.showInList} onChange={set("showInList")} />
+            <Switch label="Show in the attendee list" description="Other attendees can find them in the app's directory. Everyone is listed unless staff switch this off; people can't hide themselves." checked={form.showInList} onChange={set("showInList")} />
             <Switch label="Can be messaged" description="Other attendees can send them a message in the app." checked={form.canMessage} onChange={set("canMessage")} />
             <Switch label="Can receive connection requests" description="Other attendees can ask to connect in the app. Scanning their badge in person still works." checked={form.canRequest} onChange={set("canRequest")} />
             <p className="text-xs leading-relaxed text-ttfc-muted">For VIPs such as ministers who may not reply. People they've accepted or written to can still message them; staff always can. Hiding them from the list is separate.</p>

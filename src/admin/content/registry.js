@@ -99,6 +99,10 @@ export const REGISTRY = {
     scope: "website", group: "contact", type: "url",
     label: "X (Twitter)", description: "Where the X icon in the footer goes.", fallback: BUILTIN_SOCIAL.x,
   },
+  /* Edited by the Large site files card (cms/LargeSiteFiles.jsx), not as text: scope "files" keeps
+     them out of Website options and App text & switches. */
+  "site.hero_video_url": { scope: "files", label: "Home page video", description: "" },
+  "site.brochure_url": { scope: "files", label: "Brochure PDF", description: "" },
 
   /* ---------------- App ---------------- */
   "login.tagline": {

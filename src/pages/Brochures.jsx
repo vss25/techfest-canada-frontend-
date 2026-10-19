@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "../components/Navbar.tsx";
 import Footer from "../components/Footer";
+import useSiteSettings from "../hooks/useSiteSettings";
+import { BROCHURE_COVER, BROCHURE_FILENAME, downloadUrl, siteFileUrl } from "../lib/siteFiles";
 
 const INDUSTRIES = [
   "Artificial Intelligence","Quantum Computing","Cybersecurity & Digital Trust",
@@ -11,6 +13,25 @@ const INDUSTRIES = [
   "Government & Public Sector","Academia & Research","Venture Capital & Investing",
   "Media & Communications","Other",
 ];
+
+/* The Download PDF button (under the cover and under the open brochure). */
+function DownloadPdf(props) {
+  var dark = props.dark;
+  var rest = { background:dark?"#ffffff":"#0d0520", color:dark?"#0d0520":"#ffffff", boxShadow:dark?"0 6px 32px rgba(255,255,255,0.12)":"0 6px 32px rgba(13,5,32,0.18)" };
+  return (
+    <motion.a href={props.href} download={BROCHURE_FILENAME}
+      whileHover={{ scale:1.04, y:-2 }} whileTap={{ scale:0.97 }}
+      style={{ display:"inline-flex", alignItems:"center", gap:12, padding:"18px 52px", borderRadius:16, background:rest.background, color:rest.color, fontFamily:"'Orbitron',sans-serif", fontSize:"0.78rem", fontWeight:900, letterSpacing:"1px", textTransform:"uppercase", textDecoration:"none", boxShadow:rest.boxShadow, transition:"background 0.3s,color 0.3s,box-shadow 0.3s" }}
+      onMouseEnter={function(e){e.currentTarget.style.background="linear-gradient(135deg,#7a3fd1,#f5a623)";e.currentTarget.style.color="#fff";e.currentTarget.style.boxShadow="0 8px 40px rgba(122,63,209,0.35)";}}
+      onMouseLeave={function(e){e.currentTarget.style.background=rest.background;e.currentTarget.style.color=rest.color;e.currentTarget.style.boxShadow=rest.boxShadow;}}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Download PDF
+    </motion.a>
+  );
+}
 
 export default function Brochures() {
   var s1 = useState(false); var dark = s1[0]; var setDark = s1[1];
@@ -23,6 +44,10 @@ export default function Brochures() {
   var brochureRef = useRef(null);
   var honeypot = useRef("");
   var openedAt = useRef(Date.now()); // bots fill the form in well under a second
+  // The uploaded copy on Sanity's CDN (Admin › Site settings › Large site files), else the website's own.
+  var site = useSiteSettings();
+  var pdfUrl = siteFileUrl(site, "brochure");
+  var pdfDownload = downloadUrl(pdfUrl, BROCHURE_FILENAME);
 
   useEffect(function () {
     setDark(document.body.classList.contains("dark-mode"));
@@ -238,30 +263,34 @@ export default function Brochures() {
             </form>
           </motion.div>
 
-          {/* ── SHOW BROCHURE BUTTON ── */}
+          {/* ── COVER + VIEW / DOWNLOAD: the 15 MB PDF only loads after "View brochure" ── */}
           <AnimatePresence>
             {submitted && !brochureOpen && (
-              <motion.div initial={{ opacity:0, y:30, scale:0.95 }} animate={{ opacity:1, y:0, scale:1 }} exit={{ opacity:0, scale:0.95 }} transition={{ duration:0.6, delay:0.2 }} style={{ textAlign:"center", marginTop:"3rem" }}>
+              <motion.div initial={{ opacity:0, y:30, scale:0.95 }} animate={{ opacity:1, y:0, scale:1 }} exit={{ opacity:0, scale:0.95 }} transition={{ duration:0.6, delay:0.2 }} style={{ textAlign:"center", marginTop:"3rem", display:"flex", flexDirection:"column", alignItems:"center" }}>
                 <p style={{ color:textMid, fontSize:"0.82rem", marginBottom:"1.5rem", fontFamily:"'Orbitron',sans-serif", letterSpacing:"0.5px" }}>Your brochure is ready →</p>
-                <motion.button onClick={openBrochure}
-                  animate={btnPulsing?{boxShadow:["0 0 0 0 rgba(122,63,209,0.6)","0 0 0 24px rgba(122,63,209,0)","0 0 0 0 rgba(122,63,209,0)"]}:{}}
-                  transition={{ repeat:Infinity, duration:1.8 }}
-                  whileHover={{ scale:1.05, y:-3 }} whileTap={{ scale:0.97 }}
-                  style={{ padding:"20px 56px", borderRadius:18, border:"none", cursor:"pointer", fontFamily:"'Orbitron',sans-serif", fontSize:"0.85rem", fontWeight:900, letterSpacing:"1.5px", textTransform:"uppercase", background:"linear-gradient(135deg,#7a3fd1 0%,#c4607a 50%,#f5a623 100%)", color:"#ffffff", display:"inline-flex", alignItems:"center", gap:14, boxShadow:"0 8px 40px rgba(122,63,209,0.35)", position:"relative", overflow:"hidden" }}
+                <motion.button type="button" onClick={openBrochure} aria-label="View brochure"
+                  whileHover={{ y:-4 }} whileTap={{ scale:0.98 }}
+                  style={{ display:"block", width:"min(100%, 340px)", padding:0, marginBottom:"2rem", border:"1px solid "+cardBdr, borderRadius:18, overflow:"hidden", cursor:"pointer", background:dark?"#0a0518":"#f5f3ff", boxShadow:dark?"0 24px 60px rgba(0,0,0,0.55)":"0 24px 60px rgba(122,63,209,0.16)" }}
                 >
-                  <motion.div animate={{ x:["-100%","200%"] }} transition={{ repeat:Infinity, duration:2.2, ease:"easeInOut" }}
-                    style={{ position:"absolute", inset:0, background:"linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.18) 50%,transparent 60%)", pointerEvents:"none" }} />
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-                  </svg>
-                  View Full Brochure
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  <img src={BROCHURE_COVER} alt="Cover of the TTFC 2026 sponsorship brochure" width={595} height={842} style={{ display:"block", width:"100%", height:"auto" }} />
                 </motion.button>
-                <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:1 }}
-                  style={{ marginTop:"1rem", display:"flex", alignItems:"center", justifyContent:"center", gap:6, color:textMid, fontSize:"0.68rem", fontFamily:"'Orbitron',sans-serif", letterSpacing:"0.5px" }}>
-                  <motion.span animate={{ y:[0,4,0] }} transition={{ repeat:Infinity, duration:1.5 }}>↓</motion.span>
-                  SCROLL THROUGH ALL 14 PAGES
-                </motion.div>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:12, justifyContent:"center", alignItems:"center" }}>
+                  <motion.button type="button" onClick={openBrochure}
+                    animate={btnPulsing?{boxShadow:["0 0 0 0 rgba(122,63,209,0.6)","0 0 0 24px rgba(122,63,209,0)","0 0 0 0 rgba(122,63,209,0)"]}:{}}
+                    transition={{ repeat:Infinity, duration:1.8 }}
+                    whileHover={{ scale:1.04, y:-2 }} whileTap={{ scale:0.97 }}
+                    style={{ padding:"18px 40px", borderRadius:16, border:"none", cursor:"pointer", fontFamily:"'Orbitron',sans-serif", fontSize:"0.78rem", fontWeight:900, letterSpacing:"1.2px", textTransform:"uppercase", background:"linear-gradient(135deg,#7a3fd1 0%,#c4607a 50%,#f5a623 100%)", color:"#ffffff", display:"inline-flex", alignItems:"center", gap:12, boxShadow:"0 8px 40px rgba(122,63,209,0.35)", position:"relative", overflow:"hidden" }}
+                  >
+                    <motion.div animate={{ x:["-100%","200%"] }} transition={{ repeat:Infinity, duration:2.2, ease:"easeInOut" }}
+                      style={{ position:"absolute", inset:0, background:"linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.18) 50%,transparent 60%)", pointerEvents:"none" }} />
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    View brochure
+                  </motion.button>
+                  <DownloadPdf href={pdfDownload} dark={dark} />
+                </div>
+                <p style={{ color:textMid, fontSize:"0.68rem", fontFamily:"'Orbitron',sans-serif", letterSpacing:"0.5px", margin:"1rem 0 0" }}>PDF · 14 pages</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -283,7 +312,7 @@ export default function Brochures() {
                   style={{ borderRadius:24, overflow:"hidden", border:"1px solid "+cardBdr, boxShadow:dark?"0 24px 80px rgba(0,0,0,0.6)":"0 24px 80px rgba(122,63,209,0.12)", position:"relative" }}>
                   <div style={{ height:4, background:"linear-gradient(90deg,#7a3fd1,#c4607a,#f5a623)", width:"100%" }} />
                   <div className="pdf-container" style={{ background:dark?"#0a0518":"#f5f3ff", overflowY:"auto", maxHeight:"82vh" }}>
-                    <iframe src="/Brochure.pdf#toolbar=0&navpanes=0&scrollbar=0" title="Tech Festival Canada 2026 Brochure" style={{ width:"100%", height:"85vh", border:"none", display:"block" }} />
+                    <iframe src={pdfUrl + "#toolbar=0&navpanes=0&scrollbar=0"} title="Tech Festival Canada 2026 Brochure" style={{ width:"100%", height:"85vh", border:"none", display:"block" }} />
                   </div>
                   <div style={{ height:4, background:"linear-gradient(90deg,#f5a623,#c4607a,#7a3fd1)", width:"100%" }} />
                 </motion.div>
@@ -293,17 +322,7 @@ export default function Brochures() {
                   <div style={{ display:"flex", gap:6, marginBottom:4 }}>
                     {[0,1,2].map(function(i){ return <motion.div key={i} animate={{ y:[0,-5,0] }} transition={{ delay:i*0.15, repeat:Infinity, duration:1.2 }} style={{ width:4, height:4, borderRadius:"50%", background:i===1?"#f5a623":"#7a3fd1", opacity:0.8 }} />; })}
                   </div>
-                  <motion.a href="/Brochure.pdf" download="TechFestivalCanada_2026_Brochure.pdf"
-                    whileHover={{ scale:1.04, y:-2 }} whileTap={{ scale:0.97 }}
-                    style={{ display:"inline-flex", alignItems:"center", gap:12, padding:"18px 52px", borderRadius:16, background:dark?"#ffffff":"#0d0520", color:dark?"#0d0520":"#ffffff", fontFamily:"'Orbitron',sans-serif", fontSize:"0.78rem", fontWeight:900, letterSpacing:"1px", textTransform:"uppercase", textDecoration:"none", boxShadow:dark?"0 6px 32px rgba(255,255,255,0.12)":"0 6px 32px rgba(13,5,32,0.18)", transition:"background 0.3s,color 0.3s,box-shadow 0.3s" }}
-                    onMouseEnter={function(e){e.currentTarget.style.background="linear-gradient(135deg,#7a3fd1,#f5a623)";e.currentTarget.style.color="#fff";e.currentTarget.style.boxShadow="0 8px 40px rgba(122,63,209,0.35)";}}
-                    onMouseLeave={function(e){e.currentTarget.style.background=dark?"#ffffff":"#0d0520";e.currentTarget.style.color=dark?"#0d0520":"#ffffff";e.currentTarget.style.boxShadow=dark?"0 6px 32px rgba(255,255,255,0.12)":"0 6px 32px rgba(13,5,32,0.18)";}}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    Download PDF
-                  </motion.a>
+                  <DownloadPdf href={pdfDownload} dark={dark} />
                   <p style={{ color:textMid, fontSize:"0.68rem", fontFamily:"'Orbitron',sans-serif", letterSpacing:"0.5px", margin:0 }}>
                     PDF · 14 pages · For sponsorship enquiries:{" "}
                     <a href="mailto:sales@thetechfestival.com" style={{ color:"#b99eff", textDecoration:"none" }}>sales@thetechfestival.com</a>

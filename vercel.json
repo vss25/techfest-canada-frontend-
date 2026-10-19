@@ -27,6 +27,14 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=2592000, stale-while-revalidate=86400" }]
     },
     {
+      "source": "/hero-poster.jpg",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=2592000, stale-while-revalidate=86400" }]
+    },
+    {
+      "source": "/brochure-cover.jpg",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=2592000, stale-while-revalidate=86400" }]
+    },
+    {
       "source": "/:path([Rr][Ss][Vv][Pp]/?)",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     },

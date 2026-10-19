@@ -40,6 +40,33 @@ export const PASS_TIERS = [
 /** "Connect Pass", "Speaker Pass": a tier's pass name. */
 export const passName = (key) => (key === "speaker" ? "Speaker Pass" : `${PASS_TIERS.find((x) => x.key === key)?.label || "—"} Pass`);
 
+/** The meals and events staff can add to (or take off) one pass, each Automatic / Yes / No (backend
+    services/passExtras.js, same keys and order). `auto`: who gets it on Automatic. */
+export const EXTRAS = [
+  { key: "cxo", label: "CxO Breakfasts", short: "CxO", auto: "Apex and Speaker Passes, and speakers on any pass" },
+  { key: "lunch", label: "Networking Luncheons", short: "Lunch", auto: "Influence, Power, Apex and Speaker Passes" },
+  { key: "gala", label: "Gala Dinner & Networking Reception", short: "Gala", auto: "Power, Apex and Speaker Passes" },
+  { key: "awards", label: "Catalyst Awards Night", short: "Awards", auto: "Power, Apex and Speaker Passes" },
+];
+/** A pass's extras from the server ({ cxo: { override, auto, included }, … }), or only the CxO Breakfasts
+    from an older server (cxoBreakfast / cxoOverride / cxoAuto). */
+export const passExtras = (t) => t?.extras || (t ? { cxo: { override: t.cxoOverride ?? null, auto: !!t.cxoAuto, included: !!t.cxoBreakfast } } : {});
+/** For the directory's badge: what the pass includes ("+" = added by staff) and what staff took off. */
+export function extrasSummary(extras = {}) {
+  const on = [];
+  const off = [];
+  const notes = [];
+  for (const x of EXTRAS) {
+    const e = extras[x.key];
+    if (!e) continue;
+    const set = typeof e.override === "boolean";
+    if (e.included) on.push({ key: x.key, text: `${set && !e.auto ? "+" : ""}${x.short}` });
+    else if (set && e.auto) off.push({ key: x.key, text: x.short });
+    notes.push(`${x.label}: ${e.included ? "Yes" : "No"}${set ? " (set by staff)" : " (automatic)"}`);
+  }
+  return { on, off, edited: Object.values(extras).some((e) => typeof e?.override === "boolean"), title: notes.join("\n") };
+}
+
 /** Ticket Value After Payment: what they paid for the pass after promo codes, before HST (server: services/people.js). */
 export const VALUE_BANDS = [
   { key: "below", label: "Below 100 CAD" },

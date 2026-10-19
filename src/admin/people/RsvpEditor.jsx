@@ -17,21 +17,31 @@ import { RSVP_STATUS_LABELS, RSVP_STATUS_TONE } from "./peopleMeta";
      - Without one, staff enter it ("Confirmed by Staff"). The
        attendee's own RSVP from /rsvp later replaces staff's
        answers, but seats staff gave outside their pass stay.
-     - Only what their pass includes on the chosen days (and the
-       pass's CxO Breakfast switch), unless staff switch on
-       "Include options outside their pass": the staff override.
+     - Only what their pass includes on the chosen days (with the
+       meals and events switched on or off for that pass: CxO
+       Breakfasts, luncheons, the Gala Dinner, the Awards Night),
+       unless staff switch on "Include options outside their pass":
+       the staff override.
      - Nothing here emails the attendee.
 ========================================================= */
 
 const GENERIC = /^(sessions|expo|breaks)_d\d$/;
-const CXO = ["cxo_d1", "cxo_d2"];
+// The RSVP options each pass extra decides (backend services/rsvp.js EXTRA_OPTIONS).
+const EXTRA_OF = { cxo_d1: "cxo", cxo_d2: "cxo", lunch_d1: "lunch", lunch_d2: "lunch", gala: "gala", awards: "awards" };
 
 /** Options someone on `tier` coming on `days` can choose: the server's allowedExperiences, with the pass's
-    CxO Breakfast switch (`rules.cxo`) and breakfasts they keep (`rules.keep`). */
+    extras switched on or off (`rules.extras`: { cxo, lunch, gala, awards } true / false; `rules.cxo` from an
+    older server) and the extras they keep from their RSVP (`rules.keep`). */
 const allowedFor = (catalog, tier, days, rules = {}) => new Set((catalog?.options || [])
   .filter((o) => o.kind === "experience" && (!o.day || days.includes(o.day)))
-  .filter((o) => (CXO.includes(o.key) && typeof rules?.cxo === "boolean" ? rules.cxo : (o.tiers || []).includes(tier)) || (rules?.keep || []).includes(o.key))
+  .filter((o) => {
+    const x = EXTRA_OF[o.key];
+    const v = !x ? undefined : typeof rules?.extras?.[x] === "boolean" ? rules.extras[x] : x === "cxo" && typeof rules?.cxo === "boolean" ? rules.cxo : undefined;
+    return (typeof v === "boolean" ? v : (o.tiers || []).includes(tier)) || (rules?.keep || []).includes(o.key);
+  })
   .map((o) => o.key));
+/** Only the extras switched on (a pass staff pick here goes by its tier, but what this pass was given stays). */
+const onlyYes = (extras) => (extras ? Object.fromEntries(Object.entries(extras).filter(([, v]) => v === true)) : undefined);
 
 function Summary({ r, catalog }) {
   const days = catalog?.days || [];
@@ -178,8 +188,8 @@ function Editor({ personId, rsvp, catalog, defaultTier, tierLocked, rules, onCan
   const [outside, setOutside] = useState(!!rsvp?.passLimitOverride);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  // The pass's CxO switch applies to the pass on file; a pass staff pick here goes by its tier (a speaker keeps theirs).
-  const allowed = useMemo(() => allowedFor(catalog, tier, days, tierLocked ? rules : { keep: rules?.keep, cxo: rules?.cxo === true ? true : undefined }),
+  // The pass's switches apply to the pass on file; a pass staff pick here goes by its tier (what was switched on stays).
+  const allowed = useMemo(() => allowedFor(catalog, tier, days, tierLocked ? rules : { keep: rules?.keep, cxo: rules?.cxo === true ? true : undefined, extras: onlyYes(rules?.extras) }),
     [catalog, tier, days, tierLocked, rules]);
   const tiers = (catalog?.tiers || []);
   const catDays = catalog?.days || [];
@@ -258,7 +268,8 @@ function Editor({ personId, rsvp, catalog, defaultTier, tierLocked, rules, onCan
  * @param {object|null} p.rsvp      rsvpDetail from GET /console/people/:id
  * @param {object} p.catalog        GET /api/rsvp/options shape
  * @param {object|null} p.pass      the person's main pass (its tier is what the RSVP is checked against)
- * @param {object} [p.rules]        { cxo: true | false | null, keep: [keys] } the CxO Breakfast rules for this person
+ * @param {object} [p.rules]        { extras: { cxo, lunch, gala, awards } (true | false | null), cxo, keep: [keys] }:
+ *                                   their pass's meals and events, and the ones they keep from their RSVP
  * @param {Array} [p.duplicates]    possible duplicates waiting in Leads › RSVPs
  */
 export default function RsvpEditor({ personId, rsvp, catalog, pass, rules = null, duplicates = [], canEdit = true, onSaved }) {
@@ -266,7 +277,11 @@ export default function RsvpEditor({ personId, rsvp, catalog, pass, rules = null
   const fromAttendee = rsvp && rsvp.source !== "staff";
   const tierLocked = !!(rsvp ? rsvp.tierVerified : pass?.ticketId);
   const defaultTier = rsvp?.tier || pass?.tier || "";
-  const cxoRules = useMemo(() => ({ cxo: typeof rules?.cxo === "boolean" ? rules.cxo : undefined, keep: rules?.keep || [] }), [rules]);
+  const cxoRules = useMemo(() => ({
+    cxo: typeof rules?.cxo === "boolean" ? rules.cxo : undefined,
+    extras: rules?.extras ? Object.fromEntries(Object.entries(rules.extras).filter(([, v]) => typeof v === "boolean")) : undefined,
+    keep: rules?.keep || [],
+  }), [rules]);
 
   const done = () => { setMode("view"); onSaved(); };
 

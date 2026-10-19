@@ -13,11 +13,14 @@ import { defaultIds, keepKnown, qrContactFields, SHARE_OFF_ERROR } from "../lib/
 import { Button, Segmented, TopBar } from "../components/ui";
 import { ShareChecklist } from "../components/ShareSheet";
 import AppleWalletButton from "../components/AppleWallet";
+import { passInclusions } from "../lib/inclusions";
 
 /* =========================================================
    My pass: the door QR ("TECHFEST:<ticketId>", the same code
-   the apps and the website wallet show) and the connect QR
-   other attendees scan to connect in person.
+   the apps and the website wallet show), what the pass includes
+   (iOS TicketDetailView "What's included": the server's
+   tickets[].inclusions, else the pass's list, lib/inclusions.js)
+   and the connect QR other attendees scan to connect in person.
 ========================================================= */
 
 export default function Pass() {
@@ -96,12 +99,35 @@ function PassCode({ ticket, name }) {
       </section>
       {/* As on iOS (TicketDetailView): Apple devices only; the same badge as on the Profile. */}
       <AppleWalletButton ticketId={ticket.ticketId} />
+      <Included ticket={ticket} />
       <section className="stack-sm" aria-labelledby="link-h">
         <h3 id="link-h" className="ticket-link-h">Link another pass</h3>
         <p className="tiny muted" style={{ margin: 0 }}>Bought with a different email? Enter the last name and ticket ID from that ticket email.</p>
         {form}
       </section>
     </div>
+  );
+}
+
+/** iOS checkmark.circle.fill / Android CheckCircle: a filled circle with a white tick. */
+const FilledCheck = () => (
+  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+    <circle cx="8" cy="8" r="8" fill="currentColor" />
+    <path d="M4.7 8.2l2.1 2.1 4.5-4.6" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** "What's included", as iOS (TicketDetailView includedBlock) and Android (TicketDetailScreen). */
+function Included({ ticket }) {
+  const list = passInclusions(ticket);
+  if (!list.length) return null;
+  return (
+    <section className="stack-sm" aria-labelledby="incl-h">
+      <h3 id="incl-h" className="eyebrow">What's included</h3>
+      <ul className="card pass-incl">
+        {list.map((f) => <li key={f}><FilledCheck /><span>{f}</span></li>)}
+      </ul>
+    </section>
   );
 }
 

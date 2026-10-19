@@ -195,6 +195,10 @@ export function bestTicket(user) {
     type: String(t.type || t.tier || "").toLowerCase(),
     purchasedAt: t.purchaseDate || t.purchasedAt || "",
     checkedIn: !!t.checkedIn,
+    // Its CxO Breakfasts (true / false; null = not sent) and everything it includes, as the server lists it
+    // (the pass's meals and events as staff set them; [] from an older server): My pass › What's included.
+    cxoBreakfast: typeof t.cxoBreakfast === "boolean" ? t.cxoBreakfast : null,
+    inclusions: Array.isArray(t.inclusions) ? t.inclusions.filter((x) => typeof x === "string") : [],
   })).filter((t) => t.ticketId && !t.ticketId.toUpperCase().startsWith("BOOTH-"));
   if (!real.length) return null;
   const pick = real.some((t) => t.purchasedAt)

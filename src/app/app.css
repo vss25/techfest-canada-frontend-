@@ -1141,6 +1141,10 @@ textarea.input--ios { min-height: 120px; }
 .ticket .pass-qr { margin: 10px auto 6px; padding: 16px; border-radius: 16px; }
 .ticket-venue { font-size: 13px; color: var(--tx2); }
 .ticket-link-h { margin: 0; font-size: 13px; font-weight: 600; color: var(--tx2); }
+/* My pass › What's included (iOS TicketDetailView includedBlock: 16 padding, 10 between rows, filled check). */
+.pass-incl { list-style: none; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.pass-incl li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.35; }
+.pass-incl svg { flex: none; width: 16px; height: 16px; margin-top: 1px; color: var(--pur); }
 
 /* Speaker (iOS SpeakerDetailView) */
 /* Speaker page (iOS SpeakerDetailView): 20 padding, 22 between blocks. */

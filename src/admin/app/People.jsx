@@ -4,14 +4,15 @@ import { Search, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { Badge, Button, EmptyState, ErrorState, Input, LoadingState, PageHeader, Select, TableWrap } from "../ui";
 import { ago } from "../format";
-import { PERSON_TYPES, TYPE_LABELS, TYPE_TONE, typeTags } from "./personTypes";
+import { PERSON_TYPES, TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE, typeTags } from "./personTypes";
 
 export default function People() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState(params.get("q") || "");
   const filter = params.get("f") || "";
-  const typeFilter = PERSON_TYPES.includes(params.get("t")) ? params.get("t") : "";
+  // Any of the six types, or "vip" (the VIP switch: the server takes ?type=vip).
+  const typeFilter = PERSON_TYPES.includes(params.get("t")) || params.get("t") === "vip" ? params.get("t") : "";
   const page = Math.max(0, Number(params.get("page")) || 0);
   const dq = useDebounced(q.trim(), 300);
 
@@ -50,7 +51,8 @@ export default function People() {
         </Select>
         <Select value={typeFilter} onChange={(e) => update({ t: e.target.value, page: 0 })} aria-label="Filter people by type" className="sm:w-44">
           <option value="">Any type</option>
-          {PERSON_TYPES.map((t) => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
+          {TYPE_FILTER_OPTIONS.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+          <option value="vip">{VIP_LABEL}s</option>
         </Select>
       </div>
 
@@ -70,8 +72,9 @@ export default function People() {
                     <td>
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-semibold">{u.name}</span>
-                        {u.role === "admin" && <Badge tone="pink">Staff</Badge>}
+                        {u.role === "admin" && <Badge tone="pink">Organizer</Badge>}
                         {u.role === "volunteer" && <Badge tone="purple">Volunteer</Badge>}
+                        {u.vip && <Badge tone={VIP_TONE}>{VIP_LABEL}</Badge>}
                         {typeTags(u.types, u.role).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}
                         {u.banned && <Badge tone="bad">Suspended</Badge>}
                         {u.directoryHidden && <Badge>Hidden</Badge>}

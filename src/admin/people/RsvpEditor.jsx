@@ -1,29 +1,36 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CalendarCheck, Lock, Pencil, Plus, ShieldAlert, UserCheck } from "lucide-react";
+import { AlertTriangle, CalendarCheck, Lock, Pencil, Plus, UserCheck } from "lucide-react";
 import { api } from "../api";
 import { useToast } from "../toastContext";
-import { Badge, Banner, Button, Card, ConfirmDialog, Field, Input, SectionTitle, Select, Switch, Textarea } from "../ui";
+import { Badge, Banner, Button, Card, Field, Input, SectionTitle, Select, Switch, Textarea } from "../ui";
 import { when } from "../format";
-import { RSVP_STATUS_TONE } from "./peopleMeta";
+import { RSVP_STATUS_LABELS, RSVP_STATUS_TONE } from "./peopleMeta";
 
 /* =========================================================
    A person's RSVP, entered or changed by staff
    (PUT /console/people/:id/rsvp, backend services/rsvpStaff.js).
-     - An RSVP the attendee sent is read-only ("Entered by the
-       attendee") until staff choose "Override the attendee's
-       RSVP" and confirm (sent as override: true).
-     - Whatever staff save, the attendee's next RSVP from /rsvp
-       replaces it.
-     - Only what their pass includes on the chosen days, unless
-       staff switch on "Include options outside their pass".
+     - An RSVP the attendee sent is never changed (Oct 19 2026).
+       Staff can only add special events to it (a luncheon, the
+       Gala Dinner, a CxO Breakfast…): the attendee's own choices
+       stay ticked and locked, and staff can take off only what
+       staff added. It stays "Confirmed by Individual".
+     - Without one, staff enter it ("Confirmed by Staff"). The
+       attendee's own RSVP from /rsvp later replaces staff's
+       answers, but seats staff gave outside their pass stay.
+     - Only what their pass includes on the chosen days (and the
+       pass's CxO Breakfast switch), unless staff switch on
+       "Include options outside their pass": the staff override.
      - Nothing here emails the attendee.
 ========================================================= */
 
 const GENERIC = /^(sessions|expo|breaks)_d\d$/;
+const CXO = ["cxo_d1", "cxo_d2"];
 
-/** Options someone on `tier` coming on `days` can choose (same rule as the server's checkOptions). */
-const allowedFor = (catalog, tier, days) => new Set((catalog?.options || [])
-  .filter((o) => o.kind === "experience" && (o.tiers || []).includes(tier) && (!o.day || days.includes(o.day)))
+/** Options someone on `tier` coming on `days` can choose: the server's allowedExperiences, with the pass's
+    CxO Breakfast switch (`rules.cxo`) and breakfasts they keep (`rules.keep`). */
+const allowedFor = (catalog, tier, days, rules = {}) => new Set((catalog?.options || [])
+  .filter((o) => o.kind === "experience" && (!o.day || days.includes(o.day)))
+  .filter((o) => (CXO.includes(o.key) && typeof rules?.cxo === "boolean" ? rules.cxo : (o.tiers || []).includes(tier)) || (rules?.keep || []).includes(o.key))
   .map((o) => o.key));
 
 function Summary({ r, catalog }) {
@@ -31,6 +38,7 @@ function Summary({ r, catalog }) {
   const opt = Object.fromEntries((catalog?.options || []).map((o) => [o.key, o]));
   const diet = Object.fromEntries((catalog?.dietary || []).map((d) => [d.key, d.label]));
   const events = (r.options || []).filter((k) => !GENERIC.test(k));
+  const added = new Set(r.staffAdded || []);
   const dayName = (k) => days.find((d) => d.key === k)?.label || k;
   return (
     <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-[150px_1fr]">
@@ -39,7 +47,12 @@ function Summary({ r, catalog }) {
       <dt className="text-ttfc-muted">Special events</dt>
       <dd>{events.length ? (
         <ul className="space-y-1">
-          {events.map((k) => <li key={k}>{opt[k]?.label || k}{opt[k]?.day ? <span className="text-ttfc-dim"> · {dayName(opt[k].day)}{opt[k].time ? `, ${opt[k].time}` : ""}</span> : null}</li>)}
+          {events.map((k) => (
+            <li key={k}>
+              {opt[k]?.label || k}{opt[k]?.day ? <span className="text-ttfc-dim"> · {dayName(opt[k].day)}{opt[k].time ? `, ${opt[k].time}` : ""}</span> : null}
+              {added.has(k) && r.source !== "staff" && <Badge tone="purple" className="ml-2">Added by staff</Badge>}
+            </li>
+          ))}
         </ul>
       ) : <span className="text-ttfc-dim">None</span>}</dd>
       <dt className="text-ttfc-muted">Dietary</dt>
@@ -52,7 +65,109 @@ function Summary({ r, catalog }) {
   );
 }
 
-function Editor({ personId, rsvp, catalog, defaultTier, tierLocked, override, onCancel, onSaved }) {
+/** The special events, by day, as checkboxes. `locked`: the attendee's own choices (ticked, can't be changed). */
+function EventPicker({ catalog, allowed, days, options, setOptions, outside, locked = [] }) {
+  const catDays = catalog?.days || [];
+  const groups = [
+    ...catDays.map((d) => ({ key: d.key, title: d.label, options: (catalog?.options || []).filter((o) => o.kind === "experience" && o.day === d.key) })),
+    { key: "any", title: "Either day", options: (catalog?.options || []).filter((o) => o.kind === "experience" && !o.day) },
+  ].filter((g) => g.options.length);
+  const toggle = (k, on) => setOptions(on ? [...new Set([...options, k])] : options.filter((x) => x !== k));
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {groups.map((g) => (
+        <div key={g.key}>
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ttfc-dim">{g.title}</p>
+          <ul className="space-y-1.5">
+            {g.options.map((o) => {
+              const theirs = locked.includes(o.key);
+              const inPass = allowed.has(o.key);
+              const off = theirs || (!inPass && !outside && !options.includes(o.key));
+              return (
+                <li key={o.key}>
+                  <label className={`flex items-start gap-2 text-sm ${off && !theirs ? "cursor-not-allowed text-ttfc-dim" : ""}`}>
+                    <input type="checkbox" className="mt-0.5 accent-ttfc-pink" disabled={off} checked={theirs || options.includes(o.key)}
+                      onChange={(e) => toggle(o.key, e.target.checked)} />
+                    <span>
+                      {o.label}{o.time ? <span className="text-ttfc-dim"> · {o.time}</span> : null}
+                      {theirs ? <span className="ml-1 text-[11px] text-emerald-200/80">their choice</span>
+                        : !inPass && <span className="ml-1 text-[11px] text-amber-200/80">{o.day && !days.includes(o.day) ? "not coming that day" : "not in their pass"}</span>}
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function OutsideSwitch({ outside, setOutside, picked, catalog }) {
+  return (
+    <>
+      <div className="mt-4 rounded-2xl border border-ttfc-line p-3">
+        <Switch checked={outside} onChange={setOutside} label="Include options outside their pass"
+          description="Staff override: give someone a luncheon, the Gala Dinner or a CxO Breakfast their pass doesn't include. It's saved with a warning." />
+      </div>
+      {outside && picked.length > 0 && (
+        <Banner tone="warn" icon={AlertTriangle} className="mt-3" title="Outside their pass">
+          {picked.map((k) => (catalog?.options || []).find((o) => o.key === k)?.label || k).join(", ")}
+        </Banner>
+      )}
+    </>
+  );
+}
+
+async function saveRsvp({ personId, body, toast, onSaved, setError, setSaving }) {
+  setSaving(true); setError("");
+  try {
+    const r = await api.put(`/console/people/${encodeURIComponent(personId)}/rsvp`, body);
+    toast.success(r.created ? "RSVP added. The attendee isn't emailed." : "RSVP saved. The attendee isn't emailed.");
+    if (r.warning) toast.info(r.warning);
+    onSaved();
+  } catch (err) {
+    setError(err?.message || "Couldn't save the RSVP");
+  } finally { setSaving(false); }
+}
+
+/* Staff add special events to an RSVP the attendee sent. Their days, dietary needs and choices stay theirs. */
+function AddToTheirs({ personId, rsvp, catalog, rules, onCancel, onSaved }) {
+  const toast = useToast();
+  const added = rsvp.staffAdded || [];
+  const own = (rsvp.options || []).filter((k) => !added.includes(k));
+  const [extra, setExtra] = useState(added);
+  const [outside, setOutside] = useState(!!rsvp.passLimitOverride);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const days = rsvp.days || [];
+  const allowed = useMemo(() => allowedFor(catalog, rsvp.tier, rsvp.days || [], rules), [catalog, rsvp.tier, rsvp.days, rules]);
+  const pickedOutside = extra.filter((k) => !allowed.has(k));
+  const save = () => saveRsvp({
+    personId, toast, onSaved, setError, setSaving,
+    body: { options: [...own, ...extra], allowOutsidePass: outside, basedOn: rsvp.updatedAt, rsvpId: rsvp.id },
+  });
+  return (
+    <div className="space-y-5">
+      <Banner tone="info" icon={Lock} title="Their RSVP stays as they sent it">
+        You can add special events to it. What they chose themselves can't be changed or taken off, and their days and dietary needs stay theirs.
+      </Banner>
+      <fieldset>
+        <legend className="mb-2 text-[13px] font-semibold text-ttfc-text/90">Special events</legend>
+        <EventPicker catalog={catalog} allowed={allowed} days={days} options={extra} setOptions={setExtra} outside={outside} locked={own} />
+        <OutsideSwitch outside={outside} setOutside={setOutside} picked={pickedOutside} catalog={catalog} />
+      </fieldset>
+      {error && <p role="alert" className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="primary" loading={saving} onClick={save}>Save</Button>
+        <Button onClick={onCancel} disabled={saving}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
+
+function Editor({ personId, rsvp, catalog, defaultTier, tierLocked, rules, onCancel, onSaved }) {
   const toast = useToast();
   const [days, setDays] = useState(rsvp?.days?.length ? rsvp.days : ["day1", "day2"]);
   const [options, setOptions] = useState(rsvp?.options || []);
@@ -63,43 +178,30 @@ function Editor({ personId, rsvp, catalog, defaultTier, tierLocked, override, on
   const [outside, setOutside] = useState(!!rsvp?.passLimitOverride);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const allowed = useMemo(() => allowedFor(catalog, tier, days), [catalog, tier, days]);
+  // The pass's CxO switch applies to the pass on file; a pass staff pick here goes by its tier (a speaker keeps theirs).
+  const allowed = useMemo(() => allowedFor(catalog, tier, days, tierLocked ? rules : { keep: rules?.keep, cxo: rules?.cxo === true ? true : undefined }),
+    [catalog, tier, days, tierLocked, rules]);
   const tiers = (catalog?.tiers || []);
   const catDays = catalog?.days || [];
-  const groups = [
-    ...catDays.map((d) => ({ key: d.key, title: d.label, options: (catalog?.options || []).filter((o) => o.kind === "experience" && o.day === d.key) })),
-    { key: "any", title: "Either day", options: (catalog?.options || []).filter((o) => o.kind === "experience" && !o.day) },
-  ].filter((g) => g.options.length);
 
   const toggle = (list, setList, k, on) => setList(on ? [...new Set([...list, k])] : list.filter((x) => x !== k));
   const pickedOutside = options.filter((k) => !allowed.has(k));
 
-  const save = async () => {
-    setSaving(true); setError("");
+  const save = () => {
     // Options on a day they no longer come to go with that day.
     const dayOk = (k) => { const o = (catalog?.options || []).find((x) => x.key === k); return !o?.day || days.includes(o.day); };
-    const body = {
-      days, options: options.filter(dayOk), dietary, dietaryOther: dietary.includes("other") ? dietaryOther : "", accessibility,
-      ...(tierLocked ? {} : { tier }),
-      override: !!override, allowOutsidePass: outside, ...(rsvp?.updatedAt ? { basedOn: rsvp.updatedAt, rsvpId: rsvp.id } : {}),
-    };
-    try {
-      const r = await api.put(`/console/people/${encodeURIComponent(personId)}/rsvp`, body);
-      toast.success(r.created ? "RSVP added. The attendee isn't emailed." : "RSVP saved. The attendee isn't emailed.");
-      if (r.warning) toast.info(r.warning);
-      onSaved();
-    } catch (err) {
-      setError(err?.message || "Couldn't save the RSVP");
-    } finally { setSaving(false); }
+    return saveRsvp({
+      personId, toast, onSaved, setError, setSaving,
+      body: {
+        days, options: options.filter(dayOk), dietary, dietaryOther: dietary.includes("other") ? dietaryOther : "", accessibility,
+        ...(tierLocked ? {} : { tier }),
+        allowOutsidePass: outside, ...(rsvp?.updatedAt ? { basedOn: rsvp.updatedAt, rsvpId: rsvp.id } : {}),
+      },
+    });
   };
 
   return (
     <div className="space-y-5">
-      {override && (
-        <Banner tone="warn" icon={ShieldAlert} title="Overriding the attendee's RSVP">
-          You're changing answers the attendee sent themselves. If they send their RSVP again, theirs replaces yours.
-        </Banner>
-      )}
       {!tierLocked && (
         <Field label="Pass" hint="They have no ticket on file, so choose the pass these answers are checked against." className="sm:max-w-xs">
           {(id) => (
@@ -123,40 +225,8 @@ function Editor({ personId, rsvp, catalog, defaultTier, tierLocked, override, on
       </fieldset>
       <fieldset>
         <legend className="mb-2 text-[13px] font-semibold text-ttfc-text/90">What they're coming to</legend>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {groups.map((g) => (
-            <div key={g.key}>
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ttfc-dim">{g.title}</p>
-              <ul className="space-y-1.5">
-                {g.options.map((o) => {
-                  const inPass = allowed.has(o.key);
-                  const off = !inPass && !outside && !options.includes(o.key);
-                  return (
-                    <li key={o.key}>
-                      <label className={`flex items-start gap-2 text-sm ${off ? "cursor-not-allowed text-ttfc-dim" : ""}`}>
-                        <input type="checkbox" className="mt-0.5 accent-ttfc-pink" disabled={off} checked={options.includes(o.key)}
-                          onChange={(e) => toggle(options, setOptions, o.key, e.target.checked)} />
-                        <span>
-                          {o.label}{o.time ? <span className="text-ttfc-dim"> · {o.time}</span> : null}
-                          {!inPass && <span className="ml-1 text-[11px] text-amber-200/80">{o.day && !days.includes(o.day) ? "not coming that day" : "not in their pass"}</span>}
-                        </span>
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 rounded-2xl border border-ttfc-line p-3">
-          <Switch checked={outside} onChange={setOutside} label="Include options outside their pass"
-            description="Only when someone is invited to something their pass doesn't include. It's saved with a warning." />
-        </div>
-        {outside && pickedOutside.length > 0 && (
-          <Banner tone="warn" icon={AlertTriangle} className="mt-3" title="Outside their pass">
-            {pickedOutside.map((k) => (catalog?.options || []).find((o) => o.key === k)?.label || k).join(", ")}
-          </Banner>
-        )}
+        <EventPicker catalog={catalog} allowed={allowed} days={days} options={options} setOptions={setOptions} outside={outside} />
+        <OutsideSwitch outside={outside} setOutside={setOutside} picked={pickedOutside} catalog={catalog} />
       </fieldset>
       <fieldset>
         <legend className="mb-2 text-[13px] font-semibold text-ttfc-text/90">Dietary needs</legend>
@@ -188,24 +258,25 @@ function Editor({ personId, rsvp, catalog, defaultTier, tierLocked, override, on
  * @param {object|null} p.rsvp      rsvpDetail from GET /console/people/:id
  * @param {object} p.catalog        GET /api/rsvp/options shape
  * @param {object|null} p.pass      the person's main pass (its tier is what the RSVP is checked against)
+ * @param {object} [p.rules]        { cxo: true | false | null, keep: [keys] } the CxO Breakfast rules for this person
  * @param {Array} [p.duplicates]    possible duplicates waiting in Leads › RSVPs
  */
-export default function RsvpEditor({ personId, rsvp, catalog, pass, duplicates = [], canEdit = true, onSaved }) {
-  const [mode, setMode] = useState("view"); // view | edit | override
-  const [confirm, setConfirm] = useState(false);
+export default function RsvpEditor({ personId, rsvp, catalog, pass, rules = null, duplicates = [], canEdit = true, onSaved }) {
+  const [mode, setMode] = useState("view"); // view | edit | add
   const fromAttendee = rsvp && rsvp.source !== "staff";
   const tierLocked = !!(rsvp ? rsvp.tierVerified : pass?.ticketId);
   const defaultTier = rsvp?.tier || pass?.tier || "";
+  const cxoRules = useMemo(() => ({ cxo: typeof rules?.cxo === "boolean" ? rules.cxo : undefined, keep: rules?.keep || [] }), [rules]);
 
   const done = () => { setMode("view"); onSaved(); };
 
   return (
     <Card>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <SectionTitle className="mb-0" hint="Staff changes never email the attendee. If they send their own RSVP, it replaces what staff entered.">RSVP</SectionTitle>
+        <SectionTitle className="mb-0" hint="Staff changes never email the attendee. An RSVP they sent themselves is never changed: staff can only add to it.">RSVP</SectionTitle>
         {mode === "view" && canEdit && (
           !rsvp ? <Button size="sm" icon={Plus} onClick={() => setMode("edit")}>Add an RSVP</Button>
-            : fromAttendee ? <Button size="sm" variant="dangerOutline" icon={ShieldAlert} onClick={() => setConfirm(true)}>Override the attendee's RSVP</Button>
+            : fromAttendee ? <Button size="sm" icon={Plus} onClick={() => setMode("add")}>Add to their RSVP</Button>
               : <Button size="sm" icon={Pencil} onClick={() => setMode("edit")}>Change</Button>
         )}
       </div>
@@ -214,15 +285,16 @@ export default function RsvpEditor({ personId, rsvp, catalog, pass, duplicates =
         <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
           {fromAttendee ? (
             <>
-              <Badge tone={RSVP_STATUS_TONE.attendee} icon={UserCheck}>Entered by the attendee</Badge>
+              <Badge tone={RSVP_STATUS_TONE.attendee} icon={UserCheck}>{RSVP_STATUS_LABELS.attendee}</Badge>
               <span className="text-ttfc-muted">{when(rsvp.attendeeSubmittedAt || rsvp.updatedAt)}</span>
-              <Lock className="h-3.5 w-3.5 text-ttfc-dim" aria-label="Read-only" />
+              <Lock className="h-3.5 w-3.5 text-ttfc-dim" aria-label="Their answers can't be changed" />
+              {rsvp.staffAdded?.length > 0 && <span className="text-ttfc-muted">· {rsvp.staffUpdatedBy || "Staff"} added {rsvp.staffAdded.length}</span>}
             </>
           ) : (
             <>
-              <Badge tone={RSVP_STATUS_TONE.staff}>Set by staff</Badge>
+              <Badge tone={RSVP_STATUS_TONE.staff}>{RSVP_STATUS_LABELS.staff}</Badge>
               <span className="text-ttfc-muted">{rsvp.staffUpdatedBy || "Staff"} · {when(rsvp.staffUpdatedAt || rsvp.updatedAt)}</span>
-              {rsvp.staffOverride && <Badge tone="warn">Overrode the attendee's RSVP</Badge>}
+              {rsvp.staffOverride && <Badge tone="warn">Overrode the attendee's RSVP (before Oct 19)</Badge>}
             </>
           )}
           {rsvp.passLimitOverride && <Badge tone="warn" icon={AlertTriangle}>Includes options outside their pass</Badge>}
@@ -237,22 +309,14 @@ export default function RsvpEditor({ personId, rsvp, catalog, pass, duplicates =
 
       {mode === "view" ? (
         rsvp ? <Summary r={rsvp} catalog={catalog} /> : (
-          <p className="flex items-center gap-2 text-sm text-ttfc-muted"><CalendarCheck className="h-4 w-4" aria-hidden="true" /> No RSVP yet.</p>
+          <p className="flex items-center gap-2 text-sm text-ttfc-muted"><CalendarCheck className="h-4 w-4" aria-hidden="true" /> {RSVP_STATUS_LABELS.none}: no RSVP yet.</p>
         )
+      ) : mode === "add" ? (
+        <AddToTheirs personId={personId} rsvp={rsvp} catalog={catalog} rules={cxoRules} onCancel={() => setMode("view")} onSaved={done} />
       ) : (
-        <Editor personId={personId} rsvp={rsvp} catalog={catalog} defaultTier={defaultTier} tierLocked={tierLocked}
-          override={mode === "override"} onCancel={() => setMode("view")} onSaved={done} />
+        <Editor personId={personId} rsvp={rsvp} catalog={catalog} defaultTier={defaultTier} tierLocked={tierLocked} rules={cxoRules}
+          onCancel={() => setMode("view")} onSaved={done} />
       )}
-
-      <ConfirmDialog
-        open={confirm}
-        onClose={() => setConfirm(false)}
-        onConfirm={async () => setMode("override")}
-        title="Override the attendee's RSVP?"
-        body="They sent this RSVP themselves. Change it only when they've asked you to or you've agreed it with them. If they send their RSVP again, theirs replaces yours. They aren't emailed."
-        confirmLabel="Override"
-        tone="danger"
-      />
     </Card>
   );
 }

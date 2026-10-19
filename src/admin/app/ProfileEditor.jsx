@@ -41,6 +41,7 @@ const fromUser = (u) => ({
   banned: !!u.banned,
   types: Array.isArray(u.types) ? u.types.filter((t) => PERSON_TYPES.includes(t)) : [],
   typesOff: Array.isArray(u.typesOff) ? u.typesOff.filter((t) => PERSON_TYPES.includes(t)) : [],
+  vip: !!u.vip,
 });
 const sameList = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
 
@@ -57,6 +58,7 @@ function diff(form, orig) {
   if (form.banned !== orig.banned) out.banned = form.banned;
   if (!sameList(form.types, orig.types)) out.types = form.types;
   if (!sameList(form.typesOff, orig.typesOff)) out.typesOff = form.typesOff;
+  if (form.vip !== orig.vip) out.vip = form.vip;
   return out;
 }
 
@@ -260,9 +262,13 @@ export default function ProfileEditor({ id, user, onSaved, onDelete }) {
           <TypeChips form={form} auto={auto} holdsPass={holdsPass} canTeam={isManagement}
             onChange={(next) => setForm((f) => ({ ...f, ...next }))} />
           <p className="mt-3 text-xs leading-relaxed text-ttfc-muted">
-            Types marked from pass or from role are automatic. Switch one off to hide it for this person, for example to show a speaker as VIP only.
-            {holdsPass && " Attendee is automatic for pass holders with no other type; add it to give them attendee abilities as well."}
+            Types marked from pass or from role are automatic. Switch one off to hide it for this person.
+            {holdsPass && " Delegate is automatic for pass holders with no other type; add it to give them delegate abilities as well."}
           </p>
+          <div className="mt-4 rounded-2xl border border-ttfc-line p-4">
+            <Switch label="VIP" checked={form.vip} onChange={set("vip")}
+              description={`Shows the VIP badge in the app. It doesn't change what they can do: their types do.${user.vipFrom === "pass" ? " Now set on a pass of theirs." : ""}`} />
+          </div>
           <div className="mt-5 rounded-2xl border border-ttfc-line bg-ttfc-panel2/60 p-4">
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
               <h4 className="text-sm font-semibold text-ttfc-text">What they can do in the app</h4>

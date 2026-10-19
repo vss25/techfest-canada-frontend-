@@ -65,7 +65,8 @@ export default function AppRights() {
         Someone with several types gets any ability one of them allows. For being contacted, the most protective type wins. Per-person switches on their profile still apply.
       </Banner>
       <ul className="mb-6 space-y-1 text-xs leading-relaxed text-ttfc-muted">
-        <li>Attendee covers pass holders with no other type, and anyone with no type at all.</li>
+        <li>Delegate covers pass holders with no other type, and anyone with no type at all.</li>
+        <li>VIP is a yes / no switch on the person, not a column: a VIP gets the rights of their other types. To stop people contacting a VIP, switch off messages or connection requests on their profile.</li>
         <li>Staff accounts with admin panel access always keep {ADMIN_POWERS.map((r) => labels[r].toLowerCase()).join(", ").replace(/, ([^,]*)$/, " and $1")}.</li>
         <li>Posting in the feed and creating groups also follow the switches on App text &amp; switches{data.flags?.allowPosts === false || data.flags?.allowGroups === false ? " (one of them is off right now)" : ""}.</li>
         <li>Phones pick up changes within about a minute.</li>

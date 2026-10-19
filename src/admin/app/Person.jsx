@@ -11,7 +11,7 @@ import {
 import { when, initials } from "../format";
 import { EventRow, StatusBadge } from "./parts";
 import ProfileEditor from "./ProfileEditor";
-import { TYPE_LABELS, TYPE_TONE, typeTags } from "./personTypes";
+import { TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE, typeTags } from "./personTypes";
 
 function MessagesPane({ id }) {
   const [revealed, setRevealed] = useState(false);
@@ -173,8 +173,9 @@ function PersonView({ id }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{u.name}</h1>
-            {u.role === "admin" && <Badge tone="pink">Staff</Badge>}
+            {u.role === "admin" && <Badge tone="pink">Organizer</Badge>}
             {u.role === "volunteer" && <Badge tone="purple">Volunteer</Badge>}
+            {u.vip && <Badge tone={VIP_TONE}>{VIP_LABEL}</Badge>}
             {typeTags(u.effectiveTypes, u.role).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}
             {u.banned && <Badge tone="bad">Suspended</Badge>}
           </div>

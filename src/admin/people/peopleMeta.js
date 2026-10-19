@@ -4,9 +4,9 @@
    status (backend services/people.js and services/rsvpStaff.js);
    this file only names them.
 ========================================================= */
-import { PERSON_TYPES, TYPE_LABELS, TYPE_TONE } from "../app/personTypes";
+import { PERSON_TYPES, TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE } from "../app/personTypes";
 
-export { PERSON_TYPES, TYPE_LABELS, TYPE_TONE };
+export { PERSON_TYPES, TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE };
 
 export const PASS_STATUSES = ["paid", "complimentary", "issued", "pending", "refunded", "none"];
 export const PASS_STATUS_LABELS = {
@@ -27,17 +27,34 @@ export const PASS_STATUS_HINTS = {
 };
 export const PASS_STATUS_TONE = { paid: "good", complimentary: "purple", issued: "orange", pending: "warn", refunded: "bad", none: "neutral" };
 
+/** The Pass Type filter: the four passes (a Speaker Pass is the Speakers type). */
 export const PASS_TIERS = [
-  { key: "connect", label: "Connect Pass" },
-  { key: "influence", label: "Influence Pass" },
-  { key: "power", label: "Power Pass" },
-  { key: "apex", label: "Apex Pass" },
-  { key: "speaker", label: "Speaker Pass" },
+  { key: "connect", label: "Connect" },
+  { key: "influence", label: "Influence" },
+  { key: "power", label: "Power" },
+  { key: "apex", label: "Apex" },
 ];
 
-export const RSVP_STATUSES = ["none", "attendee", "staff"];
-export const RSVP_STATUS_LABELS = { none: "Not yet", attendee: "RSVP'd by attendee", staff: "Set by staff" };
+/** Ticket Value After Payment: what they paid for the pass after promo codes, before HST (server: services/people.js). */
+export const VALUE_BANDS = [
+  { key: "below", label: "Below 100 CAD" },
+  { key: "above", label: "Above 100 CAD" },
+];
+export const VALUE_BAND_LABELS = { below: "Below 100 CAD", above: "Above 100 CAD", unknown: "Not known", none: "No pass" };
+export const VALUE_BAND_HINTS = {
+  below: "Paid less than 100 CAD for the pass after promo codes, before HST. Complimentary, issued and Speaker Passes count as 0.",
+  above: "Paid 100 CAD or more for the pass after promo codes, before HST.",
+  unknown: "A bought pass we couldn't find in Stripe, so the amount isn't known.",
+  none: "No pass on file",
+};
+export const VALUE_BAND_TONE = { below: "orange", above: "good", unknown: "neutral", none: "neutral" };
+
+export const RSVP_STATUSES = ["attendee", "staff", "none"];
+export const RSVP_STATUS_LABELS = { attendee: "Confirmed by Individual", staff: "Confirmed by Staff", none: "Unconfirmed" };
 export const RSVP_STATUS_TONE = { none: "neutral", attendee: "good", staff: "purple" };
+
+/** What "RSVP Email Sent" counts (the server works it out from these records). */
+export const RSVP_EMAIL_HINT = "Yes when an email with their RSVP link went to them: their Speaker Pass, issued or exhibitor pass email with the RSVP button, a speaker reminder, or an RSVP reminder. Bulk campaigns aren't counted.";
 
 export const DAY_SHORT = { day1: "Day 1", day2: "Day 2" };
 

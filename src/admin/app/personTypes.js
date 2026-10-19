@@ -3,19 +3,34 @@
    The server decides (backend services/teamRoles.js and
    services/appRights.js); this copy of the same rules only
    previews a person's rights while their type is being edited.
+   Six types (Oct 19 2026). VIP is a yes / no switch on the
+   person, not a type: it gives no rights of its own.
 ========================================================= */
 
-export const PERSON_TYPES = ["attendee", "speaker", "exhibitor", "vip", "staff", "vendor", "volunteer"];
+export const PERSON_TYPES = ["attendee", "speaker", "exhibitor", "staff", "vendor", "volunteer"];
 
+/** One person's type, on badges and in the type editor. */
 export const TYPE_LABELS = {
-  attendee: "Attendee",
+  attendee: "Delegate",
   speaker: "Speaker",
   exhibitor: "Exhibitor",
-  vip: "VIP",
-  staff: "Staff",
+  staff: "Organizer",
   vendor: "Vendor",
   volunteer: "Volunteer",
 };
+
+/** The Attendee Type filter: the organiser's list, in their order and words. */
+export const TYPE_FILTER_OPTIONS = [
+  { key: "attendee", label: "Delegate" },
+  { key: "speaker", label: "Speakers" },
+  { key: "exhibitor", label: "Exhibitors" },
+  { key: "volunteer", label: "Volunteers" },
+  { key: "staff", label: "Organizers" },
+  { key: "vendor", label: "Vendors" },
+];
+
+export const VIP_LABEL = "VIP";
+export const VIP_TONE = "orange";
 
 export const RIGHTS = [
   "sendMessages", "receiveMessages", "sendRequests", "receiveRequests",
@@ -90,7 +105,7 @@ export function toggleType(t, { types = [], typesOff = [], auto = [], holdsPass 
 
 /** Tags for a people list: their types, minus what the role badge already says and minus attendee. */
 export function typeTags(types = [], role = "user") {
-  return types.filter((t) => t !== "attendee" && !(t === "staff" && role === "admin") && !(t === "volunteer" && role === "volunteer"));
+  return types.filter((t) => PERSON_TYPES.includes(t) && t !== "attendee" && !(t === "staff" && role === "admin") && !(t === "volunteer" && role === "volunteer"));
 }
 
-export const TYPE_TONE = { vip: "orange", speaker: "purple", exhibitor: "purple", staff: "pink", vendor: "neutral", volunteer: "purple", attendee: "neutral" };
+export const TYPE_TONE = { speaker: "purple", exhibitor: "purple", staff: "pink", vendor: "neutral", volunteer: "purple", attendee: "neutral" };

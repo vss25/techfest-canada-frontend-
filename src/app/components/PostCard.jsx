@@ -8,6 +8,7 @@ import { deletePost, social, toggleLike } from "../lib/social";
 import { blockFlow, reportFlow } from "../lib/safety";
 import { fileURL, FEATURES } from "../lib/config";
 import { mentionPath, splitMentions } from "../lib/mentions";
+import { publicBadge } from "../lib/people";
 import { postTime } from "../lib/time";
 import { prepareShare, shareSourceOf, sharePrepared } from "../lib/shareCard";
 import { confirmDialog, givenName, safeHref, showAlert } from "../lib/ui";
@@ -66,7 +67,8 @@ export default function PostCard({ post }) {
   const mine = a.me?.id && post.authorId === a.me.id;
   const staffCanRemove = !mine && (post.canRemove || can("deleteAnyPost", a));
   const author = s.people.find((p) => p.id === post.authorId);
-  const badge = post.authorTier === "Speaker Pass" || author?.kind === "speaker" ? "Speaker" : author?.kind === "exhibitor" ? "Exhibitor" : null;
+  // Person types, never a pass name (an older post may still carry "Speaker Pass").
+  const badge = publicBadge({ tier: post.authorTier }, author?.kind);
   const media = post.media?.length ? post.media : post.imageUrl ? [{ type: "image", url: post.imageUrl }] : [];
   const hasMedia = media.length > 0;
   const long = post.body.length > (hasMedia ? 200 : 450);

@@ -95,9 +95,9 @@ function seed() {
     person("p-grace", "Grace Kim", "Partner", "Harbourfront Ventures", { topics: ["Startups & Capital", "Artificial Intelligence"] }),
     person("p-lucas", "Lucas Moreau", "CTO", "VoltGrid Energy", { topics: ["Energy & Utilities", "Sustainability & CleanTech"] }),
     person("p-fatima", "Fatima Haddad", "Research Scientist", "Lakeview University AI Lab", { topics: ["Artificial Intelligence", "Healthcare & Lifesciences"] }),
-    person("p-maya", "Dr. Maya Singh", "Chief AI Officer", "Aurora Financial", { topics: ["Artificial Intelligence", "Banking, Financial Services & Insurance"], kind: "speaker", types: ["speaker"], tier: "Speaker Pass" }),
-    person("p-tom", "Tom Becker", "Solutions Engineer", "CyberShield", { topics: ["Cybersecurity"], kind: "exhibitor", types: ["exhibitor"], booth: "12", tier: "Exhibitor" }),
-    person("p-jordan", "Jordan Lee", "Head of Partnerships", "QuantumLeap Systems", { topics: ["Quantum Computing"], kind: "exhibitor", types: ["exhibitor"], booth: "7", tier: "Exhibitor" }),
+    person("p-maya", "Dr. Maya Singh", "Chief AI Officer", "Aurora Financial", { topics: ["Artificial Intelligence", "Banking, Financial Services & Insurance"], kind: "speaker", types: ["speaker"], tier: "Power Pass" }),
+    person("p-tom", "Tom Becker", "Solutions Engineer", "CyberShield", { topics: ["Cybersecurity"], kind: "exhibitor", types: ["exhibitor"], booth: "12", tier: "Connect Pass" }),
+    person("p-jordan", "Jordan Lee", "Head of Partnerships", "QuantumLeap Systems", { topics: ["Quantum Computing"], kind: "exhibitor", types: ["exhibitor"], booth: "7", tier: "Connect Pass" }),
     person("p-nina", "Nina Alvarez", "Attendee Experience", "TTFC", { kind: "staff", types: ["staff"] }),
     person("p-ben", "Ben Wright", "Volunteer", "TTFC", { kind: "volunteer", types: ["volunteer"] }),
     person("p-olivia", "Olivia Chen", "Deputy Minister", "Department of Digital Affairs", { kind: "vip", types: ["vip"], acceptsMessages: false, acceptsRequests: false }),
@@ -139,7 +139,7 @@ function seed() {
       { id: "post-3", authorId: "p-hannah", authorName: "Hannah Liu", authorTitle: "Product Manager", authorOrg: "Shopify", authorTier: "", kind: "member",
         body: "Organising an informal CleanTech founders coffee on Day 2 morning before the keynote. Reply if you want in. Aiming for 8–10 people.",
         topicTags: ["Sustainability & CleanTech"], linkUrl: "", media: [], mentions: [], likes: [], likeBase: 21, comments: [], createdAt: hoursAgo(26) },
-      { id: "post-4", authorId: "p-maya", authorName: "Dr. Maya Singh", authorTitle: "Chief AI Officer", authorOrg: "Aurora Financial", authorTier: "Speaker Pass", kind: "member",
+      { id: "post-4", authorId: "p-maya", authorName: "Dr. Maya Singh", authorTitle: "Chief AI Officer", authorOrg: "Aurora Financial", authorTier: "Power Pass", kind: "member",
         body: "Our panel on model governance at scale will get practical: what we stopped doing, what we automated, and what still needs a human. Bring hard questions.",
         topicTags: ["Artificial Intelligence", "Banking, Financial Services & Insurance"], linkUrl: "https://www.thetechfestival.com/agenda", media: [], mentions: [], likes: [], likeBase: 54, comments: [], createdAt: hoursAgo(30) },
     ],
@@ -185,6 +185,30 @@ try {
   }
 } catch { /* no window (tests) */ }
 
+/* Screenshot hook: /app/?demo=1&pass=speaker shows My pass as a speaker whose ticket is still on
+   the old "speaker" tier (it shows as a Power Pass), pass=exhibitor as an exhibitor (a Connect
+   Pass), pass=default as the sample attendee again. Saved in the demo data. Demo only. */
+let passHook = "";
+try {
+  const u = new URL(window.location.href);
+  passHook = ["speaker", "exhibitor", "default"].includes(u.searchParams.get("pass")) ? u.searchParams.get("pass") : "";
+  if (passHook) {
+    u.searchParams.delete("pass");
+    window.history.replaceState(window.history.state, "", u.pathname + u.search + u.hash);
+  }
+} catch { /* no window (tests) */ }
+
+function applyPassHook(s, hook) {
+  const fresh = seed();
+  s.tickets = hook === "speaker" ? [{ ticketId: "5E7A1B2C3D4F", type: "speaker", purchaseDate: "2026-09-02T14:10:00.000Z", checkedIn: false, cxoBreakfast: true }]
+    : hook === "exhibitor" ? [{ ticketId: "E8C4B2A1D3F5", type: "connect", purchaseDate: "2026-09-02T14:10:00.000Z", checkedIn: false, cxoBreakfast: false }]
+      : fresh.tickets;
+  s.me.types = hook === "speaker" ? ["attendee", "speaker"] : hook === "exhibitor" ? ["attendee", "exhibitor"] : fresh.me.types;
+  s.me.kind = hook === "speaker" || hook === "exhibitor" ? hook : "";
+  s.me.booth = hook === "exhibitor" ? "12" : "";
+  s.me.tier = hook === "exhibitor" ? "Connect Pass" : hook === "speaker" ? "Power Pass" : fresh.me.tier;
+}
+
 function applyCardHook(s, hook) {
   const full = demoMyCard();
   s.me.contactItems = hook === "full" ? full.contactItems : hook === "one" ? full.contactItems.filter((it) => it.id === "m-phone") : [];
@@ -200,6 +224,7 @@ function load() {
   if (!state) state = seed();
   if (!state.cardV) addContactCards(state);
   if (cardHook) { applyCardHook(state, cardHook); cardHook = ""; save(); }
+  if (passHook) { applyPassHook(state, passHook); passHook = ""; save(); }
   return state;
 }
 
@@ -460,7 +485,7 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
 
   // Account
   if (is("GET", "social/me")) return done({ ...card(ME), email: s.me.email, contactCard: contactCardDTO() });
-  if (is("GET", "auth/me")) return done({ _id: ME, name: s.me.name, email: s.me.email, role: "user", jobTitle: s.me.jobTitle, organization: s.me.organization, linkedinUrl: s.me.linkedinUrl, country: s.me.country, topics: s.me.topics, tagline: s.me.tagline, appOnboarded: true, termsVersion: "2026-10-09", tickets: s.tickets, rights: s.me.rights });
+  if (is("GET", "auth/me")) return done({ _id: ME, name: s.me.name, email: s.me.email, role: "user", jobTitle: s.me.jobTitle, organization: s.me.organization, linkedinUrl: s.me.linkedinUrl, country: s.me.country, topics: s.me.topics, tagline: s.me.tagline, appOnboarded: true, termsVersion: "2026-10-09", tickets: s.tickets, types: s.me.types || ["attendee"], rights: s.me.rights });
   if (is("POST", "auth/refresh")) return { token: DEMO_TOKEN };
   if (is("PATCH", "profile")) {
     const allowed = ["name", "jobTitle", "organization", "linkedinUrl", "country", "tagline", "topics", "meetingSpot", "availabilitySlots"];

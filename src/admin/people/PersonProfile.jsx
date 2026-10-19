@@ -15,7 +15,7 @@ import RsvpEditor from "./RsvpEditor";
 import LogoPicker, { CompanyMark } from "./LogoPicker";
 import { TEAM_TYPES, effectiveTypes, toggleType } from "../app/personTypes";
 import {
-  DAY_SHORT, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_STATUS_TONE, PASS_TIERS, PERSON_TYPES, RSVP_EMAIL_HINT, RSVP_STATUS_LABELS, RSVP_STATUS_TONE,
+  DAY_SHORT, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_STATUS_TONE, PASS_TIERS, PERSON_TYPES, passName, RSVP_EMAIL_HINT, RSVP_STATUS_LABELS, RSVP_STATUS_TONE,
   TYPE_LABELS, TYPE_TONE, VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL, VIP_TONE, personPath,
 } from "./peopleMeta";
 
@@ -29,12 +29,14 @@ import {
    and every record they're made of follows (account, passes,
    RSVPs). Per pass (PATCH …/passes/:ticketId): "CxO Breakfast
    included", and for management the pass itself (Connect,
-   Influence, Power or Apex, no charge) and the ticket value of a
+   Influence, Power, Apex or the internal Speaker Pass, no charge)
+   and the ticket value of a
    pass paid outside Stripe. The RSVP (RsvpEditor, add-only on an
    attendee's own), the company logo (LogoPicker), and Delete
    person (management: GET …/delete-plan, then DELETE with their
-   full name). Their app contact card is read-only. The passes are
-   strictly four: Speaker and Exhibitor are types.
+   full name). Their app contact card is read-only. Holding a
+   Speaker Pass makes someone the Speaker type; exhibitors hold
+   Connect Passes and Exhibitor is their type.
 ========================================================= */
 
 const DETAIL_KEYS = ["firstName", "lastName", "email", "phone", "linkedinUrl", "company", "jobTitle"];
@@ -48,14 +50,18 @@ const MARKS = [{ key: "auto", label: "Automatic" }, { key: "yes", label: "Yes" }
 const markKey = (m) => (m === true ? "yes" : m === false ? "no" : "auto");
 
 /* Their types as chips. An account: the App › People rules (stored types, automatic ones from their role
-   and passes, typesOff), Exhibitor is the Exhibitor switch. A pass-only person: Speaker and Exhibitor are
-   saved on their passes; the other types need an app account. */
-function TypeChips({ p, state, setState, exhibitor, setExhibitor, speaker, setSpeaker, disabled, canTeam }) {
+   and passes, typesOff), Exhibitor is the Exhibitor switch. A pass-only person: Exhibitor is saved on their
+   passes, Speaker comes from holding a Speaker Pass; the other types need an app account. */
+function TypeChips({ p, state, setState, exhibitor, setExhibitor, disabled, canTeam }) {
   const acc = p.account;
   const chips = PERSON_TYPES.map((t) => {
     if (t === "exhibitor") return { t, on: exhibitor, toggle: () => setExhibitor(!exhibitor), note: p.exhibitorPass && exhibitor ? "from pass" : "" };
     if (!acc) {
-      if (t === "speaker") return { t, on: speaker, toggle: () => setSpeaker(!speaker), note: speaker && p.passes?.some((x) => x.speakerPass) ? "from pass" : "" };
+      if (t === "speaker") {
+        const on = p.types.includes("speaker");
+        const from = p.passes?.some((x) => x.tier === "speaker") ? "from pass" : p.speaker ? "speaker list" : "automatic";
+        return { t, on, locked: "Automatic: from a Speaker Pass or the website's speaker list", note: on ? from : "" };
+      }
       if (t === "attendee") return { t, on: p.types.includes("attendee"), locked: "Automatic for someone with a pass and no other type", note: p.types.includes("attendee") ? "automatic" : "" };
       return { t, on: false, locked: "Needs an app account: this type is saved on their account" };
     }
@@ -95,12 +101,10 @@ function DetailsCard({ p, onSaved }) {
     linkedinUrl: p.linkedinUrl, company: p.company, jobTitle: p.jobTitle,
   };
   const startTypes = { types: p.account?.types || [], typesOff: p.account?.typesOff || [] };
-  const startSpeaker = !p.account && p.types.includes("speaker");
   const startMark = markKey(p.rsvpEmail?.mark);
   const [form, setForm] = useState(start);
   const [types, setTypes] = useState(startTypes);
   const [exhibitor, setExhibitor] = useState(!!p.exhibitor);
-  const [speaker, setSpeaker] = useState(startSpeaker);
   const [vip, setVip] = useState(!!p.vip);
   const [mark, setMark] = useState(startMark);
   const [saving, setSaving] = useState(false);
@@ -109,15 +113,14 @@ function DetailsCard({ p, onSaved }) {
   const changed = DETAIL_KEYS.filter((k) => (form[k] || "").trim() !== (start[k] || "").trim() && (k !== "email" || e.canEditEmail) && (k !== "phone" || e.canEditPhone));
   const typesChanged = !!p.account && (!sameList(types.types, startTypes.types) || !sameList(types.typesOff, startTypes.typesOff));
   const exChanged = exhibitor !== !!p.exhibitor;
-  const spChanged = !p.account && speaker !== startSpeaker;
   const vipChanged = vip !== !!p.vip;
   const markChanged = mark !== startMark;
-  const dirty = changed.length || typesChanged || exChanged || spChanged || vipChanged || markChanged;
+  const dirty = changed.length || typesChanged || exChanged || vipChanged || markChanged;
   const set = (k) => (ev) => setForm((f) => ({ ...f, [k]: ev.target.value }));
   const disabled = !e.canEdit;
   const emailChanged = changed.includes("email");
 
-  const reset = () => { setForm(start); setTypes(startTypes); setExhibitor(!!p.exhibitor); setSpeaker(startSpeaker); setVip(!!p.vip); setMark(startMark); setError(null); };
+  const reset = () => { setForm(start); setTypes(startTypes); setExhibitor(!!p.exhibitor); setVip(!!p.vip); setMark(startMark); setError(null); };
   const save = async () => {
     setSaving(true); setError(null);
     const body = {};
@@ -127,7 +130,6 @@ function DetailsCard({ p, onSaved }) {
     }
     if (typesChanged) { body.types = types.types; body.typesOff = types.typesOff; }
     if (exChanged) body.exhibitor = exhibitor;
-    if (spChanged) body.speaker = speaker;
     if (vipChanged) body.vip = vip;
     if (markChanged) body.rsvpEmailSent = mark === "auto" ? null : mark === "yes";
     try {
@@ -158,11 +160,11 @@ function DetailsCard({ p, onSaved }) {
 
       <div className="mt-5">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ttfc-dim">Type</p>
-        <TypeChips p={p} state={types} setState={setTypes} exhibitor={exhibitor} setExhibitor={setExhibitor} speaker={speaker} setSpeaker={setSpeaker}
+        <TypeChips p={p} state={types} setState={setTypes} exhibitor={exhibitor} setExhibitor={setExhibitor}
           disabled={disabled} canTeam={isManagement} />
         <p className="mt-2 text-xs leading-relaxed text-ttfc-dim">
-          Speaker is a type, not a pass: speakers hold a Power Pass and the type adds the CxO Breakfasts.
-          {!p.account && " Without an app account, Speaker and Exhibitor are saved on their passes; the other types need an account."}
+          Holding a Speaker Pass makes them a Speaker; the Speaker type gives the CxO Breakfasts on any pass.
+          {!p.account && " Without an app account, Exhibitor is saved on their passes and Speaker comes from a Speaker Pass; the other types need an account."}
         </p>
       </div>
       <div className="mt-5 rounded-2xl border border-ttfc-line p-4">
@@ -262,7 +264,7 @@ const money = (v) => `${Number(v).toLocaleString("en-CA", { minimumFractionDigit
 const CXO_CHOICES = [{ key: "auto", label: "Automatic" }, { key: "yes", label: "Yes" }, { key: "no", label: "No" }];
 const VALUE_SOURCE = { stripe: "from Stripe", manual: "manual", staff: "staff-made pass", unknown: "" };
 
-/* "CxO Breakfast included" for one pass: Automatic (Apex, and speakers on any pass), Yes or No. */
+/* "CxO Breakfast included" for one pass: Automatic (Apex, Speaker Pass, speakers on any pass), Yes or No. */
 function CxoSwitch({ personId, t, canEdit, onSaved }) {
   const toast = useToast();
   const [busy, setBusy] = useState("");
@@ -294,30 +296,37 @@ function CxoSwitch({ personId, t, canEdit, onSaved }) {
   );
 }
 
-/* Change a pass between the four (management): no charge; inventory moves like an upgrade. */
+/* Change a pass (management): one of the four on sale or the internal Speaker Pass; no charge; inventory moves
+   like an upgrade for the passes on sale (the Speaker Pass has no inventory). */
 function PassTypeChange({ p, t, onSaved }) {
   const toast = useToast();
   const [tier, setTier] = useState(t.tier);
   const [confirm, setConfirm] = useState(false);
-  const label = PASS_TIERS.find((x) => x.key === tier)?.label || "";
-  const an = /^[AEIOU]/.test(label) ? "an" : "a";
+  const name = passName(tier);
+  const an = /^[AEIOU]/.test(name) ? "an" : "a";
   const save = async () => {
     const r = await api.patch(`/console/people/${encodeURIComponent(p.id)}/passes/${encodeURIComponent(t.ticketId)}`, { tier });
-    toast.success(`${t.ticketId.toUpperCase()} is now ${an} ${label} Pass`);
+    toast.success(`${t.ticketId.toUpperCase()} is now ${an} ${name}`);
     for (const w of r?.warnings || []) toast.error(w);
     onSaved();
   };
+  const note = tier === "speaker"
+    ? " Holding a Speaker Pass makes them a Speaker, with the CxO Breakfasts and the VIP Lounge."
+    : t.tier === "speaker" ? " Without the Speaker Pass they're a Speaker only if staff gave them the type or they're on the speaker list." : "";
+  const counts = tier === "speaker" || t.tier === "speaker"
+    ? " The Speaker Pass isn't in the inventory, so only the pass on sale's count changes."
+    : " The ticket counts move from one pass to the other in the inventory.";
   return (
     <div className="flex w-full flex-wrap items-center gap-2 border-t border-ttfc-line pt-2">
       <Ticket className="h-4 w-4 text-ttfc-muted" aria-hidden="true" />
       <label htmlFor={`tier-${t.ticketId}`} className="text-xs font-semibold text-ttfc-text">Pass</label>
-      <Select id={`tier-${t.ticketId}`} value={tier} onChange={(e) => setTier(e.target.value)} className="ml-auto w-auto min-w-[150px] py-1.5 text-xs">
-        {PASS_TIERS.map((x) => <option key={x.key} value={x.key}>{x.label} Pass</option>)}
+      <Select id={`tier-${t.ticketId}`} value={tier} onChange={(e) => setTier(e.target.value)} className="ml-auto w-auto min-w-[170px] py-1.5 text-xs">
+        {PASS_TIERS.map((x) => <option key={x.key} value={x.key}>{x.key === "speaker" ? x.label : `${x.label} Pass`}</option>)}
       </Select>
       <Button size="sm" disabled={tier === t.tier} onClick={() => setConfirm(true)}>Change pass</Button>
-      <ConfirmDialog open={confirm} onClose={() => { setConfirm(false); }} onConfirm={save} tone="primary" confirmLabel={`Make it ${label} Pass`}
-        title={`Change ${t.ticketId.toUpperCase()} to ${an} ${label} Pass?`}
-        body={`From ${t.label} to ${label} Pass, with no charge. Their app, Wallet pass and RSVP page follow; what they already chose in their RSVP stays.${t.speakerPass ? " It stays a speaker's pass." : " The ticket counts move from one pass to the other in the inventory."} The change is logged.`} />
+      <ConfirmDialog open={confirm} onClose={() => { setConfirm(false); }} onConfirm={save} tone="primary" confirmLabel={`Make it ${an} ${name}`}
+        title={`Change ${t.ticketId.toUpperCase()} to ${an} ${name}?`}
+        body={`From ${t.label} to ${name}, with no charge. Their app, Wallet pass and RSVP page follow; what they already chose in their RSVP stays.${note}${counts} The change is logged.`} />
     </div>
   );
 }
@@ -368,7 +377,7 @@ function PassesCard({ p, onSaved }) {
   const e = p.edit || {};
   return (
     <Card>
-      <SectionTitle hint="Connect, Influence, Power or Apex. Speaker and Exhibitor are their type, not a pass.">Pass</SectionTitle>
+      <SectionTitle hint="Connect, Influence, Power, Apex, or the internal Speaker Pass. Exhibitors hold Connect Passes: Exhibitor is their type.">Pass</SectionTitle>
       {!p.passes?.length ? (
         <p className="text-sm text-ttfc-muted">None.</p>
       ) : (
@@ -378,7 +387,7 @@ function PassesCard({ p, onSaved }) {
               <Ticket className="h-4 w-4 text-ttfc-muted" aria-hidden="true" />
               <span className="font-semibold">{t.label}</span>
               <span title={PASS_STATUS_HINTS[t.status]}><Badge tone={PASS_STATUS_TONE[t.status]}>{PASS_STATUS_LABELS[t.status]}</Badge></span>
-              {t.speakerPass && <Badge tone="purple" icon={Mic2}>Speaker's pass</Badge>}
+              {t.tier === "speaker" && <span title="Never sold or listed on the website: Power Pass privileges, both CxO Breakfasts and the VIP Lounge"><Badge tone="purple" icon={Mic2}>Internal</Badge></span>}
               {t.exhibitorPass && <Badge tone="purple" icon={Store}>Exhibitor's pass</Badge>}
               {t.hidden && <Badge>Hidden by staff</Badge>}
               {t.checkedIn && <Badge tone="good">Checked in</Badge>}
@@ -404,8 +413,8 @@ function PassesCard({ p, onSaved }) {
       )}
       {p.passes?.length > 0 && (
         <p className="mt-3 text-xs leading-relaxed text-ttfc-dim">
-          Automatic gives the CxO Breakfasts to Apex, and to speakers on any pass. Yes or No is for this pass only: it shows on their ticket in the app and on the RSVP page. A breakfast they already chose in their RSVP is never taken away.
-          {e.canEditPass ? " Changing a pass is free and logged; it moves the inventory counts like an upgrade." : ""}
+          Automatic gives the CxO Breakfasts to Apex and Speaker Passes, and to speakers on any pass. Yes or No is for this pass only: it shows on their ticket in the app and on the RSVP page. A breakfast they already chose in their RSVP is never taken away.
+          {e.canEditPass ? " Changing a pass is free and logged; it moves the inventory counts like an upgrade (the Speaker Pass has none)." : ""}
         </p>
       )}
       {p.boothOrders?.length > 0 && (

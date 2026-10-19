@@ -16,8 +16,7 @@ import { CompTicketDrawer } from "./CompTicket";
 
 const PAGE = 100;
 const SAFE_NOTE = "This only hides tickets from staff lists and analytics. The owner's ticket stays valid in the app, on the website and at the door.";
-// The passes are strictly four; a ticket still saved as "speaker" (before Oct 19 2026) is a speaker's Power Pass.
-const TIER_NAMES = { speaker: "Power" };
+const TIER_NAMES = { speaker: "Speaker Pass" }; // ghost tickets for speakers (Admin → Speaker passes)
 const tierLabel = (t) => TIER_NAMES[t] || (t ? t.charAt(0).toUpperCase() + t.slice(1) : "—");
 
 function Check({ checked, indeterminate, onChange, label }) {
@@ -93,7 +92,7 @@ function AttendeeDrawer({ row, onClose, onSaved, isManagement }) {
       open={!!row}
       onClose={close}
       title={[d?.salutation, row?.name].filter(Boolean).join(" ") || "No name"}
-      description={row ? `${tierLabel(row.tier)} pass${row.speakerPass ? " (a speaker's)" : ""} · ${row.ticketId} · bought ${day(row.purchaseDate)}` : ""}
+      description={row ? `${tierLabel(row.tier)}${TIER_NAMES[row.tier] ? "" : " pass"} · ${row.ticketId} · bought ${day(row.purchaseDate)}` : ""}
       footer={row && (editing
         ? <><Button variant="primary" loading={saving} onClick={save}>Save</Button><Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button></>
         : <Button icon={Pencil} onClick={startEdit}>Edit details</Button>)}
@@ -393,7 +392,7 @@ export default function TicketManager() {
                     </td>
                     <td className="max-w-[220px] truncate font-mono text-xs text-ttfc-muted" title={r.email}>{r.email || "—"}</td>
                     <td className="whitespace-nowrap font-mono text-xs">{r.ticketId}</td>
-                    <td><Badge tone="purple">{tierLabel(r.tier)}</Badge>{r.speakerPass && <span className="mt-0.5 block text-[11px] text-ttfc-dim">Speaker's pass</span>}</td>
+                    <td><Badge tone="purple">{tierLabel(r.tier)}</Badge></td>
                     <td className="whitespace-nowrap text-ttfc-muted">{r.source === "account" ? "App account" : "Guest checkout"}</td>
                     <td className="whitespace-nowrap text-ttfc-muted">{day(r.purchaseDate)}</td>
                     <td>{r.checkedIn ? <Badge tone="good" icon={CheckCircle2}>Checked in</Badge> : <span className="text-xs text-ttfc-dim">Not yet</span>}</td>

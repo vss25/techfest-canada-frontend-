@@ -25,8 +25,7 @@ const cad = (v) => cadFmt.format(Number(v) || 0);
 const cadExact = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" });
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
 // "power" → "Power", "upgrades" → "Upgrades", "upgrade → power" → "Upgrade → Power"
-// Speakers' passes are Power Passes and never sales; an old "speaker" key reads as Power.
-const tierLabel = (t) => (t === "speaker" ? "Power" : t ? String(t).split(/\s*→\s*/).map(cap).join(" → ") : "Other");
+const tierLabel = (t) => (t === "speaker" ? "Speaker Pass" : t ? String(t).split(/\s*→\s*/).map(cap).join(" → ") : "Other");
 const money = (v) => (v == null ? "—" : cad(v));
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
 

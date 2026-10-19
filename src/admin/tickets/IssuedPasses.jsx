@@ -15,9 +15,9 @@ import { EmailDrawer, ManualDrawer, PdfModal } from "./ExhibitorManual";
 
 /* =========================================================
    Admin → Marketing → Issue passes / Exhibitor passes
-   A pass for anyone, like a speaker's pass: staff choose the
-   person, their email(s), the pass (one of the four: Connect,
-   Influence, Power or Apex), the name printed on it, whether the email
+   A pass for anyone, like the Speaker Pass: staff choose the
+   person, their email(s), the pass (Connect, Influence, Power,
+   Apex or the internal Speaker Pass), the name printed on it, whether the email
    has an RSVP button, and the email's wording, with a live
    preview. Then Preview & send (To / Cc can change per send).
    The pass gets a new ticket ID that works everywhere: the apps
@@ -55,7 +55,7 @@ const KINDS = {
 const plural = (n, one, many = `${one}s`) => `${num(n || 0)} ${n === 1 ? one : many}`;
 const shortDay = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "");
 const EMPTY = { name: "", email: "", title: "", company: "", tier: "", label: "", rsvp: true, cxo: "auto", subject: "", headline: "", message: "", booth: "", zone: "", passes: "" };
-// "CxO Breakfast included": automatic (Apex, and speakers), or Yes / No for this pass.
+// "CxO Breakfast included": automatic (Apex and Speaker Passes, and speakers), or Yes / No for this pass.
 const CXO_INCLUDE = ["2× CxO Breakfasts", "Senior-leader breakfasts, both mornings"];
 const cxoKey = (v) => (v === true ? "yes" : v === false ? "no" : "auto");
 const cxoValue = (k) => (k === "yes" ? true : k === "no" ? false : null);
@@ -175,7 +175,7 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, onClose, onSa
             </Field>
           </div>
           <Field label="CxO Breakfast included" hint={cxo === "auto"
-            ? "Automatic: Apex passes include both CxO Breakfasts, and so does anyone who's a speaker; the others don't."
+            ? "Automatic: Apex and Speaker Passes include both CxO Breakfasts, and so does anyone who's a speaker; the others don't."
             : "For this pass only. It shows in the email, on their ticket in the app and on the RSVP page."}>
             {(id) => (
               <Select id={id} value={cxo} onChange={set("cxo")} className="sm:max-w-xs">

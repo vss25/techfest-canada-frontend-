@@ -191,7 +191,6 @@ const PASS_META = {
     tier: "apex",
     defaultPrice: 1499,
     featured: false,
-    badge: "All Access",
     soldOut: false,
   },
 };

@@ -252,8 +252,7 @@ function PersonView({ id }) {
               {u.tickets.map((t) => (
                 <tr key={t.ticketId}>
                   <td className="font-mono text-xs">{t.ticketId}</td>
-                  {/* One of the four passes (an old "speaker" ticket is a Power Pass); a speaker's is marked. */}
-                  <td className="capitalize">{t.type === "speaker" ? "power" : t.type}{t.speakerPass || t.type === "speaker" ? <span className="normal-case text-ttfc-dim"> · speaker's pass</span> : null}</td>
+                  <td>{t.type}</td>
                   <td className="text-ttfc-muted">{when(t.purchaseDate)}</td>
                   <td>{t.checkedIn ? <Badge tone="good">{when(t.checkedInAt)}</Badge> : <Badge>Not yet</Badge>}</td>
                 </tr>

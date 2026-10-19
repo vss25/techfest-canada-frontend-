@@ -7,11 +7,11 @@ import { when } from "../format";
 import { listText, useLivePreview } from "./speakerEmailHooks";
 
 /* =========================================================
-   Speakers' Power Pass email: editable wording, recipients and cc
+   Speaker Pass email: editable wording, recipients and cc
    ---------------------------------------------------------
    Used by Admin → Speaker passes (SpeakerPasses.jsx):
      - TemplateDrawer ("Edit email"): the saved subject, headline,
-       message and cc list every speakers' pass email uses;
+       message and cc list every Speaker Pass email uses;
      - CopyFields / ListField: the same fields inside a speaker's
        preview, to change them for that one send;
      - useLivePreview: re-renders the email as you type.
@@ -88,7 +88,7 @@ export function EmailFrame({ preview, title = "Email preview" }) {
   );
 }
 
-/** "Edit email": the wording and cc list every speakers' Power Pass email uses. */
+/** "Edit email": the wording and cc list every Speaker Pass email uses. */
 export function TemplateDrawer({ canEdit, onClose, onSaved }) {
   const toast = useToast();
   const [loaded, setLoaded] = useState(null); // { template, defaults, updatedAt, updatedBy }
@@ -111,7 +111,7 @@ export function TemplateDrawer({ canEdit, onClose, onSaved }) {
     try {
       const r = await api.put(`${BASE}/template`, { ...copy, cc });
       setLoaded(r);
-      toast.success("Speakers' email saved");
+      toast.success("Speaker Pass email saved");
       onSaved?.(r);
       onClose();
     } catch (err) {
@@ -126,8 +126,8 @@ export function TemplateDrawer({ canEdit, onClose, onSaved }) {
       open
       onClose={onClose}
       width="max-w-3xl"
-      title="Edit the speakers' Power Pass email"
-      description="Changes apply to every speaker's Power Pass email from now on, including Send to all. You can still change them for a single send in a speaker's preview."
+      title="Edit the Speaker Pass email"
+      description="Changes apply to every Speaker Pass email from now on, including Send to all. You can still change them for a single send in a speaker's preview."
       footer={canEdit ? (
         <>
           <Button variant="primary" icon={Save} loading={saving} disabled={!loaded} onClick={save}>Save</Button>
@@ -139,7 +139,7 @@ export function TemplateDrawer({ canEdit, onClose, onSaved }) {
         <div className="flex flex-col gap-5">
           <CopyFields value={copy} onChange={setCopy} defaults={loaded.defaults} disabled={!canEdit} />
           <ListField
-            label="Cc on every speaker's pass email and calendar invite"
+            label="Cc on every Speaker Pass email and calendar invite"
             hint="Separate addresses with commas. Leave empty to cc nobody."
             value={cc}
             onChange={setCc}
@@ -149,7 +149,7 @@ export function TemplateDrawer({ canEdit, onClose, onSaved }) {
           {loaded.updatedAt && <p className="text-xs text-ttfc-dim">Last saved {when(loaded.updatedAt)}{loaded.updatedBy ? ` by ${loaded.updatedBy}` : ""}.</p>}
           <div>
             <p className="mb-2 text-sm font-semibold">Preview (sample speaker)</p>
-            {preview.error && !preview.data ? <ErrorState error={preview.error} title="Couldn't render the preview" /> : <EmailFrame preview={preview.data} title="Power Pass email preview" />}
+            {preview.error && !preview.data ? <ErrorState error={preview.error} title="Couldn't render the preview" /> : <EmailFrame preview={preview.data} title="Speaker Pass email preview" />}
             {preview.error && preview.data && <p className="mt-2 text-xs text-red-200">{preview.error.message}</p>}
           </div>
         </div>

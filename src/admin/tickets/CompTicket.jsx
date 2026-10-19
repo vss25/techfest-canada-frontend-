@@ -4,7 +4,7 @@ import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Banner, Button, Drawer, Field, Input, Select } from "../ui";
 
-// The four passes (Oct 19 2026: "The pass types are strictly four").
+// The four passes on sale (Oct 19 2026; Discover and Session are retired). Speaker Passes come from Admin › Speaker passes.
 const TIERS = [["connect", "Connect"], ["influence", "Influence"], ["power", "Power"], ["apex", "Apex"]];
 const EMPTY = { name: "", email: "", tier: "power" };
 

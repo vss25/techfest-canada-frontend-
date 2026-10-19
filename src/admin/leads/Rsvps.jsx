@@ -31,7 +31,7 @@ import { personPath } from "../people/peopleMeta";
    GET /api/rsvp/options, and failing that from the summary's own keys. */
 
 const PAGE = 50;
-const TIER_TONE = { connect: "neutral", influence: "pink", power: "orange", apex: "purple" };
+const TIER_TONE = { connect: "neutral", influence: "pink", power: "orange", apex: "purple", speaker: "good" };
 // Per-day options share a base key (sessions_d1 → sessions). Short names for the headcount tiles (full names are in the list).
 const baseKey = (k) => String(k).replace(/_d\d+$/, "");
 const SHORT = {
@@ -114,15 +114,13 @@ function ExperienceLines({ keys, cat, empty = "None" }) {
   );
 }
 
-/* The pass (one of the four) and, for someone matched to the speaker list, "Speaker": their type, not a pass. */
-function PassBadge({ tier, kind, verified, cat }) {
+function PassBadge({ tier, verified, cat }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
       <Badge tone={TIER_TONE[tier] || "neutral"}>{cat.tierName(tier)}</Badge>
-      {kind === "speaker" && <Badge tone="good">Speaker</Badge>}
       {verified
         ? <BadgeCheck className="h-4 w-4 text-emerald-300" aria-label="Verified" title="Verified with their ticket" />
-        : <span className="text-[11px] text-amber-200/80" title={kind === "speaker" ? "Matched to the speaker list by name: confirm before relying on it" : "Chosen by the person; no ticket ID matched"}>unverified</span>}
+        : <span className="text-[11px] text-amber-200/80" title={tier === "speaker" ? "Matched to the speaker list by name: confirm before relying on it" : "Chosen by the person; no ticket ID matched"}>unverified</span>}
     </span>
   );
 }
@@ -159,7 +157,7 @@ function DuplicateCompare({ r, cat, onOpen }) {
       <td className="py-1.5">{theirs}</td>
     </tr>
   );
-  const pass = (x) => <PassBadge tier={x.tier} kind={x.kind} verified={x.tierVerified} cat={cat} />;
+  const pass = (x) => <PassBadge tier={x.tier} verified={x.tierVerified} cat={cat} />;
   return (
     <section className="mb-7">
       <SectionTitle hint="Same name, sent without proof it's the same person">Compare with the earlier RSVP</SectionTitle>
@@ -284,7 +282,7 @@ function RsvpDrawer({ id, onClose, onOpen, onResolved, cat }) {
           </DetailSection>
 
           <DetailSection title="Pass">
-            <Row label="Pass"><PassBadge tier={r.tier} kind={r.kind} verified={r.tierVerified} cat={cat} /></Row>
+            <Row label="Pass"><PassBadge tier={r.tier} verified={r.tierVerified} cat={cat} /></Row>
             <Row label="How we know">{(KIND[r.kind] || KIND.none)(r)}</Row>
             {r.chosenTier && r.chosenTier !== r.tier && <Row label="They picked">{cat.tierName(r.chosenTier)}</Row>}
             {r.detectedTier && r.detectedTier !== r.tier && <Row label="Ticket on file">{cat.tierName(r.detectedTier)} (name match only)</Row>}
@@ -548,7 +546,7 @@ export default function Rsvps() {
                     {r.source !== "staff" && r.staffAdded?.length > 0 && <Badge tone="purple" className="mt-1.5">Staff added {r.staffAdded.length}</Badge>}
                     <Link to={personPath(`r-${r.id}`)} onClick={(e) => e.stopPropagation()} className="mt-1 block text-[11px] font-semibold text-ttfc-pink hover:underline">Profile</Link>
                   </td>
-                  <td className="whitespace-nowrap"><PassBadge tier={r.tier} kind={r.kind} verified={r.tierVerified} cat={cat} /></td>
+                  <td className="whitespace-nowrap"><PassBadge tier={r.tier} verified={r.tierVerified} cat={cat} /></td>
                   <td className="whitespace-nowrap">
                     <span className="inline-flex gap-1">{r.days.map((d) => <Badge key={d} tone="purple">{cat.dayName(d)}</Badge>)}</span>
                   </td>

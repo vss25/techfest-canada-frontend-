@@ -72,7 +72,8 @@ export default function CheckIn() {
             <h3>✅ Check-in Successful</h3>
             <p><strong>Name:</strong> {result.name}</p>
             <p><strong>Ticket:</strong> {result.ticketId}</p>
-            <p><strong>Type:</strong> {result.type}</p>
+            {/* One of the four passes; "Speaker" is the person's type (Oct 19 2026). */}
+            <p><strong>Pass:</strong> {result.passName || result.ticketType || result.type}{result.speaker ? " · Speaker" : ""}</p>
           </div>
         )}
 

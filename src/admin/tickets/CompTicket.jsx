@@ -4,9 +4,8 @@ import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Banner, Button, Drawer, Field, Input, Select } from "../ui";
 
-const TIERS = [
-  ["power", "Power"], ["apex", "Apex"], ["influence", "Influence"], ["connect", "Connect"], ["discover", "Discover"], ["session", "Session"],
-];
+// The four passes (Oct 19 2026: "The pass types are strictly four").
+const TIERS = [["connect", "Connect"], ["influence", "Influence"], ["power", "Power"], ["apex", "Apex"]];
 const EMPTY = { name: "", email: "", tier: "power" };
 
 /** Management: issue a free pass (speakers, guests, the App Review account). */

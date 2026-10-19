@@ -252,14 +252,17 @@ export default function PeopleDirectory() {
                   </td>
                   <td className="whitespace-nowrap">
                     {r.valueBand === "none" ? <span className="text-ttfc-dim">None</span> : (
-                      <span title={VALUE_BAND_HINTS[r.valueBand]}><Badge tone={VALUE_BAND_TONE[r.valueBand]}>{VALUE_BAND_LABELS[r.valueBand]}</Badge></span>
+                      <span title={VALUE_BAND_HINTS[r.valueBand]}>
+                        <Badge tone={VALUE_BAND_TONE[r.valueBand]}>{VALUE_BAND_LABELS[r.valueBand]}</Badge>
+                        {r.pass?.valueSource === "manual" && <span className="block text-[11px] text-amber-200/90">manual</span>}
+                      </span>
                     )}
                   </td>
                   <td className="whitespace-nowrap"><RsvpCell r={r.rsvp} /></td>
                   <td className="whitespace-nowrap" title={r.rsvpEmail?.via?.join(", ")}>
                     {r.rsvpEmail?.sent ? (
-                      <span className="block"><Badge tone="good">Yes</Badge><span className="block text-[11px] text-ttfc-muted">{when(r.rsvpEmail.at)}</span></span>
-                    ) : <span className="text-ttfc-muted">No</span>}
+                      <span className="block"><Badge tone="good">Yes</Badge><span className="block text-[11px] text-ttfc-muted">{r.rsvpEmail.mark === true ? "marked by staff" : when(r.rsvpEmail.at)}</span></span>
+                    ) : <span className="text-ttfc-muted">No{r.rsvpEmail?.mark === false && <span className="block text-[11px]">marked by staff</span>}</span>}
                   </td>
                   <td>{r.exhibitor ? <Badge tone="purple">Yes</Badge> : <span className="text-ttfc-muted">No</span>}</td>
                   <td className="whitespace-nowrap text-right">

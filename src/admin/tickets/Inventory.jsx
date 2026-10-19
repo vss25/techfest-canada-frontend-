@@ -16,7 +16,7 @@ import { useAdmin } from "../adminContext";
 
 /* Passes the Tickets page sells. A missing row means checkout for it would fail. */
 const SITE_PASSES = ["connect", "influence", "power", "apex"];
-const TIER_NAMES = { speaker: "Speaker Pass", vip: "VIP", "booth-single": "Single booth", "booth-double": "Double booth", "booth-triple": "Triple booth", "booth-quadruple": "Quadruple booth" };
+const TIER_NAMES = { speaker: "Power", vip: "VIP", "booth-single": "Single booth", "booth-double": "Double booth", "booth-triple": "Triple booth", "booth-quadruple": "Quadruple booth" };
 const isBooth = (t) => String(t).startsWith("booth-");
 const label = (t) => TIER_NAMES[t] || (t ? t.charAt(0).toUpperCase() + t.slice(1).replace(/-/g, " ") : "—");
 const cadFmt = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 });

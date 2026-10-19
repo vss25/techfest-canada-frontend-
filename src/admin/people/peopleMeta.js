@@ -27,7 +27,7 @@ export const PASS_STATUS_HINTS = {
 };
 export const PASS_STATUS_TONE = { paid: "good", complimentary: "purple", issued: "orange", pending: "warn", refunded: "bad", none: "neutral" };
 
-/** The Pass Type filter: the four passes (a Speaker Pass is the Speakers type). */
+/** The Pass Type filter: the four passes, the only ones there are (Speaker and Exhibitor are types). */
 export const PASS_TIERS = [
   { key: "connect", label: "Connect" },
   { key: "influence", label: "Influence" },
@@ -42,9 +42,9 @@ export const VALUE_BANDS = [
 ];
 export const VALUE_BAND_LABELS = { below: "Below 100 CAD", above: "Above 100 CAD", unknown: "Not known", none: "No pass" };
 export const VALUE_BAND_HINTS = {
-  below: "Paid less than 100 CAD for the pass after promo codes, before HST. Complimentary, issued and Speaker Passes count as 0.",
+  below: "Paid less than 100 CAD for the pass after promo codes, before HST. Complimentary, issued and speakers' passes count as 0, unless management typed what was paid outside Stripe.",
   above: "Paid 100 CAD or more for the pass after promo codes, before HST.",
-  unknown: "A bought pass we couldn't find in Stripe, so the amount isn't known.",
+  unknown: "A bought pass we couldn't find in Stripe, so the amount isn't known. Management can type what was paid by invoice or bank transfer.",
   none: "No pass on file",
 };
 export const VALUE_BAND_TONE = { below: "orange", above: "good", unknown: "neutral", none: "neutral" };
@@ -54,7 +54,7 @@ export const RSVP_STATUS_LABELS = { attendee: "Confirmed by Individual", staff: 
 export const RSVP_STATUS_TONE = { none: "neutral", attendee: "good", staff: "purple" };
 
 /** What "RSVP Email Sent" counts (the server works it out from these records). */
-export const RSVP_EMAIL_HINT = "Yes when an email with their RSVP link went to them: their Speaker Pass, issued or exhibitor pass email with the RSVP button, a speaker reminder, or an RSVP reminder. Bulk campaigns aren't counted.";
+export const RSVP_EMAIL_HINT = "Yes when an email with their RSVP link went to them: their speaker's, issued or exhibitor's pass email with the RSVP button, a speaker reminder, or an RSVP reminder. Bulk campaigns aren't counted. Staff can mark it Yes or No by hand on the profile.";
 
 export const DAY_SHORT = { day1: "Day 1", day2: "Day 2" };
 

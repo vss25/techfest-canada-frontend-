@@ -30,7 +30,11 @@ import { API, useFormGuard } from "../lib/forms";
    ("ttfc.rsvp.edit"); sent back under the same name, it updates that
    RSVP instead of adding another. Staff see RSVPs in Admin → Leads → RSVPs.
 
-   Personal links (the Speaker Pass email): /rsvp#t=<ticketId>&fn=<first>&ln=<last>.
+   Speakers (Oct 19 2026: the passes are strictly four) hold a Power Pass, or the
+   Apex Pass they bought; being a speaker adds the CxO Breakfasts. The page says
+   "Power Pass" and "Welcome, speaker", never "Speaker Pass".
+
+   Personal links (the speakers' pass email): /rsvp#t=<ticketId>&fn=<first>&ln=<last>.
    The fragment never reaches the server; index.html moves it out of the address
    bar before analytics loads (this page clears it too, as a fallback). The page
    opens on the name question already filled in and looks the ticket up at once.
@@ -43,7 +47,7 @@ const FORM_STEPS = ["name", "events", "dietary"];
 // Everyone with a ticket comes to the conference: only the special events are asked about.
 const SPECIAL = (o) => !/^(sessions|expo|breaks)_/.test(o.key);
 const PASS_ORDER = ["connect", "influence", "power", "apex"];
-const PASS_ACCENT = { connect: "#9b6cff", influence: "#e8458b", power: "#f5a623", apex: "#ffd27a", speaker: "#e8458b" };
+const PASS_ACCENT = { connect: "#9b6cff", influence: "#e8458b", power: "#f5a623", apex: "#ffd27a" };
 const LOCATION = "The Westin Harbour Castle, 1 Harbour Square, Toronto, ON M5J 1A6";
 const DOORS = { day1: "Registration opens 8:00 AM.", day2: "Registration opens 8:30 AM." };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -381,8 +385,8 @@ export default function Rsvp() {
   }, [failure, answers, lookupKey, tid]);
   const checking = !!lookupKey && !answered && !failure;
   const lockedTier = found.verified && (found.kind === "ticket" || found.kind === "speaker") ? found.tier : "";
-  // A speaker on the list, or a verified Speaker Pass ticket ID (tier "speaker").
-  const isSpeaker = found.kind === "speaker" || (found.verified && found.tier === "speaker");
+  // A speaker on the list (their pass is a Power Pass, or the Apex Pass they gave the ticket of).
+  const isSpeaker = found.kind === "speaker";
   const foundKey = `${found.kind}:${found.tier || ""}:${found.verified}`;
   const choice = answer.key === foundKey ? answer.choice : "";
   const keptTier = ""; // never guess a pass: only a verified ticket sets it
@@ -652,7 +656,7 @@ export default function Rsvp() {
               <motion.div key="speaker" className="rsvp-chip rsvp-chip-magic" initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }}>
                 <Mic2 size={18} aria-hidden="true" />
                 <span className="rsvp-chip-text">
-                  {found.ticketMatched ? <>We found your <strong>Speaker Pass</strong>. Welcome, speaker</> : "Welcome, speaker"}
+                  {found.ticketMatched ? <>We found your <strong>{found.tierLabel || tierLabel(found.tier) || "pass"}</strong>. Welcome, speaker</> : "Welcome, speaker"}
                 </span>
               </motion.div>
             ) : found.kind === "ticket" && found.verified ? (
@@ -682,16 +686,18 @@ export default function Rsvp() {
       </>
     );
   } else if (name === "pass") {
-    const cards = isSpeaker ? ["speaker"] : PASS_ORDER;
+    const cards = isSpeaker ? [tier || "power"] : PASS_ORDER;
     body = (
       <>
         <StepHeader id={titleId} eyebrow="Step 2 · Your pass" title={lockedTier ? "Your pass" : "Which pass do you have?"}
-          sub={lockedTier ? (isSpeaker ? "Your Speaker Pass includes every breakfast, luncheon, the Gala and the Awards." : "Confirmed from your ticket.") : "It decides which experiences you can RSVP for."} />
+          sub={lockedTier ? (isSpeaker ? `Your ${tierLabel(tier) || "pass"}, and as a speaker the CxO Breakfasts too.` : "Confirmed from your ticket.") : "It decides which experiences you can RSVP for."} />
         <div className="rsvp-stack" role="radiogroup" aria-labelledby={titleId} aria-describedby={errors.tier ? "rsvp-tier-error" : undefined}>
           {cards.map((k, i) => {
             const on = tier === k;
             const disabled = !!lockedTier && !on;
-            const inc = k === "speaker" ? ["Every CxO breakfast and luncheon, the Gala Dinner and the Awards Night"] : includesFor(k, options);
+            const own = includesFor(k, options);
+            // A speaker's breakfasts come with being a speaker, on top of the pass.
+            const inc = isSpeaker && found.cxoBreakfast !== false && !own.some((x) => /CxO/i.test(x)) ? [...own, "2× CxO Breakfast (as a speaker)"] : own;
             return (
               <motion.label key={k} className="rsvp-choice rsvp-pass" data-checked={on || undefined} data-disabled={disabled || undefined}
                 style={{ "--accent": PASS_ACCENT[k] }}
@@ -702,8 +708,8 @@ export default function Rsvp() {
                 <CheckMark on={on} round />
                 <span className="rsvp-choice-body">
                   <span className="rsvp-choice-title">
-                    {k === "speaker" ? "Speaker" : tierLabel(k)}
-                    {on && lockedTier && <span className="rsvp-lock"><Lock size={12} aria-hidden="true" /> {isSpeaker ? "All access" : "Verified"}</span>}
+                    {tierLabel(k)}
+                    {on && lockedTier && <span className="rsvp-lock"><Lock size={12} aria-hidden="true" /> {isSpeaker ? "Speaker" : "Verified"}</span>}
                   </span>
                   <span className="rsvp-choice-desc">{inc.length ? inc.join(" · ") : "Both conference days, the expo floor and networking breaks"}</span>
                 </span>
@@ -753,7 +759,7 @@ export default function Rsvp() {
         {body}
         <div className="rsvp-events-head">
           <h3 className="rsvp-events-title">Special Events</h3>
-          <p className="rsvp-events-sub">{allowed.length ? `Included with your ${isSpeaker ? "Speaker Pass" : tierLabel(tier) || "pass"}. Select the ones you'll attend, so we can plan seating and catering.` : ""}</p>
+          <p className="rsvp-events-sub">{allowed.length ? `Included with your ${tierLabel(tier) || "pass"}${isSpeaker ? " as a speaker" : ""}. Select the ones you'll attend, so we can plan seating and catering.` : ""}</p>
         </div>
         {allowed.length > 0 && (
           <div className="rsvp-exp-bar">

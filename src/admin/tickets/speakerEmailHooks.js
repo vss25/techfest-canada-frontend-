@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 
-/* Helpers for the Speaker Pass email editor (SpeakerEmailCompose.jsx, SpeakerPasses.jsx). */
+/* Helpers for the speakers' Power Pass email editor (SpeakerEmailCompose.jsx, SpeakerPasses.jsx). */
 
 /** ["a@x.com", "b@y.com"] → "a@x.com, b@y.com" */
 export const listText = (list) => (list || []).join(", ");

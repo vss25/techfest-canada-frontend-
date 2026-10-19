@@ -18,8 +18,9 @@ import { listText, useLivePreview } from "./speakerEmailHooks";
 /* =========================================================
    Admin → Tickets & attendees → Speaker passes
    Every speaker on the website (the CMS speaker list) gets a
-   "speaker" ghost ticket: never sold, never on the public
-   Tickets page. Passes start without an email; staff add each
+   Power Pass (Oct 19 2026: the passes are strictly four;
+   "speaker" is their type, which adds the CxO Breakfasts and the
+   VIP Lounge). Never sold, never counted in the inventory. Passes start without an email; staff add each
    speaker's email here (saved on blur / Enter), preview the
    personalised email, and management sends it.
    Backend (all under /console/speaker-passes):
@@ -167,7 +168,7 @@ function WhatGoesOut({ row, to, cc }) {
     <div className="mb-4 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 py-3 text-sm">
       <p className="font-semibold">What {toText ? <>goes to <span className="text-ttfc-pink">{toText}</span></> : "will go out"}</p>
       <ul className="mt-2 space-y-1.5 text-ttfc-muted">
-        <li className="flex gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> This Speaker Pass email{invites.length ? ", with their run of show" : ""}.</li>
+        <li className="flex gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> This Power Pass email{invites.length ? ", with their run of show" : ""}.</li>
         {invites.map((i) => (
           <li key={i.key} className="flex gap-2">
             <CalendarClock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -205,7 +206,7 @@ function PassPreview({ preview }) {
         )}
       </div>
       {mode === "html" || !preview.text
-        ? <iframe title="Speaker Pass email preview" sandbox="" srcDoc={preview.html || ""} className="block h-[65vh] min-h-[420px] w-full bg-white" />
+        ? <iframe title="Power Pass email preview" sandbox="" srcDoc={preview.html || ""} className="block h-[65vh] min-h-[420px] w-full bg-white" />
         : <pre className="max-h-[65vh] overflow-auto whitespace-pre-wrap bg-ttfc-ink px-4 py-3 font-mono text-xs leading-relaxed text-ttfc-muted">{preview.text}</pre>}
     </div>
   );
@@ -301,10 +302,10 @@ function PreviewDrawer({ id, row, canSend, mode = "pass", onSend, onClose, onRow
       open
       onClose={onClose}
       width="max-w-2xl"
-      title={id ? (nudge ? `Nudge ${row?.name || "this speaker"}` : `${row?.name || "Speaker"}'s Speaker Pass`) : "Speaker Pass email"}
+      title={id ? (nudge ? `Nudge ${row?.name || "this speaker"}` : `${row?.name || "Speaker"}'s Power Pass`) : "Speakers' Power Pass email"}
       description={id
         ? (nudge
-          ? "A reminder to RSVP: their Speaker Pass email again, with the reminder wording below (change it for this send)."
+          ? "A reminder to RSVP: their Power Pass email again, with the reminder wording below (change it for this send)."
           : row?.ticketId ? `Ticket ${row.ticketId}` : undefined)
         : "An example of the email every speaker gets, each with their own name and ticket ID."}
       footer={footer}
@@ -386,10 +387,10 @@ function SendAllDialog({ rows, mode = "all", onClose, onDone }) {
       onClose={close}
       size="lg"
       tone="danger"
-      title={result ? "Done" : mode === "nudge" ? `Nudge ${plural(n, "speaker")} now?` : `Send ${plural(n, "Speaker Pass", "Speaker Passes")} now?`}
+      title={result ? "Done" : mode === "nudge" ? `Nudge ${plural(n, "speaker")} now?` : `Send ${plural(n, "Power Pass", "Power Passes")} now?`}
       description={result ? undefined : mode === "nudge"
-        ? `This emails ${plural(n, "speaker")} who haven't RSVP'd a reminder with their Speaker Pass and RSVP button (the standard reminder wording; to change it, nudge one speaker at a time). This cannot be undone.`
-        : `This emails ${plural(n, "speaker")} their Speaker Pass${mode === "selected" ? " (everyone you ticked)" : ""} now, with the wording from Edit email. This cannot be undone.`}
+        ? `This emails ${plural(n, "speaker")} who haven't RSVP'd a reminder with their Power Pass and RSVP button (the standard reminder wording; to change it, nudge one speaker at a time). This cannot be undone.`
+        : `This emails ${plural(n, "speaker")} their Power Pass${mode === "selected" ? " (everyone you ticked)" : ""} now, with the wording from Edit email. This cannot be undone.`}
       footer={result
         ? <Button variant="primary" onClick={close} data-autofocus>Close</Button>
         : (
@@ -505,7 +506,7 @@ export default function SpeakerPasses() {
     try {
       const r = await api.post(`${BASE}/sync`);
       setSyncResult(r || {});
-      toast.success(r?.created ? `Created ${plural(r.created, "Speaker Pass", "Speaker Passes")}` : "Every speaker already has a pass");
+      toast.success(r?.created ? `Created ${plural(r.created, "Power Pass", "Power Passes")} for speakers` : "Every speaker already has a pass");
       reload();
     } catch (err) { toast.error(err); } finally { setSyncing(false); }
   };
@@ -523,8 +524,8 @@ export default function SpeakerPasses() {
     if (r?.row) updateRow({ ...r.row, rsvp: row.rsvp });
     setPreview(null);
     const to = r?.row?.emailSentTo || row.email;
-    if (r?.inviteError) toast.error(`Speaker Pass sent to ${to}, but the calendar invite failed: ${r.inviteError}`);
-    else toast.success(row.sessions ? `Speaker Pass and ${plural(row.sessions, "calendar invite")} sent to ${to}` : `Speaker Pass sent to ${to}`);
+    if (r?.inviteError) toast.error(`Power Pass sent to ${to}, but the calendar invite failed: ${r.inviteError}`);
+    else toast.success(row.sessions ? `Power Pass and ${plural(row.sessions, "calendar invite")} sent to ${to}` : `Power Pass sent to ${to}`);
   };
 
   const syncSummary = syncResult && [
@@ -541,13 +542,13 @@ export default function SpeakerPasses() {
       <PageHeader
         eyebrow="Tickets & attendees"
         title="Speaker passes"
-        description="Every speaker on the website gets a Speaker Pass: a ghost ticket that is never sold. Add each speaker's email, preview, then send."
+        description="Every speaker on the website gets a Power Pass, never sold. Being a speaker (their type) adds the CxO Breakfasts and the VIP Lounge. Add each speaker's email, preview, then send."
         actions={
           <>
             <Button icon={Eye} onClick={() => openPreview(null)} title="See the email speakers get, with sample details">Preview email</Button>
             <Button icon={PenLine} onClick={() => setTemplateOpen(true)} title="Change the subject, headline, message and who's cc'd">Edit email</Button>
             {isManagement && (
-              <Button icon={UserPlus} loading={syncing} onClick={sync} title="Give every speaker on the website a Speaker Pass. Speakers who already have one are left as they are. Nothing is emailed.">
+              <Button icon={UserPlus} loading={syncing} onClick={sync} title="Give every speaker on the website a Power Pass. Speakers who already have one are left as they are. Nothing is emailed.">
                 Create passes for all speakers
               </Button>
             )}
@@ -575,7 +576,7 @@ export default function SpeakerPasses() {
 
       {!isManagement && (
         <Banner tone="info" icon={Info} className="mb-6" title="Sending is for management">
-          You can add speakers' emails and preview their Speaker Pass. A manager creates the passes and sends them.
+          You can add speakers' emails and preview their Power Pass. A manager creates the passes and sends them.
         </Banner>
       )}
 
@@ -597,7 +598,7 @@ export default function SpeakerPasses() {
           <StatTile label="Emails added" value={num(counts.withEmail)} icon={Mail} tone="pink" />
           <StatTile label="Sent" value={num(counts.sent)} icon={MailCheck} tone="good" />
           <StatTile label="Ready to send" value={num(counts.ready)} icon={Send} tone="orange" />
-          <StatTile label="RSVP'd" value={num(counts.rsvpd)} icon={CalendarCheck} tone="good" hint="Matched by their Speaker Pass ticket ID" />
+          <StatTile label="RSVP'd" value={num(counts.rsvpd)} icon={CalendarCheck} tone="good" hint="Matched by their pass's ticket ID" />
         </div>
       )}
 
@@ -701,11 +702,11 @@ export default function SpeakerPasses() {
         open={!!sendTarget}
         onClose={() => setSendTarget(null)}
         tone="primary"
-        title={sendTarget ? (sendTarget.mode === "nudge" ? `Nudge ${sendTarget.row.name || "this speaker"}?` : `Send ${sendTarget.row.name || "this speaker"}'s Speaker Pass?`) : ""}
+        title={sendTarget ? (sendTarget.mode === "nudge" ? `Nudge ${sendTarget.row.name || "this speaker"}?` : `Send ${sendTarget.row.name || "this speaker"}'s Power Pass?`) : ""}
         body={sendTarget && sendTarget.mode === "nudge" ? [
           `To: ${sendTarget.preview?.to || sendTarget.row.email}.`,
           `Cc: ${listText(sendTarget.preview?.cc) || "nobody"}.`,
-          "They'll get the reminder you see in the preview, with their Speaker Pass and RSVP button.",
+          "They'll get the reminder you see in the preview, with their Power Pass and RSVP button.",
           sendTarget.row.nudgedAt ? `They were last nudged on ${shortDay(sendTarget.row.nudgedAt)}.` : "",
         ].filter(Boolean).join(" ") : sendTarget && [
           `To: ${sendTarget.preview?.to || sendTarget.row.email}.`,

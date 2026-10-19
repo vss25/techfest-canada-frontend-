@@ -16,7 +16,8 @@ import { day } from "../format";
 
 const DAY = 864e5;
 const RESEND_DAYS = 3;
-const TIER_NAMES = { speaker: "Speaker Pass" };
+// The passes are strictly four; a ticket still saved as "speaker" (before Oct 19 2026) is a speaker's Power Pass.
+const TIER_NAMES = { speaker: "Power" };
 const tierLabel = (t) => TIER_NAMES[t] || (t ? t.charAt(0).toUpperCase() + t.slice(1) : "—");
 const plural = (n, one, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 

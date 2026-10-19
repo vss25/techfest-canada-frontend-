@@ -833,7 +833,7 @@ export default function Organizers() {
               </p>
               <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
                 <motion.a
-                  href="mailto:info@atlaslinkmarkets.com"
+                  href="mailto:enquire@thetechfestival.com"
                   whileHover={{ y: -3, scale: 1.02 }}
                   whileTap={{ y: 0, scale: 0.98 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}

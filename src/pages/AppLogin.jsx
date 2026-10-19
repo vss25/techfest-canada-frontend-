@@ -20,7 +20,7 @@ import {
 
 const ORBITRON = "'Orbitron', sans-serif";
 const GRADIENT = "linear-gradient(135deg, #7a3fd1, #f5a623)";
-const SUPPORT_EMAIL = "info@thetechfestival.com";
+const SUPPORT_EMAIL = "enquire@thetechfestival.com";
 const TOKEN_KEY = "ttfc.appLoginToken";
 
 function readToken() {

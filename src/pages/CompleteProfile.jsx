@@ -17,7 +17,7 @@ import {
    where staff see them.
    ============================================================ */
 
-const SUPPORT_EMAIL = "info@thetechfestival.com";
+const SUPPORT_EMAIL = "enquire@thetechfestival.com";
 const ORBITRON = "'Orbitron', sans-serif";
 const GRADIENT = "linear-gradient(135deg, #7a3fd1, #f5a623)";
 

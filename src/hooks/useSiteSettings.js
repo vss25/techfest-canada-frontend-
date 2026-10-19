@@ -19,7 +19,7 @@ export const SITE_DEFAULTS = {
   "site.volunteer_open": true,
   "site.show_agenda": true,
   "site.hero_tagline": "",
-  "site.contact_email": "info@thetechfestival.com",
+  "site.contact_email": "enquire@thetechfestival.com",
   "site.linkedin_url": "",
   "site.instagram_url": "",
   "site.x_url": "",

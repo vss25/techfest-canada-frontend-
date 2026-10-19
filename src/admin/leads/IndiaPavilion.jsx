@@ -255,7 +255,7 @@ export default function IndiaPavilion() {
   return (
     <>
       <PageHeader
-        eyebrow="Leads"
+        eyebrow="More › Records"
         title="India Pavilion"
         description="Applications from the India Startup Pavilion page, newest first, with their $500 deposits from Stripe. Each application is emailed to sales@thetechfestival.com and the applicant gets a confirmation. Click a row to see everything they sent."
         actions={

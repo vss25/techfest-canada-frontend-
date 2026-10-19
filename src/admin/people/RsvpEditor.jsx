@@ -318,7 +318,7 @@ export default function RsvpEditor({ personId, rsvp, catalog, pass, rules = null
 
       {duplicates.length > 0 && mode === "view" && (
         <Banner tone="warn" icon={AlertTriangle} className="mb-4" title={`${duplicates.length} possible duplicate${duplicates.length === 1 ? "" : "s"} waiting`}>
-          Another RSVP was sent under this name without proof it's them. Merge it or keep it separate in Leads › RSVPs.
+          Another RSVP was sent under this name without proof it's them. Merge it or keep it separate in RSVPs & meals › Headcounts & RSVPs.
         </Banner>
       )}
 

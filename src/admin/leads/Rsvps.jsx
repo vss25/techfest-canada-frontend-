@@ -408,8 +408,8 @@ export default function Rsvps() {
   return (
     <>
       <PageHeader
-        eyebrow="Leads"
-        title="RSVPs"
+        eyebrow="RSVPs & meals"
+        title="Headcounts & RSVPs"
         description="RSVPs for 26–27 October from the unlinked page thetechfestival.com/rsvp, one row per person (sending it again from the same browser, or with the same ticket ID, updates their row). Headcounts cover everyone, whatever the filters. Click a tile to list who's coming to that, or a row for everything they told us."
         actions={isManagement && <Button icon={Download} loading={exporting} onClick={exportCsv} disabled={!total} title="Every RSVP matching the search and filters">Download CSV</Button>}
       />

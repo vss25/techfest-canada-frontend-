@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, EyeOff, Info, MailQuestion, Pencil, RefreshCw, RotateCcw, Search, Sparkles, Tag, Ticket, UserCheck, X,
 } from "lucide-react";
@@ -13,6 +13,7 @@ import {
 import { day } from "../format";
 import { ProfileLinkPanel, ProfileRequestDialog } from "./ProfileRequests";
 import { CompTicketDrawer } from "./CompTicket";
+import { personPath } from "../people/peopleMeta";
 
 const PAGE = 100;
 const SAFE_NOTE = "This only hides tickets from staff lists and analytics. The owner's ticket stays valid in the app, on the website and at the door.";
@@ -296,16 +297,16 @@ export default function TicketManager() {
   return (
     <>
       <PageHeader
-        eyebrow="Tickets & attendees"
-        title="Tickets"
-        description="Every ticket — app accounts and guest checkouts — in one list. Tidy up what staff see without touching anyone's ticket."
+        eyebrow="More › Records"
+        title="Ticket records"
+        description="Every ticket record, app accounts and guest checkouts, in one list. Tidy up what staff see without touching anyone's ticket. To find someone and change their pass, meals or RSVP, use People; to give someone a pass by email, use Give a pass."
         actions={
           <>
-            {isManagement && <Button icon={Ticket} onClick={() => setCompOpen(true)} title="Give someone a free pass (speakers, guests, App Review)">Complimentary ticket</Button>}
+            {isManagement && <Button icon={Ticket} onClick={() => setCompOpen(true)} title="A free pass with no email (speakers, guests, App Review). To email a pass, use People & passes › Give a pass">Quick free pass (no email)</Button>}
             {isManagement && <Button icon={MailQuestion} loading={busy === "profile"} onClick={previewProfileAsk} title="Email people we don't have a job title or organisation for a link to fill in their details">Ask for missing details</Button>}
             {isManagement && <Button icon={Download} loading={busy === "export"} onClick={exportCsv} title="Every visible ticket with job, company, phone, topics and more">Download attendee list</Button>}
             <Button icon={RefreshCw} loading={busy === "sync"} onClick={syncStripe} title="Pull in any recent Stripe purchases that are missing">Sync from Stripe</Button>
-            <Button variant="primary" icon={Sparkles} loading={busy === "dupes"} onClick={previewDupes}>Clean up duplicates</Button>
+            <Button icon={Sparkles} loading={busy === "dupes"} onClick={previewDupes}>Clean up duplicates</Button>
           </>
         }
       />
@@ -397,7 +398,13 @@ export default function TicketManager() {
                     <td className="whitespace-nowrap text-ttfc-muted">{r.source === "account" ? "App account" : "Guest checkout"}</td>
                     <td className="whitespace-nowrap text-ttfc-muted">{day(r.purchaseDate)}</td>
                     <td>{r.checkedIn ? <Badge tone="good" icon={CheckCircle2}>Checked in</Badge> : <span className="text-xs text-ttfc-dim">Not yet</span>}</td>
-                    <td className="text-right">
+                    <td className="whitespace-nowrap text-right">
+                      {(r.source === "account" ? r.ownerId : !r.hidden) && (
+                        <Link to={personPath(r.source === "account" ? `u-${r.ownerId}` : `t-${r.ticketId}`)} title={`Open ${r.name || "their"} full profile in People`}
+                          className="mr-1 inline-flex h-8 items-center rounded-lg px-2 text-xs font-semibold text-ttfc-pink hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ttfc-purple">
+                          Open full profile
+                        </Link>
+                      )}
                       {r.hidden
                         ? <Button size="sm" variant="ghost" icon={RotateCcw} onClick={() => restore([r.key])}>Restore</Button>
                         : <Button size="sm" variant="ghost" icon={EyeOff} onClick={() => askHide([r.key])}>Remove</Button>}

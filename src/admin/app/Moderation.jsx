@@ -139,7 +139,7 @@ export default function Moderation() {
 
   return (
     <>
-      <PageHeader eyebrow="App" title="Moderation" description="Approve, hide, edit or delete anything people post. Hiding is reversible; deleting is not." />
+      <PageHeader eyebrow="Event day" title="App moderation" description="Approve, hide, edit or delete anything people post. Hiding is reversible; deleting is not." />
       <Tabs tabs={TYPES} value={tab} onChange={setTab} label="What to moderate" />
       <div className="mb-5 max-w-xs">
         {tab === "reports" ? (

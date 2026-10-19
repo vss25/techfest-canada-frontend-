@@ -19,7 +19,7 @@ export default function AuditLog() {
   return (
     <>
       <PageHeader
-        eyebrow="App"
+        eyebrow="More › Settings"
         title="Audit log"
         description="Every change made by staff — including website edits, the kill switch and every time someone opened private messages. Latest 300."
         actions={<Button icon={RefreshCw} onClick={reload} loading={refreshing && !loading}>Refresh</Button>}

@@ -101,3 +101,9 @@ export const companyInitials = (name = "") => {
 
 /** "Oct 18" */
 export const shortDate = (d) => (d ? new Date(d).toLocaleDateString([], { month: "short", day: "numeric" }) : "");
+
+/** The "I'm attending" email per person (backend services/attendingNudge.js): status → label and colour. */
+export const ATTENDING_LABELS = { none: "Not sent", sent: "Sent", failed: "Failed", sending: "Unconfirmed" };
+export const ATTENDING_TONE = { none: "neutral", sent: "good", failed: "bad", sending: "warn" };
+export const ATTENDING_HINT = "The \"I'm attending\" email (Marketing's LinkedIn campaign) or a LinkedIn nudge from here went to one of their addresses. Opens, clicks and LinkedIn posts aren't tracked, so they can't show.";
+export const nudgeCount = (n) => (n > 0 ? `${n} ${n === 1 ? "nudge" : "nudges"}` : "");

@@ -50,7 +50,7 @@ export default function SiteSettings() {
 
   return (
     <>
-      <PageHeader eyebrow="Website content" title="Site settings" description="Switch parts of the website on or off and edit site-wide text. Every change saves on its own and reaches the website within about a minute." />
+      <PageHeader eyebrow="Website & app" title="Website switches" description="Switch parts of the website on or off (selling, forms, the agenda, homepage sections) and edit site-wide text. Every change saves on its own and reaches the website within about a minute." />
 
       <section aria-labelledby="sections-h" className="mb-10">
         <h2 id="sections-h" className="mb-1 text-base font-semibold">Homepage sections</h2>

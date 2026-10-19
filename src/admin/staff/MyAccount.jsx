@@ -6,7 +6,7 @@ export default function MyAccount() {
   const { me, isManagement } = useAdmin();
   return (
     <>
-      <PageHeader eyebrow="Staff & safety" title="My account" description="Your staff sign-in for this panel." />
+      <PageHeader eyebrow="Your account" title="My account" description="Your staff sign-in for this panel." />
       <div className="grid max-w-3xl gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="rounded-[18px] border border-ttfc-line bg-ttfc-panel p-5 sm:p-6">
           <p className="text-sm font-semibold">{me?.name}</p>

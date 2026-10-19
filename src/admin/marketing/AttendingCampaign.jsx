@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AlertTriangle, CheckCircle2, Clock, ExternalLink, Info, Mail, MailCheck, MailWarning, Search, Send, Users,
 } from "lucide-react";
@@ -187,7 +188,7 @@ export default function AttendingCampaign() {
   return (
     <>
       <PageHeader
-        eyebrow="Marketing"
+        eyebrow="More › Records"
         title="I'm attending campaign"
         description="One email to every ticket holder: “Show the world you're attending”. Its button opens their personal page, where they make an “I'm attending TTFC 2026” image and post it to LinkedIn."
         actions={
@@ -206,9 +207,16 @@ export default function AttendingCampaign() {
       />
 
       {!isManagement && (
-        <Banner tone="info" icon={Info} className="mb-6" title="Sending is for management">
-          You can see who gets the email and preview it. A manager sends the test and the campaign.
+        <Banner tone="info" icon={Info} className="mb-6" title="Sending to everyone is for management">
+          You can see who gets the email and preview it. To nudge one person, open them in{" "}
+          <Link to="/admin/people" className="font-semibold text-ttfc-pink hover:underline">People</Link> and use Send LinkedIn nudge.
         </Banner>
+      )}
+      {isManagement && (
+        <p className="mb-6 text-sm text-ttfc-muted">
+          Each person's status (and a nudge to one person or a filtered group) is also in{" "}
+          <Link to="/admin/people?attending=no" className="font-semibold text-ttfc-pink hover:underline">People › I'm attending</Link>. Opens, clicks and posts aren't tracked.
+        </p>
       )}
 
       {running && (

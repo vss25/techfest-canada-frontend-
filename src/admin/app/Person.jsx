@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Ban, BellRing, Eye, EyeOff, Lock, MessageSquare, RotateCcw, Trash2, UserCheck } from "lucide-react";
+import { ArrowLeft, Ban, BellRing, Contact, Eye, EyeOff, Lock, MessageSquare, RotateCcw, Trash2, UserCheck } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
@@ -12,6 +12,7 @@ import { when, initials } from "../format";
 import { EventRow, StatusBadge } from "./parts";
 import ProfileEditor from "./ProfileEditor";
 import { TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE, typeTags } from "./personTypes";
+import { personPath } from "../people/peopleMeta";
 
 function MessagesPane({ id }) {
   const [revealed, setRevealed] = useState(false);
@@ -164,7 +165,7 @@ function PersonView({ id }) {
   return (
     <>
       <Link to="/admin/app/people" className="mb-5 inline-flex items-center gap-1.5 rounded-lg text-sm font-semibold text-ttfc-muted hover:text-ttfc-text">
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" /> People
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" /> App accounts
       </Link>
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
         <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-ttfc-pink via-ttfc-purple to-ttfc-orange text-lg font-bold text-white" aria-hidden="true">
@@ -190,6 +191,8 @@ function PersonView({ id }) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Their passes, meals, RSVP and reminders live on the People profile. */}
+          <Button icon={Contact} onClick={() => navigate(personPath(`u-${id}`))} title={`${u.name}'s passes, meals, RSVP and emails`}>Open full profile</Button>
           <Button
             icon={BellRing}
             disabled={!onApp || u.banned}

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Megaphone, Send } from "lucide-react";
+import { Lock, Megaphone, Send } from "lucide-react";
 import { api } from "../api";
+import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
 import { Banner, Button, Card, ConfirmDialog, Field, PageHeader, SectionTitle, Tabs, Textarea } from "../ui";
 import PersonalNotify from "./PersonalNotify";
@@ -12,6 +13,7 @@ const MODES = [
 ];
 
 export default function Broadcast() {
+  const { isManagement } = useAdmin();
   const [params, setParams] = useSearchParams();
   const prefillIds = (params.get("to") || "").split(",").filter(Boolean);
   const mode = params.get("mode") === "everyone" && !prefillIds.length ? "everyone" : "person";
@@ -24,19 +26,22 @@ export default function Broadcast() {
   return (
     <>
       <PageHeader
-        eyebrow="App"
-        title="Broadcast"
-        description="Send a private notification to one person or a few, or post an official update everyone sees."
+        eyebrow="Event day"
+        title="Send an app update"
+        description={isManagement
+          ? "Send a private notification to one person or a few, or post an official update everyone sees."
+          : "Send a private notification to one person or a few. Updates to everyone are sent by management."}
       />
       <Tabs tabs={MODES} value={mode} onChange={setMode} label="Who to send to" />
       <div role="tabpanel">
-        {mode === "person" ? <PersonalNotify key={prefillIds.join(",")} prefillIds={prefillIds} /> : <EveryoneAnnouncement />}
+        {mode === "person" ? <PersonalNotify key={prefillIds.join(",")} prefillIds={prefillIds} /> : <EveryoneAnnouncement canSend={isManagement} />}
       </div>
     </>
   );
 }
 
-function EveryoneAnnouncement() {
+/** The push to every phone: management only (the server refuses it for staff too). */
+function EveryoneAnnouncement({ canSend }) {
   const toast = useToast();
   const [body, setBody] = useState("");
   const [banner, setBanner] = useState(false);
@@ -51,6 +56,11 @@ function EveryoneAnnouncement() {
 
   return (
     <>
+      {!canSend && (
+        <Banner tone="info" icon={Lock} className="mb-5" title="Management only">
+          An update to every phone is sent by management. You can still send a notification to one person or a few on the first tab.
+        </Banner>
+      )}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card as="form" onSubmit={review} className="space-y-5">
           <SectionTitle hint="It appears at the top of the Feed. Phones get a notification right away (or, before push is switched on, the next time the app checks in).">
@@ -58,19 +68,21 @@ function EveryoneAnnouncement() {
           </SectionTitle>
           <Field label="Message" error={err} hint={`${body.length}/4000 characters`}>
             {(id) => (
-              <Textarea id={id} rows={6} value={body} maxLength={4000} onChange={(e) => setBody(e.target.value)}
+              <Textarea id={id} rows={6} value={body} maxLength={4000} onChange={(e) => setBody(e.target.value)} disabled={!canSend}
                 placeholder="Doors open at 8:00 AM. Registration is in the Harbour Ballroom Foyer." />
             )}
           </Field>
           <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-ttfc-line p-4">
-            <input type="checkbox" checked={banner} onChange={(e) => setBanner(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#E8458B]" />
+            <input type="checkbox" checked={banner} onChange={(e) => setBanner(e.target.checked)} disabled={!canSend} className="mt-0.5 h-4 w-4 accent-[#E8458B]" />
             <span>
               <span className="block text-sm font-semibold">Also show it as the banner at the top of Home</span>
               <span className="block text-xs text-ttfc-muted">Replaces the current Home announcement (first 280 characters).</span>
             </span>
           </label>
           <div className="flex justify-end">
-            <Button variant="primary" type="submit" icon={Send}>Review & send</Button>
+            <Button variant="primary" type="submit" icon={canSend ? Send : Lock} disabled={!canSend} title={canSend ? undefined : "Management only"}>
+              {canSend ? "Review & send" : "Management only"}
+            </Button>
           </div>
         </Card>
         <div className="space-y-4">

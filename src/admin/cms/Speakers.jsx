@@ -316,7 +316,7 @@ export default function Speakers() {
   return (
     <>
       <PageHeader
-        eyebrow="Website content"
+        eyebrow="Website & app"
         title="Speakers"
         description="Everyone shown on the Speakers page and in the app. Click a photo to edit; star to feature; change the number to reorder."
         actions={<Button variant="primary" icon={Plus} disabled={readOnly} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add speaker</Button>}

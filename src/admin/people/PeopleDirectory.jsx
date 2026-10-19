@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ArrowDown, ArrowUp, BellRing, CalendarCheck, CalendarX, ChevronLeft, ChevronRight, Contact, Crown, Download, ImagePlus, Info, Search, Store, Users,
+  ArrowDown, ArrowUp, BellRing, CalendarCheck, CalendarX, ChevronLeft, ChevronRight, Contact, Crown, Download, ImagePlus, Info, Linkedin, Search, Store, Users,
 } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { ADMIN_API, getToken } from "../api";
@@ -11,10 +11,11 @@ import { Badge, Banner, Button, EmptyState, ErrorState, Input, LoadingState, Pag
 import { when } from "../format";
 import LogoPicker, { CompanyMark } from "./LogoPicker";
 import ReminderDialog from "./ReminderDialog";
+import NudgeDialog from "./NudgeDialog";
 import {
-  DAY_SHORT, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_TIERS, RSVP_EMAIL_HINT, RSVP_STATUSES, RSVP_STATUS_LABELS, RSVP_STATUS_TONE,
+  ATTENDING_HINT, ATTENDING_LABELS, ATTENDING_TONE, DAY_SHORT, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_TIERS, RSVP_EMAIL_HINT, RSVP_STATUSES, RSVP_STATUS_LABELS, RSVP_STATUS_TONE,
   TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VALUE_BANDS, VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL, VIP_TONE, extrasSummary,
-  passExtras, personPath,
+  nudgeCount, passExtras, personPath,
 } from "./peopleMeta";
 
 /* =========================================================
@@ -26,7 +27,11 @@ import {
    query parameters and kept in the address bar. Open a row for
    the profile (/admin/people/:id). The CSV is management only,
    like the RSVP export. "Send RSVP reminder" emails the view's
-   Unconfirmed people (ReminderDialog, management).
+   Unconfirmed people (ReminderDialog) and "Send LinkedIn nudge"
+   the "I'm attending" email (NudgeDialog): both management only;
+   staff send either to one person from the profile. The I'm
+   attending column: that email's status (opens, clicks and posts
+   aren't tracked).
 ========================================================= */
 
 const PAGE = 50;
@@ -38,6 +43,7 @@ const COLUMNS = [
   { key: "value", label: "Ticket value", sort: "value" },
   { key: "rsvp", label: "RSVP", sort: "rsvp" },
   { key: "rsvpEmail", label: "RSVP email", sort: "rsvpEmail" },
+  { key: "attending", label: "I'm attending", sort: "attending" },
   { key: "exhibitor", label: "Exhibitor", sort: "exhibitor" },
 ];
 const YES_NO = [{ key: "yes", label: "Yes" }, { key: "no", label: "No" }];
@@ -50,6 +56,7 @@ const FILTER_DEFS = [
   { key: "exhibitor", label: "Is Exhibitor?", options: YES_NO },
   { key: "rsvpEmail", label: "RSVP Email Sent?", options: YES_NO },
   { key: "vip", label: "VIP?", options: YES_NO },
+  { key: "attending", label: "I'm Attending Email Sent?", options: YES_NO },
 ];
 const FILTERS = ["q", ...FILTER_DEFS.map((f) => f.key)];
 
@@ -105,6 +112,7 @@ export default function PeopleDirectory() {
   const [exporting, setExporting] = useState(false);
   const [logoFor, setLogoFor] = useState(null); // a row
   const [reminding, setReminding] = useState(false);
+  const [nudging, setNudging] = useState(false);
   const dq = useDebounced(q.trim(), 300);
   const page = Math.max(0, Number(params.get("page")) || 0);
   const sort = params.get("sort") || "name";
@@ -154,14 +162,20 @@ export default function PeopleDirectory() {
   return (
     <>
       <PageHeader
-        eyebrow="Tickets & attendees"
+        eyebrow="People & passes"
         title="People"
         description="Everyone in one list: delegates, speakers, exhibitors, volunteers, organizers and vendors, from app accounts, tickets, passes, RSVPs and the speaker list. Open someone to see and change their details, VIP, RSVP, agenda and company logo."
         actions={(
           <>
-            <Button icon={BellRing} onClick={() => setReminding(true)} disabled={!total}
-              title="Email the RSVP reminder to the Unconfirmed people in this view">Send RSVP reminder</Button>
-            {isManagement && <Button icon={Download} loading={exporting} onClick={exportCsv} disabled={!total} title="Everyone matching the search and filters">Download CSV</Button>}
+            {isManagement && (
+              <>
+                <Button icon={BellRing} onClick={() => setReminding(true)} disabled={!total}
+                  title="Email the RSVP reminder to the Unconfirmed people in this view">Send RSVP reminder</Button>
+                <Button icon={Linkedin} onClick={() => setNudging(true)} disabled={!total}
+                  title="Email the “I'm attending” LinkedIn nudge to the people in this view">Send LinkedIn nudge</Button>
+                <Button icon={Download} loading={exporting} onClick={exportCsv} disabled={!total} title="Everyone matching the search and filters">Download CSV</Button>
+              </>
+            )}
           </>
         )}
       />
@@ -200,7 +214,7 @@ export default function PeopleDirectory() {
           </p>
           {filtered && <Button size="sm" variant="ghost" onClick={clearAll}>Clear filters</Button>}
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-8">
           {FILTER_DEFS.map((fd) => (
             <label key={fd.key} className="flex min-w-0 flex-col justify-end">
               <span className="mb-1 block text-[11px] font-semibold uppercase leading-tight tracking-wide text-ttfc-dim">{fd.label}</span>
@@ -281,6 +295,15 @@ export default function PeopleDirectory() {
                       <span className="block"><Badge tone="good">Yes</Badge><span className="block text-[11px] text-ttfc-muted">{r.rsvpEmail.mark === true ? "marked by staff" : when(r.rsvpEmail.at)}</span></span>
                     ) : <span className="text-ttfc-muted">No{r.rsvpEmail?.mark === false && <span className="block text-[11px]">marked by staff</span>}</span>}
                   </td>
+                  <td className="whitespace-nowrap" title={ATTENDING_HINT}>
+                    {r.attending && r.attending.status !== "none" ? (
+                      <span className="block">
+                        <Badge tone={ATTENDING_TONE[r.attending.status]}>{ATTENDING_LABELS[r.attending.status]}</Badge>
+                        {r.attending.sentAt && <span className="block text-[11px] text-ttfc-muted">{when(r.attending.sentAt)}</span>}
+                        {r.attending.nudges > 0 && <span className="block text-[11px] text-ttfc-dim">{nudgeCount(r.attending.nudges)}</span>}
+                      </span>
+                    ) : <span className="text-ttfc-muted">{ATTENDING_LABELS.none}</span>}
+                  </td>
                   <td>{r.exhibitor ? <Badge tone="purple">Yes</Badge> : <span className="text-ttfc-muted">No</span>}</td>
                   <td className="whitespace-nowrap text-right">
                     <Link to={personPath(r.id)} onClick={(e) => e.stopPropagation()} className="text-xs font-semibold text-ttfc-pink hover:underline">Profile</Link>
@@ -300,10 +323,12 @@ export default function PeopleDirectory() {
       )}
       <p className="mt-4 text-xs text-ttfc-dim">
         Extras: the meals and events on their main pass (CxO Breakfasts, luncheons, Gala, Awards); + was added by staff, struck through was taken off.
-        Ticket value is what they paid for the pass after promo codes, before HST. RSVP email: {RSVP_EMAIL_HINT}
-        {!isManagement && " Downloading the list as a CSV and sending reminders are for management."}
+        Ticket value is what they paid for the pass after promo codes, before HST. RSVP email: {RSVP_EMAIL_HINT}{" "}
+        I'm attending: {ATTENDING_HINT}
+        {!isManagement && " Downloading the list and sending to everyone in a view are for management; open someone to send them an RSVP reminder or a LinkedIn nudge."}
       </p>
       <ReminderDialog key={reminding ? view.toString() : "closed"} open={reminding} onClose={() => setReminding(false)} view={view} canSend={isManagement} onSent={reload} />
+      {isManagement && <NudgeDialog key={nudging ? view.toString() : "closed"} open={nudging} onClose={() => setNudging(false)} view={view} onSent={reload} />}
       {logoFor && (
         <LogoPicker open onClose={() => setLogoFor(null)} company={logoFor.company} domain={logoFor.suggestedDomain} personId={logoFor.id} personName={logoFor.name}
           canOwn={false} onSaved={reload} />

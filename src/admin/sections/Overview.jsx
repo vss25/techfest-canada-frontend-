@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  Ticket, DollarSign, Smartphone, ShieldAlert, Power, PenSquare, ScanLine, Mic2, Megaphone, Users, ArrowRight, Activity,
+  Ticket, DollarSign, Smartphone, ShieldAlert, Power, PenSquare, ScanLine, Megaphone, ArrowRight, Activity, TicketPlus, Contact, Utensils,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { useAdmin } from "../adminContext";
@@ -12,13 +12,14 @@ const greeting = () => {
   return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 };
 
-const QUICK = [
-  { to: "/admin/check-in", label: "Scan tickets", body: "Check people in at the door", icon: ScanLine },
-  { to: "/admin/content/speakers", label: "Edit speakers", body: "Add photos, bios and order", icon: Mic2 },
-  { to: "/admin/app/broadcast", label: "Send a broadcast", body: "Post an update to every app user", icon: Megaphone },
-  { to: "/admin/app/moderation", label: "Review reports", body: "Hide or approve flagged posts", icon: ShieldAlert },
-  { to: "/admin/attendees", label: "Find an attendee", body: "Look up tickets and check-ins", icon: Users },
-  { to: "/admin/content/partners", label: "Update partner logos", body: "Website and app update in a minute", icon: PenSquare },
+/* The event-week jobs (the admin review, Oct 19 2026). */
+const quickActions = (isManagement) => [
+  { to: "/admin/issued-passes", label: "Give a pass", body: "Create a pass and email it", icon: TicketPlus },
+  { to: "/admin/people", label: "Find someone", body: "Their pass, meals, RSVP and emails", icon: Contact },
+  { to: "/admin/rsvps", label: "Meal headcounts", body: "Who's coming to each meal and event", icon: Utensils },
+  { to: "/admin/check-in", label: "Check-in", body: "Scan tickets at the door", icon: ScanLine },
+  { to: "/admin/app/moderation", label: "Moderation", body: "Hide or approve flagged posts", icon: ShieldAlert },
+  { to: "/admin/app/broadcast", label: "Send an app update", body: isManagement ? "A note to one person, or an update to everyone" : "A notification to one person", icon: Megaphone },
 ];
 
 export default function Overview() {
@@ -70,7 +71,7 @@ export default function Overview() {
         <Card className="lg:col-span-2">
           <h2 className="mb-4 text-base font-semibold">Quick actions</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {QUICK.map((q) => (
+            {quickActions(isManagement).map((q) => (
               <Link
                 key={q.to}
                 to={q.to}

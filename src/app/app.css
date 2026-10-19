@@ -1035,7 +1035,7 @@ textarea.input--ios { min-height: 120px; }
 .inperson-ico { width: 40px; height: 40px; border-radius: var(--r-control); background: var(--pur); color: #fff; display: grid; place-items: center; flex: none; }
 .inperson-ico svg { width: 19px; height: 19px; }
 .inperson b { display: block; font-size: 13px; font-weight: 600; }
-.inperson span { display: block; font-size: 11px; color: var(--tx2); }
+.inperson > div > span { display: block; font-size: 11px; color: var(--tx2); }
 .scan-btn { flex: none; border: 0; border-radius: var(--r-control); background: var(--pur); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 1px; padding: 8px 12px; min-height: 34px; position: relative; }
 .scan-btn::after { content: ""; position: absolute; inset: -6px; }
 /* NetworkView.emptyState and AttendeeDirectoryView.emptyNote. */
@@ -1254,14 +1254,14 @@ textarea.input--ios { min-height: 120px; }
 .pass-strip-btn svg { width: 19px; height: 19px; }
 
 /* The live pill (iOS LivePollPill): a black capsule at the top centre while a saved session is live. */
-.live-pill { position: fixed; top: calc(6px + var(--safe-top)); left: 50%; transform: translateX(-50%); z-index: 40; display: inline-flex; align-items: center; gap: 8px; padding: 6px 4px 6px 10px; border-radius: 999px; background: #000; color: #fff; box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2); cursor: pointer; white-space: nowrap; }
-.live-pill b { font-size: 12.5px; font-weight: 600; }
-.live-pill-ico { width: 13px; height: 13px; stroke-width: 2.6; }
-.live-pill-dot { position: relative; width: 16px; height: 16px; display: grid; place-items: center; }
-.live-pill-dot i { width: 8px; height: 8px; border-radius: 50%; background: var(--pur); position: relative; }
-.live-pill-dot::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: color-mix(in srgb, var(--pur) 35%, transparent); }
-@media (prefers-reduced-motion: no-preference) { .live-pill-dot::before { animation: livePulse 1.4s ease-out infinite; } }
+.live-float { position: fixed; top: calc(6px + var(--safe-top)); left: 50%; transform: translateX(-50%); z-index: 40; display: inline-flex; align-items: center; gap: 8px; padding: 6px 4px 6px 10px; border-radius: 999px; background: #000; color: #fff; box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2); cursor: pointer; white-space: nowrap; }
+.live-float b { font-size: 12.5px; font-weight: 600; }
+.live-float-ico { width: 13px; height: 13px; stroke-width: 2.6; }
+.live-float-dot { position: relative; width: 16px; height: 16px; display: grid; place-items: center; }
+.live-float-dot i { width: 8px; height: 8px; border-radius: 50%; background: var(--pur); position: relative; }
+.live-float-dot::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: color-mix(in srgb, var(--pur) 35%, transparent); }
+@media (prefers-reduced-motion: no-preference) { .live-float-dot::before { animation: livePulse 1.4s ease-out infinite; } }
 @keyframes livePulse { from { transform: scale(0.8); opacity: 1; } to { transform: scale(1.3); opacity: 0; } }
-.live-pill-x { width: 26px; height: 26px; display: grid; place-items: center; border: 0; background: none; color: rgba(255, 255, 255, 0.6); padding: 0; position: relative; }
-.live-pill-x::after { content: ""; position: absolute; inset: -9px -6px; }
-.live-pill-x svg { width: 11px; height: 11px; stroke-width: 3; }
+.live-float-x { width: 26px; height: 26px; display: grid; place-items: center; border: 0; background: none; color: rgba(255, 255, 255, 0.6); padding: 0; position: relative; }
+.live-float-x::after { content: ""; position: absolute; inset: -9px -6px; }
+.live-float-x svg { width: 11px; height: 11px; stroke-width: 3; }

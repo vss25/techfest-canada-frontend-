@@ -31,13 +31,13 @@ export default function LivePollPill() {
   const label = qaOnly ? "Live Q&A" : "Live poll";
   const Icon = qaOnly ? MessagesSquare : ChartColumn;
   return (
-    <div className="live-pill" role="button" tabIndex={0} aria-label={`${label}: ${live.title}`} aria-description="Opens the live session full screen"
+    <div className="live-float" role="button" tabIndex={0} aria-label={`${label}: ${live.title}`} aria-description="Opens the live session full screen"
       onClick={() => navigate(`/session/${encodeURIComponent(live.id)}/live`)}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/session/${encodeURIComponent(live.id)}/live`); } }}>
-      <span className="live-pill-dot" aria-hidden="true"><i /></span>
-      <Icon aria-hidden="true" className="live-pill-ico" />
+      <span className="live-float-dot" aria-hidden="true"><i /></span>
+      <Icon aria-hidden="true" className="live-float-ico" />
       <b>{label}</b>
-      <button type="button" className="live-pill-x" aria-label="Hide live poll" onClick={(e) => { e.stopPropagation(); setHidden(live.id); }}><X aria-hidden="true" /></button>
+      <button type="button" className="live-float-x" aria-label="Hide live poll" onClick={(e) => { e.stopPropagation(); setHidden(live.id); }}><X aria-hidden="true" /></button>
     </div>
   );
 }

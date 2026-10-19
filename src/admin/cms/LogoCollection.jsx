@@ -12,6 +12,7 @@ import { buildBody, nextOrder } from "./fields";
 import useCmsStatus from "./useCmsStatus";
 import { FEATURED_GROUP, PILLAR_GROUPS, SECTOR_GROUPS, ECOSYSTEM_GROUP, matrixGroupOf } from "../../data/partnerMatrix";
 import { SPONSOR_DESCRIPTION_MAX, inApp, isSponsor, onWebsite } from "../../data/sponsors";
+import { useEditFromUrl, useInitialQuery } from "../search/deepLink";
 
 const MATRIX_OPTIONS = [FEATURED_GROUP, ...PILLAR_GROUPS, ...SECTOR_GROUPS, ECOSYSTEM_GROUP];
 /** What "Automatic" resolves to for this record (the website's built-in list), e.g. "Automatic (Featured Partners)". */
@@ -296,7 +297,8 @@ export default function LogoCollection({ type, title, singular, description, wit
   const { configured } = useCmsStatus();
   const readOnly = configured === false;
   const { data, error, loading, reload, setData } = useApi(`/cms/${type}`);
-  const [q, setQ] = useState("");
+  const initialQ = useInitialQuery(); // "See all in Partners" from the global search
+  const [q, setQ] = useState(initialQ);
   const [category, setCategory] = useState("");
   const [show, setShow] = useState("all");
   const [light, setLight] = useState(true);
@@ -304,6 +306,8 @@ export default function LogoCollection({ type, title, singular, description, wit
   const [deleting, setDeleting] = useState(null);
 
   const list = useMemo(() => (data || []).filter((d) => !sponsorsOnly || isSponsor(d)), [data, sponsorsOnly]);
+  // From the global search: ?edit=<id> opens that logo / partner.
+  useEditFromUrl(list, (doc) => setEditing({ doc, creating: false, key: doc._id }));
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
     const visible = (d) => {

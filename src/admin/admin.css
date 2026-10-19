@@ -239,3 +239,15 @@ body.ttfc-admin-open .ticket-bar { display: none !important; }
   background-color: #120c22;
   color: #f4f0fb;
 }
+
+/* ---------------- Global search: the setting or row a search result opened ---------------- */
+.ttfc-admin .adm-flash {
+  border-radius: 14px;
+  box-shadow: 0 0 0 2px var(--a-pink), 0 0 0 6px rgba(232, 69, 139, 0.18);
+  transition: box-shadow 0.3s ease;
+}
+.ttfc-admin tr.adm-flash { box-shadow: none; }
+.ttfc-admin tr.adm-flash > td { background: rgba(232, 69, 139, 0.14); }
+@media (prefers-reduced-motion: reduce) {
+  .ttfc-admin .adm-flash { transition: none; }
+}

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { LogOut, Menu, X, ExternalLink } from "lucide-react";
 import { NAV, titleFor } from "./nav";
 import { focusRing, IconButton } from "./ui";
 import { initials } from "./format";
 import { useAdmin } from "./adminContext";
+import GlobalSearch from "./search/GlobalSearch";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
@@ -80,11 +81,39 @@ function SidebarContent({ onNavigate }) {
   );
 }
 
+/* ?highlight=<key> (links from the global search to a setting or a staff row): scroll to the element with that
+   data-highlight once the page has drawn it, flash it and focus a setting's control. DOM only, no page state. */
+function useHighlightFromUrl(location, nonce) {
+  useEffect(() => {
+    const target = new URLSearchParams(location.search).get("highlight");
+    if (!target) return undefined;
+    let el = null;
+    let tries = 0;
+    let retry;
+    let unflash;
+    const find = () => {
+      el = [...document.querySelectorAll("[data-highlight]")].find((x) => x.getAttribute("data-highlight") === target) || null;
+      if (!el) { if (tries++ < 40) retry = setTimeout(find, 150); return; }
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.classList.add("adm-flash");
+      // A setting's own control gets focus; a table row (a staff account) is only shown, never a control in it.
+      if (el.tagName !== "TR") el.querySelector('[role="switch"], input, textarea')?.focus({ preventScroll: true });
+      unflash = setTimeout(() => el?.classList.remove("adm-flash"), 2600);
+    };
+    find();
+    return () => { clearTimeout(retry); clearTimeout(unflash); el?.classList.remove("adm-flash"); };
+  }, [location.pathname, location.search, nonce]);
+}
+
 export default function AdminShell({ me, kill, onSignOut, children }) {
   const { isManagement } = useAdmin();
   const [drawer, setDrawer] = useState(false);
+  // Bumped when the global search opens a link: the page starts fresh from its URL (search, drawer, highlight),
+  // even when it's the page already open.
+  const [searchNonce, setSearchNonce] = useState(0);
   const location = useLocation();
   const title = titleFor(location.pathname);
+  useHighlightFromUrl(location, searchNonce);
 
   useEffect(() => {
     if (!drawer) return undefined;
@@ -121,6 +150,7 @@ export default function AdminShell({ me, kill, onSignOut, children }) {
           <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-10">
             <IconButton icon={Menu} label="Open menu" onClick={() => setDrawer(true)} className="lg:hidden" aria-expanded={drawer} />
             <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ttfc-text">{title}</p>
+            <GlobalSearch onNavigated={() => setSearchNonce((n) => n + 1)} />
             <SiteStatusChip kill={kill} />
             <div className="flex items-center gap-3 border-l border-ttfc-line pl-3">
               <span
@@ -146,7 +176,7 @@ export default function AdminShell({ me, kill, onSignOut, children }) {
         </header>
 
         <main id="admin-main" className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10" tabIndex={-1}>
-          {children}
+          <Fragment key={searchNonce}>{children}</Fragment>
         </main>
       </div>
     </div>

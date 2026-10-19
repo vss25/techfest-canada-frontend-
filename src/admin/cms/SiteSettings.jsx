@@ -63,7 +63,7 @@ export default function SiteSettings() {
         {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : (
           <Card className="max-w-2xl divide-y divide-ttfc-line p-0 sm:p-0">
             {SETTINGS.map((s) => (
-              <div key={s.key} className="p-5 sm:p-6">
+              <div key={s.key} data-highlight={s.key} className="p-5 sm:p-6">
                 <Switch
                   size="lg"
                   label={s.label}
@@ -112,7 +112,7 @@ function AboutNumbers({ readOnly }) {
   };
 
   return (
-    <section aria-labelledby="about-numbers-h" className="mb-10">
+    <section aria-labelledby="about-numbers-h" data-highlight="aboutNumbers" className="mb-10">
       <h2 id="about-numbers-h" className="mb-1 text-base font-semibold">About page numbers</h2>
       <p className="mb-4 text-sm text-ttfc-muted">The figures in the About section, for example 1000+ attendees across 2 days. Stored in Sanity.</p>
       {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !doc ? (

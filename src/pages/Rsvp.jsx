@@ -24,8 +24,10 @@ import { API, useFormGuard } from "../lib/forms";
    Experiences (sessions, expo floor and breaks for every pass, plus what
    the pass adds) are grouped by day and never ticked for them. Which ones
    they may pick comes from the lookup (`allowedOptions`, the server's own
-   rule: the pass, its CxO Breakfast switch, the speaker type and any
-   breakfast already on their RSVP); the options' `tiers` are the fallback.
+   rule: the pass, the meals and events staff switched on or off for it
+   (CxO Breakfasts, luncheons, Gala Dinner, Awards Night), the speaker type
+   and any of those already on their RSVP); the options' `tiers` are the
+   fallback. The verified pass's card lists the same.
    The save answers with an edit token, kept in localStorage
    ("ttfc.rsvp.edit"); sent back under the same name, it updates that
    RSVP instead of adding another. Staff see RSVPs in Admin → Leads → RSVPs.
@@ -132,11 +134,12 @@ function byDay(list, days) {
   return groups.filter((g) => g.items.length);
 }
 
-/** "2× Networking Luncheon · CxO Breakfast …" for a pass, from the shared option list (what it adds to the base). */
-function includesFor(tier, options) {
+/** "2× Networking Luncheon · CxO Breakfast …" for a pass, from the shared option list (what it adds to the base).
+    `allowedKeys`: the server's list for this person's verified pass (its meals and events as staff set them). */
+function includesFor(tier, options, allowedKeys = null) {
   const counts = new Map();
   for (const o of options) {
-    if (o.kind !== "experience" || !o.tiers.includes(tier) || isBase(o)) continue;
+    if (o.kind !== "experience" || !(allowedKeys ? allowedKeys.includes(o.key) : o.tiers.includes(tier)) || isBase(o)) continue;
     const label = o.label.replace(/\s*\(.*\)$/, "");
     counts.set(label, (counts.get(label) || 0) + 1);
   }
@@ -693,7 +696,9 @@ export default function Rsvp() {
             const on = tier === k;
             const disabled = !!lockedTier && !on;
             // The internal Speaker Pass (never sold): Power's events and both CxO Breakfasts, from the server's list, and the VIP Lounge.
-            const inc = k === "speaker" ? [...includesFor(k, options), SPEAKER_LOUNGE] : includesFor(k, options);
+            // Their own verified pass: what the server allows them (a Connect Pass with the Gala added lists the Gala).
+            const own = on && lockedTier && serverAllowed ? serverAllowed : null;
+            const inc = k === "speaker" ? [...includesFor(k, options, own), SPEAKER_LOUNGE] : includesFor(k, options, own);
             return (
               <motion.label key={k} className="rsvp-choice rsvp-pass" data-checked={on || undefined} data-disabled={disabled || undefined}
                 style={{ "--accent": PASS_ACCENT[k] }}

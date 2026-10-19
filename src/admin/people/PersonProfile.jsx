@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   AlertTriangle, ArrowLeft, Check, Coffee, Crown, ExternalLink, ImagePlus, Info, Linkedin, Mail, Mic2, Pencil, Smartphone, Store, Ticket, Trash2,
+  Trophy, Utensils, Wine,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { ADMIN_API, adminFetch, api } from "../api";
@@ -15,7 +16,7 @@ import RsvpEditor from "./RsvpEditor";
 import LogoPicker, { CompanyMark } from "./LogoPicker";
 import { TEAM_TYPES, effectiveTypes, toggleType } from "../app/personTypes";
 import {
-  DAY_SHORT, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_STATUS_TONE, PASS_TIERS, PERSON_TYPES, passName, RSVP_EMAIL_HINT, RSVP_STATUS_LABELS, RSVP_STATUS_TONE,
+  DAY_SHORT, EXTRAS, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_STATUS_TONE, PASS_TIERS, PERSON_TYPES, passExtras, passName, RSVP_EMAIL_HINT, RSVP_STATUS_LABELS, RSVP_STATUS_TONE,
   TYPE_LABELS, TYPE_TONE, VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL, VIP_TONE, personPath,
 } from "./peopleMeta";
 
@@ -27,8 +28,10 @@ import {
    (management: their sign-in), phone, company, job title,
    LinkedIn, their types, Is Exhibitor, VIP and "RSVP Email Sent"),
    and every record they're made of follows (account, passes,
-   RSVPs). Per pass (PATCH …/passes/:ticketId): "CxO Breakfast
-   included", and for management the pass itself (Connect,
+   RSVPs). Per pass (PATCH …/passes/:ticketId): its meals and
+   events (CxO Breakfasts, Networking Luncheons, the Gala Dinner &
+   Networking Reception, the Catalyst Awards Night: each Automatic,
+   Yes or No), and for management the pass itself (Connect,
    Influence, Power, Apex or the internal Speaker Pass, no charge)
    and the ticket value of a
    pass paid outside Stripe. The RSVP (RsvpEditor, add-only on an
@@ -261,37 +264,58 @@ function LogoCard({ p, onSaved }) {
 }
 
 const money = (v) => `${Number(v).toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD`;
-const CXO_CHOICES = [{ key: "auto", label: "Automatic" }, { key: "yes", label: "Yes" }, { key: "no", label: "No" }];
+const EXTRA_CHOICES = [{ key: "auto", label: "Automatic" }, { key: "yes", label: "Yes" }, { key: "no", label: "No" }];
+const EXTRA_ICON = { cxo: Coffee, lunch: Utensils, gala: Wine, awards: Trophy };
 const VALUE_SOURCE = { stripe: "from Stripe", manual: "manual", staff: "staff-made pass", unknown: "" };
 
-/* "CxO Breakfast included" for one pass: Automatic (Apex, Speaker Pass, speakers on any pass), Yes or No. */
-function CxoSwitch({ personId, t, canEdit, onSaved }) {
+/* The meals and events on one pass, each Automatic (the pass's rule), Yes or No for this pass only
+   (PATCH …/passes/:ticketId { extras: { <key>: true | false | null } }, audited). An older server sends only
+   the CxO Breakfasts (cxoBreakfast): then only that row shows, saved the old way. */
+function ExtrasSwitches({ personId, t, canEdit, onSaved }) {
   const toast = useToast();
   const [busy, setBusy] = useState("");
-  const current = t.cxoOverride === true ? "yes" : t.cxoOverride === false ? "no" : "auto";
-  const pick = async (key) => {
+  const extras = passExtras(t);
+  const rows = t.extras ? EXTRAS : EXTRAS.filter((x) => x.key === "cxo");
+  const pick = async (x, key) => {
+    const e = extras[x.key] || {};
+    const current = e.override === true ? "yes" : e.override === false ? "no" : "auto";
     if (key === current || busy) return;
-    setBusy(key);
+    setBusy(`${x.key}:${key}`);
+    const value = key === "auto" ? null : key === "yes";
     try {
-      await api.patch(`/console/people/${encodeURIComponent(personId)}/passes/${encodeURIComponent(t.ticketId)}`, { cxoBreakfast: key === "auto" ? null : key === "yes" });
-      toast.success(`CxO Breakfast ${key === "auto" ? "back to automatic" : key === "yes" ? "included" : "not included"} for ${t.ticketId.toUpperCase()}`);
+      await api.patch(`/console/people/${encodeURIComponent(personId)}/passes/${encodeURIComponent(t.ticketId)}`, t.extras ? { extras: { [x.key]: value } } : { cxoBreakfast: value });
+      toast.success(`${x.label} ${key === "auto" ? "back to automatic" : key === "yes" ? "added to" : "taken off"} ${t.ticketId.toUpperCase()}`);
       onSaved();
     } catch (err) { toast.error(err); } finally { setBusy(""); }
   };
   return (
-    <div className="flex w-full flex-wrap items-center gap-2 border-t border-ttfc-line pt-2">
-      <Coffee className="h-4 w-4 text-ttfc-muted" aria-hidden="true" />
-      <span className="text-xs font-semibold text-ttfc-text">CxO Breakfast included</span>
-      <Badge tone={t.cxoBreakfast ? "good" : "neutral"}>{t.cxoBreakfast ? "Yes" : "No"}</Badge>
-      <div role="radiogroup" aria-label={`CxO Breakfast for ${t.ticketId.toUpperCase()}`} className="ml-auto inline-flex rounded-xl border border-ttfc-line p-0.5">
-        {CXO_CHOICES.map((c) => (
-          <button key={c.key} type="button" role="radio" aria-checked={current === c.key} disabled={!canEdit || !!busy}
-            onClick={() => pick(c.key)}
-            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:cursor-not-allowed ${current === c.key ? "bg-white/10 text-ttfc-text" : "text-ttfc-muted hover:text-ttfc-text"} ${busy === c.key ? "opacity-60" : ""}`}>
-            {c.key === "auto" ? `Automatic (${t.cxoAuto ? "Yes" : "No"})` : c.label}
-          </button>
-        ))}
-      </div>
+    <div className="w-full border-t border-ttfc-line pt-2">
+      <p className="mb-1.5 text-xs font-semibold text-ttfc-text">Meals and events on this pass</p>
+      <ul className="space-y-1.5">
+        {rows.map((x) => {
+          const e = extras[x.key] || {};
+          const current = e.override === true ? "yes" : e.override === false ? "no" : "auto";
+          const Icon = EXTRA_ICON[x.key];
+          return (
+            <li key={x.key} className="flex items-center gap-2">
+              <Icon className="h-4 w-4 shrink-0 text-ttfc-muted" aria-hidden="true" />
+              <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-xs text-ttfc-text" title={`Automatic: ${x.auto}`}>{x.label}</span>
+                <Badge tone={e.included ? "good" : "neutral"}>{e.included ? "Yes" : "No"}</Badge>
+              </span>
+              <div role="radiogroup" aria-label={`${x.label} for ${t.ticketId.toUpperCase()}`} className="inline-flex shrink-0 rounded-xl border border-ttfc-line p-0.5">
+                {EXTRA_CHOICES.map((c) => (
+                  <button key={c.key} type="button" role="radio" aria-checked={current === c.key} disabled={!canEdit || !!busy}
+                    onClick={() => pick(x, c.key)}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:cursor-not-allowed ${current === c.key ? "bg-white/10 text-ttfc-text" : "text-ttfc-muted hover:text-ttfc-text"} ${busy === `${x.key}:${c.key}` ? "opacity-60" : ""}`}>
+                    {c.key === "auto" ? `Automatic (${e.auto ? "Yes" : "No"})` : c.label}
+                  </button>
+                ))}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -406,14 +430,14 @@ function PassesCard({ p, onSaved }) {
               </span>
               {e.canEditValue && !t.hasStripe && !t.hidden && <ManualValue p={p} t={t} onSaved={onSaved} />}
               {e.canEditPass && !t.hidden && <PassTypeChange key={t.tier} p={p} t={t} onSaved={onSaved} />}
-              {!t.hidden && <CxoSwitch personId={p.id} t={t} canEdit={!!e.canEditCxo} onSaved={onSaved} />}
+              {!t.hidden && <ExtrasSwitches personId={p.id} t={t} canEdit={!!(e.canEditExtras ?? e.canEditCxo)} onSaved={onSaved} />}
             </li>
           ))}
         </ul>
       )}
       {p.passes?.length > 0 && (
         <p className="mt-3 text-xs leading-relaxed text-ttfc-dim">
-          Automatic gives the CxO Breakfasts to Apex and Speaker Passes, and to speakers on any pass. Yes or No is for this pass only: it shows on their ticket in the app and on the RSVP page. A breakfast they already chose in their RSVP is never taken away.
+          Automatic follows the pass: the luncheons come with Influence and up, the Gala Dinner and the Awards Night with Power, Apex and the Speaker Pass, the CxO Breakfasts with Apex, the Speaker Pass and speakers on any pass. Yes or No is for this pass only: it shows on their ticket in the app, in their pass emails and on the RSVP page, and counts them in the RSVP headcounts. Anything they already chose in their RSVP is never taken away.
           {e.canEditPass ? " Changing a pass is free and logged; it moves the inventory counts like an upgrade (the Speaker Pass has none)." : ""}
         </p>
       )}

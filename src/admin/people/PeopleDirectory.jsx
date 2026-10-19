@@ -13,7 +13,8 @@ import LogoPicker, { CompanyMark } from "./LogoPicker";
 import ReminderDialog from "./ReminderDialog";
 import {
   DAY_SHORT, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_TIERS, RSVP_EMAIL_HINT, RSVP_STATUSES, RSVP_STATUS_LABELS, RSVP_STATUS_TONE,
-  TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VALUE_BANDS, VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL, VIP_TONE, personPath,
+  TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VALUE_BANDS, VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL, VIP_TONE, extrasSummary,
+  passExtras, personPath,
 } from "./peopleMeta";
 
 /* =========================================================
@@ -63,6 +64,22 @@ function SortHeader({ col, sort, dir, onSort }) {
         <Icon className={`h-3 w-3 ${active ? "opacity-100" : "opacity-0"}`} aria-hidden="true" />
       </button>
     </th>
+  );
+}
+
+/* The pass's meals and events, compact: what it includes ("+" = added by staff) and, struck through, what
+   staff took off. Hover for each one's Yes / No and whether staff set it. Nothing for a pass with none. */
+function ExtrasBadge({ pass }) {
+  const s = extrasSummary(passExtras(pass));
+  if (!s.on.length && !s.off.length) return null;
+  return (
+    <span title={s.title} className="mt-1 block">
+      <Badge tone={s.edited ? "orange" : "purple"}>
+        Extras:{" "}
+        {s.on.map((x, i) => <span key={x.key}>{i ? " · " : ""}{x.text}</span>)}
+        {s.off.map((x, i) => <span key={x.key}>{s.on.length || i ? " · " : ""}<span className="line-through opacity-70">{x.text}</span></span>)}
+      </Badge>
+    </span>
   );
 }
 
@@ -246,7 +263,7 @@ export default function PeopleDirectory() {
                         <span className="block text-[11px] text-ttfc-dim" title={PASS_STATUS_HINTS[r.passStatus]}>
                           {PASS_STATUS_LABELS[r.passStatus]}{r.passCount > 1 ? ` · +${r.passCount - 1} more` : ""}
                         </span>
-                        {r.cxoBreakfast && <Badge tone="purple" className="mt-1">CxO Breakfast</Badge>}
+                        <ExtrasBadge pass={r.pass} />
                       </>
                     ) : <span className="text-ttfc-dim">None</span>}
                   </td>
@@ -282,6 +299,7 @@ export default function PeopleDirectory() {
         </>
       )}
       <p className="mt-4 text-xs text-ttfc-dim">
+        Extras: the meals and events on their main pass (CxO Breakfasts, luncheons, Gala, Awards); + was added by staff, struck through was taken off.
         Ticket value is what they paid for the pass after promo codes, before HST. RSVP email: {RSVP_EMAIL_HINT}
         {!isManagement && " Downloading the list as a CSV and sending reminders are for management."}
       </p>

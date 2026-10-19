@@ -186,12 +186,13 @@ try {
 } catch { /* no window (tests) */ }
 
 /* Screenshot hook: /app/?demo=1&pass=speaker shows My pass as a speaker (the internal Speaker
-   Pass, tier "speaker"), pass=exhibitor as an exhibitor (a Connect Pass), pass=default as the
+   Pass, tier "speaker"), pass=exhibitor as an exhibitor (a Connect Pass), pass=extras as a Connect
+   Pass with the Gala Dinner switched on by staff (the server's `inclusions`), pass=default as the
    sample attendee again. Saved in the demo data. Demo only. */
 let passHook = "";
 try {
   const u = new URL(window.location.href);
-  passHook = ["speaker", "exhibitor", "default"].includes(u.searchParams.get("pass")) ? u.searchParams.get("pass") : "";
+  passHook = ["speaker", "exhibitor", "extras", "default"].includes(u.searchParams.get("pass")) ? u.searchParams.get("pass") : "";
   if (passHook) {
     u.searchParams.delete("pass");
     window.history.replaceState(window.history.state, "", u.pathname + u.search + u.hash);
@@ -202,7 +203,10 @@ function applyPassHook(s, hook) {
   const fresh = seed();
   s.tickets = hook === "speaker" ? [{ ticketId: "5E7A1B2C3D4F", type: "speaker", purchaseDate: "2026-09-02T14:10:00.000Z", checkedIn: false, cxoBreakfast: true }]
     : hook === "exhibitor" ? [{ ticketId: "E8C4B2A1D3F5", type: "connect", purchaseDate: "2026-09-02T14:10:00.000Z", checkedIn: false, cxoBreakfast: false }]
-      : fresh.tickets;
+      // As /auth/me sends a Connect Pass with the Gala switched on for it in Admin › People.
+      : hook === "extras" ? [{ ticketId: "C0A1B2C3D4E5", type: "connect", purchaseDate: "2026-09-02T14:10:00.000Z", checkedIn: false, cxoBreakfast: false,
+        inclusions: ["2× Day Conference Access", "1× Gala Dinner & Networking Reception", "Expo Floor Access", "Networking Breaks"] }]
+        : fresh.tickets;
   s.me.types = hook === "speaker" ? ["attendee", "speaker"] : hook === "exhibitor" ? ["attendee", "exhibitor"] : fresh.me.types;
   s.me.kind = hook === "speaker" || hook === "exhibitor" ? hook : "";
   s.me.booth = hook === "exhibitor" ? "12" : "";

@@ -42,47 +42,47 @@ var ADDITIONAL_PACKAGES = [
   {
     name: "Delegate Kit Partner", price: "$4,999", icon: "🎒",
     description: "Your brand in every delegate's hands — logo and insert included in all delegate kits distributed at registration.",
-    highlights: ["1 Booth Space (10ft × 10ft)", "2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
+    highlights: ["2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
   },
   {
     name: "Lanyard & Badge Partner", price: "$4,999", icon: "🪪",
     description: "Maximum visibility — your brand worn by every attendee throughout the entire event.",
-    highlights: ["1 Booth Space (10ft × 10ft)", "2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Product Demo", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
+    highlights: ["2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Product Demo", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
   },
   {
     name: "Luncheon Partner", price: "$14,999", icon: "🍽️",
     description: "Own the luncheon experience — branded as the exclusive host of the midday networking session attended by all delegates.",
-    highlights: ["1 Booth Space (10ft × 10ft)", "2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Product Demo", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
+    highlights: ["2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Product Demo", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
   },
   {
     name: "CxO Breakfast Partner", price: "$9,999", icon: "☕",
     description: "Exclusive access to the highest-trust setting at the festival — an invitation-only breakfast for C-Suite and senior executives.",
-    highlights: ["1 Booth Space (10ft × 10ft)", "2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
+    highlights: ["2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
   },
   {
     name: "Gala Dinner Partner", price: "$19,999", icon: "🥂",
     description: "Be the name behind the most prestigious evening of the festival — a premium dinner and networking reception for senior leaders.",
-    highlights: ["1 Booth Space (10ft × 10ft)", "2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Product Demo", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
+    highlights: ["2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Product Demo", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
   },
   {
     name: "WiFi Partner", price: "$2,499", icon: "📶",
     description: "Your brand on every screen, every device — logo featured on the event WiFi splash page accessed by all attendees.",
-    highlights: ["1 Booth Space (10ft × 10ft)", "2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
+    highlights: ["2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
   },
   {
     name: "Registration Partner", price: "$4,999", icon: "📋",
     description: "First impressions start here — your brand is front and centre at the registration desk, the first touchpoint for every attendee.",
-    highlights: ["1 Booth Space (10ft × 10ft)", "2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Product Demo", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
+    highlights: ["2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Product Demo", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
   },
   {
     name: "Visitor Bag Partner", price: "$4,999", icon: "🛍️",
     description: "Your materials in every visitor bag — reach the broader audience beyond delegates with your branded content.",
-    highlights: ["1 Booth Space (10ft × 10ft)", "2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
+    highlights: ["2 Delegate Passes", "1 EDM Spotlight", "Thumbnail LED Screen & Branded Signage", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
   },
   {
     name: "Custom Category Sponsor", price: "$7,499", icon: "⭐",
     description: "A bespoke naming opportunity — sponsor a specific category, zone, or experience that aligns with your brand identity.",
-    highlights: ["1 Booth Space (10ft × 10ft)", "2 Delegate Passes", "Delegate Bag Insert: Full Page", "e-Show Directory: Half Page", "1 EDM Spotlight", "1:1 Curated Meetings (×2)", "VIP Lounge Access (×3)", "Press Release & Media Interview", "Thumbnail LED Screen & Branded Signage", "Product Demo", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
+    highlights: ["2 Delegate Passes", "Delegate Bag Insert: Full Page", "e-Show Directory: Half Page", "1 EDM Spotlight", "1:1 Curated Meetings (×2)", "VIP Lounge Access (×3)", "Press Release & Media Interview", "Thumbnail LED Screen & Branded Signage", "Product Demo", "Live Podcast Recording", "Website Showcase (50 Words)", "Post Event Social Media Video"],
   },
 ];
 

@@ -23,6 +23,9 @@ export const SITE_DEFAULTS = {
   "site.linkedin_url": "",
   "site.instagram_url": "",
   "site.x_url": "",
+  /* Pass upgrades (App text & switches › Pass upgrades). Off unless staff turn it on: the site then
+     shows no upgrade offers (Oct 19 2026, the organiser: "don't offer upgrades at all"). */
+  "flag.upgrades": false,
 };
 
 let state = { ...SITE_DEFAULTS, loaded: false };

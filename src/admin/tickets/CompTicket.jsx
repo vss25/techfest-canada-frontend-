@@ -4,9 +4,8 @@ import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Banner, Button, Drawer, Field, Input, Select } from "../ui";
 
-const TIERS = [
-  ["power", "Power"], ["apex", "Apex"], ["influence", "Influence"], ["connect", "Connect"], ["discover", "Discover"], ["session", "Session"],
-];
+// The four passes on sale (Oct 19 2026; Discover and Session are retired). Speaker Passes come from Admin › Speaker passes.
+const TIERS = [["connect", "Connect"], ["influence", "Influence"], ["power", "Power"], ["apex", "Apex"]];
 const EMPTY = { name: "", email: "", tier: "power" };
 
 /** Management: issue a free pass (speakers, guests, the App Review account). */

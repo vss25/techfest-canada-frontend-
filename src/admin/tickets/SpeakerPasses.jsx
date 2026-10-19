@@ -18,8 +18,10 @@ import { listText, useLivePreview } from "./speakerEmailHooks";
 /* =========================================================
    Admin → Tickets & attendees → Speaker passes
    Every speaker on the website (the CMS speaker list) gets a
-   "speaker" ghost ticket: never sold, never on the public
-   Tickets page. Passes start without an email; staff add each
+   Speaker Pass (tier "speaker"): the internal fifth pass, never
+   sold, never on the public Tickets page (Oct 19 2026: Power Pass
+   privileges, both CxO Breakfasts and VIP Lounge Access, no Apex
+   extras). Passes start without an email; staff add each
    speaker's email here (saved on blur / Enter), preview the
    personalised email, and management sends it.
    Backend (all under /console/speaker-passes):
@@ -541,7 +543,7 @@ export default function SpeakerPasses() {
       <PageHeader
         eyebrow="Tickets & attendees"
         title="Speaker passes"
-        description="Every speaker on the website gets a Speaker Pass: a ghost ticket that is never sold. Add each speaker's email, preview, then send."
+        description="Every speaker on the website gets a Speaker Pass: an internal pass, never sold or listed on the website. It has the Power Pass privileges, both CxO Breakfasts and the VIP Lounge. Add each speaker's email, preview, then send."
         actions={
           <>
             <Button icon={Eye} onClick={() => openPreview(null)} title="See the email speakers get, with sample details">Preview email</Button>

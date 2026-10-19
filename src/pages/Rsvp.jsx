@@ -42,7 +42,8 @@ const STEPS = ["welcome", "name", "events", "dietary", "success"];
 const FORM_STEPS = ["name", "events", "dietary"];
 // Everyone with a ticket comes to the conference: only the special events are asked about.
 const SPECIAL = (o) => !/^(sessions|expo|breaks)_/.test(o.key);
-const PASS_ORDER = ["connect", "influence", "power", "apex"];
+const PASS_ORDER = ["connect", "influence", "power", "apex"]; // the passes on sale; the Speaker Pass is shown only to speakers
+const SPEAKER_LOUNGE = "VIP Lounge Access (both days)";
 const PASS_ACCENT = { connect: "#9b6cff", influence: "#e8458b", power: "#f5a623", apex: "#ffd27a", speaker: "#e8458b" };
 const LOCATION = "The Westin Harbour Castle, 1 Harbour Square, Toronto, ON M5J 1A6";
 const DOORS = { day1: "Registration opens 8:00 AM.", day2: "Registration opens 8:30 AM." };
@@ -686,12 +687,13 @@ export default function Rsvp() {
     body = (
       <>
         <StepHeader id={titleId} eyebrow="Step 2 · Your pass" title={lockedTier ? "Your pass" : "Which pass do you have?"}
-          sub={lockedTier ? (isSpeaker ? "Your Speaker Pass includes every breakfast, luncheon, the Gala and the Awards." : "Confirmed from your ticket.") : "It decides which experiences you can RSVP for."} />
+          sub={lockedTier ? (isSpeaker ? "Your Speaker Pass: the Power Pass privileges, both CxO Breakfasts and the VIP Lounge." : "Confirmed from your ticket.") : "It decides which experiences you can RSVP for."} />
         <div className="rsvp-stack" role="radiogroup" aria-labelledby={titleId} aria-describedby={errors.tier ? "rsvp-tier-error" : undefined}>
           {cards.map((k, i) => {
             const on = tier === k;
             const disabled = !!lockedTier && !on;
-            const inc = k === "speaker" ? ["Every CxO breakfast and luncheon, the Gala Dinner and the Awards Night"] : includesFor(k, options);
+            // The internal Speaker Pass (never sold): Power's events and both CxO Breakfasts, from the server's list, and the VIP Lounge.
+            const inc = k === "speaker" ? [...includesFor(k, options), SPEAKER_LOUNGE] : includesFor(k, options);
             return (
               <motion.label key={k} className="rsvp-choice rsvp-pass" data-checked={on || undefined} data-disabled={disabled || undefined}
                 style={{ "--accent": PASS_ACCENT[k] }}
@@ -702,8 +704,8 @@ export default function Rsvp() {
                 <CheckMark on={on} round />
                 <span className="rsvp-choice-body">
                   <span className="rsvp-choice-title">
-                    {k === "speaker" ? "Speaker" : tierLabel(k)}
-                    {on && lockedTier && <span className="rsvp-lock"><Lock size={12} aria-hidden="true" /> {isSpeaker ? "All access" : "Verified"}</span>}
+                    {k === "speaker" ? "Speaker Pass" : tierLabel(k)}
+                    {on && lockedTier && <span className="rsvp-lock"><Lock size={12} aria-hidden="true" /> {isSpeaker ? "Speaker" : "Verified"}</span>}
                   </span>
                   <span className="rsvp-choice-desc">{inc.length ? inc.join(" · ") : "Both conference days, the expo floor and networking breaks"}</span>
                 </span>
@@ -869,7 +871,7 @@ export default function Rsvp() {
     ) : "None ticked, just the days";
     const rows = [
       { step: "name", label: "Name", value: `${first} ${last}`, extra: tid ? `Ticket ${tid.toUpperCase()}` : "" },
-      { step: "pass", label: "Pass", value: isSpeaker ? "Speaker" : tierLabel(tier), badge: lockedTier ? (isSpeaker ? "All access" : "Verified") : "" },
+      { step: "pass", label: "Pass", value: isSpeaker ? "Speaker Pass" : tierLabel(tier), badge: lockedTier ? (isSpeaker ? "Speaker" : "Verified") : "" },
       { step: "days", label: "Days", value: days.filter((d) => form.days.includes(d.key)).map((d) => `${d.label} (${shortDate(d.date)})`).join(" & ") },
       { step: "experiences", label: "Experiences", value: experiences },
       { step: "dietary", label: "Dietary", value: dietLabels.length ? dietLabels.join(", ") : "Not specified", extra: [form.accessibility.trim() && "Accessibility note added", form.email.trim()].filter(Boolean).join(" · ") },
@@ -911,7 +913,7 @@ export default function Rsvp() {
         <StepHeader id={titleId} eyebrow={saved?.updated ? "RSVP Updated" : "RSVP Received"} title={`See you on ${when}`}
           sub={`Thanks, ${first}. ${saved?.updated ? "We've updated your RSVP." : "Your RSVP is in."} ${sentDays.length > 1 ? "Both days are" : `${dayLabel(sentDays[0])} is`} on your list.`} />
         <div className="rsvp-success-chips">
-          <span className="rsvp-tag rsvp-tag-lg">{saved?.tierLabel || tierLabel(tier) || "Speaker"}</span>
+          <span className="rsvp-tag rsvp-tag-lg">{saved?.tierLabel || tierLabel(tier) || "Speaker Pass"}</span>
         </div>
         <button type="button" className="rsvp-btn" onClick={downloadIcs} data-autofocus>
           <CalendarPlus size={18} aria-hidden="true" /> Add to Calendar

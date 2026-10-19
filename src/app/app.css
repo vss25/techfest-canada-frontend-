@@ -644,6 +644,12 @@ a { color: var(--pur-alt); }
 .menu button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 12px; background: none; border: 0; border-radius: 10px; text-align: left; color: var(--tx); }
 .menu button.danger { color: var(--red); }
 .menu button:hover { background: var(--elevated); }
+/* Post Share menu: pops up above the Share button. */
+.post-share-wrap { position: relative; height: 0; }
+.post-share-menu { top: auto; bottom: 50px; right: 12px; min-width: 190px; }
+.post-share-menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px 6px; }
+.post-action .spin { animation: spin 0.8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .post-action .spin { animation: none; } }
 
 /* Composer */
 .media-strip { display: flex; gap: 8px; overflow-x: auto; }

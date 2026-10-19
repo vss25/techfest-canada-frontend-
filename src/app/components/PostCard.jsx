@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { BadgeCheck, Flag, Hand, Heart, Link2, MessageCircle, MoreHorizontal, Send, Trash2, ArrowUpRight, Megaphone } from "lucide-react";
+import { BadgeCheck, Briefcase, Camera, Flag, Hand, Heart, Link2, Loader2, MessageCircle, MessageSquare, MoreHorizontal, Send, Share2, Trash2, ArrowUpRight, Megaphone, X as XIcon } from "lucide-react";
 import { useStore } from "../lib/store";
 import { cms } from "../lib/cms";
 import { auth, can, firstName, isSignedIn } from "../lib/auth";
@@ -8,6 +8,7 @@ import { blockUser, deletePost, report, social, toggleLike } from "../lib/social
 import { fileURL, FEATURES } from "../lib/config";
 import { mentionPath, splitMentions } from "../lib/mentions";
 import { postTime } from "../lib/time";
+import { prepareShare, shareSourceOf, sharePrepared } from "../lib/shareCard";
 import { confirmDialog, safeHref, showAlert } from "../lib/ui";
 import { Avatar, IconButton, Kicker } from "./ui";
 import Comments from "./Comments";
@@ -79,12 +80,30 @@ export default function PostCard({ post }) {
     setBurst((n) => n + 1);
     if (!post.likedByMe) like();
   };
-  const share = async () => {
-    const text = `${post.authorName} on TTFC: ${post.body}${link ? ` ${link}` : ""}`;
-    try {
-      if (navigator.share) await navigator.share({ text });
-      else { await navigator.clipboard.writeText(text); showAlert("Copied", "The post is on your clipboard."); }
-    } catch { /* cancelled */ }
+  // Share menu: the post goes as a card image (author, text with its line breaks,
+  // photos, TTFC footer) plus the photos / video and the caption (lib/shareCard.js).
+  // The card is prepared as soon as the menu opens, so picking an app can open the
+  // share sheet straight from that tap.
+  const [shareMenu, setShareMenu] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const prepared = useRef(null);
+  const openShare = () => {
+    setShareMenu((v) => !v);
+    if (!prepared.current || prepared.current.body !== post.body) {
+      const job = { body: post.body, value: null, promise: null };
+      job.promise = prepareShare(shareSourceOf(post, subtitle)).then((v) => { job.value = v; return v; });
+      job.promise.catch(() => { if (prepared.current === job) prepared.current = null; });
+      prepared.current = job;
+    }
+  };
+  const shareTo = async (platform) => {
+    setShareMenu(false);
+    const job = prepared.current;
+    if (job?.value) { sharePrepared(job.value, platform); return; }
+    setPreparing(true);
+    try { sharePrepared(await job.promise, platform); }
+    catch { showAlert("Couldn't prepare the post", "Check your connection and try again."); }
+    finally { setPreparing(false); }
   };
   const remove = async () => {
     setMenu(false);
@@ -168,10 +187,22 @@ export default function PostCard({ post }) {
         <button type="button" className="post-action pressable" onClick={() => setShowComments(true)} aria-label={`Comment, ${post.commentCount} so far`}>
           <MessageCircle aria-hidden="true" />Comment
         </button>
-        <button type="button" className="post-action pressable" onClick={share}>
-          <Send aria-hidden="true" />Share
+        <button type="button" className="post-action pressable" onClick={openShare} aria-haspopup="menu" aria-expanded={shareMenu} disabled={preparing}>
+          {preparing ? <Loader2 aria-hidden="true" className="spin" /> : <Send aria-hidden="true" />}{preparing ? "Sharing…" : "Share"}
         </button>
       </div>
+      {shareMenu && (
+        <div className="post-share-wrap">
+          <div className="menu post-share-menu" role="menu" onMouseLeave={() => setShareMenu(false)}>
+            <button type="button" role="menuitem" onClick={() => shareTo("instagram")}><Camera aria-hidden="true" width={16} />Instagram</button>
+            <button type="button" role="menuitem" onClick={() => shareTo("whatsapp")}><MessageSquare aria-hidden="true" width={16} />WhatsApp</button>
+            <button type="button" role="menuitem" onClick={() => shareTo("linkedin")}><Briefcase aria-hidden="true" width={16} />LinkedIn</button>
+            <button type="button" role="menuitem" onClick={() => shareTo("x")}><XIcon aria-hidden="true" width={16} />X</button>
+            <hr />
+            <button type="button" role="menuitem" onClick={() => shareTo(null)}><Share2 aria-hidden="true" width={16} />More…</button>
+          </div>
+        </div>
+      )}
       {showComments && <Comments post={post} onClose={() => setShowComments(false)} />}
     </article>
   );

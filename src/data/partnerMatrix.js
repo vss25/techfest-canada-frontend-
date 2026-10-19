@@ -36,7 +36,6 @@ export var MATRIX_GROUP_KEYS = [FEATURED_GROUP.key]
 var DEFAULT_GROUPS = {
   // Paid partners
   "pd7BC9mehWAqIUtnYVm0zi": "featured", // NuPort Robotics
-  "2datpkVcvmhpv74vwA0HS5": "featured", // Kosim Robotics
   "82f1d0a0-0167-479a-94e3-4b9ffeefb24d": "featured", // Dell Technologies
   "inoqRsrtOZgDGk9v20EIqV": "featured", // Paragon Micro
   "inoqRsrtOZgDGk9v20m52d": "featured", // Transient.AI
@@ -63,6 +62,7 @@ var DEFAULT_GROUPS = {
   "59cbb2f2-42d7-4933-82ee-e9451058f7ca": "cyber", // Canadian Cybersecurity Network
 
   // Robotics & Automation
+  "2datpkVcvmhpv74vwA0HS5": "robotics", // Kosim Robotics (a partner, not a featured one)
   "87948a93-aa30-40e6-ae60-37545a499266": "robotics", // Rockwell Automation
   "bdbf4607-9fe7-42d1-a447-5870d6eecba8": "robotics", // Magna International
 

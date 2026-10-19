@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Building2, Check, Cpu, QrCode, ScanLine, Sparkles, Users, X, Heart, IdCard, Bookmark, ListFilter, Eye } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, isSignedIn } from "../lib/auth";
@@ -238,8 +238,13 @@ export default function Network() {
   const { section } = useParams();
   const navigate = useNavigate();
   const people = useDirectory();
-  const [scan, setScan] = useState(false);
+  const location = useLocation();
   const signedIn = isSignedIn(a);
+  // Points › "Scan a badge" lands here with { scan: true }: open the scanner straight away.
+  const [scan, setScan] = useState(() => signedIn && !!location.state?.scan);
+  useEffect(() => {
+    if (location.state?.scan) navigate(location.pathname, { replace: true, state: null });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const sections = signedIn ? SECTIONS : SECTIONS.filter((x) => GUEST_SECTIONS.includes(x.id));
   const tab = sections.find((x) => x.id === section)?.id || sections[0].id;
   const recs = useRecommendations(signedIn ? people : []);

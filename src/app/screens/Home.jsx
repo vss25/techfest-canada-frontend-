@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Bell, BarChart3, Building2, CalendarDays, ChevronRight, ChevronUp, Circle, Eye, ImagePlus, ListChecks, Megaphone, MessageSquareQuote, Moon, Smartphone, Sun, X, UserRoundPen } from "lucide-react";
 import { useStore, local } from "../lib/store";
 import { auth, can, firstName, isSignedIn, signOut } from "../lib/auth";
@@ -197,7 +197,12 @@ export default function Home() {
   const ct = useStore(content);
   const now = useNow(1000);
   const navigate = useNavigate();
-  const [composer, setComposer] = useState(false);
+  // Points › "Write a post" lands here with { compose: true }: the composer opens (when posting is on).
+  const location = useLocation();
+  const [composer, setComposer] = useState(() => !!location.state?.compose);
+  useEffect(() => {
+    if (location.state?.compose) navigate(location.pathname + location.search, { replace: true, state: null });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [pinned, setPinned] = useState(false);
   const [checklistHidden, setChecklistHidden] = useState(() => local.get(CHECKLIST_KEY) === "1");
   const sentinel = useRef(null);
@@ -351,7 +356,7 @@ export default function Home() {
       </main>
 
       {pinned && <MiniBar now={now} c={c} onTap={() => window.scrollTo({ top: 0, behavior: "smooth" })} />}
-      {composer && <Composer onClose={() => setComposer(false)} />}
+      {composer && canPost && <Composer onClose={() => setComposer(false)} />}
     </div>
   );
 }

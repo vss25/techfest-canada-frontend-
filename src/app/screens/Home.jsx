@@ -19,6 +19,7 @@ import SiteAnnouncement from "../components/SiteAnnouncement";
 import PostCard from "../components/PostCard";
 import Composer from "../components/Composer";
 import Coachmark from "../components/Coachmark";
+import { GetPassCard } from "../components/PassesSheet";
 
 /* =========================================================
    Home, merged with the feed (iOS FeedView / HomeTabView):
@@ -296,6 +297,7 @@ export default function Home() {
               <button type="button" className="btn" onClick={() => signOut()}>Sign up</button>
             </div>
           )}
+          {!signedIn && <GetPassCard where="home" />}
           {needsProfile && (
             <Link to="/profile/edit" className="announcement pressable">
               <span className="ico"><UserRoundPen aria-hidden="true" style={{ width: 17, height: 17 }} /></span>

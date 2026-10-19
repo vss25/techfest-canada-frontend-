@@ -1,4 +1,5 @@
 import { PUBLIC_API } from "../hooks/useSiteSettings";
+import { isMobileDevice as isPhoneOrTablet } from "../lib/pwaPlatform";
 
 /* =========================================================
    "Email me a sign-in link" helpers (AuthModal + /app-login).
@@ -25,12 +26,10 @@ export function appLoginUrl(token) {
   return `ttfc://login?token=${encodeURIComponent(token)}`;
 }
 
-/** Phones and tablets, where the TTFC app can be installed. */
+/** Phones and tablets, where the TTFC app can be installed (the same test as the web app's desktop page). */
 export function isMobileDevice() {
   if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent || "";
-  // iPadOS reports itself as a Mac; touch points give it away.
-  return /iPhone|iPad|iPod|Android/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  return isPhoneOrTablet();
 }
 
 async function post(path, body) {

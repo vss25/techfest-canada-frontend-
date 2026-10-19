@@ -15,6 +15,7 @@ import { Avatar, DoneButton, Empty, Sheet, Spinner, TopBar } from "../components
 import { MoreMenu } from "../components/Safety";
 import { ChatBubble, TypingIndicator } from "../components/ChatBubble";
 import { BubbleFill, PeopleFill } from "../components/Glyphs";
+import { guestAlert } from "../lib/passes";
 
 /* =========================================================
    A group's home (iOS GroupDetailView): who's in it, the
@@ -104,7 +105,7 @@ export default function GroupDetail() {
   const messages = Array.isArray(all) ? all.filter((m) => (m.status !== "held" || m.mine) && !s.blocked.includes(m.authorId)) : all;
 
   const toggleJoin = async () => {
-    if (!signedIn) { showAlert("Sign up to join", "Create a free profile to join groups."); return; }
+    if (!signedIn) { guestAlert("Sign up to join", "Create a free profile to join groups.", "group"); return; }
     const r = await toggleJoinGroup(g);
     if (!r) showAlert("Couldn't update", social.get().lastError || "Try again.");
     else if (r.joined) refreshGroupMessages(id);

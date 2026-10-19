@@ -11,6 +11,7 @@ import { FEATURES } from "../lib/config";
 import { Avatar, Button, Empty, Spinner, TopBar } from "../components/ui";
 import { ContactLimitNote } from "../components/People";
 import { PhoneSlash } from "../components/Glyphs";
+import { guestAlert } from "../lib/passes";
 
 /* =========================================================
    Speaker profile (iOS SpeakerDetailView): Connect and
@@ -42,11 +43,11 @@ export default function SpeakerDetail() {
   const mayMessage = !account || canMessage(account, s);
 
   const connect = () => {
-    if (!signedIn) { showAlert("Sign up to connect", "Create a free profile to send connection requests."); return; }
+    if (!signedIn) { guestAlert("Sign up to connect", "Create a free profile to send connection requests.", "speaker"); return; }
     connectWithSharing(account, { given });
   };
   const message = () => {
-    if (!signedIn) { showAlert("Sign up to message", "Guests can browse speakers. Create a free profile to send a question."); return; }
+    if (!signedIn) { guestAlert("Sign up to message", "Guests can browse speakers. Create a free profile to send a question.", "speaker"); return; }
     navigate(`/chat/${encodeURIComponent(account.id)}`);
   };
   const withdraw = async () => {

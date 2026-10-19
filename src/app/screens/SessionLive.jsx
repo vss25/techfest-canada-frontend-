@@ -12,6 +12,7 @@ import { sessionLivePayload } from "../lib/qr";
 import { showAlert, useNow, usePolling } from "../lib/ui";
 import { reportFlow } from "../lib/safety";
 import { IconButton, Segmented, Sheet, Spinner, TopBar } from "../components/ui";
+import { guestAlert } from "../lib/passes";
 
 /* =========================================================
    In-session participation (iOS SessionLiveView): spot polls
@@ -46,7 +47,7 @@ function PollCard({ poll, result, onVote, guest }) {
         const mine = myVote === i;
         return (
           <button key={o} type="button" className={"poll-opt pressable" + (mine ? " poll-opt--mine" : "")} disabled={voted} aria-pressed={mine}
-            onClick={() => (guest ? showAlert("Sign up to vote", "Guests can watch the poll. Create a free profile to take part.") : onVote(i))}
+            onClick={() => (guest ? guestAlert("Sign up to vote", "Guests can watch the poll. Create a free profile to take part.", "live") : onVote(i))}
             aria-label={voted ? `${o}, ${pct}%${mine ? ", your vote" : ""}` : `Vote ${o}`}>
             {voted && <span className="fill" style={{ width: `${pct}%` }} aria-hidden="true" />}
             <span className="poll-opt-label">{o}</span>
@@ -111,7 +112,7 @@ export default function SessionLive() {
     } catch (e) { showAlert("Couldn't vote", e.message); }
   };
   const upvote = async (q) => {
-    if (guest) { showAlert("Sign up to upvote", "Create a free profile to vote questions up."); return; }
+    if (guest) { guestAlert("Sign up to upvote", "Create a free profile to vote questions up.", "live"); return; }
     setQuestions((list) => list.map((x) => (x.id === q.id ? { ...x, upvotedByMe: !x.upvotedByMe, upvotes: x.upvotes + (x.upvotedByMe ? -1 : 1) } : x)));
     try {
       const r = await post(`social/sessions/questions/${encodeURIComponent(q.id)}/upvote`, {});

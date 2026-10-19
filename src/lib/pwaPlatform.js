@@ -111,6 +111,30 @@ export function isStandalone() {
 
 export const displayMode = () => (isStandalone() ? "standalone" : "browser");
 
+/**
+ * A real phone or tablet, from the device itself (the ?pwa-ua QA override never counts):
+ * iPhone, iPad (also iPadOS's desktop-style "Macintosh" UA, given away by touch points),
+ * Android phones and tablets (also Chrome's "Desktop site" mode, which says Linux but has
+ * only a touch screen). Windows, Mac, ChromeOS and Linux computers are not, installed
+ * desktop app windows included. Unknown devices count as mobile.
+ */
+export function isMobileDevice() {
+  if (typeof navigator === "undefined") return true;
+  const u = ua();
+  const hints = navigator.userAgentData;
+  if (hints && (hints.mobile === true || /^(Android|iOS|iPadOS)$/i.test(hints.platform || ""))) return true;
+  if (/iPhone|iPad|iPod|Android|Mobi|Silk\/|Kindle|PlayBook|BB10|webOS/i.test(u)) return true;
+  if (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) return true;
+  if (/Windows|Macintosh|CrOS/.test(u)) return false;
+  if (/Linux|X11/.test(u)) {
+    try {
+      const touchOnly = window.matchMedia("(pointer: coarse)").matches && window.matchMedia("(hover: none)").matches && !window.matchMedia("(any-pointer: fine)").matches;
+      return touchOnly && navigator.maxTouchPoints > 0;
+    } catch { return false; }
+  }
+  return true;
+}
+
 /** A phone (not a tablet or computer). */
 export function isPhone() {
   if (typeof window === "undefined") return false;

@@ -17,6 +17,7 @@ import { Avatar, Button, Sheet, TopBar } from "../components/ui";
 import { GearFill, TrophyFill } from "../components/Glyphs";
 import AppleWalletButton from "../components/AppleWallet";
 import ContactCard from "../components/ContactCard";
+import { GetPassCard } from "../components/PassesSheet";
 
 const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 
@@ -152,6 +153,7 @@ export default function Profile() {
           <h1>You're browsing as a guest</h1>
           <p>Create your free profile to build a contact card, connect with attendees, save sessions, and unlock your personalised feed.</p>
           <Button variant="primary" size="lg" block icon={UserPlus} onClick={() => signOut()}>Sign up / Sign in</Button>
+          <GetPassCard where="profile" />
           <div className="settings-group" style={{ width: "100%", marginTop: 18 }}>
             <Row icon={ShieldCheck} title="Privacy Policy" to="/legal/privacy" />
             <Row icon={FileText} title="Terms of Use" to="/legal/terms" />

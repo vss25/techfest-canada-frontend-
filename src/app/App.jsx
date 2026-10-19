@@ -9,6 +9,7 @@ import TabBar from "./components/TabBar";
 import { FEATURES } from "./lib/config";
 import { ToastHost, Spinner } from "./components/ui";
 import ShareSheetHost from "./components/ShareSheet";
+import PassesSheet from "./components/PassesSheet";
 import { myCard, profileTabDot } from "./lib/myCard";
 import { InstallNudges, OfflineBar, UpdatePrompt } from "./components/AppNotices";
 import LivePollPill from "./components/LivePollPill";
@@ -171,6 +172,7 @@ export default function App() {
       <Boot />
       <Shell />
       <ShareSheetHost />
+      <PassesSheet />
       <ToastHost />
     </BrowserRouter>
   );

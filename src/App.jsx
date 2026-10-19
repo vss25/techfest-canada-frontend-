@@ -38,15 +38,15 @@ const Attending = lazy(() => import("./pages/Attending"));
 import MaintenanceGate from "./components/MaintenanceGate";
 import CookieConsent from "./components/CookieConsent";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
-import { desktopCanInstall, isPhone, isStandalone } from "./lib/pwaPlatform";
+import { isStandalone } from "./lib/pwaPlatform";
 
 // The staff panel is loaded only when someone opens it.
 const Admin = lazy(() => import("./pages/Admin"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
-// "Get the TTFC app" prompt: phones, and computers whose browser can install apps.
-// Loaded only there, so other visitors never download it.
+// "Get the TTFC app" prompt: the install guide on phones and tablets, a QR code to the phone on
+// computers (the web app is phone-only). Not inside the installed app; loaded on its own.
 const InstallAppPrompt = lazy(() => import("./components/InstallAppPrompt"));
-const SHOW_INSTALL_PROMPT = typeof window !== "undefined" && !isStandalone() && (isPhone() || desktopCanInstall() || /[?&]pwa-preview=1/.test(window.location.search));
+const SHOW_INSTALL_PROMPT = typeof window !== "undefined" && !isStandalone();
 
 function AdminLoading() {
   return <div style={{ minHeight: "100vh", background: "#0B0716" }} aria-busy="true" />;

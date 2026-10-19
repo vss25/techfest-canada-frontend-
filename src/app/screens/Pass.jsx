@@ -1,14 +1,17 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { BadgeCheck, CheckCircle2, Link2, MinusCircle, Share2, Sun, Ticket } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { BadgeCheck, CheckCircle2, Link2, Plus, Share2, ShieldOff, Sun, Ticket } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useStore } from "../lib/store";
-import { auth, bestTicket, cleanTicketId, loadAccount } from "../lib/auth";
+import { auth, bestTicket, cleanTicketId, isSignedIn, loadAccount } from "../lib/auth";
 import { post } from "../lib/api";
 import { LINKS } from "../lib/config";
 import { connectPayload, passPayload } from "../lib/qr";
 import { showAlert } from "../lib/ui";
-import { Button, Segmented, Switch, TopBar } from "../components/ui";
+import { canShareContact, cardOf, myCard, queueQrShare, refreshCard, requestAddDetail } from "../lib/myCard";
+import { defaultIds, keepKnown, qrContactFields, SHARE_OFF_ERROR } from "../lib/contactCard";
+import { Button, Segmented, TopBar } from "../components/ui";
+import { ShareChecklist } from "../components/ShareSheet";
 import AppleWalletButton from "../components/AppleWallet";
 
 /* =========================================================
@@ -31,7 +34,7 @@ export default function Pass() {
       <main id="main" className="pad mt-16 stack-lg">
         <Segmented label="Code" value={tab} onChange={(v) => setParams(v === "connect" ? { tab: "connect" } : {}, { replace: true })}
           options={[{ value: "pass", label: "My pass" }, { value: "connect", label: "Connect QR" }]} />
-        {tab === "pass" ? <PassCode ticket={ticket} name={name} /> : <ConnectCode me={me} email={a.user?.email || me.email || ""} name={name} />}
+        {tab === "pass" ? <PassCode ticket={ticket} name={name} /> : <ConnectCode me={me} name={name} />}
       </main>
     </div>
   );
@@ -102,16 +105,36 @@ function PassCode({ ticket, name }) {
   );
 }
 
-function ConnectCode({ me, email, name }) {
-  const [includeEmail, setIncludeEmail] = useState(true);
-  const payload = connectPayload({ name, title: me.jobTitle || "", org: me.organization || "", linkedIn: me.linkedinUrl || "", email: includeEmail ? email : "", userId: me.id || "" });
+/**
+ * The connect QR (spec section 9). "What they get" is a checklist of my contact card
+ * (PUT /social/contact-card/qr-share): the server hands the ticked details to whoever
+ * scans it. The QR format never changes (lib/qr.js); signed-in accounts leave its email
+ * empty and carry the LinkedIn only when ticked. Demo mode (nothing to deliver them) puts
+ * no user id in it and carries the first ticked email and LinkedIn instead.
+ */
+function ConnectCode({ me, name }) {
+  const a = useStore(auth);
+  const st = useStore(myCard);
+  const navigate = useNavigate();
+  const signedIn = isSignedIn(a);
+  const demo = a.mode === "demo";
+  const card = cardOf(st);
+  const items = signedIn ? card.items || [] : [];
+  const canShare = signedIn && canShareContact(card);
+  const ticked = canShare ? keepKnown(Array.isArray(card.qrShare) ? card.qrShare : defaultIds(items), items) : [];
+  useEffect(() => { if (signedIn) refreshCard(); }, [signedIn]);
+
+  const payload = connectPayload({
+    name, title: me.jobTitle || "", org: me.organization || "",
+    ...qrContactFields(items, ticked, { local: demo }),
+    userId: demo ? "" : me.id || "",
+  });
   const share = async () => {
     try {
       if (navigator.share) await navigator.share({ text: payload });
       else { await navigator.clipboard.writeText(payload); showAlert("Copied", "Your connect code is on your clipboard."); }
     } catch { /* cancelled */ }
   };
-  const has = (on) => (on ? <CheckCircle2 aria-label="Included" style={{ width: 17, height: 17, color: "var(--pur-alt)" }} /> : <MinusCircle aria-label="Not set" style={{ width: 17, height: 17, color: "var(--tx2)" }} />);
   return (
     <div className="stack" style={{ alignItems: "center", textAlign: "center" }}>
       <div>
@@ -120,13 +143,23 @@ function ConnectCode({ me, email, name }) {
         {me.jobTitle && <div className="muted">{[me.jobTitle, me.organization].filter(Boolean).join(" · ")}</div>}
       </div>
       <div className="pass-qr" role="img" aria-label="Your connect QR code"><QRCodeSVG value={payload} size={240} level="M" marginSize={0} /></div>
-      <div className="card" style={{ width: "100%", textAlign: "left" }}>
-        <div className="section-title" style={{ marginBottom: 8 }}>What they get</div>
-        <div className="row" style={{ minHeight: 36 }}><span style={{ flex: 1 }}>Name, title and organisation</span>{has(true)}</div>
-        <div className="row" style={{ minHeight: 36 }}><span style={{ flex: 1 }}>LinkedIn</span>{has(!!me.linkedinUrl)}</div>
-        <Switch label="Email address" checked={includeEmail} onChange={setIncludeEmail} />
-      </div>
-      <p className="muted small" style={{ margin: 0 }}>Show this when you meet someone. When they scan it in the TTFC app, you're connected as "met in person" and they get your card. No request to wait on.</p>
+      <section className="stack-sm" style={{ width: "100%", textAlign: "left" }} aria-labelledby="qr-get-h">
+        {canShare && items.length > 0 ? (
+          <ShareChecklist items={items} ticked={ticked} onChange={queueQrShare} fixed="Name, title and company" heading={<h3 id="qr-get-h" className="eyebrow">What they get</h3>} />
+        ) : (
+          <>
+            <ShareChecklist items={[]} ticked={[]} onChange={() => {}} fixed="Name, title and company" heading={<h3 id="qr-get-h" className="eyebrow">What they get</h3>} />
+            {signedIn && !canShare && <div className="note row-top"><ShieldOff aria-hidden="true" style={{ width: 18, height: 18, flex: "none", marginTop: 1 }} /><span>{SHARE_OFF_ERROR}</span></div>}
+            {canShare && (
+              <div className="cc-empty cc-empty--sheet">
+                <p style={{ margin: 0 }}>You haven't added any contact details yet.</p>
+                <Button size="sm" icon={Plus} onClick={() => { requestAddDetail(); navigate("/profile"); }}>Add contact details</Button>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+      <p className="muted small" style={{ margin: 0 }}>Show this when you meet someone. When they scan it, you're connected in person and they get what's ticked here. You can change it later from their profile.</p>
       <Button block icon={Share2} onClick={share}>Share as text</Button>
     </div>
   );

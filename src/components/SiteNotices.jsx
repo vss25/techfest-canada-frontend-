@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
+import { withOrdinals } from "../lib/ordinals";
 
 /* Public-site pieces driven by Site settings → Website options in the admin panel. */
 
@@ -70,9 +71,9 @@ export function AnnouncementBar() {
           {link ? (
             <a href={link} target={isExternal ? "_blank" : undefined} rel={isExternal ? "noopener noreferrer" : undefined}
               style={{ color: "#ffffff", textDecoration: "underline", textUnderlineOffset: 3 }}>
-              {text} <span aria-hidden="true">→</span>
+              {withOrdinals(text)} <span aria-hidden="true">→</span>
             </a>
-          ) : text}
+          ) : withOrdinals(text)}
           <button
             type="button"
             onClick={dismiss}

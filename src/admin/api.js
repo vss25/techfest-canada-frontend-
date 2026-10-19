@@ -19,11 +19,17 @@ export function signOut() {
 }
 
 export class ApiError extends Error {
-  constructor(message, status) {
+  constructor(message, status, code = "") {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
+
+/* The server's `code` when staff signed in with an emailed code (or a pass ID) instead of
+   their password: the apps take those sign-ins, the admin panel doesn't. The panel sends
+   them to /admin-login without signing them out of the rest of the site. */
+export const PASSWORD_REQUIRED = "password_required";
 
 /**
  * fetch wrapper → parsed JSON. Throws ApiError with the server's
@@ -50,9 +56,12 @@ export async function adminFetch(path, { method = "GET", body, signal } = {}) {
   if (res.status === 401) {
     window.dispatchEvent(new CustomEvent("ttfc:admin-unauthorized"));
   }
+  if (data?.code === PASSWORD_REQUIRED) {
+    window.dispatchEvent(new CustomEvent("ttfc:admin-password-required"));
+  }
   if (!res.ok) {
     const msg = data?.error || data?.message || `Request failed (${res.status})`;
-    throw new ApiError(msg === "maintenance" ? data?.message || msg : msg, res.status);
+    throw new ApiError(msg === "maintenance" ? data?.message || msg : msg, res.status, data?.code || "");
   }
   return data;
 }

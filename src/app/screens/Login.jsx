@@ -243,7 +243,7 @@ export default function Login() {
             {email && (
               <div className="gold-hint">
                 <Ticket aria-hidden="true" />
-                <span>Use the same email you bought or registered your pass with.</span>
+                <span>Use the same email you bought or registered your pass with. Staff and volunteers: your TTFC account email.</span>
               </div>
             )}
             {error && <p className="error-text" role="alert" style={{ margin: 0 }}>{error}</p>}
@@ -303,7 +303,7 @@ export default function Login() {
           <form className="login-form" onSubmit={submitStaff} noValidate>
             <div>
               <h1 className="staff-title"><KeyRound aria-hidden="true" />Staff sign-in</h1>
-              <p className="login-copy" style={{ textAlign: "left", fontSize: 13, marginTop: 4 }}>For TTFC staff and volunteers.</p>
+              <p className="login-copy" style={{ textAlign: "left", fontSize: 13, marginTop: 4 }}>For TTFC staff and volunteers. You can also sign in with a code sent to your email.</p>
             </div>
             <input className="login-input" type="email" inputMode="email" autoComplete="username" autoCapitalize="none" spellCheck="false"
               value={staffEmail} onChange={(e) => setStaffEmail(e.target.value)} placeholder="Staff email" aria-label="Staff email" autoFocus />
@@ -316,6 +316,10 @@ export default function Login() {
             </div>
             {error && <p className="error-text" role="alert" style={{ margin: 0 }}>{error}</p>}
             <BigButton type="submit" filled icon={ArrowRight} loading={busy} disabled={!canStaff}>Sign in</BigButton>
+            {/* Staff can use the emailed code too; the email typed here carries over. */}
+            <div className="login-links">
+              <button type="button" className="login-link" onClick={() => { setPassword(""); if (staffEmail.trim()) setEmail(staffEmail.trim()); go("email"); }}>Email me a sign-in link instead</button>
+            </div>
           </form>
         )}
       </main>

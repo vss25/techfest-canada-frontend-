@@ -15,7 +15,10 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
-  const expired = (location.state as { expired?: boolean } | null)?.expired;
+  const state = location.state as { expired?: boolean; passwordRequired?: boolean } | null;
+  const expired = state?.expired;
+  // Sent here by the panel: they're signed in with an emailed code, which the panel doesn't take.
+  const passwordRequired = state?.passwordRequired;
 
   useEffect(() => {
     document.body.classList.add("ttfc-admin-open");
@@ -65,7 +68,12 @@ export default function AdminLogin() {
           <h1 className="text-2xl font-bold tracking-tight text-white">Sign in to the staff panel</h1>
           <p className="mt-1.5 text-sm text-ttfc-muted">Use your TTFC staff account.</p>
 
-          {expired && !error && (
+          {passwordRequired && !error && (
+            <p role="status" className="mt-5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-2.5 text-sm text-amber-100">
+              You signed in with a code sent to your email. That works in the TTFC apps, but the admin panel needs your staff password.
+            </p>
+          )}
+          {expired && !passwordRequired && !error && (
             <p className="mt-5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-2.5 text-sm text-amber-100">Your session ended. Please sign in again.</p>
           )}
           {error && (

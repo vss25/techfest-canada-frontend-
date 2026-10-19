@@ -236,13 +236,13 @@ try {
 export const SAMPLE_SPONSORS = [
   { id: "sample-northbridge", cmsId: "", name: "Northbridge Robotics", displayName: "Northbridge Robotics", category: "corporateEnterprisePartners",
     categoryLabel: "Corporate", website: "", logo: "", scale: 1, topics: [], order: 1, isSponsor: true, sample: true,
-    description: "Sample sponsor (demo). Builds warehouse robots that work alongside people, from picking to palletising." },
+    description: "Sample featured partner (demo). Builds warehouse robots that work alongside people, from picking to palletising." },
   { id: "sample-lakeview", cmsId: "", name: "Lakeview Quantum", displayName: "Lakeview Quantum", category: "startupEcosystemPartners",
     categoryLabel: "Startups", website: "", logo: "", scale: 1, topics: [], order: 2, isSponsor: true, sample: true,
-    description: "Sample sponsor (demo). Quantum-safe encryption for banks and hospitals, tested with Canadian partners." },
+    description: "Sample featured partner (demo). Quantum-safe encryption for banks and hospitals, tested with Canadian partners." },
   { id: "sample-voltgrid", cmsId: "", name: "VoltGrid Energy", displayName: "VoltGrid Energy", category: "corporateEnterprisePartners",
     categoryLabel: "Corporate", website: "", logo: "", scale: 1, topics: [], order: 3, isSponsor: true, sample: true,
-    description: "Sample sponsor (demo). Software that balances solar, storage and the grid for cities across Ontario." },
+    description: "Sample featured partner (demo). Software that balances solar, storage and the grid for cities across Ontario." },
 ];
 
 /** What the Sponsors section shows: the CMS sponsors; in demo mode the samples when there are none (or when asked). */

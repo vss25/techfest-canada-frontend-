@@ -134,7 +134,7 @@ export default function Organisations() {
         {sponsors.length > 0 && (
           <section className="pad stack-sm" aria-labelledby="g-sponsors">
             <h2 id="g-sponsors" className="section-h row sponsor-h">
-              <Star aria-hidden="true" /> Sponsors
+              <Star aria-hidden="true" /> Featured Partners
             </h2>
             <div className="sponsor-grid">
               {sponsors.map((p) => <SponsorCard key={p.id} p={p} />)}

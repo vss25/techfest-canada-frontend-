@@ -30,6 +30,7 @@ import KillSwitch from "../admin/staff/KillSwitch";
 import TicketManager from "../admin/tickets/TicketManager";
 import SpeakerPasses from "../admin/tickets/SpeakerPasses";
 import IssuedPasses, { ExhibitorPasses } from "../admin/tickets/IssuedPasses";
+import PurchaseEmail from "../admin/tickets/PurchaseEmail";
 import SalesAnalytics from "../admin/tickets/SalesAnalytics";
 import Inventory from "../admin/tickets/Inventory";
 import EmailTracking from "../admin/staff/EmailTracking";
@@ -179,6 +180,7 @@ export default function Admin() {
             <Route path="people/:id" element={<PersonProfile />} />
             <Route path="attendees" element={<TicketManager />} />
             <Route path="speaker-passes" element={<SpeakerPasses />} />
+            <Route path="purchase-email" element={<PurchaseEmail />} />
             <Route path="issued-passes" element={<IssuedPasses />} />
             <Route path="exhibitor-passes" element={<ExhibitorPasses />} />
             <Route path="inventory" element={<Inventory />} />

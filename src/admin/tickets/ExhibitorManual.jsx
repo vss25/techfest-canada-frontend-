@@ -5,17 +5,15 @@ import { ADMIN_API, api, getToken } from "../api";
 import { useToast } from "../toastContext";
 import { Button, ConfirmDialog, Drawer, ErrorState, Field, Input, LoadingState, Textarea } from "../ui";
 import { when } from "../format";
-import { CopyFields } from "./SpeakerEmailCompose";
 
 /* =========================================================
-   Exhibitor passes: the Exhibitor Manual PDF and the email defaults
+   Exhibitor passes: the Exhibitor Manual PDF
    ---------------------------------------------------------
    ManualDrawer   every word of the manual (backend
                   services/exhibitorManual.js DEFAULT_MANUAL), with a
                   live PDF preview; Save applies to every exhibitor
                   pass email from then on.
-   EmailDrawer    the default subject / headline / message for every
-                  exhibitor pass (a pass's own wording still wins).
+   (The email's own wording: PassTemplateDrawer in PassEmailTemplates.jsx.)
    PdfModal       one PDF (a pass's attachment, or an unsaved one).
    usePdf         fetches a PDF from the admin API as a blob URL.
 ========================================================= */
@@ -305,45 +303,6 @@ export function ManualDrawer({ base, canEdit, onClose }) {
         tone="primary"
         onConfirm={() => { setDraft(structuredClone(data.defaults)); setVersion((v) => v + 1); }}
       />
-    </Drawer>
-  );
-}
-
-/** The default email wording for every exhibitor pass. */
-export function EmailDrawer({ base, canEdit, onClose, onSaved }) {
-  const toast = useToast();
-  const { data, error, loading, reload, setData } = useApi(`${base}/email`);
-  const [draft, setDraft] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const copy = draft || data?.copy || { subject: "", headline: "", message: "" };
-  const dirty = !!draft && JSON.stringify(draft) !== JSON.stringify(data?.copy);
-  const save = async () => {
-    setSaving(true);
-    try {
-      const r = await api.put(`${base}/email`, draft);
-      setData(r);
-      setDraft(null);
-      toast.success("Email wording saved for every exhibitor pass");
-      onSaved?.();
-    } catch (err) { toast.error(err); } finally { setSaving(false); }
-  };
-  return (
-    <Drawer
-      open
-      onClose={onClose}
-      width="max-w-2xl"
-      title="Exhibitor pass email"
-      description={`The wording every exhibitor pass email starts from. A pass's own wording (Edit on the list) still wins.${data?.updatedBy ? ` Last saved by ${data.updatedBy} ${when(data.updatedAt)}.` : ""}`}
-      footer={canEdit ? (
-        <>
-          <Button variant="primary" loading={saving} disabled={!dirty} onClick={save}>Save wording</Button>
-          {dirty && <Button variant="ghost" onClick={() => setDraft(null)}>Discard changes</Button>}
-        </>
-      ) : undefined}
-    >
-      {loading ? <LoadingState label="Loading…" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : (
-        <CopyFields value={copy} onChange={(c) => setDraft({ subject: c.subject || "", headline: c.headline || "", message: c.message || "" })} defaults={data?.defaults || {}} disabled={!canEdit} />
-      )}
     </Drawer>
   );
 }

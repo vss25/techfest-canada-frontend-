@@ -9,9 +9,11 @@ import {
   Select, StatTile, TableWrap,
 } from "../ui";
 import { num, when } from "../format";
-import { CopyFields, EmailFrame, ListField } from "./SpeakerEmailCompose";
+import { EmailFrame, ListField } from "./SpeakerEmailCompose";
 import { listText, useLivePreview } from "./speakerEmailHooks";
-import { EmailDrawer, ManualDrawer, PdfModal } from "./ExhibitorManual";
+import { ManualDrawer, PdfModal } from "./ExhibitorManual";
+import { PassTemplateDrawer } from "./PassEmailTemplates";
+import { EmailCopyEditor, EmailPreview } from "./EmailCopyEditor";
 
 /* =========================================================
    Admin → Marketing → Issue passes / Exhibitor passes
@@ -69,26 +71,15 @@ function includesFor(tier, cxo) {
 }
 const ZONES = ["Zone A - Harbour Ballroom Foyer", "Zone B - Pier 4 & 5 Foyer"];
 
-/** The wording placeholders for a pass, with the pass name it'll carry. */
-function defaultsFor(tiers, form, defaultLabel = "") {
-  const t = tiers.find((x) => x.key === form.tier);
-  if (!t) return {};
-  const base = defaultLabel || t.label;
-  const label = form.label.trim() || base;
-  return {
-    subject: t.copy.subject.replace(base, label),
-    headline: t.copy.headline,
-    message: t.copy.message.replaceAll(base, label),
-  };
-}
-
 const boothText = (b) => [b?.booth && `Booth ${b.booth}`, b?.zone].filter(Boolean).join(" · ");
 
 /** Create or edit a pass: who, which pass, the email's wording; live preview on the right. */
-function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, onClose, onSaved }) {
+function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, emailFields = {}, onClose, onSaved }) {
   const toast = useToast();
   const BASE = kind.base;
   const [form, setForm] = useState(() => (row ? {
+    // Every field of this pass's own email wording, then the pass itself.
+    ...(row.copy || {}),
     name: row.name, email: listText(row.emails), title: row.title, company: row.company, tier: row.tier, label: row.label,
     rsvp: row.rsvp, cxo: cxoKey(row.cxoBreakfast), subject: row.copy?.subject || "", headline: row.copy?.headline || "", message: row.copy?.message || "",
     booth: row.booth?.booth || "", zone: row.booth?.zone || "", passes: row.booth?.passes || "",
@@ -195,8 +186,10 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, onClose, onSa
             <span><b>RSVP button in the email</b><span className="block text-xs text-ttfc-muted">Opens the RSVP page with their name and ticket ID filled in. The events offered follow the pass.</span></span>
           </label>
           <div className="border-t border-ttfc-line pt-4">
-            <p className="mb-3 text-sm font-semibold">Email wording{kind.booth ? " for this pass" : ""}</p>
-            <CopyFields value={form} onChange={(c) => setForm((f) => ({ ...f, ...c }))} defaults={defaultsFor(tiers, form, defaultLabel)} />
+            <p className="mb-3 text-sm font-semibold">Email wording for this pass</p>
+            <EmailCopyEditor fields={emailFields.fields || []} sections={emailFields.sections || []} value={form}
+              onChange={(c) => setForm((f) => ({ ...f, ...c }))} defaults={preview.data?.defaults || {}} placeholders={emailFields.placeholders || []}
+              note="For this pass only. Empty fields use Edit email's wording for this pass type (shown in grey). The name on the pass is above." />
           </div>
         </div>
         <div className="min-w-0">
@@ -208,8 +201,8 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, onClose, onSa
               <Button size="sm" variant="ghost" icon={FileText} onClick={() => setPdfOpen(true)}>Preview PDF</Button>
             </div>
           )}
-          {preview.error && !preview.data ? <ErrorState error={preview.error} title="Couldn't render the preview" /> : <EmailFrame preview={preview.data} title="Pass email preview" />}
-          {preview.error && preview.data && <p className="mt-2 text-xs text-red-200">{preview.error.message}</p>}
+          {preview.error && !preview.data ? <ErrorState error={preview.error} title="Couldn't render the preview" />
+            : <div className="lg:sticky lg:top-0"><EmailPreview preview={preview.data} loading={preview.loading} error={preview.data && preview.error} title="Pass email preview" /></div>}
         </div>
       </div>
       {kind.booth && (
@@ -328,7 +321,7 @@ function PassesPage({ kindName }) {
         actions={(
           <div className="flex flex-wrap gap-2">
             {kind.booth && <Button icon={BookOpen} onClick={() => setManualOpen(true)}>{isManagement ? "Edit manual" : "Manual"}</Button>}
-            {kind.booth && <Button icon={Mail} onClick={() => setEmailOpen(true)}>{isManagement ? "Edit email" : "Email wording"}</Button>}
+            <Button icon={Mail} onClick={() => setEmailOpen(true)}>{isManagement ? "Edit email" : "Email wording"}</Button>
             {isManagement && <Button variant="primary" icon={TicketPlus} disabled={!tiers.length} onClick={() => setEditing({ row: null })}>{kind.create}</Button>}
           </div>
         )}
@@ -413,11 +406,14 @@ function PassesPage({ kindName }) {
 
       {editing && tiers.length > 0 && (
         <PassDrawer kind={kind} row={editing.row} tiers={tiers} defaultTier={tiersApi.data?.defaultTier} defaultLabel={tiersApi.data?.defaultLabel || ""}
-          onClose={() => setEditing(null)} onSaved={upsert} />
+          emailFields={tiersApi.data || {}} onClose={() => setEditing(null)} onSaved={upsert} />
       )}
       {sending && <SendDrawer kind={kind} row={sending} canSend={isManagement} onClose={() => setSending(null)} onSent={(row) => upsert(row, false)} />}
       {manualOpen && <ManualDrawer base={BASE} canEdit={isManagement} onClose={() => setManualOpen(false)} />}
-      {emailOpen && <EmailDrawer base={BASE} canEdit={isManagement} onClose={() => setEmailOpen(false)} onSaved={tiersApi.reload} />}
+      {emailOpen && (
+        <PassTemplateDrawer base={BASE} title={kind.booth ? "Exhibitor pass email" : "Issued pass email"} canEdit={isManagement}
+          onClose={() => setEmailOpen(false)} onSaved={tiersApi.reload} />
+      )}
       <ConfirmDialog
         open={!!deleting}
         onClose={() => setDeleting(null)}

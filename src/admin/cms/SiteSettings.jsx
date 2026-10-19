@@ -7,6 +7,7 @@ import ContentSettings from "../content/ContentSettings";
 import { Globe, Lock } from "lucide-react";
 import { LIVE_NOTE } from "./cmsMeta";
 import useCmsStatus from "./useCmsStatus";
+import LargeSiteFiles from "./LargeSiteFiles";
 
 const SETTINGS = [
   {
@@ -79,6 +80,8 @@ export default function SiteSettings() {
       </section>
 
       <AboutNumbers readOnly={readOnly} />
+
+      <LargeSiteFiles />
 
       <WebsiteOptions />
     </>

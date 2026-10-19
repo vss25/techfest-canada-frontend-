@@ -1,4 +1,5 @@
 import { Contact } from "lucide-react";
+import { MailOpen } from "lucide-react";
 import {
   CalendarDays,
   LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
@@ -19,6 +20,7 @@ export const NAV = [
       { to: "people", label: "People", icon: Contact },
       { to: "attendees", label: "Tickets", icon: Users },
       { to: "speaker-passes", label: "Speaker passes", icon: IdCard },
+      { to: "purchase-email", label: "Purchase email", icon: MailOpen },
       { to: "analytics", label: "Sales analytics", icon: BarChart3, management: true },
       { to: "inventory", label: "Inventory", icon: Package },
       { to: "check-in", label: "Check-in", icon: ScanLine },

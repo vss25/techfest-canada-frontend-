@@ -12,7 +12,9 @@ import {
   Spinner, StatTile, TableWrap,
 } from "../ui";
 import { num, when } from "../format";
-import { CopyFields, ListField, TemplateDrawer } from "./SpeakerEmailCompose";
+import { CopyFields, ListField } from "./SpeakerEmailCompose";
+import { SpeakerTemplateDrawer as TemplateDrawer, SpeakerWording } from "./PassEmailTemplates";
+import { tidyCopy, useSpeakerWording } from "./passEmailHooks";
 import { listText, useLivePreview } from "./speakerEmailHooks";
 
 /* =========================================================
@@ -256,8 +258,9 @@ function PassDetails({ row, onSaved }) {
 /**
  * Right-side drawer with one speaker's email (`id`), or the sample (`id` null). Mounted per open.
  * mode "nudge": the reminder to RSVP instead of the pass email.
- * For management it's also where you send: To, Cc and the wording can be changed for this send,
- * and the preview follows the edits.
+ * For management it's also where you send: To and Cc for this send, and this speaker's own email
+ * wording (saved on their pass with "Save for this speaker"; unsaved edits go with this send only).
+ * The preview follows the edits.
  */
 function PreviewDrawer({ id, row, canSend, mode = "pass", onSend, onClose, onRowSaved }) {
   const nudge = mode === "nudge";
@@ -267,6 +270,7 @@ function PreviewDrawer({ id, row, canSend, mode = "pass", onSend, onClose, onRow
   const [cc, setCc] = useState("");
   const [copy, setCopy] = useState({ subject: "", headline: "", message: "" });
   const [showWording, setShowWording] = useState(true);
+  const wording = useSpeakerWording(id, composing && !nudge);
   useEffect(() => {
     if (!composing) return;
     if (nudge) {
@@ -279,12 +283,12 @@ function PreviewDrawer({ id, row, canSend, mode = "pass", onSend, onClose, onRow
     api.get(`${BASE}/template`).then((r) => {
       setTpl(r);
       setCc(listText(r.template.cc));
-      setCopy({ subject: r.template.subject, headline: r.template.headline, message: r.template.message });
     }, () => setTpl({ template: { cc: [] }, defaults: {} }));
   }, [composing, nudge]);
-  const body = composing ? { ...(to.trim() ? { to } : {}), cc, ...copy } : {};
+  // The pass email carries this speaker's whole wording as it's on screen ({ draft: true }); a nudge, its reminder wording.
+  const body = composing ? { ...(to.trim() ? { to } : {}), cc, ...(nudge ? copy : { draft: true, ...tidyCopy(wording.value || {}) }) } : {};
   const previewUrl = id ? `${BASE}/${encodeURIComponent(id)}/${nudge ? "nudge/preview" : "preview"}` : `${BASE}/preview-sample`;
-  const live = useLivePreview(previewUrl, body, { enabled: !composing || !!tpl });
+  const live = useLivePreview(previewUrl, body, { enabled: !composing || (!!tpl && (nudge || wording.loaded || !!wording.error)) });
   const data = live.data;
   const loading = live.loading && !data;
   const error = !data ? live.error : null;
@@ -328,10 +332,13 @@ function PreviewDrawer({ id, row, canSend, mode = "pass", onSend, onClose, onRow
                   <ListField label="Cc" hint="For this send. The usual list is set in Edit email." value={cc} onChange={setCc} placeholder="Nobody" />
                   <button type="button" onClick={() => setShowWording((v) => !v)} aria-expanded={showWording}
                     className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-ttfc-pink hover:text-white">
-                    <PenLine className="h-4 w-4" aria-hidden="true" /> {nudge ? "Reminder wording" : "Email wording for this send"}
+                    <PenLine className="h-4 w-4" aria-hidden="true" /> {nudge ? "Reminder wording" : "Email wording for this speaker"}
                     <ChevronDown className={`h-4 w-4 transition ${showWording ? "rotate-180" : ""}`} aria-hidden="true" />
                   </button>
-                  {showWording && <CopyFields value={copy} onChange={setCopy} defaults={tpl?.defaults || {}} />}
+                  {showWording && (nudge
+                    ? <CopyFields value={copy} onChange={setCopy} defaults={tpl?.defaults || {}} />
+                    : wording.error ? <ErrorState error={wording.error} title="Couldn't load this speaker's wording" />
+                      : <SpeakerWording id={id} wording={wording} defaults={wording.defaults} canSave={canSend} />)}
                 </div>
               )}
               {id && row && !nudge && <WhatGoesOut row={row} to={data?.to} cc={data?.cc} />}

@@ -593,6 +593,19 @@ a { color: var(--pur-alt); }
 .logo-tile { width: 64px; height: 40px; border-radius: 8px; background: #fff; border: 1px solid var(--border); display: grid; place-items: center; padding: 6px; flex: none; }
 .logo-tile { overflow: hidden; }
 .logo-tile img { width: 100%; height: 100%; object-fit: contain; display: block; }
+/* Organisations: Sponsors first (iOS SponsorsSection). Logos sit on white in both themes. */
+.sponsor-h { gap: 8px; }
+.sponsor-h svg { width: 20px; height: 20px; color: var(--gold); fill: currentColor; }
+.sponsor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.sponsor-card { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+.sponsor-logo { height: 84px; border-radius: 14px; background: #fff; border: 1px solid var(--border); display: grid; place-items: center; padding: 12px 18px; overflow: hidden; }
+.sponsor-logo img { max-width: 100%; max-height: 46px; width: auto; height: auto; object-fit: contain; display: block; }
+.sponsor-monogram { font-size: 26px; font-weight: 700; color: var(--pur-core); letter-spacing: 0.02em; }
+.sponsor-name { margin: 4px 2px 0; font-size: 17px; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+.sponsor-about { margin: 0 2px; font-size: 14px; line-height: 1.45; color: var(--tx2); white-space: pre-line; }
+.sponsor-link { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 2px; font-size: 14px; font-weight: 600; color: var(--pur); text-decoration: none; }
+:root:not([data-theme="light"]) .sponsor-link { color: var(--pur-alt); }
+.sponsor-link svg { width: 16px; height: 16px; }
 .feed-panel { background: var(--bg); border-radius: 24px 24px 0 0; padding: 10px 0 28px; min-height: 60dvh; }
 .compose-prompt { display: flex; align-items: center; gap: 12px; padding: 12px 16px; width: 100%; background: transparent; border: 0; text-align: left; color: inherit; }
 .compose-prompt .fake-input { flex: 1; min-height: 40px; display: flex; align-items: center; padding: 0 14px; border-radius: 999px; background: var(--elevated); color: var(--tx2); }

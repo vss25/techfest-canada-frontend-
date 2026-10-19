@@ -7,7 +7,9 @@ import type { PreviewValue } from "sanity";
 
 export default defineType({
   name: "sponsor",
-  title: "Sponsor",
+  // The website shows these as "Our team includes alumni from" (components/SponsorMarquee.jsx).
+  // Event sponsors are `partner` records in the Featured Partners row.
+  title: "Alumni logo (strip)",
   type: "document",
   fields: [
     defineField({

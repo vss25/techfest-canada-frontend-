@@ -1,18 +1,27 @@
 import { useMemo, useState } from "react";
-import { ImageOff, Minus, Moon, Plus, RotateCcw, Search, Sun, Trash2, Pencil, ExternalLink } from "lucide-react";
+import { ImageOff, Minus, Moon, Plus, RotateCcw, Search, Sun, Trash2, Pencil, ExternalLink, Globe, Smartphone, Star } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import {
-  Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, PageHeader, Select, SkeletonGrid, Switch, focusRing,
+  Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, PageHeader, Select, SkeletonGrid, Switch, Textarea, focusRing,
 } from "../ui";
 import { CmsBanners, ImagePicker } from "./CmsParts";
 import { PARTNER_CATEGORIES, LIVE_NOTE } from "./cmsMeta";
 import { buildBody, nextOrder } from "./fields";
 import useCmsStatus from "./useCmsStatus";
-import { FEATURED_GROUP, PILLAR_GROUPS, SECTOR_GROUPS, ECOSYSTEM_GROUP } from "../../data/partnerMatrix";
+import { FEATURED_GROUP, PILLAR_GROUPS, SECTOR_GROUPS, ECOSYSTEM_GROUP, matrixGroupOf } from "../../data/partnerMatrix";
+import { SPONSOR_DESCRIPTION_MAX, inApp, isSponsor, onWebsite } from "../../data/sponsors";
 
 const MATRIX_OPTIONS = [FEATURED_GROUP, ...PILLAR_GROUPS, ...SECTOR_GROUPS, ECOSYSTEM_GROUP];
+/** What "Automatic" resolves to for this record (the website's built-in list), e.g. "Automatic (Featured Partners)". */
+const automaticLabel = (doc) => {
+  const key = matrixGroupOf({ _id: doc?._id });
+  const g = MATRIX_OPTIONS.find((x) => x.key === key);
+  return doc?._id && g ? `Automatic (${g.title})` : "Automatic";
+};
+/** Partners have separate website / app switches; the other logo strips are website-only. */
+const VISIBILITY_HINT = "The website and the apps read this same record, so each switch only changes its own place. Changes show within about a minute.";
 
 const scaleOf = (d) => (Number.isFinite(Number(d?.logoScale)) && d?.logoScale !== null && d?.logoScale !== "" ? Number(d.logoScale) : 100);
 const clampScale = (n) => Math.min(250, Math.max(30, Math.round(n)));
@@ -37,7 +46,22 @@ function WebsiteLogoPreview({ url, scale, kind }) {
 
 const byOrder = (a, b) => (a.order ?? 9999) - (b.order ?? 9999) || (a.name || "").localeCompare(b.name || "");
 
-function LogoTile({ doc, readOnly, light, onEdit, onToggleActive, onScale }) {
+/** Where the record shows: "Website" / "App" (partners and sponsors), or "Hidden". */
+function PlaceBadges({ doc, withVisibility, showSponsor }) {
+  const active = doc.active !== false;
+  if (!withVisibility) return !active ? <> · <span className="text-amber-300">Hidden</span></> : null;
+  const web = onWebsite(doc), app = inApp(doc);
+  return (
+    <span className="mt-1 flex flex-wrap gap-1">
+      {showSponsor && isSponsor(doc) && <Badge tone="orange" icon={Star}>Sponsor</Badge>}
+      {web && <Badge tone="purple" icon={Globe}>Website</Badge>}
+      {app && <Badge tone="pink" icon={Smartphone}>App</Badge>}
+      {!web && !app && <Badge tone="warn">Hidden</Badge>}
+    </span>
+  );
+}
+
+function LogoTile({ doc, readOnly, light, withVisibility, showSponsor, onEdit, onToggleActive, onScale }) {
   const active = doc.active !== false;
   const scale = scaleOf(doc);
   return (
@@ -63,10 +87,12 @@ function LogoTile({ doc, readOnly, light, onEdit, onToggleActive, onScale }) {
           <p className="truncate text-sm font-semibold text-ttfc-text" title={doc.name}>{doc.name}</p>
           <p className="text-xs text-ttfc-dim">
             {doc.order != null ? `Order ${doc.order}` : "No order"}
-            {!active && <> · <span className="text-amber-300">Hidden</span></>}
+            {!withVisibility && <PlaceBadges doc={doc} />}
           </p>
+          {withVisibility && <PlaceBadges doc={doc} withVisibility showSponsor={showSponsor} />}
         </div>
-        <Switch checked={active} disabled={readOnly} onChange={() => onToggleActive(doc)} ariaLabel={`${active ? "Hide" : "Show"} ${doc.name}`} />
+        <Switch checked={active} disabled={readOnly} onChange={() => onToggleActive(doc)}
+          ariaLabel={withVisibility ? `${active ? "Hide" : "Show"} ${doc.name} everywhere` : `${active ? "Hide" : "Show"} ${doc.name}`} />
       </div>
       <div className="flex items-center justify-between gap-2 border-t border-ttfc-line/60 px-3 py-1.5" role="group" aria-label={`Logo size for ${doc.name}`}>
         <span className="text-[11px] text-ttfc-dim">Size</span>
@@ -82,9 +108,10 @@ function LogoTile({ doc, readOnly, light, onEdit, onToggleActive, onScale }) {
   );
 }
 
-function LogoDrawer({ type, singular, withCategory, doc, creating, defaultOrder, readOnly, onClose, onSaved, onDelete }) {
+function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly, doc, creating, defaultOrder, readOnly, onClose, onSaved, onDelete }) {
   const toast = useToast();
-  const keys = ["name", "url", "order", "active", "logoScale", ...(withCategory ? ["category", "matrixGroup"] : [])];
+  const visibilityKeys = withVisibility ? ["description", "showOnWebsite", "showInApp"] : [];
+  const keys = ["name", "url", "order", "active", "logoScale", ...(withCategory ? ["category", "matrixGroup"] : []), ...visibilityKeys];
   const [form, setForm] = useState(() => ({
     name: doc?.name || "",
     url: doc?.url || "",
@@ -92,7 +119,11 @@ function LogoDrawer({ type, singular, withCategory, doc, creating, defaultOrder,
     active: doc ? doc.active !== false : true,
     logoScale: String(scaleOf(doc)),
     category: doc?.category || (withCategory ? "partnersAndSupporters" : ""),
-    matrixGroup: doc?.matrixGroup || "",
+    // New records on the Sponsors page go straight into the Featured Partners (sponsors) row.
+    matrixGroup: doc?.matrixGroup || (creating && sponsorsOnly ? FEATURED_GROUP.key : ""),
+    description: doc?.description || "",
+    showOnWebsite: doc ? doc.showOnWebsite !== false : true,
+    showInApp: doc ? doc.showInApp !== false : true,
   }));
   const [logo, setLogo] = useState({ assetId: null, url: doc?.logoUrl || "" });
   const [errors, setErrors] = useState({});
@@ -106,18 +137,24 @@ function LogoDrawer({ type, singular, withCategory, doc, creating, defaultOrder,
     if (withCategory && !form.category) errs.category = "Pick a category";
     if (form.order !== "" && !Number.isFinite(Number(form.order))) errs.order = "Enter a number";
     if (!logo.url) errs.logo = "A logo is required";
+    if (form.description.length > SPONSOR_DESCRIPTION_MAX) errs.description = `Keep it under ${SPONSOR_DESCRIPTION_MAX} characters`;
     setErrors(errs);
     if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
-    const original = doc ? { ...doc, active: doc.active !== false, logoScale: scaleOf(doc) } : null;
-    const body = buildBody({ form, original, keys, numberKeys: ["order", "logoScale"], boolKeys: ["active"], creating });
-    if (creating) body.active = !!form.active;
+    // A missing switch counts as on, so compare against that (not against "unset").
+    const original = doc ? { ...doc, active: doc.active !== false, logoScale: scaleOf(doc),
+      showOnWebsite: doc.showOnWebsite !== false, showInApp: doc.showInApp !== false } : null;
+    const boolKeys = ["active", ...(withVisibility ? ["showOnWebsite", "showInApp"] : [])];
+    const body = buildBody({ form, original, keys, numberKeys: ["order", "logoScale"], boolKeys, creating });
+    if (creating) for (const k of boolKeys) body[k] = !!form[k];
     if (logo.assetId) body.logo = logo.assetId;
     if (!creating && !Object.keys(body).length) { toast.info("Nothing changed"); onClose(); return; }
     setSaving(true);
     try {
       const saved = creating ? await api.post(`/cms/${type}`, body) : await api.patch(`/cms/${type}/${doc._id}`, body);
       toast.success(creating ? `${form.name} added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
-      onSaved({ ...(doc || {}), ...saved, logoUrl: logo.url });
+      const merged = { ...(doc || {}), ...saved, logoUrl: logo.url };
+      for (const [k, v] of Object.entries(body)) if (v === null) delete merged[k];   // cleared fields
+      onSaved(merged);
     } catch (err) {
       toast.error(err);
     } finally {
@@ -178,10 +215,12 @@ function LogoDrawer({ type, singular, withCategory, doc, creating, defaultOrder,
           </Field>
         )}
         {withCategory && (
-          <Field label="Partners page row" hint="Which tech pillar or applied sector row the logo sits in on the Partners page. Automatic uses the built-in list; new logos default to Ecosystem & Media.">
+          <Field label="Partners page row" hint={sponsorsOnly
+            ? "Featured Partners = a sponsor (shown first in the apps' Organisations). Pick another row to make it a regular partner."
+            : "Which tech pillar or applied sector row the logo sits in on the Partners page. Featured Partners are the sponsors. Automatic uses the built-in list; new logos default to Ecosystem & Media."}>
             {(id) => (
               <Select id={id} value={form.matrixGroup} onChange={set("matrixGroup")} disabled={readOnly}>
-                <option value="">Automatic</option>
+                <option value="">{automaticLabel(doc)}</option>
                 {MATRIX_OPTIONS.map((g) => <option key={g.key} value={g.key}>{g.title}</option>)}
               </Select>
             )}
@@ -193,13 +232,48 @@ function LogoDrawer({ type, singular, withCategory, doc, creating, defaultOrder,
         <Field label="Display order" error={errors.order} hint="Lower numbers appear first.">
           {(id) => <Input id={id} type="number" inputMode="numeric" value={form.order} onChange={set("order")} disabled={readOnly} />}
         </Field>
-        <Switch
-          label="Show on the website"
-          description="Turn off to hide this logo without deleting it."
-          checked={!!form.active}
-          onChange={(v) => setForm((f) => ({ ...f, active: v }))}
-          disabled={readOnly}
-        />
+        {withVisibility && (
+          <Field label="Description" error={errors.description}
+            hint={`Optional, up to ${SPONSOR_DESCRIPTION_MAX} characters. A line or two on what they do: shown on the Sponsors cards in the apps and on their organisation page; on the website it appears when someone hovers the logo. ${form.description.length}/${SPONSOR_DESCRIPTION_MAX}`}>
+            {(id) => <Textarea id={id} rows={4} value={form.description} onChange={set("description")} maxLength={SPONSOR_DESCRIPTION_MAX} disabled={readOnly}
+              placeholder="e.g. Builds autonomous trucks for middle-mile freight." />}
+          </Field>
+        )}
+        {withVisibility ? (
+          <fieldset className="space-y-4 rounded-2xl border border-ttfc-line p-4">
+            <legend className="px-1 text-xs font-bold uppercase tracking-[0.12em] text-ttfc-dim">Where it shows</legend>
+            <Switch
+              label="Active"
+              description="The master switch. Off hides it everywhere, whatever the two switches below say."
+              checked={!!form.active}
+              onChange={(v) => setForm((f) => ({ ...f, active: v }))}
+              disabled={readOnly}
+            />
+            <Switch
+              label="Show on the website"
+              description="thetechfestival.com (Partners page)."
+              checked={!!form.showOnWebsite}
+              onChange={(v) => setForm((f) => ({ ...f, showOnWebsite: v }))}
+              disabled={readOnly}
+            />
+            <Switch
+              label="Show in the app"
+              description="The iOS and Android apps and the web app (Organisations, and the Sponsors section for sponsors)."
+              checked={!!form.showInApp}
+              onChange={(v) => setForm((f) => ({ ...f, showInApp: v }))}
+              disabled={readOnly}
+            />
+            <p className="text-xs text-ttfc-dim">{VISIBILITY_HINT}</p>
+          </fieldset>
+        ) : (
+          <Switch
+            label="Show on the website"
+            description="Turn off to hide this logo without deleting it."
+            checked={!!form.active}
+            onChange={(v) => setForm((f) => ({ ...f, active: v }))}
+            disabled={readOnly}
+          />
+        )}
         {doc?.url && (
           <a href={doc.url} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-1.5 text-sm text-ttfc-pink hover:text-pink-300 ${focusRing} rounded-lg`}>
             <ExternalLink className="h-4 w-4" aria-hidden="true" /> Open current link
@@ -211,10 +285,13 @@ function LogoDrawer({ type, singular, withCategory, doc, creating, defaultOrder,
 }
 
 /**
- * Logo editor shared by Partners, Sponsors, Sponsor marquee and Home sponsors.
- * Partners are grouped by category.
+ * Logo editor shared by Partners, Sponsors, the alumni strip, Sponsor marquee and Home sponsors.
+ * Partners are grouped by category. Sponsors (`sponsorsOnly`) are the partners in the
+ * Featured Partners row: the same records as the Partners page, listed on their own.
+ * Partners and sponsors have a description and separate website / app switches.
  */
-export default function LogoCollection({ type, title, singular, description, withCategory = false }) {
+export default function LogoCollection({ type, title, singular, description, withCategory = false, sponsorsOnly = false, eyebrow = "Website content" }) {
+  const withVisibility = type === "partner";
   const toast = useToast();
   const { configured } = useCmsStatus();
   const readOnly = configured === false;
@@ -226,21 +303,29 @@ export default function LogoCollection({ type, title, singular, description, wit
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
-  const list = useMemo(() => data || [], [data]);
+  const list = useMemo(() => (data || []).filter((d) => !sponsorsOnly || isSponsor(d)), [data, sponsorsOnly]);
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
+    const visible = (d) => {
+      switch (show) {
+        case "active": return d.active !== false;
+        case "hidden": return d.active === false;
+        case "noWebsite": return !onWebsite(d);
+        case "noApp": return !inApp(d);
+        default: return true;
+      }
+    };
     return list.filter((d) =>
       (!needle || (d.name || "").toLowerCase().includes(needle)) &&
-      (!category || d.category === category) &&
-      (show === "all" || (show === "active" ? d.active !== false : d.active === false)));
+      (!category || d.category === category) && visible(d));
   }, [list, q, category, show]);
 
   const groups = useMemo(() => {
-    if (!withCategory) return [{ key: "all", label: null, items: [...shown].sort(byOrder) }];
+    if (!withCategory || sponsorsOnly) return [{ key: "all", label: null, items: [...shown].sort(byOrder) }];
     return PARTNER_CATEGORIES
       .map((c) => ({ key: c.value, label: c.label, items: shown.filter((d) => (d.category || "other") === c.value).sort(byOrder) }))
       .filter((g) => g.items.length);
-  }, [shown, withCategory]);
+  }, [shown, withCategory, sponsorsOnly]);
 
   const patchLocal = (id, f) => setData((xs) => (xs || []).map((x) => (x._id === id ? { ...x, ...f } : x)));
   const toggleActive = async (d) => {
@@ -248,7 +333,9 @@ export default function LogoCollection({ type, title, singular, description, wit
     patchLocal(d._id, { active: next });
     try {
       await api.patch(`/cms/${type}/${d._id}`, { active: next });
-      toast.success(next ? `${d.name} is visible on the website` : `${d.name} is hidden from the website`);
+      toast.success(withVisibility
+        ? (next ? `${d.name} is active again (website and app follow their own switches)` : `${d.name} is hidden everywhere`)
+        : (next ? `${d.name} is visible on the website` : `${d.name} is hidden from the website`));
     } catch (err) {
       patchLocal(d._id, { active: d.active });
       toast.error(err);
@@ -271,16 +358,18 @@ export default function LogoCollection({ type, title, singular, description, wit
     setEditing(null);
     setData((xs) => {
       const arr = xs || [];
-      return arr.some((x) => x._id === doc._id) ? arr.map((x) => (x._id === doc._id ? { ...x, ...doc } : x)) : [...arr, doc];
+      return arr.some((x) => x._id === doc._id) ? arr.map((x) => (x._id === doc._id ? doc : x)) : [...arr, doc];
     });
   };
   const openNew = () => setEditing({ doc: null, creating: true, key: Date.now() });
   const hiddenCount = list.filter((d) => d.active === false).length;
+  const notOnWebsite = withVisibility ? list.filter((d) => d.active !== false && !onWebsite(d)).length : 0;
+  const notInApp = withVisibility ? list.filter((d) => d.active !== false && !inApp(d)).length : 0;
 
   return (
     <>
       <PageHeader
-        eyebrow="Website content"
+        eyebrow={eyebrow}
         title={title}
         description={description}
         actions={<Button variant="primary" icon={Plus} disabled={readOnly} onClick={openNew}>Add {singular}</Button>}
@@ -292,7 +381,7 @@ export default function LogoCollection({ type, title, singular, description, wit
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
           <Input type="search" placeholder={`Search ${title.toLowerCase()}`} value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" aria-label={`Search ${title}`} />
         </div>
-        {withCategory && (
+        {withCategory && !sponsorsOnly && (
           <Select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Filter by category" className="md:w-64">
             <option value="">All categories</option>
             {PARTNER_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -302,6 +391,8 @@ export default function LogoCollection({ type, title, singular, description, wit
           <option value="all">Shown & hidden</option>
           <option value="active">Shown only</option>
           <option value="hidden">Hidden only</option>
+          {withVisibility && <option value="noWebsite">Not on the website</option>}
+          {withVisibility && <option value="noApp">Not in the app</option>}
         </Select>
         <Button size="md" icon={light ? Moon : Sun} onClick={() => setLight((v) => !v)} aria-pressed={!light}>
           {light ? "Dark preview" : "Light preview"}
@@ -313,13 +404,18 @@ export default function LogoCollection({ type, title, singular, description, wit
       ) : error && !data ? (
         <ErrorState error={error} onRetry={reload} />
       ) : !list.length ? (
-        <EmptyState title={`No ${title.toLowerCase()} yet`} body={`Add the first ${singular} and it'll appear on the website within a minute.`}
+        <EmptyState title={`No ${title.toLowerCase()} yet`} body={sponsorsOnly
+          ? "Add a sponsor, or set a partner's Partners page row to Featured Partners. Sponsors show first in the apps' Organisations."
+          : `Add the first ${singular} and it'll appear on the website within a minute.`}
           action={!readOnly && <Button variant="primary" icon={Plus} onClick={openNew}>Add {singular}</Button>} />
       ) : !shown.length ? (
         <EmptyState icon={Search} title="Nothing matches" body="Try a different search or filter." />
       ) : (
         <div className="space-y-8">
-          <p className="text-sm text-ttfc-muted">{list.length} total{hiddenCount ? ` · ${hiddenCount} hidden` : ""}</p>
+          <p className="text-sm text-ttfc-muted">
+            {list.length} total{hiddenCount ? ` · ${hiddenCount} hidden` : ""}
+            {notOnWebsite ? ` · ${notOnWebsite} not on the website` : ""}{notInApp ? ` · ${notInApp} not in the app` : ""}
+          </p>
           {groups.map((g) => (
             <section key={g.key} aria-label={g.label || title}>
               {g.label && (
@@ -330,7 +426,7 @@ export default function LogoCollection({ type, title, singular, description, wit
               )}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
                 {g.items.map((d) => (
-                  <LogoTile key={d._id} doc={d} readOnly={readOnly} light={light}
+                  <LogoTile key={d._id} doc={d} readOnly={readOnly} light={light} withVisibility={withVisibility} showSponsor={!sponsorsOnly}
                     onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} onToggleActive={toggleActive} onScale={adjustScale} />
                 ))}
               </div>
@@ -345,6 +441,8 @@ export default function LogoCollection({ type, title, singular, description, wit
           type={type}
           singular={singular}
           withCategory={withCategory}
+          withVisibility={withVisibility}
+          sponsorsOnly={sponsorsOnly}
           doc={editing.doc}
           creating={editing.creating}
           defaultOrder={nextOrder(list)}

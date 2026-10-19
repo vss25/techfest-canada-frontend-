@@ -84,23 +84,37 @@ export const TOPIC_COMPANIES = {
 
 export const POST_TAGS = [...TECH_PILLARS, "Networking", "Hiring", "Fundraising"];
 
+/**
+ * The passes (Oct 19 2026), same as the apps (iOS TicketTier.key(for:)): Connect, Influence, Power
+ * and Apex are sold; the Speaker Pass ("speaker") is internal, never sold or upgraded. Older labels
+ * map onto them: "All Access" is the Power Pass, an "Exhibitor Pass" a Connect Pass (exhibitor is a
+ * person type), "VIP" Apex. Takes a backend key ("power") or a name ("Power Pass").
+ */
+export function tierKey(raw = "") {
+  const k = String(raw).trim().toLowerCase().replace(/ pass$/, "");
+  if (k === "all access" || k === "all-access" || k === "allaccess") return "power";
+  if (k === "exhibitor") return "connect";
+  if (k === "vip") return "apex";
+  return k;
+}
+
 /** Pass names (backend tier key → name). */
 export function tierName(key = "") {
-  const k = String(key).toLowerCase();
+  const k = tierKey(key);
   if (k === "discover") return "Discover Pass";
   if (k === "connect") return "Connect Pass";
   if (k === "influence") return "Influence Pass";
   if (k === "power") return "Power Pass";
-  if (k === "apex" || k === "vip") return "Apex Pass";
+  if (k === "apex") return "Apex Pass";
   if (k === "speaker") return "Speaker Pass";
   if (k === "session") return "Session Pass";
-  if (k.startsWith("booth")) return "Exhibitor";
+  if (k.startsWith("booth")) return "Exhibition booth"; // a booth, not a pass
   if (!k) return "";
   return k.charAt(0).toUpperCase() + k.slice(1) + " Pass";
 }
 
 export function tierRank(key = "") {
-  return { discover: 1, connect: 2, influence: 3, power: 4, apex: 5, vip: 5, speaker: 6 }[String(key).toLowerCase()] || 0;
+  return { discover: 1, connect: 2, influence: 3, power: 4, apex: 5, speaker: 6 }[tierKey(key)] || 0;
 }
 
 /** Server file path ("/api/files/avatar/…") or full URL → absolute URL. */

@@ -170,7 +170,8 @@ export default function TicketManager() {
   const toast = useToast();
   const [params, setParams] = useSearchParams();
   const promo = (params.get("promo") || "").trim().toUpperCase(); // "" | "ANY" | a code
-  const [show, setShow] = useState("visible");
+  // ?show=hidden: a hidden pass opened from the global search.
+  const [show, setShow] = useState(() => (["visible", "duplicates", "hidden"].includes(params.get("show")) ? params.get("show") : "visible"));
   // ?q= opens the list searched (Admin → People links a pass here by its ticket ID).
   const [q, setQ] = useState(() => params.get("q") || "");
   const [page, setPage] = useState(0);

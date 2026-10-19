@@ -163,7 +163,7 @@ export default function StaffAccounts() {
               <thead><tr><th>Person</th><th>Access</th><th>Sign-in</th><th>Last active</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>
                 {data.map((s) => (
-                  <tr key={s.id}>
+                  <tr key={s.id} data-highlight={s.id}>
                     <td>
                       <div className="flex items-center gap-3">
                         <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ttfc-panel3 text-xs font-bold" aria-hidden="true">{initials(s.name, s.email)}</span>

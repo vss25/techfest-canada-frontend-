@@ -16,6 +16,7 @@ import { CopyFields, ListField } from "./SpeakerEmailCompose";
 import { SpeakerTemplateDrawer as TemplateDrawer, SpeakerWording } from "./PassEmailTemplates";
 import { tidyCopy, useSpeakerWording } from "./passEmailHooks";
 import { listText, useLivePreview } from "./speakerEmailHooks";
+import { useInitialQuery } from "../search/deepLink";
 
 /* =========================================================
    Admin → Tickets & attendees → Speaker passes
@@ -460,7 +461,8 @@ export default function SpeakerPasses() {
   const toast = useToast();
   const { isManagement } = useAdmin();
   const { data, error, loading, reload, refreshing, setData } = useApi(BASE);
-  const [q, setQ] = useState("");
+  const initialQ = useInitialQuery(); // a speaker's pass from the global search (?q=<ticket ID>)
+  const [q, setQ] = useState(initialQ);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
   const [preview, setPreview] = useState(null); // { id, mode } for one speaker, { id: null } for the sample

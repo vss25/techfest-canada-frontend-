@@ -88,7 +88,7 @@ function SettingRow({ item, meta, scope, onSaved }) {
   };
 
   return (
-    <div className="grid gap-3 px-4 py-4 sm:px-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:gap-8">
+    <div data-highlight={item.key} className="grid gap-3 px-4 py-4 sm:px-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:gap-8">
       <div className="min-w-0">
         {isSwitch
           ? <p className="text-sm font-semibold text-ttfc-text">{meta.label}<TechName name={item.key} /></p>

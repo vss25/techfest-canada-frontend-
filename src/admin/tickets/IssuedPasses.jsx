@@ -4,6 +4,7 @@ import { useApi } from "../hooks";
 import { api } from "../api";
 import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
+import { useInitialQuery } from "../search/deepLink";
 import {
   Badge, Banner, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, IconButton, Input, LoadingState, PageHeader,
   Select, StatTile, TableWrap,
@@ -291,7 +292,8 @@ function PassesPage({ kindName }) {
   const { data, error, loading, reload, setData } = useApi(BASE);
   const tiersApi = useApi(`${BASE}/tiers`);
   const tiers = tiersApi.data?.tiers || [];
-  const [q, setQ] = useState("");
+  const initialQ = useInitialQuery(); // a pass from the global search (?q=<ticket ID>)
+  const [q, setQ] = useState(initialQ);
   const [editing, setEditing] = useState(null); // { row } or { row: null } for a new pass
   const [sending, setSending] = useState(null);
   const [deleting, setDeleting] = useState(null);

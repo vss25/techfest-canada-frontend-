@@ -14,6 +14,7 @@ import useCmsStatus from "./useCmsStatus";
 import PhotoFramer, { FramedPreview } from "./PhotoFramer";
 import { dimsFromAssetId } from "./framing";
 import { speakerPhotoUrl } from "../../utils/sanity";
+import { useEditFromUrl, useInitialQuery } from "../search/deepLink";
 
 const KEYS = ["name", "title", "company", "bio", "order", "rowPosition", "featured", "speakerType", "techPillar", "sector",
   "linkedin", "twitter", "github", "website"];
@@ -255,7 +256,8 @@ export default function Speakers() {
   const { configured } = useCmsStatus();
   const readOnly = configured === false;
   const { data, error, loading, reload, setData } = useApi("/cms/speaker");
-  const [q, setQ] = useState("");
+  const initialQ = useInitialQuery(); // "See all in Speakers" from the global search
+  const [q, setQ] = useState(initialQ);
   const [type, setType] = useState("");
   const [pillar, setPillar] = useState("");
   const [sector, setSector] = useState("");
@@ -264,6 +266,8 @@ export default function Speakers() {
   const [deleting, setDeleting] = useState(null);
 
   const list = useMemo(() => data || [], [data]);
+  // From the global search: ?edit=<id> opens that speaker.
+  useEditFromUrl(list, (doc) => setEditing({ doc, creating: false, key: doc._id }));
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return list.filter((s) =>

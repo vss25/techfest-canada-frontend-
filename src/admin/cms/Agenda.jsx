@@ -18,6 +18,7 @@ import {
 } from "./sessionLive";
 import { SESSIONS, DAYS, buildSpeakerIndex, matchSpeaker, formatTime12, getDuration } from "../../data/agenda";
 import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS, SESSION_TYPE_SUGGESTIONS } from "../../data/sessionFormats";
+import { useEditFromUrl } from "../search/deepLink";
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const toMin = (t) => { const [h, m] = String(t || "0:0").split(":").map(Number); return h * 60 + m; };
@@ -469,6 +470,11 @@ export default function Agenda() {
   const [shifting, setShifting] = useState(null);
 
   const list = useMemo(() => [...(data || [])].sort(byTime), [data]);
+  // From the global search: ?edit=<id> opens that session on its day.
+  useEditFromUrl(list, (doc) => {
+    if (Number(doc.day) === 1 || Number(doc.day) === 2) setDay(Number(doc.day));
+    setEditing({ doc, creating: false, key: doc._id });
+  });
   const speakerIndex = useMemo(() => buildSpeakerIndex(speakers.data || []), [speakers.data]);
   const globalLive = useMemo(() => globalSwitches(appContent.data), [appContent.data]);
   const speakerNames = useMemo(() => (speakers.data || []).map((d) => d.name).filter(Boolean).sort(), [speakers.data]);

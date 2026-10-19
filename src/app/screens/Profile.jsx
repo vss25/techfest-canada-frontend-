@@ -1,8 +1,8 @@
 import { lazy, Suspense, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  BadgeCheck, Bell, Building2, ChevronRight, Download, FileText, HelpCircle, Link2, LogOut, MapPin, Moon, Pencil, QrCode, RotateCcw,
-  ScanLine, Share, ShieldCheck, Smartphone, Sun, Ticket, Trophy, UserPlus, Users,
+  BadgeCheck, Bell, ChevronRight, Download, FileText, HelpCircle, LogOut, Moon, Pencil, QrCode, RotateCcw,
+  ScanLine, ShieldCheck, Smartphone, Sun, Ticket, Trophy, UserPlus, Users,
 } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, bestTicket, isSignedIn, isTeam, loadAccount, signOut } from "../lib/auth";
@@ -13,9 +13,10 @@ import { resetDemo } from "../lib/demo";
 import { patch } from "../lib/api";
 import { fileURL, LINKS, shortTopic } from "../lib/config";
 import { EVENT_START, now as clockNow } from "../lib/time";
-import { confirmDialog, safeHref, showAlert } from "../lib/ui";
+import { confirmDialog, showAlert } from "../lib/ui";
 import { Avatar, Button, Sheet, Switch, TopBar } from "../components/ui";
 import { GearFill } from "../components/Glyphs";
+import ContactCard from "../components/ContactCard";
 
 const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 
@@ -166,7 +167,6 @@ export default function Profile() {
   }
 
   const name = me?.name || user?.name || "Your profile";
-  const linkedin = safeHref(me?.linkedinUrl || user?.linkedinUrl);
   const topics = me?.topics || user?.topics || [];
   const ticket = bestTicket(user);
   const accepted = s.connections.accepted;
@@ -175,18 +175,6 @@ export default function Profile() {
   const country = me?.country || user?.country || "";
   const org = me?.organization || user?.organization || "";
   const ThemeIcon = THEME_ICON[t.value] || Smartphone;
-
-  const shareContact = async () => {
-    const lines = [name];
-    if (me?.jobTitle) lines.push([me.jobTitle, org].filter(Boolean).join(" · "));
-    if (linkedin) lines.push(`LinkedIn: ${linkedin}`);
-    lines.push("Met at The Tech Festival Canada 2026 · Toronto");
-    const text = lines.join("\n");
-    try {
-      if (navigator.share) await navigator.share({ text });
-      else { await navigator.clipboard.writeText(text); showAlert("Contact copied", "Paste it into a message or email."); }
-    } catch { /* cancelled */ }
-  };
 
   return (
     <div className="page">
@@ -232,19 +220,7 @@ export default function Profile() {
           <button type="button" className="pass-strip-btn pressable" onClick={() => setScan(true)} aria-label="Scan a badge"><span><ScanLine aria-hidden="true" /></span>Scan</button>
         </div>
 
-        <section className="stack-sm" aria-labelledby="contact-h">
-          <h2 id="contact-h" className="eyebrow">Contact card</h2>
-          <div className="card contact-card">
-            {linkedin
-              ? <a href={linkedin} target="_blank" rel="noopener noreferrer" className="contact-row"><Link2 aria-hidden="true" /><span>LinkedIn</span><b className="ellipsis">{linkedin.replace(/^https?:\/\/(www\.)?/, "")}</b></a>
-              : <Link to="/profile/edit" className="contact-row"><Link2 aria-hidden="true" /><span>LinkedIn</span><b>Not added</b></Link>}
-            <hr className="hairline" />
-            <Link to="/profile/edit" className="contact-row"><Building2 aria-hidden="true" /><span>Organization</span><b className="ellipsis">{org || "—"}</b></Link>
-            <hr className="hairline" />
-            <Link to="/profile/edit" className="contact-row"><MapPin aria-hidden="true" /><span>Residence</span><b className="ellipsis">{country || "—"}</b></Link>
-            <button type="button" className="share-contact pressable" onClick={shareContact}><Share aria-hidden="true" />Share my contact</button>
-          </div>
-        </section>
+        <ContactCard org={org} country={country} />
 
         <Link to="/network/connected" className="list-row pressable" style={{ padding: 14 }}>
           {accepted.length ? (

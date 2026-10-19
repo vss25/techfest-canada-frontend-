@@ -1,0 +1,80 @@
+/* Contact card, share sheet and shared details (ContactCard.jsx, ShareSheet.jsx,
+   SharedContact.jsx, the connect QR checklist). Same tokens as app.css. */
+
+.kind-bubble { flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--pur-tint); color: var(--pur); }
+:root:not([data-theme="light"]) .kind-bubble { color: var(--pur-alt); }
+
+.cc-text { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; }
+.cc-text b { font-size: 14px; font-weight: 600; line-height: 1.3; }
+.cc-text > span { font-size: 13px; color: var(--tx2); line-height: 1.3; }
+
+/* Profile card */
+.cc-head { display: flex; align-items: flex-end; gap: 10px; }
+.cc-head b { flex: 1; font-size: 15px; font-weight: 600; }
+.cc-head small { width: 51px; flex: none; text-align: center; font-size: 10.5px; line-height: 1.15; font-weight: 600; color: var(--tx2); }
+.cc-rows { display: flex; flex-direction: column; }
+.cc-row { display: flex; align-items: center; gap: 10px; min-height: 54px; border-top: 1px solid var(--border); }
+.cc-row:first-child { border-top: 0; }
+.cc-row-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 7px 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; }
+.cc-suggest { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--r-control); border: 1px dashed var(--rule); background: color-mix(in srgb, var(--pur-tint) 60%, transparent); }
+.cc-suggest .btn { flex: none; }
+.cc-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 10px 6px 4px; }
+.cc-empty b { font-size: 15.5px; font-weight: 600; }
+.cc-empty p { margin: 0; font-size: 13.5px; color: var(--tx2); max-width: 320px; }
+.cc-empty .btn { margin-top: 4px; }
+.cc-empty-ico { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--pur-tint); color: var(--pur); }
+:root:not([data-theme="light"]) .cc-empty-ico { color: var(--pur-alt); }
+.cc-empty-ico svg { width: 24px; height: 24px; }
+.cc-empty--sheet { padding: 16px; border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--border); }
+.cc-empty--sheet p { color: var(--tx); }
+/* Sheet primary buttons: big and centred wherever the sheet is rendered (pages restyle .btn-lg). */
+.cc-big { min-height: 54px; font-size: 16.5px; border-radius: 14px; }
+.cc-readonly { display: flex; align-items: center; color: var(--tx2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Kind picker */
+.kind-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.kind-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 92px; padding: 10px 4px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); color: var(--tx); font: inherit; font-size: 13px; font-weight: 600; }
+
+/* Checklists (share sheet, connect QR, reorder) */
+.share-list-head { margin: -6px 0 -6px; }
+.share-list-head .link-btn { min-height: 40px; padding: 0 4px; }
+.share-list { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); overflow: hidden; }
+.share-row { position: relative; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 12px 8px 14px; border-top: 1px solid var(--border); cursor: pointer; text-align: left; }
+.share-row:first-child { border-top: 0; }
+.share-row--fixed { cursor: default; }
+.share-row--fixed .share-tick { opacity: 0.55; }
+.share-input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.share-tick { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 1.8px solid var(--rule); display: grid; place-items: center; color: transparent; transition: background 0.15s, border-color 0.15s; }
+.share-tick svg { width: 14px; height: 14px; stroke-width: 3; }
+.share-input:checked + .share-tick { background: var(--pur); border-color: var(--pur); color: #fff; }
+.share-input:focus-visible + .share-tick { outline: 2.5px solid var(--pur-alt); outline-offset: 2px; }
+.share-row .icon-btn { flex: none; }
+
+/* Someone's profile: what they share with me */
+.shared-list { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); overflow: hidden; }
+.shared-row { display: flex; align-items: center; gap: 4px; padding-right: 4px; border-top: 1px solid var(--border); }
+.shared-row:first-child { border-top: 0; }
+.shared-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 6px 8px 14px; color: inherit; text-decoration: none; background: none; border: 0; font: inherit; text-align: left; }
+.shared-main .cc-text > span { color: var(--pur-alt); }
+:root[data-theme="light"] .shared-main .cc-text > span { color: var(--pur); }
+.shared-row .icon-btn { color: var(--tx2); }
+
+/* Profile: the collapsed contact card (spec section 10) */
+:root { --brand-pink: #f2559f; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --brand-pink: #e5298f; } }
+:root[data-theme="light"] { --brand-pink: #e5298f; }
+.cc-acc { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); color: inherit; font: inherit; text-align: left; }
+.cc-acc .cc-text > span { font-size: 13px; }
+.cc-acc .cc-text > .cc-acc-title { display: flex; align-items: center; gap: 7px; color: var(--tx); font-size: 15px; }
+.cc-acc-title b { font-size: 15px; }
+.cc-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--brand-pink); }
+.cc-needs, .cc-acc .cc-text > .cc-needs { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--pur); }
+:root:not([data-theme="light"]) .cc-needs, :root:not([data-theme="light"]) .cc-acc .cc-text > .cc-needs { color: var(--pur-alt); }
+.cc-empty .cc-needs { margin-top: 2px; }
+.cc-chev { flex: none; width: 18px; height: 18px; color: var(--tx2); transition: transform 0.22s cubic-bezier(.2,.8,.2,1); }
+.cc-acc--open .cc-chev { transform: rotate(180deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .cc-panel { animation: ccOpen 0.24s cubic-bezier(.2,.8,.2,1); }
+}
+@keyframes ccOpen { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.tab-dot--pink { background: var(--brand-pink); }

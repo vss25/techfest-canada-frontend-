@@ -178,19 +178,20 @@ export function canRequest(user, s = social.get()) {
   return u.acceptsRequests !== false || isStaff();
 }
 
-export async function requestConnection(user, note = "") {
+/** `share`: my contact card item ids to share (only when I may share; lib/myCard.js). → the connection, or false. */
+export async function requestConnection(user, note = "", share) {
   try {
-    await post("social/connections/request", { toUserId: user.id, note });
+    const c = await post("social/connections/request", { toUserId: user.id, note, ...(Array.isArray(share) ? { share } : {}) });
     await refreshConnections();
-    return true;
+    return c || true;
   } catch (e) { return fail(e); }
 }
 
-export async function respondConnection(conn, accept) {
+export async function respondConnection(conn, accept, share) {
   try {
-    await post(`social/connections/${conn.id}/respond`, { accept });
+    const c = await post(`social/connections/${conn.id}/respond`, { accept, ...(accept && Array.isArray(share) ? { share } : {}) });
     await refreshConnections();
-    return true;
+    return c || true;
   } catch (e) { return fail(e); }
 }
 
@@ -202,9 +203,9 @@ export async function withdrawConnection(conn) {
   } catch (e) { return fail(e); }
 }
 
-export async function connectInPerson(userId) {
+export async function connectInPerson(userId, share) {
   try {
-    const c = await post("social/connections/in-person", { toUserId: userId });
+    const c = await post("social/connections/in-person", { toUserId: userId, ...(Array.isArray(share) ? { share } : {}) });
     await refreshConnections();
     return c;
   } catch (e) { fail(e); return null; }

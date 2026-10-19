@@ -8,6 +8,8 @@ import { social, startSocial, stopSocial, chatsHasNew } from "./lib/social";
 import TabBar from "./components/TabBar";
 import { FEATURES } from "./lib/config";
 import { ToastHost, Spinner } from "./components/ui";
+import ShareSheetHost from "./components/ShareSheet";
+import { myCard, profileTabDot } from "./lib/myCard";
 import { InstallNudges, OfflineBar, UpdatePrompt } from "./components/AppNotices";
 import { onScreenChange } from "./lib/pwa";
 
@@ -96,6 +98,7 @@ function SplashDone() {
 function Shell() {
   const { mode } = useStore(auth);
   const s = useStore(social);
+  const mc = useStore(myCard);
   const { pathname } = useLocation();
   const signedOut = mode === "out";
   const publicPage = /^\/(install|legal|login)/.test(pathname);
@@ -144,7 +147,7 @@ function Shell() {
         </Routes>
         <SplashDone />
       </Suspense>
-      {showTabs && <TabBar chatsDot={FEATURES.chats && chatsHasNew(s)} />}
+      {showTabs && <TabBar chatsDot={FEATURES.chats && chatsHasNew(s)} profileDot={(mode === "user" || mode === "demo") && profileTabDot(mc)} />}
       {!signedOut && <InstallNudges />}
       <UpdatePrompt />
     </div>
@@ -156,6 +159,7 @@ export default function App() {
     <BrowserRouter basename="/app/">
       <Boot />
       <Shell />
+      <ShareSheetHost />
       <ToastHost />
     </BrowserRouter>
   );

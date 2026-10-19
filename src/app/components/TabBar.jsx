@@ -62,7 +62,8 @@ const TABS = [
   { to: "/profile", label: "Profile", icon: ProfileIcon, match: (p) => p.startsWith("/profile") || p.startsWith("/install") || p.startsWith("/legal") },
 ];
 
-export default function TabBar({ chatsDot = false }) {
+/** chatsDot: something new in Chats. profileDot: the contact card needs details (pink, lib/myCard.js profileTabDot). */
+export default function TabBar({ chatsDot = false, profileDot = false }) {
   const { pathname } = useLocation();
   return (
     <nav className="tabbar" aria-label="Main">
@@ -71,11 +72,14 @@ export default function TabBar({ chatsDot = false }) {
           const active = t.match(pathname);
           const Icon = t.icon;
           const dot = t.to === "/chats" && chatsDot && !active;
+          const pink = t.to === "/profile" && profileDot;
+          const label = dot ? `${t.label}, new messages` : pink ? `${t.label}, add ways to reach you` : t.label;
           return (
-            <Link key={t.to} to={t.to} className="tab pressable" aria-current={active ? "page" : undefined} aria-label={dot ? `${t.label}, new messages` : t.label}>
+            <Link key={t.to} to={t.to} className="tab pressable" aria-current={active ? "page" : undefined} aria-label={label}>
               <Icon />
               <span>{t.label}</span>
               {dot && <span className="tab-dot" aria-hidden="true" />}
+              {pink && <span className="tab-dot tab-dot--pink" aria-hidden="true" />}
             </Link>
           );
         })}

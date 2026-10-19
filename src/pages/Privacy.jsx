@@ -171,6 +171,7 @@ var SECTIONS_APP = [
     body: "In addition to the information described in the Privacy Policy above, the app handles:",
     list: [
       "Profile details you choose to add: title, organisation, country, LinkedIn URL, job level and function, topics, goals, tagline, profile photo, meeting availability and, if you choose, salutation and gender. If you answered these on the ticket checkout, the app pre-fills them so you are not asked twice",
+      "Contact details you choose to add (for example a phone number, extra email or social handles) and, each time you connect, which of them you share with that person. Only the people you share them with can see them",
       "Content you create: posts, comments, discussions, direct and group messages, session questions, poll votes and connection requests",
       "Usage: screens you open, what you tap and search for, and the topics you look at, linked to your account (you can turn this off in Settings → Privacy & data)",
       "Device: app version, an anonymous device identifier and, if you allow notifications, a push token used to deliver notifications",
@@ -179,7 +180,7 @@ var SECTIONS_APP = [
   },
   {
     title: "3. What other attendees see",
-    body: "Signed-in attendees can see your name, ticket type, profile photo and the profile details you add. They never see your email address unless you connect in person by scanning each other's codes. You can hide yourself from the attendee directory at any time.",
+    body: "Signed-in attendees can see your name, ticket type, profile photo and the profile details you add. They see your email address or other contact details only if you share them with that person when you connect. You can hide yourself from the attendee directory at any time.",
   },
   {
     title: "4. Community rules (zero tolerance)",

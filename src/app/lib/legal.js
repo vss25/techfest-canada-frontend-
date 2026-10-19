@@ -14,6 +14,7 @@ export const LEGAL = {
       { title: "1. What we collect", body: "Only what the app needs to run the event and your networking:", bullets: [
         "Account: your name, email address and your TTFC pass(es).",
         "Profile you choose to add: title, organisation, country, LinkedIn URL, job level and function, topics, goals, a short tagline, profile photo, meeting availability and, if you choose, salutation and gender.",
+        "Contact details you choose to add (for example a phone number, extra email or social handles) and, each time you connect, which of them you share with that person. Only the people you share them with can see them.",
         "Content you create: posts, comments, discussions, direct and group messages, session questions, poll votes and connection requests.",
         "Usage: which screens you open, what you tap and search for, and the topics you look at. On the web app this includes whether you installed it to your Home Screen and when you open it. This is linked to your account when you're signed in.",
         "Device: an app version and an anonymous device identifier kept in your browser.",
@@ -21,7 +22,7 @@ export const LEGAL = {
       ] },
       { title: "2. Camera and photos", body: "Photos are read only when you pick one for a post or your profile." },
       { title: "3. How we use it", body: "To provide the app and the event: sign-in, passes and check-in, your schedule and reminders, matching you with relevant people and sessions, messaging, notifications from the organisers, keeping the community safe, answering support requests, and improving TTFC. We do not sell personal information and we do not use it for third-party advertising or cross-app tracking." },
-      { title: "4. What other attendees see", body: "Signed-in attendees can see your name, pass type, profile photo and the profile details you add. They never see your email address unless you connect in person by scanning each other's codes. You can hide yourself from the attendee directory at any time." },
+      { title: "4. What other attendees see", body: "Signed-in attendees can see your name, pass type, profile photo and the profile details you add. They see your email address or other contact details only if you share them with that person when you connect. You can hide yourself from the attendee directory at any time." },
       { title: "5. Safety review", body: "To enforce the community rules, posts and messages may be checked automatically for abuse, and staff can review content and messages that are reported or flagged. Blocked users cannot see or message you." },
       { title: "6. Service providers", body: "We use trusted providers who process data for us under contract: cloud hosting and database services, email delivery (Resend), payments (Stripe — card details never reach us), content management (Sanity), photo and video hosting (Cloudinary) and content moderation. Some providers process data outside Canada, where local laws may apply." },
       { title: "7. Retention", body: "We keep app data for as long as your account is open and for up to 12 months after the event, then delete or anonymise it, unless we must keep certain records (for example tax records for pass purchases) for longer by law." },

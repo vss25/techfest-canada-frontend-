@@ -9,6 +9,7 @@ import Tickets from "./pages/Tickets";
 import Checkout from "./pages/Checkout";
 import Resources from "./pages/Resources";
 import Privacy from "./pages/Privacy";
+import Contact from "./pages/Contact";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AboutUs from "./components/AboutUs";
 import AuthSuccess from "./pages/AuthSuccess";
@@ -89,6 +90,7 @@ function App() {
         {/* The attendee dashboard was retired (the app replaces it); keep old links working. */}
         <Route path="/dashboard" element={<Navigate to="/" replace />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/agenda" element={<AgendaGate><Agenda /></AgendaGate>} />
         <Route

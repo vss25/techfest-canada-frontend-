@@ -15,7 +15,7 @@ import { track } from "../../lib/pwaEvents";
    • Connect is sold out. The Speaker Pass is internal: never listed.
    • Live prices from the public GET /admin/inventory/public (what the
      website uses); the Tickets page defaults until it answers.
-   • Buying happens on thetechfestival.com: /tickets/checkout?tier=…
+   • Buying happens on thetechfestival.com: /tickets/checkout?tier=…&from=app
    • No discounts, promotions or countdowns (the organiser, Oct 18).
    • Guests only: signed-in pass holders never see any of this.
 ========================================================= */
@@ -43,8 +43,9 @@ export const PASSES = [
   },
 ];
 
-/** Where the website's checkout for one pass starts (same origin as /app). */
-export const checkoutHref = (tier) => `/tickets/checkout?tier=${encodeURIComponent(tier)}`;
+/** Where the website's checkout for one pass starts (same origin as /app). `from=app` tells the team's
+    "New ticket" email the buyer came from the web app (src/lib/purchaseSource.js). */
+export const checkoutHref = (tier) => `/tickets/checkout?tier=${encodeURIComponent(tier)}&from=app`;
 
 export const passesSheet = createStore({ open: false, where: "" });
 export const inventory = createStore({ items: null, at: 0, failed: false });

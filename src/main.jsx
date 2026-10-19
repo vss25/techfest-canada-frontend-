@@ -18,9 +18,12 @@ import '@fontsource/montserrat/700.css'
 import "./styles.css";
 import App from './App.jsx'
 import { loadTrackers } from './lib/trackers'
+import { captureLanding } from './lib/purchaseSource'
 
 // Analytics/advertising tags load only if the visitor already chose "Accept All".
 loadTrackers()
+// How this visitor found us (kept in this browser; sent only with a checkout, for the team's "New ticket" email).
+captureLanding()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

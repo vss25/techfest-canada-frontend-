@@ -162,7 +162,9 @@ export const STAFF_ONLY_MESSAGE = "This sign-in is for TTFC staff and volunteers
 /** Staff or volunteer: the TTFC team on the day (iOS RemoteUser.isTeam). */
 export const isTeam = (u) => !!u && (u.isAdmin === true || u.role === "admin" || u.role === "volunteer");
 
-/** "Staff sign-in": email + password, staff and volunteer accounts only (the server refuses others too). */
+/** "Staff sign-in": email + password, staff and volunteer accounts only (the server refuses others too).
+    Staff and volunteers can also sign in with the emailed link/code like everyone else: the app reads
+    their role and rights from /auth/me and /social/me either way. */
 export async function staffSignIn(email, password) {
   const r = await post("auth/login", { email: String(email || "").trim().toLowerCase(), password, staffOnly: true }, { auth: false });
   // Checked before the app switches over, so an attendee account never lands in the app this way.

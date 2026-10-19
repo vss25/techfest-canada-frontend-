@@ -116,7 +116,7 @@ export default function SessionDetail() {
 
         <div className="stack-sm">
           <Button variant={saved ? undefined : "primary"} size="lg" block icon={saved ? BookmarkCheck : Bookmark} onClick={() => toggleBookmark(session.id)}>
-            {saved ? (isSignedIn(a) ? "Registered · Remove" : "Saved · Remove") : (isSignedIn(a) ? "Register & add to schedule" : "Save to my schedule")}
+            {saved ? (isSignedIn(a) ? "Registered · Remove" : "Saved · Remove") : (isSignedIn(a) ? "Register & add to schedule" : "Save to My Sessions")}
           </Button>
           {!isSignedIn(a) && <p className="tiny muted center" style={{ margin: 0 }}>Saved on this device. Sign in to join sessions, polls and Q&A.</p>}
           <Button size="lg" block icon={Share} onClick={share}>Share session</Button>

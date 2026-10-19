@@ -14,7 +14,7 @@ import SiteAnnouncement from "../components/SiteAnnouncement";
 
 /* =========================================================
    Schedule (iOS ScheduleView): Day 1 / Day 2 / Venue, type
-   filters and My schedule, sessions under pinned hour headings,
+   filters and My Sessions, sessions under pinned hour headings,
    a bookmark on every card. On the festival days it opens on
    what's on now (or next).
 ========================================================= */
@@ -105,7 +105,7 @@ export default function Schedule() {
           {day !== 3 && (
             <div className="chips" role="group" aria-label="Filter sessions">
               {FILTERS.map((x) => <Chip key={x.id} on={filter === x.id} onClick={() => setFilter(x.id)}>{x.label}</Chip>)}
-              <Chip on={mine} onClick={() => setMine((v) => !v)}>My schedule</Chip>
+              <Chip on={mine} onClick={() => setMine((v) => !v)}>My Sessions</Chip>
             </div>
           )}
         </div>

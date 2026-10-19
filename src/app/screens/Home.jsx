@@ -207,13 +207,25 @@ export default function Home() {
 
   useEffect(() => { if (signedIn) { refreshFeed(); refreshPoints(); } }, [signedIn]);
 
-  // The feed's bar pins once Organisations has scrolled under it.
+  // The feed's bar (compose prompt + bell) pins to the top, and the session bar floats above the
+  // tab bar, once Organisations has scrolled up under the top chrome. A plain scroll check: the
+  // IntersectionObserver version compared against the wrong edge and never switched on.
   useEffect(() => {
-    const el = sentinel.current;
-    if (!el) return undefined;
-    const io = new IntersectionObserver(([e]) => setPinned(!e.isIntersecting && e.boundingClientRect.top < 0), { rootMargin: "-56px 0px 0px 0px" });
-    io.observe(el);
-    return () => io.disconnect();
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const el = sentinel.current;
+      if (el) setPinned(el.getBoundingClientRect().top < 56);
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(check); };
+    check();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
 
   const flags = liveFlags(ct);

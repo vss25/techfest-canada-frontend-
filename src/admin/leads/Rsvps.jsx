@@ -305,10 +305,15 @@ function RsvpDrawer({ id, onClose, onOpen, onResolved, cat }) {
             <Row label="Times sent">{r.submissions}</Row>
             <Row label="Entered by">
               {r.source === "staff"
-                ? <>Staff{r.staffUpdatedBy ? `: ${r.staffUpdatedBy}` : ""}{r.staffUpdatedAt ? `, ${when(r.staffUpdatedAt)}` : ""}{r.staffOverride ? " (overrode the attendee's RSVP)" : ""}</>
-                : "The attendee"}
+                ? <>Confirmed by Staff{r.staffUpdatedBy ? `: ${r.staffUpdatedBy}` : ""}{r.staffUpdatedAt ? `, ${when(r.staffUpdatedAt)}` : ""}{r.staffOverride ? " (overrode the attendee's RSVP, before Oct 19)" : ""}</>
+                : "Confirmed by Individual"}
               {r.passLimitOverride && <Badge tone="warn" className="ml-2">Outside their pass</Badge>}
             </Row>
+            {r.source !== "staff" && r.staffAdded?.length > 0 && (
+              <Row label="Added by staff">
+                {(r.staffAddedLabels || r.staffAdded).join(", ")}{r.staffUpdatedBy ? <span className="text-ttfc-muted"> · {r.staffUpdatedBy}{r.staffUpdatedAt ? `, ${when(r.staffUpdatedAt)}` : ""}</span> : null}
+              </Row>
+            )}
             {r.fillMs != null && <Row label="Form open for">{r.fillMs < 60000 ? `${Math.round(r.fillMs / 1000)} s` : `${Math.round(r.fillMs / 60000)} min`}</Row>}
             {r.userAgent && <Row label="Browser"><span className="text-xs text-ttfc-muted">{r.userAgent}</span></Row>}
           </DetailSection>
@@ -537,7 +542,8 @@ export default function Rsvps() {
                     </button>
                     {r.email && <span className="block truncate font-mono text-ttfc-muted" title={r.email}>{r.email}</span>}
                     {r.duplicateOf && <Badge tone="warn" icon={AlertTriangle} className="mt-1.5">Possible duplicate</Badge>}
-                    {r.source === "staff" && <Badge tone="purple" className="mt-1.5">Set by staff</Badge>}
+                    {r.source === "staff" && <Badge tone="purple" className="mt-1.5">Confirmed by Staff</Badge>}
+                    {r.source !== "staff" && r.staffAdded?.length > 0 && <Badge tone="purple" className="mt-1.5">Staff added {r.staffAdded.length}</Badge>}
                     <Link to={personPath(`r-${r.id}`)} onClick={(e) => e.stopPropagation()} className="mt-1 block text-[11px] font-semibold text-ttfc-pink hover:underline">Profile</Link>
                   </td>
                   <td className="whitespace-nowrap"><PassBadge tier={r.tier} verified={r.tierVerified} cat={cat} /></td>

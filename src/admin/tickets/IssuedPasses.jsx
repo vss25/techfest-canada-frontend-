@@ -54,7 +54,19 @@ const KINDS = {
 
 const plural = (n, one, many = `${one}s`) => `${num(n || 0)} ${n === 1 ? one : many}`;
 const shortDay = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "");
-const EMPTY = { name: "", email: "", title: "", company: "", tier: "", label: "", rsvp: true, subject: "", headline: "", message: "", booth: "", zone: "", passes: "" };
+const EMPTY = { name: "", email: "", title: "", company: "", tier: "", label: "", rsvp: true, cxo: "auto", subject: "", headline: "", message: "", booth: "", zone: "", passes: "" };
+// "CxO Breakfast included": automatic (Apex and All Access passes), or Yes / No for this pass.
+const CXO_INCLUDE = ["2× CxO Breakfasts", "Senior-leader breakfasts, both mornings"];
+const cxoKey = (v) => (v === true ? "yes" : v === false ? "no" : "auto");
+const cxoValue = (k) => (k === "yes" ? true : k === "no" ? false : null);
+/** The pass's inclusions with the CxO Breakfasts on or off, as the server lists them in the email. */
+function includesFor(tier, cxo) {
+  const list = (tier?.includes || []).filter(([head]) => !/CxO Breakfast/i.test(head));
+  const auto = (tier?.includes || []).some(([head]) => /CxO Breakfast/i.test(head));
+  const on = cxo === "auto" ? auto : cxo === "yes";
+  if (on) list.splice(Math.max(0, list.findIndex(([head]) => !/Pre-Matched|Preferential|Lounge \(19/.test(head))), 0, CXO_INCLUDE);
+  return list;
+}
 const ZONES = ["Zone A - Harbour Ballroom Foyer", "Zone B - Pier 4 & 5 Foyer"];
 
 /** The wording placeholders for a pass, with the pass name it'll carry. */
@@ -78,15 +90,18 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, onClose, onSa
   const BASE = kind.base;
   const [form, setForm] = useState(() => (row ? {
     name: row.name, email: listText(row.emails), title: row.title, company: row.company, tier: row.tier, label: row.label,
-    rsvp: row.rsvp, subject: row.copy?.subject || "", headline: row.copy?.headline || "", message: row.copy?.message || "",
+    rsvp: row.rsvp, cxo: cxoKey(row.cxoBreakfast), subject: row.copy?.subject || "", headline: row.copy?.headline || "", message: row.copy?.message || "",
     booth: row.booth?.booth || "", zone: row.booth?.zone || "", passes: row.booth?.passes || "",
   } : { ...EMPTY, tier: defaultTier || "influence" }));
   const [saving, setSaving] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
   const complete = form.name.trim().split(/\s+/).length >= 2;
-  const body = kind.booth ? form : (({ booth, zone, passes, ...rest }) => rest)(form); // eslint-disable-line no-unused-vars
-  const preview = useLivePreview(`${BASE}/preview`, complete ? body : { ...body, name: "Jane Doe" });
+  const { cxo, ...fields } = form;
+  const withCxo = { ...fields, ...(row ? (cxo !== cxoKey(row.cxoBreakfast) ? { cxoBreakfast: cxoValue(cxo) } : {}) : { cxoBreakfast: cxoValue(cxo) }) };
+  const body = kind.booth ? withCxo : (({ booth, zone, passes, ...rest }) => rest)(withCxo); // eslint-disable-line no-unused-vars
+  // The preview always gets the switch (the server shows the pass as it would be saved).
+  const preview = useLivePreview(`${BASE}/preview`, { ...(complete ? body : { ...body, name: "Jane Doe" }), cxoBreakfast: cxoValue(cxo) });
   const tier = tiers.find((t) => t.key === form.tier);
   const attachment = preview.data?.attachments?.[0];
 
@@ -159,9 +174,20 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, onClose, onSa
               {(id) => <Input id={id} value={form.label} onChange={set("label")} placeholder={defaultLabel || tier?.label || ""} maxLength={40} />}
             </Field>
           </div>
+          <Field label="CxO Breakfast included" hint={cxo === "auto"
+            ? "Automatic: Apex and All Access passes include both CxO Breakfasts; the others don't."
+            : "For this pass only. It shows in the email, on their ticket in the app and on the RSVP page."}>
+            {(id) => (
+              <Select id={id} value={cxo} onChange={set("cxo")} className="sm:max-w-xs">
+                <option value="auto">Automatic ({includesFor(tier, "auto").some(([h]) => /CxO/.test(h)) ? "Yes" : "No"})</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </Select>
+            )}
+          </Field>
           {tier && (
             <p className="text-xs leading-relaxed text-ttfc-dim">
-              Includes: {tier.includes.map(([head]) => head).join(" · ")}
+              Includes: {includesFor(tier, cxo).map(([head]) => head).join(" · ")}
             </p>
           )}
           <label className="flex items-start gap-2.5 text-sm">
@@ -360,6 +386,7 @@ function PassesPage({ kindName }) {
                     <span className="block font-semibold">{r.label || r.tierLabel}</span>
                     {r.label && <span className="block text-xs text-ttfc-muted">{r.tierLabel}</span>}
                     {!r.rsvp && <span className="block text-[11px] text-ttfc-dim">No RSVP button</span>}
+                    {typeof r.cxoBreakfast === "boolean" && <span className="block text-[11px] text-ttfc-dim">CxO Breakfast: {r.cxoBreakfast ? "Yes" : "No"}</span>}
                   </td>
                   <td className="whitespace-nowrap">
                     <span className="inline-flex items-center gap-1">

@@ -22,7 +22,10 @@ import { API, useFormGuard } from "../lib/forms";
    backend checks everything again when the RSVP is saved (POST /api/rsvp)
    and, if it reads the pass differently, the page unlocks it and asks again.
    Experiences (sessions, expo floor and breaks for every pass, plus what
-   the pass adds) are grouped by day and never ticked for them.
+   the pass adds) are grouped by day and never ticked for them. Which ones
+   they may pick comes from the lookup (`allowedOptions`, the server's own
+   rule: the pass, its CxO Breakfast switch, the speaker type and any
+   breakfast already on their RSVP); the options' `tiers` are the fallback.
    The save answers with an edit token, kept in localStorage
    ("ttfc.rsvp.edit"); sent back under the same name, it updates that
    RSVP instead of adding another. Staff see RSVPs in Admin → Leads → RSVPs.
@@ -389,7 +392,12 @@ export default function Rsvp() {
   const options = useMemo(() => catalog?.options || [], [catalog]);
   const days = catalog?.days || [];
   const tierLabel = (k) => catalog?.tiers?.find((t) => t.key === k)?.label || "";
-  const allowed = useMemo(() => options.filter((o) => o.kind === "experience" && SPECIAL(o) && o.tiers.includes(tier) && (!o.day || form.days.includes(o.day))), [options, tier, form.days]);
+  // What this person may pick, worked out by the server with the same rule the save checks (POST /rsvp/lookup
+  // `allowedOptions`: their pass, its CxO Breakfast switch, the speaker type, a breakfast already on their RSVP).
+  // The pass's own list from /rsvp/options only when the answer has none.
+  const serverAllowed = found.verified && Array.isArray(found.allowedOptions) ? found.allowedOptions : null;
+  const allowed = useMemo(() => options.filter((o) => o.kind === "experience" && SPECIAL(o)
+    && (serverAllowed ? serverAllowed.includes(o.key) : o.tiers.includes(tier)) && (!o.day || form.days.includes(o.day))), [options, tier, form.days, serverAllowed]);
   const chosenOptions = allowed.filter((o) => form.options.includes(o.key)).map((o) => o.key);
 
   const set = (k, v) => {

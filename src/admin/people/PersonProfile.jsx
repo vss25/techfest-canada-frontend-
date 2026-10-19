@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarDays, ExternalLink, ImagePlus, Info, Linkedin, Mic2, Smartphone, Store, Ticket, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, Coffee, Crown, ExternalLink, ImagePlus, Info, Linkedin, Mail, Mic2, Smartphone, Store, Ticket, Trash2 } from "lucide-react";
 import { useApi } from "../hooks";
 import { ADMIN_API, api } from "../api";
 import { useAdmin } from "../adminContext";
@@ -10,7 +10,8 @@ import { when, day, initials } from "../format";
 import RsvpEditor from "./RsvpEditor";
 import LogoPicker, { CompanyMark } from "./LogoPicker";
 import {
-  DAY_SHORT, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_STATUS_TONE, RSVP_STATUS_LABELS, RSVP_STATUS_TONE, TYPE_LABELS, TYPE_TONE, personPath,
+  DAY_SHORT, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_STATUS_TONE, RSVP_EMAIL_HINT, RSVP_STATUS_LABELS, RSVP_STATUS_TONE, TYPE_LABELS, TYPE_TONE,
+  VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL, VIP_TONE, personPath,
 } from "./peopleMeta";
 
 /* =========================================================
@@ -18,11 +19,12 @@ import {
    Everything about one person, joined from their account,
    passes, RSVP and the speaker list (GET /console/people/:id).
    Staff edit name, email (management), LinkedIn, company, job
-   title and exhibitor yes/no (PATCH), the RSVP (RsvpEditor) and
-   the company logo (LogoPicker). The pass and their app contact
-   card (contactCard) are read-only here:
-   it links to Tickets. Emails and LinkedIn are staff-only (the
-   whole panel is).
+   title, exhibitor and VIP yes/no (PATCH), "CxO Breakfast
+   included" per pass (PATCH …/passes/:ticketId), the RSVP
+   (RsvpEditor) and the company logo (LogoPicker). The pass
+   itself and their app contact card (contactCard) are read-only
+   here: it links to Tickets. Emails and LinkedIn are staff-only
+   (the whole panel is).
 ========================================================= */
 
 const DETAIL_KEYS = ["name", "email", "linkedinUrl", "company", "jobTitle"];
@@ -38,10 +40,12 @@ function DetailsCard({ p, onSaved }) {
   const start = { name: p.name === "No name" ? "" : p.name, email: p.email, linkedinUrl: p.linkedinUrl, company: p.company, jobTitle: p.jobTitle };
   const [form, setForm] = useState(start);
   const [exhibitor, setExhibitor] = useState(!!p.exhibitor);
+  const [vip, setVip] = useState(!!p.vip);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const changed = DETAIL_KEYS.filter((k) => (form[k] || "") !== (start[k] || "") && (k !== "email" || e.canEditEmail));
   const exChanged = exhibitor !== !!p.exhibitor;
+  const vipChanged = vip !== !!p.vip;
   const set = (k) => (ev) => setForm((f) => ({ ...f, [k]: ev.target.value }));
   const disabled = !e.canEdit;
 
@@ -49,6 +53,7 @@ function DetailsCard({ p, onSaved }) {
     setSaving(true); setError(null);
     const body = Object.fromEntries(changed.map((k) => [k, form[k]]));
     if (exChanged) body.exhibitor = exhibitor;
+    if (vipChanged) body.vip = vip;
     try {
       await api.patch(`/console/people/${encodeURIComponent(p.id)}`, body);
       toast.success("Saved");
@@ -76,11 +81,18 @@ function DetailsCard({ p, onSaved }) {
           <p className="mt-2 text-xs text-amber-200/90">This also removes their exhibitor badge and booth in the app.</p>
         )}
       </div>
+      <div className="mt-3 rounded-2xl border border-ttfc-line p-4">
+        <Switch checked={vip} onChange={setVip} disabled={disabled || !e.canEditVip} label="VIP"
+          description="Shows the VIP badge in the app. It doesn't change what they can do there: their type does." />
+        {p.vip && p.vipFrom === "pass" && (
+          <p className="mt-2 text-xs text-ttfc-muted">Set on their pass before they had an app account.</p>
+        )}
+      </div>
       {error && <p role="alert" className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error.message}</p>}
       {!disabled && (
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button variant="primary" loading={saving} disabled={!changed.length && !exChanged} onClick={save}>Save details</Button>
-          {(changed.length > 0 || exChanged) && <Button onClick={() => { setForm(start); setExhibitor(!!p.exhibitor); setError(null); }} disabled={saving}>Undo changes</Button>}
+          <Button variant="primary" loading={saving} disabled={!changed.length && !exChanged && !vipChanged} onClick={save}>Save details</Button>
+          {(changed.length > 0 || exChanged || vipChanged) && <Button onClick={() => { setForm(start); setExhibitor(!!p.exhibitor); setVip(!!p.vip); setError(null); }} disabled={saving}>Undo changes</Button>}
         </div>
       )}
     </Card>
@@ -132,7 +144,42 @@ function LogoCard({ p, onSaved }) {
   );
 }
 
-function PassesCard({ p }) {
+const money = (v) => `${Number(v).toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD`;
+const CXO_CHOICES = [{ key: "auto", label: "Automatic" }, { key: "yes", label: "Yes" }, { key: "no", label: "No" }];
+
+/* "CxO Breakfast included" for one pass: Automatic (Apex, Speaker Pass, speakers on any pass), Yes or No. */
+function CxoSwitch({ personId, t, canEdit, onSaved }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState("");
+  const current = t.cxoOverride === true ? "yes" : t.cxoOverride === false ? "no" : "auto";
+  const pick = async (key) => {
+    if (key === current || busy) return;
+    setBusy(key);
+    try {
+      await api.patch(`/console/people/${encodeURIComponent(personId)}/passes/${encodeURIComponent(t.ticketId)}`, { cxoBreakfast: key === "auto" ? null : key === "yes" });
+      toast.success(`CxO Breakfast ${key === "auto" ? "back to automatic" : key === "yes" ? "included" : "not included"} for ${t.ticketId.toUpperCase()}`);
+      onSaved();
+    } catch (err) { toast.error(err); } finally { setBusy(""); }
+  };
+  return (
+    <div className="flex w-full flex-wrap items-center gap-2 border-t border-ttfc-line pt-2">
+      <Coffee className="h-4 w-4 text-ttfc-muted" aria-hidden="true" />
+      <span className="text-xs font-semibold text-ttfc-text">CxO Breakfast included</span>
+      <Badge tone={t.cxoBreakfast ? "good" : "neutral"}>{t.cxoBreakfast ? "Yes" : "No"}</Badge>
+      <div role="radiogroup" aria-label={`CxO Breakfast for ${t.ticketId.toUpperCase()}`} className="ml-auto inline-flex rounded-xl border border-ttfc-line p-0.5">
+        {CXO_CHOICES.map((c) => (
+          <button key={c.key} type="button" role="radio" aria-checked={current === c.key} disabled={!canEdit || !!busy}
+            onClick={() => pick(c.key)}
+            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:cursor-not-allowed ${current === c.key ? "bg-white/10 text-ttfc-text" : "text-ttfc-muted hover:text-ttfc-text"} ${busy === c.key ? "opacity-60" : ""}`}>
+            {c.key === "auto" ? `Automatic (${t.cxoAuto ? "Yes" : "No"})` : c.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PassesCard({ p, onSaved }) {
   return (
     <Card>
       <SectionTitle hint="From the ticket records. Change passes in Tickets.">Pass</SectionTitle>
@@ -141,7 +188,7 @@ function PassesCard({ p }) {
       ) : (
         <ul className="space-y-3">
           {p.passes.map((t) => (
-            <li key={t.ticketId} className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-3 py-2.5 text-sm ${t.hidden ? "opacity-60" : ""}`}>
+            <li key={t.ticketId} className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-ttfc-line bg-ttfc-panel2 px-3 py-2.5 text-sm ${t.hidden ? "opacity-60" : ""}`}>
               <Ticket className="h-4 w-4 text-ttfc-muted" aria-hidden="true" />
               <span className="font-semibold">{t.label}</span>
               <span title={PASS_STATUS_HINTS[t.status]}><Badge tone={PASS_STATUS_TONE[t.status]}>{PASS_STATUS_LABELS[t.status]}</Badge></span>
@@ -153,9 +200,20 @@ function PassesCard({ p }) {
               <Link to={`/admin/attendees?q=${encodeURIComponent(t.ticketId)}`} className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-ttfc-pink hover:underline">
                 Open in Tickets <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </Link>
+              <span className="flex w-full flex-wrap items-center gap-2 text-xs text-ttfc-muted" title={VALUE_BAND_HINTS[t.valueBand]}>
+                Ticket value after payment:
+                {"value" in t && t.value !== null ? <span className="font-semibold text-ttfc-text">{money(t.value)}</span> : null}
+                <Badge tone={VALUE_BAND_TONE[t.valueBand]}>{VALUE_BAND_LABELS[t.valueBand]}</Badge>
+              </span>
+              {!t.hidden && <CxoSwitch personId={p.id} t={t} canEdit={!!p.edit?.canEditCxo} onSaved={onSaved} />}
             </li>
           ))}
         </ul>
+      )}
+      {p.passes?.length > 0 && (
+        <p className="mt-3 text-xs leading-relaxed text-ttfc-dim">
+          Automatic gives the CxO Breakfasts to Apex and Speaker Passes, and to speakers on any pass. Yes or No is for this pass only: it shows on their ticket in the app and on the RSVP page. A breakfast they already chose in their RSVP is never taken away.
+        </p>
       )}
       {p.boothOrders?.length > 0 && (
         <p className="mt-3 flex items-center gap-2 text-sm text-ttfc-muted"><Store className="h-4 w-4" aria-hidden="true" /> Booth order on their account: {p.boothOrders.join(", ")}</p>
@@ -277,7 +335,8 @@ function ProfileView({ id }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{p.name}</h1>
-            {p.types.map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}
+            {p.vip && <Badge tone={VIP_TONE} icon={Crown}>{VIP_LABEL}</Badge>}
+            {p.types.map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t] || t}</Badge>)}
           </div>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-ttfc-muted">
             <CompanyMark url={p.logoUrl} name={p.company} size="sm" />
@@ -289,7 +348,12 @@ function ProfileView({ id }) {
           </p>
           <p className="mt-1.5 flex flex-wrap gap-2 text-xs">
             <Badge tone={PASS_STATUS_TONE[p.passStatus]}>{p.pass ? `${p.pass.label}: ${PASS_STATUS_LABELS[p.passStatus]}` : "No pass"}</Badge>
-            <Badge tone={RSVP_STATUS_TONE[r.status]}>{RSVP_STATUS_LABELS[r.status] || "Not yet"}{r.at ? ` · ${when(r.at)}` : ""}{r.status === "staff" && r.by ? ` · ${r.by}` : ""}</Badge>
+            <Badge tone={RSVP_STATUS_TONE[r.status]}>{RSVP_STATUS_LABELS[r.status] || RSVP_STATUS_LABELS.none}{r.at ? ` · ${when(r.at)}` : ""}{r.status === "staff" && r.by ? ` · ${r.by}` : ""}</Badge>
+            <span title={RSVP_EMAIL_HINT}>
+              <Badge tone={p.rsvpEmail?.sent ? "good" : "neutral"} icon={Mail}>
+                {p.rsvpEmail?.sent ? `RSVP email sent · ${when(p.rsvpEmail.at)}${p.rsvpEmail.via?.length ? ` · ${p.rsvpEmail.via.join(", ")}` : ""}` : "No RSVP email sent"}
+              </Badge>
+            </span>
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -300,7 +364,7 @@ function ProfileView({ id }) {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <div className="space-y-5">
-          <RsvpEditor personId={p.id} rsvp={data.rsvp} catalog={data.catalog} pass={p.pass} duplicates={data.rsvpDuplicates} canEdit={!!p.edit?.canEditRsvp} onSaved={reload} />
+          <RsvpEditor personId={p.id} rsvp={data.rsvp} catalog={data.catalog} pass={p.pass} rules={p.rsvpRules} duplicates={data.rsvpDuplicates} canEdit={!!p.edit?.canEditRsvp} onSaved={reload} />
           <AgendaCard agenda={data.agenda} hasAccount={!!p.userId} />
           {data.otherRsvps?.length > 0 && (
             <Card>
@@ -310,9 +374,9 @@ function ProfileView({ id }) {
           )}
         </div>
         <div className="space-y-5">
-          <DetailsCard key={JSON.stringify([p.name, p.email, p.linkedinUrl, p.company, p.jobTitle, p.exhibitor])} p={p} onSaved={reload} />
+          <DetailsCard key={JSON.stringify([p.name, p.email, p.linkedinUrl, p.company, p.jobTitle, p.exhibitor, p.vip])} p={p} onSaved={reload} />
           <LogoCard p={p} onSaved={reload} />
-          <PassesCard p={p} />
+          <PassesCard p={p} onSaved={reload} />
           <ContactCardCard items={data.contactCard} hasAccount={!!p.userId} />
           {!isManagement && <p className="text-xs text-ttfc-dim">Email changes and the CSV download are for management.</p>}
         </div>

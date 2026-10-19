@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ArrowDown, ArrowUp, CalendarCheck, ChevronLeft, ChevronRight, Contact, Download, ImagePlus, Info, Search, Store, Ticket, Users,
+  ArrowDown, ArrowUp, BellRing, CalendarCheck, CalendarX, ChevronLeft, ChevronRight, Contact, Crown, Download, ImagePlus, Info, Search, Store, Users,
 } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { ADMIN_API, getToken } from "../api";
@@ -10,9 +10,10 @@ import { useToast } from "../toastContext";
 import { Badge, Banner, Button, EmptyState, ErrorState, Input, LoadingState, PageHeader, Select, StatTile, TableWrap } from "../ui";
 import { when } from "../format";
 import LogoPicker, { CompanyMark } from "./LogoPicker";
+import ReminderDialog from "./ReminderDialog";
 import {
-  DAY_SHORT, PASS_STATUSES, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_STATUS_TONE, PASS_TIERS, PERSON_TYPES, RSVP_STATUS_LABELS,
-  RSVP_STATUS_TONE, TYPE_LABELS, TYPE_TONE, personPath,
+  DAY_SHORT, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_TIERS, RSVP_EMAIL_HINT, RSVP_STATUSES, RSVP_STATUS_LABELS, RSVP_STATUS_TONE,
+  TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VALUE_BANDS, VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL, VIP_TONE, personPath,
 } from "./peopleMeta";
 
 /* =========================================================
@@ -23,20 +24,33 @@ import {
    backend services/people.js); filters and sorting are sent as
    query parameters and kept in the address bar. Open a row for
    the profile (/admin/people/:id). The CSV is management only,
-   like the RSVP export.
+   like the RSVP export. "Send RSVP reminder" emails the view's
+   Unconfirmed people (ReminderDialog, management).
 ========================================================= */
 
 const PAGE = 50;
 const COLUMNS = [
   { key: "name", label: "Name", sort: "name" },
-  { key: "types", label: "Types", sort: "type" },
+  { key: "types", label: "Type", sort: "type" },
   { key: "company", label: "Company", sort: "company" },
   { key: "pass", label: "Pass", sort: "pass" },
-  { key: "status", label: "Pass status", sort: "status" },
+  { key: "value", label: "Ticket value", sort: "value" },
   { key: "rsvp", label: "RSVP", sort: "rsvp" },
+  { key: "rsvpEmail", label: "RSVP email", sort: "rsvpEmail" },
   { key: "exhibitor", label: "Exhibitor", sort: "exhibitor" },
 ];
-const FILTERS = ["q", "type", "pass", "status", "rsvp", "exhibitor"];
+const YES_NO = [{ key: "yes", label: "Yes" }, { key: "no", label: "No" }];
+/* The organiser's filters, in their words and order (Oct 19 2026). */
+const FILTER_DEFS = [
+  { key: "type", label: "Attendee Type", options: TYPE_FILTER_OPTIONS },
+  { key: "pass", label: "Pass Type", options: PASS_TIERS },
+  { key: "value", label: "Ticket Value After Payment", options: VALUE_BANDS },
+  { key: "rsvp", label: "RSVP Status", options: RSVP_STATUSES.map((k) => ({ key: k, label: RSVP_STATUS_LABELS[k] })) },
+  { key: "exhibitor", label: "Is Exhibitor?", options: YES_NO },
+  { key: "rsvpEmail", label: "RSVP Email Sent?", options: YES_NO },
+  { key: "vip", label: "VIP?", options: YES_NO },
+];
+const FILTERS = ["q", ...FILTER_DEFS.map((f) => f.key)];
 
 function SortHeader({ col, sort, dir, onSort }) {
   const active = sort === col.sort;
@@ -53,7 +67,7 @@ function SortHeader({ col, sort, dir, onSort }) {
 }
 
 function RsvpCell({ r }) {
-  if (!r || r.status === "none") return <span className="text-ttfc-dim">Not yet</span>;
+  if (!r || r.status === "none") return <span className="text-ttfc-dim">{RSVP_STATUS_LABELS.none}</span>;
   return (
     <span className="block space-y-1">
       <Badge tone={RSVP_STATUS_TONE[r.status]}>{RSVP_STATUS_LABELS[r.status]}</Badge>
@@ -73,6 +87,7 @@ export default function PeopleDirectory() {
   const [q, setQ] = useState(params.get("q") || "");
   const [exporting, setExporting] = useState(false);
   const [logoFor, setLogoFor] = useState(null); // a row
+  const [reminding, setReminding] = useState(false);
   const dq = useDebounced(q.trim(), 300);
   const page = Math.max(0, Number(params.get("page")) || 0);
   const sort = params.get("sort") || "name";
@@ -116,67 +131,69 @@ export default function PeopleDirectory() {
     } catch (err) { toast.error(err); } finally { setExporting(false); }
   };
 
+  const clearAll = () => { setQ(""); update(Object.fromEntries([...FILTERS, "page"].map((k) => [k, ""]))); };
+  const confirmed = (c?.byRsvp?.attendee || 0) + (c?.byRsvp?.staff || 0);
+
   return (
     <>
       <PageHeader
         eyebrow="Tickets & attendees"
         title="People"
-        description="Everyone in one list: pass holders, speakers, exhibitors, VIPs, staff, vendors and volunteers, from app accounts, tickets, passes, RSVPs and the speaker list. Open someone to see and change their details, RSVP, agenda and company logo."
-        actions={isManagement && <Button icon={Download} loading={exporting} onClick={exportCsv} disabled={!total} title="Everyone matching the search and filters">Download CSV</Button>}
+        description="Everyone in one list: delegates, speakers, exhibitors, volunteers, organizers and vendors, from app accounts, tickets, passes, RSVPs and the speaker list. Open someone to see and change their details, VIP, RSVP, agenda and company logo."
+        actions={(
+          <>
+            <Button icon={BellRing} onClick={() => setReminding(true)} disabled={!total}
+              title="Email the RSVP reminder to the Unconfirmed people in this view">Send RSVP reminder</Button>
+            {isManagement && <Button icon={Download} loading={exporting} onClick={exportCsv} disabled={!total} title="Everyone matching the search and filters">Download CSV</Button>}
+          </>
+        )}
       />
 
       {c && (
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          <StatTile label="People" value={c.total.toLocaleString()} icon={Users} tone="purple" to="?" />
-          <StatTile label="With a pass" value={(c.total - (c.byStatus.none || 0)).toLocaleString()} icon={Ticket} tone="pink"
-            hint={`${(c.byStatus.pending || 0).toLocaleString()} pending · ${(c.byStatus.issued || 0).toLocaleString()} not claimed`} />
-          <StatTile label="RSVP'd" value={((c.byRsvp.attendee || 0) + (c.byRsvp.staff || 0)).toLocaleString()} icon={CalendarCheck} tone="good" to="?rsvp=any"
-            hint={`${(c.byRsvp.staff || 0).toLocaleString()} set by staff`} />
-          <StatTile label="Speakers" value={(c.byType.speaker || 0).toLocaleString()} icon={Contact} tone="orange" to="?type=speaker" />
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+          <StatTile label="People" value={c.total.toLocaleString()} icon={Users} tone="purple" to="?"
+            hint={`${(c.total - (c.byStatus.none || 0)).toLocaleString()} with a pass`} />
+          <StatTile label="Confirmed" value={confirmed.toLocaleString()} icon={CalendarCheck} tone="good"
+            hint={`${(c.byRsvp.attendee || 0).toLocaleString()} by individual · ${(c.byRsvp.staff || 0).toLocaleString()} by staff`} />
+          <StatTile label="Unconfirmed" value={(c.byRsvp.none || 0).toLocaleString()} icon={CalendarX} tone="orange" to="?rsvp=none"
+            hint={`${(c.rsvpEmailSent || 0).toLocaleString()} sent an RSVP email`} />
+          <StatTile label="Speakers" value={(c.byType.speaker || 0).toLocaleString()} icon={Contact} tone="pink" to="?type=speaker" />
           <StatTile label="Exhibitors" value={(c.exhibitors || 0).toLocaleString()} icon={Store} tone="neutral" to="?exhibitor=yes"
             hint="Exhibitor pass holders and anyone staff marked" />
+          <StatTile label="VIPs" value={(c.vips || 0).toLocaleString()} icon={Crown} tone="orange" to="?vip=yes" />
         </div>
       )}
 
-      {data?.stripe === "slow" && (
-        <Banner tone="info" icon={Info} className="mb-4">Stripe is slow to answer, so refunds may not show yet. They'll appear on the next refresh.</Banner>
+      {data?.stripe && data.stripe !== "ok" && (
+        <Banner tone="info" icon={Info} className="mb-4">
+          {data.stripe === "slow" ? "Stripe is slow to answer, so refunds and ticket values may not show yet. They'll appear on the next refresh."
+            : data.stripe === "off" ? "Stripe isn't connected here, so bought passes have no ticket value (complimentary and issued passes count as 0)."
+              : "Stripe couldn't be read just now, so refunds and ticket values may be missing."}
+        </Banner>
       )}
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative flex-1 sm:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
-          <Input type="search" value={q} onChange={(e) => onSearch(e.target.value)} placeholder="Search name, email, company or ticket ID" className="pl-9" aria-label="Search people" />
+      <div className="mb-4 space-y-3 rounded-[18px] border border-ttfc-line bg-ttfc-panel p-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 sm:max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
+            <Input type="search" value={q} onChange={(e) => onSearch(e.target.value)} placeholder="Search name, email, company or ticket ID" className="pl-9" aria-label="Search people" />
+          </div>
+          <p className="text-sm text-ttfc-muted" aria-live="polite">
+            {loading ? "Loading…" : `${total.toLocaleString()} ${total === 1 ? "person" : "people"}`}{refreshing && !loading ? " · updating…" : ""}
+          </p>
+          {filtered && <Button size="sm" variant="ghost" onClick={clearAll}>Clear filters</Button>}
         </div>
-        <Select value={f.type} onChange={(e) => update({ type: e.target.value, page: 0 })} className="sm:w-40" aria-label="Filter by type">
-          <option value="">Any type</option>
-          {PERSON_TYPES.map((t) => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
-          <option value="none">No type</option>
-        </Select>
-        <Select value={f.pass} onChange={(e) => update({ pass: e.target.value, page: 0 })} className="sm:w-40" aria-label="Filter by pass">
-          <option value="">Any pass</option>
-          {PASS_TIERS.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
-          <option value="none">No pass</option>
-        </Select>
-        <Select value={f.status} onChange={(e) => update({ status: e.target.value, page: 0 })} className="sm:w-44" aria-label="Filter by pass status">
-          <option value="">Any pass status</option>
-          {PASS_STATUSES.map((s) => <option key={s} value={s}>{PASS_STATUS_LABELS[s]}</option>)}
-        </Select>
-        <Select value={f.rsvp} onChange={(e) => update({ rsvp: e.target.value, page: 0 })} className="sm:w-44" aria-label="Filter by RSVP">
-          <option value="">Any RSVP</option>
-          <option value="any">RSVP'd (anyone)</option>
-          <option value="attendee">RSVP'd by attendee</option>
-          <option value="staff">Set by staff</option>
-          <option value="none">Not yet</option>
-        </Select>
-        <Select value={f.exhibitor} onChange={(e) => update({ exhibitor: e.target.value, page: 0 })} className="sm:w-40" aria-label="Filter by exhibitor">
-          <option value="">Exhibitor or not</option>
-          <option value="yes">Exhibitor: Yes</option>
-          <option value="no">Exhibitor: No</option>
-        </Select>
-        <p className="text-sm text-ttfc-muted" aria-live="polite">
-          {loading ? "Loading…" : `${total.toLocaleString()} ${total === 1 ? "person" : "people"}`}{refreshing && !loading ? " · updating…" : ""}
-        </p>
-        {filtered && <Button size="sm" variant="ghost" onClick={() => { setQ(""); update({ q: "", type: "", pass: "", status: "", rsvp: "", exhibitor: "", page: 0 }); }}>Clear filters</Button>}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7">
+          {FILTER_DEFS.map((fd) => (
+            <label key={fd.key} className="flex min-w-0 flex-col justify-end">
+              <span className="mb-1 block text-[11px] font-semibold uppercase leading-tight tracking-wide text-ttfc-dim">{fd.label}</span>
+              <Select value={f[fd.key]} onChange={(e) => update({ [fd.key]: e.target.value, page: 0 })} className="w-full" aria-label={fd.label}>
+                <option value="">Any</option>
+                {fd.options.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+              </Select>
+            </label>
+          ))}
+        </div>
       </div>
 
       {loading ? <LoadingState label="Loading people…" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !rows.length ? (
@@ -202,7 +219,9 @@ export default function PeopleDirectory() {
                   </td>
                   <td>
                     <span className="flex max-w-[180px] flex-wrap gap-1">
-                      {r.types.length ? r.types.map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>) : <span className="text-ttfc-dim">None</span>}
+                      {r.vip && <Badge tone={VIP_TONE} icon={Crown}>{VIP_LABEL}</Badge>}
+                      {r.types.map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t] || t}</Badge>)}
+                      {!r.types.length && !r.vip && <span className="text-ttfc-dim">None</span>}
                     </span>
                   </td>
                   <td className="max-w-[240px]">
@@ -221,10 +240,27 @@ export default function PeopleDirectory() {
                     </span>
                   </td>
                   <td className="whitespace-nowrap">
-                    {r.pass ? <>{r.pass.label}{r.passCount > 1 && <span className="block text-[11px] text-ttfc-dim">+{r.passCount - 1} more</span>}</> : <span className="text-ttfc-dim">None</span>}
+                    {r.pass ? (
+                      <>
+                        {r.pass.label}
+                        <span className="block text-[11px] text-ttfc-dim" title={PASS_STATUS_HINTS[r.passStatus]}>
+                          {PASS_STATUS_LABELS[r.passStatus]}{r.passCount > 1 ? ` · +${r.passCount - 1} more` : ""}
+                        </span>
+                        {r.cxoBreakfast && <Badge tone="purple" className="mt-1">CxO Breakfast</Badge>}
+                      </>
+                    ) : <span className="text-ttfc-dim">None</span>}
                   </td>
-                  <td className="whitespace-nowrap"><span title={PASS_STATUS_HINTS[r.passStatus]}><Badge tone={PASS_STATUS_TONE[r.passStatus]}>{PASS_STATUS_LABELS[r.passStatus]}</Badge></span></td>
+                  <td className="whitespace-nowrap">
+                    {r.valueBand === "none" ? <span className="text-ttfc-dim">None</span> : (
+                      <span title={VALUE_BAND_HINTS[r.valueBand]}><Badge tone={VALUE_BAND_TONE[r.valueBand]}>{VALUE_BAND_LABELS[r.valueBand]}</Badge></span>
+                    )}
+                  </td>
                   <td className="whitespace-nowrap"><RsvpCell r={r.rsvp} /></td>
+                  <td className="whitespace-nowrap" title={r.rsvpEmail?.via?.join(", ")}>
+                    {r.rsvpEmail?.sent ? (
+                      <span className="block"><Badge tone="good">Yes</Badge><span className="block text-[11px] text-ttfc-muted">{when(r.rsvpEmail.at)}</span></span>
+                    ) : <span className="text-ttfc-muted">No</span>}
+                  </td>
                   <td>{r.exhibitor ? <Badge tone="purple">Yes</Badge> : <span className="text-ttfc-muted">No</span>}</td>
                   <td className="whitespace-nowrap text-right">
                     <Link to={personPath(r.id)} onClick={(e) => e.stopPropagation()} className="text-xs font-semibold text-ttfc-pink hover:underline">Profile</Link>
@@ -242,7 +278,11 @@ export default function PeopleDirectory() {
           )}
         </>
       )}
-      {!isManagement && <p className="mt-4 text-xs text-ttfc-dim">Downloading the list as a CSV is for management (it holds emails).</p>}
+      <p className="mt-4 text-xs text-ttfc-dim">
+        Ticket value is what they paid for the pass after promo codes, before HST. RSVP email: {RSVP_EMAIL_HINT}
+        {!isManagement && " Downloading the list as a CSV and sending reminders are for management."}
+      </p>
+      <ReminderDialog key={reminding ? view.toString() : "closed"} open={reminding} onClose={() => setReminding(false)} view={view} canSend={isManagement} onSent={reload} />
       {logoFor && (
         <LogoPicker open onClose={() => setLogoFor(null)} company={logoFor.company} domain={logoFor.suggestedDomain} personId={logoFor.id} personName={logoFor.name}
           canOwn={false} onSaved={reload} />

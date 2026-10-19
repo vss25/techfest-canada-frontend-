@@ -48,6 +48,16 @@
       "source": "/first-timers",
       "destination": "/briefings",
       "permanent": true
+    },
+    {
+      "source": "/Brochure.pdf",
+      "destination": "https://cdn.sanity.io/files/021qtoci/production/a35dec187892472e9850a72170ec1168a6e783c7.pdf",
+      "permanent": false
+    },
+    {
+      "source": "/hero-bg.mp4",
+      "destination": "https://cdn.sanity.io/files/021qtoci/production/9e77820d673c4b43564d7223bdc0810ecee69792.mp4",
+      "permanent": false
     }
   ],
   "rewrites": [

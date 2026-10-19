@@ -24,7 +24,7 @@ export const SITE_DEFAULTS = {
   "site.instagram_url": "",
   "site.x_url": "",
   /* Large site files (Site settings › Large site files): the Sanity CDN copies of the home video and
-     the brochure PDF. Empty = the website's own /hero-bg.mp4 and /Brochure.pdf (src/lib/siteFiles.js). */
+     the brochure PDF. Empty = the built-in CDN copies (src/lib/siteFiles.js). */
   "site.hero_video_url": "",
   "site.brochure_url": "",
   /* Pass upgrades (App text & switches › Pass upgrades). Off unless staff turn it on: the site then

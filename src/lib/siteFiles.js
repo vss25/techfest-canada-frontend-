@@ -1,10 +1,12 @@
 /* =========================================================
    The website's two large files: the home page video and the
-   brochure PDF. Management uploads them in Admin › Site settings
-   › Large site files; they then come from Sanity's CDN (app
-   content keys site.hero_video_url / site.brochure_url, read by
-   useSiteSettings), not from every Vercel deploy. While a key is
-   empty the website uses its own copy (`fallback`).
+   brochure PDF. They live on Sanity's CDN, not in public/ (every
+   Vercel deploy stored them). `fallback` is the copy management
+   uploaded in Admin › Site settings › Large site files; a newer
+   upload there (app content keys site.hero_video_url /
+   site.brochure_url, read by useSiteSettings) takes over without
+   a deploy. Old links to /hero-bg.mp4 and /Brochure.pdf (brochure
+   emails) are redirected to the CDN in vercel.json.
 
    The still frame (hero-poster.jpg, frame 0 of the video) and the
    brochure cover (page 1) stay in public/: they're small.
@@ -13,8 +15,8 @@ import { safeUrl } from "../hooks/useSiteSettings";
 import { isMobileDevice } from "./pwaPlatform";
 
 export const SITE_FILES = {
-  heroVideo: { key: "site.hero_video_url", fallback: "/hero-bg.mp4" },
-  brochure: { key: "site.brochure_url", fallback: "/Brochure.pdf" },
+  heroVideo: { key: "site.hero_video_url", fallback: "https://cdn.sanity.io/files/021qtoci/production/9e77820d673c4b43564d7223bdc0810ecee69792.mp4" },
+  brochure: { key: "site.brochure_url", fallback: "https://cdn.sanity.io/files/021qtoci/production/a35dec187892472e9850a72170ec1168a6e783c7.pdf" },
 };
 
 export const HERO_POSTER = "/hero-poster.jpg";

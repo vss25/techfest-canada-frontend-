@@ -2,7 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Check, X, MessageCircle, UserCheck, UserRoundCheck, Clock, Smartphone, Hand, Mic, Store, BadgeCheck, Star, Package, CalendarClock, Sparkles } from "lucide-react";
 import { fileURL, FEATURES } from "../lib/config";
 import { firstName } from "../lib/auth";
-import { canMessage, canRequest, connectionWith, requestConnection, respondConnection, social, withdrawConnection } from "../lib/social";
+import { canMessage, canRequest, connectionWith, respondConnection, social, withdrawConnection } from "../lib/social";
+import { acceptWithSharing, connectWithSharing } from "../lib/myCard";
 import { confirmDialog, showAlert } from "../lib/ui";
 import { Avatar, IconButton } from "./ui";
 import { BubbleFill, PersonPlusFill } from "./Glyphs";
@@ -26,7 +27,7 @@ export function ConnectionRow({ conn, mode = "invite", unread = 0, lastMessage }
   const navigate = useNavigate();
   const u = conn.user || {};
   const work = [u.jobTitle, u.organization].filter(Boolean).join(" · ");
-  const accept = async () => { if (!(await respondConnection(conn, true))) showAlert("Couldn't accept", social.get().lastError); };
+  const accept = () => acceptWithSharing(conn);
   const decline = async () => { await respondConnection(conn, false); };
   const withdraw = async () => {
     const ok = await confirmDialog({ title: `Withdraw your request to ${u.name}?`, message: "They won't be told. You can send a new request later.", confirm: "Withdraw request", destructive: true });
@@ -68,10 +69,7 @@ export function PersonCard({ person: p, state, rec, onWhy, kind }) {
   const badge = k === "speaker" ? Mic : k === "exhibitor" ? Store : null;
   const BadgeIcon = badge;
 
-  const connect = async () => {
-    if (await requestConnection(p)) showAlert("Request sent", `${firstName(p.name)} will see your request in the app.`);
-    else showAlert("Couldn't send", social.get().lastError || "Try again.");
-  };
+  const connect = () => connectWithSharing(p, { given: firstName(p.name) });
   const withdraw = async () => {
     const ok = await confirmDialog({ title: "Withdraw your request?", message: "They won't be told. You can send a new request later.", confirm: `Withdraw request to ${p.name}`, destructive: true });
     if (ok) await withdrawConnection(conn.conn);
@@ -87,7 +85,7 @@ export function PersonCard({ person: p, state, rec, onWhy, kind }) {
       <div className="row" style={{ gap: 8 }}>
         {conn?.status === "accepted" && <IconButton icon={UserRoundCheck} label={`Connected with ${p.name}`} round small disabled />}
         {conn?.status === "pending" && <IconButton icon={Clock} label="Request sent. Withdraw" round small onClick={withdraw} />}
-        {conn?.status === "incoming" && <IconButton icon={UserCheck} label={`Accept ${p.name}`} round filled small onClick={() => respondConnection(conn.conn, true)} />}
+        {conn?.status === "incoming" && <IconButton icon={UserCheck} label={`Accept ${p.name}`} round filled small onClick={() => acceptWithSharing(conn.conn)} />}
         {!conn && canRequest(p, s) && <IconButton icon={PersonPlusFill} label={`Connect with ${p.name}`} round filled small onClick={connect} />}
         {canMessage(p, s) && <IconButton icon={BubbleFill} label={`Message ${p.name}`} round small onClick={() => navigate(`/chat/${encodeURIComponent(p.id)}`)} />}
       </div>

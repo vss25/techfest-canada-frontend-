@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { client, urlFor, logoScaleOf } from "../utils/sanity";
 import { logoHref } from "../data/logoLinks";
+import { WEBSITE_PARTNER_FILTER } from "../data/sponsors";
 
 const EMPTY_CELLS = Array.from({ length: 10 }, (_, idx) => ({
   _id: `empty-${idx}`,
@@ -14,7 +15,7 @@ export default function PartnerMarquee({ category, title, dark }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const query = `*[_type == "partner" && category == "${category}" && active == true] | order(order asc) {
+    const query = `*[_type == "partner" && category == "${category}" && ${WEBSITE_PARTNER_FILTER}] | order(order asc) {
       _id,
       name,
       logo,

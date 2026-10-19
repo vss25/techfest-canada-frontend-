@@ -4,6 +4,7 @@ import { Cpu, Atom, Lock, Settings, Leaf, Heart, Building2, PenTool, Shield, Zap
 import { client, urlFor, logoScaleOf } from "../utils/sanity";
 import { logoHref } from "../data/logoLinks";
 import { FEATURED_GROUP, PILLAR_GROUPS, SECTOR_GROUPS, ECOSYSTEM_GROUP, matrixGroupOf } from "../data/partnerMatrix";
+import { WEBSITE_PARTNER_FILTER } from "../data/sponsors";
 
 /**
  * PartnerGrid — pillar × sector matrix
@@ -61,10 +62,13 @@ function PartnerTile({ partner, i, dark, accentColor }) {
   const linkProps = href
     ? { href, target: "_blank", rel: "noopener noreferrer", "aria-label": partner.name || "Partner" }
     : {};
+  // The admin panel's description (sponsors): a hover tooltip only, the design stays as it is.
+  const about = typeof partner.description === "string" ? partner.description.trim() : "";
 
   return (
     <TileMotion
       {...linkProps}
+      title={about ? `${partner.name}: ${about}` : undefined}
       className="partner-tile"
       initial={{ opacity: 0, y: 18, scale: 0.97 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
@@ -111,13 +115,14 @@ export default function PartnerGrid({ dark, accent }) {
 
   useEffect(() => {
     client
-      .fetch(`*[_type == "partner" && active == true] | order(coalesce(order, 9999) asc, name asc) {
+      .fetch(`*[_type == "partner" && ${WEBSITE_PARTNER_FILTER}] | order(coalesce(order, 9999) asc, name asc) {
         _id,
         name,
         logo,
         logoScale,
         url,
-        matrixGroup
+        matrixGroup,
+        description
       }`)
       .then((data) => {
         setPartners(Array.isArray(data) ? data : []);

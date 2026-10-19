@@ -37,4 +37,4 @@ export const PARTNER_CATEGORIES = [
 
 export const labelOf = (list, value) => list.find((x) => x.value === value)?.label || value || "";
 
-export const LIVE_NOTE = "Changes appear on the website and the iOS app within about a minute.";
+export const LIVE_NOTE = "Changes appear on the website and the apps within about a minute.";

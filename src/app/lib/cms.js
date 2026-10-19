@@ -1,6 +1,7 @@
 import { SANITY_QUERY_URL, TOPIC_COMPANIES } from "./config";
 import { clock12, parseClock, torontoDate, EVENT_START, EVENT_END } from "./time";
 import { createStore, local } from "./store";
+import { isSponsor, bySponsorOrder } from "../../data/sponsors";
 
 /* =========================================================
    Agenda, speakers and partners, live from the website's CMS
@@ -12,7 +13,9 @@ import { createStore, local } from "./store";
 
 const Q_SESSIONS = `*[_type=="session" && !(_id in path("drafts.**"))]|order(day asc, time asc){_id,sessionId,day,time,endTime,title,type,format,featured,isBreak,pillar,sector,stage,description,speakers[]{name,org},moderator{name,org},polls,qa}`;
 const Q_SPEAKERS = `*[_type=="speaker" && !(_id in path("drafts.**"))]|order(order asc, coalesce(rowPosition,9999) asc){_id,name,title,company,bio,linkedin,speakerType,techPillar,sector,featured,"imageUrl":image.asset->url,"crop":image.crop,"hotspot":image.hotspot,"dims":image.asset->metadata.dimensions}`;
-const Q_PARTNERS = `*[_type=="partner" && active==true]|order(category asc, order asc, name asc){name,category,order,"website":coalesce(url, website),displayName,logoScale,"logo":logo.asset->url}`;
+// Partners shown in the apps: master switch on and the app switch not off (missing = on).
+// Sponsors are the ones in the Featured Partners row (src/data/sponsors.js).
+const Q_PARTNERS = `*[_type=="partner" && active != false && showInApp != false]|order(category asc, order asc, name asc){_id,name,category,order,"website":coalesce(url, website),displayName,logoScale,"logo":logo.asset->url,matrixGroup,description}`;
 
 const CACHE = { sessions: "ttfc.cms.sessions", speakers: "ttfc.cms.speakers", partners: "ttfc.cms.partners" };
 
@@ -203,11 +206,50 @@ function mapPartners(raw) {
     const display = p.displayName || PARTNER_NAMES[name.toLowerCase()] || name.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
     const topics = Object.entries(TOPIC_COMPANIES).filter(([, cs]) => cs.some((c) => c === display || partnerKey(c) === partnerKey(display))).map(([t]) => t);
     return {
-      id: name + (p.category || ""), name, displayName: display, category: p.category || "other",
+      id: name + (p.category || ""), cmsId: p._id || "", name, displayName: display, category: p.category || "other",
       categoryLabel: CATEGORY_LABEL[p.category] || "Supporters", website: p.website || "",
       logo: p.logo ? `${p.logo}?h=160&fit=max&fm=png` : "", scale: Math.min(2.5, Math.max(0.3, (Number(p.logoScale) || 100) / 100)), topics,
+      order: typeof p.order === "number" ? p.order : null,
+      description: typeof p.description === "string" ? p.description.trim() : "",
+      isSponsor: !!p._id && isSponsor({ _id: p._id, matrixGroup: p.matrixGroup }),
     };
   });
+}
+
+// ---------- Sponsors ----------
+
+/** The sponsors (Featured Partners row), in the admin panel's display order. */
+export function sponsorsOf(state = cms.get()) {
+  return state.partners.filter((p) => p.isSponsor).sort(bySponsorOrder);
+}
+
+/* Demo (/app?demo=1): fictional sample sponsors when the CMS has none yet, so the
+   Sponsors section can be seen and reviewed. `?demo=1&sponsors=sample` shows them
+   instead of the real ones (QA screenshots); `?sponsors=live` goes back. */
+const SAMPLE_KEY = "ttfc.demo.sampleSponsors";
+try {
+  const q = new URLSearchParams(window.location.search).get("sponsors");
+  if (q === "sample") local.set(SAMPLE_KEY, "1");
+  if (q === "live") local.set(SAMPLE_KEY, null);
+} catch { /* ignore */ }
+
+export const SAMPLE_SPONSORS = [
+  { id: "sample-northbridge", cmsId: "", name: "Northbridge Robotics", displayName: "Northbridge Robotics", category: "corporateEnterprisePartners",
+    categoryLabel: "Corporate", website: "", logo: "", scale: 1, topics: [], order: 1, isSponsor: true, sample: true,
+    description: "Sample sponsor (demo). Builds warehouse robots that work alongside people, from picking to palletising." },
+  { id: "sample-lakeview", cmsId: "", name: "Lakeview Quantum", displayName: "Lakeview Quantum", category: "startupEcosystemPartners",
+    categoryLabel: "Startups", website: "", logo: "", scale: 1, topics: [], order: 2, isSponsor: true, sample: true,
+    description: "Sample sponsor (demo). Quantum-safe encryption for banks and hospitals, tested with Canadian partners." },
+  { id: "sample-voltgrid", cmsId: "", name: "VoltGrid Energy", displayName: "VoltGrid Energy", category: "corporateEnterprisePartners",
+    categoryLabel: "Corporate", website: "", logo: "", scale: 1, topics: [], order: 3, isSponsor: true, sample: true,
+    description: "Sample sponsor (demo). Software that balances solar, storage and the grid for cities across Ontario." },
+];
+
+/** What the Sponsors section shows: the CMS sponsors; in demo mode the samples when there are none (or when asked). */
+export function sponsorsShown(state = cms.get(), { demo = false } = {}) {
+  const live = sponsorsOf(state);
+  if (demo && (local.get(SAMPLE_KEY) === "1" || !live.length)) return SAMPLE_SPONSORS;
+  return live;
 }
 
 // ---------- Store ----------
@@ -392,14 +434,15 @@ export function featuredSpeakers(at, limit = 3, state = cms.get()) {
   return [...picked, ...fill, ...more].slice(0, limit);
 }
 
-/** Home's Organisations tile: speakers' organisations next, topped up from the partner list. */
+/** Home's Organisations tile: sponsors first, then speakers' organisations next, topped up from the partner list. */
 export function featuredOrganisations(at, limit = 3, state = cms.get()) {
   const partners = state.partners.filter((p) => p.logo);
   const match = (company) => {
     const k = partnerKey(company);
     return k ? partners.find((p) => partnerKey(p.name) === k || partnerKey(p.displayName) === k) : null;
   };
-  const picked = [];
+  const picked = sponsorsOf(state).filter((p) => p.logo).slice(0, limit);
+  if (picked.length === limit) return picked;
   for (const s of state.sessions.filter((x) => isProgramme(x) && x.start > at).sort((a, b) => a.start - b.start)) {
     for (const id of s.speakerIds) {
       const p = match(speakerById(id, state)?.company);

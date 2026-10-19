@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Package, ScanLine, BarChart3, MailCheck,
   Mic2, Handshake, Gem, GalleryHorizontal, House, Settings2, Smartphone, Activity, ShieldAlert, ToggleRight,
   Megaphone, ScrollText, UserCog, Power, KeyRound, FileDown, Landmark, Inbox, CalendarCheck, IdCard, Share2, TicketPlus, BellRing,
-  Award, Store, ShieldCheck, Download,
+  Award, Store, ShieldCheck, Download, GraduationCap,
 } from "lucide-react";
 
 /** Sidebar structure. `to` is relative to /admin. */
@@ -31,6 +31,7 @@ export const NAV = [
       { to: "content/speakers", label: "Speakers", icon: Mic2 },
       { to: "content/partners", label: "Partners", icon: Handshake },
       { to: "content/sponsors", label: "Sponsors", icon: Gem },
+      { to: "content/alumni-logos", label: "Alumni logo strip", icon: GraduationCap },
       { to: "content/sponsor-marquee", label: "Sponsor marquee", icon: GalleryHorizontal },
       { to: "content/home-sponsors", label: "Home sponsors", icon: House },
       { to: "content/settings", label: "Site settings", icon: Settings2 },

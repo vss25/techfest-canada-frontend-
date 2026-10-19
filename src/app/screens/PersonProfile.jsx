@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CalendarClock, CircleCheck, CircleUserRound, Link as LinkIcon, Sparkles, Undo2, UserRoundCheck, UserRoundPlus } from "lucide-react";
+import { CalendarClock, CircleCheck, CircleUserRound, Hand, Link as LinkIcon, Sparkles, Undo2, UserRoundCheck, UserRoundPlus } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth } from "../lib/auth";
-import { canMessage, canRequest, connectionWith, fetchPerson, social, withdrawConnection } from "../lib/social";
+import { canMessage, canRequest, connectionWith, fetchPerson, social, unblockUser, withdrawConnection } from "../lib/social";
 import { acceptWithSharing, connectWithSharing } from "../lib/myCard";
 import { fileURL } from "../lib/config";
 import { publicBadge, recoSignals, slotSummary } from "../lib/people";
@@ -65,7 +65,10 @@ export default function PersonProfile() {
 
   return (
     <div className="page">
-      <TopBar title="" right={!me && <MoreMenu label="More options" items={safetyItems({ type: "user", id: p.id, authorId: p.id, authorName: p.name })} />} />
+      <TopBar title="" right={!me && <MoreMenu label="More options" items={blocked
+        // Web only: Settings has no blocked list yet, so unblocking stays here.
+        ? [{ label: `Unblock ${given}`, icon: Hand, onClick: () => unblockUser(p.id) }]
+        : safetyItems({ type: "user", id: p.id, authorId: p.id, authorName: p.name })} />} />
       <main id="main" className="person-page">
         <div className="profile-hero">
           <Avatar name={p.name} src={fileURL(p.avatarUrl)} size={96} tierRing={!!badge} />

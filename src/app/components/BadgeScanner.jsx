@@ -5,6 +5,7 @@ import { isDemoApi } from "../lib/api";
 import { demoConnectFromCode, demoKnows } from "../lib/demo";
 import { scanWithSharing } from "../lib/myCard";
 import { parseQR } from "../lib/qr";
+import { Camera } from "lucide-react";
 import { Sheet } from "./ui";
 
 /* =========================================================
@@ -18,11 +19,12 @@ export default function BadgeScanner({ onClose, onConnected }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [denied, setDenied] = useState(false);
 
   const handle = async (raw) => {
     if (busy || !raw) return;
     const p = parseQR(raw);
-    if (!p) { setError("That isn't a TTFC code. Try their connect QR in the TTFC app."); return; }
+    if (!p) { setError("That's not a TTFC code."); return; }
     if (p.kind === "session") { onClose(); navigate(`/session/${encodeURIComponent(p.id)}/live`); return; }
     if (p.kind === "pass") { setError("That's a door pass. Ask for their connect QR (Profile › Connect QR)."); return; }
     // Demo mode keeps codes it can't look up (no user id, or someone outside the demo) on this device.
@@ -35,20 +37,29 @@ export default function BadgeScanner({ onClose, onConnected }) {
   };
 
   return (
-    <Sheet open onClose={onClose} title="Scan a badge">
+    <Sheet open onClose={onClose} title="Scan" actions={{ left: <span />, right: <button type="button" className="link-btn sheet-cancel" onClick={onClose}>Cancel</button> }}>
       <div className="sheet-body stack">
-        <div style={{ borderRadius: 18, overflow: "hidden", background: "#000", aspectRatio: "1" }}>
-          <Scanner
-            onScan={(codes) => handle(codes?.[0]?.rawValue)}
-            onError={() => setError("Allow camera access to scan, or ask them to share their code.")}
-            formats={["qr_code"]}
-            components={{ finder: true }}
-            styles={{ container: { width: "100%", height: "100%" } }}
-          />
+        <div className="scan-view">
+          {denied ? (
+            <div className="scan-denied">
+              <Camera aria-hidden="true" />
+              <b>Camera access is off</b>
+              <span>Allow the camera for this site in your browser's settings to scan badges.</span>
+            </div>
+          ) : (
+            <Scanner
+              onScan={(codes) => handle(codes?.[0]?.rawValue)}
+              onError={() => setDenied(true)}
+              formats={["qr_code"]}
+              components={{ finder: true }}
+              styles={{ container: { width: "100%", height: "100%" } }}
+            />
+          )}
+          <div className="scan-caption" role={error ? "alert" : undefined}>
+            <b className={error ? "scan-error" : undefined}>{busy ? "Connecting…" : error || "Point at a TTFC badge, pass or session QR"}</b>
+            <span>Badge → instant in-person connection · Pass → verify · Session → join the poll</span>
+          </div>
         </div>
-        {busy && <p className="center small" role="status" style={{ margin: 0 }}>Connecting…</p>}
-        {error && <p className="error-text center" role="alert" style={{ margin: 0 }}>{error}</p>}
-        <p className="muted small center" style={{ margin: 0 }}>Point your camera at their connect QR. You're connected as "met in person" and you both get each other's card.</p>
       </div>
     </Sheet>
   );

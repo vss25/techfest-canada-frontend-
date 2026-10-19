@@ -622,7 +622,7 @@ a { color: var(--pur-alt); }
 .countdown { display: flex; gap: clamp(10px, 4vw, 16px); align-items: flex-end; }
 .countdown .unit b { display: block; font-size: clamp(24px, 8vw, 30px); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .countdown .unit span { font-size: 11px; color: var(--tx2); font-weight: 500; }
-.countdown--hero .unit b { font-size: clamp(28px, 10.5vw, 40px); }
+.countdown--hero .unit b { font-size: 30px; }
 .hero-session-title { font-size: 19px; font-weight: 700; margin: 0; line-height: 1.25; }
 .live-pill {
   display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: 999px;
@@ -1304,3 +1304,34 @@ textarea.input--ios { min-height: 120px; }
 .live-float-x { width: 26px; height: 26px; display: grid; place-items: center; border: 0; background: none; color: rgba(255, 255, 255, 0.6); padding: 0; position: relative; }
 .live-float-x::after { content: ""; position: absolute; inset: -9px -6px; }
 .live-float-x svg { width: 11px; height: 11px; stroke-width: 3; }
+
+/* Organisations (iOS PartnersSection, expanded) and the partner sheet (PartnerDetailView). */
+.attending-h { flex: 1; display: flex; align-items: center; gap: 8px; margin: 0; font-size: 22.4px; font-weight: 700; }
+.attending-h svg { width: 22px; height: 22px; color: var(--pur); }
+.fewer-btn { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--pur-tint); color: var(--pur-alt); font-size: 12px; font-weight: 600; }
+.fewer-btn svg { width: 12px; height: 12px; stroke-width: 3; }
+.partner-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 10px; }
+.partner-tile { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; text-align: center; }
+.partner-logo { height: 62px; padding: 10px; border-radius: 18px; background: #fff; border: 1px solid var(--border); display: grid; place-items: center; overflow: hidden; }
+.partner-logo img { max-width: 100%; object-fit: contain; display: block; }
+.partner-name { font-size: 11px; font-weight: 600; color: var(--tx2); }
+.all-btn { display: flex; align-items: center; justify-content: center; gap: 6px; height: 44px; border: 0; border-radius: 999px; background: var(--pur-tint); color: var(--pur-alt); font-size: 14px; font-weight: 600; }
+.all-btn svg { width: 15px; height: 15px; }
+.partner-sheet { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 18px; padding: 4px 20px 20px; }
+.partner-hero { height: 120px; padding: 18px; border-radius: 26px; background: #fff; display: grid; place-items: center; }
+.partner-hero img { max-width: 100%; object-fit: contain; }
+.partner-title { margin: 0; font-size: 26.9px; font-weight: 700; line-height: 1.15; }
+.partner-people-h { margin: 0; font-size: 20.2px; font-weight: 600; }
+.feed-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 50px 24px; text-align: center; }
+.feed-empty svg { width: 30px; height: 30px; color: var(--pur); }
+.feed-empty p { margin: 0; font-size: 14px; color: var(--tx2); }
+/* Badge scanner (iOS BadgeScannerView): the camera with the caption over its bottom edge. */
+.scan-view { position: relative; border-radius: 18px; overflow: hidden; background: #000; aspect-ratio: 1; }
+.scan-caption { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 6px; padding: 16px; text-align: center; background: rgba(0, 0, 0, 0.6); color: #fff; }
+.scan-caption b { font-size: 13px; font-weight: 600; }
+.scan-caption span { font-size: 11px; color: rgba(255, 255, 255, 0.7); }
+.scan-error { color: var(--gold); }
+.scan-denied { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 0 40px 80px; text-align: center; color: #fff; }
+.scan-denied svg { width: 36px; height: 36px; opacity: 0.6; }
+.scan-denied b { font-size: 15.7px; font-weight: 600; }
+.scan-denied span { font-size: 13px; color: rgba(255, 255, 255, 0.7); }

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Bell, BarChart3, Building2, CalendarDays, ChevronRight, ChevronUp, Circle, Eye, ImagePlus, ListChecks, Megaphone, MessageSquareQuote, Moon, Smartphone, Sun, X, UserRoundPen } from "lucide-react";
+import { Bell, BarChart3, House as HomeIcon, Building2, CalendarDays, ChevronRight, ChevronUp, Circle, Eye, ImagePlus, ListChecks, Megaphone, MessageSquareQuote, Moon, Smartphone, Sun, X, UserRoundPen } from "lucide-react";
 import { useStore, local } from "../lib/store";
 import { auth, can, firstName, isSignedIn, signOut } from "../lib/auth";
 import { cms, featuredOrganisations, featuredSpeakers, heroSession, pollsOn, qaOn, speakerById, timeRange, speakerLine } from "../lib/cms";
 import { content, flag, liveFlags, optionalText, text } from "../lib/content";
-import { refreshFeed, social, bookmarks } from "../lib/social";
+import { markActivitySeen, refreshActivity, refreshFeed, social, bookmarks } from "../lib/social";
 import { notificationItems, unreadCount } from "../lib/notifications";
 import { countdownTarget, EVENT_END, parts, shortCountdown, showsSessionHero, twoDigits } from "../lib/time";
 import { fileURL, FEATURES } from "../lib/config";
@@ -18,6 +18,7 @@ import { WelcomeCard } from "../components/AppNotices";
 import SiteAnnouncement from "../components/SiteAnnouncement";
 import PostCard from "../components/PostCard";
 import Composer from "../components/Composer";
+import Coachmark from "../components/Coachmark";
 
 /* =========================================================
    Home, merged with the feed (iOS FeedView / HomeTabView):
@@ -211,6 +212,8 @@ export default function Home() {
   const pts = useStore(points);
 
   useEffect(() => { if (signedIn) { refreshFeed(); refreshPoints(); } }, [signedIn]);
+  // You've seen the feed's activity by opening Home (iOS ActivityService.markSeen("feed")).
+  useEffect(() => { if (signedIn) refreshActivity().then(() => markActivitySeen("feed")); }, [signedIn]);
 
   // The feed's bar (compose prompt + bell) pins to the top, and the session bar floats above the
   // tab bar, once Organisations has scrolled up under the top chrome. A plain scroll check: the
@@ -345,7 +348,7 @@ export default function Home() {
               <Button variant="primary" onClick={() => signOut()}>Sign in</Button>
             </div>
           ) : !s.feedLoaded ? <Spinner label="Loading the feed" /> : posts.length === 0 ? (
-            <div className="empty">
+            <div className="feed-empty">
               <MessageSquareQuote aria-hidden="true" />
               <p>{s.feedError ? "Couldn't load the feed. Pull down or come back in a moment." : text(ct, "feed.empty", "Be the first to post. Everyone at TTFC will see it.")}</p>
             </div>
@@ -357,6 +360,7 @@ export default function Home() {
 
       {pinned && <MiniBar now={now} c={c} onTap={() => window.scrollTo({ top: 0, behavior: "smooth" })} />}
       {composer && canPost && <Composer onClose={() => setComposer(false)} />}
+      <Coachmark id="home" title="Your TTFC home" message="What's on, then the feed. Scroll down for posts; discussions and groups are in Chats." icon={HomeIcon} />
     </div>
   );
 }

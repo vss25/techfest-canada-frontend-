@@ -3,14 +3,14 @@ import { Link } from "react-router-dom";
 import { BadgeCheck, Briefcase, Camera, Flag, Hand, Heart, Link2, Loader2, MessageCircle, MessageSquare, MoreHorizontal, Send, Share2, Trash2, ArrowUpRight, Megaphone, X as XIcon } from "lucide-react";
 import { useStore } from "../lib/store";
 import { cms } from "../lib/cms";
-import { auth, can, firstName, isSignedIn } from "../lib/auth";
+import { auth, can, isSignedIn } from "../lib/auth";
 import { deletePost, social, toggleLike } from "../lib/social";
 import { blockFlow, reportFlow } from "../lib/safety";
 import { fileURL, FEATURES } from "../lib/config";
 import { mentionPath, splitMentions } from "../lib/mentions";
 import { postTime } from "../lib/time";
 import { prepareShare, shareSourceOf, sharePrepared } from "../lib/shareCard";
-import { confirmDialog, safeHref, showAlert } from "../lib/ui";
+import { confirmDialog, givenName, safeHref, showAlert } from "../lib/ui";
 import { Avatar, IconButton, Kicker } from "./ui";
 import Comments from "./Comments";
 
@@ -136,8 +136,8 @@ export default function PostCard({ post }) {
         {menu && (
           <div className="menu" role="menu" onMouseLeave={() => setMenu(false)}>
             {mine && <button type="button" role="menuitem" className="danger" onClick={remove}><Trash2 aria-hidden="true" width={16} />Delete post</button>}
-            {!mine && <button type="button" role="menuitem" onClick={reportPost}><Flag aria-hidden="true" width={16} />Report post</button>}
-            {!mine && post.kind !== "announcement" && post.authorId && <button type="button" role="menuitem" className="danger" onClick={block}><Hand aria-hidden="true" width={16} />Block {firstName(post.authorName)}</button>}
+            {!mine && <button type="button" role="menuitem" onClick={reportPost}><Flag aria-hidden="true" width={16} />Report</button>}
+            {!mine && post.kind !== "announcement" && post.authorId && <button type="button" role="menuitem" className="danger" onClick={block}><Hand aria-hidden="true" width={16} />Block {givenName(post.authorName)}</button>}
             {staffCanRemove && <button type="button" role="menuitem" className="danger" onClick={remove}><Trash2 aria-hidden="true" width={16} />Remove post (staff)</button>}
           </div>
         )}

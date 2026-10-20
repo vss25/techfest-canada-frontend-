@@ -7,6 +7,8 @@ import { registerServiceWorker } from "./lib/pwa";
 import "./lib/theme";
 import { desktopGated } from "./lib/desktopGate";
 import { track } from "../lib/pwaEvents";
+import { recordInviteVisit } from "./lib/inviteVisit";
+import { API } from "./lib/config";
 import App from "./App.jsx";
 
 // Computers get the "made for your phone" page instead of the app (lib/desktopGate.js).
@@ -16,6 +18,9 @@ const DesktopGate = lazy(() => import("./screens/DesktopGate"));
 if (window.location.pathname === "/app") {
   window.history.replaceState(window.history.state, "", "/app/" + window.location.search + window.location.hash);
 }
+
+// Opened from the app invite email's button (#r=<token>): count the visit, then tidy the address (lib/inviteVisit.js).
+recordInviteVisit(API);
 
 const gated = desktopGated();
 if (gated) {

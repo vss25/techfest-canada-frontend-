@@ -3,20 +3,22 @@
    The server decides (backend services/teamRoles.js and
    services/appRights.js); this copy of the same rules only
    previews a person's rights while their type is being edited.
-   Six types (Oct 19 2026). VIP is a yes / no switch on the
-   person, not a type: it gives no rights of its own.
+   Seven types: Media since Oct 20 2026, and the staff type is
+   called "Staff" (it was "Organizer"). VIP is a yes / no switch
+   on the person, not a type: it gives no rights of its own.
 ========================================================= */
 
-export const PERSON_TYPES = ["attendee", "speaker", "exhibitor", "staff", "vendor", "volunteer"];
+export const PERSON_TYPES = ["attendee", "speaker", "exhibitor", "staff", "vendor", "volunteer", "media"];
 
 /** One person's type, on badges and in the type editor. */
 export const TYPE_LABELS = {
   attendee: "Delegate",
   speaker: "Speaker",
   exhibitor: "Exhibitor",
-  staff: "Organizer",
+  staff: "Staff",
   vendor: "Vendor",
   volunteer: "Volunteer",
+  media: "Media",
 };
 
 /** The Attendee Type filter: the organiser's list, in their order and words. */
@@ -25,8 +27,9 @@ export const TYPE_FILTER_OPTIONS = [
   { key: "speaker", label: "Speakers" },
   { key: "exhibitor", label: "Exhibitors" },
   { key: "volunteer", label: "Volunteers" },
-  { key: "staff", label: "Organizers" },
+  { key: "staff", label: "Staff" },
   { key: "vendor", label: "Vendors" },
+  { key: "media", label: "Media" },
 ];
 
 export const VIP_LABEL = "VIP";
@@ -108,4 +111,4 @@ export function typeTags(types = [], role = "user") {
   return types.filter((t) => PERSON_TYPES.includes(t) && t !== "attendee" && !(t === "staff" && role === "admin") && !(t === "volunteer" && role === "volunteer"));
 }
 
-export const TYPE_TONE = { speaker: "purple", exhibitor: "purple", staff: "pink", vendor: "neutral", volunteer: "purple", attendee: "neutral" };
+export const TYPE_TONE = { speaker: "purple", exhibitor: "purple", staff: "pink", vendor: "neutral", volunteer: "purple", attendee: "neutral", media: "purple" };

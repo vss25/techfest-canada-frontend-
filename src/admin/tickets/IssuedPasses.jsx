@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, CalendarCheck, Copy, Eye, FileText, Mail, MailCheck, Paperclip, Pencil, Search, Send, TicketPlus, Trash2 } from "lucide-react";
+import { BookOpen, CalendarCheck, Camera, Check, Copy, Eye, FileText, Hand, Mail, MailCheck, Paperclip, Pencil, Search, Send, Star, TicketPlus, Trash2 } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useAdmin } from "../adminContext";
@@ -7,7 +7,7 @@ import { useToast } from "../toastContext";
 import { useInitialQuery } from "../search/deepLink";
 import {
   Badge, Banner, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, IconButton, Input, LoadingState, PageHeader,
-  Select, StatTile, TableWrap,
+  Select, StatTile, TableWrap, focusRing,
 } from "../ui";
 import { num, when } from "../format";
 import { EmailFrame, ListField } from "./SpeakerEmailCompose";
@@ -42,6 +42,13 @@ import { EXTRAS } from "../people/peopleMeta";
    create it, then send it (GET / answers canIssue; the server limits
    them to one at a time). Editing, deleting, the email template and
    exhibitor passes are management only.
+   Who it's for (Oct 20 2026, Give a pass only): VIP, Media and
+   Volunteer chips. VIP and Media are saved on the pass (the account
+   that claims it is a VIP / Media too) and pick the Power Pass;
+   Volunteer picks the Connect Pass (the Volunteer type itself is on
+   their app account: People, management). Staff can still change the
+   pass, and a pass already given never changes by itself. VIPs and
+   Media get the CxO Breakfasts on Automatic.
 ========================================================= */
 
 const KINDS = {
@@ -75,11 +82,20 @@ const extrasForm = (row) => Object.fromEntries(EXTRAS.map((x) => [x.key, extraKe
 /** On Automatic, does this pass type include it? (GET /tiers autoExtras; an older server: the CxO row in its list.) */
 const autoHas = (tier, key) => (tier?.autoExtras ? !!tier.autoExtras[key] : key === "cxo" && (tier?.includes || []).some(([head]) => /CxO Breakfast/i.test(head)));
 const ZONES = ["Zone A - Harbour Ballroom Foyer", "Zone B - Pier 4 & 5 Foyer"];
+/** Who the pass is for (Give a pass): `saved` marks go on the pass; Volunteer only picks the pass. */
+const MARKS = [
+  { key: "vip", label: "VIP", icon: Star, saved: true },
+  { key: "media", label: "Media", icon: Camera, saved: true },
+  { key: "volunteer", label: "Volunteer", icon: Hand, saved: false },
+];
+/** The pass each mark picks (GET /tiers markTiers; an older server: these). */
+const MARK_TIERS = { vip: "power", media: "power", volunteer: "connect" };
+const marksForm = (row) => ({ vip: !!row?.vip, media: !!row?.media, volunteer: false });
 
 const boothText = (b) => [b?.booth && `Booth ${b.booth}`, b?.zone].filter(Boolean).join(" · ");
 
 /** Create or edit a pass: who, which pass, the email's wording; live preview on the right. */
-function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, emailFields = {}, onClose, onSaved }) {
+function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, markTiers = MARK_TIERS, emailFields = {}, onClose, onSaved }) {
   const toast = useToast();
   const BASE = kind.base;
   const [form, setForm] = useState(() => (row ? {
@@ -91,19 +107,34 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, emailFields =
   } : { ...EMPTY, tier: defaultTier || "influence" }));
   const [saving, setSaving] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
+  const [marks, setMarks] = useState(() => marksForm(row));
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
   const complete = form.name.trim().split(/\s+/).length >= 2;
   const { extras, ...fields } = form;
   // New passes send every switch; an edit sends the ones that changed.
   const was = row ? extrasForm(row) : null;
   const sentExtras = Object.fromEntries(EXTRAS.filter((x) => !was || extras[x.key] !== was[x.key]).map((x) => [x.key, extraValue(extras[x.key])]));
-  const withExtras = { ...fields, ...(Object.keys(sentExtras).length ? { extras: sentExtras } : {}) };
+  // VIP / Media on the pass (Give a pass only): a new pass sends both, an edit the ones that changed.
+  const wasMarks = marksForm(row);
+  const sentMarks = kind.booth ? {} : Object.fromEntries(MARKS.filter((m) => m.saved && (!row || marks[m.key] !== wasMarks[m.key])).map((m) => [m.key, marks[m.key]]));
+  const withExtras = { ...fields, ...sentMarks, ...(Object.keys(sentExtras).length ? { extras: sentExtras } : {}) };
   const body = kind.booth ? withExtras : (({ booth, zone, passes, ...rest }) => rest)(withExtras); // eslint-disable-line no-unused-vars
   // The preview always gets every switch (the server shows the pass as it would be saved).
   const allExtras = Object.fromEntries(EXTRAS.map((x) => [x.key, extraValue(extras[x.key])]));
-  const preview = useLivePreview(`${BASE}/preview`, { ...(complete ? body : { ...body, name: "Jane Doe" }), extras: allExtras });
+  const preview = useLivePreview(`${BASE}/preview`, { ...(complete ? body : { ...body, name: "Jane Doe" }), ...(kind.booth ? {} : { vip: marks.vip, media: marks.media }), extras: allExtras });
   const tier = tiers.find((t) => t.key === form.tier);
   const setExtra = (key) => (e) => setForm((f) => ({ ...f, extras: { ...f.extras, [key]: e.target.value } }));
+  // On Automatic the CxO Breakfasts also come with a VIP or Media pass.
+  const autoOn = (key) => autoHas(tier, key) || (key === "cxo" && !kind.booth && (marks.vip || marks.media));
+  /** A mark on or off. Switching one on picks its pass for a new pass (VIP / Media: Power; Volunteer: Connect, unless
+      VIP or Media is on too); staff can still change the pass. An edit never changes the pass. */
+  const toggleMark = (key) => {
+    const next = { ...marks, [key]: !marks[key] };
+    setMarks(next);
+    if (row || !next[key]) return;
+    const pick = next.vip || next.media ? markTiers.vip || "power" : next.volunteer ? markTiers.volunteer || "connect" : "";
+    if (pick && tiers.some((t) => t.key === pick)) setForm((f) => ({ ...f, tier: pick }));
+  };
   // What the email lists: the server's preview (with these switches), else the pass type's own list.
   const includes = preview.data?.includes || (tier?.includes || []).map(([head]) => head);
   const attachment = preview.data?.attachments?.[0];
@@ -165,6 +196,29 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, emailFields =
               <Field label="Passes allotted">{(id) => <Input id={id} value={form.passes} onChange={set("passes")} placeholder="4" maxLength={20} />}</Field>
             </div>
           )}
+          {!kind.booth && (
+            <fieldset className="rounded-xl border border-ttfc-line px-3 py-3">
+              <legend className="px-1 text-sm font-semibold">Who it's for (optional)</legend>
+              <div role="group" aria-label="Who it's for" className="flex flex-wrap gap-2">
+                {MARKS.map((m) => {
+                  const on = marks[m.key];
+                  const Icon = m.icon;
+                  return (
+                    <button key={m.key} type="button" aria-pressed={on} onClick={() => toggleMark(m.key)}
+                      className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}>
+                      {on ? <Check className="h-3 w-3" aria-hidden="true" /> : <Icon className="h-3 w-3" aria-hidden="true" />}
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2.5 text-xs leading-relaxed text-ttfc-muted">
+                {row
+                  ? "VIP and Media are saved on this pass: the account that uses it is a VIP / Media too. Changing them here doesn't change the pass."
+                  : "VIP and Media pick the Power Pass with the CxO Breakfasts, Volunteer the Connect Pass. You can still change the pass below. VIP and Media are saved on the pass; the Volunteer type is set on their app account in People (management)."}
+              </p>
+            </fieldset>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Pass" hint={tier ? `Access: ${tier.access}` : undefined}>
               {(id) => (
@@ -187,7 +241,7 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, emailFields =
                 <Field key={x.key} label={x.label} hint={extras[x.key] === "auto" ? `Automatic: ${x.auto}.` : undefined}>
                   {(id) => (
                     <Select id={id} value={extras[x.key]} onChange={setExtra(x.key)}>
-                      <option value="auto">Automatic ({autoHas(tier, x.key) ? "Yes" : "No"})</option>
+                      <option value="auto">Automatic ({autoOn(x.key) ? "Yes" : "No"})</option>
                       <option value="yes">Yes</option>
                       <option value="no">No</option>
                     </Select>
@@ -405,6 +459,12 @@ function PassesPage({ kindName }) {
                   <td>
                     <span className="block font-semibold">{r.label || r.tierLabel}</span>
                     {r.label && <span className="block text-xs text-ttfc-muted">{r.tierLabel}</span>}
+                    {(r.vip || r.media) && (
+                      <span className="mt-1 flex flex-wrap gap-1">
+                        {r.vip && <Badge tone="orange">VIP</Badge>}
+                        {r.media && <Badge tone="purple">Media</Badge>}
+                      </span>
+                    )}
                     {!r.rsvp && <span className="block text-[11px] text-ttfc-dim">No RSVP button</span>}
                     {EXTRAS.filter((x) => typeof (r.extras ? r.extras[x.key]?.override : x.key === "cxo" ? r.cxoBreakfast : null) === "boolean").map((x) => {
                       const on = r.extras ? r.extras[x.key].override : r.cxoBreakfast;
@@ -436,6 +496,7 @@ function PassesPage({ kindName }) {
 
       {editing && tiers.length > 0 && (
         <PassDrawer kind={kind} row={editing.row} tiers={tiers} defaultTier={tiersApi.data?.defaultTier} defaultLabel={tiersApi.data?.defaultLabel || ""}
+          markTiers={tiersApi.data?.markTiers || MARK_TIERS}
           emailFields={tiersApi.data || {}} onClose={() => setEditing(null)}
           onSaved={(row, isNew) => { upsert(row, isNew); if (isNew) { setSending(row); reload(); } }} />
       )}

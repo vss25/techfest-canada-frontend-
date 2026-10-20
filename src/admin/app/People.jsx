@@ -72,7 +72,7 @@ export default function People() {
                     <td>
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-semibold">{u.name}</span>
-                        {u.role === "admin" && <Badge tone="pink">Organizer</Badge>}
+                        {u.role === "admin" && <Badge tone="pink">Staff</Badge>}
                         {u.role === "volunteer" && <Badge tone="purple">Volunteer</Badge>}
                         {u.vip && <Badge tone={VIP_TONE}>{VIP_LABEL}</Badge>}
                         {typeTags(u.types, u.role).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}

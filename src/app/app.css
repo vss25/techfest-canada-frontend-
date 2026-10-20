@@ -240,6 +240,13 @@ a { color: var(--pur-alt); }
   border-radius: 999px;
 }
 .tab svg { width: 27px; height: 27px; }
+/* Home: the TTFC mark (TabBar.jsx), the logo on the active tab, its shape in the tab colour otherwise. */
+.tab-mark { width: 20px; height: 26px; display: block; margin: 0.5px 0; }
+.tab-mark--mono {
+  background: currentColor;
+  -webkit-mask: url(/app/brand/share-mark.png) center / contain no-repeat;
+  mask: url(/app/brand/share-mark.png) center / contain no-repeat;
+}
 .tab[aria-current="page"] { color: var(--tab-on); background: var(--glass-pill); }
 .tab-dot { position: absolute; top: 5px; left: calc(50% + 10px); width: 10px; height: 10px; border-radius: 50%; background: var(--red); border: 2px solid var(--glass); }
 
@@ -1195,6 +1202,77 @@ textarea.input--ios { min-height: 120px; }
 .profile-org { font-size: 13px; font-weight: 600; color: var(--pur); }
 :root:not([data-theme="light"]) .profile-org { color: var(--pur); }
 .profile-tagline { font-size: 13px; font-weight: 500; color: var(--tx2); margin-top: 2px; }
+/* Your pass type on your own Profile screen (Oct 20 2026, lib/profileTag.js), on the upper half of the screen only
+   (along the top and down both sides, fading out by the middle):
+   - .profile-glow: the soft glow inward, under the header and its buttons (z 20), over the page; breathes slowly.
+   - .profile-glow-edge: the 3px line at the very edge, over the header but clear of its buttons (they sit 12px in),
+     under sheets and toasts; a soft highlight sweeps along its top edge every 7 s.
+   Both grow outward from the top centre when the screen opens. Transform and opacity only; paused while the page
+   is hidden (.is-paused); none of it moves with prefers-reduced-motion. Neither takes a tap. The pill under your
+   name has the colour and an icon only. */
+.profile-glow, .profile-glow-edge {
+  position: fixed; inset: 0; pointer-events: none; border-radius: 40px; transform-origin: 50% 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 55%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 55%);
+}
+.profile-glow { z-index: 19; animation: profile-glow-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.profile-glow::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  box-shadow: inset 0 0 26px 2px rgba(var(--tag-rgb), 0.7);
+  animation: profile-glow-breathe 3s ease-in-out 0.7s infinite alternate;
+}
+.profile-glow-edge { z-index: 22; overflow: hidden; box-shadow: inset 0 0 0 3px var(--tag); animation: profile-edge-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.profile-glow-sweep {
+  position: absolute; top: 0; left: 0; width: 150px; height: 18px; opacity: 0; will-change: transform, opacity;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9) 50%, transparent) top / 100% 3px no-repeat,
+    radial-gradient(60% 100% at 50% 0, rgba(255, 255, 255, 0.32), transparent 70%);
+  animation: profile-glow-sweep 7s ease-in-out 1.4s infinite;
+}
+.profile-glow.is-paused, .profile-glow.is-paused::after, .profile-glow-edge.is-paused, .profile-glow-edge.is-paused .profile-glow-sweep { animation-play-state: paused; }
+@keyframes profile-glow-in { from { opacity: 0; transform: scaleX(0.7); } to { opacity: 1; transform: none; } }
+@keyframes profile-edge-in { from { opacity: 0; transform: scaleX(0.35); } to { opacity: 1; transform: none; } }
+@keyframes profile-glow-breathe { from { opacity: 1; } to { opacity: 0.75; } }
+@keyframes profile-glow-sweep {
+  0% { transform: translateX(-150px); opacity: 0; }
+  3%, 17% { opacity: 1; }
+  22%, 100% { transform: translateX(100vw); opacity: 0; }
+}
+@keyframes profile-tag-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
+/* The pill: the pass colour and a small icon in its text colour, no words. */
+.profile-tag {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; align-self: center; margin-top: 8px;
+  width: 64px; height: 30px; border-radius: 999px; background: var(--tag); color: var(--tag-text);
+  box-shadow: 0 3px 12px rgba(var(--tag-rgb), 0.35);
+  animation: profile-tag-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) 0.15s both;
+}
+.profile-tag svg { width: 17px; height: 17px; flex: none; }
+@media (prefers-reduced-motion: reduce) {
+  .profile-glow, .profile-glow::after, .profile-glow-edge, .profile-tag { animation: none; }
+  .profile-glow-sweep { display: none; }
+}
+/* The TTFC brand (Oct 20 2026, the organiser: "add branding colors/logo … Ensure it doesn't impact the UX"), decorative
+   only: the logo mark in the Home and Profile header rows (components/BrandMark.jsx), a 2px hairline in the logo's
+   colours under the screen headers (TopBar, the Schedule header; Profile has its own under your header) and on Home's
+   divider under the hero. Buttons, links, toggles and the tab bar keep the purple accent; no gradient text; the pass
+   colours (Profile) are never used for it. */
+:root { --brand-gradient: linear-gradient(90deg, #E8458B, #7A3FD1 50%, #F5A623); }
+.brand-mark {
+  display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none;
+  padding: 0; border: 0; border-radius: 12px; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.brand-mark img { width: 22px; height: 28px; display: block; }
+/* The tap: a quick springy pop (transform only); none with reduced motion. */
+.brand-mark img.is-popping { animation: brand-pop 350ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes brand-pop { 0% { transform: none; } 35% { transform: scale(1.15) rotate(-8deg); } 65% { transform: scale(1.05) rotate(8deg); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .brand-mark img.is-popping { animation: none; } }
+.topbar-title:has(.brand-mark) { display: flex; justify-content: center; }
+.topbar--brand::after, .sched-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--brand-gradient); pointer-events: none; }
+.sched-head::after { bottom: -1px; }
+.home-top { position: relative; }
+.home-brand { position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); }
+.hero .rule { background: var(--brand-gradient); border-radius: 2px; }
+.brand-hairline { display: block; align-self: stretch; height: 3px; margin-top: 2px; border-radius: 3px; background: var(--brand-gradient); }
 .info-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: var(--r-control); background: var(--elevated); border: 1px solid var(--border); color: var(--tx2); font-size: 12px; font-weight: 500; }
 .info-pill svg { width: 11px; height: 11px; }
 .edit-link { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; color: var(--pur); font-size: 12.5px; font-weight: 600; text-decoration: none; }

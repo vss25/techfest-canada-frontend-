@@ -43,7 +43,7 @@ export const passName = (key) => (key === "speaker" ? "Speaker Pass" : `${PASS_T
 /** The meals and events staff can add to (or take off) one pass, each Automatic / Yes / No (backend
     services/passExtras.js, same keys and order). `auto`: who gets it on Automatic. */
 export const EXTRAS = [
-  { key: "cxo", label: "CxO Breakfasts", short: "CxO", auto: "Apex and Speaker Passes, and speakers on any pass" },
+  { key: "cxo", label: "CxO Breakfasts", short: "CxO", auto: "Apex and Speaker Passes, speakers, VIPs and media on any pass" },
   { key: "lunch", label: "Networking Luncheons", short: "Lunch", auto: "Influence, Power, Apex and Speaker Passes" },
   { key: "gala", label: "Gala Dinner & Networking Reception", short: "Gala", auto: "Power, Apex and Speaker Passes" },
   { key: "awards", label: "Catalyst Awards Night", short: "Awards", auto: "Power, Apex and Speaker Passes" },

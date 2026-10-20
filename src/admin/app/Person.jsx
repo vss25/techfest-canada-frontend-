@@ -174,7 +174,7 @@ function PersonView({ id }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{u.name}</h1>
-            {u.role === "admin" && <Badge tone="pink">Organizer</Badge>}
+            {u.role === "admin" && <Badge tone="pink">Staff</Badge>}
             {u.role === "volunteer" && <Badge tone="purple">Volunteer</Badge>}
             {u.vip && <Badge tone={VIP_TONE}>{VIP_LABEL}</Badge>}
             {typeTags(u.effectiveTypes, u.role).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}

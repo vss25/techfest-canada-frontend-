@@ -489,7 +489,9 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
 
   // Account
   if (is("GET", "social/me")) return done({ ...card(ME), email: s.me.email, contactCard: contactCardDTO() });
-  if (is("GET", "auth/me")) return done({ _id: ME, name: s.me.name, email: s.me.email, role: "user", jobTitle: s.me.jobTitle, organization: s.me.organization, linkedinUrl: s.me.linkedinUrl, country: s.me.country, topics: s.me.topics, tagline: s.me.tagline, appOnboarded: true, termsVersion: "2026-10-09", tickets: s.tickets, types: s.me.types || ["attendee"], rights: s.me.rights });
+  if (is("GET", "auth/me")) return done({ _id: ME, name: s.me.name, email: s.me.email, role: "user", jobTitle: s.me.jobTitle, organization: s.me.organization, linkedinUrl: s.me.linkedinUrl, country: s.me.country, topics: s.me.topics, tagline: s.me.tagline, appOnboarded: true, termsVersion: "2026-10-09", tickets: s.tickets, types: s.me.types || ["attendee"], rights: s.me.rights,
+    // As the server works it out (backend services/profileTag.js): the demo attendee holds a Connect Pass.
+    profileTag: s.tickets?.length ? { key: "pass", label: "Connect" } : null });
   if (is("POST", "auth/refresh")) return { token: DEMO_TOKEN };
   if (is("PATCH", "profile")) {
     const allowed = ["name", "jobTitle", "organization", "linkedinUrl", "country", "tagline", "topics", "meetingSpot", "availabilitySlots"];

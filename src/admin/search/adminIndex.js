@@ -7,7 +7,7 @@
    sidebar does. Settings open their page with ?highlight=<key>
    (AdminShell scrolls to it and flashes it).
 ========================================================= */
-import { CalendarClock, Tag, KeyRound, LayoutGrid, ToggleRight, TicketPlus, UserPlus, BellRing, Hash, Linkedin, MailOpen } from "lucide-react";
+import { CalendarClock, Tag, KeyRound, LayoutGrid, ToggleRight, TicketPlus, UserPlus, BellRing, Hash, Linkedin, MailOpen, Users } from "lucide-react";
 import { NAV } from "../nav";
 import { REGISTRY, SCOPES } from "../content/registry";
 import { score } from "./match";
@@ -16,7 +16,8 @@ import { score } from "./match";
 const KEYWORDS = {
   "": ["dashboard", "home", "stats", "summary"],
   people: ["directory", "attendees", "delegates", "contacts", "persons", "vip", "edit person", "delete person", "rsvp status", "exhibitor",
-    "opened email", "email opens", "who opened", "posted on linkedin", "linkedin posts", "rsvp form opened"],
+    "opened email", "email opens", "who opened", "posted on linkedin", "linkedin posts", "rsvp form opened",
+    "media", "press", "journalist", "staff", "volunteer", "speaker", "person type", "profile colour", "profile color"],
   attendees: ["tickets", "ticket holders", "orders", "passes", "hide duplicates", "complimentary ticket", "comp", "missing details", "profile request", "export"],
   "speaker-passes": ["speaker pass", "speakers passes", "run of show", "speaker email", "nudge", "sync speakers"],
   "purchase-email": ["confirmation email", "receipt", "order email", "ticket email"],
@@ -38,7 +39,7 @@ const KEYWORDS = {
   rsvps: ["rsvp", "headcounts", "catering", "dietary", "meals", "luncheons", "gala", "cxo breakfast", "awards night", "duplicates"],
   "marketing/attending": ["i'm attending", "linkedin", "campaign", "share image"],
   "marketing/rsvp-reminders": ["reminder email", "send reminder", "unconfirmed"],
-  "issued-passes": ["issue pass", "issue a pass", "give a pass", "free pass", "guest pass", "vip pass", "invite"],
+  "issued-passes": ["issue pass", "issue a pass", "give a pass", "free pass", "guest pass", "vip pass", "media pass", "press pass", "volunteer pass", "invite"],
   "exhibitor-passes": ["exhibitors", "booth", "exhibitor manual", "connect pass"],
   app: ["mobile app", "app stats", "usage"],
   "app/people": ["app users", "app accounts", "ban", "messages off", "person types", "types"],
@@ -58,6 +59,7 @@ const KEYWORDS = {
 /* Things done on a page that people look for by name. */
 const ACTIONS = [
   { title: "Give a pass", where: "People & passes › Give a pass", to: "issued-passes", icon: TicketPlus, keywords: ["give someone a pass", "new pass"] },
+  { title: "Mark someone as Media, VIP, Volunteer or Staff", where: "People & passes › People › their profile", to: "people", icon: Users, keywords: ["media tag", "press", "vip", "volunteer", "staff", "type", "profile colour", "profile color"] },
   { title: "Running late: shift sessions", where: "Website & app › Agenda", to: "content/agenda", icon: CalendarClock, keywords: ["delay", "push back", "move sessions", "late"] },
   { title: "Send RSVP reminder", where: "RSVPs & meals › RSVP reminders", to: "marketing/rsvp-reminders", icon: BellRing, keywords: ["remind", "unconfirmed"] },
   { title: "Who posted on LinkedIn (I'm attending)", where: "People & passes › People", to: "people?attending=posted", icon: Linkedin, keywords: ["linkedin posts", "posted", "shared", "i'm attending"] },

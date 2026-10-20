@@ -1,18 +1,21 @@
 import { Link, useLocation } from "react-router-dom";
 
 /* Home · Network · Chats · Schedule · Profile (iOS MainTabView).
-   Filled glyphs drawn after the SF Symbols the app uses: house.fill,
+   Filled glyphs drawn after the SF Symbols the app uses:
    person.2.fill, bubble.left.and.bubble.right.fill, calendar and
-   person.crop.circle.fill. */
+   person.crop.circle.fill. Home is the TTFC mark (Oct 20 2026, the
+   organiser: "home icon to be replaced by TTFC logo"): in full
+   colour when Home is the tab you're on, otherwise the mark's
+   shape in the same colour as the other tabs' icons, so it never
+   looks selected when it isn't. */
 
 const svg = { viewBox: "0 0 28 28", fill: "currentColor", "aria-hidden": true, focusable: "false" };
 
-function HomeIcon() {
-  return (
-    <svg {...svg}>
-      <path d="M13.1 3.6a1.4 1.4 0 0 1 1.8 0l4.6 3.9V5.3c0-.5.4-.8.8-.8h1.6c.5 0 .8.4.8.8v4.9l2.3 2a1.2 1.2 0 0 1-1.5 1.8l-1-.8v9.1a2.2 2.2 0 0 1-2.2 2.2h-3.5v-6.3c0-.6-.5-1.1-1.1-1.1h-3.4c-.6 0-1.1.5-1.1 1.1v6.3H7.7a2.2 2.2 0 0 1-2.2-2.2v-9.1l-1 .8A1.2 1.2 0 0 1 3 12.2z" />
-    </svg>
-  );
+/** The TTFC mark: the logo itself on the active tab, else its silhouette in the tab colour (app.css .tab-mark). */
+function HomeIcon({ active }) {
+  return active
+    ? <img className="tab-mark" src="/app/brand/share-mark.png" alt="" aria-hidden="true" width="20" height="26" decoding="async" />
+    : <span className="tab-mark tab-mark--mono" aria-hidden="true" />;
 }
 function NetworkIcon() {
   return (
@@ -76,7 +79,7 @@ export default function TabBar({ chatsDot = false, profileDot = false }) {
           const label = dot ? `${t.label}, new messages` : pink ? `${t.label}, add ways to reach you` : t.label;
           return (
             <Link key={t.to} to={t.to} className="tab pressable" aria-current={active ? "page" : undefined} aria-label={label}>
-              <Icon />
+              <Icon active={active} />
               <span>{t.label}</span>
               {dot && <span className="tab-dot" aria-hidden="true" />}
               {pink && <span className="tab-dot tab-dot--pink" aria-hidden="true" />}

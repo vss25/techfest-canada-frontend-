@@ -43,7 +43,8 @@ const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
    else in the app changes colour. The TTFC brand (Oct 20 2026,
    the organiser: "more branding"; "Just the logo"): the logo
    mark in the header row instead of the word "Profile" (still
-   the screen's name for screen readers), and a hairline in the
+   the screen's name for screen readers; a tap on the mark pops
+   it and scrolls to the top), and a hairline in the
    logo's colours under your header (so this header has no
    hairline of its own). The glow and the pill stay the pass
    colour only.
@@ -72,16 +73,6 @@ function ProfileGlow({ tag }) {
       <div className={`profile-glow-edge${state}`} data-tag={tag.key} style={style} aria-hidden="true"><span className="profile-glow-sweep" /></div>
     </>,
     document.body,
-  );
-}
-
-/** The header row's title: the TTFC mark only (not a link; "Profile" for screen readers). */
-function BrandTitle() {
-  return (
-    <>
-      <span className="sr-only">Profile</span>
-      <BrandMark />
-    </>
   );
 }
 
@@ -241,7 +232,8 @@ export default function Profile() {
     <div className="page">
       {tag && <ProfileGlow tag={tag} />}
       {/* Points top left (as on Home), Settings top right: both always in reach. */}
-      <TopBar title={<BrandTitle />} back={false} brand={false}
+      {/* The header's title is the TTFC mark (a tap pops it and scrolls to the top); "Profile" for screen readers. */}
+      <TopBar title={<BrandMark />} titleLabel="Profile" back={false} brand={false}
         left={(
           <Link to="/points" className="points-pill pressable" aria-label={total != null ? `${total} festival points. Opens your points and the leaderboard` : "Festival points. Opens your points and the leaderboard"}>
             <TrophyFill />{total != null && <span className="figure">{total}</span>}

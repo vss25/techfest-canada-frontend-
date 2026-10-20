@@ -240,6 +240,13 @@ a { color: var(--pur-alt); }
   border-radius: 999px;
 }
 .tab svg { width: 27px; height: 27px; }
+/* Home: the TTFC mark (TabBar.jsx), the logo on the active tab, its shape in the tab colour otherwise. */
+.tab-mark { width: 20px; height: 26px; display: block; margin: 0.5px 0; }
+.tab-mark--mono {
+  background: currentColor;
+  -webkit-mask: url(/app/brand/share-mark.png) center / contain no-repeat;
+  mask: url(/app/brand/share-mark.png) center / contain no-repeat;
+}
 .tab[aria-current="page"] { color: var(--tab-on); background: var(--glass-pill); }
 .tab-dot { position: absolute; top: 5px; left: calc(50% + 10px); width: 10px; height: 10px; border-radius: 50%; background: var(--red); border: 2px solid var(--glass); }
 
@@ -1250,13 +1257,20 @@ textarea.input--ios { min-height: 120px; }
    divider under the hero. Buttons, links, toggles and the tab bar keep the purple accent; no gradient text; the pass
    colours (Profile) are never used for it. */
 :root { --brand-gradient: linear-gradient(90deg, #E8458B, #7A3FD1 50%, #F5A623); }
-.brand-mark { display: inline-flex; align-items: center; justify-content: center; height: 32px; flex: none; pointer-events: none; }
+.brand-mark {
+  display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none;
+  padding: 0; border: 0; border-radius: 12px; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
 .brand-mark img { width: 22px; height: 28px; display: block; }
+/* The tap: a quick springy pop (transform only); none with reduced motion. */
+.brand-mark img.is-popping { animation: brand-pop 350ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes brand-pop { 0% { transform: none; } 35% { transform: scale(1.15) rotate(-8deg); } 65% { transform: scale(1.05) rotate(8deg); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .brand-mark img.is-popping { animation: none; } }
 .topbar-title:has(.brand-mark) { display: flex; justify-content: center; }
 .topbar--brand::after, .sched-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--brand-gradient); pointer-events: none; }
 .sched-head::after { bottom: -1px; }
 .home-top { position: relative; }
-.home-brand { position: absolute; left: 50%; bottom: 5px; transform: translateX(-50%); }
+.home-brand { position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); }
 .hero .rule { background: var(--brand-gradient); border-radius: 2px; }
 .brand-hairline { display: block; align-self: stretch; height: 3px; margin-top: 2px; border-radius: 3px; background: var(--brand-gradient); }
 .info-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: var(--r-control); background: var(--elevated); border: 1px solid var(--border); color: var(--tx2); font-size: 12px; font-weight: 500; }

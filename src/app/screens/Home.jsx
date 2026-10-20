@@ -29,8 +29,9 @@ import BrandMark from "../components/BrandMark";
    Speakers and Organisations, then the feed. Once you're into
    the posts, a "What's on your mind?" bar pins to the top and
    the session line floats above the tab bar. The TTFC mark sits
-   in the middle of the top row and the divider under the hero
-   is in the logo's colours (Oct 20 2026, decorative only).
+   in the middle of the top row (a tap pops it and scrolls to the
+   top) and the divider under the hero is in the logo's colours
+   (Oct 20 2026).
 ========================================================= */
 
 function Countdown({ now, target }) {
@@ -165,7 +166,7 @@ function TopChrome({ total, unread, onChecklist, onNotifications }) {
   const ThemeIcon = THEME_ICON[t.value] || Smartphone;
   return (
     <div className="home-top">
-      {/* The TTFC mark, centred in the row (decorative; the hero below is the screen's heading). */}
+      {/* The TTFC mark, centred in the row: a tap pops it and scrolls Home back to the top. */}
       <BrandMark className="home-brand" />
       {total != null && (
         <Link to="/points" className="points-pill pressable" aria-label={`${total} festival points. Opens your points and the leaderboard`}>

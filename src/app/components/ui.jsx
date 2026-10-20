@@ -147,8 +147,9 @@ export function Empty({ icon, title, children, action }) {
 
 // ---------- Top bar for pushed pages ----------
 
-/** `brand` (default on): the 2px hairline in the logo's colours under the header (decorative, app.css). */
-export function TopBar({ title, back = true, onBack, right, left, titleLeft, below, brand = true }) {
+/** `brand` (default on): the 2px hairline in the logo's colours under the header (decorative, app.css).
+    `titleLabel`: the heading's name when `title` isn't text (Profile's TTFC mark). */
+export function TopBar({ title, titleLabel, back = true, onBack, right, left, titleLeft, below, brand = true }) {
   const navigate = useNavigate();
   const goBack = () => {
     if (onBack) return onBack();
@@ -163,7 +164,7 @@ export function TopBar({ title, back = true, onBack, right, left, titleLeft, bel
             {left || (back && <IconButton icon={ChevronLeft} label="Back" onClick={goBack} />)}
           </div>
         )}
-        <h1 className={cx("topbar-title", titleLeft && "topbar-title--left")}>{title}</h1>
+        <h1 className={cx("topbar-title", titleLeft && "topbar-title--left")} aria-label={titleLabel || undefined}>{title}</h1>
         <div className="topbar-side topbar-side--end">{right}</div>
       </div>
       {/* Pills pinned under the title in the same material (iOS safeAreaInset(edge: .top)). */}

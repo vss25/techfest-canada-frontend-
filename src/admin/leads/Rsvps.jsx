@@ -13,6 +13,7 @@ import {
 } from "../ui";
 import { when } from "../format";
 import { personPath } from "../people/peopleMeta";
+import CodeLabel from "../people/CodeLabel";
 
 /* Admin → Leads → RSVPs
    TTFC 2026 RSVPs from the unlinked website page /rsvp (POST /api/rsvp).
@@ -31,7 +32,10 @@ import { personPath } from "../people/peopleMeta";
    GET /api/rsvp/options, and failing that from the summary's own keys.
    The pass extras' tiles (CxO Breakfasts, luncheons, Gala, Awards) also say
    how many passes are eligible: their pass includes it, or staff switched
-   it on in People (GET /console/people/eligible). */
+   it on in People (GET /console/people/eligible).
+   Code (Oct 20 2026): the coupon code the RSVP's ticket was bought with
+   (row.code, backend services/promoCodes.js), "No code", what a pass staff
+   made is, or "—" without a ticket (a speaker matched by name). */
 
 const PAGE = 50;
 const TIER_TONE = { connect: "neutral", influence: "pink", power: "orange", apex: "purple", speaker: "good" };
@@ -282,6 +286,7 @@ function RsvpDrawer({ id, onClose, onOpen, onResolved, cat }) {
             </Row>
             <Row label="Email">{r.email ? <a href={`mailto:${r.email}`} className="text-ttfc-pink underline-offset-2 hover:underline">{r.email}</a> : <Dash />}</Row>
             <Row label="Ticket ID">{r.ticketId ? <span className="font-mono text-xs">{r.ticketId.toUpperCase()}{r.ticketVerified ? "" : " (didn't match)"}</span> : <Dash />}</Row>
+            {r.code && <Row label="Code">{r.code.kind === "unknown" ? <Dash /> : <CodeLabel code={r.code} />}</Row>}
           </DetailSection>
 
           <DetailSection title="Pass">
@@ -541,7 +546,7 @@ export default function Rsvps() {
         <>
           <TableWrap>
             <thead>
-              <tr><th>Name</th><th>Pass</th><th>Days</th><th>Experiences</th><th>Dietary</th><th>RSVP’d</th></tr>
+              <tr><th>Name</th><th>Pass</th><th>Code</th><th>Days</th><th>Experiences</th><th>Dietary</th><th>RSVP’d</th></tr>
             </thead>
             <tbody>
               {rows.map((r) => (
@@ -559,6 +564,8 @@ export default function Rsvps() {
                     <Link to={personPath(`r-${r.id}`)} onClick={(e) => e.stopPropagation()} className="mt-1 block text-[11px] font-semibold text-ttfc-pink hover:underline">Profile</Link>
                   </td>
                   <td className="whitespace-nowrap"><PassBadge tier={r.tier} verified={r.tierVerified} cat={cat} /></td>
+                  {/* The coupon code of the ticket this RSVP belongs to (Oct 20 2026); "—" without a ticket. */}
+                  <td className="whitespace-nowrap"><CodeLabel code={r.code} /></td>
                   <td className="whitespace-nowrap">
                     <span className="inline-flex gap-1">{r.days.map((d) => <Badge key={d} tone="purple">{cat.dayName(d)}</Badge>)}</span>
                   </td>

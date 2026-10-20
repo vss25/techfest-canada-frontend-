@@ -27,7 +27,8 @@ import {
    passes, RSVP and the speaker list (GET /console/people/:id).
    Staff edit any detail (PATCH: first and last name, email
    (management: their sign-in), phone, company, job title,
-   LinkedIn, their types, Is Exhibitor, VIP and "RSVP Email Sent"),
+   LinkedIn, their types (Media and Staff among them since Oct 20
+   2026), Is Exhibitor, VIP and "RSVP Email Sent"),
    and every record they're made of follows (account, passes,
    RSVPs). Per pass (PATCH …/passes/:ticketId): its meals and
    events (CxO Breakfasts, Networking Luncheons, the Gala Dinner &
@@ -63,12 +64,13 @@ const MARKS = [{ key: "auto", label: "Automatic" }, { key: "yes", label: "Yes" }
 const markKey = (m) => (m === true ? "yes" : m === false ? "no" : "auto");
 
 /* Their types as chips. An account: the App › People rules (stored types, automatic ones from their role
-   and passes, typesOff), Exhibitor is the Exhibitor switch. A pass-only person: Exhibitor is saved on their
-   passes, Speaker comes from holding a Speaker Pass; the other types need an app account. */
-function TypeChips({ p, state, setState, exhibitor, setExhibitor, disabled, canTeam }) {
+   and passes, typesOff), Exhibitor is the Exhibitor switch. A pass-only person: Exhibitor and Media are saved
+   on their passes, Speaker comes from holding a Speaker Pass; the other types need an app account. */
+function TypeChips({ p, state, setState, exhibitor, setExhibitor, media, setMedia, disabled, canTeam }) {
   const acc = p.account;
   const chips = PERSON_TYPES.map((t) => {
     if (t === "exhibitor") return { t, on: exhibitor, toggle: () => setExhibitor(!exhibitor), note: p.exhibitorPass && exhibitor ? "from pass" : "" };
+    if (!acc && t === "media") return { t, on: media, toggle: () => setMedia(!media), note: media ? "on their passes" : "" };
     if (!acc) {
       if (t === "speaker") {
         const on = p.types.includes("speaker");
@@ -86,7 +88,7 @@ function TypeChips({ p, state, setState, exhibitor, setExhibitor, disabled, canT
     return {
       t, on,
       toggle: () => setState(toggleType(t, live, !on)),
-      locked: TEAM_TYPES.includes(t) && !canTeam ? "Only management can change the Organizer and Volunteer types" : "",
+      locked: TEAM_TYPES.includes(t) && !canTeam ? "Only management can change the Staff and Volunteer types" : "",
       note: on && a && !state.types.includes(t) ? (a.from === "role" ? "from role" : "from pass") : switchedOff ? "switched off" : "",
       off: switchedOff,
     };
@@ -119,6 +121,9 @@ function DetailsCard({ p, onSaved }) {
   const [types, setTypes] = useState(startTypes);
   const [exhibitor, setExhibitor] = useState(!!p.exhibitor);
   const [vip, setVip] = useState(!!p.vip);
+  // Media for a pass-only person (saved on their passes); an account's Media is one of its types.
+  const startMedia = (p.types || []).includes("media");
+  const [media, setMedia] = useState(startMedia);
   const [mark, setMark] = useState(startMark);
   const [saving, setSaving] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState(false);
@@ -127,13 +132,14 @@ function DetailsCard({ p, onSaved }) {
   const typesChanged = !!p.account && (!sameList(types.types, startTypes.types) || !sameList(types.typesOff, startTypes.typesOff));
   const exChanged = exhibitor !== !!p.exhibitor;
   const vipChanged = vip !== !!p.vip;
+  const mediaChanged = !p.account && media !== startMedia;
   const markChanged = mark !== startMark;
-  const dirty = changed.length || typesChanged || exChanged || vipChanged || markChanged;
+  const dirty = changed.length || typesChanged || exChanged || vipChanged || mediaChanged || markChanged;
   const set = (k) => (ev) => setForm((f) => ({ ...f, [k]: ev.target.value }));
   const disabled = !e.canEdit;
   const emailChanged = changed.includes("email");
 
-  const reset = () => { setForm(start); setTypes(startTypes); setExhibitor(!!p.exhibitor); setVip(!!p.vip); setMark(startMark); setError(null); };
+  const reset = () => { setForm(start); setTypes(startTypes); setExhibitor(!!p.exhibitor); setVip(!!p.vip); setMedia(startMedia); setMark(startMark); setError(null); };
   const save = async () => {
     setSaving(true); setError(null);
     const body = {};
@@ -144,6 +150,7 @@ function DetailsCard({ p, onSaved }) {
     if (typesChanged) { body.types = types.types; body.typesOff = types.typesOff; }
     if (exChanged) body.exhibitor = exhibitor;
     if (vipChanged) body.vip = vip;
+    if (mediaChanged) body.media = media;
     if (markChanged) body.rsvpEmailSent = mark === "auto" ? null : mark === "yes";
     try {
       await api.patch(`/console/people/${encodeURIComponent(p.id)}`, body);
@@ -174,10 +181,11 @@ function DetailsCard({ p, onSaved }) {
       <div className="mt-5">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ttfc-dim">Type</p>
         <TypeChips p={p} state={types} setState={setTypes} exhibitor={exhibitor} setExhibitor={setExhibitor}
-          disabled={disabled} canTeam={isManagement} />
+          media={media} setMedia={setMedia} disabled={disabled} canTeam={isManagement} />
         <p className="mt-2 text-xs leading-relaxed text-ttfc-dim">
-          Holding a Speaker Pass makes them a Speaker; the Speaker type gives the CxO Breakfasts on any pass.
-          {!p.account && " Without an app account, Exhibitor is saved on their passes and Speaker comes from a Speaker Pass; the other types need an account."}
+          Holding a Speaker Pass makes them a Speaker. Speakers, Media and VIPs get the CxO Breakfasts on any pass.
+          In the app, their own Profile page glows in their colour: VIP gold, Media dark blue, Speaker red, Staff purple, Volunteer orange, any other pass green.
+          {!p.account && " Without an app account, Exhibitor and Media are saved on their passes and Speaker comes from a Speaker Pass; the other types need an account."}
         </p>
       </div>
       <div className="mt-5 rounded-2xl border border-ttfc-line p-4">
@@ -189,7 +197,7 @@ function DetailsCard({ p, onSaved }) {
       </div>
       <div className="mt-3 rounded-2xl border border-ttfc-line p-4">
         <Switch checked={vip} onChange={setVip} disabled={disabled || !e.canEditVip} label="VIP"
-          description="Shows the VIP badge in the app. It doesn't change what they can do there: their type does." />
+          description="Shows the VIP badge in the app and gives the CxO Breakfasts on any pass. It doesn't change what they can do there: their type does." />
         {p.vip && p.vipFrom === "pass" && (
           <p className="mt-2 text-xs text-ttfc-muted">Set on their pass before they had an app account.</p>
         )}

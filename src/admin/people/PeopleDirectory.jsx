@@ -220,7 +220,7 @@ export default function PeopleDirectory() {
       <PageHeader
         eyebrow="People & passes"
         title="People"
-        description="Everyone in one list: delegates, speakers, exhibitors, volunteers, organizers and vendors, from app accounts, tickets, passes, RSVPs and the speaker list. Open someone to see and change their details, VIP, RSVP, agenda and company logo."
+        description="Everyone in one list: delegates, speakers, exhibitors, volunteers, staff, vendors and media, from app accounts, tickets, passes, RSVPs and the speaker list. Open someone to see and change their details, VIP, RSVP, agenda and company logo."
         actions={(
           <>
             {isManagement && (

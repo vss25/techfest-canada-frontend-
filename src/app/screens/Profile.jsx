@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  BadgeCheck, Bell, ChevronRight, Download, FileText, HelpCircle, Landmark, LogOut, Moon, Pencil, QrCode, RotateCcw,
-  LogIn, ScanLine, ShieldCheck, Smartphone, Sun, Ticket, Trophy, Users,
+  BadgeCheck, Bell, Camera, ChevronRight, Download, FileText, Hand, HelpCircle, IdCard, Landmark, LogOut, Mic, Moon, Pencil, QrCode, RotateCcw,
+  LogIn, ScanLine, ShieldCheck, Smartphone, Star, Sun, Ticket, Trophy, Users,
 } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, bestTicket, isSignedIn, isTeam, loadAccount, signOut } from "../lib/auth";
@@ -18,6 +19,7 @@ import { GearFill, TrophyFill } from "../components/Glyphs";
 import AppleWalletButton from "../components/AppleWallet";
 import ContactCard from "../components/ContactCard";
 import { GetPassCard } from "../components/PassesSheet";
+import { profileTagView } from "../lib/profileTag";
 
 const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 
@@ -28,9 +30,72 @@ const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
    devices, the contact card, availability, connections, Awards,
    and Interests last. Notifications, theme, About and sign out
    are in Settings (the gear). Guests get the sign-in card.
+   Your pass type (Oct 20 2026, /auth/me `profileTag`, lib/
+   profileTag.js): a glow at the screen's edge in its colour (the
+   upper half: along the top and down both sides) while this
+   screen is open, and a pill in the same colour under
+   your name, job title and company (VIP gold, Media dark blue,
+   Speaker red, Staff purple, Volunteer orange, any other pass
+   green), so door staff can tell it from a distance. Nothing
+   else in the app changes colour. The TTFC brand (Oct 20 2026,
+   the organiser: "more branding"): the logo mark and the dates
+   in the header row instead of the word "Profile" (still the
+   screen's name for screen readers), and a hairline in the
+   logo's colours under your header. The glow and the pill stay
+   the pass colour only.
 ========================================================= */
 
 const THEME_ICON = { system: Smartphone, light: Sun, dark: Moon };
+const TAG_ICON = { vip: Star, media: Camera, speaker: Mic, staff: IdCard, volunteer: Hand, pass: Ticket };
+
+/** The glow at the screen's edge: fixed to the viewport (safe areas included), the upper half only. The soft glow
+    sits under the header and its buttons, the 3px edge line over it (clear of the buttons), both under sheets and
+    toasts, never in the way of a tap or a scroll. It grows in from the top centre, breathes, and a highlight sweeps
+    the top edge now and then (app.css; still with reduced motion). Paused while the page is hidden; gone when you
+    leave the screen. */
+function ProfileGlow({ tag }) {
+  const [paused, setPaused] = useState(() => typeof document !== "undefined" && document.hidden);
+  useEffect(() => {
+    const onVisibility = () => setPaused(document.hidden);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+  const style = { "--tag": tag.colors.bg, "--tag-rgb": tag.colors.rgb };
+  const state = paused ? " is-paused" : "";
+  return createPortal(
+    <>
+      <div className={`profile-glow${state}`} data-tag={tag.key} style={style} aria-hidden="true" />
+      <div className={`profile-glow-edge${state}`} data-tag={tag.key} style={style} aria-hidden="true"><span className="profile-glow-sweep" /></div>
+    </>,
+    document.body,
+  );
+}
+
+/** The header row's title: the TTFC mark, the festival and its dates (not a link; "Profile" for screen readers). */
+function BrandTitle() {
+  return (
+    <>
+      <span className="sr-only">Profile</span>
+      <span className="profile-brand" aria-hidden="true">
+        <img src="/app/brand/share-mark.png" alt="" width="22" height="28" decoding="async" />
+        <span className="profile-brand-text">
+          <b>The Tech Festival Canada</b>
+          <span>26–27 Oct 2026 · Toronto</span>
+        </span>
+      </span>
+    </>
+  );
+}
+
+/** Your pass type under your name: the word and an icon, so it doesn't rely on the colour alone. */
+function ProfileTagPill({ tag }) {
+  const Icon = TAG_ICON[tag.key] || Ticket;
+  return (
+    <span className="profile-tag" data-tag={tag.key} style={{ "--tag": tag.colors.bg, "--tag-text": tag.colors.text, "--tag-rgb": tag.colors.rgb }}>
+      <Icon aria-hidden="true" />{tag.text}
+    </span>
+  );
+}
 
 function Row({ to, href, icon, title, onClick, tone }) {
   const Icon = icon;
@@ -171,11 +236,13 @@ export default function Profile() {
   const country = me?.country || user?.country || "";
   const org = me?.organization || user?.organization || "";
   const total = pts.me?.total;
+  const tag = profileTagView(user?.profileTag);
 
   return (
     <div className="page">
+      {tag && <ProfileGlow tag={tag} />}
       {/* Points top left (as on Home), Settings top right: both always in reach. */}
-      <TopBar title="Profile" back={false}
+      <TopBar title={<BrandTitle />} back={false}
         left={(
           <Link to="/points" className="points-pill pressable" aria-label={total != null ? `${total} festival points. Opens your points and the leaderboard` : "Festival points. Opens your points and the leaderboard"}>
             <TrophyFill />{total != null && <span className="figure">{total}</span>}
@@ -194,9 +261,11 @@ export default function Profile() {
             <h1>{name}</h1>
             {me?.jobTitle && <div className="profile-title">{me.jobTitle}</div>}
             {org && <div className="profile-org">{org}</div>}
+            {tag && <ProfileTagPill tag={tag} />}
             {me?.tagline && <div className="profile-tagline">“{me.tagline}”</div>}
           </div>
           <Link to="/profile/edit" className="edit-link"><Pencil aria-hidden="true" />Edit profile</Link>
+          <span className="brand-hairline" aria-hidden="true" />
         </section>
 
         {isTeam(user) && (

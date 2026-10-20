@@ -1195,6 +1195,62 @@ textarea.input--ios { min-height: 120px; }
 .profile-org { font-size: 13px; font-weight: 600; color: var(--pur); }
 :root:not([data-theme="light"]) .profile-org { color: var(--pur); }
 .profile-tagline { font-size: 13px; font-weight: 500; color: var(--tx2); margin-top: 2px; }
+/* Your pass type on your own Profile screen (Oct 20 2026, lib/profileTag.js), on the upper half of the screen only
+   (along the top and down both sides, fading out by the middle):
+   - .profile-glow: the soft glow inward, under the header and its buttons (z 20), over the page; breathes slowly.
+   - .profile-glow-edge: the 3px line at the very edge, over the header but clear of its buttons (they sit 12px in),
+     under sheets and toasts; a soft highlight sweeps along its top edge every 7 s.
+   Both grow outward from the top centre when the screen opens. Transform and opacity only; paused while the page
+   is hidden (.is-paused); none of it moves with prefers-reduced-motion. Neither takes a tap. */
+.profile-glow, .profile-glow-edge {
+  position: fixed; inset: 0; pointer-events: none; border-radius: 40px; transform-origin: 50% 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 55%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 55%);
+}
+.profile-glow { z-index: 19; animation: profile-glow-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.profile-glow::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  box-shadow: inset 0 0 26px 2px rgba(var(--tag-rgb), 0.7);
+  animation: profile-glow-breathe 3s ease-in-out 0.7s infinite alternate;
+}
+.profile-glow-edge { z-index: 22; overflow: hidden; box-shadow: inset 0 0 0 3px var(--tag); animation: profile-edge-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.profile-glow-sweep {
+  position: absolute; top: 0; left: 0; width: 150px; height: 18px; opacity: 0; will-change: transform, opacity;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9) 50%, transparent) top / 100% 3px no-repeat,
+    radial-gradient(60% 100% at 50% 0, rgba(255, 255, 255, 0.32), transparent 70%);
+  animation: profile-glow-sweep 7s ease-in-out 1.4s infinite;
+}
+.profile-glow.is-paused, .profile-glow.is-paused::after, .profile-glow-edge.is-paused, .profile-glow-edge.is-paused .profile-glow-sweep { animation-play-state: paused; }
+@keyframes profile-glow-in { from { opacity: 0; transform: scaleX(0.7); } to { opacity: 1; transform: none; } }
+@keyframes profile-edge-in { from { opacity: 0; transform: scaleX(0.35); } to { opacity: 1; transform: none; } }
+@keyframes profile-glow-breathe { from { opacity: 1; } to { opacity: 0.75; } }
+@keyframes profile-glow-sweep {
+  0% { transform: translateX(-150px); opacity: 0; }
+  3%, 17% { opacity: 1; }
+  22%, 100% { transform: translateX(100vw); opacity: 0; }
+}
+@keyframes profile-tag-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
+.profile-tag {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; align-self: center; margin-top: 8px;
+  min-height: 36px; padding: 6px 16px 6px 13px; border-radius: 999px; background: var(--tag); color: var(--tag-text);
+  font-size: 17.5px; font-weight: 600; line-height: 1.2; letter-spacing: 0.01em; box-shadow: 0 3px 12px rgba(var(--tag-rgb), 0.35);
+  animation: profile-tag-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) 0.15s both;
+}
+.profile-tag svg { width: 19px; height: 19px; flex: none; }
+@media (prefers-reduced-motion: reduce) {
+  .profile-glow, .profile-glow::after, .profile-glow-edge, .profile-tag { animation: none; }
+  .profile-glow-sweep { display: none; }
+}
+/* The TTFC brand on the Profile screen: the mark and the dates in the header row, and a hairline in the
+   logo's colours under your header (decorative; the pass colour stays on the glow and the pill only). */
+.topbar-title:has(.profile-brand) { flex: 0 1 auto; display: flex; justify-content: center; }
+.profile-brand { display: inline-flex; align-items: center; gap: 7px; min-width: 0; height: 32px; text-align: left; }
+.profile-brand img { width: 22px; height: 28px; flex: none; display: block; }
+.profile-brand-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.profile-brand-text b { font-size: 12.5px; font-weight: 700; letter-spacing: -0.005em; color: var(--tx); overflow: hidden; text-overflow: ellipsis; }
+.profile-brand-text span { font-size: 11px; font-weight: 500; color: var(--tx2); overflow: hidden; text-overflow: ellipsis; }
+.brand-hairline { display: block; align-self: stretch; height: 3px; margin-top: 2px; border-radius: 3px; background: linear-gradient(90deg, #E8458B, #7A3FD1 50%, #F5A623); }
 .info-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: var(--r-control); background: var(--elevated); border: 1px solid var(--border); color: var(--tx2); font-size: 12px; font-weight: 500; }
 .info-pill svg { width: 11px; height: 11px; }
 .edit-link { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; color: var(--pur); font-size: 12.5px; font-weight: 600; text-decoration: none; }

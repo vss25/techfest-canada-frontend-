@@ -458,7 +458,7 @@ function PassesCard({ p, onSaved }) {
       )}
       {p.passes?.length > 0 && (
         <p className="mt-3 text-xs leading-relaxed text-ttfc-dim">
-          Automatic follows the pass: the luncheons come with Influence and up, the Gala Dinner and the Awards Night with Power, Apex and the Speaker Pass, the CxO Breakfasts with Apex, the Speaker Pass and speakers on any pass. Yes or No is for this pass only: it shows on their ticket in the app, in their pass emails and on the RSVP page, and counts them in the RSVP headcounts. Anything they already chose in their RSVP is never taken away.
+          Automatic follows the pass: the luncheons come with Influence and up, the Gala Dinner and the Awards Night with Power, Apex and the Speaker Pass, the CxO Breakfasts with Apex, the Speaker Pass, and speakers, VIPs and media on any pass. Yes or No is for this pass only: it shows on their ticket in the app, in their pass emails and on the RSVP page, and counts them in the RSVP headcounts. Anything they already chose in their RSVP is never taken away.
           {e.canEditPass ? " Changing a pass is free and logged; it moves the inventory counts like an upgrade (the Speaker Pass has none)." : ""}
         </p>
       )}

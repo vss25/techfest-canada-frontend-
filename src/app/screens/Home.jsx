@@ -166,8 +166,9 @@ function TopChrome({ total, unread, onChecklist, onNotifications }) {
   const ThemeIcon = THEME_ICON[t.value] || Smartphone;
   return (
     <div className="home-top">
-      {/* The TTFC mark, centred in the row: a tap pops it and scrolls Home back to the top. */}
-      <BrandMark className="home-brand" />
+      {/* The TTFC mark, centred in the row: a tap pops it and scrolls Home back to the top. It fades out while the
+          bell menu is open (the menu's pill reaches the middle of the row). */}
+      <BrandMark className="home-brand" hidden={open} />
       {total != null && (
         <Link to="/points" className="points-pill pressable" aria-label={`${total} festival points. Opens your points and the leaderboard`}>
           <TrophyFill /><span className="figure">{total}</span>

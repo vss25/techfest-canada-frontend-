@@ -7,9 +7,9 @@
    holder (their pass, or "Exhibitor") > nothing. Only the
    Profile screen uses it: a glow at the screen's edge in the
    colour (upper half), and a pill under the name / job title /
-   company, so door staff can tell the pass from a distance (the
-   word and the icon are there for anyone who can't tell the
-   colours apart).
+   company (colour and an icon, no words), so door staff can tell
+   the pass from a distance (the icon is there for anyone who
+   can't tell the colours apart).
    Same colours as the iOS and Android apps.
 ========================================================= */
 
@@ -25,8 +25,9 @@ export const PROFILE_TAG_COLORS = Object.freeze({
 
 const FIXED = { vip: "VIP", media: "Media", speaker: "Speaker", staff: "Staff", volunteer: "Volunteer" };
 
-/** { key, label, text, colors } for the screen, or null (no pass and no tag, or an older server). `text`: what the
-    pill says: "VIP" … "Volunteer", a pass with " Pass" ("Power Pass"), "Exhibitor" as it is. */
+/** { key, label, text, colors } for the screen, or null (no pass and no tag, or an older server). `text`: the pill's
+    name for screen readers ("Pass colour: <text>"; the pill shows no words): "VIP" … "Volunteer", a pass with " Pass"
+    ("Power Pass"), "Exhibitor" as it is. */
 export function profileTagView(tag) {
   const key = String(tag?.key || "");
   const colors = PROFILE_TAG_COLORS[key];

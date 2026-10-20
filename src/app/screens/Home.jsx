@@ -20,6 +20,7 @@ import PostCard from "../components/PostCard";
 import Composer from "../components/Composer";
 import Coachmark from "../components/Coachmark";
 import { GetPassCard } from "../components/PassesSheet";
+import BrandMark from "../components/BrandMark";
 
 /* =========================================================
    Home, merged with the feed (iOS FeedView / HomeTabView):
@@ -27,7 +28,9 @@ import { GetPassCard } from "../components/PassesSheet";
    next with its Polls and Q&A), the first-day checklist,
    Speakers and Organisations, then the feed. Once you're into
    the posts, a "What's on your mind?" bar pins to the top and
-   the session line floats above the tab bar.
+   the session line floats above the tab bar. The TTFC mark sits
+   in the middle of the top row and the divider under the hero
+   is in the logo's colours (Oct 20 2026, decorative only).
 ========================================================= */
 
 function Countdown({ now, target }) {
@@ -162,6 +165,8 @@ function TopChrome({ total, unread, onChecklist, onNotifications }) {
   const ThemeIcon = THEME_ICON[t.value] || Smartphone;
   return (
     <div className="home-top">
+      {/* The TTFC mark, centred in the row (decorative; the hero below is the screen's heading). */}
+      <BrandMark className="home-brand" />
       {total != null && (
         <Link to="/points" className="points-pill pressable" aria-label={`${total} festival points. Opens your points and the leaderboard`}>
           <TrophyFill /><span className="figure">{total}</span>

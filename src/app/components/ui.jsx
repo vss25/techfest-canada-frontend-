@@ -147,7 +147,8 @@ export function Empty({ icon, title, children, action }) {
 
 // ---------- Top bar for pushed pages ----------
 
-export function TopBar({ title, back = true, onBack, right, left, titleLeft, below }) {
+/** `brand` (default on): the 2px hairline in the logo's colours under the header (decorative, app.css). */
+export function TopBar({ title, back = true, onBack, right, left, titleLeft, below, brand = true }) {
   const navigate = useNavigate();
   const goBack = () => {
     if (onBack) return onBack();
@@ -155,7 +156,7 @@ export function TopBar({ title, back = true, onBack, right, left, titleLeft, bel
     else navigate("/");
   };
   return (
-    <header className="topbar">
+    <header className={cx("topbar", brand && "topbar--brand")}>
       <div className="topbar-inner">
         {(left || back || !titleLeft) && (
           <div className="topbar-side">

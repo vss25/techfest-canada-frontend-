@@ -20,6 +20,7 @@ import AppleWalletButton from "../components/AppleWallet";
 import ContactCard from "../components/ContactCard";
 import { GetPassCard } from "../components/PassesSheet";
 import { profileTagView } from "../lib/profileTag";
+import BrandMark from "../components/BrandMark";
 
 const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 
@@ -36,13 +37,16 @@ const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
    screen is open, and a pill in the same colour under
    your name, job title and company (VIP gold, Media dark blue,
    Speaker red, Staff purple, Volunteer orange, any other pass
-   green), so door staff can tell it from a distance. Nothing
+   green), so door staff can tell it from a distance. The pill
+   has no words (the organiser: "Just show the colored tab/pill"):
+   a small icon in it, and its name for screen readers. Nothing
    else in the app changes colour. The TTFC brand (Oct 20 2026,
-   the organiser: "more branding"): the logo mark and the dates
-   in the header row instead of the word "Profile" (still the
-   screen's name for screen readers), and a hairline in the
-   logo's colours under your header. The glow and the pill stay
-   the pass colour only.
+   the organiser: "more branding"; "Just the logo"): the logo
+   mark in the header row instead of the word "Profile" (still
+   the screen's name for screen readers), and a hairline in the
+   logo's colours under your header (so this header has no
+   hairline of its own). The glow and the pill stay the pass
+   colour only.
 ========================================================= */
 
 const THEME_ICON = { system: Smartphone, light: Sun, dark: Moon };
@@ -71,28 +75,23 @@ function ProfileGlow({ tag }) {
   );
 }
 
-/** The header row's title: the TTFC mark, the festival and its dates (not a link; "Profile" for screen readers). */
+/** The header row's title: the TTFC mark only (not a link; "Profile" for screen readers). */
 function BrandTitle() {
   return (
     <>
       <span className="sr-only">Profile</span>
-      <span className="profile-brand" aria-hidden="true">
-        <img src="/app/brand/share-mark.png" alt="" width="22" height="28" decoding="async" />
-        <span className="profile-brand-text">
-          <b>The Tech Festival Canada</b>
-          <span>26–27 Oct 2026 · Toronto</span>
-        </span>
-      </span>
+      <BrandMark />
     </>
   );
 }
 
-/** Your pass type under your name: the word and an icon, so it doesn't rely on the colour alone. */
+/** Your pass type under your name: the colour and a small icon, no words (the icon tells the colours apart
+    for anyone who can't see the difference); screen readers hear "Pass colour: VIP". */
 function ProfileTagPill({ tag }) {
   const Icon = TAG_ICON[tag.key] || Ticket;
   return (
     <span className="profile-tag" data-tag={tag.key} style={{ "--tag": tag.colors.bg, "--tag-text": tag.colors.text, "--tag-rgb": tag.colors.rgb }}>
-      <Icon aria-hidden="true" />{tag.text}
+      <Icon aria-hidden="true" /><span className="sr-only">{`Pass colour: ${tag.text}`}</span>
     </span>
   );
 }
@@ -242,7 +241,7 @@ export default function Profile() {
     <div className="page">
       {tag && <ProfileGlow tag={tag} />}
       {/* Points top left (as on Home), Settings top right: both always in reach. */}
-      <TopBar title={<BrandTitle />} back={false}
+      <TopBar title={<BrandTitle />} back={false} brand={false}
         left={(
           <Link to="/points" className="points-pill pressable" aria-label={total != null ? `${total} festival points. Opens your points and the leaderboard` : "Festival points. Opens your points and the leaderboard"}>
             <TrophyFill />{total != null && <span className="figure">{total}</span>}

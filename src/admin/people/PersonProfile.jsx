@@ -14,6 +14,7 @@ import {
 import { when, day, initials } from "../format";
 import RsvpEditor from "./RsvpEditor";
 import LogoPicker, { CompanyMark } from "./LogoPicker";
+import CodeLabel from "./CodeLabel";
 import { TEAM_TYPES, effectiveTypes, toggleType } from "../app/personTypes";
 import {
   ATTENDING_HINT, ATTENDING_LABELS, ATTENDING_STAGE_HINTS, ATTENDING_STAGE_LABELS, ATTENDING_TONE, OPENS_NOTE, TRACKED_FROM, nudgeCount, times,
@@ -435,7 +436,9 @@ function PassesCard({ p, onSaved }) {
               {t.checkedIn && <Badge tone="good">Checked in</Badge>}
               {t.booth && <Badge tone="purple">Booth {t.booth}</Badge>}
               <span className="font-mono text-xs text-ttfc-muted">{t.ticketId.toUpperCase()}</span>
-              <span className="text-xs text-ttfc-dim">{t.promoCode ? `${t.promoCode} · ` : ""}{t.purchaseDate ? day(t.purchaseDate) : ""}</span>
+              {/* The coupon code it was bought with ("Code: SPRING20 · 20% off"), "No code", or "Given by staff" (Oct 20 2026). */}
+              {t.code && <CodeLabel code={t.code} prefix />}
+              {t.purchaseDate && <span className="text-xs text-ttfc-dim">{day(t.purchaseDate)}</span>}
               <Link to={`/admin/attendees?q=${encodeURIComponent(t.ticketId)}`} className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-ttfc-pink hover:underline">
                 Open in Tickets <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </Link>

@@ -10,6 +10,7 @@ import { useToast } from "../toastContext";
 import { Badge, Banner, Button, EmptyState, ErrorState, Input, LoadingState, PageHeader, Select, StatTile, TableWrap } from "../ui";
 import { when } from "../format";
 import LogoPicker, { CompanyMark } from "./LogoPicker";
+import CodeLabel from "./CodeLabel";
 import ReminderDialog from "./ReminderDialog";
 import NudgeDialog from "./NudgeDialog";
 import {
@@ -37,6 +38,9 @@ import {
    summed up above the filters, and its values are part of the
    existing filters (I'm Attending, RSVP Email Sent?, RSVP Status),
    not filters of their own.
+   Code (Oct 20 2026): the coupon code their pass was bought with
+   ("SPRING20 · 20% off"), "No code", or what a pass staff made is
+   ("Given by staff", never an internal marker); the search finds it.
 ========================================================= */
 
 const PAGE = 50;
@@ -45,6 +49,8 @@ const COLUMNS = [
   { key: "types", label: "Type", sort: "type" },
   { key: "company", label: "Company", sort: "company" },
   { key: "pass", label: "Pass", sort: "pass" },
+  // The coupon code their pass was bought with (Oct 20 2026): A–Z, then No code, then passes staff made.
+  { key: "code", label: "Code", sort: "code" },
   { key: "value", label: "Ticket value", sort: "value" },
   { key: "rsvp", label: "RSVP", sort: "rsvp" },
   { key: "rsvpEmail", label: "RSVP email", sort: "rsvpEmail" },
@@ -264,7 +270,7 @@ export default function PeopleDirectory() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1 sm:max-w-sm">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
-            <Input type="search" value={q} onChange={(e) => onSearch(e.target.value)} placeholder="Search name, email, company or ticket ID" className="pl-9" aria-label="Search people" />
+            <Input type="search" value={q} onChange={(e) => onSearch(e.target.value)} placeholder="Search name, email, company, ticket ID or code" className="pl-9" aria-label="Search people" />
           </div>
           <p className="text-sm text-ttfc-muted" aria-live="polite">
             {loading ? "Loading…" : `${total.toLocaleString()} ${total === 1 ? "person" : "people"}`}{refreshing && !loading ? " · updating…" : ""}
@@ -338,6 +344,7 @@ export default function PeopleDirectory() {
                       </>
                     ) : <span className="text-ttfc-dim">None</span>}
                   </td>
+                  <td className="whitespace-nowrap">{r.pass ? <CodeLabel code={r.pass.code} /> : <span className="text-ttfc-dim">None</span>}</td>
                   <td className="whitespace-nowrap">
                     {r.valueBand === "none" ? <span className="text-ttfc-dim">None</span> : (
                       <span title={VALUE_BAND_HINTS[r.valueBand]}>

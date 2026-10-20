@@ -14,6 +14,7 @@ import { day } from "../format";
 import { ProfileLinkPanel, ProfileRequestDialog } from "./ProfileRequests";
 import { CompTicketDrawer } from "./CompTicket";
 import { personPath } from "../people/peopleMeta";
+import CodeLabel from "../people/CodeLabel";
 
 const PAGE = 100;
 const SAFE_NOTE = "This only hides tickets from staff lists and analytics. The owner's ticket stays valid in the app, on the website and at the door.";
@@ -319,12 +320,12 @@ export default function TicketManager() {
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1 sm:max-w-md">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
-          <Input type="search" value={q} onChange={(e) => changeQ(e.target.value)} placeholder="Search name, email, company or ticket ID" className="pl-9" aria-label="Search tickets" />
+          <Input type="search" value={q} onChange={(e) => changeQ(e.target.value)} placeholder="Search name, email, company, ticket ID or code" className="pl-9" aria-label="Search tickets" />
         </div>
         <Select value={promo} onChange={(e) => changePromo(e.target.value)} aria-label="Promo code filter" className="sm:w-56">
           <option value="">All tickets</option>
-          <option value="ANY">Used a promo code</option>
-          {promo && promo !== "ANY" && <option value={promo}>Promo code {promo}</option>}
+          <option value="ANY">Bought with a code</option>
+          {promo && promo !== "ANY" && <option value={promo}>Code {promo}</option>}
         </Select>
         <p className="text-sm text-ttfc-muted" aria-live="polite">
           {loading ? "Loading…" : `${total.toLocaleString()} ticket${total === 1 ? "" : "s"}`}{refreshing && !loading ? " · updating…" : ""}
@@ -354,7 +355,7 @@ export default function TicketManager() {
         <EmptyState
           icon={show === "duplicates" ? Copy : Ticket}
           title={dq || promo ? "No tickets match" : show === "duplicates" ? "No duplicates" : show === "hidden" ? "Nothing hidden" : "No tickets yet"}
-          body={promo && !dq ? (promo === "ANY" ? "No tickets in this list used a promo code." : `No tickets in this list used ${promo}.`) : dq ? "Try a different name, email or ticket ID." : show === "duplicates" ? "Every person has a single visible ticket." : show === "hidden" ? "Tickets you remove from staff lists appear here, and can be restored any time." : "Tickets appear here as soon as people buy them."}
+          body={promo && !dq ? (promo === "ANY" ? "No tickets in this list were bought with a code." : `No tickets in this list used ${promo}.`) : dq ? "Try a different name, email or ticket ID." : show === "duplicates" ? "Every person has a single visible ticket." : show === "hidden" ? "Tickets you remove from staff lists appear here, and can be restored any time." : "Tickets appear here as soon as people buy them."}
         />
       ) : (
         <>
@@ -362,7 +363,7 @@ export default function TicketManager() {
             <thead>
               <tr>
                 <th className="w-10"><Check checked={pageAllSelected} indeterminate={!pageAllSelected && pageSomeSelected} onChange={togglePage} label="Select all on this page" /></th>
-                <th>Name</th><th>Company</th><th>Email</th><th>Ticket ID</th><th>Pass</th><th>Source</th><th>Bought</th><th>Check-in</th>
+                <th>Name</th><th>Company</th><th>Email</th><th>Ticket ID</th><th>Pass</th><th>Code</th><th>Source</th><th>Bought</th><th>Check-in</th>
                 <th><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -380,7 +381,6 @@ export default function TicketManager() {
                         </button>
                         {r.duplicate && <Badge tone="warn" icon={Copy}>Duplicate</Badge>}
                         {r.hidden && <Badge tone="neutral" icon={EyeOff}>Hidden</Badge>}
-                        {r.promoCode && <Badge tone="pink" icon={Tag} className="font-mono">{r.promoCode}</Badge>}
                         {r.profileCompletedAt && <span title={`Completed their profile on ${day(r.profileCompletedAt)}`}><Badge tone="good" icon={UserCheck}>Profile</Badge></span>}
                       </div>
                     </td>
@@ -395,6 +395,8 @@ export default function TicketManager() {
                     <td className="max-w-[220px] truncate font-mono text-xs text-ttfc-muted" title={r.email}>{r.email || "—"}</td>
                     <td className="whitespace-nowrap font-mono text-xs">{r.ticketId}</td>
                     <td><Badge tone="purple">{tierLabel(r.tier)}</Badge></td>
+                    {/* The coupon code it was bought with, "No code", or what a staff-made pass is (Oct 20 2026). */}
+                    <td className="whitespace-nowrap">{r.code ? <CodeLabel code={r.code} /> : r.promoCode ? <Badge tone="pink" icon={Tag} className="font-mono">{r.promoCode}</Badge> : <span className="text-xs text-ttfc-dim">—</span>}</td>
                     <td className="whitespace-nowrap text-ttfc-muted">{r.source === "account" ? "App account" : "Guest checkout"}</td>
                     <td className="whitespace-nowrap text-ttfc-muted">{day(r.purchaseDate)}</td>
                     <td>{r.checkedIn ? <Badge tone="good" icon={CheckCircle2}>Checked in</Badge> : <span className="text-xs text-ttfc-dim">Not yet</span>}</td>

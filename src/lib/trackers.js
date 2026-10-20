@@ -23,11 +23,20 @@ export function getConsent() {
   }
 }
 
+// Fired after the visitor picks in the cookie banner (src/lib/purchaseSource.js keeps or drops
+// its "first visit" record on it).
+export var CONSENT_EVENT = "tfc:cookie-consent";
+
 export function setConsent(value) {
   try {
     window.localStorage.setItem(CONSENT_KEY, value);
   } catch {
     /* storage blocked: the choice applies to this page view only */
+  }
+  try {
+    window.dispatchEvent(new Event(CONSENT_EVENT));
+  } catch {
+    /* very old browsers (no Event constructor): nothing to tell */
   }
 }
 

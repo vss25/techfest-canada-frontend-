@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PavilionCard from "../components/PavilionCard";
 import { submitForm, useFormGuard, FORMS_FALLBACK_EMAIL } from "../lib/forms";
+import { checkoutSource } from "../lib/purchaseSource";
 
 const API = import.meta.env.VITE_API_URL || "https://techfest-canada-backend.onrender.com/api";
 
@@ -187,6 +188,8 @@ export default function Exhibit() {
         type: "booth",
         tier: `booth-${tierId}`,
         ...(promoCode ? { promoCode, promo_code: promoCode, code: promoCode } : {}),
+        // How they found us (src_visit, src_first), for the team's "New booth" email only.
+        metadata: checkoutSource(),
       }),
     });
     const data = await res.json();

@@ -7,6 +7,7 @@ import { API } from "../utils/api";
 import useSiteSettings from "../hooks/useSiteSettings";
 import { TicketSalesNotice } from "../components/SiteNotices";
 import { CustomDropdown, TickSmall } from "../components/FormDropdown";
+import { checkoutSource } from "../lib/purchaseSource";
 import { COUNTRIES, PRIORITY_COUNTRIES, COUNTRY_FLAGS, SALUTATIONS, JOB_LEVELS, JOB_FUNCTIONS, TOPICS, OBJECTIVES } from "../data/attendeeOptions";
 
 /* ============================================================
@@ -260,6 +261,8 @@ function CheckoutInner() {
             objectives: form.objectives.join("; "),
             consentTerms: String(!!form.consent1),
             consentUpdates: String(!!form.consent2),
+            // How they found us (src_visit, src_first), for the team's "New ticket" email only.
+            ...checkoutSource(),
           },
         }),
       });

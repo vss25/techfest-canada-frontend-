@@ -53,7 +53,7 @@ var SECTIONS_PRIVACY = [
   },
   {
     title: "7. Cookies and similar technologies",
-    body: "We use cookies and similar technologies to operate the website, remember preferences, secure the Services, and understand website traffic and performance. Analytics and advertising cookies (Google Analytics, the Meta Pixel, and a visitor-identification service) are only used if you choose \"Accept All\" in our cookie banner. You can change your choice at any time using \"Cookie settings\" in the site footer, and you can also control cookies through your browser settings. Disabling certain cookies may affect site functionality.",
+    body: "We use cookies and similar technologies to operate the website, remember preferences, secure the Services, and understand website traffic and performance. Analytics and advertising cookies (Google Analytics, the Meta Pixel, and a visitor-identification service) are only used if you choose \"Accept All\" in our cookie banner. When you buy a pass or booth on our website, we record how you found us (the website, ad or campaign link that brought you and the page you landed on) with your order so our team can see which channels work; we never store ad click identifiers, and we keep your first visit in your browser only if you choose \"Accept All\". You can change your choice at any time using \"Cookie settings\" in the site footer, and you can also control cookies through your browser settings. Disabling certain cookies may affect site functionality.",
   },
   {
     title: "8. Retention",
@@ -210,6 +210,7 @@ var SECTIONS_COOKIES = [
       "Preferences such as remembering choices you make and improving your experience",
       "Analytics such as understanding traffic, page performance, and how visitors use the site",
       "Communications measurement such as understanding whether emails are opened or links are clicked where permitted by law and enabled by the provider",
+      "Order source: when you buy a pass or booth, how you found us (the website, ad or campaign link that brought you and the page you landed on) is kept in your browser for that visit and saved with your order. We never store ad click identifiers, and your first visit is kept only if you choose \"Accept All\"",
     ],
   },
   {
@@ -399,7 +400,7 @@ export default function Privacy() {
         <PolicyBlock
           title="Privacy Policy"
           subtitle="The Tech Festival Canada"
-          effective="October 9, 2026"
+          effective="October 19, 2026"
           intro="This website thetechfestival.com is organized by AtlasLink Markets Inc. We are responsible for the personal information handled through this site and related event services. This Privacy Policy explains how we collect, use, disclose, store, and protect personal information when you visit thetechfestival.com or interact with The Tech Festival Canada event services. We aim to comply with applicable Canadian privacy laws, including the Personal Information Protection and Electronic Documents Act and relevant provincial private sector privacy laws where they apply."
           sections={SECTIONS_PRIVACY}
           dark={dark}
@@ -461,7 +462,7 @@ export default function Privacy() {
         <PolicyBlock
           title="Cookie Policy"
           subtitle="The Tech Festival Canada"
-          effective="October 9, 2026"
+          effective="October 19, 2026"
           intro="This Cookie Policy explains how AtlasLink Markets Inc uses cookies and similar technologies on thetechfestival.com."
           sections={SECTIONS_COOKIES}
           dark={dark}

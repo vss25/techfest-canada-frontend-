@@ -18,7 +18,8 @@ const stillMotion = () => {
   try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; }
 };
 
-export default function BrandMark({ className = "" }) {
+/** `hidden`: out of the way for now (Home's bell menu is open): faded out, not tappable, skipped by screen readers. */
+export default function BrandMark({ className = "", hidden = false }) {
   const img = useRef(null);
   const tap = () => {
     try { navigator.vibrate?.(10); } catch { /* no vibration here */ }
@@ -32,7 +33,8 @@ export default function BrandMark({ className = "" }) {
     window.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
   };
   return (
-    <button type="button" className={`brand-mark ${className}`.trim()} aria-label="The Tech Festival Canada, scroll to top" onClick={tap}>
+    <button type="button" className={`brand-mark ${className}${hidden ? " is-hidden" : ""}`.trim()} aria-label="The Tech Festival Canada, scroll to top"
+      onClick={tap} aria-hidden={hidden || undefined} tabIndex={hidden ? -1 : undefined}>
       <img ref={img} src="/app/brand/share-mark.png" alt="" width="22" height="28" decoding="async"
         onAnimationEnd={(e) => e.currentTarget.classList.remove("is-popping")} />
     </button>

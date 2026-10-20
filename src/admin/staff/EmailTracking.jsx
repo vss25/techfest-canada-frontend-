@@ -12,7 +12,7 @@ const SAVED_FORM = {
   to: ["baldeep@thetechfestival.com"],
   toNote: "Saved in the admin panel first (More › Form submissions), then emailed. Reply goes straight to the person.",
   via: "backend",
-  viaNote: "from noreply@thetechfestival.com",
+  viaNote: "from enquire@thetechfestival.com",
   reply: null,
 };
 
@@ -23,7 +23,7 @@ const ROWS = [
     path: "/awards/nominations",
     to: ["baldeep@thetechfestival.com", "nicole@thetechfestival.com"],
     via: "backend",
-    viaNote: "from noreply@thetechfestival.com",
+    viaNote: "from enquire@thetechfestival.com",
     reply: "Confirmation email. Replies go to enquire@thetechfestival.com.",
   },
   {
@@ -49,8 +49,8 @@ const ROWS = [
   { form: "Speaker application", what: "People applying to speak", path: "/speakers", ...SAVED_FORM },
   { form: "Volunteer application", what: "People applying to volunteer", path: "/volunteer", ...SAVED_FORM },
   { form: "Institutional partnership enquiry", what: "Organisations asking to partner", path: "/partners2026", ...SAVED_FORM },
-  { form: "Newsletter sign-up", what: "Email box in the footer and on some pages", to: [], toNote: "Not emailed to staff — saved as a subscriber.", via: "saved", reply: "Confirmation email from noreply@thetechfestival.com." },
-  { form: "Brochure download", what: "Request a brochure", path: "/brochures", to: ["sales@thetechfestival.com"], toNote: "A receipt for each download. Every download is also listed under More › Brochure downloads.", via: "backend", viaNote: "from noreply@thetechfestival.com", reply: "The brochure (download link, or the PDF attached when it's small enough). Replies go to sales@thetechfestival.com." },
+  { form: "Newsletter sign-up", what: "Email box in the footer and on some pages", to: [], toNote: "Not emailed to staff — saved as a subscriber.", via: "saved", reply: "Confirmation email from enquire@thetechfestival.com." },
+  { form: "Brochure download", what: "Request a brochure", path: "/brochures", to: ["sales@thetechfestival.com"], toNote: "A receipt for each download. Every download is also listed under More › Brochure downloads.", via: "backend", viaNote: "from enquire@thetechfestival.com", reply: "The brochure (download link, or the PDF attached when it's small enough). Replies go to sales@thetechfestival.com." },
   { form: "Ticket purchase", what: "Buying a pass through Stripe", path: "/tickets", to: [], toNote: "No staff email.", via: "stripe", reply: "Their ticket, from tickets@thetechfestival.com." },
 ];
 

@@ -9,7 +9,14 @@
    #li=1&fn=…&ln=…&pic=<media.licdn.com URL>, or #li_error=<code>.
    After "Post to LinkedIn" (computers): #posted=1&post=<post URL>,
    or #post_error=<code>.
+   Emails sent from Oct 19 2026 add &r=<token>: who the link was sent
+   to, signed by the backend. The page keeps it (and in the draft, for
+   the trip to LinkedIn) and sends it back when it's opened, shared or
+   posted (sendAttendingEvent, POST /api/attending/event), so staff can
+   see who did. Nothing else about the visitor goes with it.
 ========================================================= */
+
+import { API } from "./forms";
 
 export const SITE_URL = "https://www.thetechfestival.com";
 export const HASHTAGS = "#TTFC2026 #TheTechFestivalCanada";
@@ -53,9 +60,12 @@ export function isLinkedinPhotoUrl(raw) {
 /** A LinkedIn post's address, as the backend sends it back after posting. */
 export const isLinkedinPostUrl = (raw) => /^https:\/\/www\.linkedin\.com\/feed\/update\/urn:li:(share|ugcPost):\d+\/$/.test(String(raw || ""));
 
+/** The tracking token's shape (the backend checks its signature): base64url body "." 22-character signature. */
+export const isTrackToken = (raw) => typeof raw === "string" && raw.length <= 400 && /^[A-Za-z0-9_-]{8,377}\.[A-Za-z0-9_-]{22}$/.test(raw);
+
 /**
  * Reads the fragment: { fields: { firstName, lastName, title, company }, linkedin: { picture } | null,
- * linkedinError: "" | code, posted: { url } | null, postError: "" | code, had: boolean }.
+ * linkedinError: "" | code, posted: { url } | null, postError: "" | code, track: "" | token, had: boolean }.
  * `had` is true when there was anything to clear.
  */
 export function readFragment(hash) {
@@ -73,7 +83,25 @@ export function readFragment(hash) {
   const post = p.get("post") || "";
   const posted = p.get("posted") === "1" ? { url: isLinkedinPostUrl(post) ? post : "" } : null;
   const postError = tidy(p.get("post_error"), 40);
-  return { fields, linkedin, linkedinError, posted, postError, had: raw.length > 0 };
+  const r = p.get("r") || "";
+  return { fields, linkedin, linkedinError, posted, postError, track: isTrackToken(r) ? r : "", had: raw.length > 0 };
+}
+
+/**
+ * Tells the backend what happened on the page for this token: "visit", "share" or "manual".
+ * Never waits, never fails, sends no cookies; text/plain so it needs no CORS preflight.
+ */
+export function sendAttendingEvent(track, type) {
+  if (!isTrackToken(track) || typeof fetch !== "function") return;
+  try {
+    fetch(`${API}/attending/event`, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ r: track, type }),
+      credentials: "omit",
+      keepalive: true,
+    }).catch(() => {});
+  } catch { /* never in the way */ }
 }
 
 /** Phones and tablets: share straight to the LinkedIn app via the share sheet. */

@@ -215,7 +215,9 @@ export default function AttendingCampaign() {
       {isManagement && (
         <p className="mb-6 text-sm text-ttfc-muted">
           Each person's status (and a nudge to one person or a filtered group) is also in{" "}
-          <Link to="/admin/people?attending=no" className="font-semibold text-ttfc-pink hover:underline">People › I'm attending</Link>. Opens, clicks and posts aren't tracked.
+          <Link to="/admin/people?attending=no" className="font-semibold text-ttfc-pink hover:underline">People › I'm attending</Link>. For emails sent from Oct 19, People also shows who{" "}
+          <Link to="/admin/people?attending=opened" className="font-semibold text-ttfc-pink hover:underline">opened it</Link> and who{" "}
+          <Link to="/admin/people?attending=posted" className="font-semibold text-ttfc-pink hover:underline">posted on LinkedIn</Link>. Test emails aren't counted.
         </p>
       )}
 

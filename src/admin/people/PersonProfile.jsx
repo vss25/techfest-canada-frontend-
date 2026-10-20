@@ -16,7 +16,7 @@ import RsvpEditor from "./RsvpEditor";
 import LogoPicker, { CompanyMark } from "./LogoPicker";
 import { TEAM_TYPES, effectiveTypes, toggleType } from "../app/personTypes";
 import {
-  ATTENDING_HINT, ATTENDING_LABELS, ATTENDING_TONE, nudgeCount,
+  ATTENDING_HINT, ATTENDING_LABELS, ATTENDING_STAGE_HINTS, ATTENDING_STAGE_LABELS, ATTENDING_TONE, OPENS_NOTE, TRACKED_FROM, nudgeCount, times,
   DAY_SHORT, EXTRAS, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_STATUS_TONE, PASS_TIERS, PERSON_TYPES, passExtras, passName, RSVP_EMAIL_HINT, RSVP_STATUS_LABELS, RSVP_STATUS_TONE,
   TYPE_LABELS, TYPE_TONE, VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL, VIP_TONE, personPath,
 } from "./peopleMeta";
@@ -45,7 +45,11 @@ import {
    "I'm attending" LinkedIn nudge to this person (POST …/reminder,
    …/nudge), with the same cool-downs and skip rules as the sends
    to a view; the server says whether each can go now and why not
-   (`outreach`).
+   (`outreach`). Each row also says what they did (`person.engagement`,
+   emails sent from Oct 19 and every RSVP link): I'm attending: opened
+   the email, opened their page, posted on LinkedIn (with the post) or
+   shared / opened LinkedIn without a confirmation; RSVP: which RSVP
+   email they opened, when they opened the form, whether they sent it.
 ========================================================= */
 
 const DETAIL_KEYS = ["firstName", "lastName", "email", "phone", "linkedinUrl", "company", "jobTitle"];
@@ -568,6 +572,73 @@ function ContactCardCard({ items, hasAccount }) {
   );
 }
 
+/* A line of what they did: "Email  Opened Oct 19, 10:02 · last Oct 20, 8:11 · 3 times". */
+function Seen({ label, children }) {
+  return (
+    <li className="flex gap-2">
+      <span className="w-[4.5rem] shrink-0 text-ttfc-dim">{label}</span>
+      <span className="min-w-0 flex-1 text-ttfc-text/90">{children}</span>
+    </li>
+  );
+}
+const firstLast = (first, last, n) => [when(first), last && n > 1 && String(last) !== String(first) ? `last ${when(last)}` : "", times(n)].filter(Boolean)
+  .flatMap((part, i) => [i ? <span key={`s${i}`}> · </span> : null, <span key={i} className="whitespace-nowrap">{part}</span>]);
+
+/* "I'm attending": opened the email, opened their page, what they did there (backend services/engagement.js). */
+function AttendingSeen({ at, e }) {
+  if (!e || (at.status === "none" && !e.stage)) return null;
+  const sent = at.status === "sent";
+  const notKnown = sent && !e.tracked;
+  return (
+    <ul className="mt-2 space-y-1">
+      <Seen label="Email">
+        {e.opens > 0 ? <>Opened {firstLast(e.firstOpenAt, e.lastOpenAt, e.opens)}</>
+          : notKnown ? <span className="text-ttfc-muted">Opens not known (sent before Oct 19)</span>
+            : sent ? <span className="text-ttfc-muted">Not opened yet</span> : <span className="text-ttfc-muted">Not sent</span>}
+      </Seen>
+      <Seen label="Page">
+        {e.visits > 0 ? <>Opened {firstLast(e.firstVisitAt, e.lastVisitAt, e.visits)}</>
+          : <span className="text-ttfc-muted">{notKnown ? "Not known" : "Not opened"}</span>}
+      </Seen>
+      <Seen label="LinkedIn">
+        {e.posts > 0 ? (
+          <span title={ATTENDING_STAGE_HINTS.posted}>
+            <b className="font-semibold text-emerald-200">{ATTENDING_STAGE_LABELS.posted}</b> {when(e.postedAt)}{e.posts > 1 ? ` · ${e.posts} posts` : ""}
+            {e.postUrl && <> · <a href={e.postUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-ttfc-pink hover:underline">View post <ExternalLink className="h-3 w-3" aria-hidden="true" /></a></>}
+          </span>
+        ) : e.shares > 0 ? (
+          <span title={ATTENDING_STAGE_HINTS.shared}>{ATTENDING_STAGE_LABELS.shared} {when(e.sharedAt)} <span className="text-ttfc-muted">(can't confirm it was posted)</span></span>
+        ) : e.manuals > 0 ? (
+          <span title={ATTENDING_STAGE_HINTS.manual}>{ATTENDING_STAGE_LABELS.manual} {when(e.manualAt)} <span className="text-ttfc-muted">(not confirmed)</span></span>
+        ) : <span className="text-ttfc-muted">{notKnown ? "Not known" : "Not posted"}</span>}
+      </Seen>
+    </ul>
+  );
+}
+
+/* RSVP: the RSVP emails opened, the form opened with their ticket, and their RSVP. */
+function RsvpSeen({ p, e }) {
+  if (!e) return null;
+  const r = p.rsvp || {};
+  const sent = !!p.rsvpEmail?.sent;
+  return (
+    <ul className="mt-2 space-y-1">
+      <Seen label="Email">
+        {e.emailOpened ? <>Opened {firstLast(e.firstOpenAt, e.lastOpenAt, e.opens)}{e.openedVia?.length ? <span className="text-ttfc-muted"> ({e.openedVia.join(", ")})</span> : null}</>
+          : !sent ? <span className="text-ttfc-muted">No RSVP email sent</span>
+            : e.tracked ? <span className="text-ttfc-muted">Not opened yet</span> : <span className="text-ttfc-muted">Opens not known (sent before Oct 19, or with a cc)</span>}
+      </Seen>
+      <Seen label="Form">
+        {e.formOpened ? <>Opened {firstLast(e.firstFormAt, e.lastFormAt, e.formOpens)}</> : <span className="text-ttfc-muted">Not opened</span>}
+      </Seen>
+      <Seen label="RSVP">
+        {r.status === "attendee" ? <>Submitted {when(r.at)}</> : r.status === "staff" ? <>Not submitted <span className="text-ttfc-muted">(confirmed by staff{r.by ? `, ${r.by}` : ""})</span></>
+          : <span className="text-ttfc-muted">Not submitted</span>}
+      </Seen>
+    </ul>
+  );
+}
+
 /* One email to this person, after a confirm: the RSVP reminder or the "I'm attending" LinkedIn nudge. */
 function OutreachRow({ icon: Icon, title, status, verdict, button, confirmTitle, confirmBody, path, sentMsg, onSent }) {
   const toast = useToast();
@@ -602,7 +673,12 @@ function OutreachCard({ p, outreach, onSent }) {
       <SectionTitle hint="One email to this person. Sends to a whole list are on the People page (management).">Emails</SectionTitle>
       <div className="divide-y divide-ttfc-line">
         <OutreachRow icon={BellRing} title="RSVP reminder" verdict={rr} button="Send RSVP reminder"
-          status={rr.lastSentAt ? `Last reminded ${when(rr.lastSentAt)}. Skipped if reminded in the last ${rr.cooldownHours} hours.` : `Not reminded yet. The email has a personal RSVP button for each of their tickets.`}
+          status={(
+            <>
+              {rr.lastSentAt ? `Last reminded ${when(rr.lastSentAt)}. Skipped if reminded in the last ${rr.cooldownHours} hours.` : "Not reminded yet. The email has a personal RSVP button for each of their tickets."}
+              <RsvpSeen p={p} e={p.engagement?.rsvp} />
+            </>
+          )}
           confirmTitle={`Send ${p.name} the RSVP reminder?`} confirmBody={`To ${to}. The same email as RSVP reminders, with an RSVP button for each ticket still open.`}
           path={`${base}/reminder`} sentMsg={(e) => `RSVP reminder sent to ${e}`} onSent={onSent} />
         <OutreachRow icon={Linkedin} title="I'm attending (LinkedIn)" verdict={at} button="Send LinkedIn nudge"
@@ -610,12 +686,18 @@ function OutreachCard({ p, outreach, onSent }) {
             <span title={ATTENDING_HINT}>
               <Badge tone={ATTENDING_TONE[at.status] || "neutral"}>{ATTENDING_LABELS[at.status] || ATTENDING_LABELS.none}{at.sentAt ? ` · ${when(at.sentAt)}` : ""}</Badge>
               {at.nudges > 0 && <span className="ml-2">{nudgeCount(at.nudges)} from People</span>}
-              <span className="mt-1 block">Opens, clicks and LinkedIn posts aren't tracked. Skipped if emailed in the last {at.cooldownDays} days.</span>
+              <AttendingSeen at={at} e={p.engagement?.attending} />
+              <span className="mt-1 block">
+                {at.tracking?.posts
+                  ? `Skipped if emailed in the last ${at.cooldownDays} days, or once they've posted on LinkedIn.`
+                  : `Opens, clicks and LinkedIn posts aren't tracked. Skipped if emailed in the last ${at.cooldownDays} days.`}
+              </span>
             </span>
           )}
           confirmTitle={`Send ${p.name} the LinkedIn nudge?`} confirmBody={`To ${to}. The “Show the world you're attending” email: their personal page to make an “I'm attending” image and post it on LinkedIn.`}
           path={`${base}/nudge`} sentMsg={(e) => `LinkedIn nudge sent to ${e}`} onSent={onSent} />
       </div>
+      {p.engagement && <p className="mt-4 border-t border-ttfc-line pt-3 text-xs text-ttfc-dim">{OPENS_NOTE} {TRACKED_FROM}</p>}
     </Card>
   );
 }
@@ -726,7 +808,7 @@ function ProfileView({ id }) {
             </span>
             <span title={ATTENDING_HINT}>
               <Badge tone={ATTENDING_TONE[p.attending?.status] || "neutral"} icon={Linkedin}>
-                {`I'm attending: ${ATTENDING_LABELS[p.attending?.status] || ATTENDING_LABELS.none}${p.attending?.sentAt ? ` · ${when(p.attending.sentAt)}` : ""}`}
+                {`I'm attending: ${ATTENDING_LABELS[p.attending?.status] || ATTENDING_LABELS.none}${p.attending?.sentAt ? ` · ${when(p.attending.sentAt)}` : ""}${p.engagement?.attending?.stage ? ` · ${ATTENDING_STAGE_LABELS[p.engagement.attending.stage]}` : ""}`}
               </Badge>
             </span>
           </p>

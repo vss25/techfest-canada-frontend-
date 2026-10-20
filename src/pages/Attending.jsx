@@ -10,8 +10,8 @@ import {
   loadCardAssets, photoCircle, prepareImage,
 } from "../lib/attendingCard";
 import {
-  ENQUIRE, LINKEDIN_PAGE, canShareFile, clearDraft, copyText, copyTextNow, defaultPostText, downloadBlob, isMobileDevice, linkedinShareUrl,
-  peekDraft, readFragment, saveDraft,
+  ENQUIRE, LINKEDIN_PAGE, canShareFile, clearDraft, copyText, copyTextNow, defaultPostText, downloadBlob, isMobileDevice, isTrackToken,
+  linkedinShareUrl, peekDraft, readFragment, saveDraft, sendAttendingEvent,
 } from "../lib/attending";
 
 /* =========================================================
@@ -42,6 +42,13 @@ import {
        text is copied, LinkedIn's share box opens, they attach it.
    The image is drawn in the browser. Only the finished image is
    uploaded, and only when they post it.
+   Who did what (Oct 19 2026): links from emails sent since carry
+   &r=<token> (who it was sent to, signed by the backend). The page
+   keeps it (in the draft too, for the trips to LinkedIn) and tells
+   the backend once when opened from the link (visit), when the
+   phone's share sheet finishes (share) and on "Download and open
+   LinkedIn" (manual); "Post to LinkedIn" sends it with the draft so
+   the post is theirs. Never waited for, never in the way.
 ========================================================= */
 
 const SHAPES = ["square", "landscape"];
@@ -65,7 +72,7 @@ const filled = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => !!v
 
 /** First render: what the link (or the trip back from LinkedIn) brought. Doesn't change anything. */
 function initialState() {
-  if (typeof window === "undefined") return { fields: EMPTY, text: defaultPostText(), format: "square", picture: "", error: "", clear: false, returning: false, posted: null, postError: "", photoData: "" };
+  if (typeof window === "undefined") return { fields: EMPTY, text: defaultPostText(), format: "square", picture: "", error: "", clear: false, returning: false, posted: null, postError: "", photoData: "", track: "", fromLink: false };
   const frag = readFragment(window.location.hash);
   const returning = !!(frag.linkedin || frag.linkedinError || frag.posted || frag.postError);
   const draft = returning ? peekDraft() : null;
@@ -88,6 +95,9 @@ function initialState() {
     photoData: !frag.linkedin && typeof draft?.photo === "string" && draft.photo.startsWith("data:image/jpeg;base64,") ? draft.photo : "",
     photoSource: ["upload", "camera", "linkedin"].includes(draft?.photoSource) ? draft.photoSource : "upload",
     crop: draft?.crop && typeof draft.crop === "object" ? draft.crop : null,
+    // Who the email link was for: from the link, or back from LinkedIn from the draft.
+    track: frag.track || (returning && isTrackToken(draft?.r) ? draft.r : ""),
+    fromLink: !!frag.track,
   };
 }
 
@@ -164,6 +174,7 @@ export default function Attending() {
   const copiedTimer = useRef(0);
   const mobile = useMemo(() => isMobileDevice(), []);
   const ready = !!assets;
+  const track = init.track; // "" without one (an older link, or opened some other way)
 
   /* Hidden page: out of search engines, a quiet title, the dark page background. */
   useEffect(() => {
@@ -183,6 +194,7 @@ export default function Attending() {
     startedRef.current = true;
     if (init.clear) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
     if (init.returning) clearDraft();
+    if (init.fromLink) sendAttendingEvent(init.track, "visit");
     if (init.photoData) {
       (async () => {
         try {
@@ -279,7 +291,7 @@ export default function Attending() {
   const removePhoto = () => { setPhoto(null); setCrop(DEFAULT_CROP); setPhotoError(""); };
 
   /* Before leaving for LinkedIn's sign-in page, keep what they typed (this tab only). */
-  const onLinkedinClick = () => saveDraft({ fields, text, format });
+  const onLinkedinClick = () => saveDraft({ fields, text, format, r: track });
 
   /* Drag the photo inside its circle. */
   const toCanvas = (e) => {
@@ -331,7 +343,7 @@ export default function Attending() {
     setPostError("");
     setPosted(null);
     setGuide(null);
-    const base = { fields, text, format };
+    const base = { fields, text, format, r: track };
     let photoData = "";
     try { photoData = photo?.img ? photo.img.toDataURL("image/jpeg", 0.9) : ""; } catch { /* keep the rest */ }
     if (!photoData || !saveDraft({ ...base, photo: photoData, photoSource: photo.source, crop })) saveDraft(base);
@@ -340,7 +352,7 @@ export default function Attending() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "omit",
-        body: JSON.stringify({ image: canvas.toDataURL("image/png"), text }),
+        body: JSON.stringify({ image: canvas.toDataURL("image/png"), text, ...(track ? { r: track } : {}) }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j.id) throw Object.assign(new Error(j.error || "failed"), { code: j.code || "failed" });
@@ -363,7 +375,7 @@ export default function Attending() {
     if (mobile && file && canShareFile(file)) {
       if (copyTextNow(text)) flashCopied(); // in case the app keeps only the image
       navigator.share({ files: [file], text, title: "I'm attending TTFC 2026" }).then(
-        () => { setShared(true); setGuide(null); },
+        () => { setShared(true); setGuide(null); sendAttendingEvent(track, "share"); },
         (err) => { if (err?.name !== "AbortError") setGuide({ mode: "fallback", copied: true, name }); },
       );
       return;
@@ -382,6 +394,7 @@ export default function Attending() {
     downloadBlob(blob, name);
     const ok = copyTextNow(text);
     window.open(linkedinShareUrl(text), "_blank", "noopener,noreferrer");
+    sendAttendingEvent(track, "manual");
     if (ok) flashCopied();
     else copyText(text).then((done) => { if (done) flashCopied(); });
     setGuide({ mode: "desktop", copied: ok, name });
@@ -613,7 +626,7 @@ export default function Attending() {
       </main>
 
       <footer className="att-foot">
-        <p>Made in your browser. When you post, only your finished image and text go to LinkedIn. We don’t keep a copy.</p>
+        <p>Made in your browser. Your image and text go only to LinkedIn; we don’t keep them. We do note when you open this page or post, so we don’t send you reminders you don’t need.</p>
         <p>Questions? <a className="att-link" href={`mailto:${ENQUIRE}`}>{ENQUIRE}</a></p>
       </footer>
     </div>

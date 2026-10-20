@@ -14,8 +14,9 @@ import { personPath } from "./peopleMeta";
    on LinkedIn), to the people in the current view. The same
    confirm, count and skip list as the RSVP reminder: GET
    /console/people/nudge shows exactly who, and who's left out
-   and why (no pass, no email, suspended, unsubscribed, a send
-   not confirmed, emailed in the last 3 days). Sent in the
+   and why (no pass, no email, suspended, unsubscribed, already
+   posted on LinkedIn, a send not confirmed, emailed in the last
+   3 days). Sent in the
    background, 600 ms apart; if the list changed since it was
    shown, nothing is sent. One person: their profile.
 ========================================================= */
@@ -130,7 +131,9 @@ export default function NudgeDialog({ open, onClose, view, onSent }) {
           )}
           <p className="text-xs text-ttfc-dim">
             Anyone emailed in the last {data.cooldownDays} days is skipped, here, on their profile and by the campaign's send to everyone.
-            Opens, clicks and LinkedIn posts aren't tracked, so people who already posted can't be left out automatically.{" "}
+            {data.tracking?.posts
+              ? " Anyone who posted with “Post to LinkedIn” is left out too. A phone share or a post made by hand can't be confirmed, so those people still get it."
+              : " Opens, clicks and LinkedIn posts aren't tracked, so people who already posted can't be left out automatically."}{" "}
             <Link to="/admin/marketing/attending" className="font-semibold text-ttfc-pink hover:underline">See the email</Link>
           </p>
         </div>

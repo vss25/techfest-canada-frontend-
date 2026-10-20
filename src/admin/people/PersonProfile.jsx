@@ -650,6 +650,27 @@ function RsvpSeen({ p, e }) {
   );
 }
 
+/* The app invite email to this person: sent or not, opened, the web app opened from its button, using the app. */
+function AppInviteSeen({ ai }) {
+  const sent = ai.status === "sent";
+  return (
+    <>
+      <Badge tone={sent ? "good" : ai.status === "failed" ? "bad" : ai.status === "sending" ? "warn" : "neutral"}>
+        {sent ? `Sent${ai.sentAt ? ` · ${when(ai.sentAt)}` : ""}` : ai.status === "failed" ? "Failed" : ai.status === "sending" ? "Unconfirmed" : "Not sent"}
+      </Badge>
+      {sent && (
+        <ul className="mt-2 space-y-1">
+          <Seen label="Email">{ai.opened ? "Opened" : <span className="text-ttfc-muted">Not opened yet</span>}</Seen>
+          <Seen label="Button">{ai.clicked ? "Opened the web app from it" : <span className="text-ttfc-muted">Not clicked yet</span>}</Seen>
+          <Seen label="App">{ai.usingAfter ? "Signed in after the email" : ai.usingApp ? "Using the app" : <span className="text-ttfc-muted">Not signed in yet</span>}</Seen>
+        </ul>
+      )}
+      {!sent && ai.usingApp && <span className="ml-2">Already using the app</span>}
+      <span className="mt-1 block">Skipped if emailed in the last {ai.cooldownDays} days.</span>
+    </>
+  );
+}
+
 /* One email to this person, after a confirm: the RSVP reminder or the "I'm attending" LinkedIn nudge. */
 function OutreachRow({ icon: Icon, title, status, verdict, button, confirmTitle, confirmBody, path, sentMsg, onSent }) {
   const toast = useToast();
@@ -707,6 +728,13 @@ function OutreachCard({ p, outreach, onSent }) {
           )}
           confirmTitle={`Send ${p.name} the LinkedIn nudge?`} confirmBody={`To ${to}. The “Show the world you're attending” email: their personal page to make an “I'm attending” image and post it on LinkedIn.`}
           path={`${base}/nudge`} sentMsg={(e) => `LinkedIn nudge sent to ${e}`} onSent={onSent} />
+        {/* The app invite email (Website & app › App invite email, Oct 20 2026): null = no pass or role at TTFC 2026. */}
+        {outreach.appInvite && (
+          <OutreachRow icon={Smartphone} title="App invite email" verdict={outreach.appInvite} button="Send app invite"
+            status={<AppInviteSeen ai={outreach.appInvite} />}
+            confirmTitle={`Send ${p.name} the app invite?`} confirmBody={`To ${to}. “Open the TTFC app”: the web app, how to add it to their home screen, and the email to sign in with.`}
+            path={`${base}/app-invite`} sentMsg={(e) => `App invite sent to ${e}`} onSent={onSent} />
+        )}
       </div>
       {p.engagement && <p className="mt-4 border-t border-ttfc-line pt-3 text-xs text-ttfc-dim">{OPENS_NOTE} {TRACKED_FROM}</p>}
     </Card>

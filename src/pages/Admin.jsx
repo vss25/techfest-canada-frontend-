@@ -41,6 +41,7 @@ import FormSubmissions from "../admin/leads/FormSubmissions";
 import Rsvps from "../admin/leads/Rsvps";
 import CatalystNominations from "../admin/awards/CatalystNominations";
 import AttendingCampaign from "../admin/marketing/AttendingCampaign";
+import AppInvite from "../admin/app/AppInvite";
 import RsvpReminders from "../admin/marketing/RsvpReminders";
 import PeopleDirectory from "../admin/people/PeopleDirectory";
 import PersonProfile from "../admin/people/PersonProfile";
@@ -220,6 +221,7 @@ export default function Admin() {
             <Route path="awards" element={<CatalystNominations />} />
 
             <Route path="marketing/attending" element={<AttendingCampaign />} />
+            <Route path="app/invite" element={<AppInvite />} />
             <Route path="marketing/rsvp-reminders" element={<RsvpReminders />} />
 
             <Route path="app" element={<AppOverview />} />

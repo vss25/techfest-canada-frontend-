@@ -7,7 +7,7 @@
    sidebar does. Settings open their page with ?highlight=<key>
    (AdminShell scrolls to it and flashes it).
 ========================================================= */
-import { CalendarClock, Tag, KeyRound, LayoutGrid, ToggleRight, TicketPlus, UserPlus, BellRing, Hash, Linkedin, MailOpen, Users } from "lucide-react";
+import { CalendarClock, Tag, KeyRound, LayoutGrid, ToggleRight, TicketPlus, UserPlus, BellRing, Hash, Linkedin, MailOpen, MailPlus, Users } from "lucide-react";
 import { NAV } from "../nav";
 import { REGISTRY, SCOPES } from "../content/registry";
 import { score } from "./match";
@@ -49,6 +49,7 @@ const KEYWORDS = {
   "app/moderation": ["reports", "held posts", "flagged", "review queue", "remove post"],
   "app/text": ["app copy", "feature switches", "switches", "flags", "texts", "wording"],
   "app/pwa": ["web app", "installs", "install prompt", "home screen"],
+  "app/invite": ["app invite", "invite email", "download the app", "web app email", "email everyone", "add to home screen", "app email", "open the ttfc app"],
   "app/rights": ["permissions", "rights matrix", "who can message", "connection requests", "posting", "share contact"],
   "app/broadcast": ["push", "notification", "notify", "announce", "send to everyone", "personal notification"],
   "app/audit": ["history", "log", "who changed", "audit trail"],
@@ -61,6 +62,7 @@ const KEYWORDS = {
 /* Things done on a page that people look for by name. */
 const ACTIONS = [
   { title: "Give a pass", where: "People & passes › Give a pass", to: "issued-passes", icon: TicketPlus, keywords: ["give someone a pass", "new pass"] },
+  { title: "Email everyone to get the web app", where: "Website & app › App invite email", to: "app/invite", icon: MailPlus, keywords: ["app invite", "download the app", "install the app", "web app email"] },
   { title: "Mark someone as Media, VIP, Volunteer or Staff", where: "People & passes › People › their profile", to: "people", icon: Users, keywords: ["media tag", "press", "vip", "volunteer", "staff", "type", "profile colour", "profile color"] },
   { title: "Running late: shift sessions", where: "Website & app › Agenda", to: "content/agenda", icon: CalendarClock, keywords: ["delay", "push back", "move sessions", "late"] },
   { title: "Send RSVP reminder", where: "RSVPs & meals › RSVP reminders", to: "marketing/rsvp-reminders", icon: BellRing, keywords: ["remind", "unconfirmed"] },

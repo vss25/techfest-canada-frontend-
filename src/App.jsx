@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import Home from "./pages/Home";
 import Programme from "./pages/Programme";
@@ -36,6 +36,8 @@ import AppLogin from "./pages/AppLogin";
 const Rsvp = lazy(() => import("./pages/Rsvp"));
 // Unlinked "I'm attending" page: opened from the campaign email (noindex, not in any menu).
 const Attending = lazy(() => import("./pages/Attending"));
+// Catalyst Awards jury portal: unlinked, noindex, light only (src/jury). Loaded only when someone opens it.
+const JuryPortal = lazy(() => import("./jury/JuryPortal"));
 import MaintenanceGate from "./components/MaintenanceGate";
 import CookieConsent from "./components/CookieConsent";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
@@ -48,6 +50,14 @@ const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 // computers (the web app is phone-only). Not inside the installed app; loaded on its own.
 const InstallAppPrompt = lazy(() => import("./components/InstallAppPrompt"));
 const SHOW_INSTALL_PROMPT = typeof window !== "undefined" && !isStandalone();
+
+/* The jury portal (/awards/jury-admin) is a focused tool for the Catalyst Awards jury: no ticket bar,
+   announcement, cookie banner or app prompt on it. The router matches paths ignoring case. */
+const isJuryPath = (p) => /^\/awards\/jury-admin(\/|$)/i.test(p);
+function OffJury({ children }) {
+  const { pathname } = useLocation();
+  return isJuryPath(pathname) ? null : children;
+}
 
 function AdminLoading() {
   return <div style={{ minHeight: "100vh", background: "#0B0716" }} aria-busy="true" />;
@@ -73,7 +83,7 @@ function App() {
     <BrowserRouter>
       <ScrollToTop />
       <MaintenanceGate>
-      <AnnouncementBar />
+      <OffJury><AnnouncementBar /></OffJury>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/programme" element={<AgendaGate><Programme /></AgendaGate>} />
@@ -121,6 +131,7 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/awards" element={<Awards />} />
         <Route path="/awards/nominations" element={<Awards />} />
+        <Route path="/awards/jury-admin/*" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#f6f4fa" }} aria-busy="true" />}><JuryPortal /></Suspense>} />
         {/* KYC form hidden (13 Oct 2026); the page is kept in src/pages/KycForm.jsx */}
         <Route path="/kyc" element={<Navigate to="/" replace />} />
         <Route path="/volunteer" element={<Volunteer />} />
@@ -133,10 +144,10 @@ function App() {
         <Route path="/rsvp" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><Rsvp /></Suspense>} />
         <Route path="/attending" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><Attending /></Suspense>} />
       </Routes>
-      <TicketBar />
+      <OffJury><TicketBar /></OffJury>
       </MaintenanceGate>
-      <CookieConsent />
-      {SHOW_INSTALL_PROMPT && <Suspense fallback={null}><InstallAppPrompt /></Suspense>}
+      <OffJury><CookieConsent /></OffJury>
+      {SHOW_INSTALL_PROMPT && <OffJury><Suspense fallback={null}><InstallAppPrompt /></Suspense></OffJury>}
     </BrowserRouter>
   );
 }

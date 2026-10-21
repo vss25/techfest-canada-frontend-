@@ -6,14 +6,15 @@ import { useLocation } from "react-router-dom";
    and every 60 s. If the site is switched off, every public
    route shows a branded "We'll be right back" screen. Staff
    routes (/admin, /admin-login) always render so the switch can
-   be turned back off. Fails open: if the check fails, the site
-   is shown as normal.
+   be turned back off, and so does the Catalyst Awards jury portal
+   (/awards/jury-admin: its API keeps working too). Fails open: if
+   the check fails, the site is shown as normal.
 ========================================================= */
 
 const STATUS_API =
   (import.meta.env.VITE_ADMIN_API_URL || "https://techfest-canada-backend.onrender.com/api") + "/status";
 
-const isStaffPath = (p) => p === "/admin" || p.startsWith("/admin/") || p === "/admin-login";
+const isStaffPath = (p) => p === "/admin" || p.startsWith("/admin/") || p === "/admin-login" || /^\/awards\/jury-admin(\/|$)/i.test(p);
 
 function MaintenanceScreen({ message }) {
   return (

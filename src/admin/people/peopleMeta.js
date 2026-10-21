@@ -150,3 +150,14 @@ export const OPENS_NOTE = "Opens are estimates: some mail apps (e.g. Apple Mail)
 export const TRACKED_FROM = "Opens, clicks and posts count for emails sent from Oct 19. RSVP form opens count for every RSVP link.";
 /** "3 times" ("" for none or once). */
 export const times = (n) => (n > 1 ? `${n.toLocaleString()} times` : "");
+
+/* Hide from app (shadow mode, Oct 21 2026; HideFromApp.jsx). */
+export const HIDDEN_LABEL = "Hidden from app";
+export const HIDDEN_HINT = "Hidden from the app by staff: nobody else in the app sees them or anything they do. They haven't been told.";
+export const HIDDEN_CONTENT_HINT = "Written by someone hidden from the app: nobody else in the app sees it.";
+
+/** "Feed posts 3 · Chat messages 1" from the server's while-hidden counts and labels (GET …/app-hidden, appHide). */
+export function whileHiddenText(counts, labels = {}) {
+  if (!counts) return "";
+  return Object.entries(labels).filter(([k]) => counts[k] > 0).map(([k, label]) => `${label} ${counts[k]}`).join(" · ");
+}

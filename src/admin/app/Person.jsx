@@ -12,7 +12,8 @@ import { when, initials } from "../format";
 import { EventRow, StatusBadge } from "./parts";
 import ProfileEditor from "./ProfileEditor";
 import { TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE, typeTags } from "./personTypes";
-import { personPath } from "../people/peopleMeta";
+import { HIDDEN_LABEL, personPath } from "../people/peopleMeta";
+import { HiddenBadge } from "../people/HideFromApp";
 
 function MessagesPane({ id }) {
   const [revealed, setRevealed] = useState(false);
@@ -37,7 +38,7 @@ function MessagesPane({ id }) {
               {threads.data.map((t) => (
                 <tr key={t.threadKey} className={`is-clickable ${thread?.threadKey === t.threadKey ? "bg-white/5" : ""}`} tabIndex={0}
                   onClick={() => setThread(t)} onKeyDown={(e) => e.key === "Enter" && setThread(t)}>
-                  <td className="font-semibold">{t.otherName}</td>
+                  <td className="font-semibold">{t.otherName}{t.otherHidden && <HiddenBadge className="ml-1.5" />}</td>
                   <td className="max-w-[220px] truncate text-ttfc-muted">{t.last}</td>
                   <td className="tabular-nums">{t.count}</td>
                   <td className="whitespace-nowrap text-ttfc-muted">{when(t.at)}</td>
@@ -55,6 +56,7 @@ function MessagesPane({ id }) {
                       <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                         <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm ${mine ? "rounded-br-md bg-gradient-to-br from-ttfc-pink/30 to-ttfc-purple/30" : "rounded-bl-md bg-ttfc-panel2"}`}>
                           <p className="mb-1 text-[11px] text-ttfc-muted">{m.from} · {when(m.at)}{m.status !== "approved" && ` · ${m.status}`}</p>
+                          {m.fromHidden && <p className="mb-1 text-[11px] font-semibold text-red-200" title="The sender is hidden from the app, so the other person doesn't see this message.">Not delivered · {HIDDEN_LABEL.toLowerCase()}</p>}
                           <p className="whitespace-pre-wrap break-words">{m.body}</p>
                         </div>
                       </li>
@@ -179,6 +181,7 @@ function PersonView({ id }) {
             {u.vip && <Badge tone={VIP_TONE}>{VIP_LABEL}</Badge>}
             {typeTags(u.effectiveTypes, u.role).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}
             {u.banned && <Badge tone="bad">Suspended</Badge>}
+            {u.appHidden && <HiddenBadge />}
           </div>
           <p className="mt-1 text-sm text-ttfc-muted">
             {u.email} · {[u.jobTitle, u.organization].filter(Boolean).join(" · ") || "No title yet"} · joined {when(u.createdAt)} · last active {when(u.lastActiveAt)}
@@ -208,6 +211,13 @@ function PersonView({ id }) {
       </header>
       {!onApp && !u.banned && (
         <p className="-mt-3 mb-5 text-xs text-ttfc-dim">Not on the app yet, so app notifications aren't available for {u.name}.</p>
+      )}
+      {u.appHidden && (
+        <Banner tone="danger" icon={EyeOff} className="mb-5" title={`${HIDDEN_LABEL} since ${when(u.appHidden.at)}${u.appHidden.byName ? ` · by ${u.appHidden.byName}` : ""}`}
+          action={<Button size="sm" onClick={() => navigate(personPath(`u-${id}`))}>Change on their profile</Button>}>
+          Nobody else in the app sees {u.name} or anything below: posts, comments, messages, requests. They haven't been told.
+          {u.appHidden.reason && <> Note: {u.appHidden.reason}</>}
+        </Banner>
       )}
 
       <Tabs tabs={tabs} value={tab} onChange={setTab} label="Person details" />

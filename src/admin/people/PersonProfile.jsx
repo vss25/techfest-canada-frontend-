@@ -15,6 +15,7 @@ import { when, day, initials } from "../format";
 import RsvpEditor from "./RsvpEditor";
 import LogoPicker, { CompanyMark } from "./LogoPicker";
 import CodeLabel from "./CodeLabel";
+import { HideCard, HiddenBadge } from "./HideFromApp";
 import { TEAM_TYPES, effectiveTypes, toggleType } from "../app/personTypes";
 import {
   ATTENDING_HINT, ATTENDING_LABELS, ATTENDING_STAGE_HINTS, ATTENDING_STAGE_LABELS, ATTENDING_TONE, OPENS_NOTE, TRACKED_FROM, nudgeCount, times,
@@ -52,6 +53,10 @@ import {
    the email, opened their page, posted on LinkedIn (with the post) or
    shared / opened LinkedIn without a confirmation; RSVP: which RSVP
    email they opened, when they opened the form, whether they sent it.
+   Hide from app (Oct 21 2026, HideFromApp.jsx): staff and moderators
+   hide someone causing trouble (shadow mode, they aren't told), with
+   a private note; shown again with the option to take down what they
+   posted while hidden. "Hidden from app" by their name.
 ========================================================= */
 
 const DETAIL_KEYS = ["firstName", "lastName", "email", "phone", "linkedinUrl", "company", "jobTitle"];
@@ -826,6 +831,7 @@ function ProfileView({ id }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{p.name}</h1>
+            {p.appHidden && <HiddenBadge />}
             {p.vip && <Badge tone={VIP_TONE} icon={Crown}>{VIP_LABEL}</Badge>}
             {p.types.map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t] || t}</Badge>)}
           </div>
@@ -870,11 +876,14 @@ function ProfileView({ id }) {
           )}
         </div>
         <div className="space-y-5">
+          {/* Hidden from the app: the first thing staff see on the right; otherwise the card sits further down. */}
+          {data.appHide?.hidden && <HideCard personId={p.id} name={p.name} appHide={data.appHide} onChanged={reload} />}
           <OutreachCard p={p} outreach={data.outreach} onSent={reload} />
           <DetailsCard key={JSON.stringify([p.name, p.firstName, p.lastName, p.email, p.phone, p.linkedinUrl, p.company, p.jobTitle, p.types, p.account, p.exhibitor, p.vip, p.rsvpEmail?.mark, p.rsvpEmail?.sent])} p={p} onSaved={reload} />
           <PassesCard p={p} onSaved={reload} />
           <LogoCard p={p} onSaved={reload} />
           <ContactCardCard items={data.contactCard} hasAccount={!!p.userId} />
+          {!data.appHide?.hidden && <HideCard personId={p.id} name={p.name} appHide={data.appHide} onChanged={reload} />}
           {isManagement ? <DeleteCard p={p} /> : <p className="text-xs text-ttfc-dim">Email changes, pass changes, ticket values, deleting people and the CSV download are for management.</p>}
         </div>
       </div>

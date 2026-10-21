@@ -7,7 +7,7 @@
    sidebar does. Settings open their page with ?highlight=<key>
    (AdminShell scrolls to it and flashes it).
 ========================================================= */
-import { CalendarClock, Tag, KeyRound, LayoutGrid, ToggleRight, TicketPlus, UserPlus, BellRing, Hash, Linkedin, MailOpen, MailPlus, Users } from "lucide-react";
+import { CalendarClock, EyeOff, Tag, KeyRound, LayoutGrid, ToggleRight, TicketPlus, UserPlus, BellRing, Hash, Linkedin, MailOpen, MailPlus, Users } from "lucide-react";
 import { NAV } from "../nav";
 import { REGISTRY, SCOPES } from "../content/registry";
 import { score } from "./match";
@@ -18,7 +18,7 @@ const KEYWORDS = {
   people: ["directory", "attendees", "delegates", "contacts", "persons", "vip", "edit person", "delete person", "rsvp status", "exhibitor",
     "opened email", "email opens", "who opened", "posted on linkedin", "linkedin posts", "rsvp form opened",
     "media", "press", "journalist", "staff", "volunteer", "speaker", "person type", "profile colour", "profile color",
-    "coupon code", "promo code used", "discount code used"],
+    "coupon code", "promo code used", "discount code used", "hide from app", "hidden from app", "shadow ban"],
   attendees: ["tickets", "ticket holders", "orders", "passes", "hide duplicates", "complimentary ticket", "comp", "missing details", "profile request", "export",
     "coupon code used", "promo code used", "who used a code"],
   "speaker-passes": ["speaker pass", "speakers passes", "run of show", "speaker email", "nudge", "sync speakers"],
@@ -46,7 +46,8 @@ const KEYWORDS = {
   app: ["mobile app", "app stats", "usage"],
   "app/people": ["app users", "app accounts", "ban", "messages off", "person types", "types"],
   "app/activity": ["live", "feed", "events", "posts"],
-  "app/moderation": ["reports", "held posts", "flagged", "review queue", "remove post"],
+  "app/moderation": ["reports", "held posts", "flagged", "review queue", "remove post", "hidden people", "hidden from app", "hide from app",
+    "shadow ban", "unhide", "show in app again", "harassment", "troublemaker", "block someone"],
   "app/text": ["app copy", "feature switches", "switches", "flags", "texts", "wording"],
   "app/pwa": ["web app", "installs", "install prompt", "home screen"],
   "app/invite": ["app invite", "invite email", "download the app", "web app email", "email everyone", "add to home screen", "app email", "open the ttfc app"],
@@ -64,6 +65,10 @@ const ACTIONS = [
   { title: "Give a pass", where: "People & passes › Give a pass", to: "issued-passes", icon: TicketPlus, keywords: ["give someone a pass", "new pass"] },
   { title: "Email everyone to get the web app", where: "Website & app › App invite email", to: "app/invite", icon: MailPlus, keywords: ["app invite", "download the app", "install the app", "web app email"] },
   { title: "Mark someone as Media, VIP, Volunteer or Staff", where: "People & passes › People › their profile", to: "people", icon: Users, keywords: ["media tag", "press", "vip", "volunteer", "staff", "type", "profile colour", "profile color"] },
+  { title: "Hide someone from the app", where: "People & passes › People › their profile › Hide from app", to: "people", icon: EyeOff,
+    keywords: ["hide from app", "shadow ban", "harassment", "troublemaker", "stop messages", "block someone", "unwanted messages", "safety"] },
+  { title: "Hidden people (hidden from the app)", where: "Event day › App moderation › Hidden people", to: "app/moderation?tab=hidden", icon: EyeOff,
+    keywords: ["hidden from app", "unhide", "show in app again", "shadow ban", "who is hidden"] },
   { title: "Running late: shift sessions", where: "Website & app › Agenda", to: "content/agenda", icon: CalendarClock, keywords: ["delay", "push back", "move sessions", "late"] },
   { title: "Send RSVP reminder", where: "RSVPs & meals › RSVP reminders", to: "marketing/rsvp-reminders", icon: BellRing, keywords: ["remind", "unconfirmed"] },
   { title: "Who posted on LinkedIn (I'm attending)", where: "People & passes › People", to: "people?attending=posted", icon: Linkedin, keywords: ["linkedin posts", "posted", "shared", "i'm attending"] },

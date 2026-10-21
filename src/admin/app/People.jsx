@@ -5,6 +5,7 @@ import { useApi, useDebounced } from "../hooks";
 import { Badge, Button, EmptyState, ErrorState, Input, LoadingState, PageHeader, Select, TableWrap } from "../ui";
 import { ago } from "../format";
 import { PERSON_TYPES, TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE, typeTags } from "./personTypes";
+import { HiddenBadge } from "../people/HideFromApp";
 
 export default function People() {
   const navigate = useNavigate();
@@ -77,7 +78,8 @@ export default function People() {
                         {u.vip && <Badge tone={VIP_TONE}>{VIP_LABEL}</Badge>}
                         {typeTags(u.types, u.role).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}
                         {u.banned && <Badge tone="bad">Suspended</Badge>}
-                        {u.directoryHidden && <Badge>Hidden</Badge>}
+                        {u.appHidden && <HiddenBadge />}
+                        {u.directoryHidden && <span title="Switched off the app's attendee list on their profile"><Badge>Not in attendee list</Badge></span>}
                         {u.messagesOff && <Badge>No messages</Badge>}
                         {u.requestsOff && <Badge>No requests</Badge>}
                       </div>

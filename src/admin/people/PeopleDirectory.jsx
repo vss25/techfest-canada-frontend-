@@ -13,11 +13,12 @@ import LogoPicker, { CompanyMark } from "./LogoPicker";
 import CodeLabel from "./CodeLabel";
 import ReminderDialog from "./ReminderDialog";
 import NudgeDialog from "./NudgeDialog";
+import { HiddenBadge } from "./HideFromApp";
 import {
   ATTENDING_FILTER_OPTIONS, ATTENDING_HINT, ATTENDING_LABELS, ATTENDING_STAGE_HINTS, ATTENDING_STAGE_LABELS, ATTENDING_STAGE_TONE, ATTENDING_TONE, DAY_SHORT,
   OPENS_NOTE, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_TIERS, RSVP_EMAIL_FILTER_OPTIONS, RSVP_EMAIL_HINT, RSVP_FORM_FILTER, RSVP_STATUSES, RSVP_STATUS_LABELS,
   RSVP_STATUS_TONE, TRACKED_FROM, TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VALUE_BANDS, VALUE_BAND_HINTS, VALUE_BAND_LABELS, VALUE_BAND_TONE, VIP_LABEL,
-  VIP_TONE, extrasSummary, nudgeCount, passExtras, personPath,
+  VIP_TONE, HIDDEN_LABEL, extrasSummary, nudgeCount, passExtras, personPath,
 } from "./peopleMeta";
 
 /* =========================================================
@@ -70,7 +71,8 @@ const FILTER_DEFS = [
   { key: "vip", label: "VIP?", options: YES_NO },
   { key: "attending", label: "I'm Attending", options: ATTENDING_FILTER_OPTIONS },
 ];
-const FILTERS = ["q", ...FILTER_DEFS.map((f) => f.key)];
+// appHidden (yes | no) is in the address only: App moderation › Hidden people links to ?appHidden=yes.
+const FILTERS = ["q", ...FILTER_DEFS.map((f) => f.key), "appHidden"];
 
 function SortHeader({ col, sort, dir, onSort }) {
   const active = sort === col.sort;
@@ -266,6 +268,13 @@ export default function PeopleDirectory() {
         </Banner>
       )}
 
+      {f.appHidden && (
+        <Banner tone="danger" className="mb-4" title={f.appHidden === "no" ? `Not ${HIDDEN_LABEL.toLowerCase()}` : `Only people ${HIDDEN_LABEL.toLowerCase()}`}
+          action={<Button size="sm" onClick={() => update({ appHidden: "", page: 0 })}>Show everyone</Button>}>
+          {f.appHidden === "no" ? "Everyone except the people staff hid from the app." : "People staff hid from the app. Nobody else in the app sees them or anything they do."}
+        </Banner>
+      )}
+
       <div className="mb-4 space-y-3 rounded-[18px] border border-ttfc-line bg-ttfc-panel p-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1 sm:max-w-sm">
@@ -310,6 +319,7 @@ export default function PeopleDirectory() {
                     <span className="block truncate font-semibold">{r.name}</span>
                     {r.email && <span className="block truncate font-mono text-xs text-ttfc-muted" title={r.email}>{r.email}</span>}
                     {r.rsvpDuplicates > 0 && <Badge tone="warn" className="mt-1">Possible duplicate RSVP</Badge>}
+                    {r.appHidden && <HiddenBadge className="mt-1 block" />}
                   </td>
                   <td>
                     <span className="flex max-w-[180px] flex-wrap gap-1">

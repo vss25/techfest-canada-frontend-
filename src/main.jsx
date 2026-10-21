@@ -20,8 +20,8 @@ import App from './App.jsx'
 import { loadTrackers } from './lib/trackers'
 import { captureLanding } from './lib/purchaseSource'
 
-// Analytics/advertising tags load only if the visitor already chose "Accept All".
-loadTrackers()
+// Analytics/advertising tags load only if the visitor already chose "Accept All" (never on the Catalyst Awards jury portal).
+if (!/^\/awards\/jury-admin(\/|$)/i.test(window.location.pathname)) loadTrackers()
 // How this visitor found us (kept in this browser; sent only with a checkout, for the team's "New ticket" email).
 captureLanding()
 

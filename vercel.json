@@ -41,6 +41,14 @@
     {
       "source": "/:path([Aa][Tt][Tt][Ee][Nn][Dd][Ii][Nn][Gg]/?)",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/awards/jury-admin",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/awards/jury-admin/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     }
   ],
   "redirects": [

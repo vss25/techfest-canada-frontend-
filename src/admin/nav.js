@@ -3,6 +3,7 @@ import {
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, Power, ScanLine,
   MailPlus, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
+import { Gavel, ListChecks, Network, Trophy } from "lucide-react";
 
 /* =========================================================
    Sidebar structure (the admin review, Oct 19 2026): five sections
@@ -46,6 +47,17 @@ export const NAV = [
     ],
   },
   {
+    // Catalyst Awards (Oct 20 2026): the nominations, and the jury who score them at thetechfestival.com/awards/jury-admin.
+    title: "Catalyst Awards",
+    items: [
+      { to: "awards", label: "Nominations", icon: Award, end: true },
+      { to: "awards/jury", label: "Jury", icon: Gavel },
+      { to: "awards/allocation", label: "Allocation", icon: Network },
+      { to: "awards/rubric", label: "Scoring rubric", icon: ListChecks },
+      { to: "awards/results", label: "Jury results", icon: Trophy, management: true },
+    ],
+  },
+  {
     title: "Website & app",
     items: [
       { to: "content/agenda", label: "Agenda", icon: CalendarDays },
@@ -74,7 +86,6 @@ export const NAV = [
       { to: "form-submissions", label: "Form submissions", icon: Inbox, sub: "Records" },
       { to: "brochure-downloads", label: "Brochure downloads", icon: FileDown, sub: "Records" },
       { to: "india-pavilion", label: "India Pavilion", icon: Landmark, sub: "Records" },
-      { to: "awards", label: "Award nominations", icon: Award, sub: "Records" },
       { to: "marketing/attending", label: "I'm attending campaign", icon: Share2, sub: "Records" },
       { to: "content/alumni-logos", label: "Team alumni", icon: GraduationCap, sub: "Logo strips" },
       { to: "content/sponsor-marquee", label: "Community & speakers' companies", icon: GalleryHorizontal, sub: "Logo strips" },

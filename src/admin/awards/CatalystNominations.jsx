@@ -11,7 +11,7 @@ import {
 } from "../ui";
 import { num, when } from "../format";
 
-/* Admin → Catalyst Awards → Nominations
+/* Admin → Catalyst Awards → Nominations (the jury: Jury, Allocation, Scoring rubric, Jury results)
    Every nomination from thetechfestival.com/awards/nominations. Saved by the
    backend (POST /api/nominations) and still emailed to baldeep@ and nicole@.
    Before Oct 2026 they were only emailed: "Recover emailed nominations" reads
@@ -245,8 +245,8 @@ export default function CatalystNominations() {
   return (
     <>
       <PageHeader
-        eyebrow="More › Records"
-        title="Award nominations"
+        eyebrow="Catalyst Awards"
+        title="Nominations"
         description="Every nomination from the website's Catalyst Awards form, newest first. Open one to read it in full, shortlist it, pick winners and keep jury notes. Staff still get each one by email."
         actions={isManagement && (
           <div className="flex flex-wrap gap-2">

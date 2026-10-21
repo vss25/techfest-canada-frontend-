@@ -15,6 +15,7 @@ import { InstallNudges, OfflineBar, UpdatePrompt } from "./components/AppNotices
 import LivePollPill from "./components/LivePollPill";
 import { showAlert } from "./lib/ui";
 import { onScreenChange } from "./lib/pwa";
+import { listenForNotificationTaps, syncNotifications } from "./lib/webpush";
 
 /* =========================================================
    The TTFC attendee app at /app/ (installable PWA).
@@ -39,6 +40,7 @@ const GroupDetail = lazy(() => import("./screens/GroupDetail"));
 const DiscussionDetail = lazy(() => import("./screens/DiscussionDetail"));
 const Profile = lazy(() => import("./screens/Profile"));
 const EditProfile = lazy(() => import("./screens/EditProfile"));
+const Availability = lazy(() => import("./screens/Availability"));
 const Pass = lazy(() => import("./screens/Pass"));
 const Install = lazy(() => import("./screens/Install"));
 const Legal = lazy(() => import("./screens/Legal"));
@@ -63,15 +65,19 @@ function Boot() {
     return () => { document.removeEventListener("visibilitychange", onVisible); clearInterval(t); };
   }, []);
 
-  // Signed in: account + the social layer (feed, people, chats…).
+  // Signed in: account + the social layer (feed, people, chats…) and, when they're on, message notifications.
   useEffect(() => {
     if (mode === "user" || mode === "demo") {
       loadAccount();
       startSocial();
+      syncNotifications();
       return () => stopSocial();
     }
     return undefined;
   }, [mode]);
+
+  // A tap on a message notification while the app is open: straight to that chat.
+  useEffect(() => listenForNotificationTaps(navigate), [navigate]);
 
   // /app/?install=1 (from the website's prompt) → the guide.
   useEffect(() => {
@@ -150,6 +156,7 @@ function Shell() {
           <Route path="/discussion/:id" element={<DiscussionDetail />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />
+          <Route path="/profile/availability" element={<Availability />} />
           <Route path="/profile/pass" element={<Pass />} />
           <Route path="/points" element={<Points />} />
           <Route path="/install" element={<Install />} />

@@ -125,17 +125,3 @@ export function recommend(people, me, { connectedIds = new Set(), canContact = (
   }
   return out.sort((a, b) => b.score - a.score || a.person.name.localeCompare(b.person.name)).slice(0, 20);
 }
-
-// ---------- Meeting availability (iOS MeetingSlots) ----------
-
-const SLOT_DAYS = [[1, "Oct 26"], [2, "Oct 27"]];
-const SLOT_BLOCKS = [[8, "8–10 AM"], [10, "10 AM–12 PM"], [12, "12–2 PM"], [14, "2–4 PM"], [16, "4–6 PM"], [18, "6–8 PM"]];
-
-/** ["d1-10", "d2-14"] → "Oct 26: 10 AM–12 PM · Oct 27: 2–4 PM" */
-export function slotSummary(slots = []) {
-  const set = new Set(slots);
-  return SLOT_DAYS.map(([d, label]) => {
-    const times = SLOT_BLOCKS.filter(([h]) => set.has(`d${d}-${String(h).padStart(2, "0")}`)).map(([, l]) => l);
-    return times.length ? `${label}: ${times.join(", ")}` : null;
-  }).filter(Boolean).join(" · ");
-}

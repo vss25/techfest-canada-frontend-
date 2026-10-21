@@ -86,7 +86,13 @@ export function enterDemo() {
   return loadAccount();
 }
 
+const signOutHooks = [];
+/** `fn({ mode, token })` runs just before signing out, while the old token still works (lib/webpush.js). */
+export function beforeSignOut(fn) { signOutHooks.push(fn); }
+
 export function signOut(notice = "") {
+  const was = { mode: auth.get().mode, token };
+  for (const fn of signOutHooks) { try { fn(was); } catch { /* never blocks signing out */ } }
   token = "";
   local.set(TOKEN_KEY, null);
   local.set(GUEST_KEY, null);

@@ -30,6 +30,12 @@ const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=1200&q=85",
 ];
 
+// Cvent's own viewers for the Westin (from its Cvent listing, Social Tables). The 3D room can't be framed
+// by other sites, so it opens in a new tab; the floor plan is embedded, loaded only once someone asks
+// (Cvent sets its own cookies). Same links as the TTFC app's Venue screen.
+const WALKTHROUGH_3D = "https://pr3d.socialtables.com/room/1650904?sourceSite=ifp";
+const FLOOR_PLANS = "https://connect.socialtables.com/embed/3198/floors/248117?lang=en-US&measurementSystem=imperial";
+
 function FadeIn({ children, delay = 0, y = 30 }) {
   var ref = useRef(null);
   var inView = useInView(ref, { once: true, margin: "-60px" });
@@ -45,6 +51,8 @@ function FadeIn({ children, delay = 0, y = 30 }) {
 export default function Venue() {
   var s1 = useState(false); var dark = s1[0]; var setDark = s1[1];
   var s2 = useState(0);     var activeImg = s2[0]; var setActiveImg = s2[1];
+  var s3 = useState(false); var planOn = s3[0]; var setPlanOn = s3[1];
+  var s4 = useState(false); var planLoaded = s4[0]; var setPlanLoaded = s4[1];
   var heroRef = useRef(null);
   var scrollData = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   var heroY  = useTransform(scrollData.scrollYProgress, [0, 1], ["0%", "30%"]);
@@ -79,7 +87,13 @@ export default function Venue() {
         .space-card:hover { transform:translateY(-4px) !important; }
         .venue-bento-grid { display:grid; }
         .mobile-gallery-strip { display:none; }
+        @keyframes venueSpin { to { transform: rotate(360deg); } }
+        .explore-3d:hover { transform:translateY(-4px); box-shadow:0 18px 48px rgba(122,63,209,0.35) !important; }
+        .explore-load:hover { filter:brightness(1.08); }
+        .fp-embed { aspect-ratio:16/10; }
+        @media(max-width:860px){ .explore-grid { grid-template-columns:1fr !important; } }
         @media(max-width:640px){
+          .fp-embed { aspect-ratio:4/5; }
           .venue-bento-grid { display:none !important; }
           .mobile-gallery-strip { display:block !important; }
           .venue-stats-row { flex-direction:column !important; gap:12px !important; }
@@ -258,6 +272,76 @@ export default function Venue() {
                   style={{ width: "100%", height: "100%", border: "none", display: "block", filter: dark ? "invert(90%) hue-rotate(180deg)" : "none" }}
                   allowFullScreen loading="lazy" />
                 <div style={{ position: "absolute", top: 16, left: 16, background: "linear-gradient(135deg,#7a3fd1,#f5a623)", borderRadius: 10, padding: "8px 14px", fontFamily: "'Orbitron',sans-serif", fontSize: "0.65rem", fontWeight: 800, color: "#fff", letterSpacing: "1px", textTransform: "uppercase" }}>TTFC 2026</div>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* EXPLORE THE VENUE */}
+      <section style={{ background: bg, padding: "6rem 5%" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+              <p style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "3px", textTransform: "uppercase", color: accent, marginBottom: 12 }}>Explore the Venue</p>
+              <h2 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 900, color: textMain, marginBottom: 16 }}>Walk the Westin Before You Arrive</h2>
+              <div style={{ width: 50, height: 3, borderRadius: 3, background: "linear-gradient(90deg,#7a3fd1,#f5a623)", margin: "0 auto" }} />
+            </div>
+          </FadeIn>
+          <FadeIn delay={0.1}>
+            <div className="explore-grid" style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 20, alignItems: "stretch" }}>
+              <a href={WALKTHROUGH_3D} target="_blank" rel="noopener noreferrer" className="explore-3d"
+                style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 28, padding: "2rem", borderRadius: 24, background: "linear-gradient(135deg,#7a3fd1 0%,#9b4fd6 55%,#f5a623 130%)", color: "#ffffff", textDecoration: "none", boxShadow: dark ? "0 12px 48px rgba(0,0,0,0.5)" : "0 12px 48px rgba(122,63,209,0.18)", transition: "transform 0.3s ease, box-shadow 0.3s ease" }}
+              >
+                <span style={{ width: 64, height: 64, borderRadius: 18, background: "rgba(255,255,255,0.16)", border: "1px solid rgba(255,255,255,0.25)", display: "grid", placeItems: "center" }}>
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                </span>
+                <span>
+                  <span style={{ display: "block", fontFamily: "'Orbitron',sans-serif", fontSize: "1.25rem", fontWeight: 900, lineHeight: 1.25, marginBottom: 10 }}>Harbour Ballroom in 3D</span>
+                  <span style={{ display: "block", fontSize: "0.95rem", lineHeight: 1.6, color: "rgba(255,255,255,0.86)" }}>Walk the main stage room · opens Cvent's 3D viewer</span>
+                </span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, alignSelf: "flex-start", padding: "12px 20px", borderRadius: 12, background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.28)", fontFamily: "'Orbitron',sans-serif", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}>
+                  Open the 3D Walkthrough
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+                </span>
+              </a>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: 12, borderRadius: 24, background: cardBg, border: "1px solid " + cardBdr, boxShadow: dark ? "0 12px 48px rgba(0,0,0,0.5)" : "0 12px 48px rgba(122,63,209,0.10)" }}>
+                <div className="fp-embed" style={{ position: "relative", borderRadius: 16, overflow: "hidden", background: dark ? "#0d0520" : "#f3eefc" }}>
+                  {planOn ? (
+                    <>
+                      {!planLoaded && (
+                        <div role="status" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", zIndex: 1, background: dark ? "#0d0520" : "#f3eefc" }}>
+                          <span style={{ width: 30, height: 30, borderRadius: "50%", border: "3px solid " + cardBdr, borderTopColor: accent, animation: "venueSpin 0.8s linear infinite" }} />
+                          <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Loading the floor plan</span>
+                        </div>
+                      )}
+                      <iframe src={FLOOR_PLANS} title="Interactive floor plan of The Westin Harbour Castle, Convention Level" loading="lazy" allow="fullscreen"
+                        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms" referrerPolicy="strict-origin-when-cross-origin"
+                        onLoad={function () { setPlanLoaded(true); }}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block", background: "#ffffff" }} />
+                    </>
+                  ) : (
+                    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: "1.5rem", textAlign: "center", background: dark ? "radial-gradient(circle at 30% 20%, rgba(122,63,209,0.28), transparent 60%), #0d0520" : "radial-gradient(circle at 30% 20%, rgba(122,63,209,0.14), transparent 60%), #f3eefc" }}>
+                      <span style={{ width: 56, height: 56, borderRadius: 16, display: "grid", placeItems: "center", background: dark ? "rgba(185,158,255,0.14)" : "rgba(122,63,209,0.10)", color: accent }}>
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 8c0 3.613-3.869 7.429-5.393 8.795a1 1 0 0 1-1.214 0C9.87 15.429 6 11.613 6 8a6 6 0 0 1 12 0"/><circle cx="12" cy="8" r="2"/><path d="M8.714 14h-3.71a1 1 0 0 0-.948.683l-2.004 6A1 1 0 0 0 3 22h18a1 1 0 0 0 .948-1.316l-2-6a1 1 0 0 0-.949-.684h-3.712"/></svg>
+                      </span>
+                      <span style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "1.1rem", fontWeight: 900, color: textMain }}>Interactive floor plans</span>
+                      <span style={{ fontSize: "0.95rem", color: textMid, lineHeight: 1.6, maxWidth: 380 }}>Every room on the Convention Level, with photos and setups.</span>
+                      <button type="button" className="explore-load" onClick={function () { setPlanOn(true); }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 26px", borderRadius: 12, border: "none", cursor: "pointer", background: "linear-gradient(135deg,#7a3fd1,#9b4fd6)", color: "#ffffff", fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", transition: "filter 0.2s ease" }}
+                      >Load the Floor Plan</button>
+                      <span style={{ fontSize: "0.78rem", color: textMid, opacity: 0.85 }}>Loads Cvent's viewer, which sets its own cookies.</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "2px 6px 4px" }}>
+                  <span style={{ fontSize: "0.8rem", color: textMid }}>Floor plans by Cvent</span>
+                  <a href={FLOOR_PLANS} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontWeight: 600, color: accent, textDecoration: "none" }}>
+                    Open in a new tab
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+                  </a>
+                </div>
               </div>
             </div>
           </FadeIn>

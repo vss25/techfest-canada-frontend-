@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  BadgeCheck, Bell, Camera, ChevronRight, Download, FileText, Hand, HelpCircle, IdCard, Landmark, LogOut, Mic, Moon, Pencil, QrCode, RotateCcw,
+  BadgeCheck, Bell, CalendarClock, Camera, ChevronRight, Download, FileText, Hand, HelpCircle, IdCard, Landmark, LogOut, Mic, Moon, Pencil, QrCode, RotateCcw,
   LogIn, ScanLine, ShieldCheck, Smartphone, Star, Sun, Ticket, Trophy, Users,
 } from "lucide-react";
 import { useStore } from "../lib/store";
@@ -21,6 +21,9 @@ import ContactCard from "../components/ContactCard";
 import { GetPassCard } from "../components/PassesSheet";
 import { profileTagView } from "../lib/profileTag";
 import BrandMark from "../components/BrandMark";
+import { PushSetting } from "../components/PushControls";
+import { AvailabilityRows } from "../components/Availability";
+import { availabilitySummary } from "../lib/availability";
 
 const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 
@@ -101,9 +104,9 @@ function Row({ to, href, icon, title, onClick, tone }) {
   return <button type="button" className="list-row pressable" onClick={onClick}>{inner}</button>;
 }
 
-/** iOS SettingsSheet, most used first: notifications, theme, About AtlasLink; then account,
-    links, and sign out last. (Session reminders are app-only:
-    a browser can't alert you when the web app is closed.) */
+/** iOS SettingsSheet, most used first: notifications (the list, then the switch for message
+    notifications), theme, About AtlasLink; then account, links, and sign out last. (Session
+    reminders are app-only: a browser can't alert you when the web app is closed.) */
 function SettingsSheet({ onClose }) {
   const a = useStore(auth);
   const p = useStore(pwa);
@@ -132,6 +135,11 @@ function SettingsSheet({ onClose }) {
         <div className="settings-group">
           <Row icon={Bell} title="Notifications" to="/notifications" />
         </div>
+
+        <section className="card stack-sm" aria-labelledby="push-h">
+          <h2 id="push-h" className="eyebrow">Message notifications</h2>
+          <PushSetting />
+        </section>
 
         <section className="card stack-sm" aria-labelledby="appearance-h">
           <h2 id="appearance-h" className="eyebrow">Appearance</h2>
@@ -227,6 +235,7 @@ export default function Profile() {
   const org = me?.organization || user?.organization || "";
   const total = pts.me?.total;
   const tag = profileTagView(user?.profileTag);
+  const free = availabilitySummary(me?.availabilitySlots, me?.availabilitySpots, me?.meetingSpot);
 
   return (
     <div className="page">
@@ -284,6 +293,23 @@ export default function Profile() {
         </div>
 
         <ContactCard org={org} country={country} />
+
+        {/* Free to meet (iOS availabilityCard): your days and places, as people see them; a tap edits. */}
+        <section className="stack-sm" aria-labelledby="free-h">
+          <h2 id="free-h" className="eyebrow">Free to meet</h2>
+          <Link to="/profile/availability" className="list-row pressable avail-card">
+            <span className="lead-icon lead-icon--accent" style={{ width: 34, height: 34 }}><CalendarClock aria-hidden="true" /></span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              {free ? <AvailabilityRows slots={me.availabilitySlots} spots={me.availabilitySpots} meetingSpot={me.meetingSpot} /> : (
+                <>
+                  <b style={{ display: "block" }}>Set when you're free to meet</b>
+                  <span className="tiny muted">Everyone on the app will see it on your profile.</span>
+                </>
+              )}
+            </span>
+            <ChevronRight className="chev" aria-hidden="true" />
+          </Link>
+        </section>
 
         <Link to="/network/connected" className="list-row pressable" style={{ padding: 14 }}>
           {accepted.length ? (

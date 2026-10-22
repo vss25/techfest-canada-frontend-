@@ -518,6 +518,9 @@ const DEMO_LEVELS = [
   { key: "catalyst", name: "Catalyst", min: 1000 },
 ];
 const NOTIFY_DEFAULTS = { messages: true, comments: true, mentions: true, likes: true, groups: true, connections: true, announcements: true, digestEmail: true };
+const NOTIFY_OPTIONS = [["messages", "Messages"], ["comments", "Comments and replies"], ["mentions", "Mentions"], ["likes", "Likes"],
+  ["groups", "Group and session chats"], ["connections", "Connection requests"], ["announcements", "Announcements from TTFC"],
+  ["digestEmail", "Email me a summary of what I missed"]].map(([key, label]) => ({ key, label }));
 
 /** The server's rules (backend services/points.js RULES). */
 const DEMO_RULES = [
@@ -628,21 +631,25 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
 
   // Notification settings and the LinkedIn links (Oct 22 2026, lib/engage.js). Nothing leaves the browser: the
   // links open the website's pages in their demo form (t=demo…), which never contact LinkedIn.
-  if (is("GET", "social/notify/prefs")) return done({ ...NOTIFY_DEFAULTS, ...(s.notifyPrefs || {}) });
+  if (is("GET", "social/notify/prefs")) return done({ prefs: { ...NOTIFY_DEFAULTS, ...(s.notifyPrefs || {}) }, options: NOTIFY_OPTIONS });
   if (is("PATCH", "social/notify/prefs")) {
     const next = { ...NOTIFY_DEFAULTS, ...(s.notifyPrefs || {}) };
     for (const k of Object.keys(NOTIFY_DEFAULTS)) if (typeof body[k] === "boolean") next[k] = body[k];
     s.notifyPrefs = next;
-    return done(next);
+    return done({ prefs: next, options: NOTIFY_OPTIONS });
   }
   if (is("GET", "app/attending-link")) {
     const [fn, ...rest] = String(s.me.name || "").split(" ");
     const frag = new URLSearchParams({ fn, ln: rest.join(" "), title: s.me.jobTitle || "", co: s.me.organization || "" });
-    return done({ url: `/attending?from=app&demo=1#${frag}`, posted: !!s.linkedinAttending });
+    return done({ url: `/attending?from=app&demo=1#${frag}`, posted: !!s.linkedinAttending, points: 50 });
   }
   if (is("POST", "app/linkedin/share")) {
     const kind = body.kind === "poll" ? "poll" : "discussion";
-    return done({ url: `/share/linkedin?t=${encodeURIComponent(`demo.${kind}.${body.id || "x"}.${body.sessionId || ""}`)}` });
+    const sessionId = kind === "poll" ? body.sessionId : body.id;
+    const x = cms.get().sessions.find((y) => y.id === sessionId);
+    // The website's demo page builds its draft from these (nothing is stored or sent).
+    const demo = new URLSearchParams({ k: kind, s: x?.title || "", q: kind === "poll" ? String(body.question || "") : "" });
+    return done({ url: `/share/linkedin?t=demo&${demo}`, expiresAt: new Date(Date.now() + 2 * 3600000).toISOString(), points: 15 });
   }
 
   // Apple Wallet (GET /api/wallet/link/:ticketId): demo passes can't be signed.
@@ -812,7 +819,7 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
   if ((m = is("POST", "social/feed/:id/comments"))) {
     const p = s.posts.find((x) => x.id === m.id);
     if (!p) throw new ApiError("Not found", 404);
-    const c = { id: "cm-" + uid(), authorId: ME, authorName: s.me.name, authorTier: "", body: String(body.body || "").slice(0, 2000), status: "approved", createdAt: new Date().toISOString() };
+    const c = { id: "cm-" + uid(), authorId: ME, authorName: s.me.name, authorTier: "", body: String(body.body || "").slice(0, 2000), mentions: Array.isArray(body.mentions) ? body.mentions.slice(0, 20) : [], status: "approved", createdAt: new Date().toISOString() };
     p.comments.push(c);
     return done({ ...c, postId: p.id, commentCount: p.comments.length });
   }

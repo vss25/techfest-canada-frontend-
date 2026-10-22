@@ -60,7 +60,7 @@ function PollCard({ poll, result, onVote, guest, sessionId }) {
         {voted ? `Thanks for voting · ${total} ${total === 1 ? "vote" : "votes"}` : total === 0 ? "Tap an option to vote · be the first" : `Tap an option to vote · ${total} ${total === 1 ? "vote" : "votes"} so far`}
       </span>
       {/* The results, on LinkedIn (Oct 22 2026): once you've voted and can see them. */}
-      {voted && !guest && <ShareOnLinkedIn kind="poll" id={poll.id} sessionId={sessionId} small label="Share results on LinkedIn" />}
+      {voted && !guest && <ShareOnLinkedIn item={{ kind: "poll", id: poll.id, sessionId, question: poll.question, options: poll.options }} small label="Share results on LinkedIn" />}
     </section>
   );
 }

@@ -1,23 +1,22 @@
 /* =========================================================
-   Server calls for the website pages the app links to (Oct 22
-   2026), in one place so a changed route is a one-line edit:
-     /share/linkedin?t=<token>   a session chat or poll, as an
-                                 editable LinkedIn post
-       GET  {API}/share/linkedin?t=…            → the draft (below)
-       POST {API}/share/linkedin/post {t, text} → { id }, then
-            {API}/share/linkedin/start?d=<id>  (LinkedIn OAuth →
-            Posts API → back to /share/linkedin?t=…#posted=1&post=<url>
-            or #post_error=<code>, as /attending does)
-     /unsubscribe?t=<token>      "What you missed" emails off / on
-       POST {API}/notify/email-prefs {t, digestEmail} → { digestEmail, email? }
-   Tokens starting "demo." never reach the server: sample answers,
-   and "posting" only pretends (nothing goes to LinkedIn).
+   Server calls for /share/linkedin?t=<token> (Oct 22 2026), the
+   website page the TTFC app opens to post a session's discussion
+   or a live poll on LinkedIn (backend routes/linkedinShare.js), in
+   one place so a changed route is a one-line edit:
+     GET  {API}/linkedin-share/draft?t=  → { kind, sessionTitle, title, description, link, text,
+          maxLength, hashtag, page, expiresAt, available }   404 { code: "expired" }
+     POST {API}/linkedin-share/text {t, text} → { ok, text }   (the edited post)
+     then the page goes to {API}/linkedin-share/post?t=  (LinkedIn sign-in → Posts API →
+          back to /share/linkedin#posted=1&post=<URL>, or #post_error=<code>&t=<token>)
+   The token "demo" (the app's demo mode) never reaches the server:
+   a sample draft from the link's own k / s / q, and posting only
+   pretends (nothing goes to LinkedIn).
 ========================================================= */
 
 import { API } from "./forms";
 
-export const isDemoToken = (t) => typeof t === "string" && t.startsWith("demo.");
-const isToken = (t) => typeof t === "string" && t.length >= 6 && t.length <= 600 && /^[A-Za-z0-9._~-]+$/.test(t);
+export const isDemoToken = (t) => t === "demo";
+const isToken = (t) => typeof t === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(t);
 
 async function json(res) {
   const j = await res.json().catch(() => ({}));
@@ -25,50 +24,36 @@ async function json(res) {
   return j;
 }
 
-/**
- * The draft: { kind: "discussion" | "poll", session: { title, when, place, url }, topic?, poll?: { question,
- * options: [{ label, pct }], total }, text, article: { title, description, url }, posted?: { url } }.
- */
+/** The draft for this token (see the header). */
 export async function loadShareDraft(t) {
-  if (isDemoToken(t)) return demoDraft(t);
+  if (isDemoToken(t)) return demoDraft();
   if (!isToken(t)) throw Object.assign(new Error("This link isn't complete."), { code: "invalid" });
-  return json(await fetch(`${API}/share/linkedin?t=${encodeURIComponent(t)}`, { credentials: "omit" }));
+  return json(await fetch(`${API}/linkedin-share/draft?t=${encodeURIComponent(t)}`, { credentials: "omit", cache: "no-store" }));
 }
 
-/** Saves the edited text with the token, then LinkedIn asks to allow posting (the page goes there). */
+/** Saves the edited text, then → the address that starts LinkedIn's sign-in ({ demo: true } in the demo). */
 export async function startSharePost(t, text) {
   if (isDemoToken(t)) return { demo: true };
-  const j = await json(await fetch(`${API}/share/linkedin/post`, {
+  await json(await fetch(`${API}/linkedin-share/text`, {
     method: "POST", headers: { "Content-Type": "application/json" }, credentials: "omit", body: JSON.stringify({ t, text }),
   }));
-  if (!j.id) throw Object.assign(new Error("failed"), { code: "failed" });
-  return { redirect: `${API}/share/linkedin/start?d=${encodeURIComponent(j.id)}` };
+  return { redirect: `${API}/linkedin-share/post?t=${encodeURIComponent(t)}` };
 }
 
-/** Turns "What you missed" emails off (false) or back on (true) for the person the email was sent to. */
-export async function setDigestEmail(t, on) {
-  if (isDemoToken(t)) return { digestEmail: on, email: "al•••@example.com" };
-  if (!isToken(t)) throw Object.assign(new Error("This link isn't complete."), { code: "invalid" });
-  return json(await fetch(`${API}/notify/email-prefs`, {
-    method: "POST", headers: { "Content-Type": "application/json" }, credentials: "omit", body: JSON.stringify({ t, digestEmail: on }),
-  }));
-}
+// ---------- Demo (/share/linkedin?t=demo&k=poll|discussion&s=<session title>&q=<question>) ----------
 
-// ---------- Demo (t=demo.<kind>.<id>.<sessionId>, from the web app's demo mode) ----------
-
-const SITE = "https://www.thetechfestival.com";
-function demoDraft(t) {
-  const kind = t.split(".")[1] === "poll" ? "poll" : "discussion";
-  const session = { title: "Conviction Before Consensus: A Bet on Canadian Deep Tech", when: "Mon, Oct 26 · 10:05 AM", place: "Centre Stage", url: `${SITE}/agenda` };
-  const poll = kind === "poll" ? { question: "Where will Canadian deep tech win first?", total: 214, options: [
-    { label: "Quantum", pct: 38 }, { label: "AI infrastructure", pct: 34 }, { label: "Clean energy", pct: 19 }, { label: "Robotics", pct: 9 },
-  ] } : null;
-  const topic = kind === "discussion" ? "The session chat: what founders said about raising before the market agrees" : "";
+function demoDraft() {
+  const q = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
+  const kind = q.get("k") === "poll" ? "poll" : "discussion";
+  const sessionTitle = (q.get("s") || "Conviction Before Consensus: A Bet on Canadian Deep Tech").slice(0, 160);
+  const question = (q.get("q") || "").slice(0, 200);
+  const at = `"${sessionTitle}" at The Tech Festival Canada`;
   const text = kind === "poll"
-    ? `Live poll at The Tech Festival Canada 2026: "${poll.question}"\n\n${poll.options.map((o) => `${o.label}: ${o.pct}%`).join("\n")}\n\n(${poll.total} votes in the room at "${session.title}".) What would you have picked?\n\n#TTFC2026`
-    : `Great conversation in the "${session.title}" session chat at The Tech Festival Canada 2026.\n\nThe question everyone kept coming back to: how do you build conviction before the market agrees with you?\n\n#TTFC2026`;
+    ? `${question ? `"${question}" ` : ""}I just voted in the live poll at ${at}.\n\n#TTFC2026`
+    : `A great discussion at ${at}.\n\n#TTFC2026`;
   return Promise.resolve({
-    kind, session, poll, topic, text, demo: true,
-    article: { title: session.title, description: `${session.when} · ${session.place} · The Tech Festival Canada 2026, Toronto`, url: session.url },
+    kind, sessionTitle, title: sessionTitle, description: "The Tech Festival Canada · Oct 26–27, 2026 · Toronto",
+    link: "https://www.thetechfestival.com/agenda", text, maxLength: 3000, hashtag: "#TTFC2026", page: "The Tech Festival Canada",
+    expiresAt: new Date(Date.now() + 2 * 3600000).toISOString(), available: true, demo: true,
   });
 }

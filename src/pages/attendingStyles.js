@@ -1,5 +1,5 @@
 /* The /attending page's look (a dark aurora page, glass cards, the brand gradient button), shared with the other
-   pages the app opens on the website: /share/linkedin and /unsubscribe (Oct 22 2026). Plain CSS in a string, injected
+   page the app opens on the website: /share/linkedin (Oct 22 2026). Plain CSS in a string, injected
    by each page with <style>, so none of it reaches the rest of the site. */
 
 export const ATT_CSS = `

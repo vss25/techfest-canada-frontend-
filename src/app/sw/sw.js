@@ -146,8 +146,10 @@ self.addEventListener("push", (event) => {
     const open = await windows();
     if (open.some((c) => c.focused && c.visibilityState === "visible" && pathOf(c.url) === pathOf(url))) return;
     // One notification per thread: a newer push for the same post / chat replaces the older one (and still alerts).
+    // The payload: { title, body, link, thread, kind, id, url, tag, from } (services/push.js). renotify needs a tag.
+    const tag = (typeof d.tag === "string" && d.tag) || (typeof d.thread === "string" && d.thread) || undefined;
     await self.registration.showNotification(d.title || "TTFC", {
-      body: d.body || "", tag: d.thread || undefined, renotify: !!d.thread, data: { url }, icon: NOTIFY_ICON, badge: NOTIFY_BADGE,
+      body: d.body || "", tag, renotify: !!tag, data: { ...d, url }, icon: NOTIFY_ICON, badge: NOTIFY_BADGE,
     });
   })());
 });

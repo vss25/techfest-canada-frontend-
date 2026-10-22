@@ -13,11 +13,11 @@ import { Spinner, Switch, TopBar } from "../components/ui";
 ========================================================= */
 
 export default function NotificationSettings() {
-  const { prefs, error, saving } = useStore(notifyPrefs);
+  const { prefs, labels, error, saving } = useStore(notifyPrefs);
   useEffect(() => { loadNotifyPrefs(); }, []);
 
   const row = (p) => (
-    <Switch key={p.key} label={p.label} description={p.hint} checked={prefs?.[p.key] !== false}
+    <Switch key={p.key} label={labels[p.key] || p.label} description={p.hint} checked={prefs?.[p.key] !== false}
       disabled={!!saving[p.key]} onChange={(v) => setNotifyPref(p.key, v)} />
   );
 

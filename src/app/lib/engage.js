@@ -5,12 +5,18 @@ import { showAlert } from "./ui";
 /* =========================================================
    Batch 4 (Oct 22 2026) server calls, all in one place so a
    changed route is a one-line edit here:
-     GET   social/notify/prefs          → the 8 notification switches
-     PATCH social/notify/prefs {key: b} → saved switches
-     GET   app/attending-link           → { url, posted? }  the website's
+     GET   social/notify/prefs          → { prefs: {8 switches}, options: [{key, label}] }
+     PATCH social/notify/prefs {key: b} → the same
+     GET   app/attending-link           → { url, posted, points }  the website's
            "I'm attending" page for this person (their signed r token)
-     POST  app/linkedin/share {kind, id, sessionId} → { url } the website's
-           /share/linkedin?t=… draft for a session chat or a poll
+     POST  app/linkedin/share           → 201 { url, expiresAt, points } the website's
+           /share/linkedin?t=… draft (2 hours):
+             a session's discussion: { kind: "discussion", id: <session id> }
+             a poll: { kind: "poll", id: <poll id>, sessionId, question, options: [labels] }
+             (the server adds the results from the votes); 404 when the session isn't on the
+             agenda, 503 { code: "unavailable" } when LinkedIn isn't set up
+     POST  app/events                   → presence (markActive): the "What you missed"
+           email skips what you'd have seen by opening the app
    Demo mode answers all of them (lib/demo.js).
 
    Opening a link: Safari only opens a new tab straight from a tap
@@ -38,14 +44,15 @@ export const DIGEST_PREF = {
 };
 const DEFAULTS = Object.fromEntries([...NOTIFY_PREFS, DIGEST_PREF].map((p) => [p.key, true]));
 
-export const notifyPrefs = createStore({ prefs: null, error: "", saving: {} });
+export const notifyPrefs = createStore({ prefs: null, labels: {}, error: "", saving: {} });
 let version = 0; // a load that set off before a change can't put the old value back
 
 export async function loadNotifyPrefs() {
   const v = version;
   try {
     const r = await get("social/notify/prefs");
-    if (v === version) notifyPrefs.set((s) => ({ ...s, prefs: { ...DEFAULTS, ...pick(r) }, error: "" }));
+    const labels = Object.fromEntries((Array.isArray(r?.options) ? r.options : []).filter((o) => o?.key && o?.label).map((o) => [o.key, String(o.label)]));
+    if (v === version) notifyPrefs.set((s) => ({ ...s, prefs: { ...DEFAULTS, ...pick(r?.prefs || r) }, labels, error: "" }));
   } catch (e) {
     notifyPrefs.set((s) => ({ ...s, error: e.message || "Couldn't load your notification settings." }));
   }
@@ -60,7 +67,8 @@ export async function setNotifyPref(key, value) {
   notifyPrefs.set((s) => ({ ...s, prefs: { ...(s.prefs || DEFAULTS), [key]: value }, saving: { ...s.saving, [key]: true } }));
   try {
     const r = await patch("social/notify/prefs", { [key]: value });
-    const saved = typeof r?.[key] === "boolean" ? r[key] : value;
+    const got = r?.prefs || r;
+    const saved = typeof got?.[key] === "boolean" ? got[key] : value;
     version++;
     notifyPrefs.set((s) => ({ ...s, prefs: { ...(s.prefs || DEFAULTS), [key]: saved }, saving: { ...s.saving, [key]: false } }));
   } catch (e) {
@@ -70,7 +78,7 @@ export async function setNotifyPref(key, value) {
   }
 }
 
-window.addEventListener("ttfc:signed-out", () => { version++; notifyPrefs.set({ prefs: null, error: "", saving: {} }); });
+window.addEventListener("ttfc:signed-out", () => { version++; notifyPrefs.set({ prefs: null, labels: {}, error: "", saving: {} }); });
 
 // ---------- Links to the website (I'm attending, LinkedIn shares) ----------
 
@@ -89,7 +97,7 @@ export function fromApp(url) {
 
 function fresh(key) {
   const hit = links.get(key);
-  return hit?.url && Date.now() - hit.at < TTL ? hit : null;
+  return hit?.url && Date.now() < hit.until ? hit : null;
 }
 
 function fetchLink(key, load) {
@@ -98,7 +106,10 @@ function fetchLink(key, load) {
   const promise = load().then((r) => {
     const url = fromApp(r?.url || "");
     if (!url) throw new Error("No link came back. Try again in a moment.");
-    const entry = { url, at: Date.now(), posted: !!r?.posted };
+    // A share link lasts 2 hours (expiresAt): reuse it until 10 minutes before, so a draft isn't made on every view.
+    const ends = Date.parse(r?.expiresAt || "");
+    const until = Number.isFinite(ends) ? Math.max(Date.now(), ends - 10 * 60 * 1000) : Date.now() + TTL;
+    const entry = { url, until, posted: !!r?.posted };
     links.set(key, entry);
     return entry;
   }, (e) => { links.delete(key); throw e; });
@@ -112,7 +123,9 @@ function openLink(key, load, label) {
   if (hit && openNow(hit.url)) return;
   fetchLink(key, load).then(
     (e) => showAlert(label, "Your page is ready.", { action: { label: "Open", run: () => openNow(e.url, true) }, ms: 12000 }),
-    (e) => showAlert("Couldn't open LinkedIn", e.message || "Check your connection and try again."),
+    (e) => (e?.status === 503 || e?.data?.code === "unavailable"
+      ? showAlert("LinkedIn sharing isn't available right now", "Try again later.")
+      : showAlert("Couldn't open LinkedIn", e.message || "Check your connection and try again.")),
   );
 }
 
@@ -131,11 +144,34 @@ export const openAttending = () => openLink(ATTENDING, () => get("app/attending-
 /** The server said this person's I'm-attending post is confirmed (the points also say so). */
 export const attendingPostedHint = () => !!links.get(ATTENDING)?.posted;
 
-/** `kind` "discussion" (a session chat: id = the chat's id) or "poll" (id = the poll's id); sessionId either way. */
-const shareKey = (kind, id) => `share:${kind}:${id}`;
-const loadShare = (kind, id, sessionId) => () => post("app/linkedin/share", { kind, id, ...(sessionId ? { sessionId } : {}) });
-export function prefetchShare(kind, id, sessionId) {
-  const key = shareKey(kind, id);
-  if (!fresh(key)) fetchLink(key, loadShare(kind, id, sessionId)).catch(() => {});
+/**
+ * What to share: { kind: "discussion", sessionId } (the session's discussion: its chat), or { kind: "poll", id,
+ * sessionId, question, options } (options as the labels the app shows; the server adds the results).
+ */
+const shareKey = (item) => `share:${item.kind}:${item.kind === "poll" ? `${item.sessionId}/${item.id}` : item.sessionId || item.id}`;
+const shareBody = (item) => (item.kind === "poll"
+  ? { kind: "poll", id: item.id, sessionId: item.sessionId, question: item.question || "", options: item.options || [] }
+  : { kind: "discussion", id: item.sessionId || item.id });
+const loadShare = (item) => () => post("app/linkedin/share", shareBody(item));
+export function prefetchShare(item) {
+  const key = shareKey(item);
+  if (!fresh(key)) fetchLink(key, loadShare(item)).catch(() => {});
 }
-export const openShare = (kind, id, sessionId) => openLink(shareKey(kind, id), loadShare(kind, id, sessionId), "Share on LinkedIn");
+export const openShare = (item) => openLink(shareKey(item), loadShare(item), "Share on LinkedIn");
+
+// ---------- Presence ----------
+
+let lastActive = 0;
+/**
+ * Tells the server this person has the app open (POST app/events: it updates lastActiveAt), so the "What you
+ * missed" email leaves out what they'd have seen. At most once a minute (`minGap`); no analytics event when the website's
+ * cookie choice is "Essential only" (the empty ping still counts as being here).
+ */
+export function markActive(reason = "foreground", minGap = 60000) {
+  if (Date.now() - lastActive < minGap) return;
+  lastActive = Date.now();
+  let essentialOnly = false;
+  try { essentialOnly = localStorage.getItem("tfc_cookie_consent") === "essential"; } catch { /* storage blocked */ }
+  const events = essentialOnly ? [] : [{ name: "app_active", at: new Date().toISOString(), props: { reason } }];
+  post("app/events", { platform: "web", events }).catch(() => { lastActive = 0; });
+}

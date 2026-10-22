@@ -1,12 +1,10 @@
-import { useEffect, useState } from "react";
-import { AlertTriangle, Clock, Info, Mail, MailCheck, MailX, Moon, RotateCcw, Save, ShieldCheck, Sunset, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AlertTriangle, Clock, Info, Mail, MailCheck, MailX, Moon, ShieldCheck, Sunset, Users } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
-import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
 import { Banner, Button, Card, ConfirmDialog, ErrorState, LoadingState, PageHeader, SectionTitle, StatTile, Switch } from "../ui";
 import { num, when } from "../format";
-import { EmailCopyEditor } from "../tickets/EmailCopyEditor";
 import { useLivePreview } from "../tickets/speakerEmailHooks";
 import EmailPreview from "./EmailPreview";
 
@@ -15,53 +13,59 @@ import EmailPreview from "./EmailPreview";
    The organiser: "a summary email of updates/items missed by the
    individual … after 3 hours of the first activity. And at 5 pm
    also. If the 3 hours update happens in the next 1 hour of 5 pm,
-   skip." The backend schedules and sends them; this page:
-     - the on/off switch (OFF until the organiser turns it on),
-     - sent / skipped / failed today against the daily safety cap,
-     - "Send me a test digest" (to your own email),
-     - the wording editor and preview when the server has one
-       (a 404 on the template hides it: the built-in wording is used).
-   All calls are under BASE, so a changed route is one edit here:
-     GET   /console/digest            → { enabled, sentToday, skippedToday, failedToday, cap, lastRunAt, nextFivePm, waiting }
-     PATCH /console/digest { enabled } → the same
-     POST  /console/digest/test        → { to }
-     GET / PUT /console/digest/template, POST /console/digest/preview (optional)
+   skip." The backend schedules and sends them (services/digest.js);
+   this page:
+     - the on/off switch (OFF until the organiser turns it on;
+       management),
+     - sent / waiting / failed today against the daily safety cap,
+     - the timing rules, as the server reports them,
+     - a preview (your own last 2 days in the app, else sample
+       items) and "Send me a test digest". The wording is fixed.
+   Backend (routes/digest.js), all under BASE:
+     GET  /console/digest           → { enabled, sentToday, failedToday, waiting, dailyCap, day, lastRun, canEdit, rules }
+     PUT  /console/digest {enabled} → the same
+     POST /console/digest/preview   → { subject, preheader, html, text, sections, sample }
+     POST /console/digest/test      → { sent, to, sample }
+   The unsubscribe link in each email goes to the backend's own page
+   (GET / POST /api/app/digest/unsubscribe?t=).
 ========================================================= */
 
 const BASE = "/console/digest";
+const TZ = "America/Toronto";
 
-const RULES = [
-  { icon: Clock, text: "About 3 hours after the first thing someone misses (a message, a reply, a mention, a like on their post, chat messages), if they haven't opened the app since." },
-  { icon: Sunset, text: "Every day at 5:00 PM Toronto time, for anyone with something new they haven't seen. A 3-hour email due between 4 and 5 PM is skipped: the 5 PM one covers it." },
-  { icon: Moon, text: "Never between 9 PM and 8 AM (one due then goes at 8 AM), never two within an hour, at most 3 a day, and each item only once." },
-  { icon: ShieldCheck, text: "Nothing from hidden or blocked people. People can switch it off in the app (Settings › Notifications) or with the unsubscribe link in every email." },
-];
+/** When the next 5:00 PM run is, in Toronto: "today" or "tomorrow". */
+function nextFivePm(now = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat("en-CA", { timeZone: TZ, hour: "2-digit", hourCycle: "h23" }).format(now));
+  return hour < 17 ? "today" : "tomorrow";
+}
+
+function ruleLines(r = {}) {
+  const delay = r.delayHours || 3;
+  return [
+    { icon: Clock, text: `About ${delay} hours after the first thing someone misses (a message, a reply, a mention, a like on their post, chat messages), if they haven't opened the app since.` },
+    { icon: Sunset, text: `Every day at ${r.fivePm || "5:00 PM"} Toronto time, for anyone with something new they haven't seen. A ${delay}-hour email due ${r.skipWindow || "between 4 and 5 PM (the 5 PM one covers it)"} is skipped.` },
+    { icon: Moon, text: `Never during quiet hours, ${r.quietHours || "9:00 PM – 8:00 AM (due then → 8:00 AM)"}; never two within ${r.minGapMinutes || 60} minutes; at most ${r.maxPerDay || 3} a day per person; each item only once.` },
+    { icon: ShieldCheck, text: "Nothing from hidden or blocked people. People switch it off in the app (Settings › Notification settings) or with the unsubscribe link in every email." },
+  ];
+}
 
 export default function DigestEmails() {
-  const { isManagement } = useAdmin();
   const toast = useToast();
   const status = useApi(BASE, { interval: 60000 });
-  const template = useApi(`${BASE}/template`);
+  const preview = useLivePreview(`${BASE}/preview`, {}, { enabled: true, delay: 0 });
   const [confirm, setConfirm] = useState(null); // true | false: the switch's next value, waiting for OK
   const [switching, setSwitching] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [draft, setDraft] = useState(null);
-  const [saving, setSaving] = useState(false);
 
   const st = status.data;
-  // No template route on the server: the built-in wording, and no editor.
-  const noTemplate = template.error?.status === 404;
-  const t = noTemplate ? null : template.data;
-  useEffect(() => { if (t && !draft) setDraft({ ...t.copy }); }, [t, draft]);
-  const copy = draft || {};
-  const preview = useLivePreview(`${BASE}/preview`, copy, { enabled: !!t });
-  const dirty = !!t && JSON.stringify(t.copy || {}) !== JSON.stringify(copy);
+  const rules = useMemo(() => ruleLines(st?.rules), [st?.rules]);
+  const five = nextFivePm();
 
   const flip = async (enabled) => {
     setConfirm(null);
     setSwitching(true);
     try {
-      const r = await api.patch(BASE, { enabled });
+      const r = await api.put(BASE, { enabled });
       status.setData((d) => ({ ...(d || {}), ...r }));
       toast.success(enabled ? "“What you missed” emails are on" : "“What you missed” emails are off");
     } catch (e) { toast.error(e); } finally { setSwitching(false); }
@@ -69,22 +73,13 @@ export default function DigestEmails() {
   const sendTest = async () => {
     setTesting(true);
     try {
-      const r = await api.post(`${BASE}/test`, t ? copy : {});
-      toast.success(`Test sent to ${r.to || "your email"}. It isn't counted.`);
+      const r = await api.post(`${BASE}/test`, {});
+      toast.success(`Test sent to ${r.to || "your email"}${r.sample ? ", with sample items" : ", from your own activity"}. It isn't counted.`);
     } catch (e) { toast.error(e); } finally { setTesting(false); }
-  };
-  const save = async () => {
-    setSaving(true);
-    try {
-      const r = await api.put(`${BASE}/template`, copy);
-      template.setData?.(r);
-      setDraft({ ...r.copy });
-      toast.success("Email wording saved");
-    } catch (e) { toast.error(e); } finally { setSaving(false); }
   };
 
   const enabled = !!st?.enabled;
-  const cap = st?.cap || 0;
+  const cap = st?.dailyCap || 0;
   const capHit = cap > 0 && (st?.sentToday || 0) >= cap;
 
   return (
@@ -99,10 +94,12 @@ export default function DigestEmails() {
       {status.loading && !st ? <LoadingState label="Loading…" /> : status.error && !st ? <ErrorState error={status.error} onRetry={status.reload} /> : (
         <>
           <Card className="mb-6">
-            <Switch size="lg" checked={enabled} disabled={switching || !isManagement} onChange={(v) => setConfirm(v)}
+            <Switch size="lg" checked={enabled} disabled={switching || !st?.canEdit} onChange={(v) => setConfirm(v)}
               label={enabled ? "On: emails go out on the schedule below" : "Off: no “What you missed” emails are sent"}
-              description={isManagement ? "Off until you turn it on. Turning it off stops the next run; nothing already sent changes." : "Only management can turn these emails on or off."} />
-            {st?.lastRunAt && <p className="mt-3 text-xs text-ttfc-dim">Last checked {when(st.lastRunAt)}{st.nextFivePm ? ` · next 5 PM run ${when(st.nextFivePm)}` : ""}.</p>}
+              description={st?.canEdit ? "Off until you turn it on. Turning it off stops the next run; nothing already sent changes." : "Only management can turn these emails on or off."} />
+            <p className="mt-3 text-xs text-ttfc-dim">
+              {st?.lastRun ? `Last checked ${when(st.lastRun)}. ` : ""}{enabled ? `Next 5 PM run ${five} at 5:00 PM Toronto time.` : ""}
+            </p>
           </Card>
 
           {capHit && (
@@ -111,51 +108,33 @@ export default function DigestEmails() {
             </Banner>
           )}
 
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            <StatTile label="Sent today" value={num(st?.sentToday || 0)} icon={MailCheck} tone="purple" hint={cap ? `Safety cap ${num(cap)} a day` : "Toronto time"} />
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+            <StatTile label="Sent today" value={num(st?.sentToday || 0)} icon={MailCheck} tone="purple" hint={cap ? `Safety cap ${num(cap)} a day · Toronto time` : "Toronto time"} />
             <StatTile label="Waiting" value={num(st?.waiting || 0)} icon={Users} tone="orange" hint="People with something new they haven't seen" />
-            <StatTile label="Skipped today" value={num(st?.skippedToday || 0)} icon={Clock} tone="neutral" hint="Seen in the app first, or folded into the next one" />
             <StatTile label="Failed today" value={num(st?.failedToday || 0)} icon={MailX} tone={st?.failedToday ? "bad" : "good"} hint="Tried again on the next run" />
           </div>
         </>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div className="flex min-w-0 flex-col gap-6">
           <Card>
             <SectionTitle>When they go out</SectionTitle>
             <ul className="flex flex-col gap-3 text-sm">
-              {RULES.map((r) => (
+              {rules.map((r) => (
                 <li key={r.text} className="flex gap-3"><r.icon className="mt-0.5 h-4 w-4 flex-none text-ttfc-pink" aria-hidden="true" /><span className="text-ttfc-muted">{r.text}</span></li>
               ))}
             </ul>
           </Card>
-
-          {t && (
-            <Card>
-              <SectionTitle hint={t.updatedAt ? `Last saved ${when(t.updatedAt)}${t.updatedBy ? ` by ${t.updatedBy}` : ""}` : "The built-in wording"}>The email's wording</SectionTitle>
-              <EmailCopyEditor fields={t.fields} sections={t.sections} value={copy} defaults={t.defaults} placeholders={t.placeholders}
-                onChange={(c) => setDraft(c)}
-                note={t.canEdit ? "Changes show in the preview straight away. Save to use them for every email." : "You can try wording in the preview and your test; only management can save it."} />
-              <div className="mt-4 flex flex-wrap gap-2 border-t border-ttfc-line pt-4">
-                {t.canEdit && <Button variant="primary" icon={Save} loading={saving} disabled={!dirty} onClick={save}>Save wording</Button>}
-                <Button icon={RotateCcw} disabled={!dirty} onClick={() => setDraft({ ...t.copy })}>Undo changes</Button>
-              </div>
-            </Card>
-          )}
-          {noTemplate && (
-            <Banner tone="info" icon={Info} title="The wording is built in">
-              Each email lists what that person missed, grouped by kind, with an Open TTFC button and an unsubscribe link. Send yourself a test to see it.
-            </Banner>
-          )}
+          <Banner tone="info" icon={Info} title="The wording is fixed">
+            Each email lists what that person missed, grouped by kind, with names and short snippets, an Open TTFC button and an unsubscribe link.
+          </Banner>
         </div>
 
-        {t && (
-          <Card className="min-w-0">
-            <SectionTitle hint="Sample activity for a made-up attendee.">Preview</SectionTitle>
-            <EmailPreview title="“What you missed” email preview" preview={preview.data} loading={preview.loading} error={preview.error} />
-          </Card>
-        )}
+        <Card className="min-w-0">
+          <SectionTitle hint={preview.data ? (preview.data.sample ? "Made-up sample items (you have no app activity in the last 2 days)." : "Built from your own app activity in the last 2 days.") : undefined}>Preview</SectionTitle>
+          <EmailPreview title="“What you missed” email preview" preview={preview.data} loading={preview.loading} error={preview.error} />
+        </Card>
       </div>
 
       <ConfirmDialog

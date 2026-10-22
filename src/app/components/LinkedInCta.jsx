@@ -13,8 +13,9 @@ import { AppMark } from "./PostShareSheet";
      Profile. It opens the website's I'm-attending page for this
      person (GET app/attending-link), where "Post to LinkedIn"
      posts it and earns the points.
-   • "Share on LinkedIn" on a session chat and a poll's results:
-     the website's draft page for it (POST app/linkedin/share).
+   • "Share on LinkedIn" on a session chat (the session's discussion)
+     and a poll's results: the website's draft page for it
+     (POST app/linkedin/share).
    The links are fetched as the button shows, so the tap opens
    the page at once (lib/engage.js).
 ========================================================= */
@@ -69,23 +70,29 @@ export function AttendingRow() {
   );
 }
 
-/** "Share on LinkedIn" for a session chat (kind "discussion", id = the chat) or a poll (kind "poll", id = the poll). */
-export function ShareOnLinkedIn({ kind, id, sessionId, small = false, label = "Share on LinkedIn" }) {
+/**
+ * "Share on LinkedIn": `item` is { kind: "discussion", sessionId } (a session's chat) or { kind: "poll", id,
+ * sessionId, question, options } (the labels as shown; the server adds the results).
+ */
+export function ShareOnLinkedIn({ item, small = false, label = "Share on LinkedIn" }) {
   const full = label === "Share" ? "Share on LinkedIn" : label;
   const ref = useRef(null);
+  const latest = useRef(item);
+  useEffect(() => { latest.current = item; });
+  const key = `${item.kind}:${item.sessionId || ""}:${item.id || ""}`;
   // Fetch the draft link once the button is on screen, so the tap opens it straight away.
   useEffect(() => {
     const el = ref.current;
-    if (!el || !id) return undefined;
-    if (typeof IntersectionObserver !== "function") { prefetchShare(kind, id, sessionId); return undefined; }
+    if (!el) return undefined;
+    if (typeof IntersectionObserver !== "function") { prefetchShare(latest.current); return undefined; }
     const io = new IntersectionObserver((entries) => {
-      if (entries.some((e) => e.isIntersecting)) { prefetchShare(kind, id, sessionId); io.disconnect(); }
+      if (entries.some((e) => e.isIntersecting)) { prefetchShare(latest.current); io.disconnect(); }
     });
     io.observe(el);
     return () => io.disconnect();
-  }, [kind, id, sessionId]);
+  }, [key]);
   return (
-    <button ref={ref} type="button" className={"li-share-btn pressable" + (small ? " li-share-btn--sm" : "")} onClick={() => openShare(kind, id, sessionId)}
+    <button ref={ref} type="button" className={"li-share-btn pressable" + (small ? " li-share-btn--sm" : "")} onClick={() => openShare(latest.current)}
       aria-label={full} title={full} aria-description="Opens a LinkedIn post you can edit. +15 points when you post with Post to LinkedIn.">
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="currentColor"><rect x="5" y="9.5" width="3" height="9" rx="0.5" /><circle cx="6.5" cy="6.3" r="1.8" /><path d="M10.5 9.5h2.9v1.3c.5-.9 1.6-1.5 3-1.5 2.4 0 3.1 1.5 3.1 3.9v5.3h-3v-4.7c0-1.1-.3-1.9-1.4-1.9s-1.6.8-1.6 1.9v4.7h-3z" /></svg>
       {label}

@@ -2,6 +2,7 @@ import { ApiError, del, get, post } from "./api";
 import { auth, can, isStaff } from "./auth";
 import { createStore, local } from "./store";
 import { mergeFeed } from "./feedMerge.js";
+import { markActive } from "./engage";
 
 /* =========================================================
    The signed-in layer (the web SyncService): people, connections,
@@ -70,6 +71,7 @@ export function watchIncoming({ whileHidden, notify }) {
 export function startSocial() {
   stopSocial();
   refreshAll();
+  markActive("open", 0);
   pollTimer = setInterval(() => {
     if (document.visibilityState !== "visible") {
       if (pollWhileHidden()) refreshThreads();
@@ -78,8 +80,14 @@ export function startSocial() {
     refreshThreads();
     refreshConnections();
     refreshNotifications();
+    markActive("open", 5 * 60 * 1000); // still here (the "What you missed" email skips what you've seen)
   }, 30000);
 }
+
+// Back in front: you're looking at the app again.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && pollTimer && signedIn()) markActive("foreground");
+});
 
 export function stopSocial() {
   clearInterval(pollTimer);
@@ -434,10 +442,11 @@ export const fetchComments = (postId) => get(`social/feed/${postId}/comments`);
  * moment): the post is fetched again; if it's there the reply is sent once more, and only if the post is
  * really gone does this say so ("This post isn't available any more.", and the post leaves the feed).
  */
-export async function addComment(postId, body) {
+export async function addComment(postId, body, mentions = []) {
+  const payload = { body, ...(mentions.length ? { mentions } : {}) };
   let c;
   try {
-    c = await post(`social/feed/${postId}/comments`, { body });
+    c = await post(`social/feed/${postId}/comments`, payload);
   } catch (e) {
     if (e?.status !== 404) throw e;
     let still = null;
@@ -449,7 +458,7 @@ export async function addComment(postId, body) {
       throw e;
     }
     if (still?.id) patchPost(postId, () => still);
-    c = await post(`social/feed/${postId}/comments`, { body });
+    c = await post(`social/feed/${postId}/comments`, payload);
   }
   patchPost(postId, (x) => ({ ...x, commentCount: c.commentCount ?? x.commentCount + 1 }));
   return c;
@@ -552,9 +561,12 @@ export async function toggleJoinGroup(g) {
   } catch (e) { fail(e); return null; }
 }
 
-export async function refreshGroupMessages(id) {
+/** A group's messages. Only the chat on screen counts as read (it's what the "What you missed" email leaves out);
+    every other fetch (the Chats list's previews, a hidden tab) is a ?peek=1. */
+export async function refreshGroupMessages(id, { open = false } = {}) {
+  const reading = open && document.visibilityState === "visible";
   try {
-    const list = await get(`community/groups/${id}/messages`);
+    const list = await get(`community/groups/${id}/messages${reading ? "" : "?peek=1"}`);
     set({ groupMessages: { ...social.get().groupMessages, [id]: list || [] } });
   } catch (e) {
     if (e?.status === 403) set({ groupMessages: { ...social.get().groupMessages, [id]: null } });

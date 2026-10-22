@@ -99,7 +99,7 @@ export default function GroupDetail() {
   const at = now().getTime();
 
   useEffect(() => { if (!g) refreshGroups(); }, [g]);
-  usePolling(() => (g?.joined ? refreshGroupMessages(id) : null), 6000, [id, g?.joined]);
+  usePolling(() => (g?.joined ? refreshGroupMessages(id, { open: true }) : null), 6000, [id, g?.joined]);
   useEffect(() => { markGroupRead(id); return () => markGroupRead(id); }, [id]);
   useEffect(() => { if (all?.length) markGroupRead(id); }, [id, all?.length]);
   useLayoutEffect(() => { bottom.current?.scrollIntoView({ block: "end" }); }, [all?.length]);
@@ -113,7 +113,7 @@ export default function GroupDetail() {
     if (!signedIn) { guestAlert("Get a pass to join groups", "group"); return; }
     const r = await toggleJoinGroup(g);
     if (!r) showAlert("Couldn't update", social.get().lastError || "Try again.");
-    else if (r.joined) refreshGroupMessages(id);
+    else if (r.joined) refreshGroupMessages(id, { open: true });
   };
   const send = async (e) => {
     e?.preventDefault();
@@ -144,7 +144,7 @@ export default function GroupDetail() {
           </button>
         </span>
         {/* A session's chat, on LinkedIn (Oct 22 2026). */}
-        {g.sessionId && g.joined && <span className="group-head-share"><ShareOnLinkedIn kind="discussion" id={g.id} sessionId={g.sessionId} small label="Share" /></span>}
+        {g.sessionId && g.joined && <span className="group-head-share"><ShareOnLinkedIn item={{ kind: "discussion", sessionId: g.sessionId }} small label="Share" /></span>}
       </div>
       {pinned.length > 0 && (
         <div className="column pinned-strip">

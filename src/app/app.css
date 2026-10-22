@@ -736,6 +736,8 @@ a { color: var(--pur-alt); }
 .mention-list { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
 .mention-list button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 6px 12px; background: none; border: 0; border-bottom: 1px solid var(--border); text-align: left; }
 .mention-list button:last-child { border-bottom: 0; }
+.comment-mentions { padding: 0 12px; }
+.comment-mentions:empty { display: none; }
 
 /* Comments / chat bubbles */
 .comment { display: flex; gap: 10px; }

@@ -6,6 +6,7 @@ import { auth, isSignedIn } from "../lib/auth";
 import { cms, isProgramme, speakerById, typeLabel } from "../lib/cms";
 import { bookmarks, canMessage, fetchGroupMembers, markGroupRead, refreshGroupMessages, refreshGroups, sendGroupMessage, social, toggleJoinGroup } from "../lib/social";
 import { TOPIC_SHORT, fileURL } from "../lib/config";
+import { avatarFor } from "../lib/avatar.js";
 import { now } from "../lib/time";
 import { reportFlow, safetyItems } from "../lib/safety";
 import { publicBadge } from "../lib/people";
@@ -177,7 +178,7 @@ export default function GroupDetail() {
             {messages === undefined ? <Spinner /> : !messages?.length ? (
               <div className="group-empty"><MessagesSquare aria-hidden="true" /><b>Say hi to the group</b><span>Plan meetups, share notes from the pinned sessions.</span></div>
             ) : messages.map((m) => (
-              <ChatBubble key={m.id} text={m.body} mine={m.mine} author={m.mine ? null : m.authorName} timestamp={m.createdAt} held={m.status === "held"}
+              <ChatBubble key={m.id} text={m.body} mine={m.mine} author={m.mine ? null : m.authorName} avatarUrl={m.mine ? "" : fileURL(avatarFor(m, s.people))} timestamp={m.createdAt} held={m.status === "held"}
                 menu={m.mine ? null : safetyItems({ type: "groupMessage", id: m.id, authorId: m.authorId, authorName: m.authorName })} />
             ))}
             <div ref={bottom} />

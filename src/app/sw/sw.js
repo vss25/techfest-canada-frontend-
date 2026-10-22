@@ -25,6 +25,9 @@
      fail the picture (Oct 21 2026: speaker photos went missing
      in long lists in Safari; see imageFirst).
    • Anything signed in, and every write: network only, never cached.
+     The feed, comments, chats and account calls go straight to the
+     network even without a token (Oct 22 2026: a feed that's missing
+     a post the app already showed must never come from a cache).
    • Message notifications (Web Push, lib/webpush.js): shown
      unless a window is open on that chat; a tap focuses an open
      app window on the chat (/app/chat/<senderId>), else opens one.
@@ -160,8 +163,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Signed-in API calls carry a token: never cached here.
+  // Signed-in API calls carry a token: never cached here. Nor is anything social or account-related.
   if (req.headers.has("Authorization")) return;
+  if (/\/api\/(social|community|auth|profile|app\/(?!content$))/.test(url.pathname)) return;
 
   if (url.origin === self.location.origin) {
     if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/app/icons/") || url.pathname.startsWith("/app/brand/") || /\.(woff2?|ttf)$/.test(url.pathname)) {

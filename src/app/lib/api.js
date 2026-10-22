@@ -28,10 +28,10 @@ export function configureApi({ getToken, demo }) {
 export const isDemoApi = () => !!demoHandler;
 
 /**
- * request("social/feed?limit=60") → parsed JSON.
+ * request("social/feed?limit=60") → parsed JSON. `cache: "no-store"` skips the browser's HTTP cache.
  * Throws ApiError with the server's friendly `error` / `message`.
  */
-export async function request(path, { method = "GET", body, auth = true, token, signal } = {}) {
+export async function request(path, { method = "GET", body, auth = true, token, signal, cache } = {}) {
   const clean = String(path).replace(/^\/+/, "");
   if (demoHandler) return demoHandler(clean, { method, body, auth });
   const bearer = token || (auth ? tokenGetter() : "");
@@ -41,6 +41,7 @@ export async function request(path, { method = "GET", body, auth = true, token, 
     res = await fetch(`${API}/${clean}`, {
       method,
       signal,
+      ...(cache ? { cache } : {}),
       headers: {
         Accept: "application/json",
         ...(body !== undefined ? { "Content-Type": "application/json" } : {}),

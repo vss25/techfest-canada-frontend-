@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { BadgeCheck, Briefcase, Camera, Flag, Hand, Heart, Link2, Loader2, MessageCircle, MessageSquare, MoreHorizontal, Send, Share2, Trash2, ArrowUpRight, Megaphone, X as XIcon } from "lucide-react";
+import { BadgeCheck, Flag, Hand, Heart, Link2, MessageCircle, MoreHorizontal, Send, Trash2, ArrowUpRight, Megaphone } from "lucide-react";
 import { useStore } from "../lib/store";
 import { cms } from "../lib/cms";
 import { auth, can, isSignedIn } from "../lib/auth";
@@ -10,10 +10,12 @@ import { fileURL, FEATURES } from "../lib/config";
 import { mentionPath, splitMentions } from "../lib/mentions";
 import { publicBadge } from "../lib/people";
 import { postTime } from "../lib/time";
-import { prepareShare, shareSourceOf, sharePrepared } from "../lib/shareCard";
+import { shareSourceOf } from "../lib/shareCard";
+import { avatarFor } from "../lib/avatar.js";
 import { confirmDialog, givenName, safeHref, showAlert } from "../lib/ui";
 import { Avatar, IconButton, Kicker } from "./ui";
 import Comments from "./Comments";
+import PostShareSheet from "./PostShareSheet";
 import { guestAlert } from "../lib/passes";
 
 /* =========================================================
@@ -84,31 +86,11 @@ export default function PostCard({ post }) {
     setBurst((n) => n + 1);
     if (!post.likedByMe) like();
   };
-  // Share menu: the post goes as a card image (author, text with its line breaks,
-  // photos, TTFC footer) plus the photos / video and the caption (lib/shareCard.js).
-  // The card is prepared as soon as the menu opens, so picking an app can open the
-  // share sheet straight from that tap.
-  const [shareMenu, setShareMenu] = useState(false);
-  const [preparing, setPreparing] = useState(false);
-  const prepared = useRef(null);
-  const openShare = () => {
-    setShareMenu((v) => !v);
-    if (!prepared.current || prepared.current.body !== post.body) {
-      const job = { body: post.body, value: null, promise: null };
-      job.promise = prepareShare(shareSourceOf(post, subtitle)).then((v) => { job.value = v; return v; });
-      job.promise.catch(() => { if (prepared.current === job) prepared.current = null; });
-      prepared.current = job;
-    }
-  };
-  const shareTo = async (platform) => {
-    setShareMenu(false);
-    const job = prepared.current;
-    if (job?.value) { sharePrepared(job.value, platform); return; }
-    setPreparing(true);
-    try { sharePrepared(await job.promise, platform); }
-    catch { showAlert("Couldn't prepare the post", "Check your connection and try again."); }
-    finally { setPreparing(false); }
-  };
+  // Share: a sheet of apps (PostShareSheet). The post goes as a card image (author, text with its line breaks,
+  // photos, TTFC footer) where the share sheet takes files, or straight to X / LinkedIn's composer. The card
+  // starts rendering as the sheet opens, so picking an app acts on that tap.
+  const [shareSource, setShareSource] = useState(null);
+  const openShare = () => setShareSource(shareSourceOf({ ...post, authorAvatarUrl: avatarFor(post, s.people) }, subtitle));
   const remove = async () => {
     setMenu(false);
     const ok = await confirmDialog({
@@ -126,7 +108,7 @@ export default function PostCard({ post }) {
   return (
     <article className="post" aria-label={`Post by ${post.authorName}`}>
       <header className="post-head" style={{ position: "relative" }}>
-        <Avatar name={post.authorName} src={fileURL(post.authorAvatarUrl)} size={38}
+        <Avatar name={post.authorName} src={fileURL(post.kind === "announcement" ? post.authorAvatarUrl : avatarFor(post, s.people))} size={38}
           badge={post.kind === "announcement" ? <span className="avatar-badge"><Megaphone aria-hidden="true" /></span> : null} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="row" style={{ gap: 6 }}>
@@ -184,22 +166,11 @@ export default function PostCard({ post }) {
         <button type="button" className="post-action pressable" onClick={() => setShowComments(true)} aria-label={`Comment, ${post.commentCount} so far`}>
           <MessageCircle aria-hidden="true" />Comment
         </button>
-        <button type="button" className="post-action pressable" onClick={openShare} aria-haspopup="menu" aria-expanded={shareMenu} disabled={preparing}>
-          {preparing ? <Loader2 aria-hidden="true" className="spin" /> : <Send aria-hidden="true" />}{preparing ? "Sharing…" : "Share"}
+        <button type="button" className="post-action pressable" onClick={openShare} aria-haspopup="dialog">
+          <Send aria-hidden="true" />Share
         </button>
       </div>
-      {shareMenu && (
-        <div className="post-share-wrap">
-          <div className="menu post-share-menu" role="menu" onMouseLeave={() => setShareMenu(false)}>
-            <button type="button" role="menuitem" onClick={() => shareTo("instagram")}><Camera aria-hidden="true" width={16} />Instagram</button>
-            <button type="button" role="menuitem" onClick={() => shareTo("whatsapp")}><MessageSquare aria-hidden="true" width={16} />WhatsApp</button>
-            <button type="button" role="menuitem" onClick={() => shareTo("linkedin")}><Briefcase aria-hidden="true" width={16} />LinkedIn</button>
-            <button type="button" role="menuitem" onClick={() => shareTo("x")}><XIcon aria-hidden="true" width={16} />X</button>
-            <hr />
-            <button type="button" role="menuitem" onClick={() => shareTo(null)}><Share2 aria-hidden="true" width={16} />More…</button>
-          </div>
-        </div>
-      )}
+      {shareSource && <PostShareSheet source={shareSource} onClose={() => setShareSource(null)} />}
       {showComments && <Comments post={post} onClose={() => setShowComments(false)} />}
     </article>
   );

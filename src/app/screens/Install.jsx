@@ -64,7 +64,7 @@ export default function Install() {
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(APP_URL);
-      showAlert("Link copied", "Open your browser, tap the address bar and paste.");
+      showAlert("Link copied", `Open ${p.os === "ios" ? "Safari" : p.os === "android" ? "Chrome" : "your browser"}, tap the address bar and paste.`);
     } catch {
       window.prompt("Copy this link:", APP_URL);
     }
@@ -114,6 +114,9 @@ export default function Install() {
         )}
         {step.action === "copy-link" && (
           <Button variant="primary" size="lg" block icon={Copy} onClick={copy}>Copy link</Button>
+        )}
+        {step.secondary === "copy-link" && (
+          <Button block icon={Copy} onClick={copy}>Copy the link for Safari</Button>
         )}
         {step.qr && (
           <div className="card center stack" style={{ alignItems: "center" }}>

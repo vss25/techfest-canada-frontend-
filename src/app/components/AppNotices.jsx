@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Download, RefreshCw, Share, X, WifiOff } from "lucide-react";
+import { Copy, Download, RefreshCw, X, WifiOff } from "lucide-react";
 import { useStore, local } from "../lib/store";
 import { pwa, applyUpdate, dismissWelcome, promptInstall } from "../lib/pwa";
 import { connectivity } from "../lib/online";
+import { flowFor, APP_URL } from "../lib/installFlows";
+import { showAlert } from "../lib/ui";
 import { Button, IconButton, Sheet } from "./ui";
+import StepGlyph from "./StepGlyph";
 
 /* =========================================================
    App-wide notices: "New version available · Reload", the
    offline strip (checked, lib/online.js), the one-time install nudges (Chrome-style
-   banner / iPhone Safari sheet) and the first-launch welcome.
+   banner / a short illustrated step list on iPhone, or "Open this page in Safari first"
+   inside another app's browser) and the first-launch welcome.
    Install nudges never show inside the installed app.
 ========================================================= */
 
@@ -43,28 +47,52 @@ export function OfflineBar() {
   );
 }
 
-/** Chrome / Edge / Samsung: dismissible "Install app" banner. iPhone Safari: a one-time sheet. */
+/** Chrome / Edge / Samsung: dismissible "Install app" banner. iPhone (any browser) and app browsers: a one-time sheet. */
 export function InstallNudges() {
   const p = useStore(pwa);
   const { pathname } = useLocation();
   const [bannerHidden, setBannerHidden] = useState(() => local.get(BANNER_KEY) === "1");
-  const [iosOpen, setIosOpen] = useState(() => !p.standalone && !p.installed && p.os === "ios" && p.browser === "safari" && local.get(IOS_SHEET_KEY) !== "1");
+  const sheetCase = p.os === "ios" || (p.os === "android" && p.browser === "inapp");
+  const [sheetOpen, setSheetOpen] = useState(() => !p.standalone && !p.installed && sheetCase && local.get(IOS_SHEET_KEY) !== "1");
   const quiet = QUIET.some((re) => re.test(pathname));
   if (p.standalone || p.installed || quiet) return null;
 
-  const closeIos = () => { local.set(IOS_SHEET_KEY, "1"); setIosOpen(false); };
+  const closeSheet = () => { local.set(IOS_SHEET_KEY, "1"); setSheetOpen(false); };
 
-  if (p.os === "ios" && p.browser === "safari") {
+  if (sheetCase) {
+    // The same steps as the full guide (lib/installFlows.js), for this iOS version and browser.
+    const flow = flowFor({ os: p.os, browser: p.browser, canPrompt: false, onAppPage: true });
+    const steps = flow.steps.filter((x) => x.id !== "find");
+    const elsewhere = flow.kind === "inapp" || flow.kind === "ios-other";
+    const copy = async () => {
+      try {
+        await navigator.clipboard.writeText(APP_URL);
+        showAlert("Link copied", `Open ${p.os === "ios" ? "Safari" : "Chrome"}, tap the address bar and paste.`);
+      } catch { window.prompt("Copy this link:", APP_URL); }
+    };
     return (
-      <Sheet open={iosOpen} onClose={closeIos} title="Get the TTFC app">
-        <div className="sheet-body stack" style={{ textAlign: "center", alignItems: "center" }}>
-          <img src="/app/icons/icon-192.png" alt="" width="72" height="72" className="app-icon" />
-          <p style={{ fontSize: 18, margin: 0 }}>
-            Add TTFC to your Home Screen: tap <Share aria-label="Share" style={{ width: 18, height: 18, verticalAlign: "-3px", color: "#0a84ff" }} /> Share, then <b>Add to Home Screen</b>.
-          </p>
-          <p className="muted small" style={{ margin: 0 }}>It opens like an app, full screen, with your schedule ready offline.</p>
-          <Link to="/install?from=ios-sheet" className="btn btn-primary btn-lg btn-block" onClick={closeIos}>Show me how</Link>
-          <Button block onClick={closeIos}>Not now</Button>
+      <Sheet open={sheetOpen} onClose={closeSheet} title={elsewhere ? flow.title : "Get the TTFC app"}>
+        <div className="sheet-body stack" style={{ alignItems: "center" }}>
+          <img src="/app/icons/icon-192.png" alt="" width="64" height="64" className="app-icon" />
+          {elsewhere ? (
+            <p className="center" style={{ margin: 0 }}>{steps[0]?.lead}</p>
+          ) : (
+            <>
+              <p className="center" style={{ margin: 0 }}>Add TTFC to your Home Screen. It opens like an app, full screen, with your schedule ready offline.</p>
+              <ol className="install-steps" aria-label="How to add TTFC to your Home Screen">
+                {steps.map((x, i) => (
+                  <li key={x.id}>
+                    <span className="install-step-glyph"><StepGlyph name={x.glyph} /></span>
+                    <span><b className="install-step-n">{i + 1}</b>{x.title}</span>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+          {elsewhere
+            ? <Button variant="primary" size="lg" block icon={Copy} onClick={copy}>Copy link</Button>
+            : <Link to="/install?from=ios-sheet" className="btn btn-primary btn-lg btn-block" onClick={closeSheet}>Show me how</Link>}
+          <Button block onClick={closeSheet}>Not now</Button>
         </div>
       </Sheet>
     );

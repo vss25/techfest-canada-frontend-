@@ -1,12 +1,27 @@
 /* =========================================================
    Which phone / browser is this, and is the TTFC app already
    installed? Shared by the website's install prompt and the
-   app (/app). Kept tiny: no imports.
+   app (/app). Kept tiny: no imports. The detectors take an
+   optional user-agent string (unit tests: pwaPlatform.test.mjs).
 ========================================================= */
 
-const ua = () => (typeof navigator !== "undefined" ? navigator.userAgent || "" : "");
+/** A raw user-agent override for QA on a local dev server only: ?pwa-uastring=<UA> (kept for the tab). */
+function qaUserAgent() {
+  try {
+    const host = window.location.hostname;
+    if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(host) && !host.endsWith(".localhost")) return "";
+    const q = new URLSearchParams(window.location.search).get("pwa-uastring");
+    if (q) sessionStorage.setItem("ttfc.pwa.uastring", q);
+    return sessionStorage.getItem("ttfc.pwa.uastring") || "";
+  } catch { return ""; }
+}
 
-/** Forced platform for screenshots / QA: ?pwa-ua=ios-safari | ios-chrome | android-chrome | inapp-ios … */
+const ua = () => qaUserAgent() || (typeof navigator !== "undefined" ? navigator.userAgent || "" : "");
+
+/**
+ * Forced platform for screenshots / QA: ?pwa-ua=<os>-<browser>[-<iOS major>], e.g. ios-safari,
+ * ios-safari-27, ios-safari-18, ios-chrome, android-chrome, inapp-ios, inapp-android, desktop-chrome.
+ */
 function forced() {
   try {
     const q = new URLSearchParams(window.location.search).get("pwa-ua");
@@ -19,10 +34,10 @@ function forced() {
 export const isForcedPlatform = () => !!forced();
 
 /** "ios" | "android" | "desktop" | "other" */
-export function detectOS() {
-  const f = forced();
+export function detectOS(given) {
+  const f = given ? "" : forced();
   if (f) return f.split("-")[0] === "inapp" ? (f.split("-")[1] || "ios") : f.split("-")[0];
-  const u = ua();
+  const u = given || ua();
   if (/iPhone|iPad|iPod/i.test(u)) return "ios";
   // iPadOS reports itself as a Mac; touch points give it away.
   if (/Macintosh/.test(u) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1) return "ios";
@@ -31,36 +46,61 @@ export function detectOS() {
   return "other";
 }
 
-/** Apps that open links in their own browser, where installing isn't possible. */
-const IN_APP = /Instagram|FBAN|FBAV|FB_IAB|FBIOS|FB4A|LinkedInApp|Line\/|Snapchat|musical_ly|Bytedance|TikTok|Twitter|WhatsApp|GSA\/|Pinterest|; wv\)|WebView|MicroMessenger/i;
+/**
+ * Apps that open links in their own browser, where installing isn't possible: Instagram, Facebook / Messenger,
+ * LinkedIn, Gmail, the Google app, WhatsApp, X, TikTok, Snapchat, Pinterest, LINE, WeChat, Teams, Slack… and
+ * any iOS web view without Safari's own tokens (caught in detectBrowser).
+ */
+const IN_APP = /Instagram|FBAN|FBAV|FB_IAB|FBIOS|FB4A|MessengerForiOS|LinkedInApp|LinkedIn\/|GmailApp|Gmail\/|Line\/|Snapchat|musical_ly|Bytedance|TikTok|Twitter|WhatsApp|GSA\/|Pinterest|; wv\)|WebView|MicroMessenger|Teams\/|Slack\//i;
+
+const IN_APP_NAMES = [
+  [/Instagram/i, "Instagram"], [/FBAN|FBAV|FB_IAB|FBIOS|FB4A/i, "Facebook"], [/MessengerForiOS/i, "Messenger"],
+  [/LinkedInApp|LinkedIn\//i, "LinkedIn"], [/GmailApp|Gmail\//i, "Gmail"], [/GSA\//, "the Google app"], [/WhatsApp/i, "WhatsApp"],
+  [/Twitter/i, "X"], [/TikTok|musical_ly|Bytedance/i, "TikTok"], [/Snapchat/i, "Snapchat"], [/Pinterest/i, "Pinterest"],
+  [/Teams\//i, "Teams"], [/Slack\//i, "Slack"],
+];
+
+/** The app whose built-in browser this is ("Instagram"…), or "" when it doesn't say. */
+export function inAppName(given) {
+  const u = given || ua();
+  const hit = IN_APP_NAMES.find(([re]) => re.test(u));
+  return hit ? hit[1] : "";
+}
 
 /** "safari" | "chrome" | "edge" | "samsung" | "firefox" | "inapp" | "other" */
-export function detectBrowser() {
-  const f = forced();
+export function detectBrowser(given) {
+  const f = given ? "" : forced();
   if (f) return f.startsWith("inapp") ? "inapp" : (f.split("-")[1] || "other");
-  const u = ua();
+  const u = given || ua();
   if (IN_APP.test(u)) return "inapp";
   if (/EdgiOS|EdgA|Edg\//.test(u)) return "edge";
   if (/SamsungBrowser/.test(u)) return "samsung";
   if (/FxiOS|Firefox\//.test(u)) return "firefox";
   if (/CriOS|Chrome\//.test(u)) return /OPR\/|OPT\/|OPiOS|YaBrowser|DuckDuckGo/.test(u) ? "other" : "chrome";
   if (/Safari\//.test(u) && /Version\//.test(u)) return "safari";
-  if (detectOS() === "ios" && /AppleWebKit/.test(u) && !/Safari\//.test(u)) return "inapp";
+  // A web view inside an app: WebKit without Safari's own tokens.
+  if (detectOS(u) === "ios" && /AppleWebKit/.test(u) && !/Safari\//.test(u)) return "inapp";
   return "other";
 }
 
 /**
- * iOS major.minor (e.g. 17.4), or 0 when unknown. Safari on iOS 26 freezes
- * the OS token at 18_x, but its Version/ token is the real one (26.4).
+ * iOS major.minor (e.g. 17.4), or 0 when unknown. Since iOS 26, Safari freezes the OS token at 18_x
+ * (18_6, later 18_7) but its Version/ token is the real one (Version/26.4, Version/27.0), so for Safari
+ * the Version/ token wins. Other iOS browsers (Chrome, Edge, Firefox, app web views) only carry the
+ * frozen OS token: 18.x there means "iOS 18 or later".
  */
-export function iosVersion() {
-  const u = ua();
+export function iosVersion(given) {
+  const f = given ? "" : forced();
+  if (f) {
+    if (!f.startsWith("ios") && !f.startsWith("inapp-ios")) return 0;
+    const v = Number(f.split("-")[2]);
+    return v > 0 ? v : 26;
+  }
+  const u = given || ua();
   const os = u.match(/OS (\d+)[_.](\d+)/);
   const ver = /Safari\//.test(u) && !/CriOS|FxiOS|EdgiOS/.test(u) ? u.match(/Version\/(\d+)\.(\d+)/) : null;
   const n = (m) => (m ? Number(m[1]) + Number(m[2]) / 10 : 0);
-  const v = Math.max(n(os), n(ver));
-  if (!v) return forced().startsWith("ios") ? 26 : 0;
-  return v;
+  return Math.max(n(os), n(ver));
 }
 
 /** Desktop Safari major version (17 = macOS Sonoma's "Add to Dock"), or 0. */

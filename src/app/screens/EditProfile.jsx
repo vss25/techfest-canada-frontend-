@@ -8,6 +8,7 @@ import { APPLIED_SECTORS, CONSENT_VERSION, TECH_PILLARS, fileURL } from "../lib/
 import { blobToDataURL, compressImage } from "../lib/media";
 import { refreshPeople } from "../lib/social";
 import { showAlert } from "../lib/ui";
+import { isUploadedAvatar } from "../lib/avatar.js";
 import { Avatar, Button, Chip, Spinner, TopBar } from "../components/ui";
 
 /* Edit profile (iOS EditProfileView): saved with PATCH /api/profile, photo with PUT /api/profile/avatar. */
@@ -79,6 +80,9 @@ function EditForm() {
     </label>
   );
 
+  // The server may fill in a speaker's website photo when they haven't uploaded one: that one can't be removed here.
+  const uploaded = isUploadedAvatar(me.avatarUrl);
+
   return (
     <div className="page">
       <TopBar title="Edit profile" />
@@ -87,9 +91,11 @@ function EditForm() {
           <Avatar name={`${f.firstName} ${f.lastName}`} src={fileURL(me.avatarUrl)} size={80} />
           <div className="stack-sm" style={{ flex: 1 }}>
             <input ref={fileRef} type="file" accept="image/*" hidden onChange={pickPhoto} />
-            <Button size="sm" icon={Camera} loading={photoBusy} onClick={() => fileRef.current?.click()}>{me.avatarUrl ? "Change photo" : "Add a photo"}</Button>
-            {me.avatarUrl && <Button size="sm" icon={Trash2} className="btn-ghost" onClick={removePhoto}>Remove photo</Button>}
-            <span className="tiny muted">Square, well lit. Shown on your badge QR card and to connections.</span>
+            <Button size="sm" icon={Camera} loading={photoBusy} onClick={() => fileRef.current?.click()}>{uploaded ? "Change photo" : "Add a photo"}</Button>
+            {uploaded && <Button size="sm" icon={Trash2} className="btn-ghost" onClick={removePhoto}>Remove photo</Button>}
+            <span className="tiny muted">{me.avatarUrl && !uploaded
+              ? "Showing your speaker photo from the TTFC website. Add your own to use a different one."
+              : "Square, well lit. Shown on your badge QR card and to connections."}</span>
           </div>
         </div>
         <div className="row" style={{ gap: 10 }}>

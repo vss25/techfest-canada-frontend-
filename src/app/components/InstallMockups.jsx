@@ -144,7 +144,7 @@ const MOCKS = {
   ),
   // iPhone Safari on iOS 26: 1 ••• at the right of the address bar, 2 Share at the top of the menu.
   "ios26-more-share": () => (
-    <Phone crop={[200, 240]} title="Safari on iOS 26: tap ••• at the bottom right (1), then Share at the top of the menu (2)">
+    <Phone crop={[200, 240]} title="Safari on iOS 26: tap ••• next to the address bar (1), then Share at the top of the menu (2)">
       <Content y="60" n={4} />
       <rect x="62" y="226" width="140" height="140" rx="16" fill="#ffffff" stroke={LINE} />
       {["Share", "Add to Bookmarks", "Add Bookmark to…", "New Tab"].map((l, i) => (
@@ -159,6 +159,27 @@ const MOCKS = {
       <Dots x="184" y="397" />
       <Pulse x="184" y="397" r="17" />
       <Num x="199" y="380" n="1" />
+    </Phone>
+  ),
+  // iPhone Safari on iOS 27 (Compact tabs): 1 the page menu (≡) at the left end of the address bar, 2 Share.
+  // The button at the right of the address bar is Tabs now, not •••.
+  "ios27-menu-share": () => (
+    <Phone crop={[200, 240]} title="Safari on iOS 27: tap ≡ at the left end of the address bar (1), then Share in the menu (2)">
+      <Content y="60" n={4} />
+      <rect x="18" y="214" width="150" height="150" rx="16" fill="#ffffff" stroke={LINE} />
+      {["Share", "Add Bookmark", "Find on Page", "Show Reader"].map((l, i) => (
+        <T key={l} x="34" y={240 + i * 32} size={10} weight={i === 0 ? 700 : 400}>{l}</T>
+      ))}
+      <ShareIcon x="150" y="238" s={0.75} color={INK} />
+      <PulseRect x="22" y="220" w="142" h="30" rx="8" />
+      <Num x="162" y="220" n="2" />
+      <rect x="18" y="378" width="148" height="38" rx="19" fill="#ffffff" stroke={LINE} />
+      <g stroke={INK} strokeWidth="2" strokeLinecap="round"><path d="M32 390 h13 M32 397 h13 M32 404 h8" /></g>
+      <Pulse x="39" y="397" r="14" />
+      <Num x="25" y="381" n="1" />
+      <T x="106" y="401" size={9.5} anchor="middle">thetechfestival.com</T>
+      <circle cx="186" cy="397" r="19" fill="#ffffff" stroke={LINE} />
+      <g fill="none" stroke={INK} strokeWidth="1.6"><rect x="179" y="392" width="11" height="11" rx="2.5" /><path d="M183 389 h7.5 a2.5 2.5 0 0 1 2.5 2.5 v7.5" /></g>
     </Phone>
   ),
   // iOS 26 share sheet: 1 View More, 2 Add to Home Screen.

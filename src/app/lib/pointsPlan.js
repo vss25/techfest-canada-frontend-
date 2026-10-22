@@ -13,12 +13,12 @@
 /** What matters most (most points / most useful first). */
 export const IMPORTANCE = [
   "linkedin.attending", "profile.linkedin", "network.connection", "profile.topics", "session.saved", "network.request",
-  "feed.post", "feed.comment", "network.inPerson", "live.vote", "live.question", "session.attended",
+  "feed.post", "feed.comment", "linkedin.share", "network.inPerson", "live.vote", "live.question", "session.attended",
 ];
 
 /** Only possible at the event: first on the event days, not recommended on other days. */
-export const EVENT_FIRST = ["network.inPerson", "live.vote", "live.question"];
-const EVENT_ONLY = [...EVENT_FIRST, "session.attended"];
+export const EVENT_FIRST = ["network.inPerson", "live.vote", "live.question", "session.attended"];
+const EVENT_ONLY = EVENT_FIRST;
 
 /** The most a rule can count overall (null when it has no overall cap, e.g. "up to 3 a day"). */
 export function ruleCap(rule) {

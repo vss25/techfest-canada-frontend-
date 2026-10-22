@@ -50,14 +50,16 @@ function useLongPress(enabled) {
 /** `authorTo`: where the author's name and photo go (lib/avatar.js authorPath); plain when it's null. */
 export function ChatBubble({ text, mine, author, avatarUrl, authorTo, timestamp, quote, held, receipt, onReply, menu }) {
   const items = (menu || []).filter(Boolean);
+  // The name and photo go along to their profile, for while it loads (and if it's private).
+  const peek = { peek: { name: author, avatarUrl } };
   const [press, anchor, close] = useLongPress(!mine && items.length > 0);
   return (
     <div className={mine ? "cb-row cb-row--mine" : "cb-row"}>
       {!mine && author && (authorTo
-        ? <Link to={authorTo} className="cb-avatar-link" aria-label={`${author}'s profile`} tabIndex={-1}><Avatar name={author} src={avatarUrl} size={28} /></Link>
+        ? <Link to={authorTo} state={peek} className="cb-avatar-link" aria-label={`${author}'s profile`} tabIndex={-1}><Avatar name={author} src={avatarUrl} size={28} /></Link>
         : <Avatar name={author} src={avatarUrl} size={28} />)}
       <div className="cb-col">
-        {!mine && author && (authorTo ? <Link to={authorTo} className="cb-author cb-author--link">{author}</Link> : <span className="cb-author">{author}</span>)}
+        {!mine && author && (authorTo ? <Link to={authorTo} state={peek} className="cb-author cb-author--link">{author}</Link> : <span className="cb-author">{author}</span>)}
         <div className={"cb" + (mine ? " cb--mine" : "") + (held ? " cb--held" : "")} {...press}>
           {quote && <span className="cb-quote"><span>{quote}</span></span>}
           {text}

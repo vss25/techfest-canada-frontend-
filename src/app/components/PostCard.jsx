@@ -112,7 +112,7 @@ export default function PostCard({ post, startWithComments = false }) {
           badge={post.kind === "announcement" ? <span className="avatar-badge"><Megaphone aria-hidden="true" /></span> : null} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="row" style={{ gap: 6 }}>
-            {FEATURES.network && post.authorId && post.kind !== "announcement" ? <Link to={`/people/${encodeURIComponent(post.authorId)}`} className="post-author ellipsis" style={{ color: "inherit", textDecoration: "none" }}>{post.authorName}</Link> : <span className="post-author ellipsis">{post.authorName}</span>}
+            {FEATURES.network && post.authorId && post.kind !== "announcement" ? <Link to={`/people/${encodeURIComponent(post.authorId)}`} state={{ peek: { name: post.authorName, avatarUrl: avatarFor(post, s.people) } }} className="post-author ellipsis" style={{ color: "inherit", textDecoration: "none" }}>{post.authorName}</Link> : <span className="post-author ellipsis">{post.authorName}</span>}
             {post.kind === "announcement" ? <BadgeCheck aria-label="Official" style={{ width: 14, height: 14, color: "var(--pur-alt)", flex: "none" }} /> : badge ? <Kicker tone="accent">{badge}</Kicker> : null}
           </div>
           <div className="post-sub ellipsis">{subtitle} · <time dateTime={post.createdAt}>{postTime(post.createdAt)}</time>{post.status === "held" ? " · Held for review" : ""}</div>

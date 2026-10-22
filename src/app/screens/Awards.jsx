@@ -1,44 +1,26 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { BadgeCheck, ChevronRight, ClipboardList, Grid3x3, LogIn, Star, Trophy } from "lucide-react";
+import { BadgeCheck, ChevronRight, ClipboardList, LogIn, Star, Trophy } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, isSignedIn, signOut } from "../lib/auth";
 import { content, flag } from "../lib/content";
-import { awards, awardsLine, refreshAwardsSummary } from "../lib/awards";
+import { awards, refreshAwardsSummary } from "../lib/awards";
 import { LINKS, TECH_PILLARS } from "../lib/config";
 import { Button, TopBar } from "../components/ui";
 
 /* =========================================================
-   Catalyst Awards (iOS AwardsView): the hero, the counts
-   (Awards = the categories that received eligible applications,
-   GET /api/app/awards/summary; Applications opens the list for
-   pass holders), evaluation criteria, the five pillars, the road
-   to awards night, and Nominate while nominations are open
-   (site.nominations_open, the website's switch). Until the
-   summary has loaded the screen shows no number (never "28").
+   Catalyst Awards (iOS AwardsView): the hero, "See the
+   applications" (the list for pass holders, while staff have it
+   on), evaluation criteria, the five pillars, and Nominate while
+   nominations are open (site.nominations_open, the website's
+   switch). No numbers anywhere (Oct 22 2026, the organiser: "hide
+   the number of applicants … the number of awards … the 'Road to
+   Awards Night' section").
 ========================================================= */
 
 const EVALUATION = [
   ["Impact", 30, "#e0408a"], ["Innovation", 25, "var(--pur)"], ["Scale", 20, "#f58733"], ["Canadian", 15, "#d52b1e"], ["Execution", 10, "#a9a6b8"],
 ];
-const DATES = [
-  ["Jun", "Framework"], ["Jul–Aug", null], ["Sep", "Screening"], ["Oct 6", "Shortlist"], ["Oct 15", "Winners sealed"], ["Oct 26", "Awards Night"],
-];
-
-function CountCard({ icon, value, label, to, hint }) {
-  const Icon = icon;
-  const inner = (
-    <>
-      <Icon aria-hidden="true" className="award-count-ico" />
-      <b className="figure">{value}</b>
-      <span>{label}</span>
-      {hint && <span className="award-count-hint">{hint}</span>}
-    </>
-  );
-  return to
-    ? <Link to={to} className="award-count award-count--link pressable" aria-label={`${value} ${label}. Opens the list`}>{inner}<ChevronRight aria-hidden="true" className="award-count-chev" /></Link>
-    : <div className="award-count">{inner}</div>;
-}
 
 export default function Awards() {
   const a = useStore(auth);
@@ -47,10 +29,9 @@ export default function Awards() {
   const signedIn = isSignedIn(a);
   useEffect(() => { refreshAwardsSummary({ force: true }); }, []);
 
-  const total = awardsLine(summary); // "12 Awards", or null while unknown
   const open = flag(ct, "site.nominations_open", true);
   // Hidden when staff switch the list off (the summary's `enabled`, or the site.award_applications switch itself).
-  const showApps = summary?.enabled !== false && flag(ct, "site.award_applications", true) && summary?.applicationsCount != null;
+  const showApps = summary?.enabled !== false && flag(ct, "site.award_applications", true);
 
   return (
     <div className="page">
@@ -58,20 +39,19 @@ export default function Awards() {
       <main id="main" className="pad stack-lg awards-page" style={{ paddingTop: 16 }}>
         <section className="stack-sm" aria-label="Catalyst Awards">
           <span className="eyebrow awards-eyebrow">Awards night · Oct 26, 2026</span>
-          <h1 className="awards-hero">{total ? `${total}.` : "Catalyst Awards."}<br />One stage. Infinite impact.</h1>
-          <p className="muted" style={{ margin: 0, fontSize: 14 }}>Honouring the pioneers transforming industries through technology. Categories span the 5×5 pillar-sector matrix and special recognition awards.</p>
+          <h1 className="awards-hero">The Catalyst Awards.<br />One stage. Infinite impact.</h1>
+          <p className="muted" style={{ margin: 0, fontSize: 14 }}>Honouring the pioneers transforming industries through technology, across the technology pillars and applied sectors, with special recognition awards.</p>
         </section>
 
-        <div className="award-counts">
-          {total && <CountCard icon={Trophy} value={summary.categoriesCount} label={summary.categoriesCount === 1 ? "Award" : "Awards"} />}
-          <CountCard icon={Grid3x3} value="5×5" label="Matrix" />
-          <CountCard icon={Star} value="3" label="Special" />
-        </div>
-        {showApps && (
-          <div className="award-counts award-counts--one">
-            <CountCard icon={ClipboardList} value={summary.applicationsCount} label={summary.applicationsCount === 1 ? "Application" : "Applications"}
-              to={signedIn ? "/awards/applications" : undefined} />
-          </div>
+        {showApps && signedIn && (
+          <Link to="/awards/applications" className="list-row pressable" style={{ padding: 14 }}>
+            <span className="lead-icon lead-icon--accent" style={{ width: 34, height: 34 }}><ClipboardList aria-hidden="true" /></span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <b style={{ display: "block" }}>See the applications</b>
+              <span className="tiny muted">The people, organisations and teams nominated</span>
+            </span>
+            <ChevronRight className="chev" aria-hidden="true" />
+          </Link>
         )}
         {showApps && !signedIn && (
           <div className="info-note" style={{ alignItems: "center" }}>
@@ -94,26 +74,13 @@ export default function Awards() {
         </section>
 
         <section className="stack-sm" aria-labelledby="pillars-h">
-          <h2 id="pillars-h" className="eyebrow">The 5 pillar categories</h2>
+          <h2 id="pillars-h" className="eyebrow">The pillar categories</h2>
           {TECH_PILLARS.map((p) => (
             <div key={p} className="card row award-pillar">
               <Star aria-hidden="true" className="award-pillar-star" />
               <span style={{ flex: 1, minWidth: 0 }}><span className="tiny muted bold" style={{ display: "block" }}>The Catalyst Award for</span><b>{p}</b></span>
-              <span className="tiny muted">5 categories</span>
             </div>
           ))}
-        </section>
-
-        <section className="stack-sm" aria-labelledby="dates-h">
-          <h2 id="dates-h" className="eyebrow awards-eyebrow--orange">Road to awards night</h2>
-          <div className="card stack-sm" style={{ gap: 12 }}>
-            {DATES.map(([when, what], i) => (
-              <div key={when} className="row award-date">
-                <span className={"award-date-when" + (i === DATES.length - 1 ? " is-night" : "")}>{when}</span>
-                <b className="small">{what || (open ? "Nominations open (free)" : "Nominations (now closed)")}</b>
-              </div>
-            ))}
-          </div>
         </section>
 
         {open ? (

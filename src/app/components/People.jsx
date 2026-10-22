@@ -55,7 +55,7 @@ export function ConnectionRow({ conn, mode = "invite", unread = 0, lastMessage, 
   };
   return (
     <div className="conn-card">
-      <Link to={`/people/${encodeURIComponent(u.id)}`} className="avatar-link" aria-label={`${u.name}'s profile`}><Avatar name={u.name} src={fileURL(u.avatarUrl)} size={48} /></Link>
+      <Link to={`/people/${encodeURIComponent(u.id)}`} state={{ peek: u }} className="avatar-link" aria-label={`${u.name}'s profile`}><Avatar name={u.name} src={fileURL(u.avatarUrl)} size={48} /></Link>
       <div className="info">
         <div className="row" style={{ gap: 6 }}><span className="conn-name ellipsis">{u.name}</span>{conn.status === "accepted" && <KindBadge kind={conn.kind} />}</div>
         {work && <div className="conn-work ellipsis">{work}</div>}
@@ -149,12 +149,12 @@ export function PersonCard({ person: p, state, rec, onWhy, kind }) {
 
   return (
     <div className="person-card">
-      <Link to={href} tabIndex={-1} aria-hidden="true" className="avatar-link">
+      <Link to={href} state={{ peek: p }} tabIndex={-1} aria-hidden="true" className="avatar-link">
         <Avatar name={p.name} src={fileURL(p.avatarUrl)} size={40} tierRing={!!publicBadge(p, k)}
           badge={BadgeIcon ? <span className="avatar-badge" aria-label={k === "speaker" ? "Speaker" : "Exhibitor"}><BadgeIcon aria-hidden="true" /></span> : null} />
       </Link>
       <span className="info">
-        <Link to={href} className="person-link">
+        <Link to={href} state={{ peek: p }} className="person-link">
           <span className="row" style={{ gap: 6 }}>
             <span className="person-name ellipsis">{p.name}</span>
             {k === "exhibitor" && p.booth && <span className="booth">Booth {p.booth}</span>}

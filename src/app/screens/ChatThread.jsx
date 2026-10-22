@@ -34,12 +34,12 @@ export default function ChatThread() {
   const bottom = useRef(null);
   const messages = s.messages[id];
 
+  // Their name and photo from the server each time (the list's copy shows meanwhile).
   useEffect(() => {
-    if (peer) return undefined;
     let alive = true;
-    fetchPerson(id).then((p) => { if (alive) setPeer(p); }).catch(() => {});
+    fetchPerson(id).then((p) => { if (alive && p) setPeer((cur) => ({ ...(cur || {}), ...p })); }).catch(() => {});
     return () => { alive = false; };
-  }, [id, peer]);
+  }, [id]);
 
   // On screen and in front: a read (anything else would be a ?peek=1, lib/social.js).
   usePolling(() => refreshMessages(id, { open: true }), 5000, [id]);

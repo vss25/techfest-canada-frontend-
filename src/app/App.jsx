@@ -4,6 +4,7 @@ import { useStore } from "./lib/store";
 import { auth, loadAccount } from "./lib/auth";
 import { cms, refreshCMS, roomOf } from "./lib/cms";
 import { refreshContent } from "./lib/content";
+import { refreshOrganisations } from "./lib/orgs";
 import { bookmarks, social, startSocial, stopSocial, chatsHasNew } from "./lib/social";
 import TabBar from "./components/TabBar";
 import { FEATURES } from "./lib/config";
@@ -46,6 +47,8 @@ const Install = lazy(() => import("./screens/Install"));
 const Legal = lazy(() => import("./screens/Legal"));
 const PostPage = lazy(() => import("./screens/PostPage"));
 const Points = lazy(() => import("./screens/Points"));
+const Awards = lazy(() => import("./screens/Awards"));
+const AwardApplications = lazy(() => import("./screens/AwardApplications"));
 
 /** Pages that fill the screen with their own composer: no tab bar. */
 const NO_TABS = [/^\/chat\//, /^\/group\//, /^\/discussion\//, /^\/session\/[^/]+\/live/, /^\/install/, /^\/login/];
@@ -55,17 +58,20 @@ function Boot() {
   const location = useLocation();
   const { mode } = useStore(auth);
 
-  // Agenda, speakers, app switches: for everyone, guests included.
+  // Agenda, speakers, attending organisations, app switches: for everyone, guests included.
   useEffect(() => {
     refreshCMS();
     refreshContent();
-    const onVisible = () => { if (document.visibilityState === "visible") { refreshCMS(); refreshContent(); } };
+    const onVisible = () => { if (document.visibilityState === "visible") { refreshCMS(); refreshContent(); refreshOrganisations(); } };
     document.addEventListener("visibilitychange", onVisible);
     const t = setInterval(() => refreshCMS(), 5 * 60 * 1000);
     return () => { document.removeEventListener("visibilitychange", onVisible); clearInterval(t); };
   }, []);
 
   // Signed in: account + the social layer (feed, people, chats…) and, when they're on, message notifications.
+  // The organisations list differs in the demo (lib/orgs.js): read it again when the mode changes.
+  useEffect(() => { refreshOrganisations({ force: true }); }, [mode]);
+
   useEffect(() => {
     if (mode === "user" || mode === "demo") {
       loadAccount();
@@ -159,6 +165,8 @@ function Shell() {
           <Route path="/profile/availability" element={<Availability />} />
           <Route path="/profile/pass" element={<Pass />} />
           <Route path="/points" element={<Points />} />
+          <Route path="/awards" element={<Awards />} />
+          <Route path="/awards/applications" element={<AwardApplications />} />
           <Route path="/install" element={<Install />} />
           <Route path="/legal/:doc" element={<Legal />} />
           <Route path="/login" element={signedOut ? <Login /> : <Navigate to="/" replace />} />

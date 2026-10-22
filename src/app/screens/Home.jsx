@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Bell, BarChart3, House as HomeIcon, Building2, CalendarDays, ChevronRight, ChevronUp, Circle, Eye, ImagePlus, ListChecks, Megaphone, MessageSquareQuote, Moon, Smartphone, Sun, X, UserRoundPen } from "lucide-react";
 import { useStore, local } from "../lib/store";
 import { auth, can, firstName, isSignedIn, signOut } from "../lib/auth";
-import { cms, featuredOrganisations, featuredSpeakers, heroSession, pollsOn, qaOn, speakerById, timeRange, speakerLine } from "../lib/cms";
+import { cms, featuredSpeakers, heroSession, pollsOn, qaOn, speakerById, timeRange, speakerLine } from "../lib/cms";
+import { useOrganisations } from "../lib/orgs";
 import { content, flag, liveFlags, optionalText, text } from "../lib/content";
 import { markActivitySeen, refreshActivity, refreshFeed, social, bookmarks } from "../lib/social";
 import { notificationItems, unreadCount } from "../lib/notifications";
@@ -20,13 +21,16 @@ import PostCard from "../components/PostCard";
 import Composer from "../components/Composer";
 import Coachmark from "../components/Coachmark";
 import { GetPassCard } from "../components/PassesSheet";
+import { FeaturedRow, OrgGrid, PartnerSheet } from "../components/Orgs";
 import BrandMark from "../components/BrandMark";
 
 /* =========================================================
    Home, merged with the feed (iOS FeedView / HomeTabView):
    welcome, the countdown (or, Oct 25–27, the session on now /
    next with its Polls and Q&A), the first-day checklist,
-   Speakers and Organisations, then the feed. Once you're into
+   Speakers and Organisations (Featured Partners in one row and
+   the first two rows of In attendance, Oct 21 2026), then the
+   feed. Once you're into
    the posts, a "What's on your mind?" bar pins to the top and
    the session line floats above the tab bar. The TTFC mark sits
    in the middle of the top row (a tap pops it and scrolls to the
@@ -149,6 +153,32 @@ function MiniBar({ now, c, onTap }) {
   );
 }
 
+/** Organisations on Home: the Featured Partners row and the first two rows of In attendance; "See all (N)" opens the
+    full page and a logo its partner sheet. */
+function OrgsPreview() {
+  const { featured, attending, total } = useOrganisations();
+  const ct = useStore(content);
+  const [opened, setOpened] = useState(null);
+  if (!total) return null;
+  return (
+    <section className="orgs-preview" aria-labelledby="home-orgs">
+      <div className="row orgs-preview-head">
+        <h2 id="home-orgs" className="row"><Building2 aria-hidden="true" />Organisations</h2>
+        <span className="spacer" />
+        <Link to="/organisations" className="orgs-see-all pressable">See all ({total})<ChevronRight aria-hidden="true" /></Link>
+      </div>
+      {featured.length > 0 && <FeaturedRow list={featured} onOpen={setOpened} />}
+      {attending.length > 0 && (
+        <>
+          <span className="orgs-preview-sub">{text(ct, "home.partners_title", "In attendance")}</span>
+          <OrgGrid list={attending.slice(0, 6)} onOpen={setOpened} />
+        </>
+      )}
+      {opened && <PartnerSheet p={opened} onClose={() => setOpened(null)} />}
+    </section>
+  );
+}
+
 const CHECKLIST_KEY = "ttfc.app.checklistDismissed";
 const THEME_ICON = { system: Smartphone, light: Sun, dark: Moon };
 const NEXT_THEME = { system: "dark", dark: "light", light: "system" };
@@ -252,7 +282,6 @@ export default function Home() {
   const announcement = optionalText(ct, "home.announcement");
   const announcementLink = safeHref(optionalText(ct, "home.announcement_link"));
   const faces = featuredSpeakers(now, 3, c);
-  const orgs = featuredOrganisations(now, 3, c);
   const posts = s.feed.filter((p) => !s.blocked.includes(p.authorId));
   const greeting = me?.name ? firstName(me.name) : "";
 
@@ -335,15 +364,7 @@ export default function Home() {
               <span className="see-all">See all speakers <ChevronRight aria-hidden="true" style={{ width: 14, height: 14 }} /></span>
             </span>
           </Link>
-          <Link to="/organisations" className="orgs-tile pressable" aria-label="See all attending organisations">
-            <span style={{ flex: 1 }}>
-              <span className="row" style={{ gap: 8, fontWeight: 600, fontSize: 15 }}><Building2 aria-hidden="true" style={{ width: 18, height: 18 }} />Organisations</span>
-              <span className="row" style={{ gap: 8, marginTop: 10 }}>
-                {orgs.map((o) => <span key={o.id} className="logo-tile"><img src={o.logo} alt={o.displayName} loading="lazy" crossOrigin="anonymous" /></span>)}
-              </span>
-            </span>
-            <span className="small bold row" style={{ gap: 2, color: "var(--pur-alt)" }}>See all <ChevronRight aria-hidden="true" style={{ width: 14, height: 14 }} /></span>
-          </Link>
+          <OrgsPreview />
         </div>
 
         <div ref={sentinel} aria-hidden="true" style={{ height: 1 }} />

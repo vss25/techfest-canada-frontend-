@@ -43,7 +43,7 @@ function MediaCarousel({ media, onDoubleTap }) {
         {media.map((m, i) => (
           m.type === "video"
             ? <video key={i} src={fileURL(m.url)} poster={m.posterUrl ? fileURL(m.posterUrl) : undefined} controls playsInline preload="metadata" style={{ aspectRatio: String(aspect) }} />
-            : <img key={i} src={fileURL(m.url)} alt="" loading="lazy" decoding="async" style={{ aspectRatio: String(aspect) }} crossOrigin={/^https?:\/\//.test(m.url) && !m.url.startsWith(window.location.origin) ? "anonymous" : undefined} />
+            : <img key={i} src={fileURL(m.url)} alt="" loading="lazy" decoding="async" style={{ aspectRatio: String(aspect) }} />
         ))}
       </div>
       {media.length > 1 && (

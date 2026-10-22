@@ -1,5 +1,5 @@
 import {
-  Activity, Award, BarChart3, BellRing, CalendarCheck, CalendarDays, Contact, Download, FileDown, Gem, GalleryHorizontal, GraduationCap,
+  Activity, Award, BarChart3, BellRing, Building2, CalendarCheck, CalendarDays, Contact, Download, FileDown, Gem, GalleryHorizontal, GraduationCap,
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, Power, ScanLine,
   MailPlus, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
@@ -64,6 +64,7 @@ export const NAV = [
       { to: "content/speakers", label: "Speakers", icon: Mic2 },
       { to: "content/partners", label: "Partners", icon: Handshake },
       { to: "content/sponsors", label: "Featured Partners", icon: Gem },
+      { to: "content/organisations", label: "Attending organisations", icon: Building2 },
       { to: "content/settings", label: "Website switches", icon: Settings2 },
       { to: "app/text", label: "App text & switches", icon: ToggleRight },
       { to: "app/invite", label: "App invite email", icon: MailPlus },

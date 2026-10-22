@@ -1,11 +1,13 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { BadgeCheck, BarChart3, Bookmark, CalendarDays, ChevronRight, CircleCheck, Clock, MapPin, Share, Tag, Layers, Ticket } from "lucide-react";
+import { BadgeCheck, BarChart3, Bookmark, CalendarDays, ChevronRight, CircleCheck, Clock, MapPin, MessagesSquare, Share, Tag, Layers, Ticket } from "lucide-react";
 import { useStore } from "../lib/store";
 import { cms, dayLabel, isLiveWindow, liveOn, refreshCMS, roomOf, sessionById, speakerById, timeRange, typeLabel, liveWindow } from "../lib/cms";
 import { content, liveFlags } from "../lib/content";
 import { auth, isSignedIn } from "../lib/auth";
-import { bookmarks, refreshRegistrations, social, toggleBookmark } from "../lib/social";
+import { bookmarks, fetchSessionGroup, refreshGroups, refreshRegistrations, social, toggleBookmark } from "../lib/social";
+import { sessionGetsChat, sessionGroupOf } from "../lib/sessionChat";
+import { post } from "../lib/api";
 import { clockFaked } from "../lib/time";
 import { showAlert, useNow } from "../lib/ui";
 import { Avatar, Button, Empty, Spinner, TopBar } from "../components/ui";
@@ -13,7 +15,9 @@ import { TypeIcon } from "../components/SessionRow";
 import { EVENT, FEATURES } from "../lib/config";
 import { openPasses } from "../lib/passes";
 
-/* Session page (iOS SessionDetailView). */
+/* Session page (iOS SessionDetailView). Its chat (lib/sessionChat.js, GET /community/groups/session/:id): "Open
+   session chat" once you're in it; registered but you left it, "Join session chat"; registered with no chat yet
+   (and not a meal or break), "Session chat opens 30 min before". */
 
 export default function SessionDetail() {
   const { id } = useParams();
@@ -25,7 +29,17 @@ export default function SessionDetail() {
   const now = useNow(30000);
   const signedIn = isSignedIn(a);
   useEffect(() => { refreshCMS(); }, []);
-  useEffect(() => { if (signedIn) refreshRegistrations(); }, [signedIn]);
+  useEffect(() => { if (signedIn) { refreshRegistrations(); refreshGroups(); } }, [signedIn]);
+  // The session's chat: null until it exists (the server opens it 30 min before the start).
+  const [chat, setChat] = useState(null);
+  const sid = decodeURIComponent(id);
+  const loadChat = useCallback(async () => {
+    const x = sessionById(sid);
+    setChat(signedIn && x ? await fetchSessionGroup(x.id) : null);
+  }, [sid, signedIn]);
+  const loaded = c.loaded;
+  useEffect(() => { if (loaded) loadChat(); }, [loaded, loadChat]);
+  const [joining, setJoining] = useState(false);
 
   const session = sessionById(decodeURIComponent(id), c);
   if (!session) {
@@ -43,6 +57,24 @@ export default function SessionDetail() {
   const flags = liveFlags(ct);
   const hasLive = FEATURES.live && session.type !== "break" && session.type !== "ceremony" && liveOn(session, flags);
   const open = isLiveWindow(session, now) || clockFaked();
+  const group = signedIn ? chat || sessionGroupOf(session, s.groups) : null;
+  const chatSoon = signedIn && saved && !group && sessionGetsChat(session) && now < session.end;
+  // Registering adds you to the session's chat (and un-registering before it starts takes you out): read it again.
+  const register = async () => { await toggleBookmark(session.id); refreshGroups(); loadChat(); };
+  const openChat = (g) => navigate(`/group/${encodeURIComponent(g.id)}`);
+  // You left the chat but you're registered: back in (POST …/join; the server says why if it refuses).
+  const joinChat = async () => {
+    if (joining) return;
+    setJoining(true);
+    try {
+      const g = await post(`community/groups/${encodeURIComponent(group.id)}/join`, {});
+      setChat(g?.id ? g : group);
+      await refreshGroups();
+      if (g?.joined !== false) openChat(group);
+    } catch (e) {
+      showAlert("Couldn't join the chat", e.message || "Try again.");
+    } finally { setJoining(false); }
+  };
 
   const openLive = () => {
     if (open) { navigate(`/session/${encodeURIComponent(session.id)}/live`); return; }
@@ -119,7 +151,7 @@ export default function SessionDetail() {
 
         <div className="stack-sm" style={{ gap: 10 }}>
           {signedIn ? (
-            <Button variant="primary" size="lg" block icon={saved ? BadgeCheck : Bookmark} onClick={() => toggleBookmark(session.id)} className={saved ? "" : "icon-fill"}>
+            <Button variant="primary" size="lg" block icon={saved ? BadgeCheck : Bookmark} onClick={register} className={saved ? "" : "icon-fill"}>
               {saved ? "Registered · Remove" : "Register & add to schedule"}
             </Button>
           ) : (
@@ -128,6 +160,9 @@ export default function SessionDetail() {
               <p className="center muted" style={{ margin: 0, fontSize: 11 }}>Sign in and choose a pass to join sessions, polls and Q&A.</p>
             </>
           )}
+          {group?.joined && <Button size="lg" block icon={MessagesSquare} onClick={() => openChat(group)}>Open session chat</Button>}
+          {group && !group.joined && saved && <Button size="lg" block icon={MessagesSquare} loading={joining} onClick={joinChat}>Join session chat</Button>}
+          {chatSoon && <p className="session-chat-soon"><MessagesSquare aria-hidden="true" />Session chat opens 30 min before</p>}
           <Button size="lg" block icon={Share} onClick={share}>Share session</Button>
         </div>
       </main>

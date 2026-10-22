@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import {
   BadgeCheck, Bell, CalendarClock, Camera, ChevronRight, Download, FileText, Hand, HelpCircle, IdCard, Landmark, LogOut, Mic, Moon, Pencil, QrCode, RotateCcw,
-  LogIn, ScanLine, ShieldCheck, Smartphone, Star, Sun, Ticket, Trophy, Users,
+  LogIn, ScanLine, ShieldCheck, Smartphone, Sun, Ticket, Trophy, Users,
 } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, bestTicket, isSignedIn, isTeam, loadAccount, signOut } from "../lib/auth";
@@ -11,6 +11,7 @@ import { social } from "../lib/social";
 import { pwa, promptInstall } from "../lib/pwa";
 import { theme, setTheme, THEME_LABEL } from "../lib/theme";
 import { points, refreshPoints } from "../lib/points";
+import { awards, categoriesLine, refreshAwardsSummary } from "../lib/awards";
 import { resetDemo } from "../lib/demo";
 import { fileURL, LINKS, shortTopic } from "../lib/config";
 import { confirmDialog } from "../lib/ui";
@@ -38,9 +39,9 @@ const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
    profileTag.js): a glow at the screen's edge in its colour (the
    upper half: along the top and down both sides) while this
    screen is open, and a pill in the same colour under
-   your name, job title and company (VIP gold, Media dark blue,
-   Speaker red, Staff purple, Volunteer orange, any other pass
-   green), so door staff can tell it from a distance. The pill
+   your name, job title and company (Media dark blue, Speaker
+   red, Staff purple, Volunteer orange, any other pass green; no
+   one is labelled VIP), so door staff can tell it from a distance. The pill
    has no words (the organiser: "Just show the colored tab/pill"):
    a small icon in it, and its name for screen readers. Nothing
    else in the app changes colour. The TTFC brand (Oct 20 2026,
@@ -54,7 +55,7 @@ const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 ========================================================= */
 
 const THEME_ICON = { system: Smartphone, light: Sun, dark: Moon };
-const TAG_ICON = { vip: Star, media: Camera, speaker: Mic, staff: IdCard, volunteer: Hand, pass: Ticket };
+const TAG_ICON = { media: Camera, speaker: Mic, staff: IdCard, volunteer: Hand, pass: Ticket };
 
 /** The glow at the screen's edge: fixed to the viewport (safe areas included), the upper half only. The soft glow
     sits under the header and its buttons, the 3px edge line over it (clear of the buttons), both under sheets and
@@ -80,7 +81,7 @@ function ProfileGlow({ tag }) {
 }
 
 /** Your pass type under your name: the colour and a small icon, no words (the icon tells the colours apart
-    for anyone who can't see the difference); screen readers hear "Pass colour: VIP". */
+    for anyone who can't see the difference); screen readers hear "Pass colour: Speaker". */
 function ProfileTagPill({ tag }) {
   const Icon = TAG_ICON[tag.key] || Ticket;
   return (
@@ -195,6 +196,7 @@ export default function Profile() {
   const a = useStore(auth);
   const s = useStore(social);
   const pts = useStore(points);
+  const { summary: awardSummary } = useStore(awards);
   const navigate = useNavigate();
   const [settings, setSettings] = useState(false);
   const [scan, setScan] = useState(false);
@@ -203,6 +205,7 @@ export default function Profile() {
   const user = a.user;
 
   useEffect(() => { if (signedIn) refreshPoints(); }, [signedIn]);
+  useEffect(() => { if (signedIn) refreshAwardsSummary(); }, [signedIn]);
 
   if (!signedIn) {
     return (
@@ -322,15 +325,15 @@ export default function Profile() {
           <ChevronRight className="chev" aria-hidden="true" />
         </Link>
 
-        {/* Awards as a row like Connections (Network, My pass and the brochure repeated the tabs and the pass strip) */}
-        <a href={LINKS.awards} target="_blank" rel="noopener noreferrer" className="list-row pressable" style={{ padding: 14 }}>
+        {/* Awards as a row like Connections; the count is the categories with eligible applications (no number until known). */}
+        <Link to="/awards" className="list-row pressable" style={{ padding: 14 }}>
           <span className="lead-icon lead-icon--accent" style={{ width: 34, height: 34 }}><Trophy aria-hidden="true" /></span>
           <span style={{ flex: 1, minWidth: 0 }}>
             <b style={{ display: "block" }}>Catalyst Awards</b>
-            <span className="tiny muted">28 categories</span>
+            {categoriesLine(awardSummary) && <span className="tiny muted">{categoriesLine(awardSummary)}</span>}
           </span>
           <ChevronRight className="chev" aria-hidden="true" />
-        </a>
+        </Link>
 
         <section className="stack-sm" aria-labelledby="topics-h">
           <div className="row"><h2 id="topics-h" className="eyebrow" style={{ flex: 1 }}>Interests</h2><Link to="/profile/edit" className="small bold muted" style={{ textDecoration: "none" }}>Edit</Link></div>

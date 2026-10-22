@@ -23,20 +23,23 @@ import { guestAlert } from "../lib/passes";
    chat (refreshed every 6 s). Join to get the chat.
 ========================================================= */
 
-/** Programme sessions whose track or speakers match the group's tags (iOS MockData.sessions(matchingTags:)). */
-function usePinned(tags) {
+/** Programme sessions whose track or speakers match the group's tags (iOS MockData.sessions(matchingTags:)).
+    A session's own chat (the group's `sessionId`) pins that session first. */
+function usePinned(tags, sessionId) {
   const c = useStore(cms);
   return useMemo(() => {
+    const own = sessionId ? c.sessions.filter((s) => s.id === sessionId || s.cmsId === sessionId) : [];
     const needles = (tags || []).flatMap((t) => TOPIC_SHORT[t] || [t]).map((x) => x.toLowerCase());
-    if (!needles.length) return [];
-    return c.sessions.filter((s) => {
+    if (!needles.length) return own;
+    return [...own, ...c.sessions.filter((s) => {
+      if (own.includes(s)) return false;
       if (!isProgramme(s)) return false;
       const track = String(s.track || "").toLowerCase();
       if (needles.some((n) => track.includes(n))) return true;
       const topics = s.speakerIds.map((id) => speakerById(id, c)).filter(Boolean).flatMap((sp) => sp.topics || []);
       return topics.some((t) => tags.includes(t)) && (s.type === "keynote" || s.type === "panel");
-    }).sort((a, b) => a.start - b.start);
-  }, [tags, c]);
+    }).sort((a, b) => a.start - b.start)];
+  }, [tags, sessionId, c]);
 }
 
 /** Who's in a group (iOS GroupMembersView): organiser first, Message where you can. */
@@ -88,7 +91,7 @@ export default function GroupDetail() {
   const bottom = useRef(null);
   const g = s.groups.find((x) => x.id === id);
   const all = s.groupMessages[id];
-  const pinned = usePinned(g?.tags);
+  const pinned = usePinned(g?.tags, g?.sessionId);
   const saved = bookmarks(s);
   const signedIn = isSignedIn(a);
   const at = now().getTime();

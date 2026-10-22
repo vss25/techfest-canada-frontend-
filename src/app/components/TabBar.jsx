@@ -62,7 +62,7 @@ const TABS = [
   { to: "/network", label: "Network", icon: NetworkIcon, match: (p) => p.startsWith("/network") || p.startsWith("/people") || p.startsWith("/speakers") },
   { to: "/chats", label: "Chats", icon: ChatsIcon, match: (p) => p.startsWith("/chat") || p.startsWith("/group") || p.startsWith("/discussion") },
   { to: "/schedule", label: "Schedule", icon: ScheduleIcon, match: (p) => p.startsWith("/schedule") || p.startsWith("/session") },
-  { to: "/profile", label: "Profile", icon: ProfileIcon, match: (p) => p.startsWith("/profile") || p.startsWith("/install") || p.startsWith("/legal") },
+  { to: "/profile", label: "Profile", icon: ProfileIcon, match: (p) => p.startsWith("/profile") || p.startsWith("/awards") || p.startsWith("/install") || p.startsWith("/legal") },
 ];
 
 /** chatsDot: something new in Chats. profileDot: the contact card needs details (pink, lib/myCard.js profileTabDot). */

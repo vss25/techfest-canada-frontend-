@@ -82,6 +82,12 @@ export const REGISTRY = {
     label: "Award nominations open",
     description: "When off, the nomination form on the Awards page is replaced by “Nominations are closed”.",
   },
+  // Oct 21 2026 (backend services/awardApplications.js): the Catalyst Awards Applications list in the apps.
+  "site.award_applications": {
+    scope: "website", group: "forms", type: "switch",
+    label: "Show award applications in the app",
+    description: "Pass holders see who applied for the Catalyst Awards in the apps and the web app: the nominee's name, title, organisation, location and website, and who applied. Never the categories, contact details or the jury's notes. Off: the Applications entry is hidden; the number of award categories still shows.",
+  },
   "site.volunteer_open": {
     scope: "website", group: "forms", type: "switch",
     label: "Volunteer applications open",

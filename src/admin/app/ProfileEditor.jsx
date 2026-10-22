@@ -89,7 +89,7 @@ function TypeChips({ form, auto, holdsPass, onChange, canTeam }) {
             disabled={locked}
             title={locked ? "Only management can change the Staff and Volunteer types" : undefined}
             onClick={() => onChange(toggleType(t, state, !on))}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-ttfc-contrast" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}
           >
             {on && <Check className="h-3 w-3" aria-hidden="true" />}
             {TYPE_LABELS[t]}
@@ -152,7 +152,7 @@ function Chips({ options, value, onChange, label }) {
             type="button"
             aria-pressed={on}
             onClick={() => onChange(on ? value.filter((v) => v !== o) : [...value, o])}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-ttfc-contrast" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}
             title={extra ? "Not one of the app's standard choices" : undefined}
           >
             {on && <Check className="h-3 w-3" aria-hidden="true" />}
@@ -179,7 +179,7 @@ function SlotList({ value, onChange }) {
             <li key={s} className="inline-flex max-w-full items-center gap-1.5 rounded-xl border border-ttfc-line bg-ttfc-panel2 py-1 pl-3 pr-1 text-xs">
               <span className="truncate">{s}</span>
               <button type="button" onClick={() => onChange(value.filter((x) => x !== s))} aria-label={`Remove ${s}`}
-                className={`inline-flex h-6 w-6 items-center justify-center rounded-lg text-ttfc-dim hover:bg-white/10 hover:text-ttfc-text ${focusRing}`}>
+                className={`inline-flex h-6 w-6 items-center justify-center rounded-lg text-ttfc-dim hover:bg-ttfc-contrast/10 hover:text-ttfc-text ${focusRing}`}>
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </li>

@@ -9,6 +9,7 @@ import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, EmptyState, ErrorState, PageHeader, SkeletonGrid, StatTile, focusRing } from "../ui";
 import { ago, num } from "../format";
+import { chartColors, useAdminTheme } from "../theme";
 
 const RANGES = [
   { key: "day", label: "24 hours" },
@@ -17,8 +18,8 @@ const RANGES = [
   { key: "all", label: "All time" },
 ];
 const METRICS = {
-  tickets: { label: "Tickets", color: "#E8458B", fmt: (v) => num(v) },
-  revenue: { label: "Revenue", color: "#F59E42", fmt: (v) => cad(v) },
+  tickets: { label: "Tickets", tone: "pink", fmt: (v) => num(v) },
+  revenue: { label: "Revenue", tone: "orange", fmt: (v) => cad(v) },
 };
 const cadFmt = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 });
 const cad = (v) => cadFmt.format(Number(v) || 0);
@@ -29,16 +30,17 @@ const tierLabel = (t) => (t === "speaker" ? "Speaker Pass" : t ? String(t).split
 const money = (v) => (v == null ? "—" : cad(v));
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
 
-const AXIS = { stroke: "#7B7296", fontSize: 11, tickLine: false, axisLine: false };
+// Chart colours follow the panel theme (Recharts takes plain colours, not CSS variables).
+const axisOf = (c) => ({ stroke: c.axis, fontSize: 11, tickLine: false, axisLine: false });
 
-function ChartTip({ active, payload, label, metric }) {
+function ChartTip({ active, payload, label, metric, color }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
     <div className="rounded-xl border border-ttfc-line bg-ttfc-ink/95 px-3 py-2 text-xs shadow-xl">
       <p className="mb-1 font-semibold text-ttfc-text">{label}</p>
       <p className="text-ttfc-muted">
-        <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: METRICS[metric].color }} aria-hidden="true" />
+        <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: color }} aria-hidden="true" />
         {METRICS[metric].label}: <b className="text-ttfc-text">{METRICS[metric].fmt(row[metric])}</b>
       </p>
       <p className="mt-0.5 text-ttfc-dim">{metric === "tickets" ? `Revenue ${cad(row.revenue)}` : `${num(row.tickets)} tickets`}</p>
@@ -70,7 +72,7 @@ function Segmented({ options, value, onChange, label }) {
           aria-checked={value === o.key}
           disabled={o.disabled}
           onClick={() => onChange(o.key)}
-          className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${value === o.key ? "bg-white/10 text-ttfc-text" : "text-ttfc-muted hover:text-ttfc-text"} disabled:cursor-not-allowed disabled:opacity-40 ${focusRing}`}
+          className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${value === o.key ? "bg-ttfc-contrast/10 text-ttfc-text" : "text-ttfc-muted hover:text-ttfc-text"} disabled:cursor-not-allowed disabled:opacity-40 ${focusRing}`}
         >
           {o.label}
         </button>
@@ -83,6 +85,8 @@ export default function SalesAnalytics() {
   const [range, setRange] = useState("month");
   const [metricChoice, setMetric] = useState("tickets");
   const [syncing, setSyncing] = useState(false);
+  const colors = chartColors(useAdminTheme().theme);
+  const AXIS = axisOf(colors);
   const toast = useToast();
   const { data, error, loading, reload, refreshing, setData } = useApi(`/console/sales?range=${range}`);
   const revenueKnown = data?.totals ? data.totals.totalRevenue != null : true;
@@ -172,17 +176,17 @@ export default function SalesAnalytics() {
                   <AreaChart data={sales} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id={`fill-${metric}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={METRICS[metric].color} stopOpacity={0.35} />
-                        <stop offset="100%" stopColor={METRICS[metric].color} stopOpacity={0} />
+                        <stop offset="0%" stopColor={colors[METRICS[metric].tone]} stopOpacity={0.35} />
+                        <stop offset="100%" stopColor={colors[METRICS[metric].tone]} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid vertical={false} stroke="#2A2143" strokeDasharray="3 3" />
+                    <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 3" />
                     <XAxis dataKey="name" {...AXIS} minTickGap={24} />
                     <YAxis {...AXIS} width={metric === "revenue" ? 64 : 32} allowDecimals={false}
                       tickFormatter={(v) => (metric === "revenue" ? (v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v}`) : v)} />
-                    <Tooltip content={<ChartTip metric={metric} />} cursor={{ stroke: "#A9A1C2", strokeDasharray: "3 3" }} />
-                    <Area type="monotone" dataKey={metric} stroke={METRICS[metric].color} strokeWidth={2} fill={`url(#fill-${metric})`}
-                      dot={false} activeDot={{ r: 5, stroke: "#130D22", strokeWidth: 2 }} />
+                    <Tooltip content={<ChartTip metric={metric} color={colors[METRICS[metric].tone]} />} cursor={{ stroke: colors.cursor, strokeDasharray: "3 3" }} />
+                    <Area type="monotone" dataKey={metric} stroke={colors[METRICS[metric].tone]} strokeWidth={2} fill={`url(#fill-${metric})`}
+                      dot={false} activeDot={{ r: 5, stroke: colors.dotRing, strokeWidth: 2 }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -198,11 +202,11 @@ export default function SalesAnalytics() {
                   <div style={{ height: Math.max(140, byTier.length * 52) }} className="w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={byTier} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }} barCategoryGap={10}>
-                        <CartesianGrid horizontal={false} stroke="#2A2143" strokeDasharray="3 3" />
+                        <CartesianGrid horizontal={false} stroke={colors.grid} strokeDasharray="3 3" />
                         <XAxis type="number" {...AXIS} allowDecimals={false} tickFormatter={(v) => (!tierRevenueKnown ? v : v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v}`)} />
-                        <YAxis type="category" dataKey="tier" {...AXIS} width={84} tickFormatter={tierLabel} stroke="#A9A1C2" />
-                        <Tooltip content={<TierTip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-                        <Bar dataKey={tierRevenueKnown ? "revenue" : "tickets"} fill="#8B5CF6" radius={[0, 4, 4, 0]} maxBarSize={28} />
+                        <YAxis type="category" dataKey="tier" {...AXIS} width={84} tickFormatter={tierLabel} stroke={colors.label} />
+                        <Tooltip content={<TierTip />} cursor={{ fill: colors.hover }} />
+                        <Bar dataKey={tierRevenueKnown ? "revenue" : "tickets"} fill={colors.purple} radius={[0, 4, 4, 0]} maxBarSize={28} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -238,7 +242,7 @@ export default function SalesAnalytics() {
                           <span className="font-semibold text-ttfc-text">{tierLabel(r.tier)} <span className="font-normal text-ttfc-dim">· {cad(r.price)}</span></span>
                           <span className="tabular-nums text-ttfc-muted">{num(r.sold)} / {num(r.total)} {full && <Badge tone="warn" className="ml-1">Sold out</Badge>}</span>
                         </div>
-                        <div className="h-2.5 rounded-full bg-white/5" role="progressbar" aria-valuemin={0} aria-valuemax={r.total || 0} aria-valuenow={r.sold} aria-label={`${tierLabel(r.tier)} sold`}>
+                        <div className="h-2.5 rounded-full bg-ttfc-contrast/5" role="progressbar" aria-valuemin={0} aria-valuemax={r.total || 0} aria-valuenow={r.sold} aria-label={`${tierLabel(r.tier)} sold`}>
                           <div className="h-2.5 rounded-full bg-gradient-to-r from-ttfc-pink to-ttfc-orange" style={{ width: `${Math.min(100, Math.max(r.sold > 0 ? 3 : 0, p))}%` }} />
                         </div>
                         <p className="mt-1 text-xs text-ttfc-dim">{p}% sold · {num(Math.max(0, r.total - r.sold))} left</p>

@@ -13,7 +13,7 @@ export default function EmailPreview({ preview, loading, error, title = "Email p
     <div className="flex gap-1" role="group" aria-label={label}>
       {items.map(([k, text, Icon]) => (
         <button key={k} type="button" aria-pressed={value === k} onClick={() => set(k)}
-          className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold ${value === k ? "bg-ttfc-purple/30 text-white" : "text-ttfc-muted hover:text-ttfc-text"}`}>
+          className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold ${value === k ? "bg-ttfc-purple/30 text-ttfc-contrast" : "text-ttfc-muted hover:text-ttfc-text"}`}>
           {Icon && <Icon className="h-3.5 w-3.5" aria-hidden="true" />}{text}
         </button>
       ))}

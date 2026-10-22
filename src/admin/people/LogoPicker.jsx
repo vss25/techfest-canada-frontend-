@@ -29,7 +29,7 @@ export function CompanyMark({ url, name, size = "md", className = "" }) {
     );
   }
   return (
-    <span className={`inline-flex shrink-0 items-center justify-center bg-white/5 font-bold text-ttfc-dim ${box} ${className}`} aria-hidden="true">
+    <span className={`inline-flex shrink-0 items-center justify-center bg-ttfc-contrast/5 font-bold text-ttfc-dim ${box} ${className}`} aria-hidden="true">
       {companyInitials(name)}
     </span>
   );

@@ -56,7 +56,7 @@ function withSponsorRule(group) {
 function Marked({ text, q }) {
   const parts = highlight(text, { words: q.words, exact: exactTerm(q) });
   return parts.map((p, i) => (p.hit
-    ? <mark key={i} className="rounded-[4px] bg-ttfc-pink/25 px-px text-white">{p.text}</mark>
+    ? <mark key={i} className="rounded-[4px] bg-ttfc-pink/25 px-px text-ttfc-contrast">{p.text}</mark>
     : <span key={i}>{p.text}</span>));
 }
 
@@ -263,7 +263,7 @@ function Palette({ initial, onClose, onGo }) {
           {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-ttfc-purple" aria-hidden="true" />}
           {text && (
             <button type="button" onClick={() => { setText(""); inputRef.current?.focus(); }} aria-label="Clear the search"
-              className={cx("inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text", focusRing)}>
+              className={cx("inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text", focusRing)}>
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
@@ -297,7 +297,7 @@ function Palette({ initial, onClose, onGo }) {
                     onClick={(e) => choose(o, { newTab: e.metaKey || e.ctrlKey })}
                     className={cx(
                       "flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
-                      on ? "bg-white/[0.07] shadow-[inset_0_0_0_1px_rgba(139,92,246,0.55)]" : "hover:bg-white/[0.03]",
+                      on ? "bg-ttfc-contrast/[0.07] shadow-[inset_0_0_0_1px_rgb(var(--ttfc-purple)/0.55)]" : "hover:bg-ttfc-contrast/[0.03]",
                     )}
                   >
                     <span className={cx("inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
@@ -317,7 +317,7 @@ function Palette({ initial, onClose, onGo }) {
                     </span>
                     {o.item?.exact && <span className="hidden shrink-0 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-200 sm:inline">Exact</span>}
                     {(o.item?.badges || []).slice(0, 2).map((b) => (
-                      <span key={b} className="hidden shrink-0 rounded-full border border-ttfc-line bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-ttfc-muted sm:inline">{b}</span>
+                      <span key={b} className="hidden shrink-0 rounded-full border border-ttfc-line bg-ttfc-contrast/5 px-2 py-0.5 text-[11px] font-semibold text-ttfc-muted sm:inline">{b}</span>
                     ))}
                     <CornerDownLeft className={cx("hidden h-4 w-4 shrink-0 text-ttfc-dim sm:block", !on && "invisible")} aria-hidden="true" />
                   </div>

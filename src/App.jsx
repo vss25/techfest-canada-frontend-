@@ -63,8 +63,20 @@ function OffJury({ children }) {
   return isJuryPath(pathname) ? null : children;
 }
 
+/* The staff panel's light / dark choice (src/admin/theme.js; index.html applies it before the
+   first paint), so the loading screen matches the panel even when arriving from another page. */
+function adminLight() {
+  const set = document.documentElement.getAttribute("data-admin-theme");
+  if (set) return set === "light";
+  try {
+    const choice = localStorage.getItem("ttfc.admin.theme");
+    if (choice === "light" || choice === "dark") return choice === "light";
+  } catch { /* storage blocked: follow the device */ }
+  return !!window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+}
+
 function AdminLoading() {
-  return <div style={{ minHeight: "100vh", background: "#0B0716" }} aria-busy="true" />;
+  return <div style={{ minHeight: "100vh", background: adminLight() ? "#F4F2F9" : "#0B0716" }} aria-busy="true" />;
 }
 
 /* ================= SYSTEM THEME DETECTOR ================= */

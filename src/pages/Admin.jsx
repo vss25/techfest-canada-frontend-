@@ -6,6 +6,7 @@ import "../admin/admin.css";
 import AdminShell from "../admin/AdminShell";
 import Toaster from "../admin/Toaster";
 import { AdminContext } from "../admin/adminContext";
+import { AdminThemeContext, useAdminThemeRoot } from "../admin/theme";
 import { adminFetch, signOut, PASSWORD_REQUIRED } from "../admin/api";
 import { Button, ErrorState, ManagementOnly, Spinner } from "../admin/ui";
 
@@ -60,25 +61,36 @@ import CheckIn from "../components/CheckIn";
 const EVENT_DAY = "Event day"; // the sidebar section (admin/nav.js)
 const LOGO_STRIPS = "More › Logo strips";
 
-/** The panel is always dark: existing components read body.dark-mode. */
-function useAdminBody() {
+/** Existing components read body.dark-mode: on while the panel is dark, off in its light mode; put back on close. */
+function useAdminBody(dark) {
   useEffect(() => {
     const body = document.body;
     const hadDark = body.classList.contains("dark-mode");
-    body.classList.add("dark-mode", "ttfc-admin-open");
+    body.classList.add("ttfc-admin-open");
     return () => {
       body.classList.remove("ttfc-admin-open");
-      if (!hadDark) body.classList.remove("dark-mode");
+      body.classList.toggle("dark-mode", hadDark);
     };
   }, []);
+  useEffect(() => { document.body.classList.toggle("dark-mode", dark); }, [dark]);
 }
 
 function FullScreen({ children }) {
   return <div className="ttfc-admin flex min-h-screen items-center justify-center p-6">{children}</div>;
 }
 
+/* Light / dark theme (admin/theme.js): System, Light or Dark, chosen in the top bar. */
 export default function Admin() {
-  useAdminBody();
+  const theme = useAdminThemeRoot();
+  useAdminBody(theme.theme === "dark");
+  return (
+    <AdminThemeContext.Provider value={theme}>
+      <AdminPanel />
+    </AdminThemeContext.Provider>
+  );
+}
+
+function AdminPanel() {
   const navigate = useNavigate();
   const [me, setMe] = useState(null);
   const [meError, setMeError] = useState(null);

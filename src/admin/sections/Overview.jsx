@@ -47,7 +47,7 @@ export default function Overview() {
           icon={Power}
           title="The website and app are OFFLINE"
           className="mb-6"
-          action={<Link to="/admin/kill-switch" className={`rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/20 ${focusRing}`}>Manage</Link>}
+          action={<Link to="/admin/kill-switch" className={`rounded-xl bg-ttfc-contrast/10 px-3 py-2 text-sm font-semibold text-ttfc-contrast hover:bg-ttfc-contrast/20 ${focusRing}`}>Manage</Link>}
         >
           Visitors currently see: “{kill.message}”
         </Banner>
@@ -77,7 +77,7 @@ export default function Overview() {
                 to={q.to}
                 className={`group flex items-center gap-4 rounded-2xl border border-ttfc-line bg-ttfc-panel2/60 p-4 transition hover:border-ttfc-purple/50 hover:bg-ttfc-panel2 ${focusRing}`}
               >
-                <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-ttfc-pink/25 to-ttfc-purple/25 text-white">
+                <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-ttfc-pink/25 to-ttfc-purple/25 text-ttfc-contrast">
                   <q.icon className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">

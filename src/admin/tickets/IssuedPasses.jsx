@@ -205,7 +205,7 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, markTiers = M
                   const Icon = m.icon;
                   return (
                     <button key={m.key} type="button" aria-pressed={on} onClick={() => toggleMark(m.key)}
-                      className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}>
+                      className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-ttfc-contrast" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}>
                       {on ? <Check className="h-3 w-3" aria-hidden="true" /> : <Icon className="h-3 w-3" aria-hidden="true" />}
                       {m.label}
                     </button>

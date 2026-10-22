@@ -33,8 +33,8 @@ function NavItem({ it, onNavigate }) {
         className={({ isActive }) => cx(
           "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition",
           isActive
-            ? "bg-gradient-to-r from-ttfc-pink/20 to-ttfc-purple/10 text-white shadow-[inset_2px_0_0_0_#E8458B]"
-            : it.danger ? "text-red-300/80 hover:bg-red-500/10 hover:text-red-200" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text",
+            ? "bg-gradient-to-r from-ttfc-pink/20 to-ttfc-purple/10 text-ttfc-contrast shadow-[inset_2px_0_0_0_rgb(var(--ttfc-pink))]"
+            : it.danger ? "text-red-300/80 hover:bg-red-500/10 hover:text-red-200" : "text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text",
           focusRing,
         )}
       >

@@ -32,7 +32,7 @@ function DayColumns({ rows, field, label }) {
         <p className="text-xs tabular-nums text-ttfc-muted">{h ? `${dayLabel(h.day)} · ${num(h[field] || 0)}` : `${num(total)} in total · peak ${num(max)}`}</p>
       </div>
       <svg viewBox={`0 0 ${W} ${H + 1}`} className="block h-[76px] w-full" role="img" aria-label={`${label} per day: ${num(total)} in total`} onMouseLeave={() => setHover(null)}>
-        <line x1="0" x2={W} y1={H + 0.5} y2={H + 0.5} stroke="#2A2143" strokeWidth="1" />
+        <line x1="0" x2={W} y1={H + 0.5} y2={H + 0.5} className="stroke-ttfc-line" strokeWidth="1" />
         {rows.map((r, i) => {
           const v = r[field] || 0;
           const bh = v ? Math.max(2, (v / max) * (H - 4)) : 0;
@@ -44,7 +44,7 @@ function DayColumns({ rows, field, label }) {
               {bh > 0 && (
                 <path
                   d={`M${x},${H} V${y + rr} Q${x},${y} ${x + rr},${y} H${x + bw - rr} Q${x + bw},${y} ${x + bw},${y + rr} V${H} Z`}
-                  fill="#8B5CF6"
+                  className="fill-ttfc-purple"
                   opacity={hover == null || hover === i ? 1 : 0.45}
                 />
               )}
@@ -78,7 +78,7 @@ function Funnel({ steps }) {
                 <p className="text-ttfc-text/90">{s.label}</p>
                 {rate !== null && <p className="text-xs text-ttfc-dim">{rate}% of the step before</p>}
               </div>
-              <div className="mt-1 h-2 rounded-full bg-white/5">
+              <div className="mt-1 h-2 rounded-full bg-ttfc-contrast/5">
                 <div className="h-2 rounded-full bg-ttfc-purple" style={{ width: `${Math.max(2, (s.value / top) * 100)}%` }} />
               </div>
             </div>
@@ -160,7 +160,7 @@ export default function PwaInstalls() {
                         <span className="flex-1 text-ttfc-text/90">{OS_LABEL[p.os] || p.os}</span>
                         <span className="tabular-nums text-ttfc-muted">{num(p.installs)} installs · {num(p.launches)} launches</span>
                       </div>
-                      <div className="mt-1.5 h-1.5 rounded-full bg-white/5"><div className="h-1.5 rounded-full bg-ttfc-purple" style={{ width: `${Math.max(2, (p.installs / pmax) * 100)}%` }} /></div>
+                      <div className="mt-1.5 h-1.5 rounded-full bg-ttfc-contrast/5"><div className="h-1.5 rounded-full bg-ttfc-purple" style={{ width: `${Math.max(2, (p.installs / pmax) * 100)}%` }} /></div>
                     </li>
                   ))}
                 </ul>

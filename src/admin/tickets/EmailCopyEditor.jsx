@@ -23,7 +23,7 @@ import { countSet } from "./passEmailHooks";
 const isSet = (v) => (Array.isArray(v) ? v.length > 0 : typeof v === "string" && v.length > 0);
 const clone = (v) => JSON.parse(JSON.stringify(v ?? []));
 
-const ROW_BTN = "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text disabled:opacity-30";
+const ROW_BTN = "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text disabled:opacity-30";
 
 /** A list field: the built-in list until staff choose to change it; then rows to reword, reorder, add and remove. */
 function ListEditor({ field, value, builtIn = [], onChange, disabled }) {
@@ -42,7 +42,7 @@ function ListEditor({ field, value, builtIn = [], onChange, disabled }) {
         </ul>
         {!disabled && (
           <button type="button" onClick={() => onChange(builtIn.length ? clone(builtIn) : [pairs ? ["", ""] : ""])}
-            className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-ttfc-pink hover:text-white">
+            className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-ttfc-pink hover:text-ttfc-contrast">
             <PenLine className="h-3.5 w-3.5" aria-hidden="true" /> Change this list
           </button>
         )}
@@ -79,7 +79,7 @@ function ListEditor({ field, value, builtIn = [], onChange, disabled }) {
       ))}
       {!disabled && rows.length < (field.max || 20) && (
         <button type="button" onClick={() => onChange([...rows, pairs ? ["", ""] : ""])}
-          className="inline-flex items-center gap-1.5 self-start pl-6 text-xs font-semibold text-ttfc-pink hover:text-white">
+          className="inline-flex items-center gap-1.5 self-start pl-6 text-xs font-semibold text-ttfc-pink hover:text-ttfc-contrast">
           <Plus className="h-3.5 w-3.5" aria-hidden="true" /> Add an item
         </button>
       )}
@@ -176,7 +176,7 @@ export function EmailCopyEditor({ fields = [], sections = [], value = {}, onChan
           <details key={`${g.key}${needle ? "-q" : ""}`} open={!!needle || n > 0 || g.key === groups[0].key} className="group rounded-xl border border-ttfc-line">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
               <span className="inline-flex items-center gap-2"><ListPlus className="h-4 w-4 text-ttfc-dim transition group-open:rotate-90" aria-hidden="true" />{g.title}</span>
-              {n > 0 && <span className="rounded-full bg-ttfc-pink/20 px-2 py-0.5 text-[11px] text-white">{n} changed</span>}
+              {n > 0 && <span className="rounded-full bg-ttfc-pink/20 px-2 py-0.5 text-[11px] text-ttfc-contrast">{n} changed</span>}
             </summary>
             <div className="flex flex-col gap-4 border-t border-ttfc-line px-3 py-3">
               {shown.map((f) => (
@@ -210,7 +210,7 @@ export function EmailPreview({ preview, loading, error, title = "Email preview",
             <div className="flex gap-1" role="tablist" aria-label="Email format">
               {[["html", "Email"], ["text", "Plain text"]].map(([k, label]) => (
                 <button key={k} type="button" role="tab" aria-selected={mode === k} onClick={() => setMode(k)}
-                  className={`rounded-lg px-2.5 py-1 font-semibold ${mode === k ? "bg-ttfc-purple/30 text-white" : "text-ttfc-muted hover:text-ttfc-text"}`}>
+                  className={`rounded-lg px-2.5 py-1 font-semibold ${mode === k ? "bg-ttfc-purple/30 text-ttfc-contrast" : "text-ttfc-muted hover:text-ttfc-text"}`}>
                   {label}
                 </button>
               ))}

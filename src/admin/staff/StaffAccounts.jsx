@@ -66,7 +66,7 @@ function AddStaff({ onAdded }) {
         <div role="radiogroup" className="grid grid-cols-2 gap-2">
           {TYPES.map((t) => (
             <button key={t.value} type="button" role="radio" aria-checked={f.role === t.value} onClick={() => setF((x) => ({ ...x, role: t.value }))}
-              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${f.role === t.value ? "border-ttfc-pink bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>
+              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${f.role === t.value ? "border-ttfc-pink bg-ttfc-pink/15 text-ttfc-contrast" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>
               {t.label}
             </button>
           ))}
@@ -85,8 +85,8 @@ function AddStaff({ onAdded }) {
         <div role="radiogroup" className="grid grid-cols-2 gap-2">
           {LEVELS.map((l) => (
             <button key={l.value} type="button" role="radio" aria-checked={f.staffRole === l.value} onClick={() => setF((x) => ({ ...x, staffRole: l.value }))}
-              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${f.staffRole === l.value ? "border-ttfc-pink bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>
-              {l.label}{l.value === "staff" && <span className="ml-1 text-xs font-normal opacity-70">(default)</span>}
+              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${f.staffRole === l.value ? "border-ttfc-pink bg-ttfc-pink/15 text-ttfc-contrast" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>
+              {l.label}{l.value === "staff" && <span className="ml-1 text-xs font-normal opacity-80">(default)</span>}
             </button>
           ))}
         </div>

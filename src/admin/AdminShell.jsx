@@ -7,6 +7,8 @@ import { focusRing, IconButton } from "./ui";
 import { initials } from "./format";
 import { useAdmin } from "./adminContext";
 import GlobalSearch from "./search/GlobalSearch";
+import ThemeSwitch from "./ThemeSwitch";
+import { useAdminTheme } from "./theme";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
@@ -30,12 +32,13 @@ function SiteStatusChip({ kill }) {
 }
 
 function SidebarContent({ onNavigate }) {
+  const { theme } = useAdminTheme();
   return (
     <nav aria-label="Admin sections" className="adm-sidebar-nav">
       <Link to="/admin" onClick={onNavigate} className={cx("mb-6 flex items-center gap-3 rounded-xl px-2 py-1", focusRing)}>
-        <img src="/Tech_Festival_Canada_Logo_Dark_Transparent.png" alt="" className="h-12 w-auto" />
+        <img src={theme === "light" ? "/Tech_Festival_Canada_Logo_Light_Transparent.webp" : "/Tech_Festival_Canada_Logo_Dark_Transparent.png"} alt="" className="h-12 w-auto" />
         <span className="leading-tight">
-          <span className="font-display block text-[13px] font-bold text-white">TTFC</span>
+          <span className="font-display block text-[13px] font-bold text-ttfc-contrast">TTFC</span>
           <span className="block text-[11px] font-medium text-ttfc-muted">Staff panel</span>
         </span>
       </Link>
@@ -123,6 +126,7 @@ export default function AdminShell({ me, kill, onSignOut, children }) {
             <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ttfc-text">{title}</p>
             <GlobalSearch onNavigated={() => setSearchNonce((n) => n + 1)} />
             <SiteStatusChip kill={kill} />
+            <ThemeSwitch />
             <div className="flex items-center gap-3 border-l border-ttfc-line pl-3">
               {/* Your name opens My account (your level, change your password). */}
               <NavLink to="/admin/account" aria-label={`My account: ${me?.name || "Staff"}`} title={`My account${me?.email ? ` (${me.email})` : ""}`} className={cx("flex min-w-0 items-center gap-3 rounded-xl hover:opacity-90", focusRing)}>
@@ -140,7 +144,7 @@ export default function AdminShell({ me, kill, onSignOut, children }) {
               <button
                 type="button"
                 onClick={onSignOut}
-                className={cx("inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-ttfc-muted transition hover:bg-white/5 hover:text-ttfc-text", focusRing)}
+                className={cx("inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-ttfc-muted transition hover:bg-ttfc-contrast/5 hover:text-ttfc-text", focusRing)}
               >
                 <LogOut className="h-4 w-4" aria-hidden="true" />
                 <span className="hidden sm:inline">Sign out</span>

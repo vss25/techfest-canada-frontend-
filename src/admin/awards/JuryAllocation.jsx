@@ -54,15 +54,15 @@ function JurorPicker({ jurors, picked, setPicked, note }) {
       <div className="flex items-center justify-between text-xs text-ttfc-muted">
         <span>{note || `${picked.size} picked`}</span>
         <span className="flex gap-3">
-          <button type="button" className="font-semibold text-ttfc-pink hover:text-white" onClick={() => setPicked(new Set(all.map((j) => j.id)))}>All</button>
-          <button type="button" className="font-semibold text-ttfc-muted hover:text-white" onClick={() => setPicked(new Set())}>None</button>
+          <button type="button" className="font-semibold text-ttfc-pink hover:text-ttfc-contrast" onClick={() => setPicked(new Set(all.map((j) => j.id)))}>All</button>
+          <button type="button" className="font-semibold text-ttfc-muted hover:text-ttfc-contrast" onClick={() => setPicked(new Set())}>None</button>
         </span>
       </div>
       <ul className="max-h-72 divide-y divide-ttfc-line/70 overflow-y-auto rounded-xl border border-ttfc-line">
         {jurors.map((j) => (
           <li key={j.id}>
-            <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5 hover:bg-white/[0.03]">
-              <input type="checkbox" className="h-4 w-4 accent-[#8B5CF6]" checked={picked.has(j.id)} disabled={!j.active}
+            <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5 hover:bg-ttfc-contrast/[0.03]">
+              <input type="checkbox" className="h-4 w-4 accent-ttfc-purple" checked={picked.has(j.id)} disabled={!j.active}
                 onChange={(e) => { const n = new Set(picked); if (e.target.checked) n.add(j.id); else n.delete(j.id); setPicked(n); }} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold">{j.name}{!j.active && <span className="ml-2 text-xs font-normal text-ttfc-dim">switched off</span>}</span>
@@ -160,7 +160,7 @@ function BalanceModal({ rows, jurors, onClose, onDone }) {
               </Banner>
             )}
             {plan.skipped?.length > 0 && <p className="text-xs text-ttfc-dim">Skipped: {skippedText(plan.skipped)}.</p>}
-            <button type="button" className="self-start text-xs font-semibold text-ttfc-pink hover:text-white" onClick={() => setPlan(null)}>Change the jurors or the number</button>
+            <button type="button" className="self-start text-xs font-semibold text-ttfc-pink hover:text-ttfc-contrast" onClick={() => setPlan(null)}>Change the jurors or the number</button>
           </div>
         )}
         {err && <p role="alert" className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{err}</p>}
@@ -206,7 +206,7 @@ function UnassignModal({ rows, onClose, onDone }) {
           {on.map((j) => (
             <li key={j.id}>
               <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5">
-                <input type="checkbox" className="h-4 w-4 accent-[#E8458B]" checked={picked.has(j.id)}
+                <input type="checkbox" className="h-4 w-4 accent-ttfc-pink" checked={picked.has(j.id)}
                   onChange={(e) => { const n = new Set(picked); if (e.target.checked) n.add(j.id); else n.delete(j.id); setPicked(n); }} />
                 <span className="flex-1 text-sm font-semibold">{j.name}</span>
                 <span className="text-xs text-ttfc-muted">{plural(j.n, "of these", "of these")}{j.submitted ? ` · ${j.submitted} submitted` : ""}</span>
@@ -241,7 +241,7 @@ function PoolModal({ pool, onClose, onDone }) {
         <Switch checked={auto} onChange={setAuto} label="Automatic" description="Shortlisted nominations; pending ones while nothing is shortlisted." />
         {!auto && POOL.map((s) => (
           <label key={s} className="flex items-center gap-3 text-sm">
-            <input type="checkbox" className="h-4 w-4 accent-[#8B5CF6]" checked={picked.has(s)}
+            <input type="checkbox" className="h-4 w-4 accent-ttfc-purple" checked={picked.has(s)}
               onChange={(e) => { const n = new Set(picked); if (e.target.checked) n.add(s); else n.delete(s); setPicked(n); }} />
             {NOMINATION_STATUS[s].label}
           </label>
@@ -389,7 +389,7 @@ export default function JuryAllocation() {
       {isManagement && (
         <div className="sticky top-2 z-10 mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-ttfc-line bg-ttfc-panel/95 px-3 py-2 backdrop-blur">
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" className="h-4 w-4 accent-[#8B5CF6]" checked={allShownPicked} disabled={!shown.length}
+            <input type="checkbox" className="h-4 w-4 accent-ttfc-purple" checked={allShownPicked} disabled={!shown.length}
               onChange={(e) => { const n = new Set(picked); for (const r of shown) { if (e.target.checked) n.add(r.id); else n.delete(r.id); } setPicked(n); }} />
             Select all shown ({shown.length})
           </label>
@@ -419,7 +419,7 @@ export default function JuryAllocation() {
               <tr key={r.id} className="is-clickable" onClick={() => setOpenId(r.id)}>
                 {isManagement && (
                   <td onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" className="h-4 w-4 accent-[#8B5CF6]" checked={picked.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Pick ${r.nomineeName}`} />
+                    <input type="checkbox" className="h-4 w-4 accent-ttfc-purple" checked={picked.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Pick ${r.nomineeName}`} />
                   </td>
                 )}
                 <td className="min-w-[200px] max-w-[260px]">

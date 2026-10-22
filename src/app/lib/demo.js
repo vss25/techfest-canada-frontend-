@@ -7,6 +7,7 @@ import { cms, dayLabel, isProgramme, roomOf, sponsorsShown } from "./cms";
 import { now as clockNow } from "./time";
 import { companyKey } from "./orgKey";
 import { sessionGetsChat, SESSION_CHAT_LEAD_MS } from "./sessionChat";
+import { SOS_DEFAULTS } from "./sos";
 
 /* =========================================================
    Demo backend (/app?demo=1). Answers the same routes, with the
@@ -576,6 +577,40 @@ function demoPoints(s) {
   };
 }
 
+// ---------- Help & SOS (demo) ----------
+
+/** The demo's SOS requests: two made-up ones from other people for the staff inbox, then yours. */
+function demoSos(s) {
+  if (!Array.isArray(s.sos)) {
+    s.sos = [
+      { id: "sos-demo-1", userId: "p-hannah", name: "Hannah Liu", email: "hannah@example.com", phone: "+1 416 555 0111", category: "medical",
+        location: "Harbour Ballroom foyer", message: "Someone near the coffee station feels faint and needs to sit down. Can a first aider come?",
+        status: "open", messages: [], createdAt: hoursAgo(0.1) },
+      { id: "sos-demo-2", userId: "p-lucas", name: "Lucas Moreau", email: "lucas@example.com", phone: "", category: "accessibility",
+        location: "Pier 4 & 5", message: "The lift to Pier 4 isn't working and I use a wheelchair. Is there another way up?",
+        status: "acknowledged", acknowledgedBy: { id: "staff-sam", name: "Sam (TTFC team)" }, acknowledgedAt: hoursAgo(0.3),
+        messages: [{ from: "staff", staffId: "staff-sam", staffName: "Sam (TTFC team)", body: "On my way to Pier 4. There's a service lift; I'll take you up.", at: hoursAgo(0.3) }],
+        createdAt: hoursAgo(0.4) },
+    ];
+  }
+  return s.sos;
+}
+
+function sosDTO(r, staff = false) {
+  const cat = SOS_DEFAULTS.categories.find((c) => c.key === r.category);
+  const last = r.messages.length ? r.messages[r.messages.length - 1].at : r.createdAt;
+  const base = {
+    id: r.id, category: r.category, categoryLabel: cat?.label || r.category, location: r.location, message: r.message, phone: r.phone,
+    status: r.status, statusLabel: SOS_DEFAULTS.statusLabels[r.status], messages: r.messages, createdAt: r.createdAt, updatedAt: last,
+  };
+  if (!staff) return base;
+  return {
+    ...base, userId: r.userId, name: r.name, email: r.email, acknowledgedBy: r.acknowledgedBy || null, acknowledgedAt: r.acknowledgedAt || null,
+    resolvedBy: r.resolvedBy || null, resolvedAt: r.resolvedAt || null, lastMessageAt: last,
+    links: { app: `/app/staff/sos/${r.id}`, tel: r.phone ? `tel:${r.phone.replace(/[^+\d]/g, "")}` : "", mailto: r.email ? `mailto:${r.email}` : "" },
+  };
+}
+
 // ---------- Router ----------
 
 /** request(path, {method, body}) in demo mode. */
@@ -597,7 +632,76 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     return params;
   };
   let m;
+
   const done = (v) => { save(); return JSON.parse(JSON.stringify(v)); };
+
+  // Help & SOS (Oct 22 2026, lib/sos.js): your requests, and the staff inbox with two made-up ones. A new request
+  // is "seen" by demo staff after 8 s with a reply, so the thread can be tried end to end. Nothing leaves the browser.
+  if (is("GET", "app/sos/options")) return done(SOS_DEFAULTS);
+  if (is("GET", "app/sos")) {
+    const mine = demoSos(s).filter((r) => r.userId === ME).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+    return done({ requests: mine.map(sosDTO), phone: "+1 416 555 0148" });
+  }
+  if (is("POST", "app/sos")) {
+    const hour = Date.now() - 3600000;
+    if (demoSos(s).filter((r) => r.userId === ME && Date.parse(r.createdAt) > hour).length >= 3) {
+      throw new ApiError("You've sent 3 requests in the last hour. If this is urgent, call 911 or find a staff member.", 429, { code: "rate_limited" });
+    }
+    const message = String(body.message || "").trim().slice(0, 1000);
+    if (!message) throw new ApiError("Tell staff what's happening.", 400);
+    const cat = SOS_DEFAULTS.categories.find((c) => c.key === body.category || c.label === body.category) || SOS_DEFAULTS.categories[4];
+    const r = { id: "sos-" + uid(), userId: ME, name: s.me.name, email: s.me.email, phone: String(body.phone || "").slice(0, 40), category: cat.key,
+      location: String(body.location || "").slice(0, 120), message, status: "open", messages: [], createdAt: new Date().toISOString() };
+    s.sos.unshift(r);
+    setTimeout(() => {
+      const st = load();
+      const x = (st.sos || []).find((y) => y.id === r.id);
+      if (!x || x.status !== "open") return;
+      x.status = "acknowledged";
+      x.acknowledgedBy = { id: "staff-sam", name: "Sam (TTFC team)" };
+      x.acknowledgedAt = new Date().toISOString();
+      x.messages.push({ from: "staff", staffName: "Sam (TTFC team)", body: `Hi ${String(s.me.name).split(" ")[0]}, this is Sam from the TTFC team. I'm on my way${x.location ? ` to ${x.location}` : ""}. Stay where you are.`, at: new Date().toISOString() });
+      save();
+    }, 8000);
+    return done({ request: sosDTO(r) });
+  }
+  if ((m = is("POST", "app/sos/:id/messages"))) {
+    const r = demoSos(s).find((x) => x.id === m.id && x.userId === ME);
+    if (!r) throw new ApiError("Not found", 404);
+    if (r.status === "resolved") throw new ApiError("This request is resolved. Send a new one if you need help again.", 409, { code: "resolved" });
+    r.messages.push({ from: "attendee", body: String(body.body || "").slice(0, 1000), at: new Date().toISOString() });
+    return done({ request: sosDTO(r) });
+  }
+  if (is("GET", "console/sos")) {
+    const status = q.get("status") || "active";
+    const all = demoSos(s);
+    const list = all.filter((r) => status === "all" || (status === "active" ? r.status !== "resolved" : r.status === status));
+    const counts = { open: 0, acknowledged: 0, resolved: 0 };
+    for (const r of all) counts[r.status]++;
+    return done({ status, requests: list.map((r) => sosDTO(r, true)), counts });
+  }
+  if ((m = is("GET", "console/sos/:id"))) {
+    const r = demoSos(s).find((x) => x.id === m.id);
+    if (!r) throw new ApiError("Not found", 404);
+    return done({ request: sosDTO(r, true) });
+  }
+  if ((m = is("POST", "console/sos/:id/reply"))) {
+    const r = demoSos(s).find((x) => x.id === m.id);
+    if (!r) throw new ApiError("Not found", 404);
+    r.messages.push({ from: "staff", staffId: ME, staffName: `${s.me.name} (demo staff)`, body: String(body.body || "").slice(0, 1000), at: new Date().toISOString() });
+    if (r.status === "open") { r.status = "acknowledged"; r.acknowledgedBy = { id: ME, name: s.me.name }; r.acknowledgedAt = new Date().toISOString(); }
+    return done({ request: sosDTO(r, true) });
+  }
+  if ((m = is("POST", "console/sos/:id/status"))) {
+    const r = demoSos(s).find((x) => x.id === m.id);
+    if (!r) throw new ApiError("Not found", 404);
+    if (!["open", "acknowledged", "resolved"].includes(body.status)) throw new ApiError("status must be acknowledged, resolved or open", 400);
+    r.status = body.status;
+    const at = new Date().toISOString();
+    if (body.status === "acknowledged") { r.acknowledgedBy = { id: ME, name: s.me.name }; r.acknowledgedAt = at; }
+    if (body.status === "resolved") { r.resolvedBy = { id: ME, name: s.me.name }; r.resolvedAt = at; }
+    return done({ request: sosDTO(r, true) });
+  }
 
   // Public
   if (is("GET", "app/content")) return { "flag.polls": true, "flag.qa": true, "flag.allow_posts": true, "flag.allow_groups": true, "feed.empty": "Be the first to post. Everyone at TTFC will see it." };

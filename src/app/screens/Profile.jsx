@@ -2,11 +2,12 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  BadgeCheck, Bell, BellRing, CalendarClock, Camera, ChevronRight, Download, FileText, Hand, HelpCircle, IdCard, Landmark, LogOut, Mic, Moon, Pencil, QrCode, RotateCcw,
+  BadgeCheck, Bell, BellRing, CalendarClock, Camera, ChevronRight, Download, FileText, Hand, HelpCircle, IdCard, Landmark, LifeBuoy, LogOut, Mic, Moon, Pencil, QrCode, RotateCcw,
   LogIn, ScanLine, ShieldCheck, Smartphone, Sun, Ticket, Trophy, Users,
 } from "lucide-react";
 import { useStore } from "../lib/store";
-import { auth, bestTicket, isSignedIn, isTeam, loadAccount, signOut } from "../lib/auth";
+import { auth, bestTicket, can, isSignedIn, isTeam, loadAccount, signOut } from "../lib/auth";
+import { staffSos } from "../lib/sos";
 import { social } from "../lib/social";
 import { pwa, promptInstall } from "../lib/pwa";
 import { theme, setTheme, THEME_LABEL } from "../lib/theme";
@@ -91,18 +92,40 @@ function ProfileTagPill({ tag }) {
   );
 }
 
-function Row({ to, href, icon, title, onClick, tone }) {
+function Row({ to, href, icon, title, onClick, tone, badge }) {
   const Icon = icon;
   const inner = (
     <>
-      <span className="lead-icon" style={tone === "danger" ? { color: "var(--red)" } : undefined}><Icon aria-hidden="true" /></span>
+      <span className="lead-icon" style={tone === "danger" || tone === "sos" ? { color: "var(--red)" } : undefined}><Icon aria-hidden="true" /></span>
       <b style={{ flex: 1, minWidth: 0, color: tone === "danger" ? "var(--red)" : undefined }}>{title}</b>
+      {badge}
       <ChevronRight className="chev" aria-hidden="true" />
     </>
   );
   if (to) return <Link to={to} className="list-row pressable">{inner}</Link>;
   if (href) return <a href={href} className="list-row pressable" target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer">{inner}</a>;
   return <button type="button" className="list-row pressable" onClick={onClick}>{inner}</button>;
+}
+
+/** Staff: the SOS inbox, with a red count of new requests (the server decides who can open it). */
+function SosInboxRow() {
+  const [open, setOpen] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    staffSos("active").then((r) => { if (alive) setOpen(r.counts.open); }, () => {});
+    return () => { alive = false; };
+  }, []);
+  return (
+    <Link to="/staff/sos" className="list-row pressable" style={{ padding: 14 }}>
+      <span className="lead-icon" style={{ width: 34, height: 34, color: "var(--red)" }}><LifeBuoy aria-hidden="true" /></span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <b style={{ display: "block" }}>SOS inbox</b>
+        <span className="tiny muted">Staff: help requests from attendees</span>
+      </span>
+      {open > 0 && <span className="sos-count" aria-label={`${open} new`}>{open}</span>}
+      <ChevronRight className="chev" aria-hidden="true" />
+    </Link>
+  );
 }
 
 /** iOS SettingsSheet, most used first: notifications (the list, then the switch for message
@@ -177,6 +200,7 @@ function SettingsSheet({ onClose }) {
           {p.standalone && <Row icon={Smartphone} title="Find TTFC on your Home Screen" to="/install?find=1" />}
           <Row icon={ShieldCheck} title="Privacy Policy" to="/legal/privacy" />
           <Row icon={FileText} title="Terms of Use" to="/legal/terms" />
+          <Row icon={LifeBuoy} tone="sos" title="Help & SOS" to="/help" />
           <Row icon={HelpCircle} title="Help & support" href={`mailto:${LINKS.support}?subject=${encodeURIComponent("TTFC app support")}`} />
           {a.mode === "demo" && (
             <Row icon={RotateCcw} title="Reset demo" onClick={() => { resetDemo(); loadAccount(); window.location.reload(); }} />
@@ -219,6 +243,7 @@ export default function Profile() {
           <div className="settings-group" style={{ width: "100%", marginTop: 18 }}>
             <Row icon={ShieldCheck} title="Privacy Policy" to="/legal/privacy" />
             <Row icon={FileText} title="Terms of Use" to="/legal/terms" />
+            <Row icon={LifeBuoy} tone="sos" title="Help & SOS" to="/help" />
             <Row icon={HelpCircle} title="Help & support" href={`mailto:${LINKS.support}`} />
           </div>
         </main>
@@ -273,6 +298,8 @@ export default function Profile() {
             <div className="small">Door check-in is in the TTFC app for now.</div>
           </div>
         )}
+        {/* Staff tools (Oct 22 2026): the SOS inbox. The demo shows it too, with made-up requests. */}
+        {(isTeam(user) || can("moderate", a) || a.mode === "demo") && <SosInboxRow />}
 
         {/* One strip (as on iOS and Android): the pass opens the ticket; then My QR and Scan.
             Apple devices: Add to Apple Wallet right under it, once a pass is linked. */}

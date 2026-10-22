@@ -43,6 +43,8 @@ const Profile = lazy(() => import("./screens/Profile"));
 const EditProfile = lazy(() => import("./screens/EditProfile"));
 const Availability = lazy(() => import("./screens/Availability"));
 const NotificationSettings = lazy(() => import("./screens/NotificationSettings"));
+const Help = lazy(() => import("./screens/Help"));
+const StaffSos = lazy(() => import("./screens/StaffSos"));
 const Pass = lazy(() => import("./screens/Pass"));
 const Install = lazy(() => import("./screens/Install"));
 const Legal = lazy(() => import("./screens/Legal"));
@@ -165,6 +167,9 @@ function Shell() {
           <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/profile/availability" element={<Availability />} />
           <Route path="/profile/notifications" element={<NotificationSettings />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/staff/sos" element={<StaffSos />} />
+          <Route path="/staff/sos/:id" element={<StaffSos />} />
           <Route path="/profile/pass" element={<Pass />} />
           <Route path="/points" element={<Points />} />
           <Route path="/awards" element={<Awards />} />

@@ -3,7 +3,7 @@ import {
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, Power, ScanLine,
   MailPlus, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
-import { Gavel, ListChecks, Network, Trophy } from "lucide-react";
+import { Gavel, LifeBuoy, ListChecks, Network, Trophy } from "lucide-react";
 
 /* =========================================================
    Sidebar structure (the admin review, Oct 19 2026): five sections
@@ -44,6 +44,7 @@ export const NAV = [
       { to: "check-in", label: "Check-in", icon: ScanLine },
       { to: "app/moderation", label: "App moderation", icon: ShieldAlert },
       { to: "app/broadcast", label: "Send an app update", icon: Megaphone },
+      { to: "app/sos", label: "SOS & help", icon: LifeBuoy },
     ],
   },
   {

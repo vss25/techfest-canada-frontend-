@@ -23,3 +23,14 @@ test("uploaded vs filled-in speaker photo", () => {
   assert.equal(isUploadedAvatar(sanity), false);
   assert.equal(isUploadedAvatar(""), false);
 });
+
+test("names and photos open the right profile (Oct 22 2026)", async () => {
+  const { authorPath } = await import("./avatar.js");
+  assert.equal(authorPath({ authorId: "u1" }, { meId: "u9" }), "/people/u1");
+  assert.equal(authorPath({ authorId: "u9" }, { meId: "u9" }), "/profile");
+  assert.equal(authorPath({ authorId: "u2", authorSpeakerId: "sp-7" }), "/speakers/sp-7");
+  assert.equal(authorPath({ authorId: "u2", authorSpeakerId: "" }), "/people/u2");
+  assert.equal(authorPath({ authorId: "u3" }, { blocked: ["u3"] }), null);
+  assert.equal(authorPath({ authorName: "No id" }), null);
+  assert.equal(authorPath({ authorId: "u1" }, { people: false }), null);
+});

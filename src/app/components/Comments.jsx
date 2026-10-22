@@ -4,7 +4,7 @@ import { ArrowUp } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, can, isSignedIn } from "../lib/auth";
 import { addComment, fetchComments, social } from "../lib/social";
-import { avatarFor } from "../lib/avatar.js";
+import { authorPath, avatarFor } from "../lib/avatar.js";
 import { fileURL } from "../lib/config";
 import { listTime } from "../lib/time";
 import { cms } from "../lib/cms";
@@ -69,13 +69,17 @@ export default function Comments({ post, onClose }) {
       <div className="sheet-body stack" style={{ flex: 1, overflow: "auto", paddingBottom: 12 }}>
         {list === null ? <Spinner /> : list.length === 0 ? (
           <p className="muted center" style={{ margin: "30px 0" }}>No replies yet — start the conversation.</p>
-        ) : list.map((c) => (
+        ) : list.map((c) => {
+          // A tap on the name or photo opens their profile (yours: your own; a speaker: their page).
+          const to = authorPath(c, { meId: a.me?.id, blocked: s.blocked, people: FEATURES.network });
+          const photo = <Avatar name={c.authorName} src={fileURL(avatarFor(c, s.people) || (c.authorId && c.authorId === a.me?.id ? a.me?.avatarUrl : ""))} size={32} />;
+          return (
           <div key={c.id} className="comment">
-            <Avatar name={c.authorName} src={fileURL(avatarFor(c, s.people) || (c.authorId && c.authorId === a.me?.id ? a.me?.avatarUrl : ""))} size={32} />
+            {to ? <Link to={to} className="comment-avatar-link" onClick={onClose} tabIndex={-1} aria-label={`${c.authorName}'s profile`}>{photo}</Link> : photo}
             <div style={{ minWidth: 0, flex: 1 }}>
               <div className="comment-bubble">
                 <div className="row" style={{ gap: 6 }}>
-                  <b className="small">{c.authorName}</b>
+                  {to ? <Link to={to} className="small bold comment-author-link" onClick={onClose}>{c.authorName}</Link> : <b className="small">{c.authorName}</b>}
                   {c.authorId === a.me?.id && <span className="tiny bold" style={{ color: "var(--pur-alt)" }}>You</span>}
                   {c.status === "rejected" || c.status === "held" ? <span className="tiny bold" style={{ color: "var(--red)" }}>Held</span> : null}
                 </div>
@@ -90,7 +94,8 @@ export default function Comments({ post, onClose }) {
               <time className="tiny muted" dateTime={c.createdAt} style={{ marginLeft: 12 }}>{listTime(c.createdAt)}</time>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
       {gone ? (
         <p className="small muted center pad">This post isn't available any more.</p>

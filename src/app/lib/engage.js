@@ -140,6 +140,8 @@ function openNow(url, sameTabIfBlocked = false) {
 
 const ATTENDING = "attending";
 export const prefetchAttending = () => { if (!fresh(ATTENDING)) fetchLink(ATTENDING, () => get("app/attending-link")).catch(() => {}); };
+/** The link and whether their I'm-attending post is confirmed: { url, posted } (cached like the prefetch). */
+export const loadAttending = () => Promise.resolve(fresh(ATTENDING) || fetchLink(ATTENDING, () => get("app/attending-link")));
 export const openAttending = () => openLink(ATTENDING, () => get("app/attending-link"), "Tell your network you're attending");
 /** The server said this person's I'm-attending post is confirmed (the points also say so). */
 export const attendingPostedHint = () => !!links.get(ATTENDING)?.posted;

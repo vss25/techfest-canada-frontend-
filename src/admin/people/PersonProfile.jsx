@@ -103,7 +103,7 @@ function TypeChips({ p, state, setState, exhibitor, setExhibitor, media, setMedi
     <div role="group" aria-label="Type" className="flex flex-wrap gap-2">
       {chips.map((c) => (
         <button key={c.t} type="button" aria-pressed={c.on} disabled={disabled || !!c.locked || !c.toggle} title={c.locked || undefined} onClick={c.toggle}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${c.on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}>
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${c.on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-ttfc-contrast" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}>
           {c.on && <Check className="h-3 w-3" aria-hidden="true" />}
           {TYPE_LABELS[c.t]}
           {c.note && <span className={`font-normal ${c.off ? "text-ttfc-dim line-through" : "text-ttfc-muted"}`}>· {c.note}</span>}
@@ -217,7 +217,7 @@ function DetailsCard({ p, onSaved }) {
             {MARKS.map((m) => (
               <button key={m.key} type="button" role="radio" aria-checked={mark === m.key} disabled={disabled || !e.canEditRsvpEmail}
                 onClick={() => setMark(m.key)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:cursor-not-allowed ${mark === m.key ? "bg-white/10 text-ttfc-text" : "text-ttfc-muted hover:text-ttfc-text"}`}>
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:cursor-not-allowed ${mark === m.key ? "bg-ttfc-contrast/10 text-ttfc-text" : "text-ttfc-muted hover:text-ttfc-text"}`}>
                 {m.key === "auto" ? `Automatic (${p.rsvpEmail?.auto?.sent ? "Yes" : "No"})` : m.label}
               </button>
             ))}
@@ -331,7 +331,7 @@ function ExtrasSwitches({ personId, t, canEdit, onSaved }) {
                 {EXTRA_CHOICES.map((c) => (
                   <button key={c.key} type="button" role="radio" aria-checked={current === c.key} disabled={!canEdit || !!busy}
                     onClick={() => pick(x, c.key)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:cursor-not-allowed ${current === c.key ? "bg-white/10 text-ttfc-text" : "text-ttfc-muted hover:text-ttfc-text"} ${busy === `${x.key}:${c.key}` ? "opacity-60" : ""}`}>
+                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:cursor-not-allowed ${current === c.key ? "bg-ttfc-contrast/10 text-ttfc-text" : "text-ttfc-muted hover:text-ttfc-text"} ${busy === `${x.key}:${c.key}` ? "opacity-60" : ""}`}>
                     {c.key === "auto" ? `Automatic (${e.auto ? "Yes" : "No"})` : c.label}
                   </button>
                 ))}

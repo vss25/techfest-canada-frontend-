@@ -3,9 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle, Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import "../admin/admin.css";
 import { ADMIN_API } from "../admin/api";
+import { useAdminThemeRoot } from "../admin/theme";
 
 const field =
-  "w-full rounded-xl border border-ttfc-line bg-ttfc-ink/70 px-4 py-3 text-[15px] text-ttfc-text placeholder:text-ttfc-dim transition focus:border-ttfc-purple focus:outline-none focus:ring-2 focus:ring-ttfc-purple/30";
+  "w-full rounded-xl border border-ttfc-field bg-ttfc-ink/70 px-4 py-3 text-[15px] text-ttfc-text placeholder:text-ttfc-dim transition focus:border-ttfc-purple focus:outline-none focus:ring-2 focus:ring-ttfc-purple/30";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -19,6 +20,8 @@ export default function AdminLogin() {
   const expired = state?.expired;
   // Sent here by the panel: they're signed in with an emailed code, which the panel doesn't take.
   const passwordRequired = state?.passwordRequired;
+  // The staff panel's light / dark choice (admin/theme.js) applies here too.
+  const { theme } = useAdminThemeRoot();
 
   useEffect(() => {
     document.body.classList.add("ttfc-admin-open");
@@ -58,14 +61,14 @@ export default function AdminLogin() {
 
       <main className="relative w-full max-w-[420px]">
         <div className="mb-8 flex flex-col items-center text-center">
-          <img src="/Tech_Festival_Canada_Logo_Dark_Transparent.png" alt="The Tech Festival Canada" className="h-20 w-auto" />
-          <p className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-ttfc-line bg-white/5 px-3 py-1 text-xs font-semibold text-ttfc-muted">
+          <img src={theme === "light" ? "/Tech_Festival_Canada_Logo_Light_Transparent.webp" : "/Tech_Festival_Canada_Logo_Dark_Transparent.png"} alt="The Tech Festival Canada" className="h-20 w-auto" />
+          <p className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-ttfc-line bg-ttfc-contrast/5 px-3 py-1 text-xs font-semibold text-ttfc-muted">
             <Lock className="h-3 w-3" aria-hidden="true" /> Staff only
           </p>
         </div>
 
         <form onSubmit={handleLogin} className="rounded-[22px] border border-ttfc-line bg-ttfc-panel/90 p-7 shadow-2xl shadow-black/50 backdrop-blur-xl sm:p-8" noValidate>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Sign in to the staff panel</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ttfc-contrast">Sign in to the staff panel</h1>
           <p className="mt-1.5 text-sm text-ttfc-muted">Use your TTFC staff account.</p>
 
           {passwordRequired && !error && (

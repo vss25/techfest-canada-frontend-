@@ -4,8 +4,8 @@ import { ToastContext } from "./toastContext";
 
 const ICONS = { success: CheckCircle2, error: AlertTriangle, info: Info };
 const TONE = {
-  success: "border-emerald-400/30 bg-[#0f2a22] text-emerald-100",
-  error: "border-red-400/40 bg-[#2d1018] text-red-100",
+  success: "border-emerald-400/30 bg-ttfc-good-surface text-emerald-100",
+  error: "border-red-400/40 bg-ttfc-bad-surface text-red-100",
   info: "border-ttfc-purple/40 bg-ttfc-panel2 text-ttfc-text",
 };
 
@@ -34,7 +34,7 @@ export default function Toaster({ children }) {
     <ToastContext.Provider value={api}>
       {children}
       <div
-        className="pointer-events-none fixed inset-x-0 bottom-4 z-[100000] flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:right-6 sm:left-auto sm:items-end"
+        className="ttfc-admin-portal pointer-events-none fixed inset-x-0 bottom-4 z-[100000] flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:right-6 sm:left-auto sm:items-end"
         aria-live="polite"
         role="status"
       >
@@ -51,7 +51,7 @@ export default function Toaster({ children }) {
                 <button
                   type="button"
                   onClick={() => { dismiss(t.id); t.action.onClick(); }}
-                  className="-my-0.5 shrink-0 rounded-md px-2 py-0.5 text-sm font-semibold underline underline-offset-2 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ttfc-purple"
+                  className="-my-0.5 shrink-0 rounded-md px-2 py-0.5 text-sm font-semibold underline underline-offset-2 hover:bg-ttfc-contrast/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ttfc-purple"
                 >
                   {t.action.label}
                 </button>

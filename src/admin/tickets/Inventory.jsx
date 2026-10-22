@@ -79,7 +79,7 @@ function TierCard({ item, onSaved, onArchive, canEdit }) {
           <span className="text-ttfc-muted"><b className="text-ttfc-text tabular-nums">{num(sold)}</b> sold of {num(item.total)}</span>
           <span className="tabular-nums text-ttfc-muted">{num(remaining)} left</span>
         </div>
-        <div className="h-2.5 rounded-full bg-white/5" role="progressbar" aria-valuemin={0} aria-valuemax={item.total || 0} aria-valuenow={sold} aria-label={`${label(item.tier)} sold`}>
+        <div className="h-2.5 rounded-full bg-ttfc-contrast/5" role="progressbar" aria-valuemin={0} aria-valuemax={item.total || 0} aria-valuenow={sold} aria-label={`${label(item.tier)} sold`}>
           <div className="h-2.5 rounded-full bg-gradient-to-r from-ttfc-pink to-ttfc-orange" style={{ width: `${sold > 0 ? Math.max(3, pct) : 0}%` }} />
         </div>
         <p className="mt-1 text-xs text-ttfc-dim">{pct}% sold</p>
@@ -150,7 +150,7 @@ function PromoTermsFields({ passes, discount, setDiscount, tiers, setTiers, maxU
         <div className="flex flex-wrap items-center gap-2">
           {["10", "25", "50"].map((d) => (
             <button key={d} type="button" onClick={() => setDiscount(d)} aria-pressed={discount === d}
-              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${discount === d ? "border-ttfc-pink bg-ttfc-pink/15 text-white" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>{d}%</button>
+              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${discount === d ? "border-ttfc-pink bg-ttfc-pink/15 text-ttfc-contrast" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>{d}%</button>
           ))}
           <Input id={id} type="number" min={1} max={100} value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-24" aria-label="Custom discount percent" />
         </div>
@@ -162,7 +162,7 @@ function PromoTermsFields({ passes, discount, setDiscount, tiers, setTiers, maxU
             const on = tiers.includes(t);
             return (
               <button key={t} type="button" aria-pressed={on} onClick={() => setTiers((xs) => (on ? xs.filter((x) => x !== t) : [...xs, t]))}
-                className={`rounded-xl border px-3 py-1.5 text-sm font-semibold transition ${on ? "border-ttfc-purple bg-ttfc-purple/20 text-white" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>{label(t)}</button>
+                className={`rounded-xl border px-3 py-1.5 text-sm font-semibold transition ${on ? "border-ttfc-purple bg-ttfc-purple/20 text-ttfc-contrast" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"} ${focusRing}`}>{label(t)}</button>
             );
           })}
         </div>
@@ -194,7 +194,7 @@ function PromoUsed({ p }) {
         {num(used)}{max != null && <span className="text-base font-semibold text-ttfc-muted"> / {num(max)}</span>}
       </dd>
       {max != null && (
-        <dd className="mt-1.5 h-1.5 rounded-full bg-white/10" role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={used} aria-label={`${p.code} used ${used} of ${max}`}>
+        <dd className="mt-1.5 h-1.5 rounded-full bg-ttfc-contrast/10" role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={used} aria-label={`${p.code} used ${used} of ${max}`}>
           <div className={`h-1.5 rounded-full ${used >= max ? "bg-amber-400" : "bg-gradient-to-r from-ttfc-pink to-ttfc-orange"}`} style={{ width: `${used > 0 ? Math.max(4, pct) : 0}%` }} />
         </dd>
       )}
@@ -350,7 +350,7 @@ function PromoCodes({ passes }) {
                         </div>
                       </div>
                       <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        <div className="col-span-2 rounded-xl bg-white/5 px-3 py-2 sm:col-span-1">
+                        <div className="col-span-2 rounded-xl bg-ttfc-contrast/5 px-3 py-2 sm:col-span-1">
                           <dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Used</dt>
                           <PromoUsed p={p} />
                           {!paid && <dd className="text-[10px] text-amber-200/80">(Stripe unavailable)</dd>}
@@ -360,7 +360,7 @@ function PromoCodes({ passes }) {
                         <div className="px-1 py-2"><dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Last used</dt><dd className="text-sm">{p.lastUsedAt ? day(p.lastUsedAt) : "Never"}</dd></div>
                       </dl>
                       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ttfc-line pt-3">
-                        <Link to={`/admin/attendees?promo=${encodeURIComponent(p.code)}`} className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-ttfc-pink hover:bg-white/5 ${focusRing}`}>
+                        <Link to={`/admin/attendees?promo=${encodeURIComponent(p.code)}`} className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-ttfc-pink hover:bg-ttfc-contrast/5 ${focusRing}`}>
                           <Ticket className="h-4 w-4" aria-hidden="true" /> See tickets
                         </Link>
                         <span className="flex-1" />
@@ -533,7 +533,7 @@ export default function Inventory() {
       >
         <ul className="mt-3 space-y-1.5 text-sm">
           {(recount?.changes || []).map((c) => (
-            <li key={c.tier} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
+            <li key={c.tier} className="flex items-center justify-between rounded-lg bg-ttfc-contrast/5 px-3 py-2">
               <span>{label(c.tier)}{c.archived ? " (removed from sale)" : ""}</span>
               <span className="tabular-nums text-ttfc-dim">{c.from} → <b className="text-ttfc-text">{c.to}</b> sold</span>
             </li>

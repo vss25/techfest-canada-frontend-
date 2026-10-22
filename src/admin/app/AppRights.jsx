@@ -86,7 +86,7 @@ export default function AppRights() {
         {GROUPS.map((g) => (
           <tbody key={g.title}>
             <tr>
-              <th scope="colgroup" colSpan={PERSON_TYPES.length + 1} className="!static !bg-white/[0.03] !pt-4 !text-ttfc-dim"><span className="sticky left-4">{g.title}</span></th>
+              <th scope="colgroup" colSpan={PERSON_TYPES.length + 1} className="!static !bg-ttfc-contrast/[0.03] !pt-4 !text-ttfc-dim"><span className="sticky left-4">{g.title}</span></th>
             </tr>
             {g.rights.map((r) => (
               <tr key={r}>

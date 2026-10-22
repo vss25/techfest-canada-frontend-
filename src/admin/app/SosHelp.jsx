@@ -79,7 +79,7 @@ export default function SosHelp() {
                 const n = k === "active" ? (counts.open || 0) + (counts.acknowledged || 0) : k === "resolved" ? counts.resolved || 0 : null;
                 return (
                   <button key={k} type="button" aria-pressed={filter === k} onClick={() => { setFilter(k); setPicked(""); }}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${filter === k ? "bg-white/10 text-ttfc-text" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text"}`}>
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${filter === k ? "bg-ttfc-contrast/10 text-ttfc-text" : "text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text"}`}>
                     {label}{n != null ? ` (${n})` : ""}
                   </button>
                 );
@@ -93,7 +93,7 @@ export default function SosHelp() {
                 {requests.map((x) => (
                   <li key={idOf(x)}>
                     <button type="button" onClick={() => setPicked(idOf(x))} aria-current={picked === idOf(x) ? "true" : undefined}
-                      className={`w-full rounded-xl border px-3 py-2.5 text-left transition ${picked === idOf(x) ? "border-ttfc-pink/60 bg-white/10" : x.status === "open" ? "border-red-400/50 hover:bg-white/5" : "border-ttfc-line hover:bg-white/5"}`}>
+                      className={`w-full rounded-xl border px-3 py-2.5 text-left transition ${picked === idOf(x) ? "border-ttfc-pink/60 bg-ttfc-contrast/10" : x.status === "open" ? "border-red-400/50 hover:bg-ttfc-contrast/5" : "border-ttfc-line hover:bg-ttfc-contrast/5"}`}>
                       <span className="flex items-center gap-2">
                         <b className="truncate text-sm">{x.categoryLabel || x.category}</b>
                         <Badge tone={TONE[x.status]}>{LABEL[x.status] || x.statusLabel}</Badge>
@@ -130,12 +130,12 @@ export default function SosHelp() {
 
                 <SectionTitle>Messages</SectionTitle>
                 <ol className="flex flex-col gap-2">
-                  <li className="max-w-[90%] rounded-xl bg-white/5 px-3 py-2">
+                  <li className="max-w-[90%] rounded-xl bg-ttfc-contrast/5 px-3 py-2">
                     <p className="text-xs font-semibold text-ttfc-muted">{r.name || "Attendee"} · {when(r.createdAt)}</p>
                     <p className="whitespace-pre-wrap text-sm">{r.message}</p>
                   </li>
                   {(r.messages || []).map((m, i) => (
-                    <li key={i} className={`max-w-[90%] rounded-xl px-3 py-2 ${m.from === "staff" ? "self-end bg-ttfc-purple/25" : "bg-white/5"}`}>
+                    <li key={i} className={`max-w-[90%] rounded-xl px-3 py-2 ${m.from === "staff" ? "self-end bg-ttfc-purple/25" : "bg-ttfc-contrast/5"}`}>
                       <p className="text-xs font-semibold text-ttfc-muted">{m.from === "staff" ? m.staffName || "Staff" : r.name || "Attendee"} · {when(m.at)}</p>
                       <p className="whitespace-pre-wrap text-sm">{m.body}</p>
                     </li>

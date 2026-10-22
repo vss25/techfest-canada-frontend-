@@ -19,17 +19,23 @@ import {
 import { SESSIONS, DAYS, buildSpeakerIndex, matchSpeaker, formatTime12, getDuration } from "../../data/agenda";
 import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS, SESSION_TYPE_SUGGESTIONS } from "../../data/sessionFormats";
 import { useEditFromUrl } from "../search/deepLink";
+import { useAdminTheme } from "../theme";
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const toMin = (t) => { const [h, m] = String(t || "0:0").split(":").map(Number); return h * 60 + m; };
 const byTime = (a, b) => (Number(a.day) - Number(b.day)) || String(a.time).localeCompare(String(b.time));
 
 function FormatBadge({ format }) {
+  const { theme } = useAdminTheme();
   const f = FORMAT_MAP[format];
   if (!f) return null;
+  // Light panel: the website's light-mode colours, the text deepened for AA contrast at this small size.
+  const style = theme === "light"
+    ? { background: f.bgL, color: `color-mix(in srgb, ${f.tcL} 70%, #000)`, borderColor: `${f.tcL}55` }
+    : { background: f.bg, color: f.tc, borderColor: `${f.tc}55` };
   return (
     <span className="inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold"
-      style={{ background: f.bg, color: f.tc, borderColor: `${f.tc}55` }}>
+      style={style}>
       {f.label}
     </span>
   );
@@ -108,7 +114,7 @@ function LiveModeControl({ feature, value, onChange, reason, globalOff, readOnly
           <label key={m}
             className={`relative inline-flex h-9 min-w-[3.5rem] items-center justify-center border-r border-ttfc-line px-3 text-sm font-semibold transition last:border-r-0 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-ttfc-purple ${
               readOnly ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${
-              value === m ? "bg-ttfc-purple/30 text-white" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text"}`}>
+              value === m ? "bg-ttfc-purple/30 text-ttfc-contrast" : "text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text"}`}>
             <input type="radio" name={name} value={m} checked={value === m} onChange={() => onChange(m)} disabled={readOnly} className="sr-only" />
             {MODE_LABELS[m]}
           </label>
@@ -233,11 +239,11 @@ function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNa
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <label className="mr-auto inline-flex cursor-pointer items-center gap-2 text-xs text-ttfc-muted">
-                    <input type="checkbox" checked={p.tentative} onChange={(e) => setSpeaker(i, { tentative: e.target.checked })} className="h-4 w-4 accent-[#E8458B]" disabled={readOnly} />
+                    <input type="checkbox" checked={p.tentative} onChange={(e) => setSpeaker(i, { tentative: e.target.checked })} className="h-4 w-4 accent-ttfc-pink" disabled={readOnly} />
                     Tentative (not confirmed yet)
                   </label>
-                  <button type="button" onClick={() => move(i, -1)} disabled={i === 0 || readOnly} aria-label={`Move ${p.name || "speaker"} up`} className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-ttfc-muted hover:bg-white/5 disabled:opacity-30 ${focusRing}`}><ArrowUp className="h-4 w-4" /></button>
-                  <button type="button" onClick={() => move(i, 1)} disabled={i === form.speakers.length - 1 || readOnly} aria-label={`Move ${p.name || "speaker"} down`} className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-ttfc-muted hover:bg-white/5 disabled:opacity-30 ${focusRing}`}><ArrowDown className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => move(i, -1)} disabled={i === 0 || readOnly} aria-label={`Move ${p.name || "speaker"} up`} className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-ttfc-muted hover:bg-ttfc-contrast/5 disabled:opacity-30 ${focusRing}`}><ArrowUp className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => move(i, 1)} disabled={i === form.speakers.length - 1 || readOnly} aria-label={`Move ${p.name || "speaker"} down`} className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-ttfc-muted hover:bg-ttfc-contrast/5 disabled:opacity-30 ${focusRing}`}><ArrowDown className="h-4 w-4" /></button>
                   <button type="button" onClick={() => setForm((f) => ({ ...f, speakers: f.speakers.filter((_, j) => j !== i) }))} disabled={readOnly} aria-label={`Remove ${p.name || "speaker"}`} className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-300/80 hover:bg-red-500/10 disabled:opacity-30 ${focusRing}`}><X className="h-4 w-4" /></button>
                 </div>
               </li>
@@ -282,7 +288,7 @@ function SessionRow({ s, speakerIndex, readOnly, globalLive, onEdit, onDuplicate
   const live = sessionLive(s, globalLive);
   const unmatched = [...(s.speakers || []), ...(s.moderator?.name ? [s.moderator] : [])].filter((p) => p.name && !matchSpeaker(speakerIndex, p.name));
   return (
-    <li className={`grid gap-3 border-b border-ttfc-line/70 px-4 py-4 last:border-0 sm:grid-cols-[120px_minmax(0,1fr)_auto] sm:items-start sm:px-5 ${s.isBreak ? "bg-white/[0.02]" : ""}`}>
+    <li className={`grid gap-3 border-b border-ttfc-line/70 px-4 py-4 last:border-0 sm:grid-cols-[120px_minmax(0,1fr)_auto] sm:items-start sm:px-5 ${s.isBreak ? "bg-ttfc-contrast/[0.02]" : ""}`}>
       <div className="text-sm tabular-nums">
         {s.time ? (
           <>
@@ -372,7 +378,7 @@ function ShiftDialog({ session, all, readOnly, onClose, onShifted, onStale }) {
         {steps.map((m) => (
           <label key={m}
             className={`relative inline-flex h-9 min-w-[3rem] cursor-pointer items-center justify-center border-r border-ttfc-line px-2.5 text-sm font-semibold tabular-nums transition last:border-r-0 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-ttfc-purple ${
-              minutes === m ? "bg-ttfc-purple/30 text-white" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text"}`}>
+              minutes === m ? "bg-ttfc-purple/30 text-ttfc-contrast" : "text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text"}`}>
             <input type="radio" name={minutesName} value={m} checked={minutes === m} onChange={() => setMinutes(m)} disabled={busy} className="sr-only" />
             {signed(m)}<span className="sr-only"> minutes {m > 0 ? "later" : "earlier"}</span>
           </label>
@@ -384,9 +390,9 @@ function ShiftDialog({ session, all, readOnly, onClose, onShifted, onStale }) {
   const scopeOption = (value, label) => {
     const count = plans[value].changes?.length;
     return (
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-ttfc-line p-3 transition hover:bg-white/[0.02] has-[:checked]:border-ttfc-purple/60 has-[:checked]:bg-ttfc-purple/10">
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-ttfc-line p-3 transition hover:bg-ttfc-contrast/[0.02] has-[:checked]:border-ttfc-purple/60 has-[:checked]:bg-ttfc-purple/10">
         <input type="radio" name={scopeName} value={value} checked={scope === value} onChange={() => setScope(value)} disabled={busy}
-          className="mt-0.5 h-4 w-4 shrink-0 accent-[#E8458B]" />
+          className="mt-0.5 h-4 w-4 shrink-0 accent-ttfc-pink" />
         <span className="min-w-0">
           <span className="block text-sm font-semibold text-ttfc-text">{label}</span>
           {count !== undefined && <span className="block text-xs text-ttfc-dim">{plural(count, "session")} change</span>}

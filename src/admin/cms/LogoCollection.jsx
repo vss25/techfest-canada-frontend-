@@ -71,7 +71,7 @@ function LogoTile({ doc, readOnly, light, withVisibility, showSponsor, onEdit, o
         type="button"
         onClick={() => onEdit(doc)}
         aria-label={`Edit ${doc.name}`}
-        className={`relative flex aspect-[16/9] items-center justify-center p-5 transition ${light ? "bg-[#F6F4FB]" : "bg-ttfc-ink"} ${active ? "" : "opacity-45"} ${focusRing}`}
+        className={`relative flex aspect-[16/9] items-center justify-center p-5 transition ${light ? "bg-[#F6F4FB]" : "bg-[#0B0716]"} ${active ? "" : "opacity-45"} ${focusRing}`}
       >
         {doc.logoUrl ? (
           <img src={`${doc.logoUrl}?w=400&fit=max&auto=format`} alt="" loading="lazy" className="object-contain"
@@ -99,10 +99,10 @@ function LogoTile({ doc, readOnly, light, withVisibility, showSponsor, onEdit, o
         <span className="text-[11px] text-ttfc-dim">Size</span>
         <div className="flex items-center gap-1">
           <button type="button" onClick={() => onScale(doc, -10)} disabled={readOnly || scale <= 30} aria-label={`Make ${doc.name} smaller`}
-            className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text disabled:opacity-30 ${focusRing}`}><Minus className="h-3.5 w-3.5" /></button>
+            className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text disabled:opacity-30 ${focusRing}`}><Minus className="h-3.5 w-3.5" /></button>
           <span className="w-11 text-center text-xs tabular-nums text-ttfc-text">{scale}%</span>
           <button type="button" onClick={() => onScale(doc, 10)} disabled={readOnly || scale >= 250} aria-label={`Make ${doc.name} bigger`}
-            className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text disabled:opacity-30 ${focusRing}`}><Plus className="h-3.5 w-3.5" /></button>
+            className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text disabled:opacity-30 ${focusRing}`}><Plus className="h-3.5 w-3.5" /></button>
         </div>
       </div>
     </article>
@@ -197,7 +197,7 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
           <div className="flex items-center gap-3">
             <input type="range" min={30} max={250} step={5} value={form.logoScale} disabled={readOnly}
               onChange={(e) => setForm((f) => ({ ...f, logoScale: e.target.value }))}
-              aria-label="Logo size" aria-valuetext={`${form.logoScale}%`} className="h-2 flex-1 cursor-pointer accent-[#E8458B]" />
+              aria-label="Logo size" aria-valuetext={`${form.logoScale}%`} className="h-2 flex-1 cursor-pointer accent-ttfc-pink" />
             <span className="w-12 text-right text-sm tabular-nums">{form.logoScale}%</span>
             <Button size="sm" variant="ghost" icon={RotateCcw} disabled={readOnly || form.logoScale === "100"} onClick={() => setForm((f) => ({ ...f, logoScale: "100" }))}>100%</Button>
           </div>

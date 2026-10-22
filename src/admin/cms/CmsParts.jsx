@@ -19,7 +19,7 @@ export function CmsBanners({ configured }) {
 }
 
 const checker =
-  "bg-[length:16px_16px] [background-image:linear-gradient(45deg,rgba(255,255,255,.05)_25%,transparent_25%),linear-gradient(-45deg,rgba(255,255,255,.05)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,rgba(255,255,255,.05)_75%),linear-gradient(-45deg,transparent_75%,rgba(255,255,255,.05)_75%)] [background-position:0_0,0_8px,8px_-8px,-8px_0]";
+  "bg-[length:16px_16px] [background-image:linear-gradient(45deg,rgb(var(--ttfc-contrast)/.05)_25%,transparent_25%),linear-gradient(-45deg,rgb(var(--ttfc-contrast)/.05)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,rgb(var(--ttfc-contrast)/.05)_75%),linear-gradient(-45deg,transparent_75%,rgb(var(--ttfc-contrast)/.05)_75%)] [background-position:0_0,0_8px,8px_-8px,-8px_0]";
 
 /**
  * Pick → downscale → upload. Calls onUploaded({ assetId, url, preview }).

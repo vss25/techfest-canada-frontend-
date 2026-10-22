@@ -150,7 +150,7 @@ export default function RsvpReminders() {
             <p className="font-semibold">Sending… {num(done)} of {num(job.total)}</p>
             <p className="text-ttfc-muted">Started {when(job.startedAt)}{job.by ? ` by ${job.by}` : ""}</p>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/5" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Send progress">
+          <div className="h-2 overflow-hidden rounded-full bg-ttfc-contrast/5" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Send progress">
             <div className="h-2 rounded-full bg-gradient-to-r from-ttfc-purple via-ttfc-pink to-ttfc-orange transition-all" style={{ width: `${Math.max(2, pct)}%` }} />
           </div>
           <p className="mt-2 text-xs text-ttfc-dim">Sent {num(job.sent)} · failed {num(job.failed)} · skipped {num(job.skipped)}. You can leave this page; it keeps going.</p>
@@ -205,7 +205,7 @@ export default function RsvpReminders() {
         <div className="flex flex-wrap gap-1" role="group" aria-label="Show">
           {FILTERS.map(([k, label]) => (
             <button key={k} type="button" onClick={() => setFilter(k)} aria-pressed={filter === k}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${filter === k ? "bg-white/10 text-ttfc-text" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text"}`}>
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${filter === k ? "bg-ttfc-contrast/10 text-ttfc-text" : "text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text"}`}>
               {label}
             </button>
           ))}

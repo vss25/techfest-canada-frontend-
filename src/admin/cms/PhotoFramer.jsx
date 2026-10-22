@@ -102,10 +102,10 @@ export default function PhotoFramer({ open, onClose, onApply, assetId, imageUrl,
             </span>
           </div>
           <div className="flex w-full max-w-[280px] items-center gap-2">
-            <button type="button" onClick={() => update({ zoom: state.zoom - 0.1 })} aria-label="Zoom out" className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-ttfc-muted hover:bg-white/5 ${focusRing}`}><Minus className="h-4 w-4" /></button>
+            <button type="button" onClick={() => update({ zoom: state.zoom - 0.1 })} aria-label="Zoom out" className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-ttfc-muted hover:bg-ttfc-contrast/5 ${focusRing}`}><Minus className="h-4 w-4" /></button>
             <input type="range" min={MIN_ZOOM} max={MAX_ZOOM} step={0.01} value={state.zoom}
-              onChange={(e) => update({ zoom: Number(e.target.value) })} aria-label="Zoom" className="h-2 flex-1 cursor-pointer accent-[#E8458B]" />
-            <button type="button" onClick={() => update({ zoom: state.zoom + 0.1 })} aria-label="Zoom in" className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-ttfc-muted hover:bg-white/5 ${focusRing}`}><Plus className="h-4 w-4" /></button>
+              onChange={(e) => update({ zoom: Number(e.target.value) })} aria-label="Zoom" className="h-2 flex-1 cursor-pointer accent-ttfc-pink" />
+            <button type="button" onClick={() => update({ zoom: state.zoom + 0.1 })} aria-label="Zoom in" className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-ttfc-muted hover:bg-ttfc-contrast/5 ${focusRing}`}><Plus className="h-4 w-4" /></button>
             <span className="w-12 text-right text-xs tabular-nums text-ttfc-muted">{state.zoom.toFixed(1)}×</span>
           </div>
         </div>

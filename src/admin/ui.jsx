@@ -22,10 +22,10 @@ const BTN_VARIANT = {
   primary:
     "bg-gradient-to-r from-ttfc-pink via-ttfc-purple to-ttfc-purple text-white shadow-lg shadow-ttfc-pink/20 hover:brightness-110",
   secondary: "border border-ttfc-line bg-ttfc-panel2 text-ttfc-text hover:border-ttfc-purple/60 hover:bg-ttfc-panel3",
-  ghost: "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text",
-  danger: "bg-red-500/90 text-white hover:bg-red-500 shadow-lg shadow-red-900/30",
+  ghost: "text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text",
+  danger: "bg-ttfc-bad/90 text-white hover:bg-ttfc-bad shadow-lg shadow-red-900/30",
   dangerOutline: "border border-red-400/40 text-red-300 hover:bg-red-500/10",
-  success: "bg-emerald-500/90 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-900/30",
+  success: "bg-ttfc-good/90 text-white hover:bg-ttfc-good shadow-lg shadow-emerald-900/30",
 };
 const BTN_SIZE = {
   sm: "h-8 gap-1.5 rounded-lg px-3 text-xs",
@@ -59,7 +59,7 @@ export function IconButton({ icon, label, className, ...rest }) {
       type="button"
       aria-label={label}
       title={label}
-      className={cx("inline-flex h-9 w-9 items-center justify-center rounded-xl text-ttfc-muted transition hover:bg-white/5 hover:text-ttfc-text disabled:opacity-40", focusRing, className)}
+      className={cx("inline-flex h-9 w-9 items-center justify-center rounded-xl text-ttfc-muted transition hover:bg-ttfc-contrast/5 hover:text-ttfc-text disabled:opacity-40", focusRing, className)}
       {...rest}
     >
       <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
@@ -101,7 +101,7 @@ export function SectionTitle({ children, hint, className }) {
 
 /* ---------------- Forms ---------------- */
 const inputBase =
-  "w-full rounded-xl border border-ttfc-line bg-ttfc-ink/70 px-3.5 py-2.5 text-sm text-ttfc-text placeholder:text-ttfc-dim transition focus:border-ttfc-purple focus:outline-none focus:ring-2 focus:ring-ttfc-purple/30 disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full rounded-xl border border-ttfc-field bg-ttfc-ink/70 px-3.5 py-2.5 text-sm text-ttfc-text placeholder:text-ttfc-dim transition focus:border-ttfc-purple focus:outline-none focus:ring-2 focus:ring-ttfc-purple/30 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function Field({ label, hint, error, required, children, className, id: idProp }) {
   const auto = useId();
@@ -149,9 +149,10 @@ export function Select({ className, children, ...rest }) {
   return (
     // Arrow styling lives in `style`: as Tailwind classes, tailwind-merge took
     // them for background colours and dropped the dark background (white box).
+    // The arrow (--adm-select-arrow in admin.css) follows the light / dark theme.
     <select className={cx(inputBase, "cursor-pointer appearance-none pr-9", className)}
       style={{
-        backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A9A1C2' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
+        backgroundImage: "var(--adm-select-arrow)",
         backgroundSize: "16px",
         backgroundPosition: "right 12px center",
         backgroundRepeat: "no-repeat",
@@ -180,7 +181,7 @@ export function Switch({ checked, onChange, label, description, disabled, id: id
       onClick={() => onChange?.(!checked)}
       className={cx(
         "relative inline-flex shrink-0 items-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50",
-        track, checked ? "border-transparent bg-gradient-to-r from-ttfc-pink to-ttfc-purple" : "border-ttfc-line bg-ttfc-panel3", focusRing,
+        track, checked ? "border-transparent bg-gradient-to-r from-ttfc-pink to-ttfc-purple" : "border-ttfc-line bg-ttfc-track", focusRing,
       )}
     >
       <span className={cx("inline-block translate-x-1 rounded-full bg-white shadow transition", knob, checked && shift)} />
@@ -200,7 +201,7 @@ export function Switch({ checked, onChange, label, description, disabled, id: id
 
 /* ---------------- Feedback ---------------- */
 const BADGE = {
-  neutral: "border-ttfc-line bg-white/5 text-ttfc-muted",
+  neutral: "border-ttfc-line bg-ttfc-contrast/5 text-ttfc-muted",
   pink: "border-ttfc-pink/30 bg-ttfc-pink/10 text-pink-200",
   purple: "border-ttfc-purple/30 bg-ttfc-purple/10 text-violet-200",
   orange: "border-ttfc-orange/30 bg-ttfc-orange/10 text-orange-200",
@@ -244,7 +245,7 @@ export function EmptyState({ icon = Inbox, title = "Nothing here yet", body, act
   const Icon = icon;
   return (
     <div className={cx("flex flex-col items-center justify-center rounded-[18px] border border-dashed border-ttfc-line px-6 py-14 text-center", className)}>
-      <span className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-ttfc-muted">
+      <span className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-ttfc-contrast/5 text-ttfc-muted">
         <Icon className="h-6 w-6" aria-hidden="true" />
       </span>
       <p className="font-semibold text-ttfc-text">{title}</p>
@@ -294,7 +295,7 @@ const BANNER = {
 };
 export function Banner({ tone = "info", icon: Icon, title, children, className, action }) {
   return (
-    <div className={cx("flex flex-col gap-3 rounded-2xl border px-4 py-3.5 text-sm sm:flex-row sm:items-center", BANNER[tone], className)} role={tone === "danger" ? "alert" : undefined}>
+    <div className={cx("adm-banner flex flex-col gap-3 rounded-2xl border px-4 py-3.5 text-sm sm:flex-row sm:items-center", BANNER[tone], className)} role={tone === "danger" ? "alert" : undefined}>
       <div className="flex flex-1 items-start gap-3">
         {Icon && <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />}
         <div className="min-w-0 leading-relaxed">
@@ -310,7 +311,7 @@ export function Banner({ tone = "info", icon: Icon, title, children, className, 
 /* ---------------- Data display ---------------- */
 const TILE_TONE = {
   pink: "from-ttfc-pink/25", purple: "from-ttfc-purple/25", orange: "from-ttfc-orange/25",
-  good: "from-emerald-400/20", bad: "from-red-400/25", neutral: "from-white/5",
+  good: "from-emerald-400/20", bad: "from-red-400/25", neutral: "from-ttfc-contrast/5",
 };
 export function StatTile({ label, value, icon: Icon, tone = "purple", hint, to }) {
   const body = (
@@ -341,7 +342,7 @@ export function Bars({ rows = [], empty = "No data yet" }) {
         <li key={r.key} className="grid grid-cols-[1fr_auto] items-center gap-3 text-sm">
           <div className="min-w-0">
             <p className="truncate text-ttfc-text/90" title={r.key}>{r.key}</p>
-            <div className="mt-1 h-1.5 rounded-full bg-white/5">
+            <div className="mt-1 h-1.5 rounded-full bg-ttfc-contrast/5">
               <div className="h-1.5 rounded-full bg-gradient-to-r from-ttfc-pink to-ttfc-orange" style={{ width: `${Math.max(4, (r.count / max) * 100)}%` }} />
             </div>
           </div>
@@ -377,12 +378,12 @@ export function Tabs({ tabs, value, onChange, label = "Sections", className }) {
             onClick={() => onChange(t.key)}
             className={cx(
               "inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition",
-              active ? "bg-white/10 text-ttfc-text shadow-inner" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text",
+              active ? "bg-ttfc-contrast/10 text-ttfc-text shadow-inner" : "text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text",
               focusRing,
             )}
           >
             {t.label}
-            {t.count !== undefined && <span className={cx("rounded-full px-1.5 text-[11px] tabular-nums", active ? "bg-ttfc-pink/30 text-white" : "bg-white/5")}>{t.count}</span>}
+            {t.count !== undefined && <span className={cx("rounded-full px-1.5 text-[11px] tabular-nums", active ? "bg-ttfc-pink/30 text-ttfc-contrast" : "bg-ttfc-contrast/5")}>{t.count}</span>}
           </button>
         );
       })}

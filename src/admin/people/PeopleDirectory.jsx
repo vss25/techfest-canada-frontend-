@@ -337,7 +337,7 @@ export default function PeopleDirectory() {
                       </span>
                       {r.company && !r.logoUrl && (
                         <button type="button" onClick={(e) => { e.stopPropagation(); setLogoFor(r); }} title={`Find a logo for ${r.company}`}
-                          className="ml-auto inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-ttfc-dim hover:bg-white/5 hover:text-ttfc-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttfc-purple">
+                          className="ml-auto inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-ttfc-dim hover:bg-ttfc-contrast/5 hover:text-ttfc-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttfc-purple">
                           <ImagePlus className="h-4 w-4" aria-hidden="true" /><span className="sr-only">Find a logo for {r.company}</span>
                         </button>
                       )}

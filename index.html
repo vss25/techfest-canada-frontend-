@@ -164,6 +164,23 @@
       })();
     </script>
 
+    <!-- Staff panel (/admin, /admin-login): its light / dark choice (System, Light or Dark,
+         saved in this browser by src/admin/theme.js) is applied before the first paint,
+         so the panel never flashes the other theme. Nothing happens on other pages. -->
+    <script>
+      (function () {
+        try {
+          if (!/^\/admin(-login)?(\/|$)/i.test(location.pathname)) return;
+          var choice = null;
+          try { choice = localStorage.getItem("ttfc.admin.theme"); } catch (e) { /* storage blocked: follow the device */ }
+          var mq = function (q) { return window.matchMedia(q).matches; };
+          var sysDark = !window.matchMedia || mq("(prefers-color-scheme: dark)") || !mq("(prefers-color-scheme: light)");
+          var dark = choice === "dark" || (choice !== "light" && sysDark);
+          document.documentElement.setAttribute("data-admin-theme", dark ? "dark" : "light");
+        } catch (e) { /* the panel applies it itself once it loads */ }
+      })();
+    </script>
+
     <!-- Analytics / advertising (Google Analytics 4, Meta Pixel, visitor identification)
          are NOT loaded here. src/lib/trackers.js injects them only after the visitor
          chooses "Accept All" in the cookie banner (localStorage tfc_cookie_consent = "all").

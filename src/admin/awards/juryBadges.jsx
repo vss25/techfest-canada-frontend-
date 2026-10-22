@@ -15,7 +15,7 @@ export function StatusBadge({ status }) {
 export function ProgressBar({ done = 0, total = 0, className = "" }) {
   const pct = total ? Math.round((done / total) * 100) : 0;
   return (
-    <div className={`h-1.5 w-full rounded-full bg-white/5 ${className}`} role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label="Submitted">
+    <div className={`h-1.5 w-full rounded-full bg-ttfc-contrast/5 ${className}`} role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label="Submitted">
       <div className="h-1.5 rounded-full bg-gradient-to-r from-ttfc-pink to-ttfc-purple" style={{ width: `${Math.max(pct ? 3 : 0, pct)}%` }} />
     </div>
   );

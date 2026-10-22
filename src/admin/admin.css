@@ -1,23 +1,126 @@
 /* =========================================================
    TTFC admin panel — scoped styles.
    Everything is under .ttfc-admin (the shell) or
-   .ttfc-admin-portal (modals/drawers rendered into <body>),
-   so nothing leaks into the public website.
+   .ttfc-admin-portal (modals/drawers/toasts rendered into
+   <body>), so nothing leaks into the public website.
 ========================================================= */
+
+/* ---------------- Theme ----------------
+   The ttfc colours (tailwind.config.js) are CSS variables holding RGB
+   channels. Dark is the default (and Tailwind's fallback); the panel's
+   light mode (theme.js sets <html data-admin-theme="light">) swaps them.
+   Only the panel and its sign-in page ever set that attribute. */
+:root {
+  --ttfc-ink: 11 7 22;
+  --ttfc-panel: 19 13 34;
+  --ttfc-panel2: 27 20 48;
+  --ttfc-panel3: 37 28 64;
+  --ttfc-line: 42 33 67;
+  --ttfc-text: 244 240 251;
+  --ttfc-muted: 169 161 194;
+  --ttfc-dim: 123 114 150;
+  --ttfc-pink: 232 69 139;
+  --ttfc-purple: 139 92 246;
+  --ttfc-orange: 245 158 66;
+  --ttfc-good: 16 185 129;
+  --ttfc-bad: 239 68 68;
+  --ttfc-warn: 251 191 36;
+  --ttfc-contrast: 255 255 255;
+  --ttfc-field: 42 33 67;
+  --ttfc-track: 37 28 64;
+  --ttfc-good-surface: 15 42 34;
+  --ttfc-bad-surface: 45 16 24;
+  /* Admin-only extras (not Tailwind colours) */
+  --adm-table-head: 24 17 43;
+  --adm-scrollbar: 47 38 80;
+  --adm-good-text: 167 243 208;
+  --adm-good-title: 110 231 183;
+  --adm-bad-title: 252 165 165;
+  --adm-glow: 0.12;
+  --adm-glow-2: 0.10;
+  --adm-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A9A1C2' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Light: white panels, light grey lines, dark text; the brand pink, purple and
+   orange deepened so text and white-on-colour buttons pass WCAG AA (4.5:1). */
+html[data-admin-theme="light"] {
+  --ttfc-ink: 244 242 249;
+  --ttfc-panel: 255 255 255;
+  --ttfc-panel2: 248 247 252;
+  --ttfc-panel3: 237 234 244;
+  --ttfc-line: 222 216 233;
+  --ttfc-text: 28 21 48;
+  --ttfc-muted: 77 70 99;
+  --ttfc-dim: 98 91 121;
+  --ttfc-pink: 194 28 100;
+  --ttfc-purple: 110 63 219;
+  --ttfc-orange: 152 70 7;
+  --ttfc-good: 5 105 76;
+  --ttfc-bad: 185 28 28;
+  --ttfc-warn: 180 83 9;
+  --ttfc-contrast: 28 21 48;
+  --ttfc-field: 144 137 163;
+  --ttfc-track: 142 134 162;
+  --ttfc-good-surface: 236 253 245;
+  --ttfc-bad-surface: 254 242 242;
+  --adm-table-head: 248 247 252;
+  --adm-scrollbar: 196 189 212;
+  --adm-good-text: 6 95 70;
+  --adm-good-title: 4 120 87;
+  --adm-bad-title: 185 28 28;
+  --adm-glow: 0.06;
+  --adm-glow-2: 0.05;
+  --adm-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234D4663' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Light: the pale status shades used for text on the dark panel (text-red-200,
+   text-emerald-300, text-amber-100 …) become the 800 shade of the same hue, so
+   badges, banners, errors and toasts stay readable on white (≥ 4.5:1 on their
+   tinted backgrounds, even at the /80 fades). Scoped to the panel only. */
+html[data-admin-theme="light"] :is(.ttfc-admin, .ttfc-admin-portal) {
+  --ttfc-red-100: 153 27 27;
+  --ttfc-red-200: 153 27 27;
+  --ttfc-red-300: 153 27 27;
+  --ttfc-emerald-100: 6 95 70;
+  --ttfc-emerald-200: 6 95 70;
+  --ttfc-emerald-300: 6 95 70;
+  --ttfc-amber-100: 146 64 14;
+  --ttfc-amber-200: 146 64 14;
+  --ttfc-amber-300: 146 64 14;
+  --ttfc-violet-100: 91 33 182;
+  --ttfc-violet-200: 91 33 182;
+  --ttfc-violet-300: 91 33 182;
+  --ttfc-pink-100: 157 23 77;
+  --ttfc-pink-200: 157 23 77;
+  --ttfc-pink-300: 157 23 77;
+  --ttfc-orange-100: 154 52 18;
+  --ttfc-orange-200: 154 52 18;
+  --ttfc-orange-300: 154 52 18;
+}
+
+/* Light: text the dark panel fades (text-ttfc-dim/80, opacity inside banners) stays at full
+   strength: the light colours are already the quieter shade, and fading them drops below 4.5:1. */
+html[data-admin-theme="light"] :is(.ttfc-admin, .ttfc-admin-portal) .text-ttfc-dim\/80 { color: rgb(var(--ttfc-dim)); }
+html[data-admin-theme="light"] :is(.ttfc-admin, .ttfc-admin-portal) .adm-banner :is(.opacity-80, .opacity-85) { opacity: 1; }
+
+/* The page behind the panel (overscroll, iOS rubber-banding) matches it. */
+html[data-admin-theme="light"] body.ttfc-admin-open {
+  background: rgb(var(--ttfc-ink));
+}
 
 .ttfc-admin,
 .ttfc-admin-portal {
-  --a-bg: #0b0716;
-  --a-panel: #130d22;
-  --a-panel-2: #1b1430;
-  --a-panel-3: #251c40;
-  --a-line: #2a2143;
-  --a-text: #f4f0fb;
-  --a-muted: #a9a1c2;
-  --a-dim: #7b7296;
-  --a-pink: #e8458b;
-  --a-purple: #8b5cf6;
-  --a-orange: #f59e42;
+  --a-bg: rgb(var(--ttfc-ink));
+  --a-panel: rgb(var(--ttfc-panel));
+  --a-panel-2: rgb(var(--ttfc-panel2));
+  --a-panel-3: rgb(var(--ttfc-panel3));
+  --a-line: rgb(var(--ttfc-line));
+  --a-text: rgb(var(--ttfc-text));
+  --a-muted: rgb(var(--ttfc-muted));
+  --a-dim: rgb(var(--ttfc-dim));
+  --a-pink: rgb(var(--ttfc-pink));
+  --a-purple: rgb(var(--ttfc-purple));
+  --a-orange: rgb(var(--ttfc-orange));
 
   /* Re-point the public site's theme variables so the existing
      admin components (which use them) render in the panel's look. */
@@ -39,13 +142,16 @@
   color: var(--a-text);
   -webkit-font-smoothing: antialiased;
 }
+html[data-admin-theme="light"] :is(.ttfc-admin, .ttfc-admin-portal) {
+  --shadow-main: 0 12px 40px rgba(28, 21, 48, 0.12);
+}
 
 .ttfc-admin {
   min-height: 100vh;
   background-color: var(--a-bg);
   background-image:
-    radial-gradient(900px 500px at 100% -10%, rgba(232, 69, 139, 0.12), transparent 60%),
-    radial-gradient(700px 500px at -10% 30%, rgba(139, 92, 246, 0.10), transparent 60%);
+    radial-gradient(900px 500px at 100% -10%, rgb(var(--ttfc-pink) / var(--adm-glow)), transparent 60%),
+    radial-gradient(700px 500px at -10% 30%, rgb(var(--ttfc-purple) / var(--adm-glow-2)), transparent 60%);
   background-attachment: fixed;
 }
 
@@ -67,11 +173,11 @@
   letter-spacing: 0.04em;
 }
 
-.ttfc-admin ::selection { background: rgba(232, 69, 139, 0.35); }
+.ttfc-admin ::selection { background: rgb(var(--ttfc-pink) / 0.35); }
 
 /* Thin, quiet scrollbars */
 .ttfc-admin *::-webkit-scrollbar { width: 10px; height: 10px; }
-.ttfc-admin *::-webkit-scrollbar-thumb { background: #2f2650; border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+.ttfc-admin *::-webkit-scrollbar-thumb { background: rgb(var(--adm-scrollbar)); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
 .ttfc-admin *::-webkit-scrollbar-track { background: transparent; }
 
 /* ---------------- Tables (new pages + legacy .admin-table) ---------------- */
@@ -89,7 +195,7 @@
   z-index: 1;
   text-align: left;
   padding: 12px 16px;
-  background: #18112b;
+  background: rgb(var(--adm-table-head));
   color: var(--a-muted);
   font-size: 0.7rem;
   font-weight: 700;
@@ -101,19 +207,19 @@
 .ttfc-admin .adm-table td,
 .ttfc-admin .admin-table td {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(42, 33, 67, 0.7);
+  border-bottom: 1px solid rgb(var(--ttfc-line) / 0.7);
   color: var(--a-text);
   vertical-align: middle;
 }
 .ttfc-admin .adm-table tbody tr:last-child td,
 .ttfc-admin .admin-table tbody tr:last-child td { border-bottom: 0; }
 .ttfc-admin .adm-table tbody tr:hover td,
-.ttfc-admin .admin-table tbody tr:hover td { background: rgba(255, 255, 255, 0.025); }
+.ttfc-admin .admin-table tbody tr:hover td { background: rgb(var(--ttfc-contrast) / 0.025); }
 .ttfc-admin .adm-table tr.is-clickable { cursor: pointer; }
-.ttfc-admin .adm-table tr.is-clickable:focus-visible td { background: rgba(139, 92, 246, 0.12); outline: none; }
+.ttfc-admin .adm-table tr.is-clickable:focus-visible td { background: rgb(var(--ttfc-purple) / 0.12); outline: none; }
 /* App invite list (app/AppInvite.jsx): rows ticked, and the next group "Send next N" would email. */
-.ttfc-admin .adm-table tr.app-invite-picked td { background: rgba(232, 69, 139, 0.08); }
-.ttfc-admin .adm-table tr.app-invite-next td:first-child { box-shadow: inset 3px 0 0 rgba(245, 158, 66, 0.9); }
+.ttfc-admin .adm-table tr.app-invite-picked td { background: rgb(var(--ttfc-pink) / 0.08); }
+.ttfc-admin .adm-table tr.app-invite-next td:first-child { box-shadow: inset 3px 0 0 rgb(var(--ttfc-orange) / 0.9); }
 
 /* ---------------- Legacy admin components ---------------- */
 .ttfc-admin .legacy .admin-card {
@@ -138,7 +244,7 @@
 .ttfc-admin .legacy .admin-input,
 .ttfc-admin .legacy .form-input {
   background: var(--a-bg);
-  border: 1px solid var(--a-line);
+  border: 1px solid rgb(var(--ttfc-field));
   border-radius: 12px;
   color: var(--a-text);
   padding: 10px 14px;
@@ -146,7 +252,7 @@
 .ttfc-admin .legacy .admin-input:focus,
 .ttfc-admin .legacy .form-input:focus {
   border-color: var(--a-purple);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+  box-shadow: 0 0 0 3px rgb(var(--ttfc-purple) / 0.25);
   outline: none;
 }
 .ttfc-admin .legacy .btn-primary,
@@ -158,7 +264,7 @@
   border-radius: 12px;
   font-size: 0.875rem;
   background: linear-gradient(135deg, var(--a-pink), var(--a-purple));
-  box-shadow: 0 8px 24px rgba(232, 69, 139, 0.2);
+  box-shadow: 0 8px 24px rgb(var(--ttfc-pink) / 0.2);
 }
 .ttfc-admin .legacy .btn-primary:hover { transform: none; filter: brightness(1.1); }
 .ttfc-admin .legacy .btn-secondary,
@@ -172,22 +278,22 @@
   border: 1px solid var(--a-line);
   color: var(--a-text);
 }
-.ttfc-admin .legacy .btn-secondary:hover { border-color: rgba(139, 92, 246, 0.6); }
+.ttfc-admin .legacy .btn-secondary:hover { border-color: rgb(var(--ttfc-purple) / 0.6); }
 .ttfc-admin .legacy .admin-tabs { border-bottom: 1px solid var(--a-line); }
 .ttfc-admin .legacy .admin-tabs button { font-family: inherit; text-transform: none; font-size: 0.85rem; letter-spacing: 0; }
-.ttfc-admin .legacy .admin-tabs button.active { color: #fff; border-bottom-color: var(--a-pink); }
+.ttfc-admin .legacy .admin-tabs button.active { color: rgb(var(--ttfc-contrast)); border-bottom-color: var(--a-pink); }
 .ttfc-admin .legacy .ticket-badge {
   margin-bottom: 0;
   border-radius: 999px;
   font-size: 0.72rem;
   padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(var(--ttfc-contrast) / 0.06);
   color: var(--a-muted);
   border: 1px solid var(--a-line);
 }
 .ttfc-admin .legacy .ticket-badge.active {
   background: rgba(52, 211, 153, 0.12);
-  color: #a7f3d0;
+  color: rgb(var(--adm-good-text));
   border-color: rgba(52, 211, 153, 0.3);
 }
 .ttfc-admin .legacy .scanner-wrapper {
@@ -201,8 +307,8 @@
   background: var(--a-panel-2);
   border: 1px solid var(--a-line);
 }
-.ttfc-admin .legacy .checkin-success h3 { color: #6ee7b7; font-size: 1.05rem; }
-.ttfc-admin .legacy .checkin-error h3 { color: #fca5a5; font-size: 1.05rem; }
+.ttfc-admin .legacy .checkin-success h3 { color: rgb(var(--adm-good-title)); font-size: 1.05rem; }
+.ttfc-admin .legacy .checkin-error h3 { color: rgb(var(--adm-bad-title)); font-size: 1.05rem; }
 .ttfc-admin .legacy .muted { color: var(--a-muted); }
 .ttfc-admin .legacy input[type="checkbox"],
 .ttfc-admin .legacy input[type="radio"] { accent-color: var(--a-pink); }
@@ -236,21 +342,23 @@ body.ttfc-admin-open .ticket-bar { display: none !important; }
   z-index: auto;
 }
 
-/* Native dropdown lists follow the dark panel theme. */
+/* Native dropdown lists follow the panel theme. */
 .ttfc-admin select option,
-.ttfc-admin select optgroup {
-  background-color: #120c22;
-  color: #f4f0fb;
+.ttfc-admin select optgroup,
+.ttfc-admin-portal select option,
+.ttfc-admin-portal select optgroup {
+  background-color: rgb(var(--ttfc-panel));
+  color: rgb(var(--ttfc-text));
 }
 
 /* ---------------- Global search: the setting or row a search result opened ---------------- */
 .ttfc-admin .adm-flash {
   border-radius: 14px;
-  box-shadow: 0 0 0 2px var(--a-pink), 0 0 0 6px rgba(232, 69, 139, 0.18);
+  box-shadow: 0 0 0 2px var(--a-pink), 0 0 0 6px rgb(var(--ttfc-pink) / 0.18);
   transition: box-shadow 0.3s ease;
 }
 .ttfc-admin tr.adm-flash { box-shadow: none; }
-.ttfc-admin tr.adm-flash > td { background: rgba(232, 69, 139, 0.14); }
+.ttfc-admin tr.adm-flash > td { background: rgb(var(--ttfc-pink) / 0.14); }
 @media (prefers-reduced-motion: reduce) {
   .ttfc-admin .adm-flash { transition: none; }
 }

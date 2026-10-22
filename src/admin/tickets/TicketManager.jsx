@@ -30,7 +30,7 @@ function Check({ checked, indeterminate, onChange, label }) {
       ref={(el) => { if (el) el.indeterminate = !!indeterminate; }}
       onChange={(e) => onChange(e.target.checked)}
       onClick={(e) => e.stopPropagation()}
-      className="h-4 w-4 cursor-pointer rounded accent-[#E8458B] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ttfc-purple"
+      className="h-4 w-4 cursor-pointer rounded accent-ttfc-pink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ttfc-purple"
     />
   );
 }

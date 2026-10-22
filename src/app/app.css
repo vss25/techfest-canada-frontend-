@@ -652,22 +652,40 @@ a { color: var(--pur-alt); }
 .compose-prompt .fake-input { flex: 1; min-height: 40px; display: flex; align-items: center; padding: 0 14px; border-radius: 999px; background: var(--elevated); color: var(--tx2); }
 /* Home's feed bars (Oct 22 2026): "What's on your mind?" docked above the tab bar on load (.home-dock); once the
    feed reaches the top it slides away behind the tab bar while the same bar slides down from the top
-   (.pinned-bar), and on the festival days the Now / Next bar rises above the tab bar (.now-bar). All three stay
-   mounted and move with transform only, so the feed never shifts; Reduce Motion makes it instant (below). */
+   (.pinned-bar); the status bar (.status-bar) is always above them. All of them stay mounted and move with
+   transform only, so the feed never shifts; Reduce Motion makes it instant (below). */
 .pinned-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 25; background: var(--chrome); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); padding-top: var(--safe-top); }
 .pinned-bar .inner, .home-dock .inner { max-width: 640px; margin: 0 auto; display: flex; align-items: center; padding: 6px 4px 6px 0; }
 .home-dock { position: fixed; left: 0; right: 0; bottom: var(--tab-space); z-index: 24; background: var(--chrome); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border-top: 0.5px solid var(--rule); padding: 0 var(--safe-right) 0 var(--safe-left); }
 .home-dock .compose-prompt { padding-top: 4px; padding-bottom: 4px; }
-.pinned-bar, .home-dock, .now-bar { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease, visibility 0s linear 0.3s; }
+.pinned-bar, .home-dock { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease, visibility 0s linear 0.3s; }
 .pinned-bar:not(.is-on) { transform: translateY(-100%); opacity: 0; visibility: hidden; }
 .home-dock:not(.is-on) { transform: translateY(100%); opacity: 0; visibility: hidden; }
-.now-bar:not(.is-on) { transform: translateY(calc(100% + 16px)); opacity: 0; visibility: hidden; }
-.pinned-bar.is-on, .home-dock.is-on, .now-bar.is-on { transition-delay: 0s; }
+.pinned-bar.is-on, .home-dock.is-on { transition-delay: 0s; }
+/* The status bar (Oct 22 2026, batch 5): always on Home; it rides above the docked composer (is-raised: the dock's
+   height, --home-dock-h) and settles above the tab bar once the composer moves to the top. */
+.status-bar { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.status-bar.is-raised { transform: translateY(calc(-1 * var(--home-dock-h, 53px))); }
+.status-doors { font-weight: 700; font-variant-numeric: tabular-nums; }
 .page--home-bars { padding-bottom: calc(var(--tab-space) + 76px); }
+.page--home-bars-2 { padding-bottom: calc(var(--tab-space) + 132px); }
 .now-bar { text-decoration: none; }
 .now-bar-tag { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; background: var(--pur-tint); color: var(--pur-alt); font-size: 12px; font-weight: 700; white-space: nowrap; }
 .now-bar-tag--next { background: var(--elevated); color: var(--tx2); }
 .now-bar-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+/* "Earn points" cards in the feed (FeedCta.jsx, batch 5): the feed's width and surface, purple accents. */
+.feed-cta { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px; background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+@media (min-width: 660px) { .feed-cta { border: 1px solid var(--border); border-radius: var(--r-card); } }
+.feed-cta-ico { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--pur-tint); color: var(--pur-alt); }
+.feed-cta-ico svg { width: 20px; height: 20px; }
+.feed-cta-eyebrow { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--pur-alt); }
+.feed-cta-eyebrow b { font-weight: 800; }
+.feed-cta-title { margin: 3px 0 0; font-size: 16px; font-weight: 700; line-height: 1.3; }
+.feed-cta-why { margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: var(--tx2); }
+.feed-cta-x { flex: none; width: 32px; height: 32px; margin: -4px -6px 0 0; border: 0; border-radius: 50%; background: none; color: var(--tx2); display: grid; place-items: center; }
+.feed-cta-x svg { width: 18px; height: 18px; }
+.feed-cta-btn { align-self: stretch; }
 .mini-bar {
   position: fixed; left: 12px; right: 12px; bottom: calc(var(--tab-space) + 8px); z-index: 24;
   max-width: 616px; margin: 0 auto; display: flex; align-items: center; gap: 10px; padding: 10px 14px;
@@ -749,6 +767,10 @@ a { color: var(--pur-alt); }
 .cb-col { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
 .cb-row--mine .cb-col { align-items: flex-end; }
 .cb-author { font-size: 11px; font-weight: 600; color: var(--tx2); padding-left: 4px; }
+.cb-author--link, .comment-author-link { text-decoration: none; color: inherit; }
+.cb-author--link { color: var(--tx2); }
+.cb-author--link:hover, .comment-author-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+.cb-avatar-link, .comment-avatar-link { display: inline-flex; flex: none; border-radius: 50%; }
 .cb { padding: 9px 13px; font-size: 14.5px; line-height: 1.38; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 18px 18px 18px 6px; background: var(--surface); border: 1px solid var(--border); color: var(--tx); -webkit-touch-callout: none; }
 .cb--mine { background: var(--pur); color: #fff; border-color: transparent; border-radius: 18px 18px 6px 18px; }
 .cb--held { opacity: 0.55; }
@@ -1057,13 +1079,7 @@ textarea.input--ios { min-height: 120px; }
 .poll-card h2 { margin: 0; font-size: 15px; font-weight: 600; }
 .poll-foot { font-size: 11px; color: var(--tx2); }
 
-/* LinkedIn from the app (Oct 22 2026, LinkedInCta.jsx): the I'm-attending card on Home and "Share on LinkedIn". */
-.li-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--border); }
-.li-card .share-app-ico { width: 44px; height: 44px; border-radius: 12px; flex: none; }
-.li-card-title { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.3; }
-.li-card-sub { margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: var(--tx2); }
-.li-points { flex: none; padding: 4px 9px; border-radius: 999px; background: var(--pur-tint); color: var(--pur-alt); font-size: 13px; font-weight: 800; }
-.li-card-btn { background: #0A66C2; border-color: #0A66C2; color: #fff; }
+/* LinkedIn from the app (Oct 22 2026, LinkedInCta.jsx): the Profile row and "Share on LinkedIn". */
 .list-row .share-app-ico { width: 34px; height: 34px; border-radius: 10px; box-shadow: none; flex: none; }
 .list-row .share-app-ico svg { width: 18px; height: 18px; }
 .li-share-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid color-mix(in srgb, #0A66C2 55%, transparent); background: color-mix(in srgb, #0A66C2 14%, transparent); color: var(--tx); font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; }
@@ -1446,6 +1462,7 @@ textarea.input--ios { min-height: 120px; }
   .pinned-bar { left: 96px; }
   .home-dock { left: 96px; bottom: 0; padding-bottom: var(--safe-bottom); }
   .page--home-bars { padding-bottom: 100px; }
+  .page--home-bars-2 { padding-bottom: 156px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1676,3 +1693,38 @@ textarea.input--ios { min-height: 120px; }
 /* Session page: the chat isn't open yet (lib/sessionChat.js). */
 .session-chat-soon { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0; padding: 4px 0; font-size: 12.5px; font-weight: 600; color: var(--tx2); }
 .session-chat-soon svg { width: 15px; height: 15px; }
+
+/* ---------- Help & SOS (Help.jsx, StaffSos.jsx; Oct 22 2026) ---------- */
+.sos-banner { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: var(--r-card); border: 2px solid var(--red); background: color-mix(in srgb, var(--red) 10%, var(--surface)); }
+.sos-banner-ico { flex: none; width: 26px; height: 26px; color: var(--red); }
+.sos-banner-title { margin: 0; font-size: 16px; font-weight: 800; color: var(--red); }
+.sos-banner-text { margin: 2px 0 0; font-size: 14px; line-height: 1.4; }
+.sos-911 { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--red); border-color: transparent; color: #fff; font-weight: 800; text-decoration: none; }
+.sos-911 svg { width: 18px; height: 18px; }
+.sos-lifebuoy { width: 20px; height: 20px; color: var(--red); }
+.sos-field { border: 0; margin: 0; padding: 0; min-width: 0; }
+.sos-field legend { margin-bottom: 8px; padding: 0; }
+.sos-places { margin-top: -6px; }
+.sos-places .chip { font-size: 12.5px; }
+.btn.sos-send { background: var(--red); color: #fff; border-color: transparent; }
+.sos-sent { display: flex; align-items: center; gap: 8px; margin: 0; padding: 12px 14px; border-radius: var(--r-control); font-weight: 700; background: color-mix(in srgb, #2fbf71 16%, var(--surface)); border: 1px solid color-mix(in srgb, #2fbf71 45%, transparent); }
+.sos-sent svg { width: 18px; height: 18px; color: #2fbf71; flex: none; }
+.sos-steps { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; flex-wrap: wrap; }
+.sos-steps li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; font-size: 12.5px; font-weight: 700; color: var(--tx2); background: var(--elevated); }
+.sos-steps li.is-done { color: var(--tx); }
+.sos-step-dot { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--rule); }
+.sos-steps li.is-done .sos-step-dot { background: var(--pur); border-color: transparent; color: #fff; }
+.sos-step-dot svg { width: 12px; height: 12px; }
+.sos-msg { display: flex; flex-direction: column; gap: 2px; max-width: 88%; padding: 10px 12px; border-radius: 14px; background: var(--elevated); }
+.sos-msg p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sos-msg--me, .sos-msg--mine { align-self: flex-end; background: var(--pur-tint); }
+.sos-msg--staff:not(.sos-msg--mine) { align-self: flex-start; border: 1px solid color-mix(in srgb, var(--pur) 40%, transparent); }
+.sos-msg--them { align-self: flex-start; }
+.sos-thread { display: flex; flex-direction: column; }
+.composer-bar.sos-reply { padding: 8px 0 0; background: none; border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.sos-pill { flex: none; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 800; background: var(--elevated); color: var(--tx2); }
+.sos-pill--open { background: var(--red); color: #fff; }
+.sos-pill--acknowledged { background: var(--pur-tint); color: var(--pur-alt); }
+.sos-count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--red); color: #fff; font-size: 12px; font-weight: 800; }
+.sos-row { align-items: flex-start; padding: 12px 14px; }
+.sos-row--new { border-color: color-mix(in srgb, var(--red) 55%, transparent); }

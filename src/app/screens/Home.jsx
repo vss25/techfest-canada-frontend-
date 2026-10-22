@@ -8,7 +8,7 @@ import { useOrganisations } from "../lib/orgs";
 import { content, flag, liveFlags, optionalText, text } from "../lib/content";
 import { markActivitySeen, refreshActivity, refreshFeed, social, bookmarks } from "../lib/social";
 import { notificationItems, unreadCount } from "../lib/notifications";
-import { countdownTarget, EVENT_END, parts, shortCountdown, showsSessionHero, torontoDate, twoDigits } from "../lib/time";
+import { countdownTarget, EVENT_END, parts, shortCountdown, showsSessionHero, twoDigits } from "../lib/time";
 import { fileURL, FEATURES } from "../lib/config";
 import { safeHref, useNow } from "../lib/ui";
 import { Avatar, Button, IconButton, Spinner } from "../components/ui";
@@ -21,7 +21,8 @@ import PostCard from "../components/PostCard";
 import Composer from "../components/Composer";
 import Coachmark from "../components/Coachmark";
 import { GetPassCard } from "../components/PassesSheet";
-import { AttendingCard } from "../components/LinkedInCta";
+import FeedCta from "../components/FeedCta";
+import { useFeedCtas } from "../lib/useFeedCtas";
 import { FeaturedRow, OrgGrid, PartnerSheet } from "../components/Orgs";
 import BrandMark from "../components/BrandMark";
 
@@ -31,10 +32,11 @@ import BrandMark from "../components/BrandMark";
    next with its Polls and Q&A), the first-day checklist,
    Speakers and Organisations (Featured Partners in one row and
    the first two rows of In attendance, Oct 21 2026), then the
-   feed. The "What's on your mind?" bar starts docked above the
-   tab bar; once the feed reaches the top of the screen it moves
-   to the top, and on the festival days the bottom shows the
-   session on now / next (Oct 22 2026). The TTFC mark sits
+   feed, with "Earn points" cards placed in it (never first). The
+   "What's on your mind?" bar starts docked above the tab bar; once
+   the feed reaches the top of the screen it moves to the top. The
+   status bar above them always shows the time to the doors, the
+   session on now / next, or thank you (Oct 22 2026). The TTFC mark sits
    in the middle of the top row (a tap pops it and scrolls to the
    top) and the divider under the hero is in the logo's colours
    (Oct 20 2026).
@@ -129,34 +131,65 @@ function Checklist({ steps, onDismiss }) {
   );
 }
 
-/** The festival days (Oct 26–27, Toronto): the Now / Next bar shows; before and after, it doesn't. */
-const FESTIVAL_DAYS = [torontoDate(26).getTime(), torontoDate(28).getTime()];
 const placeOf = (stage) => roomOf(stage) || String(stage || "").split(" · ")[0] || "Centre Stage";
 
-/** The session on now (main stage first) or, between sessions, the next one; null outside the festival days. */
-function nowBarPick(now, c) {
-  if (now < FESTIVAL_DAYS[0] || now >= FESTIVAL_DAYS[1]) return null;
-  return heroSession(now, c);
+/**
+ * What the status bar above the tab bar says (Oct 22 2026, the organiser: "the bottom bar showing the current
+ * session status isn't appearing"): until the doors open, the time to the doors; then the session on now (main
+ * stage first) or the next one; after the last session, thank you. → { kind, … } or null (no agenda yet).
+ */
+function statusPick(now, c) {
+  // Until the doors open: the countdown (the hero's target, so the two always agree).
+  const doors = countdownTarget().getTime();
+  if (now < doors) return { kind: "countdown", left: doors - now };
+  const pick = c.sessions.length ? heroSession(now, c) : null;
+  if (pick) return { kind: pick.isOn ? "now" : "next", session: pick.session };
+  if (!c.sessions.length && now < EVENT_END.getTime()) return null;
+  return { kind: "after" };
 }
 
-/** Bottom status bar once the feed is pinned (the iOS mini-bar): "Now · title · room · ends 10:45", or
-    "Next: 11:00 · title · room"; a tap opens the session. */
-function NowBar({ pick, now, on }) {
-  const s = pick?.session;
-  if (!s) return null;
-  const nextDay = !pick.isOn && new Date(s.start).toDateString() !== new Date(now).toDateString();
+/** "03d 22h 49m to the doors" (under an hour: "49m to the doors"); minutes, so it changes once a minute. */
+function doorsLine(left) {
+  const p = parts(Math.max(0, left));
+  if (left < 3600000) return `${Math.max(1, p.m)}m to the doors`;
+  return `${twoDigits(p.d)}d ${twoDigits(p.h)}h ${twoDigits(p.m)}m to the doors`;
+}
+
+/** The bar above the tab bar on Home (the iOS mini-bar), always there; it rides above the docked composer. */
+function StatusBar({ pick, now, raised }) {
+  if (!pick) return null;
+  const cls = "mini-bar now-bar status-bar pressable" + (raised ? " is-raised" : "");
+  const chevron = <ChevronRight aria-hidden="true" style={{ width: 16, height: 16, color: "var(--tx2)", flex: "none" }} />;
+  if (pick.kind === "countdown") {
+    return (
+      <Link to="/schedule" className={cls} aria-label={`${doorsLine(pick.left)}. Opens the schedule`}>
+        <span className="now-bar-text"><span className="figure ellipsis status-doors">{doorsLine(pick.left)}</span></span>
+        {chevron}
+      </Link>
+    );
+  }
+  if (pick.kind === "after") {
+    return (
+      <Link to="/schedule" className={cls} aria-label="Thank you for being at TTFC 2026. Opens the schedule">
+        <span className="now-bar-text"><span className="ellipsis">Thank you for being at TTFC 2026</span></span>
+        {chevron}
+      </Link>
+    );
+  }
+  const s = pick.session;
+  const isOn = pick.kind === "now";
+  const nextDay = !isOn && new Date(s.start).toDateString() !== new Date(now).toDateString();
   return (
-    <Link to={`/session/${encodeURIComponent(s.id)}`} className={"mini-bar now-bar pressable" + (on ? " is-on" : "")}
-      aria-hidden={!on} inert={!on}
-      aria-label={`${pick.isOn ? "On now" : "Next"}: ${s.title}, ${placeOf(s.stage)}, ${pick.isOn ? `ends ${s.endTime}` : `starts ${s.startTime}`}. Opens the session`}>
-      {pick.isOn
+    <Link to={`/session/${encodeURIComponent(s.id)}`} className={cls}
+      aria-label={`${isOn ? "On now" : "Next"}: ${s.title}, ${placeOf(s.stage)}, ${isOn ? `ends ${s.endTime}` : `starts ${s.startTime}`}. Opens the session`}>
+      {isOn
         ? <span className="now-bar-tag"><span className="live-dot" aria-hidden="true" />Now</span>
         : <span className="now-bar-tag now-bar-tag--next">Next{nextDay ? ` ${s.day === 2 ? "Tue" : "Mon"}` : ""} {s.startTime}</span>}
       <span className="now-bar-text">
         <span className="ellipsis">{s.title}</span>
-        <span className="tiny muted ellipsis">{placeOf(s.stage)}{pick.isOn ? ` · ends ${s.endTime}` : ""}</span>
+        <span className="tiny muted ellipsis">{placeOf(s.stage)}{isOn ? ` · ends ${s.endTime}` : ""}</span>
       </span>
-      <ChevronRight aria-hidden="true" style={{ width: 16, height: 16, color: "var(--tx2)", flex: "none" }} />
+      {chevron}
     </Link>
   );
 }
@@ -253,10 +286,11 @@ export default function Home() {
     if (location.state?.compose) navigate(location.pathname + location.search, { replace: true, state: null });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // "What's on your mind?" sits docked above the tab bar until the feed reaches the top of the screen, then
-  // pins to the top (and the Now / Next bar takes the bottom). Both bars stay mounted and slide, so nothing
-  // in the feed moves; Reduce Motion makes the switch instant (app.css).
+  // pins to the top. The status bar (countdown / Now / Next / thank you) is always above it. The bars stay
+  // mounted and slide, so nothing in the feed moves; Reduce Motion makes the switch instant (app.css).
   const [pinned, setPinned] = useState(false);
   const topBar = useRef(null);
+  const dock = useRef(null);
   const [checklistHidden, setChecklistHidden] = useState(() => local.get(CHECKLIST_KEY) === "1");
   const sentinel = useRef(null);
   const signedIn = isSignedIn(a);
@@ -291,17 +325,21 @@ export default function Home() {
     };
   }, []);
 
-  // Toasts and the coachmark sit above whichever Home bar is at the bottom (app.css --home-bars).
-  const bottomBar = (!pinned && canPostNow(signedIn, ct, a)) || (pinned && !!nowBarPick(now, c));
+  // The status bar is always there; the docked composer sits under it until the feed is pinned. Toasts and the
+  // coachmark go above both (app.css --home-bars).
+  const status = statusPick(now, c);
+  const docked = !pinned && canPostNow(signedIn, ct, a);
+  const barsHeight = (status ? 60 : 0) + (docked ? 56 : 0);
   useEffect(() => {
     const root = document.documentElement.style;
-    root.setProperty("--home-bars", bottomBar ? "64px" : "0px");
-    return () => root.removeProperty("--home-bars");
-  }, [bottomBar]);
+    root.setProperty("--home-bars", `${barsHeight}px`);
+    // The status bar rides exactly the docked composer's height above the tab bar.
+    if (dock.current?.offsetHeight) root.setProperty("--home-dock-h", `${dock.current.offsetHeight}px`);
+    return () => { root.removeProperty("--home-bars"); root.removeProperty("--home-dock-h"); };
+  }, [barsHeight]);
 
   const flags = liveFlags(ct);
   const pick = showsSessionHero(new Date(now)) ? heroSession(now, c) : null;
-  const nowPick = nowBarPick(now, c);
   const items = signedIn ? notificationItems({ social: s, cms: c, auth: a, now }) : [];
   const unread = unreadCount(items, s.readNotifs);
   const canPost = canPostNow(signedIn, ct, a);
@@ -309,6 +347,8 @@ export default function Home() {
   const announcementLink = safeHref(optionalText(ct, "home.announcement_link"));
   const faces = featuredSpeakers(now, 3, c);
   const posts = s.feed.filter((p) => !s.blocked.includes(p.authorId));
+  // "Earn points" cards in the feed: never first, a shuffle that stays put for the day (lib/feedCtas.js).
+  const feed = useFeedCtas(posts, now);
   const greeting = me?.name ? firstName(me.name) : "";
 
   const linkedin = !!(me?.linkedinUrl || a.user?.linkedinUrl);
@@ -335,7 +375,7 @@ export default function Home() {
   );
 
   return (
-    <div className={"page" + (canPost || nowPick ? " page--home-bars" : "")}>
+    <div className={"page" + (canPost ? " page--home-bars page--home-bars-2" : " page--home-bars")}>
       <div ref={topBar} className={"pinned-bar" + (pinned ? " is-on" : "")} aria-hidden={!pinned} inert={!pinned}>
         <div className="inner">
           {canPost ? <div style={{ flex: 1 }}>{composePrompt(true)}</div> : <b style={{ flex: 1, paddingLeft: 16 }}>The TTFC feed</b>}
@@ -380,7 +420,6 @@ export default function Home() {
 
         <div className="pad stack">
           {showChecklist && <Checklist steps={steps} onDismiss={() => { local.set(CHECKLIST_KEY, "1"); setChecklistHidden(true); }} />}
-          <AttendingCard />
           <Link to="/network/speakers" className="speakers-tile card-link pressable" aria-label="See all speakers">
             <span className="row" style={{ gap: 8, fontWeight: 600, fontSize: 16 }}><PeopleFill />Speakers</span>
             <span className="row" style={{ marginTop: 14 }}>
@@ -407,17 +446,21 @@ export default function Home() {
               <p>{s.feedError ? "Couldn't load the feed. Pull down or come back in a moment." : text(ct, "feed.empty", "Be the first to post. Everyone at TTFC will see it.")}</p>
             </div>
           ) : (
-            <div className="column stack-sm">{posts.map((p) => <PostCard key={p.id} post={p} />)}</div>
+            <div className="column stack-sm">
+              {feed.items.map((x) => (x.type === "post"
+                ? <PostCard key={x.post.id} post={x.post} />
+                : <FeedCta key={`cta-${x.key}`} ctaKey={x.key} rules={feed.rules} liveSession={feed.liveSession} onDismiss={feed.dismiss} />))}
+            </div>
           )}
         </section>
       </main>
 
       {canPost && (
-        <div className={"home-dock" + (pinned ? "" : " is-on")} aria-hidden={pinned} inert={pinned}>
+        <div ref={dock} className={"home-dock" + (pinned ? "" : " is-on")} aria-hidden={pinned} inert={pinned}>
           <div className="inner">{composePrompt(true)}</div>
         </div>
       )}
-      <NowBar pick={nowPick} now={now} on={pinned} />
+      <StatusBar pick={status} now={now} raised={docked} />
       {composer && canPost && <Composer onClose={() => setComposer(false)} />}
       <Coachmark id="home" title="Your TTFC home" message="What's on, then the feed. Scroll down for posts; discussions and groups are in Chats." icon={HomeIcon} />
     </div>

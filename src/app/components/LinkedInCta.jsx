@@ -8,9 +8,9 @@ import { AppMark } from "./PostShareSheet";
 
 /* =========================================================
    LinkedIn from the app (Oct 22 2026):
-   • "Tell your network you're attending · +50 points": a card on
-     Home until their I'm-attending post is confirmed, a row on
-     Profile. It opens the website's I'm-attending page for this
+   • "Tell your network you're attending · +50 points": a row on
+     Profile (the feed has it as an "Earn points" card since Oct 22
+     2026: FeedCta.jsx). It opens the website's I'm-attending page for this
      person (GET app/attending-link), where "Post to LinkedIn"
      posts it and earns the points.
    • "Share on LinkedIn" on a session chat (the session's discussion)
@@ -26,29 +26,6 @@ const POINTS_NOTE = "Points are added when you post with Post to LinkedIn.";
 function useAttendingPosted() {
   const { me } = useStore(points);
   return pointsDone(me, "linkedin.attending") > 0 || attendingPostedHint();
-}
-
-/** Home: the card, until they've posted. */
-export function AttendingCard() {
-  const a = useStore(auth);
-  const signedIn = isSignedIn(a);
-  const posted = useAttendingPosted();
-  const show = signedIn && !posted;
-  useEffect(() => { if (show) prefetchAttending(); }, [show]);
-  if (!show) return null;
-  return (
-    <section className="li-card" aria-labelledby="li-card-h">
-      <div className="row" style={{ gap: 12, alignItems: "flex-start" }}>
-        <AppMark id="linkedin" />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h2 id="li-card-h" className="li-card-title">Tell your network you're attending</h2>
-          <p className="li-card-sub">Make your “I’m attending TTFC 2026” image and post it on LinkedIn. {POINTS_NOTE}</p>
-        </div>
-        <span className="li-points figure">+50</span>
-      </div>
-      <button type="button" className="btn btn-primary btn-block li-card-btn pressable" onClick={openAttending}>Post on LinkedIn</button>
-    </section>
-  );
 }
 
 /** Profile: the same as a row (done once posted). */

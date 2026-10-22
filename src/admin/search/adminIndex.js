@@ -59,6 +59,7 @@ const KEYWORDS = {
   "app/digest": ["what you missed", "digest", "summary email", "missed activity", "5 pm email", "activity email", "unsubscribe"],
   "app/rights": ["permissions", "rights matrix", "who can message", "connection requests", "posting", "share contact"],
   "app/broadcast": ["push", "notification", "notify", "announce", "send to everyone", "personal notification"],
+  "app/sos": ["sos", "help", "emergency", "urgent", "medical", "safety", "lost", "accessibility", "help request"],
   "app/audit": ["history", "log", "who changed", "audit trail"],
   staff: ["team", "admins", "volunteers", "add staff", "management", "access level"],
   "email-tracking": ["opens", "clicks", "bounces", "deliverability"],

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Check, CheckCheck, Clock, Reply } from "lucide-react";
 import { listTime } from "../lib/time";
 import { READ_BLUE, RECEIPT_LABEL } from "../lib/receipts";
@@ -46,14 +47,17 @@ function useLongPress(enabled) {
 }
 
 /** `receipt`: lib/receipts receiptOf(message), for your own 1:1 messages ("held" shows the held line instead). */
-export function ChatBubble({ text, mine, author, avatarUrl, timestamp, quote, held, receipt, onReply, menu }) {
+/** `authorTo`: where the author's name and photo go (lib/avatar.js authorPath); plain when it's null. */
+export function ChatBubble({ text, mine, author, avatarUrl, authorTo, timestamp, quote, held, receipt, onReply, menu }) {
   const items = (menu || []).filter(Boolean);
   const [press, anchor, close] = useLongPress(!mine && items.length > 0);
   return (
     <div className={mine ? "cb-row cb-row--mine" : "cb-row"}>
-      {!mine && author && <Avatar name={author} src={avatarUrl} size={28} />}
+      {!mine && author && (authorTo
+        ? <Link to={authorTo} className="cb-avatar-link" aria-label={`${author}'s profile`} tabIndex={-1}><Avatar name={author} src={avatarUrl} size={28} /></Link>
+        : <Avatar name={author} src={avatarUrl} size={28} />)}
       <div className="cb-col">
-        {!mine && author && <span className="cb-author">{author}</span>}
+        {!mine && author && (authorTo ? <Link to={authorTo} className="cb-author cb-author--link">{author}</Link> : <span className="cb-author">{author}</span>)}
         <div className={"cb" + (mine ? " cb--mine" : "") + (held ? " cb--held" : "")} {...press}>
           {quote && <span className="cb-quote"><span>{quote}</span></span>}
           {text}

@@ -21,3 +21,18 @@ export function avatarFor(item, people = []) {
 
 /** The server's avatar URL is the person's own upload (/api/files/avatar/…), not a speaker photo it filled in. */
 export const isUploadedAvatar = (url) => /\/api\/files\/avatar\//.test(String(url || "")) || /^(data|blob):/.test(String(url || ""));
+
+/**
+ * Where tapping an author's name or photo goes (Oct 22 2026, the organiser: "make their names clickable in the
+ * comment section"): you → your profile; a speaker (authorSpeakerId on comments, discussions, replies and group
+ * messages) → their speaker page; anyone else → their profile. Someone you blocked, or no id: nowhere (plain text).
+ * `people`: false when the directory is off.
+ */
+export function authorPath(item, { meId = "", blocked = [], people = true } = {}) {
+  const id = String(item?.authorId || item?.userId || item?.author?.id || "");
+  if (!id || blocked.includes(id)) return null;
+  if (meId && id === String(meId)) return "/profile";
+  const speaker = item?.authorSpeakerId || item?.speakerId;
+  if (speaker) return `/speakers/${encodeURIComponent(speaker)}`;
+  return people ? `/people/${encodeURIComponent(id)}` : null;
+}

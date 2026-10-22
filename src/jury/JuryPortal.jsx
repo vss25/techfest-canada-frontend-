@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { KeyRound, LogOut, UserRound } from "lucide-react";
+import { LogOut, UserRound } from "lucide-react";
 import "./jury.css";
-import { SIGNED_OUT_EVENT, clearJuryToken, getJuryToken, jury, setJuryToken } from "./api";
+import { SIGNED_OUT_EVENT, clearJuryToken, getJuryToken, jury } from "./api";
 import SignIn from "./SignIn";
 import Home from "./Home";
 import Nominee from "./Nominee";
@@ -63,48 +63,11 @@ function useLightPage() {
   }, []);
 }
 
-function AccountDialog({ open, onClose, me, onSignOut, onToast }) {
-  const [pw, setPw] = useState("");
-  const [pw2, setPw2] = useState("");
-  const [current, setCurrent] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const needsCurrent = me?.juror?.hasPassword && me?.signedInWith === "password";
-  const save = async (e) => {
-    e.preventDefault();
-    if (pw !== pw2) { setError("The two passwords don't match."); return; }
-    setBusy(true); setError("");
-    try {
-      const r = await jury.post("/password", { password: pw, currentPassword: needsCurrent ? current : undefined });
-      setJuryToken(r.token);
-      setPw(""); setPw2(""); setCurrent("");
-      onToast(me?.juror?.hasPassword ? "Password changed. Other devices are signed out." : "Password set. You can now sign in with it.");
-      onClose(true);
-    } catch (err) { setError(err.message); } finally { setBusy(false); }
-  };
+function AccountDialog({ open, onClose, me, onSignOut }) {
   return (
     <Modal open={open} onClose={() => onClose(false)} title={me?.juror?.name || "Your account"} description={me?.juror?.email}
       footer={<Button icon={LogOut} onClick={onSignOut}>Sign out</Button>}>
-      <form onSubmit={save} className="j-form" noValidate>
-        <h3 className="j-h3">{me?.juror?.hasPassword ? "Change your password" : "Set a password"}</h3>
-        <p className="j-hint">{me?.juror?.hasPassword
-          ? "At least 10 characters. Other devices will be signed out."
-          : "Optional: you can always sign in with an emailed code instead. At least 10 characters."}</p>
-        {needsCurrent && (
-          <>
-            <label className="j-label" htmlFor="j-cur">Current password</label>
-            <input id="j-cur" className="j-input" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
-          </>
-        )}
-        <label className="j-label" htmlFor="j-new">New password</label>
-        <input id="j-new" className="j-input" type="password" autoComplete="new-password" minLength={10} value={pw} onChange={(e) => setPw(e.target.value)} />
-        <label className="j-label" htmlFor="j-new2">New password again</label>
-        <input id="j-new2" className="j-input" type="password" autoComplete="new-password" minLength={10} value={pw2} onChange={(e) => setPw2(e.target.value)} />
-        {error && <p className="j-error" role="alert">{error}</p>}
-        <Button type="submit" variant="primary" icon={KeyRound} loading={busy} disabled={pw.length < 10 || !pw2 || (needsCurrent && !current)}>
-          {me?.juror?.hasPassword ? "Change password" : "Set password"}
-        </Button>
-      </form>
+      <p className="j-hint">You sign in with a one-time 6-digit code sent to this email address. There's no password to remember.</p>
     </Modal>
   );
 }
@@ -201,7 +164,7 @@ export default function JuryPortal() {
         <p>The Catalyst Awards at The Tech Festival Canada 2026 · Questions? <a href="mailto:enquire@thetechfestival.com">enquire@thetechfestival.com</a></p>
       </footer>
 
-      <AccountDialog open={account} me={me} onSignOut={signOut} onToast={setToast}
+      <AccountDialog open={account} me={me} onSignOut={signOut}
         onClose={(changed) => { setAccount(false); if (changed) loadMe(); }} />
       <Toast message={toast} onDone={clearToast} />
     </div>

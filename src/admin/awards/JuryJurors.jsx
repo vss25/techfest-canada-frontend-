@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  BellRing, CalendarClock, CheckCircle2, ExternalLink, Gavel, KeyRound, Lock, Mail, MailCheck, Pencil, Search, ShieldAlert, Trash2, UserPlus, Users,
+  BellRing, CalendarClock, CheckCircle2, ExternalLink, Gavel, Lock, Mail, MailCheck, Pencil, Search, ShieldAlert, Trash2, UserPlus, Users,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
 import {
-  Badge, Banner, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, IconButton, Input, LoadingState, Modal, PageHeader, PasswordInput,
+  Badge, Banner, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, IconButton, Input, LoadingState, Modal, PageHeader,
   StatTile, Switch, TableWrap,
 } from "../ui";
 import { ago, day, when } from "../format";
@@ -22,8 +22,8 @@ import { ProgressBar, StateBadge, StatusBadge } from "./juryBadges";
    awards and rank it objectively … The jury will be allocated
    startups to evaluate by the admin itself."
      - Jurors: add, edit, switch off, remove (management); staff can
-       look. An optional password, else they sign in with a 6-digit
-       code by email at thetechfestival.com/awards/jury-admin.
+       look. They sign in with a one-time 6-digit code by email at
+       thetechfestival.com/awards/jury-admin (no passwords, Oct 22).
      - Each juror's progress, last active, invite and reminders;
        "Send invite" / "Send reminder" (management clicks only),
        "Remind everyone with work left".
@@ -37,7 +37,7 @@ function JurorForm({ juror, onClose, onSaved }) {
   const isNew = !juror?.id;
   const [f, setF] = useState(() => ({
     name: juror?.name || "", email: juror?.email || "", organisation: juror?.organisation || "", title: juror?.title || "",
-    active: juror?.active !== false, password: "", clearPassword: false,
+    active: juror?.active !== false,
   }));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -46,8 +46,6 @@ function JurorForm({ juror, onClose, onSaved }) {
     e?.preventDefault();
     setBusy(true); setErr("");
     const body = { name: f.name, email: f.email, organisation: f.organisation, title: f.title, active: f.active };
-    if (f.password) body.password = f.password;
-    else if (!isNew && f.clearPassword) body.password = null;
     try {
       const r = isNew ? await api.post(`${JURY}/jurors`, body) : await api.patch(`${JURY}/jurors/${juror.id}`, body);
       toast.success(isNew ? `${r.juror.name} added to the jury` : "Juror saved");
@@ -57,7 +55,7 @@ function JurorForm({ juror, onClose, onSaved }) {
   };
   return (
     <Modal open onClose={() => { if (!busy) onClose(); }} title={isNew ? "Add a juror" : `Edit ${juror.name}`}
-      description={isNew ? "They'll sign in with this email. Nothing is sent until you click Send invite." : "Changing the email, the password or switching them off signs them out."}
+      description={isNew ? "They'll sign in with this email. Nothing is sent until you click Send invite." : "Changing the email or switching them off signs them out."}
       footer={<>
         <Button onClick={onClose} disabled={busy}>Cancel</Button>
         <Button variant="primary" loading={busy} onClick={save} disabled={!f.name.trim() || !f.email.trim()}>{isNew ? "Add juror" : "Save"}</Button>
@@ -71,13 +69,6 @@ function JurorForm({ juror, onClose, onSaved }) {
           <Field label="Organisation">{(id) => <Input id={id} value={f.organisation} onChange={(e) => set("organisation", e.target.value)} />}</Field>
           <Field label="Title">{(id) => <Input id={id} value={f.title} onChange={(e) => set("title", e.target.value)} />}</Field>
         </div>
-        <Field label={isNew ? "Password (optional)" : juror.hasPassword ? "New password (optional)" : "Password (optional)"}
-          hint={isNew || !juror.hasPassword ? "Leave it empty and they sign in with a 6-digit code by email. At least 10 characters. Tell them yourself: it's never emailed." : "Leave it empty to keep the current one."}>
-          {(id) => <PasswordInput id={id} value={f.password} onChange={(e) => set("password", e.target.value)} disabled={f.clearPassword} />}
-        </Field>
-        {!isNew && juror.hasPassword && (
-          <Switch checked={f.clearPassword} onChange={(v) => set("clearPassword", v)} label="Remove their password" description="They'll sign in with an emailed code instead." />
-        )}
         <Switch checked={f.active} onChange={(v) => set("active", v)} label="Can sign in" description="Off: they can't sign in or get emails; anything they submitted still counts." />
         {err && <p role="alert" className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{err}</p>}
         <button type="submit" hidden aria-hidden="true" />
@@ -97,7 +88,7 @@ function JurorDrawer({ id, onClose }) {
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-ttfc-line bg-ttfc-panel2 p-3"><p className="text-xs text-ttfc-dim">Progress</p><p className="mt-1 text-sm font-semibold">{progressText(j.progress)}</p></div>
             <div className="rounded-xl border border-ttfc-line bg-ttfc-panel2 p-3"><p className="text-xs text-ttfc-dim">Last active</p><p className="mt-1 text-sm font-semibold">{j.lastActiveAt ? ago(j.lastActiveAt) : "Never signed in"}</p></div>
-            <div className="rounded-xl border border-ttfc-line bg-ttfc-panel2 p-3"><p className="text-xs text-ttfc-dim">Signs in with</p><p className="mt-1 text-sm font-semibold">{j.hasPassword ? "Password or code" : "Emailed code"}</p></div>
+            <div className="rounded-xl border border-ttfc-line bg-ttfc-panel2 p-3"><p className="text-xs text-ttfc-dim">Signs in with</p><p className="mt-1 text-sm font-semibold">Emailed code</p></div>
           </div>
           <div>
             <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-ttfc-dim">Allocated to them ({data.rows.length})</h3>
@@ -163,7 +154,7 @@ export default function JuryJurors() {
       <PageHeader
         eyebrow={EYEBROW}
         title="Jury"
-        description="The people judging the Catalyst Awards. Jurors sign in at thetechfestival.com/awards/jury-admin with a 6-digit code by email (or a password you set) and see only the nominations you allocate to them: never anyone's contact details, never each other's scores."
+        description="The people judging the Catalyst Awards. Jurors sign in at thetechfestival.com/awards/jury-admin with a one-time 6-digit code by email and see only the nominations you allocate to them: never anyone's contact details, never each other's scores."
         actions={<>
           <a href={data?.portalUrl || PORTAL_URL} target="_blank" rel="noopener noreferrer" tabIndex={-1}><Button icon={ExternalLink}>Open the jury portal</Button></a>
           {isManagement && <Button icon={BellRing} disabled={!leftToRemind.length} onClick={() => setRemindAll(true)}>Remind everyone with work left</Button>}
@@ -211,7 +202,7 @@ export default function JuryJurors() {
                   {(r.title || r.organisation) && <span className="block truncate text-xs text-ttfc-dim">{[r.title, r.organisation].filter(Boolean).join(", ")}</span>}
                   <span className="mt-1 flex flex-wrap gap-1">
                     {!r.active && <Badge tone="warn">Switched off</Badge>}
-                    {r.hasPassword ? <Badge icon={KeyRound}>Password set</Badge> : <Badge icon={Mail}>Code by email</Badge>}
+                    <Badge icon={Mail}>Code by email</Badge>
                   </span>
                 </td>
                 <td className="min-w-[220px]">

@@ -30,6 +30,7 @@ const KEYWORDS = {
   "content/speakers": ["speaker list", "bios", "featured speakers", "photos", "headshots"],
   "content/partners": ["partner logos", "organisations", "organizations", "partners page"],
   "content/sponsors": ["featured partners", "paid partners", "sponsor descriptions"],
+  "content/organisations": ["attending organisations", "in attendance", "companies", "organisation logos", "merge organisations", "duplicate companies", "hide organisation"],
   "content/alumni-logos": ["our team includes alumni from", "alumni strip"],
   "content/sponsor-marquee": ["scrolling logos", "logo strip"],
   "content/home-sponsors": ["homepage sponsors"],

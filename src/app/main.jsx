@@ -9,6 +9,7 @@ import { desktopGated } from "./lib/desktopGate";
 import { track } from "../lib/pwaEvents";
 import { recordInviteVisit } from "./lib/inviteVisit";
 import { API } from "./lib/config";
+import { installViewportFix } from "./lib/viewport";
 import App from "./App.jsx";
 
 // Computers get the "made for your phone" page instead of the app (lib/desktopGate.js).
@@ -29,6 +30,8 @@ if (gated) {
 } else if (new URLSearchParams(window.location.search).get("source") === "desktop-qr") {
   track("pwa_qr_open", { path: window.location.pathname.slice(0, 120) });
 }
+// The docked tab bar stays on the bottom edge after the keyboard or a filter picker closes (lib/viewport.js).
+if (!gated) installViewportFix();
 
 // A computer that already has the worker (an installed desktop app) keeps getting updates;
 // other computers don't download the app for offline use.

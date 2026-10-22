@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft, X, Loader2 } from "lucide-react";
 import { useStore } from "../lib/store";
 import { cx, initialsOf, toasts, dismissToast } from "../lib/ui";
+import { lockScroll } from "../lib/viewport";
 
 /* =========================================================
    Shared UI pieces (the web versions of the iOS Surface,
@@ -12,11 +13,12 @@ import { cx, initialsOf, toasts, dismissToast } from "../lib/ui";
 
 // ---------- Avatar ----------
 
-/** People: the iOS AvatarView monogram tile. Speakers: `round` (SpeakerAvatar). */
+/** People: the iOS AvatarView monogram tile. Speakers: `round` (SpeakerAvatar). A plain image request (no CORS:
+    nothing draws these on a canvas, and in CORS mode the Sanity CDN refuses any origin missing from its list with a
+    403); a picture that fails shows the initials until its address changes (a CMS refresh), not for good. */
 export function Avatar({ name, src, size = 40, tile = false, round = false, ring = false, tierRing = false, badge = null, label }) {
-  const [failed, setFailed] = useState(false);
-  const show = src && !failed;
-  const crossOrigin = show && /^https?:/.test(src) ? "anonymous" : undefined;
+  const [failed, setFailed] = useState("");
+  const show = src && failed !== src;
   // iOS BrandShape.avatar: a 14pt corner at every size (small tiles read as circles).
   const radius = round ? "50%" : Math.min(14, size / 2);
   return (
@@ -28,7 +30,7 @@ export function Avatar({ name, src, size = 40, tile = false, round = false, ring
         aria-label={label}
         aria-hidden={label ? undefined : true}
       >
-        {show ? <img src={src} alt="" loading="lazy" decoding="async" crossOrigin={crossOrigin} onError={() => setFailed(true)} /> : initialsOf(name)}
+        {show ? <img src={src} alt="" loading="lazy" decoding="async" onError={() => setFailed(src)} /> : initialsOf(name)}
       </span>
       {/* iOS MemberAvatar: speakers and exhibitors get a purple ring around the tile. */}
       {tierRing && <span className="avatar-tier-ring" aria-hidden="true" style={{ borderWidth: Math.max(2, size * 0.05) }} />}
@@ -183,7 +185,8 @@ export function Sheet({ open, onClose, title, children, full, medium, footer, ac
     const prev = document.activeElement;
     const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    // overflow:hidden on <html>, counted; the scroll and the docked tab bar are put back on close (lib/viewport.js).
+    const unlock = lockScroll();
     const t = setTimeout(() => {
       const el = ref.current;
       if (!el || el.contains(document.activeElement)) return;
@@ -192,8 +195,8 @@ export function Sheet({ open, onClose, title, children, full, medium, footer, ac
     return () => {
       clearTimeout(t);
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-      prev?.focus?.();
+      unlock();
+      prev?.focus?.({ preventScroll: true });
     };
   }, [open, onClose]);
   if (!open) return null;
@@ -244,7 +247,9 @@ export function Popover({ anchor, onClose, children, width = 280, label }) {
     el.focus();
     const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
     const onDown = (e) => { if (!el.contains(e.target)) onClose?.(); };
-    const onScroll = () => onClose?.();
+    // A real scroll closes it; the 1px layout nudge after a keyboard closes (lib/viewport.js settle) doesn't.
+    const y0 = window.scrollY;
+    const onScroll = () => { if (Math.abs(window.scrollY - y0) > 4) onClose?.(); };
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", onDown, true);
     window.addEventListener("scroll", onScroll, { passive: true });

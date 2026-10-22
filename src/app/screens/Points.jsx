@@ -25,13 +25,15 @@ const STAT_ICON = {
 };
 
 export default function Points() {
-  const { me, board, error } = useStore(points);
+  const { me, board, error, savingPrefs } = useStore(points);
   const s = useStore(social);
 
   useEffect(() => { refreshPoints(true); loadLeaderboard(); }, []);
 
+  // Flips on the first tap (lib/points.js): disabled while it saves, back as it was with an alert if it couldn't.
   const toggle = async (show) => {
-    try { await setLeaderboardHidden(!show); } catch (e) { showAlert("Couldn't save", e.message); }
+    if (savingPrefs) return;
+    try { await setLeaderboardHidden(!show); } catch (e) { showAlert("Couldn't save", e.message || "Try again."); }
   };
 
   // This browser's own numbers for these two (what the profile used to show).
@@ -101,7 +103,7 @@ export default function Points() {
                 </div>
               )) : <p className="small muted" style={{ margin: 0 }}>Be the first on the board: save a session or make a connection.</p>}
               <Switch label="Show me on the leaderboard" description="Your name, organisation and points. You keep earning either way."
-                checked={!me.hideFromLeaderboard} onChange={toggle} />
+                checked={!me.hideFromLeaderboard} onChange={toggle} disabled={savingPrefs} />
             </section>
           </>
         )}

@@ -3,8 +3,11 @@
    ---------------------------------------------------------
    The server decides who is what: GET /auth/me `profileTag`
    ({ key, label } or null; backend services/profileTag.js):
-   VIP > Media > Speaker > Staff > Volunteer > any other pass
-   holder (their pass, or "Exhibitor") > nothing. Only the
+   Media > Speaker > Staff > Volunteer > any other pass holder
+   (their pass, or "Exhibitor") > nothing. No one is labelled
+   VIP (Oct 21 2026, the organiser: "Don't label anyone as
+   VIP"): a VIP gets their next tag, and an older server's
+   "vip" shows nothing. Only the
    Profile screen uses it: a glow at the screen's edge in the
    colour (upper half), and a pill under the name / job title /
    company (colour and an icon, no words), so door staff can tell
@@ -15,7 +18,6 @@
 
 /** Background and text colour of each tag (text on the pill; the glow uses `bg`). */
 export const PROFILE_TAG_COLORS = Object.freeze({
-  vip: { bg: "#F5C400", text: "#3D2E00", rgb: "245, 196, 0" },
   media: { bg: "#0B3D91", text: "#FFFFFF", rgb: "11, 61, 145" },
   speaker: { bg: "#D01F2F", text: "#FFFFFF", rgb: "208, 31, 47" },
   staff: { bg: "#7B2FD0", text: "#FFFFFF", rgb: "123, 47, 208" },
@@ -23,10 +25,10 @@ export const PROFILE_TAG_COLORS = Object.freeze({
   pass: { bg: "#18A957", text: "#052E16", rgb: "24, 169, 87" },
 });
 
-const FIXED = { vip: "VIP", media: "Media", speaker: "Speaker", staff: "Staff", volunteer: "Volunteer" };
+const FIXED = { media: "Media", speaker: "Speaker", staff: "Staff", volunteer: "Volunteer" };
 
 /** { key, label, text, colors } for the screen, or null (no pass and no tag, or an older server). `text`: the pill's
-    name for screen readers ("Pass colour: <text>"; the pill shows no words): "VIP" … "Volunteer", a pass with " Pass"
+    name for screen readers ("Pass colour: <text>"; the pill shows no words): "Media" … "Volunteer", a pass with " Pass"
     ("Power Pass"), "Exhibitor" as it is. */
 export function profileTagView(tag) {
   const key = String(tag?.key || "");

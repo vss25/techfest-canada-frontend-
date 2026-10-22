@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Check, X, UserRoundCheck, Hand, Mic, Store, BadgeCheck, Star, Package, CalendarClock, Sparkles, Wifi, ScanLine } from "lucide-react";
+import { Check, X, UserRoundCheck, Hand, Mic, Store, BadgeCheck, Package, CalendarClock, Sparkles, Wifi, ScanLine } from "lucide-react";
 import { fileURL, FEATURES } from "../lib/config";
 import { canMessage, canRequest, connectionWith, respondConnection, social, withdrawConnection } from "../lib/social";
 import { acceptWithSharing, connectWithSharing } from "../lib/myCard";
@@ -93,8 +93,9 @@ export function ConnectedRow({ conn }) {
   );
 }
 
+/* No "VIP" (Oct 21 2026, the organiser: "Don't label anyone as VIP"): a VIP's card shows nothing extra. */
 const KIND_ICON = {
-  staff: { icon: BadgeCheck, text: "Staff" }, volunteer: { icon: Hand, text: "Volunteer" }, vip: { icon: Star, text: "VIP" }, vendor: { icon: Package, text: "Vendor" },
+  staff: { icon: BadgeCheck, text: "Staff" }, volunteer: { icon: Hand, text: "Volunteer" }, vendor: { icon: Package, text: "Vendor" },
 };
 
 /** A round icon button on Network cards (iOS NetworkIconButton). */

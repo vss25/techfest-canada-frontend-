@@ -15,6 +15,7 @@ import Speakers from "../admin/cms/Speakers";
 import AgendaAdmin from "../admin/cms/Agenda";
 import LogoCollection from "../admin/cms/LogoCollection";
 import SiteSettings from "../admin/cms/SiteSettings";
+import AttendingOrgs from "../admin/cms/AttendingOrgs";
 import AppOverview from "../admin/app/AppOverview";
 import People from "../admin/app/People";
 import Person from "../admin/app/Person";
@@ -204,6 +205,7 @@ export default function Admin() {
               <LogoCollection key="sponsors" type="partner" title="Featured Partners" singular="Featured Partner" withCategory sponsorsOnly
                 description="The paid partners: the Featured Partners row on the Partners page, and the Featured Partners section shown first in the apps' Organisations. These are the same records as on the Partners page, so the website and the apps always read one copy. Add a description and choose where each one shows." />
             } />
+            <Route path="content/organisations" element={<AttendingOrgs />} />
             <Route path="content/alumni-logos" element={
               <LogoCollection key="sponsor" type="sponsor" title="Team alumni" singular="logo" eyebrow={LOGO_STRIPS}
                 description={'The "Our team includes alumni from" logo strip on the Home and Sponsors pages. These aren\'t the paid partners: those are under Website & app › Featured Partners.'} />

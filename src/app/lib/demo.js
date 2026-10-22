@@ -3,6 +3,10 @@ import {
   accountEmailOf, cleanItems, CONTACT_KINDS, cleanValue, firstLinkedIn, keepKnown, MAX_CONTACT_ITEMS, resolveItems, SHARE_OFF_ERROR,
 } from "./contactCard";
 import { cleanSlots, cleanSpots } from "./availability";
+import { cms, dayLabel, isProgramme, roomOf, sponsorsShown } from "./cms";
+import { now as clockNow } from "./time";
+import { companyKey } from "./orgKey";
+import { sessionGetsChat, SESSION_CHAT_LEAD_MS } from "./sessionChat";
 
 /* =========================================================
    Demo backend (/app?demo=1). Answers the same routes, with the
@@ -425,6 +429,89 @@ const match = (q) => (p) => {
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* GET /api/app/organisations (contract §3): the website's partners with their logos, plus the organisations of the
+   sample people (no logo: the apps draw a monogram), one entry per key, most attendees first; the sponsors on top. */
+function demoOrganisations(s) {
+  const c = cms.get();
+  const people = new Map(); // key → { name, n }
+  for (const p of [...s.people, s.me]) {
+    const name = String(p.organization || "").trim(), k = companyKey(name);
+    if (!k || k === "ttfc" || p.onApp === false) continue;
+    const e = people.get(k) || { name, n: 0 };
+    e.n++;
+    people.set(k, e);
+  }
+  const speakers = new Map();
+  for (const sp of c.speakers) { const k = companyKey(sp.company); if (k) speakers.set(k, (speakers.get(k) || 0) + 1); }
+  const org = (p) => {
+    const key = companyKey(p.displayName);
+    return { key, name: p.displayName, logo: p.logo, logoSource: p.logo ? "website" : "", website: p.website, kind: p.category, topics: p.topics,
+      description: p.description, scale: p.scale, attendeeCount: people.get(key)?.n || 0, speakerCount: speakers.get(key) || 0, sample: !!p.sample };
+  };
+  const featured = sponsorsShown(c, { demo: true }).map(org);
+  const seen = new Set(featured.map((o) => o.key));
+  const attending = [];
+  for (const p of c.partners) {
+    const o = org(p);
+    if (p.isSponsor || !p.logo || !o.key || seen.has(o.key)) continue;
+    seen.add(o.key);
+    attending.push(o);
+  }
+  for (const [key, e] of people) {
+    if (seen.has(key)) continue;
+    seen.add(key);
+    attending.push({ key, name: e.name, logo: "", logoSource: "", website: "", kind: "", topics: [], description: "", scale: 1, attendeeCount: e.n, speakerCount: speakers.get(key) || 0 });
+  }
+  attending.sort((a, b) => b.attendeeCount - a.attendeeCount || a.name.localeCompare(b.name));
+  return { updatedAt: new Date().toISOString(), featured, attending };
+}
+
+/* Catalyst Awards (contract §6–7): fictional applications; never categories or contact details.
+   QA: /app/?demo=1&award-apps=off shows the staff switch turned off (award-apps=on: back on). */
+const DEMO_APPLICATIONS = [
+  { id: "na-1", nomineeName: "Aurora Grid Labs", nomineeType: "Organisation", nomineeTitle: "", nomineeOrganisation: "Aurora Grid Labs", nomineeLocation: "Toronto, ON", nomineeWebsite: "https://example.com/aurora-grid", applicantName: "Priya Raman", selfNominated: false, submittedAt: "2026-08-14T15:20:00.000Z" },
+  { id: "na-2", nomineeName: "Dr. Leila Haddad", nomineeType: "Individual", nomineeTitle: "Chief Scientist", nomineeOrganisation: "Lakeview University AI Lab", nomineeLocation: "Waterloo, ON", nomineeWebsite: "", applicantName: "Leila Haddad", selfNominated: true, submittedAt: "2026-08-02T12:00:00.000Z" },
+  { id: "na-3", nomineeName: "Project Northstar", nomineeType: "Team / Project", nomineeTitle: "", nomineeOrganisation: "Maple Health Network", nomineeLocation: "Montréal, QC", nomineeWebsite: "https://example.com/northstar", applicantName: "Sofia Martins", selfNominated: false, submittedAt: "2026-08-21T09:45:00.000Z" },
+  { id: "na-4", nomineeName: "Qubit Labs", nomineeType: "Organisation", nomineeTitle: "", nomineeOrganisation: "Qubit Labs", nomineeLocation: "Vancouver, BC", nomineeWebsite: "https://example.com/qubit-labs", applicantName: "Marcus Chen", selfNominated: true, submittedAt: "2026-07-30T18:10:00.000Z" },
+  { id: "na-5", nomineeName: "Samuel Okoye", nomineeType: "Individual", nomineeTitle: "Founder & CEO", nomineeOrganisation: "VoltGrid Energy", nomineeLocation: "Calgary, AB", nomineeWebsite: "", applicantName: "Grace Kim", selfNominated: false, submittedAt: "2026-08-09T20:30:00.000Z" },
+  { id: "na-6", nomineeName: "CyberShield Response Team", nomineeType: "Team / Project", nomineeTitle: "", nomineeOrganisation: "CyberShield", nomineeLocation: "Ottawa, ON", nomineeWebsite: "https://example.com/cybershield", applicantName: "Tom Becker", selfNominated: false, submittedAt: "2026-08-27T14:05:00.000Z" },
+].sort((a, b) => a.nomineeName.localeCompare(b.nomineeName));
+const DEMO_AWARD_CATEGORIES = 4;
+const APPS_OFF_KEY = "ttfc.demo.awardAppsOff";
+try {
+  const q = new URLSearchParams(window.location.search).get("award-apps");
+  if (q === "off") localStorage.setItem(APPS_OFF_KEY, "1");
+  if (q === "on") localStorage.removeItem(APPS_OFF_KEY);
+} catch { /* no window (tests) */ }
+const awardAppsOn = () => { try { return localStorage.getItem(APPS_OFF_KEY) !== "1"; } catch { return true; } };
+
+/* Session chats (contract §8), as the server's job makes them: from 30 min before a session starts (not meals or
+   breaks), one group per session with everyone registered and a welcome message; it stays after the session.
+   QA: a fake clock, e.g. /app/?demo=1&ttfc-now=2026-10-26T10:10:00-04:00. */
+function syncSessionGroups(s) {
+  const at = clockNow().getTime();
+  for (const x of cms.get().sessions) {
+    if (!isProgramme(x) || !sessionGetsChat(x) || at < x.start - SESSION_CHAT_LEAD_MS) continue;
+    if (s.groups.some((g) => g.sessionId === x.id) || at >= x.end) continue;
+    const room = roomOf(x.stage) || x.stage;
+    const joined = s.registrations.includes(x.id);
+    const createdAt = new Date(x.start - SESSION_CHAT_LEAD_MS).toISOString();
+    const g = { id: `sg-${x.id}`, name: x.title.slice(0, 60), description: `Session chat · ${dayLabel(x)} ${x.startTime} · ${room}`, tags: [],
+      ownerId: "ttfc", ownerName: "TTFC", memberCount: 12 + (x.title.length % 30) + (joined ? 1 : 0), joined, status: "approved", sessionId: x.id, system: true, createdAt };
+    s.groups.push(g);
+    s.groupMessages.push({ id: uid(), groupId: g.id, authorId: "ttfc", authorName: "TTFC", body: `Welcome to the ${x.title} chat. It starts at ${x.startTime} in ${room}.`, createdAt });
+  }
+}
+/** Registering after the chat exists adds you (until the session ends); un-registering before it starts takes you out. */
+function syncSessionMember(s, sessionId, registered) {
+  const g = s.groups.find((x) => x.sessionId === sessionId);
+  const x = cms.get().sessions.find((y) => y.id === sessionId);
+  if (!g || !x) return;
+  const at = clockNow().getTime();
+  if (registered && !g.joined && at < x.end) { g.joined = true; g.memberCount++; }
+  if (!registered && g.joined && at < x.start) { g.joined = false; g.memberCount = Math.max(0, g.memberCount - 1); }
+}
+
 const DEMO_LEVELS = [
   { key: "explorer", name: "Explorer", min: 0 }, { key: "connector", name: "Connector", min: 100 },
   { key: "insider", name: "Insider", min: 300 }, { key: "trailblazer", name: "Trailblazer", min: 600 },
@@ -511,6 +598,13 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
   if (is("POST", "app/block")) { s.blocks = [...new Set([...(s.blocks || []), String(body.userId)])]; return done({ ok: true }); }
   if ((m = is("DELETE", "app/block/:id"))) { s.blocks = (s.blocks || []).filter((x) => x !== m.id); return done({ ok: true }); }
   if (is("POST", "app/report")) return { ok: true };
+  if (is("GET", "app/organisations")) return done(demoOrganisations(s));
+  if (is("GET", "app/awards/summary")) return { categoriesCount: DEMO_AWARD_CATEGORIES, applicationsCount: DEMO_APPLICATIONS.length, enabled: awardAppsOn() };
+  if (is("GET", "app/awards/applications")) {
+    return awardAppsOn()
+      ? { enabled: true, total: DEMO_APPLICATIONS.length, categoriesCount: DEMO_AWARD_CATEGORIES, items: DEMO_APPLICATIONS }
+      : { enabled: false, total: 0, categoriesCount: DEMO_AWARD_CATEGORIES, items: [] };
+  }
 
   // Points (services/points.js on the backend)
   if (is("GET", "social/points/me")) return done(demoPoints(s));
@@ -704,6 +798,7 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     const on = !s.registrations.includes(m.id);
     s.registrations = on ? [...s.registrations, m.id] : s.registrations.filter((x) => x !== m.id);
     s.counts[m.id] = Math.max(0, (s.counts[m.id] || 0) + (on ? 1 : -1));
+    syncSessionMember(s, m.id, on);
     return done({ registered: on, count: s.counts[m.id] });
   }
   if ((m = is("GET", "social/sessions/:id/questions"))) {
@@ -779,7 +874,13 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     s.replies.push(r);
     return done({ ...r, mine: true, replyCount: s.replies.filter((x) => x.discussionId === m.id).length });
   }
-  if (is("GET", "community/groups")) return done([...s.groups].sort((a, b) => b.memberCount - a.memberCount).map(groupDTO));
+  if (is("GET", "community/groups")) { syncSessionGroups(s); return done([...s.groups].sort((a, b) => b.memberCount - a.memberCount).map(groupDTO)); }
+  if ((m = is("GET", "community/groups/session/:sessionId"))) {
+    syncSessionGroups(s);
+    const g = s.groups.find((x) => x.sessionId === m.sessionId);
+    if (!g) throw new ApiError("Not found", 404);
+    return done(groupDTO(g));
+  }
   if (is("POST", "community/groups")) {
     const g = { id: "g-" + uid(), name: String(body.name || "").trim(), description: String(body.description || "").trim(), tags: body.tags || [], ownerId: ME, ownerName: s.me.name, memberCount: 1, joined: true, status: "pending", createdAt: new Date().toISOString() };
     if (g.name.length < 3) throw new ApiError("Give the group a name (3 characters or more).", 400);
@@ -789,6 +890,7 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
   if ((m = is("POST", "community/groups/:id/join"))) {
     const g = s.groups.find((x) => x.id === m.id);
     if (!g) throw new ApiError("Not found", 404);
+    if (g.sessionId && !g.joined && !s.registrations.includes(g.sessionId)) throw new ApiError("Save this session to your agenda to join its chat.", 403);
     g.joined = !g.joined;
     g.memberCount += g.joined ? 1 : -1;
     return done(groupDTO(g));

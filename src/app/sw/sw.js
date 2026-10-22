@@ -18,7 +18,12 @@
      switched over and reloaded at once.
    • Agenda / speakers / partners (Sanity CDN) and the public
      app content: stale-while-revalidate, so Schedule works offline.
-   • Speaker photos and logos: cache-first, capped.
+   • Speaker photos and logos: cache-first, capped. The page asks
+     for them as plain images (no CORS); the worker keeps its own
+     readable (CORS) copy when the host allows it, and otherwise
+     just passes the picture through. Saving a copy can never
+     fail the picture (Oct 21 2026: speaker photos went missing
+     in long lists in Safari; see imageFirst).
    • Anything signed in, and every write: network only, never cached.
    • Message notifications (Web Push, lib/webpush.js): shown
      unless a window is open on that chat; a tap focuses an open
@@ -30,7 +35,7 @@ const VERSION = self.__TTFC_VERSION__;
 const SHELL = `ttfc-app-shell-${VERSION}`;
 const DATA = "ttfc-app-data-v1";
 const IMAGES = "ttfc-app-images-v1";
-const MAX_IMAGES = 220;
+const MAX_IMAGES = 600; // every speaker photo and logo with room to spare (~40 KB each)
 const KEEP = new Set([SHELL, DATA, IMAGES]);
 // Written by pages that manage their own updates (lib/pwa.js). Not "ttfc-app-" so no old worker deletes it.
 const META = "ttfc-meta";
@@ -172,7 +177,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (isImage(url)) {
-    event.respondWith(cacheFirst(req, IMAGES, MAX_IMAGES));
+    event.respondWith(imageFirst(req, event));
   }
 });
 
@@ -191,26 +196,68 @@ async function shell(req) {
   try { return await network; } catch { return offlinePage(); }
 }
 
-async function cacheFirst(req, name, max) {
+async function cacheFirst(req, name) {
   const cache = await caches.open(name);
   const hit = await cache.match(req, { ignoreVary: true });
   if (hit) return hit;
+  let res;
   try {
-    const res = await fetch(req);
-    // Only readable (CORS) responses: opaque ones would eat the storage quota.
-    if (res.ok && res.type !== "opaque") {
-      await cache.put(req, res.clone());
-      if (max) trim(cache, max);
-    }
-    // A script from a build that's no longer deployed (a page still open from
-    // before an update): reload onto the current version instead of breaking.
-    if (res.status === 404 && /^\/assets\/.+\.js$/.test(new URL(req.url).pathname)) {
-      return new Response("self.location.reload();export default null;", { status: 200, headers: { "Content-Type": "text/javascript" } });
-    }
-    return res;
+    res = await fetch(req);
   } catch {
     return new Response("", { status: 504, statusText: "Offline" });
   }
+  // Only readable (CORS) responses: opaque ones would eat the storage quota. A copy that can't be
+  // saved (storage full) never fails the request itself.
+  if (res.ok && res.type !== "opaque") cache.put(req, res.clone()).catch(() => {});
+  // A script from a build that's no longer deployed (a page still open from
+  // before an update): reload onto the current version instead of breaking.
+  if (res.status === 404 && /^\/assets\/.+\.js$/.test(new URL(req.url).pathname)) {
+    return new Response("self.location.reload();export default null;", { status: 200, headers: { "Content-Type": "text/javascript" } });
+  }
+  return res;
+}
+
+/*
+ * Speaker photos and logos (cdn.sanity.io, Cloudinary, our avatars). What went wrong before (Oct 21 2026: "going to
+ * the Speakers page from Home isn't showing images", Safari / the Home Screen app): each picture was handed to the
+ * page only after `await cache.put(…)`, and every save was followed by a trim of the 220-picture cache (keys() and
+ * deletes). Safari runs one cache's operations one after another, so once the cache was full (logos + photos + older
+ * framings, a few days of use) the ~90 photos of the speakers list queued behind each other: measured in the iOS 26.5
+ * simulator, none of 91 photos showed after 5 s and all arrived together after 10–20 s (Chrome does them in parallel,
+ * so it looked fine there; the speaker page, one photo, was quick). A save that failed also turned a downloaded
+ * picture into an error. Now: the cached copy if there is one; else a CORS fetch (a readable copy that can be kept,
+ * with the page's Accept header so the CDN still sends AVIF / WebP), returned at once and saved in the background
+ * with one trim a few seconds later; if CORS isn't allowed or fails, the page's own plain request, passed straight
+ * through. Measured the same way: all 91 photos in under 1 s, cache full or empty.
+ */
+async function imageFirst(req, event) {
+  let cache = null;
+  try {
+    cache = await caches.open(IMAGES);
+    const hit = await cache.match(req.url, { ignoreVary: true });
+    if (hit) return hit;
+  } catch { cache = null; /* storage unavailable: the network */ }
+  let res = null;
+  try {
+    const accept = req.headers.get("Accept");
+    res = await fetch(new Request(req.url, { mode: "cors", credentials: "omit", headers: accept ? { Accept: accept } : {} }));
+  } catch { res = null; /* CORS not allowed for this origin, or offline */ }
+  if (res && res.ok) {
+    if (cache) event.waitUntil(cache.put(req.url, res.clone()).then(() => trimSoon(cache)).catch(() => {}));
+    return res;
+  }
+  try {
+    return await fetch(req);
+  } catch {
+    return res || new Response("", { status: 504, statusText: "Offline" });
+  }
+}
+
+let trimTimer = 0;
+/** One trim a few seconds after the last save, not one per picture. */
+function trimSoon(cache) {
+  clearTimeout(trimTimer);
+  trimTimer = setTimeout(() => { trim(cache, MAX_IMAGES).catch(() => {}); }, 4000);
 }
 
 async function staleWhileRevalidate(req, name) {

@@ -199,6 +199,9 @@ const CATEGORY_LABEL = {
   partnersAndSupporters: "Partners",
 };
 export const partnerKey = (s) => (String(s || "").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)[0] || "");
+/** A partner category (GET /api/app/organisations `kind`: "governmentPartners") as the kind filters say it
+    ("Government"); "other" is a supporter; "" (not a website partner) has no label. */
+export const categoryLabelOf = (kind) => (!kind ? "" : CATEGORY_LABEL[kind] || (Object.values(CATEGORY_LABEL).includes(kind) ? kind : "Supporters"));
 
 function mapPartners(raw) {
   return (raw || []).map((p) => {
@@ -432,29 +435,6 @@ export function featuredSpeakers(at, limit = 3, state = cms.get()) {
   const fill = state.speakers.filter((s) => s.isKeynote && s.photo && !seen.has(s.id));
   const more = state.speakers.filter((s) => s.photo && !seen.has(s.id) && !s.isKeynote);
   return [...picked, ...fill, ...more].slice(0, limit);
-}
-
-/** Home's Organisations tile: sponsors first, then speakers' organisations next, topped up from the partner list. */
-export function featuredOrganisations(at, limit = 3, state = cms.get()) {
-  const partners = state.partners.filter((p) => p.logo);
-  const match = (company) => {
-    const k = partnerKey(company);
-    return k ? partners.find((p) => partnerKey(p.name) === k || partnerKey(p.displayName) === k) : null;
-  };
-  const picked = sponsorsOf(state).filter((p) => p.logo).slice(0, limit);
-  if (picked.length === limit) return picked;
-  for (const s of state.sessions.filter((x) => isProgramme(x) && x.start > at).sort((a, b) => a.start - b.start)) {
-    for (const id of s.speakerIds) {
-      const p = match(speakerById(id, state)?.company);
-      if (p && !picked.includes(p)) picked.push(p);
-      if (picked.length === limit) return picked;
-    }
-  }
-  for (const p of partners) {
-    if (!picked.includes(p)) picked.push(p);
-    if (picked.length === limit) break;
-  }
-  return picked;
 }
 
 /** 1 or 2 on the festival days (Toronto), else null. */

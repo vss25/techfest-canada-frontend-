@@ -73,7 +73,7 @@ export function InstallNudges() {
   if (!p.canPrompt || bannerHidden) return null;
   const hide = () => { local.set(BANNER_KEY, "1"); setBannerHidden(true); };
   return (
-    <div className="pad" style={{ position: "fixed", left: 0, right: 0, bottom: "calc(var(--tab-space) + 10px)", zIndex: 26 }}>
+    <div className="pad" style={{ position: "fixed", left: 0, right: 0, bottom: "calc(var(--tab-space) + 8px)", zIndex: 26 }}>
       <div className="banner column" role="region" aria-label="Install the app" style={{ maxWidth: 608 }}>
         <img src="/app/icons/icon-96.png" alt="" width="40" height="40" className="app-icon" />
         <div style={{ flex: 1, minWidth: 0 }}><b>Install the TTFC app</b><p>Full screen, quick to open, schedule offline.</p></div>

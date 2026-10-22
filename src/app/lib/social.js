@@ -351,6 +351,16 @@ export async function markActivitySeen(section) {
 
 export const fetchGroupMembers = (id) => get(`community/groups/${encodeURIComponent(id)}/members`);
 
+/** A session's chat (its group, with `joined`; lib/sessionChat.js), or null when there's none yet or you can't see it. */
+export async function fetchSessionGroup(sessionId) {
+  try {
+    const g = await get(`community/groups/session/${encodeURIComponent(sessionId)}`);
+    return g && g.id ? g : null;
+  } catch {
+    return null;
+  }
+}
+
 /** The Chats tab's one red dot: something came in since you last looked. */
 export function chatsHasNew(s) {
   if (s.threads.some((t) => t.unread > 0 && !t.lastMessage?.sentByMe && Date.parse(t.lastMessage?.createdAt) > s.chatsSeenAt)) return true;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Clock, Reply } from "lucide-react";
+import { Check, CheckCheck, Clock, Reply } from "lucide-react";
 import { listTime } from "../lib/time";
+import { READ_BLUE, RECEIPT_LABEL } from "../lib/receipts";
 import { givenName } from "../lib/ui";
 import { whoIsTyping } from "../lib/typing";
 import { Avatar, Popover } from "./ui";
@@ -9,8 +10,21 @@ import { Avatar, Popover } from "./ui";
    One bubble style for 1:1 chat, group chat and discussion
    threads (iOS ChatBubble), the "Alex is typing" line (iOS
    TypingIndicator) and a long-press menu (iOS contextMenu)
-   for Report / Block on other people's messages.
+   for Report / Block on other people's messages. Your own
+   1:1 messages carry read receipts by the time (lib/receipts).
 ========================================================= */
+
+/** ✓ sent · ✓✓ delivered (grey) · ✓✓ read (blue) · a clock while held for review. */
+export function Ticks({ state }) {
+  if (!state) return null;
+  const Icon = state === "held" ? Clock : state === "sent" ? Check : CheckCheck;
+  return (
+    <span className={"ticks ticks--" + state} role="img" aria-label={RECEIPT_LABEL[state]} title={RECEIPT_LABEL[state]}
+      style={state === "read" ? { color: READ_BLUE } : undefined}>
+      <Icon aria-hidden="true" />
+    </span>
+  );
+}
 
 /** Long press (or right-click) opens a small menu by the bubble. items: [{ label, icon, onClick, danger }]. */
 function useLongPress(enabled) {
@@ -31,7 +45,8 @@ function useLongPress(enabled) {
   return [handlers, anchor, () => setAnchor(null)];
 }
 
-export function ChatBubble({ text, mine, author, avatarUrl, timestamp, quote, held, onReply, menu }) {
+/** `receipt`: lib/receipts receiptOf(message), for your own 1:1 messages ("held" shows the held line instead). */
+export function ChatBubble({ text, mine, author, avatarUrl, timestamp, quote, held, receipt, onReply, menu }) {
   const items = (menu || []).filter(Boolean);
   const [press, anchor, close] = useLongPress(!mine && items.length > 0);
   return (
@@ -45,7 +60,9 @@ export function ChatBubble({ text, mine, author, avatarUrl, timestamp, quote, he
         </div>
         <span className="cb-meta">
           {held && <span className="row" style={{ gap: 3 }}><Clock aria-hidden="true" />Held for review</span>}
-          {timestamp && <time dateTime={timestamp}>{listTime(timestamp)}</time>}
+          {timestamp && (receipt && receipt !== "held" ? (
+            <span className="cb-time"><time dateTime={timestamp}>{listTime(timestamp)}</time><Ticks state={receipt} /></span>
+          ) : <time dateTime={timestamp}>{listTime(timestamp)}</time>)}
           {onReply && <button type="button" className="cb-reply pressable" onClick={onReply} aria-label={`Reply to ${author || "this message"}`}><Reply aria-hidden="true" />Reply</button>}
         </span>
       </div>

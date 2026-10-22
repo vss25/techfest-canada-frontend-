@@ -2,6 +2,7 @@ import { ApiError } from "./api";
 import {
   accountEmailOf, cleanItems, CONTACT_KINDS, cleanValue, firstLinkedIn, keepKnown, MAX_CONTACT_ITEMS, resolveItems, SHARE_OFF_ERROR,
 } from "./contactCard";
+import { cleanSlots, cleanSpots } from "./availability";
 
 /* =========================================================
    Demo backend (/app?demo=1). Answers the same routes, with the
@@ -23,9 +24,29 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 function person(id, name, jobTitle, organization, extra = {}) {
   return {
     id, name, jobTitle, organization, linkedinUrl: "", country: "Canada", topics: [], tier: "", tagline: "",
-    availabilitySlots: [], meetingSpot: "", avatarUrl: "", onApp: true, acceptsMessages: true, acceptsRequests: true,
+    availabilitySlots: [], availabilitySpots: {}, meetingSpot: "", avatarUrl: "", onApp: true, acceptsMessages: true, acceptsRequests: true,
     kind: "", booth: "", types: [], ...extra,
   };
+}
+
+/* Free to meet (lib/availability.js): a whole day, a range split by place, a place on one block. */
+const DEMO_AVAILABILITY = {
+  "p-hannah": { availabilitySlots: ["d1-08", "d1-10", "d1-12", "d1-14", "d1-16", "d1-18"], availabilitySpots: {}, meetingSpot: "Harbour Ballroom foyer" },
+  "p-priya": { availabilitySlots: ["d1-10", "d1-12", "d2-12", "d2-14", "d2-16", "d2-18"], availabilitySpots: { "d1-10": "Coffee bar" }, meetingSpot: "Expo floor" },
+  "p-marcus": {
+    availabilitySlots: ["d2-12", "d2-14", "d2-16", "d2-18"], meetingSpot: "",
+    availabilitySpots: { "d2-12": "Harbour Ballroom foyer", "d2-14": "Harbour Ballroom foyer", "d2-16": "Expo floor", "d2-18": "Expo floor" },
+  },
+};
+
+/* Your messages' ticks (lib/receipts.js): read (Hannah), delivered (Priya), sent (Daniel hasn't opened
+   the app since), held for review (Sofia). Times in the future show once they've passed. */
+function demoReceiptMessages() {
+  return [
+    { id: uid(), peer: "p-priya", body: "Hi Priya, I'll be by the Expo floor on Day 1 from 10. Coffee?", sentByMe: true, status: "approved", createdAt: hoursAgo(3), deliveredAt: hoursAgo(2.9), readAt: null },
+    { id: uid(), peer: "p-daniel", body: "Great meeting you at the AI panel! Sending the deck shortly.", sentByMe: true, status: "approved", createdAt: hoursAgo(1.5), deliveredAt: null, readAt: null },
+    { id: uid(), peer: "p-sofia", body: "Hi Sofia, here's the deck I mentioned: example.com/deck", sentByMe: true, status: "held", createdAt: hoursAgo(0.5), deliveredAt: null, readAt: null },
+  ];
 }
 
 /* Contact cards (all fake: example.com, 555 numbers). `theirShare` on a connection =
@@ -103,7 +124,7 @@ function seed() {
     person("p-olivia", "Olivia Chen", "Deputy Minister", "Department of Digital Affairs", { kind: "vip", types: ["vip"], acceptsMessages: false, acceptsRequests: false }),
     person("guest:sam", "Sam Rivera", "Operations Director", "Lakeshore Insurance", { onApp: false }),
   ];
-  for (const p of people) p.contactItems = DEMO_CARDS[p.id] || [];
+  for (const p of people) { p.contactItems = DEMO_CARDS[p.id] || []; Object.assign(p, DEMO_AVAILABILITY[p.id] || {}); }
   return {
     me: {
       ...person(ME, "Alex Morgan", "Director of Innovation", "Northwind Bank", {
@@ -121,10 +142,12 @@ function seed() {
     ],
     messages: [
       { id: uid(), peer: "p-hannah", body: "Hey! Loved your question at the AI panel. Coffee tomorrow?", sentByMe: false, createdAt: hoursAgo(18) },
-      { id: uid(), peer: "p-hannah", body: "Absolutely. Centre Stage cafe at 9?", sentByMe: true, createdAt: hoursAgo(17) },
+      { id: uid(), peer: "p-hannah", body: "Absolutely. Centre Stage cafe at 9?", sentByMe: true, createdAt: hoursAgo(17), deliveredAt: hoursAgo(17), readAt: hoursAgo(16.2) },
       { id: uid(), peer: "p-hannah", body: "Perfect, see you then!", sentByMe: false, createdAt: hoursAgo(16) },
       { id: uid(), peer: "p-lucas", body: "Hi Alex, saw you're into grid-scale AI. We're piloting forecasting with two utilities. Worth a chat at the festival?", sentByMe: false, createdAt: hoursAgo(5) },
+      ...demoReceiptMessages(),
     ],
+    receiptsV: 1,
     readAt: {},
     posts: [
       { id: "post-1", authorId: "org", authorName: "The Tech Festival Canada", authorTitle: "Organizers", authorOrg: "AtlasLink Markets", authorTier: "", kind: "announcement",
@@ -227,6 +250,7 @@ function load() {
   try { state = JSON.parse(localStorage.getItem(KEY)) || null; } catch { state = null; }
   if (!state) state = seed();
   if (!state.cardV) addContactCards(state);
+  if (!state.receiptsV) addReceiptsAndPlaces(state);
   if (cardHook) { applyCardHook(state, cardHook); cardHook = ""; save(); }
   if (passHook) { applyPassHook(state, passHook); passHook = ""; save(); }
   return state;
@@ -245,6 +269,17 @@ function addContactCards(s) {
   }
   s.cardV = 1;
 }
+/** Demo data saved before ticks and per-time places: the sample availability, older messages of yours as read. */
+function addReceiptsAndPlaces(s) {
+  for (const p of s.people) {
+    if (!p.availabilitySpots) p.availabilitySpots = {};
+    if (DEMO_AVAILABILITY[p.id] && !(p.availabilitySlots || []).length) Object.assign(p, DEMO_AVAILABILITY[p.id]);
+  }
+  if (!s.me.availabilitySpots) s.me.availabilitySpots = {};
+  for (const m of s.messages) if (m.sentByMe && m.deliveredAt === undefined) { m.deliveredAt = m.createdAt; m.readAt = m.createdAt; }
+  s.messages.push(...demoReceiptMessages());
+  s.receiptsV = 1;
+}
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* full */ }
 }
@@ -254,6 +289,13 @@ export function resetDemo() {
 }
 
 // ---------- DTOs ----------
+
+/** A 1:1 message as GET /social/messages/:id sends it; planned delivery / read times show once they've passed. */
+const passed = (t) => (t && Date.parse(t) <= Date.now() ? t : null);
+const messageDTO = (x) => ({
+  id: x.id, body: x.body, sentByMe: x.sentByMe, status: x.status || "approved", createdAt: x.createdAt,
+  deliveredAt: x.sentByMe ? passed(x.deliveredAt) : x.createdAt, readAt: x.sentByMe ? passed(x.readAt) : null,
+});
 
 /** A person as others see them: never their contact card items (only what they share, via shareFields). */
 const card = (id) => {
@@ -494,8 +536,12 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     profileTag: s.tickets?.length ? { key: "pass", label: "Connect" } : null });
   if (is("POST", "auth/refresh")) return { token: DEMO_TOKEN };
   if (is("PATCH", "profile")) {
-    const allowed = ["name", "jobTitle", "organization", "linkedinUrl", "country", "tagline", "topics", "meetingSpot", "availabilitySlots"];
+    const allowed = ["name", "jobTitle", "organization", "linkedinUrl", "country", "tagline", "topics", "meetingSpot", "availabilitySlots", "availabilitySpots"];
     for (const k of allowed) if (body[k] !== undefined) s.me[k] = body[k];
+    // As the server keeps them (contract B): known blocks; places only for picked blocks.
+    s.me.availabilitySlots = cleanSlots(s.me.availabilitySlots);
+    s.me.availabilitySpots = cleanSpots(s.me.availabilitySpots, s.me.availabilitySlots);
+    s.me.meetingSpot = String(s.me.meetingSpot || "").trim().slice(0, 160);
     if (body.linkedinUrl !== undefined) syncLinkedInItem(s.me, String(body.linkedinUrl || "").trim());
     return done({ success: true, user: { ...card(ME), email: s.me.email } });
   }
@@ -585,13 +631,14 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
       const list = s.messages.filter((x) => x.peer === id);
       const last = list[list.length - 1];
       const seen = s.readAt[id] || 0;
-      return { user: card(id), lastMessage: { body: last.body, sentByMe: last.sentByMe, createdAt: last.createdAt }, unread: list.filter((x) => !x.sentByMe && Date.parse(x.createdAt) > seen).length };
+      const { id: _id, ...lastMessage } = messageDTO(last);
+      return { user: card(id), lastMessage, unread: list.filter((x) => !x.sentByMe && Date.parse(x.createdAt) > seen).length };
     }).sort((a, b) => Date.parse(b.lastMessage.createdAt) - Date.parse(a.lastMessage.createdAt)));
   }
   if ((m = is("GET", "social/messages/:id"))) {
-    s.readAt[m.id] = Date.now();
+    if (q.get("peek") !== "1") s.readAt[m.id] = Date.now(); // ?peek=1: delivered only, not read
     const since = q.get("since") ? Date.parse(q.get("since")) : 0;
-    return done(s.messages.filter((x) => x.peer === m.id && Date.parse(x.createdAt) > since).map((x) => ({ id: x.id, body: x.body, sentByMe: x.sentByMe, status: "approved", createdAt: x.createdAt, readAt: null })));
+    return done(s.messages.filter((x) => x.peer === m.id && Date.parse(x.createdAt) > since).map(messageDTO));
   }
   if ((m = is("POST", "social/messages/:id"))) {
     const p = card(m.id);
@@ -599,13 +646,16 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     const connected = s.connections.some((c) => c.userId === p.id && c.status === "accepted");
     const wrote = s.messages.some((x) => x.peer === p.id && !x.sentByMe);
     if (!p.acceptsMessages && !connected && !wrote) throw new ApiError(`${p.name.split(" ")[0]} isn't taking messages in the app.`, 403);
-    const msg = { id: uid(), peer: p.id, body: String(body.body || "").slice(0, 2000), sentByMe: true, createdAt: new Date().toISOString() };
+    const now = Date.now();
+    // Their app picks it up a moment later; Hannah reads it before she answers.
+    const msg = { id: uid(), peer: p.id, body: String(body.body || "").slice(0, 2000), sentByMe: true, status: "approved", createdAt: new Date(now).toISOString(),
+      deliveredAt: new Date(now + 1500).toISOString(), readAt: p.id === "p-hannah" ? new Date(now + 4000).toISOString() : null };
     s.messages.push(msg);
     // A friendly reply a few seconds later, so the 5-second refresh can be seen working.
     if (p.id === "p-hannah") {
       setTimeout(() => { load().messages.push({ id: uid(), peer: p.id, body: "Sounds good! 👋", sentByMe: false, createdAt: new Date().toISOString() }); save(); }, 6000);
     }
-    return done({ id: msg.id, body: msg.body, sentByMe: true, status: "approved", createdAt: msg.createdAt });
+    return done(messageDTO(msg));
   }
 
   // Feed

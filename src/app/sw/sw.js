@@ -20,6 +20,9 @@
      app content: stale-while-revalidate, so Schedule works offline.
    • Speaker photos and logos: cache-first, capped.
    • Anything signed in, and every write: network only, never cached.
+   • Message notifications (Web Push, lib/webpush.js): shown
+     unless a window is open on that chat; a tap focuses an open
+     app window on the chat (/app/chat/<senderId>), else opens one.
 ========================================================= */
 
 const PRECACHE = self.__TTFC_PRECACHE__;
@@ -84,6 +87,56 @@ self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "VERSION" && event.ports && event.ports[0]) event.ports[0].postMessage({ version: VERSION });
   // "Is this page already your build?" (its entry script is in your list) → no reload needed.
   if (event.data && event.data.type === "HAS" && event.ports && event.ports[0]) event.ports[0].postMessage({ has: PRECACHE.includes(event.data.url) });
+});
+
+// ---------- Notifications ----------
+
+const NOTIFY_ICON = "/app/icons/icon-192.png";
+const NOTIFY_BADGE = "/app/icons/icon-96.png";
+
+/** The screen a push opens: its `url` (the app's own routes: /app/chat/<senderId>, /app/group/<id>…), else a chat
+    built from thread "dm.<senderId>" (or `from`), else the tab its ttfc:// link names. */
+function routeOf(d) {
+  if (typeof d.url === "string" && /^\/app\/[^/]/.test(d.url)) return d.url;
+  const sender = typeof d.thread === "string" && d.thread.startsWith("dm.") ? d.thread.slice(3) : (d.kind === "dm" && d.from) || "";
+  if (sender) return `/app/chat/${encodeURIComponent(sender)}`;
+  const tab = /^ttfc:\/\/tab\/(home|network|chats|schedule|profile)$/.exec(String(d.link || ""));
+  if (tab) return tab[1] === "home" ? "/app/" : `/app/${tab[1]}`;
+  return "/app/";
+}
+
+const windows = () => self.clients.matchAll({ type: "window", includeUncontrolled: true });
+const pathOf = (u) => { try { return new URL(u).pathname; } catch { return ""; } };
+
+self.addEventListener("push", (event) => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch { d = { body: event.data ? event.data.text() : "" }; }
+  const url = routeOf(d);
+  event.waitUntil((async () => {
+    // Someone reading that very chat sees the message arrive; no banner on top of it.
+    const open = await windows();
+    if (open.some((c) => c.focused && c.visibilityState === "visible" && pathOf(c.url) === url)) return;
+    await self.registration.showNotification(d.title || "TTFC", {
+      body: d.body || "", tag: d.thread || undefined, data: { url }, icon: NOTIFY_ICON, badge: NOTIFY_BADGE,
+    });
+  })());
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const raw = event.notification.data && event.notification.data.url;
+  const url = typeof raw === "string" && /^\/app\//.test(raw) ? raw : "/app/";
+  event.waitUntil((async () => {
+    const open = (await windows()).filter((c) => pathOf(c.url).startsWith("/app"));
+    const win = open.find((c) => c.focused) || open.find((c) => c.visibilityState === "visible") || open[0];
+    if (win) {
+      // The page moves to the chat itself (no reload): lib/webpush.js listenForNotificationTaps.
+      try { await win.focus(); } catch { /* not allowed: still told where to go */ }
+      win.postMessage({ type: "NAVIGATE", url });
+      return;
+    }
+    await self.clients.openWindow(url);
+  })());
 });
 
 const isSanityQuery = (url) => /(^|\.)apicdn\.sanity\.io$|(^|\.)api\.sanity\.io$/.test(url.hostname) && url.pathname.includes("/data/query/");

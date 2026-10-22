@@ -14,6 +14,9 @@ import { showAlert } from "../lib/ui";
 import { Avatar, Chip, Segmented, Sheet, Spinner, TopBar } from "../components/ui";
 import { ConnectionRow } from "../components/People";
 import { MoreMenu } from "../components/Safety";
+import { Ticks } from "../components/ChatBubble";
+import { PushBanner } from "../components/PushControls";
+import { receiptOf } from "../lib/receipts";
 import { SearchField } from "../components/Filters";
 import { guestAlert } from "../lib/passes";
 
@@ -28,11 +31,12 @@ import { guestAlert } from "../lib/passes";
 
 const GROUP_TAGS = [...TECH_PILLARS, ...APPLIED_SECTORS, "Networking", "Founders", "Investors"];
 
-/** iOS ChatRow: name, unread dot, "Not connected", time; the last message underneath. */
+/** iOS ChatRow: name, unread dot, "Not connected", time; the last message underneath (ticks first when it's yours). */
 function ThreadRow({ t, s }) {
   const u = t.user || {};
   const conn = connectionWith(u.id, s);
   const unread = threadUnread(t, s);
+  const receipt = receiptOf(t.lastMessage);
   return (
     <Link to={`/chat/${encodeURIComponent(u.id)}`} className="conn-card pressable">
       <Avatar name={u.name} src={fileURL(u.avatarUrl)} size={46} />
@@ -44,7 +48,10 @@ function ThreadRow({ t, s }) {
           <span className="spacer" />
           {t.lastMessage?.createdAt && <time className="row-time" dateTime={t.lastMessage.createdAt}>{listTime(t.lastMessage.createdAt)}</time>}
         </span>
-        <span className={"ellipsis" + (unread ? " bold" : " muted")} style={{ fontSize: 12 }}>{t.lastMessage?.body || "Say hello —"}</span>
+        <span className={"thread-preview" + (unread ? " bold" : " muted")}>
+          {receipt && <Ticks state={receipt} />}
+          <span className="ellipsis">{t.lastMessage?.body || "Say hello —"}</span>
+        </span>
       </span>
     </Link>
   );
@@ -337,6 +344,7 @@ export default function Chats() {
       <main id="main" className="stack" style={{ paddingTop: 8, gap: 10 }}>
         {section === "chats" && (
           <>
+            {signedIn && <PushBanner className="pad" />}
             {requestCount > 0 && (
               <div className="pad">
                 <Link to="/chats/requests" className="requests-row pressable">

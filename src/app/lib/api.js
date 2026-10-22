@@ -1,4 +1,5 @@
 import { API } from "./config";
+import { couldNotReach, reachedServer } from "./online";
 
 /* =========================================================
    JSON client for the TTFC backend (the same Render service the
@@ -49,8 +50,10 @@ export async function request(path, { method = "GET", body, auth = true, token, 
     });
   } catch (err) {
     if (err?.name === "AbortError") throw err;
+    couldNotReach();
     throw new ApiError("Can't reach the TTFC server. Check your connection and try again.", 0);
   }
+  reachedServer();
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = data?.error === "maintenance" ? data.message : (data?.message && data?.error === "closed" ? data.message : data?.error || data?.message);

@@ -8,7 +8,10 @@ import { createStore, local } from "./store";
    groups and discussions, from /api/social and /api/community.
    Polls like the apps: threads/requests every 30 s while the app
    is open, an open chat every 5 s, a group chat every 6 s.
-   Guests keep bookmarks on this device only.
+   While the app is hidden, only the chat list, and only when
+   message notifications are on (lib/webpush.js): a new message
+   then shows a notification. Guests keep bookmarks on this
+   device only.
 ========================================================= */
 
 const GUEST_BOOKMARKS = "ttfc.app.bookmarks";
@@ -54,12 +57,23 @@ const set = (patch) => social.set(patch);
 const signedIn = () => ["user", "demo"].includes(auth.get().mode);
 
 let pollTimer = null;
+// Set by lib/webpush.js (kept out of here so this file has no service-worker code).
+let pollWhileHidden = () => false;
+let onIncoming = null;
+/** `whileHidden()`: keep checking the chat list while the app is hidden; `notify(thread)`: a new message came in. */
+export function watchIncoming({ whileHidden, notify }) {
+  pollWhileHidden = whileHidden;
+  onIncoming = notify;
+}
 
 export function startSocial() {
   stopSocial();
   refreshAll();
   pollTimer = setInterval(() => {
-    if (document.visibilityState !== "visible") return;
+    if (document.visibilityState !== "visible") {
+      if (pollWhileHidden()) refreshThreads();
+      return;
+    }
     refreshThreads();
     refreshConnections();
     refreshNotifications();
@@ -229,19 +243,36 @@ export async function refreshThreads() {
   if (!signedIn()) return;
   try {
     const threads = await get("social/messages");
-    set({ threads: Array.isArray(threads) ? threads : [], threadsLoaded: true });
+    const list = Array.isArray(threads) ? threads : [];
+    const before = social.get();
+    set({ threads: list, threadsLoaded: true });
+    if (before.threadsLoaded && onIncoming) for (const t of newIncoming(before.threads, list, before)) onIncoming(t);
   } catch { set({ threadsLoaded: true }); }
 }
 
-export async function refreshMessages(userId) {
+/** Threads whose last message is theirs, unread, and newer than what the last poll had (not on the first load). */
+function newIncoming(prev, next, s) {
+  const had = new Map(prev.map((t) => [t.user?.id, Date.parse(t.lastMessage?.createdAt) || 0]));
+  return next.filter((t) => {
+    const id = t.user?.id, m = t.lastMessage;
+    if (!id || !m || m.sentByMe || !(t.unread > 0) || s.blocked.includes(id)) return false;
+    const at = Date.parse(m.createdAt) || 0;
+    return at > (had.get(id) || 0) && at > (s.chatReadAt[id] || 0);
+  });
+}
+
+/** A 1:1 thread. The server marks it read (their blue ticks) only when it's fetched without ?peek=1, so that's
+    only when the chat is open (`open`) and the app is in front; any other fetch is a peek (delivered only). */
+export async function refreshMessages(userId, { open = false } = {}) {
+  const reading = open && document.visibilityState === "visible";
   try {
-    const list = await get(`social/messages/${encodeURIComponent(userId)}`);
+    const list = await get(`social/messages/${encodeURIComponent(userId)}${reading ? "" : "?peek=1"}`);
     const s = social.get();
     set({
       messages: { ...s.messages, [userId]: list || [] },
-      threads: s.threads.map((t) => (t.user?.id === userId ? { ...t, unread: 0 } : t)),
+      threads: reading ? s.threads.map((t) => (t.user?.id === userId ? { ...t, unread: 0 } : t)) : s.threads,
     });
-    markChatRead(userId);
+    if (reading) markChatRead(userId);
   } catch { /* next round */ }
 }
 
@@ -252,7 +283,7 @@ export async function sendMessage(user, body) {
     const list = [...(s.messages[user.id] || []), m];
     const replied = s.repliedTo.includes(user.id) ? s.repliedTo : [...s.repliedTo, user.id];
     local.setJSON(REPLIED, replied);
-    const thread = { user: personById(user.id) || user, lastMessage: { body: m.body, sentByMe: true, createdAt: m.createdAt }, unread: 0 };
+    const thread = { user: personById(user.id) || user, lastMessage: { body: m.body, sentByMe: true, createdAt: m.createdAt, status: m.status, deliveredAt: m.deliveredAt ?? null, readAt: m.readAt ?? null }, unread: 0 };
     set({ messages: { ...s.messages, [user.id]: list }, repliedTo: replied, threads: [thread, ...s.threads.filter((t) => t.user?.id !== user.id)] });
     return true;
   } catch (e) { return fail(e); }

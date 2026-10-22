@@ -5,6 +5,7 @@ import { canMessage, canRequest, connectionWith, respondConnection, social, with
 import { acceptWithSharing, connectWithSharing } from "../lib/myCard";
 import { confirmDialog, cx, givenName, showAlert } from "../lib/ui";
 import { publicBadge } from "../lib/people";
+import { availabilitySummary } from "../lib/availability";
 import { Avatar } from "./ui";
 import { BubbleFill, FigureWave, PersonClock, PersonPlusFill, PhoneSlash } from "./Glyphs";
 
@@ -143,6 +144,7 @@ export function PersonCard({ person: p, state, rec, onWhy, kind }) {
   const MetaIcon = meta?.icon;
   const BadgeIcon = k === "speaker" ? Mic : k === "exhibitor" ? Store : null;
   const href = `/people/${encodeURIComponent(p.id)}`;
+  const free = availabilitySummary(p.availabilitySlots, p.availabilitySpots, p.meetingSpot);
 
   return (
     <div className="person-card">
@@ -158,10 +160,9 @@ export function PersonCard({ person: p, state, rec, onWhy, kind }) {
           </span>
           {p.organization && <span className="person-org ellipsis">{p.organization}</span>}
         </Link>
-        {(meta || p.availabilitySlots?.length > 0 || rec) && (
+        {(meta || rec) && (
           <span className="meta-icons">
             {meta && <span className="row" style={{ gap: 3 }}><MetaIcon aria-hidden="true" />{meta.text}</span>}
-            {p.availabilitySlots?.length > 0 && <CalendarClock aria-label="Free to meet" role="img" />}
             {rec && (
               <button type="button" className="dashed" onClick={(e) => onWhy?.(p, rec, e.currentTarget.getBoundingClientRect())} aria-label={`Recommended. Why ${p.name} is recommended`}>
                 <Sparkles aria-hidden="true" />Recommended
@@ -169,6 +170,8 @@ export function PersonCard({ person: p, state, rec, onWhy, kind }) {
             )}
           </span>
         )}
+        {/* Free to meet, one line without places: "Oct 26: All day · Oct 27: 12–8 PM". */}
+        {free && <span className="meta-free"><CalendarClock aria-hidden="true" /><span className="ellipsis"><span className="sr-only">Free to meet: </span>{free}</span></span>}
       </span>
       <PersonActions person={p} state={state} />
     </div>

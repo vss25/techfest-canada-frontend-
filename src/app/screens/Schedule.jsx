@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Calendar, ChevronRight, CircleDot, Map as MapIcon, TramFront, Car, Plane, Ship } from "lucide-react";
+import { Box, Calendar, ChevronRight, CircleDot, ExternalLink, Map as MapIcon, MapPinned, Navigation, TramFront, Car, Plane, Ship } from "lucide-react";
 import { useStore, session as sessionStore } from "../lib/store";
 import { cms, eventDay, highlightedSession, refreshCMS, sessionsForDay } from "../lib/cms";
 import { content, optionalText, text } from "../lib/content";
@@ -7,18 +7,21 @@ import { auth, isSignedIn } from "../lib/auth";
 import { bookmarks, refreshRegistrations, social, toggleBookmark } from "../lib/social";
 import { hourLabel } from "../lib/time";
 import { useNow } from "../lib/ui";
-import { Chip, Segmented, Spinner } from "../components/ui";
+import { Chip, Segmented, Sheet, Spinner } from "../components/ui";
 import SessionRow from "../components/SessionRow";
 import Coachmark from "../components/Coachmark";
 import { EVENT, LINKS } from "../lib/config";
 import SiteAnnouncement from "../components/SiteAnnouncement";
 import { announcement, announcementShown } from "../lib/announcement";
 import { guestAlert } from "../lib/passes";
+import { detectOS } from "../../lib/pwaPlatform";
 
 /* =========================================================
    Schedule (iOS ScheduleView): Day 1 / Day 2 / Venue, type
    filters and My Sessions, sessions under pinned hour headings,
-   a bookmark on every card. On the festival days it opens on
+   a bookmark on every card. Venue: the Westin card (opens
+   Maps), Explore the venue (Cvent's 3D room and floor plans),
+   getting here. On the festival days it opens on
    what's on now (or next). Guests are asked to get a pass
    before saving, as on iOS.
 ========================================================= */
@@ -152,6 +155,79 @@ const isApple = () => /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
 /** iOS action.openMaps: Apple Maps on Apple devices, Google Maps elsewhere. */
 const mapsURL = (q) => (isApple() ? `https://maps.apple.com/?q=${encodeURIComponent(q)}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`);
 
+/* The venue in Maps (the Westin card), as on iOS and Android: iPhone / iPad → Apple Maps; Android → the
+   geo: link (any maps app), then Google Maps if nothing took it; computers → Google Maps in a new tab. */
+const VENUE_QUERY = "The Westin Harbour Castle, 1 Harbour Square, Toronto";
+const googleMaps = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+function venueMaps() {
+  const os = detectOS();
+  if (os === "ios") return { href: `https://maps.apple.com/?q=${encodeURIComponent(VENUE_QUERY)}` };
+  if (os !== "android") return { href: googleMaps(VENUE_QUERY), target: "_blank" };
+  return {
+    href: `geo:0,0?q=${encodeURIComponent(VENUE_QUERY)}`,
+    onClick: () => {
+      // A maps app hides the page; still here after a moment → Google Maps (within the tap's 5 s window).
+      let left = false;
+      const away = () => { left = true; };
+      window.addEventListener("blur", away, { once: true });
+      document.addEventListener("visibilitychange", away, { once: true });
+      setTimeout(() => {
+        window.removeEventListener("blur", away);
+        document.removeEventListener("visibilitychange", away);
+        if (!left && document.visibilityState === "visible") window.open(googleMaps(VENUE_QUERY), "_blank", "noopener");
+      }, 1500);
+    },
+  };
+}
+
+/* Explore the venue (Cvent's own viewers for the Westin, from its Cvent listing). The 3D room can't be framed
+   by other sites, so it opens in a new tab; the floor plans embed anywhere, in a sheet, loaded only once
+   someone asks for them (Cvent sets its own cookies). */
+const WALKTHROUGH_3D = "https://pr3d.socialtables.com/room/1650904?sourceSite=ifp";
+const FLOOR_PLANS = "https://connect.socialtables.com/embed/3198/floors/248117?lang=en-US&measurementSystem=imperial";
+
+function FloorPlansSheet({ onClose }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <Sheet open onClose={onClose} title="Floor plans" full actions={{
+      left: <button type="button" className="link-btn sheet-cancel" onClick={onClose}>Close</button>,
+      right: <span />,
+    }} footer={(
+      <span className="fp-foot">
+        <span>Floor plans by Cvent</span>
+        <a className="fp-open" href={FLOOR_PLANS} target="_blank" rel="noopener noreferrer">Open in browser<ExternalLink aria-hidden="true" /></a>
+      </span>
+    )}>
+      <div className="fp-frame">
+        {!loaded && <div className="fp-loading"><Spinner label="Loading the floor plans" /></div>}
+        <iframe src={FLOOR_PLANS} title="Interactive floor plans of the Westin Harbour Castle, Convention Level" loading="lazy" allow="fullscreen"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms" referrerPolicy="strict-origin-when-cross-origin"
+          onLoad={() => setLoaded(true)} />
+      </div>
+    </Sheet>
+  );
+}
+
+function ExploreVenue() {
+  const [plans, setPlans] = useState(false);
+  return (
+    <section className="stack-sm" style={{ gap: 10 }} aria-labelledby="explore-h">
+      <h3 id="explore-h" className="eyebrow">Explore the venue</h3>
+      <a className="explore-card explore-card--3d pressable" href={WALKTHROUGH_3D} target="_blank" rel="noopener noreferrer">
+        <span className="explore-ico" aria-hidden="true"><Box /></span>
+        <span style={{ flex: 1, minWidth: 0 }}><b>Harbour Ballroom in 3D</b><span>Walk the main stage room · opens Cvent's 3D viewer</span></span>
+        <ExternalLink aria-hidden="true" className="explore-chev" />
+      </a>
+      <button type="button" className="explore-card pressable" onClick={() => setPlans(true)}>
+        <span className="explore-ico" aria-hidden="true"><MapPinned /></span>
+        <span style={{ flex: 1, minWidth: 0 }}><b>Interactive floor plans</b><span>Every room on the Convention Level, with photos and setups</span></span>
+        <ChevronRight aria-hidden="true" className="explore-chev" />
+      </button>
+      {plans && <FloorPlansSheet onClose={() => setPlans(false)} />}
+    </section>
+  );
+}
+
 function Venue() {
   const rows = [
     { icon: TramFront, title: "Union Station", detail: "12-minute walk south via Bay St", q: "Union Station Toronto" },
@@ -159,13 +235,18 @@ function Venue() {
     { icon: Plane, title: "Pearson YYZ", detail: "30 min via UP Express + 5 min walk", q: "Toronto Pearson Airport" },
     { icon: Ship, title: "Toronto Island Ferry", detail: "5 min walk to terminal", q: "Jack Layton Ferry Terminal Toronto" },
   ];
+  const maps = venueMaps();
   return (
     <div className="venue">
-      <div className="venue-head">
+      {/* The whole card opens Maps; the Westin's tower on the right, a scrim on the left for the words. */}
+      <a className="venue-head venue-head--photo pressable" href={maps.href} target={maps.target} rel="noopener noreferrer" onClick={maps.onClick}
+        aria-label={`Open ${EVENT.venue} in Maps`}>
         <span className="venue-kicker"><CircleDot aria-hidden="true" />Toronto · Canada</span>
         <h2>{EVENT.venue}</h2>
         <span className="venue-addr">{EVENT.address}</span>
-      </div>
+        <span className="venue-open"><Navigation aria-hidden="true" />Open in Maps</span>
+      </a>
+      <ExploreVenue />
       <section className="stack-sm" style={{ gap: 10 }}>
         <h3 className="eyebrow">Getting here</h3>
         <div className="card venue-card">
@@ -184,8 +265,7 @@ function Venue() {
       <a className="btn btn-primary btn-lg btn-block" href={mapsURL(EVENT.address)} target="_blank" rel="noopener noreferrer">
         {isApple() ? "Open in Apple Maps" : "Open in Google Maps"}<MapIcon aria-hidden="true" />
       </a>
-      {/* No interactive floor plan on the web: the venue guide stands in for it. */}
-      <a className="btn btn-lg btn-block" href={LINKS.venue} target="_blank" rel="noopener noreferrer">Floor plan and venue guide<ChevronRight aria-hidden="true" /></a>
+      <a className="btn btn-lg btn-block" href={LINKS.venue} target="_blank" rel="noopener noreferrer">Venue guide<ChevronRight aria-hidden="true" /></a>
     </div>
   );
 }

@@ -12,13 +12,15 @@ import { Avatar, IconButton, Spinner, TopBar } from "../components/ui";
 import { KindBadge } from "../components/People";
 import { MoreMenu } from "../components/Safety";
 import { ChatBubble } from "../components/ChatBubble";
+import { receiptOf } from "../lib/receipts";
 
 /* =========================================================
    1:1 chat (iOS ChatThreadView): who it's with under the bar,
    the bubbles with a relative time under each, a one-line
    composer. Pulled on open, then every 5 s while it's on
-   screen. You don't need an accepted connection unless staff
-   switched their messages off.
+   screen (which also moves the ticks on your messages:
+   sent, delivered, read). You don't need an accepted
+   connection unless staff switched their messages off.
 ========================================================= */
 
 export default function ChatThread() {
@@ -39,7 +41,8 @@ export default function ChatThread() {
     return () => { alive = false; };
   }, [id, peer]);
 
-  usePolling(() => refreshMessages(id), 5000, [id]);
+  // On screen and in front: a read (anything else would be a ?peek=1, lib/social.js).
+  usePolling(() => refreshMessages(id, { open: true }), 5000, [id]);
   // Read when it opens, on each new message and when it closes (iOS ChatReadState).
   useEffect(() => { markChatRead(id); return () => markChatRead(id); }, [id]);
   useEffect(() => { if (messages?.length) markChatRead(id); }, [id, messages?.length]);
@@ -88,9 +91,10 @@ export default function ChatThread() {
         }
       />
       <main id="main" className="column bubbles" aria-live="polite" aria-label={`Messages with ${name}`}>
-        {messages === undefined ? <Spinner /> : messages.map((m) => (
-          <ChatBubble key={m.id} text={m.body} mine={m.sentByMe} timestamp={m.createdAt} />
-        ))}
+        {messages === undefined ? <Spinner /> : messages.map((m) => {
+          const receipt = receiptOf(m);
+          return <ChatBubble key={m.id} text={m.body} mine={m.sentByMe} timestamp={m.createdAt} held={receipt === "held"} receipt={receipt} />;
+        })}
         <div ref={bottom} />
       </main>
       {blocked ? (

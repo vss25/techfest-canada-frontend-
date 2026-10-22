@@ -6,7 +6,8 @@ import { auth } from "../lib/auth";
 import { canMessage, canRequest, connectionWith, fetchPerson, social, unblockUser, withdrawConnection } from "../lib/social";
 import { acceptWithSharing, connectWithSharing } from "../lib/myCard";
 import { fileURL } from "../lib/config";
-import { publicBadge, recoSignals, slotSummary } from "../lib/people";
+import { publicBadge, recoSignals } from "../lib/people";
+import { availabilitySummary } from "../lib/availability";
 import { safetyItems } from "../lib/safety";
 import { confirmDialog, givenName, safeHref, showAlert } from "../lib/ui";
 import { Avatar, Button, Empty, Spinner, TopBar } from "../components/ui";
@@ -14,12 +15,13 @@ import { MoreMenu } from "../components/Safety";
 import { ContactLimitNote } from "../components/People";
 import { BubbleFill } from "../components/Glyphs";
 import SharedContact from "../components/SharedContact";
+import { AvailabilityRows } from "../components/Availability";
 
 /* =========================================================
    Someone's public profile (iOS PersonProfileView): photo,
    name, role, a Speaker / Exhibitor badge, Connect and
    Message side by side, what their switches allow, free-to-meet
-   times, interests and LinkedIn. Report / Block in the "…" menu.
+   times (merged ranges with their places), interests and LinkedIn. Report / Block in the "…" menu.
 ========================================================= */
 
 export default function PersonProfile() {
@@ -55,6 +57,7 @@ export default function PersonProfile() {
   const badge = publicBadge(p);
   const mayMessage = canMessage(p, s);
   const mayRequest = !!conn || canRequest(p, s);
+  const free = availabilitySummary(p.availabilitySlots, p.availabilitySpots, p.meetingSpot);
 
   // Both go through "Share your contact details" (lib/myCard.js).
   const connect = () => connectWithSharing(p, { given });
@@ -96,11 +99,11 @@ export default function PersonProfile() {
           )
         )}
         {!me && !blocked && <SharedContact person={p} state={conn} />}
-        {(slotSummary(p.availabilitySlots) || p.meetingSpot) && (
+        {(free || p.meetingSpot) && (
           <section className="card person-section">
             <h2><CalendarClock aria-hidden="true" />Free to meet</h2>
-            {slotSummary(p.availabilitySlots) && <b style={{ fontSize: 14, fontWeight: 600 }}>{slotSummary(p.availabilitySlots)}</b>}
-            {p.meetingSpot && <span className="muted" style={{ fontSize: 13 }}>Find them at: {p.meetingSpot}</span>}
+            {free ? <AvailabilityRows slots={p.availabilitySlots} spots={p.availabilitySpots} meetingSpot={p.meetingSpot} />
+              : <span className="muted" style={{ fontSize: 13 }}>Find them at: {p.meetingSpot}</span>}
           </section>
         )}
         {p.topics?.length > 0 && (

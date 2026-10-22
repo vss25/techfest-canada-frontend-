@@ -3,12 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import { Download, RefreshCw, Share, X, WifiOff } from "lucide-react";
 import { useStore, local } from "../lib/store";
 import { pwa, applyUpdate, dismissWelcome, promptInstall } from "../lib/pwa";
-import { useOnline } from "../lib/ui";
+import { connectivity } from "../lib/online";
 import { Button, IconButton, Sheet } from "./ui";
 
 /* =========================================================
    App-wide notices: "New version available · Reload", the
-   offline strip, the one-time install nudges (Chrome-style
+   offline strip (checked, lib/online.js), the one-time install nudges (Chrome-style
    banner / iPhone Safari sheet) and the first-launch welcome.
    Install nudges never show inside the installed app.
 ========================================================= */
@@ -31,9 +31,10 @@ export function UpdatePrompt() {
   );
 }
 
+/** Only once a real request has failed (lib/online.js), never on navigator.onLine alone. */
 export function OfflineBar() {
-  const online = useOnline();
-  if (online) return null;
+  const { offline } = useStore(connectivity);
+  if (!offline) return null;
   return (
     <div className="offline-bar" role="status" style={{ paddingTop: "calc(6px + var(--safe-top))" }}>
       <WifiOff aria-hidden="true" style={{ width: 14, height: 14, verticalAlign: "-2px", marginRight: 6 }} />

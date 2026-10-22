@@ -1,0 +1,120 @@
+import { useEffect, useState } from "react";
+import { Smartphone, Trophy, UserRoundPlus, Gift } from "lucide-react";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import useSiteSettings, { PUBLIC_API } from "../hooks/useSiteSettings";
+import { SWAG_ALT, SWAG_PHOTO, fetchSwag, swagFrom, swagHowTo } from "../lib/swag";
+
+/* =========================================================
+   /swag: "Win the TTFC swag kit" (Oct 22 2026). The rules page the
+   app invite email ("Win the swag kit"), the apps' Points banner and
+   the install page link to: the photo, the title, how to win in
+   three lines, a "Get the app" button (→ /app/install) and the rules
+   staff write in Admin › Website & app › Swag kit giveaway (with the
+   number of kits and the times filled in): GET /api/app/swag, or the
+   same worked out from the site settings until it answers
+   (src/lib/swag.js). Light and dark like the rest of the site.
+========================================================= */
+
+const HOW_ICONS = [Smartphone, UserRoundPlus, Trophy];
+
+export default function Swag() {
+  const settings = useSiteSettings();
+  const [api, setApi] = useState(null);
+  const s = api || swagFrom(settings);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    fetchSwag(PUBLIC_API).then((r) => { if (alive && r) setApi(r); });
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    const read = () => setDark(document.body.classList.contains("dark-mode"));
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const before = document.title;
+    document.title = `${s.title} | The Tech Festival Canada`;
+    return () => { document.title = before; };
+  }, [s.title]);
+
+  const c = dark
+    ? { bg: "#06020f", text: "#ffffff", mid: "rgba(225,215,255,0.82)", card: "rgba(255,255,255,0.045)", line: "rgba(155,135,245,0.18)", accent: "#c4adff", chip: "rgba(155,135,245,0.16)" }
+    : { bg: "#faf9ff", text: "#0d0520", mid: "rgba(13,5,32,0.7)", card: "#ffffff", line: "rgba(122,63,209,0.14)", accent: "#6a2fc4", chip: "rgba(122,63,209,0.09)" };
+  const loaded = !!api || settings.loaded;
+  const note = !loaded ? null
+    : s.stage === "off" ? "The giveaway opens soon. Get the app now and start earning points."
+      : s.stage === "closed" ? `Points are in. Winners are told in the app at ${s.announceLabel}.`
+        : s.stage === "announced" ? "The winners have been told in the app. Congratulations, and thank you for taking part!"
+          : `Open now. Points count until ${s.cutoffLabel}.`;
+
+  return (
+    <>
+      <Navbar />
+      <main style={{ background: c.bg, color: c.text, minHeight: "100vh" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "clamp(88px, 12vw, 120px) 16px 72px" }}>
+          <div style={{ display: "grid", gap: 28, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", alignItems: "center" }}>
+            <figure style={{ margin: 0, borderRadius: 22, overflow: "hidden", border: `1px solid ${c.line}`, background: "#e9e7ee" }}>
+              <img src={SWAG_PHOTO} alt={SWAG_ALT} width="1200" height="1016" decoding="async" style={{ display: "block", width: "100%", height: "auto" }} />
+            </figure>
+            <div>
+              <p style={{ margin: 0, display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: 999, background: c.chip, color: c.accent, fontSize: 13, fontWeight: 700, letterSpacing: 0.3 }}>
+                <Gift size={15} aria-hidden="true" /> TTFC 2026 · the app leaderboard
+              </p>
+              <h1 style={{ margin: "14px 0 0", fontSize: "clamp(32px, 6vw, 48px)", lineHeight: 1.08, fontWeight: 800, letterSpacing: -0.5 }}>{s.title}</h1>
+              <p style={{ margin: "14px 0 0", fontSize: 18, lineHeight: 1.55, color: c.mid }}>
+                A TTFC backpack, bottle, mug, notebook, phone stand, umbrella and more. Earn points in the TTFC app: the top {s.kits} on the leaderboard each win one.
+              </p>
+              {note && <p style={{ margin: "12px 0 0", fontSize: 15, fontWeight: 600, color: c.accent }}>{note}</p>}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 22 }}>
+                <a href="/app/install?from=swag" style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 54, padding: "0 26px", borderRadius: 999,
+                  background: "linear-gradient(90deg, #7A3FD1, #E8458B)", color: "#fff", fontSize: 17, fontWeight: 700, textDecoration: "none",
+                }}>
+                  <Smartphone size={20} aria-hidden="true" /> Get the app
+                </a>
+                <a href="#rules" style={{ display: "inline-flex", alignItems: "center", minHeight: 54, padding: "0 22px", borderRadius: 999, border: `1px solid ${c.line}`, color: c.text, fontSize: 16, fontWeight: 600, textDecoration: "none" }}>
+                  Read the rules
+                </a>
+              </div>
+              <p style={{ margin: "12px 0 0", fontSize: 13, color: c.mid }}>Free. No purchase necessary.</p>
+            </div>
+          </div>
+
+          <section aria-labelledby="how-h" style={{ marginTop: 56 }}>
+            <h2 id="how-h" style={{ margin: 0, fontSize: 26, fontWeight: 800 }}>How to win</h2>
+            <ol style={{ listStyle: "none", margin: "18px 0 0", padding: 0, display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))" }}>
+              {swagHowTo(s).map((line, i) => {
+                const Icon = HOW_ICONS[i];
+                return (
+                  <li key={line} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: 18, borderRadius: 18, background: c.card, border: `1px solid ${c.line}` }}>
+                    <span aria-hidden="true" style={{ flex: "none", width: 40, height: 40, borderRadius: 12, display: "grid", placeItems: "center", background: c.chip, color: c.accent }}><Icon size={20} /></span>
+                    <span>
+                      <b style={{ display: "block", fontSize: 13, color: c.accent, letterSpacing: 0.4, textTransform: "uppercase" }}>Step {i + 1}</b>
+                      <span style={{ display: "block", marginTop: 4, fontSize: 16, lineHeight: 1.5 }}>{line}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+
+          <section id="rules" aria-labelledby="rules-h" style={{ marginTop: 48, padding: "24px 22px", borderRadius: 20, background: c.card, border: `1px solid ${c.line}`, scrollMarginTop: 96 }}>
+            <h2 id="rules-h" style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>The rules</h2>
+            <p style={{ margin: "12px 0 0", fontSize: 16, lineHeight: 1.65, color: c.mid, whiteSpace: "pre-line" }}>{s.rules}</p>
+            <p style={{ margin: "14px 0 0", fontSize: 14, color: c.mid }}>
+              Questions? Email <a href="mailto:enquire@thetechfestival.com" style={{ color: c.accent, fontWeight: 600 }}>enquire@thetechfestival.com</a>.
+            </p>
+          </section>
+        </div>
+      </main>
+      <Footer />
+    </>
+  );
+}

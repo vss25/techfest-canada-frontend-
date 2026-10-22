@@ -10,6 +10,8 @@ import { showAlert } from "../lib/ui";
 import { loadAttending, openAttending } from "../lib/engage";
 import { now, torontoDate } from "../lib/time";
 import { Avatar, Segmented, Spinner, Switch, TopBar } from "../components/ui";
+import SwagBanner from "../components/SwagBanner";
+import { refreshSwag } from "../lib/swagState";
 
 /* =========================================================
    Points (iOS PointsView, Android ui/points/PointsScreen.kt).
@@ -23,6 +25,8 @@ import { Avatar, Segmented, Spinner, Switch, TopBar } from "../components/ui";
      earn (with its progress) folded under "All ways to earn
      points".
    The order and rules are in lib/pointsPlan.js (pure, tested).
+   Batch 7: the swag kit banner at the top of the Leaderboard tab
+   while the giveaway is on (components/SwagBanner.jsx).
    Nothing here animates (Reduce Motion needs nothing extra).
 ========================================================= */
 
@@ -35,7 +39,7 @@ export default function Points() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") === "activity" ? "activity" : "board";
 
-  useEffect(() => { refreshPoints(true); loadLeaderboard(); }, []);
+  useEffect(() => { refreshPoints(true); loadLeaderboard(); refreshSwag(); }, []);
 
   // Flips on the first tap (lib/points.js): disabled while it saves, back as it was with an alert if it couldn't.
   const toggle = async (show) => {
@@ -66,6 +70,7 @@ function BoardTab({ me, board, savingPrefs, onToggle }) {
   const myId = a.me?.id || a.user?._id || "";
   return (
     <div role="tabpanel" aria-label="Leaderboard" className="stack">
+      <SwagBanner />
       <div className="points-me" role="group" aria-label={`${me.rank ? `Your rank: ${me.rank}` : "Not ranked yet"}. ${me.level?.name || ""}. ${me.total} points`}>
         <b className="points-me-rank figure" aria-hidden="true">{me.rank ? `#${me.rank}` : "–"}</b>
         <span style={{ flex: 1, minWidth: 0 }} aria-hidden="true">

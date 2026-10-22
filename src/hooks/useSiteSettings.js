@@ -30,6 +30,14 @@ export const SITE_DEFAULTS = {
   /* Pass upgrades (App text & switches › Pass upgrades). Off unless staff turn it on: the site then
      shows no upgrade offers (Oct 19 2026, the organiser: "don't offer upgrades at all"). */
   "flag.upgrades": false,
+  /* The swag kit giveaway (Admin › Website & app › Swag kit giveaway), for the /swag page: read through
+     src/lib/swag.js swagFrom(), which has the defaults for empty values. */
+  "swag.enabled": false,
+  "swag.kits": "",
+  "swag.cutoff": "",
+  "swag.announce": "",
+  "swag.title": "",
+  "swag.rules": "",
 };
 
 let state = { ...SITE_DEFAULTS, loaded: false };
@@ -43,7 +51,7 @@ function normalize(raw) {
   const out = {};
   for (const [k, d] of Object.entries(SITE_DEFAULTS)) {
     const v = raw?.[k];
-    out[k] = typeof d === "boolean" ? bool(v, d) : str(v, d);
+    out[k] = typeof d === "boolean" ? bool(v, d) : typeof v === "number" ? String(v) : str(v, d);
   }
   // Empty message/email fall back to the defaults so the UI never shows a blank.
   if (!out["site.ticket_sales_message"]) out["site.ticket_sales_message"] = SITE_DEFAULTS["site.ticket_sales_message"];

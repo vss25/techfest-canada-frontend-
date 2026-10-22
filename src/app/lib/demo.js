@@ -8,6 +8,7 @@ import { now as clockNow } from "./time";
 import { companyKey } from "./orgKey";
 import { sessionGetsChat, SESSION_CHAT_LEAD_MS } from "./sessionChat";
 import { SOS_DEFAULTS } from "./sos";
+import { SWAG_DEFAULTS, SWAG_PHOTO, SWAG_URL, swagFrom } from "../../lib/swag.js";
 
 /* =========================================================
    Demo backend (/app?demo=1). Answers the same routes, with the
@@ -718,7 +719,23 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
   }
 
   // Public
-  if (is("GET", "app/content")) return { "flag.polls": true, "flag.qa": true, "flag.allow_posts": true, "flag.allow_groups": true, "feed.empty": "Be the first to post. Everyone at TTFC will see it." };
+  if (is("GET", "app/content")) {
+    return {
+      "flag.polls": true, "flag.qa": true, "flag.allow_posts": true, "flag.allow_groups": true, "feed.empty": "Be the first to post. Everyone at TTFC will see it.",
+      // The swag kit giveaway, on in the demo (lib/swag.js has the defaults for the rest).
+      "swag.enabled": true, "swag.kits": 3,
+    };
+  }
+  // The giveaway as the server works it out (backend GET /api/app/swag), from the same demo settings.
+  if (is("GET", "app/swag")) {
+    const g = swagFrom({ "swag.enabled": true, "swag.kits": 3 }, clockNow().getTime());
+    return {
+      enabled: g.enabled, title: g.title, kits: g.kits, cutoff: SWAG_DEFAULTS["swag.cutoff"], announce: SWAG_DEFAULTS["swag.announce"],
+      cutoffLabel: g.cutoffLabel, cutoffShort: g.cutoffShort, announceLabel: g.announceLabel, rules: g.rules,
+      phase: g.stage === "off" ? "open" : g.stage, announced: false, rulesUrl: SWAG_URL, photoUrl: `https://www.thetechfestival.com${SWAG_PHOTO}`,
+      installUrl: "https://www.thetechfestival.com/app/install",
+    };
+  }
   if (is("GET", "status")) return { live: true, message: "" };
   if (is("POST", "app/events")) return { accepted: 0 };
   if (is("GET", "app/blocks")) return done(s.blocks || []);

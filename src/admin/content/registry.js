@@ -34,6 +34,13 @@ export const SCOPES = {
       { id: "flags", title: "Feature switches", hint: "Turn parts of the app on or off for everyone. Pass upgrades and the website's install-the-app prompt are under Website switches › Selling." },
     ],
   },
+  /* Edited on their own page, Website & app › Swag kit giveaway (admin/app/SwagKit.jsx: times in Toronto, a preview
+     and the winners), so they aren't on App text & switches. */
+  swag: {
+    groups: [
+      { id: "swag", title: "Swag kit giveaway", hint: "The top people on the app leaderboard at the cutoff each win a TTFC swag kit. Management only." },
+    ],
+  },
 };
 
 const BUILTIN_SOCIAL = {
@@ -218,12 +225,40 @@ export const REGISTRY = {
     scope: "app", group: "flags", type: "switch",
     label: "Audience Q&A", description: "Turn off to hide session Q&A in the app and stop new questions.",
   },
+
+  /* ---------------- Swag kit giveaway (batch 7) ---------------- */
+  "swag.enabled": {
+    scope: "swag", group: "swag", type: "switch", management: true,
+    label: "Giveaway on", description: "Shows the swag kit banner on the app leaderboard, the card in the feed and the rules on /swag. Off by default.",
+  },
+  "swag.kits": {
+    scope: "swag", group: "swag", type: "text", management: true,
+    label: "Number of kits", description: "The top this many people on the leaderboard win (1–50).",
+  },
+  "swag.cutoff": {
+    scope: "swag", group: "swag", type: "text", management: true,
+    label: "Points count until", description: "When the leaderboard is taken for the winners (Toronto time).",
+  },
+  "swag.announce": {
+    scope: "swag", group: "swag", type: "text", management: true,
+    label: "Winners told at", description: "When the apps say the winners are out (Toronto time). Winners are told when management clicks Announce winners.",
+  },
+  "swag.title": {
+    scope: "swag", group: "swag", type: "text", management: true,
+    label: "Giveaway title", description: "In the apps' banner and feed card, on /swag and in the email.",
+  },
+  "swag.rules": {
+    scope: "swag", group: "swag", type: "textarea", rows: 6, management: true,
+    label: "Giveaway rules", description: "On /swag. {kits}, {cutoff} and {announce} are filled in.",
+  },
 };
 
 /* Not shown anywhere in the panel (Oct 19 2026): the web app's guest offer (APP50), five settings that were
    listed under "Other" with no explanation. Promotions are banned, so they're gone from App text & switches;
    their stored values stay as they are, and the server refuses switching the offer on for anyone. */
-export const HIDDEN_KEYS = new Set(["flag.guestOffer", "offer.guest_code", "offer.guest_discount", "offer.guest_ends", "offer.guest_passes"]);
+export const HIDDEN_KEYS = new Set([
+  "flag.guestOffer", "offer.guest_code", "offer.guest_discount", "offer.guest_ends", "offer.guest_passes",
+]);
 
 /** Scope for a key that isn't in the registry yet (keeps new backend keys editable). */
 export const scopeOf = (key) => REGISTRY[key]?.scope || (key.startsWith("site.") ? "website" : "app");

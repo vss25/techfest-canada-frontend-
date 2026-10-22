@@ -10,9 +10,11 @@
      - where they go: never first; after the 3rd post (or at the end
        when there are fewer), then one every 6 posts; each card once.
    Same rules as iOS FeedCallToActions and Android FeedCtas.
+   Batch 7 (Oct 22 2026): "Win the TTFC swag kit" joins the rotation
+   while the giveaway is on and points still count (swagOpen).
 ========================================================= */
 
-export const CTA_KEYS = ["attending", "linkedin", "topics", "availability", "sessions", "reachout", "scan", "poll"];
+export const CTA_KEYS = ["attending", "linkedin", "topics", "availability", "sessions", "reachout", "scan", "poll", "swag"];
 export const FIRST_AFTER = 3;
 export const EVERY = 6;
 export const DISMISS_MS = 3 * 24 * 60 * 60 * 1000;
@@ -25,6 +27,7 @@ export const DISMISS_MS = 3 * 24 * 60 * 60 * 1000;
  *   attendingPosted (GET app/attending-link), linkedinUrl, topics: [], availabilitySlots: [] (social/me),
  *   saved: n, requestsSent: n (this device's numbers, used too),
  *   festivalDay: bool (Oct 26–27 in Toronto), liveSession: { id, title } | null (a saved session that's live),
+ *   swagOpen: bool (the swag kit giveaway is on and before its cutoff, lib/swag.js),
  *   dismissed: { key: untilMs }, now }
  */
 export function eligibleCtas(st) {
@@ -40,6 +43,7 @@ export function eligibleCtas(st) {
   if (raw("network.request", st.requestsSent) === 0) out.push("reachout");
   if (st.festivalDay) out.push("scan");
   if (st.festivalDay && st.liveSession) out.push("poll");
+  if (st.swagOpen) out.push("swag");
   const now = st.now ?? Date.now();
   return out.filter((k) => !(st.dismissed?.[k] > now));
 }

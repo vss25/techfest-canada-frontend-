@@ -57,6 +57,13 @@ self.addEventListener("install", (event) => {
         if (res.ok) await cache.put(url, res);
       } catch { /* offline during install: fetched on first use instead */ }
     }));
+    // The page itself and its scripts/styles must be in: otherwise this install fails and the
+    // current version (with its cached copy) stays. Oct 22 2026: an update downloaded while the
+    // phone had no connection replaced the working copy with an empty one ("You're offline").
+    const required = PRECACHE.filter((u) => u === "/app/" || (/^\/assets\//.test(u) && /\.(js|css)$/.test(u)));
+    for (const u of required) {
+      if (!(await cache.match(u))) throw new Error(`TTFC: ${u} didn't download; keeping the current version`);
+    }
     // First install: take over at once. An update waits for the page to
     // apply it — unless the open pages predate that (they'd never ask).
     if (!self.registration.active || !(await managed())) await self.skipWaiting();
@@ -218,7 +225,7 @@ async function shell(req) {
   const timeout = new Promise((resolve) => setTimeout(() => resolve(null), NAV_TIMEOUT));
   const res = await Promise.race([network.catch(() => null), timeout]);
   if (res && res.ok) return res;
-  const cached = await cache.match("/app/");
+  const cached = (await cache.match("/app/")) || (await caches.match("/app/")); // any copy beats the offline page
   if (cached) return cached;
   if (res) return res; // nothing cached yet: whatever the server said
   try { return await network; } catch { return offlinePage(); }
@@ -310,6 +317,6 @@ function offlinePage() {
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0E0828;color:#fff;font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;text-align:center;padding:24px;box-sizing:border-box}
 main{max-width:340px}h1{font-size:22px;margin:16px 0 8px}p{color:rgba(219,206,255,.72);margin:0 0 20px}
 button{min-height:48px;padding:0 22px;border:0;border-radius:12px;background:#8B52E0;color:#fff;font:600 16px inherit}</style></head>
-<body><main><img src="/app/icons/icon-96.png" width="72" height="72" alt="" style="border-radius:18px"><h1>You're offline</h1><p>Connect to the internet to open the TTFC app for the first time. After that, the schedule works offline.</p><button onclick="location.reload()">Try again</button></main></body></html>`;
+<body><main><img src="/app/icons/icon-96.png" width="72" height="72" alt="" style="border-radius:18px" onerror="this.remove()"><h1>You're offline</h1><p>The TTFC app couldn't reach the internet. Check Wi-Fi or mobile data, then try again. Once it has opened online, the schedule also works offline.</p><button onclick="location.reload()">Try again</button></main></body></html>`;
   return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
 }

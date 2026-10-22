@@ -50,6 +50,7 @@ import AttendingCampaign from "../admin/marketing/AttendingCampaign";
 import AppInvite from "../admin/app/AppInvite";
 import SosHelp from "../admin/app/SosHelp";
 import DigestEmails from "../admin/app/DigestEmails";
+import UnsubscribedEmails from "../admin/app/UnsubscribedEmails";
 import SwagKit from "../admin/app/SwagKit";
 import RsvpReminders from "../admin/marketing/RsvpReminders";
 import PeopleDirectory from "../admin/people/PeopleDirectory";
@@ -249,6 +250,7 @@ function AdminPanel() {
             <Route path="app/invite" element={<AppInvite />} />
             <Route path="app/sos" element={<SosHelp />} />
             <Route path="app/digest" element={<DigestEmails />} />
+            <Route path="app/unsubscribes" element={<UnsubscribedEmails />} />
             <Route path="app/swag" element={<SwagKit />} />
             <Route path="marketing/rsvp-reminders" element={<RsvpReminders />} />
 

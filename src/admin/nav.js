@@ -1,7 +1,7 @@
 import {
   Activity, Award, BarChart3, BellRing, Building2, CalendarCheck, CalendarDays, Contact, Download, FileDown, Gem, GalleryHorizontal, GraduationCap,
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, Power, ScanLine,
-  MailPlus, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
+  MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
 import { Gavel, Gift, LifeBuoy, ListChecks, Network, Trophy } from "lucide-react";
 
@@ -71,6 +71,7 @@ export const NAV = [
       { to: "app/invite", label: "App invite email", icon: MailPlus },
       { to: "app/swag", label: "Swag kit giveaway", icon: Gift },
       { to: "app/digest", label: "“What you missed” emails", icon: MailOpen },
+      { to: "app/unsubscribes", label: "Unsubscribed emails", icon: MailX },
     ],
   },
   {

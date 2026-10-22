@@ -56,6 +56,7 @@ const KEYWORDS = {
   "app/text": ["app copy", "feature switches", "switches", "flags", "texts", "wording"],
   "app/pwa": ["web app", "installs", "install prompt", "home screen"],
   "app/invite": ["app invite", "invite email", "download the app", "web app email", "email everyone", "add to home screen", "app email", "open the ttfc app"],
+  "app/digest": ["what you missed", "digest", "summary email", "missed activity", "5 pm email", "activity email", "unsubscribe"],
   "app/rights": ["permissions", "rights matrix", "who can message", "connection requests", "posting", "share contact"],
   "app/broadcast": ["push", "notification", "notify", "announce", "send to everyone", "personal notification"],
   "app/audit": ["history", "log", "who changed", "audit trail"],
@@ -69,6 +70,7 @@ const KEYWORDS = {
 const ACTIONS = [
   { title: "Give a pass", where: "People & passes › Give a pass", to: "issued-passes", icon: TicketPlus, keywords: ["give someone a pass", "new pass"] },
   { title: "Email everyone to get the web app", where: "Website & app › App invite email", to: "app/invite", icon: MailPlus, keywords: ["app invite", "download the app", "install the app", "web app email"] },
+  { title: "Turn “What you missed” emails on or off", where: "Website & app › “What you missed” emails", to: "app/digest", icon: MailPlus, keywords: ["digest", "summary email", "missed", "test digest"] },
   { title: "Mark someone as Media, VIP, Volunteer or Staff", where: "People & passes › People › their profile", to: "people", icon: Users, keywords: ["media tag", "press", "vip", "volunteer", "staff", "type", "profile colour", "profile color"] },
   { title: "Hide someone from the app", where: "People & passes › People › their profile › Hide from app", to: "people", icon: EyeOff,
     keywords: ["hide from app", "shadow ban", "harassment", "troublemaker", "stop messages", "block someone", "unwanted messages", "safety"] },

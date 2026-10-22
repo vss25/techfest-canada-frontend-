@@ -6,6 +6,7 @@ import { auth, isSignedIn } from "../lib/auth";
 import { cms, isProgramme, speakerById, typeLabel } from "../lib/cms";
 import { bookmarks, canMessage, fetchGroupMembers, markGroupRead, refreshGroupMessages, refreshGroups, sendGroupMessage, social, toggleJoinGroup } from "../lib/social";
 import { TOPIC_SHORT, fileURL } from "../lib/config";
+import { avatarFor } from "../lib/avatar.js";
 import { now } from "../lib/time";
 import { reportFlow, safetyItems } from "../lib/safety";
 import { publicBadge } from "../lib/people";
@@ -16,6 +17,7 @@ import { MoreMenu } from "../components/Safety";
 import { ChatBubble, TypingIndicator } from "../components/ChatBubble";
 import { BubbleFill, PeopleFill } from "../components/Glyphs";
 import { guestAlert } from "../lib/passes";
+import { ShareOnLinkedIn } from "../components/LinkedInCta";
 
 /* =========================================================
    A group's home (iOS GroupDetailView): who's in it, the
@@ -97,7 +99,7 @@ export default function GroupDetail() {
   const at = now().getTime();
 
   useEffect(() => { if (!g) refreshGroups(); }, [g]);
-  usePolling(() => (g?.joined ? refreshGroupMessages(id) : null), 6000, [id, g?.joined]);
+  usePolling(() => (g?.joined ? refreshGroupMessages(id, { open: true }) : null), 6000, [id, g?.joined]);
   useEffect(() => { markGroupRead(id); return () => markGroupRead(id); }, [id]);
   useEffect(() => { if (all?.length) markGroupRead(id); }, [id, all?.length]);
   useLayoutEffect(() => { bottom.current?.scrollIntoView({ block: "end" }); }, [all?.length]);
@@ -111,7 +113,7 @@ export default function GroupDetail() {
     if (!signedIn) { guestAlert("Get a pass to join groups", "group"); return; }
     const r = await toggleJoinGroup(g);
     if (!r) showAlert("Couldn't update", social.get().lastError || "Try again.");
-    else if (r.joined) refreshGroupMessages(id);
+    else if (r.joined) refreshGroupMessages(id, { open: true });
   };
   const send = async (e) => {
     e?.preventDefault();
@@ -141,6 +143,8 @@ export default function GroupDetail() {
             {g.memberCount} members{g.joined ? " · you're in" : ""}<ChevronRight aria-hidden="true" />
           </button>
         </span>
+        {/* A session's chat, on LinkedIn (Oct 22 2026). */}
+        {g.sessionId && g.joined && <span className="group-head-share"><ShareOnLinkedIn item={{ kind: "discussion", sessionId: g.sessionId }} small label="Share" /></span>}
       </div>
       {pinned.length > 0 && (
         <div className="column pinned-strip">
@@ -177,7 +181,7 @@ export default function GroupDetail() {
             {messages === undefined ? <Spinner /> : !messages?.length ? (
               <div className="group-empty"><MessagesSquare aria-hidden="true" /><b>Say hi to the group</b><span>Plan meetups, share notes from the pinned sessions.</span></div>
             ) : messages.map((m) => (
-              <ChatBubble key={m.id} text={m.body} mine={m.mine} author={m.mine ? null : m.authorName} timestamp={m.createdAt} held={m.status === "held"}
+              <ChatBubble key={m.id} text={m.body} mine={m.mine} author={m.mine ? null : m.authorName} avatarUrl={m.mine ? "" : fileURL(avatarFor(m, s.people))} timestamp={m.createdAt} held={m.status === "held"}
                 menu={m.mine ? null : safetyItems({ type: "groupMessage", id: m.id, authorId: m.authorId, authorName: m.authorName })} />
             ))}
             <div ref={bottom} />

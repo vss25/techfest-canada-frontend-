@@ -53,3 +53,10 @@ export function insertMention(text, name, caret = text.length) {
   if (replaced === before) return `${before}${before && !/\s$/.test(before) ? " " : ""}@${name} ${after}`;
   return replaced + after;
 }
+
+/** Up to 6 people whose name contains the "@query" being typed (none when nothing is being typed). */
+export const mentionSuggestions = (candidates, query) =>
+  (query === null ? [] : candidates.filter((x) => x.name.toLowerCase().includes(query.toLowerCase())).slice(0, 6));
+
+/** The tags still in the text when it's sent (one removed by editing doesn't go). */
+export const keptMentions = (body, mentions) => mentions.filter((m) => body.includes("@" + m.name));

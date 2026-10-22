@@ -19,6 +19,7 @@ import { PushBanner } from "../components/PushControls";
 import { receiptOf } from "../lib/receipts";
 import { SearchField } from "../components/Filters";
 import { guestAlert } from "../lib/passes";
+import { avatarFor } from "../lib/avatar.js";
 
 /* =========================================================
    Chats (iOS ChatsView): Chats (1:1 and your groups, newest
@@ -263,7 +264,7 @@ function Discussions({ signedIn }) {
         <div key={d.id} className="pad">
           <Link to={`/discussion/${encodeURIComponent(d.id)}`} className="disc-card pressable">
             <span className="row" style={{ gap: 6 }}>
-              <Avatar name={d.authorName} size={26} />
+              <Avatar name={d.authorName} src={fileURL(avatarFor(d, s.people))} size={26} />
               <b style={{ fontSize: 12, fontWeight: 600 }}>{d.authorName}</b>
               {d.status === "pending" && <span className="pending-label">Pending review</span>}
               <span className="spacer" />

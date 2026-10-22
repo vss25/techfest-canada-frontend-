@@ -517,6 +517,11 @@ const DEMO_LEVELS = [
   { key: "insider", name: "Insider", min: 300 }, { key: "trailblazer", name: "Trailblazer", min: 600 },
   { key: "catalyst", name: "Catalyst", min: 1000 },
 ];
+const NOTIFY_DEFAULTS = { messages: true, comments: true, mentions: true, likes: true, groups: true, connections: true, announcements: true, digestEmail: true };
+const NOTIFY_OPTIONS = [["messages", "Messages"], ["comments", "Comments and replies"], ["mentions", "Mentions"], ["likes", "Likes"],
+  ["groups", "Group and session chats"], ["connections", "Connection requests"], ["announcements", "Announcements from TTFC"],
+  ["digestEmail", "Email me a summary of what I missed"]].map(([key, label]) => ({ key, label }));
+
 /** The server's rules (backend services/points.js RULES). */
 const DEMO_RULES = [
   { key: "profile.linkedin", label: "Add your LinkedIn", description: "Add your LinkedIn profile to your TTFC profile.", points: 20, max: 1, per: "total", maxTotal: null },
@@ -532,6 +537,8 @@ const DEMO_RULES = [
   { key: "feed.post", label: "Post on the feed", description: "Each post (up to 3 a day).", points: 10, max: 3, per: "day", maxTotal: null },
   { key: "feed.comment", label: "Comment", description: "Each comment (up to 10 a day).", points: 3, max: 10, per: "day", maxTotal: null },
   { key: "feed.likes", label: "Get likes", description: "Each like your posts get from others (up to 25 per post).", points: 1, max: 25, per: "post", maxTotal: null },
+  { key: "linkedin.attending", label: "Post that you're attending", description: "Post your I'm attending image on LinkedIn.", points: 50, max: 1, per: "total", maxTotal: null },
+  { key: "linkedin.share", label: "Share a session on LinkedIn", description: "Each session chat or poll you share on LinkedIn (up to 5).", points: 15, max: 5, per: "total", maxTotal: null },
 ];
 /** Sample standing worked out from the demo account's own data (live polls and Q&A are samples). */
 function demoPoints(s) {
@@ -551,6 +558,8 @@ function demoPoints(s) {
     "feed.post": myPosts.length,
     "feed.comment": (s.posts || []).reduce((n, p) => n + (p.comments || []).filter((c) => c.authorId === ME).length, 0),
     "feed.likes": myPosts.reduce((n, p) => n + (p.likes || []).filter((id) => id !== ME).length, 0),
+    "linkedin.attending": s.linkedinAttending ? 1 : 0,
+    "linkedin.share": (s.linkedinShares || []).length,
   };
   const breakdown = DEMO_RULES.map((r) => {
     const n = done[r.key] || 0;
@@ -619,6 +628,29 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     return done({ entries, me: { rank: me.rank, points: me.total } });
   }
   if (is("PATCH", "social/points/prefs")) { s.pointsHidden = !!body.hideFromLeaderboard; return done({ hideFromLeaderboard: s.pointsHidden }); }
+
+  // Notification settings and the LinkedIn links (Oct 22 2026, lib/engage.js). Nothing leaves the browser: the
+  // links open the website's pages in their demo form (t=demo…), which never contact LinkedIn.
+  if (is("GET", "social/notify/prefs")) return done({ prefs: { ...NOTIFY_DEFAULTS, ...(s.notifyPrefs || {}) }, options: NOTIFY_OPTIONS });
+  if (is("PATCH", "social/notify/prefs")) {
+    const next = { ...NOTIFY_DEFAULTS, ...(s.notifyPrefs || {}) };
+    for (const k of Object.keys(NOTIFY_DEFAULTS)) if (typeof body[k] === "boolean") next[k] = body[k];
+    s.notifyPrefs = next;
+    return done({ prefs: next, options: NOTIFY_OPTIONS });
+  }
+  if (is("GET", "app/attending-link")) {
+    const [fn, ...rest] = String(s.me.name || "").split(" ");
+    const frag = new URLSearchParams({ fn, ln: rest.join(" "), title: s.me.jobTitle || "", co: s.me.organization || "" });
+    return done({ url: `/attending?from=app&demo=1#${frag}`, posted: !!s.linkedinAttending, points: 50 });
+  }
+  if (is("POST", "app/linkedin/share")) {
+    const kind = body.kind === "poll" ? "poll" : "discussion";
+    const sessionId = kind === "poll" ? body.sessionId : body.id;
+    const x = cms.get().sessions.find((y) => y.id === sessionId);
+    // The website's demo page builds its draft from these (nothing is stored or sent).
+    const demo = new URLSearchParams({ k: kind, s: x?.title || "", q: kind === "poll" ? String(body.question || "") : "" });
+    return done({ url: `/share/linkedin?t=demo&${demo}`, expiresAt: new Date(Date.now() + 2 * 3600000).toISOString(), points: 15 });
+  }
 
   // Apple Wallet (GET /api/wallet/link/:ticketId): demo passes can't be signed.
   if (is("GET", "wallet/link/:id")) throw new ApiError("Demo passes can't be added to Apple Wallet. Sign in with your TTFC account to add your real pass.", 409);
@@ -787,7 +819,7 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
   if ((m = is("POST", "social/feed/:id/comments"))) {
     const p = s.posts.find((x) => x.id === m.id);
     if (!p) throw new ApiError("Not found", 404);
-    const c = { id: "cm-" + uid(), authorId: ME, authorName: s.me.name, authorTier: "", body: String(body.body || "").slice(0, 2000), status: "approved", createdAt: new Date().toISOString() };
+    const c = { id: "cm-" + uid(), authorId: ME, authorName: s.me.name, authorTier: "", body: String(body.body || "").slice(0, 2000), mentions: Array.isArray(body.mentions) ? body.mentions.slice(0, 20) : [], status: "approved", createdAt: new Date().toISOString() };
     p.comments.push(c);
     return done({ ...c, postId: p.id, commentCount: p.comments.length });
   }

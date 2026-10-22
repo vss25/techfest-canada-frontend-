@@ -13,6 +13,7 @@ import { showAlert, useNow, usePolling } from "../lib/ui";
 import { reportFlow } from "../lib/safety";
 import { IconButton, Segmented, Sheet, Spinner, TopBar } from "../components/ui";
 import { guestAlert } from "../lib/passes";
+import { ShareOnLinkedIn } from "../components/LinkedInCta";
 
 /* =========================================================
    In-session participation (iOS SessionLiveView): spot polls
@@ -33,7 +34,7 @@ function LiveState({ icon, title, children, small }) {
   );
 }
 
-function PollCard({ poll, result, onVote, guest }) {
+function PollCard({ poll, result, onVote, guest, sessionId }) {
   const counts = result?.counts?.length === poll.options.length ? result.counts : poll.options.map(() => 0);
   const myVote = result?.myVote ?? null;
   const voted = myVote !== null && myVote !== undefined;
@@ -58,6 +59,8 @@ function PollCard({ poll, result, onVote, guest }) {
       <span className="poll-foot">
         {voted ? `Thanks for voting · ${total} ${total === 1 ? "vote" : "votes"}` : total === 0 ? "Tap an option to vote · be the first" : `Tap an option to vote · ${total} ${total === 1 ? "vote" : "votes"} so far`}
       </span>
+      {/* The results, on LinkedIn (Oct 22 2026): once you've voted and can see them. */}
+      {voted && !guest && <ShareOnLinkedIn item={{ kind: "poll", id: poll.id, sessionId, question: poll.question, options: poll.options }} small label="Share results on LinkedIn" />}
     </section>
   );
 }
@@ -162,7 +165,7 @@ export default function SessionLive() {
         ) : shown === "polls" ? (
           polls.length === 0 ? <LiveState small icon={ChartColumn} title="No polls for this session">The moderator hasn't put a question on screen yet.</LiveState> : (
             <>
-              {polls.map((p) => <PollCard key={p.id} poll={p} result={results[p.id]} guest={guest} onVote={(i) => vote(p, i)} />)}
+              {polls.map((p) => <PollCard key={p.id} poll={p} result={results[p.id]} guest={guest} sessionId={session.id} onVote={(i) => vote(p, i)} />)}
               <p className="poll-note">{guest ? "Results are simulated until you sign in. Your vote is stored on this device." : "Live results from everyone in the room."}</p>
             </>
           )

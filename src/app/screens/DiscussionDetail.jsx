@@ -4,6 +4,8 @@ import { ArrowUp, Bell, CircleX, Loader2, MessagesSquare, Reply } from "lucide-r
 import { useStore } from "../lib/store";
 import { auth, can, isSignedIn } from "../lib/auth";
 import { followDiscussion, refreshDiscussions, refreshReplies, replyToDiscussion, social } from "../lib/social";
+import { avatarFor } from "../lib/avatar.js";
+import { fileURL } from "../lib/config";
 import { listTime } from "../lib/time";
 import { safetyItems } from "../lib/safety";
 import { typingChanged, typingSent } from "../lib/typing";
@@ -50,7 +52,7 @@ export default function DiscussionDetail() {
     const parent = parentOf(r);
     return (
       <div key={r.id} className="stack-sm">
-        <ChatBubble text={r.body} mine={r.mine} author={r.mine ? null : r.authorName} timestamp={r.createdAt} held={r.status === "held"}
+        <ChatBubble text={r.body} mine={r.mine} author={r.mine ? null : r.authorName} avatarUrl={r.mine ? "" : fileURL(avatarFor(r, s.people))} timestamp={r.createdAt} held={r.status === "held"}
           quote={depth > 1 && parent ? `${parent.authorName}: ${parent.body}` : null}
           onReply={signedIn ? () => startReply(r) : null}
           menu={r.mine || !signedIn ? null : safetyItems({ type: "reply", id: r.id, authorId: r.authorId, authorName: r.authorName })} />
@@ -84,7 +86,7 @@ export default function DiscussionDetail() {
       <main id="main" className="column stack" style={{ padding: 16, gap: 14, flex: 1 }}>
         <article className="q-card">
           <div className="row" style={{ gap: 10 }}>
-            <Avatar name={d.authorName} size={36} />
+            <Avatar name={d.authorName} src={fileURL(avatarFor(d, s.people))} size={36} />
             <span style={{ flex: 1, minWidth: 0 }}>
               <b style={{ display: "block", fontSize: 13, fontWeight: 600 }}>{d.authorName}</b>
               <time className="muted" style={{ fontSize: 11 }}>{listTime(d.createdAt)}</time>

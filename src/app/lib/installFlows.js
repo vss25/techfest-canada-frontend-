@@ -1,4 +1,4 @@
-import { desktopKind, iosVersion, isChromium, safariVersion } from "../../lib/pwaPlatform";
+import { desktopKind, inAppName, iosVersion, isChromium, safariVersion } from "../../lib/pwaPlatform.js";
 
 /* =========================================================
    Step-by-step "install the app" instructions for every phone
@@ -30,26 +30,79 @@ const openAppPage = (onAppPage) => (onAppPage ? [] : [{
   action: "open-app-page",
 }]);
 
+/*
+ * iPhone Safari's Share button moved twice (Oct 22 2026, Apple's iPhone User Guide for iOS 26 and 27):
+ *  • iOS 18 and earlier: Share (a square with an arrow) in the toolbar, at the bottom (top on iPad).
+ *  • iOS 26, Compact tabs (the default): ••• next to the address bar, then Share. Bottom / Top tabs: Share
+ *    in the toolbar. The Share sheet may hide Add to Home Screen under View More. (Recorded in the iOS 26.5
+ *    simulator: public/app/guide/ios26-*.)
+ *  • iOS 27, Compact tabs: the ••• button became the Tabs button; Share is in the page menu, the ≡ button
+ *    at the left end of the address bar (or touch and hold the address bar). Bottom / Top tabs: Share in the
+ *    toolbar.
+ * Safari 26+ says "OS 18_x" in its user agent; its Version/ token is the real iOS version (pwaPlatform.js).
+ * The steps name each button by how it looks and say what to do if the layout differs, rather than
+ * pointing at a fixed corner of the screen.
+ */
+const ADD_STEP = (iv) => ({
+  id: "add", mock: "ios26-viewmore-add", clip: iv >= 26 && iv < 27 ? "ios26-add" : undefined, glyph: "plus",
+  title: "Tap Add to Home Screen, then Add",
+  lead: "In the Share sheet, tap Add to Home Screen, then Add. Not showing? Tap View More (a round button with a down arrow) or scroll down the list.",
+  hint: "Leave Open as Web App switched on. Still not there? Tap Edit Actions at the bottom of the list. Or you may be in another app's browser: open this page in Safari.",
+});
+
+function iosSafariShare(iv) {
+  if (iv >= 27) {
+    return {
+      id: "share", mock: "ios27-menu-share", glyph: "lines", title: "Tap ≡ then Share",
+      lead: "Tap the ≡ button (three lines) at the left end of the address bar, then tap Share in the menu.",
+      hint: "See a Share button (a square with an arrow) in the toolbar? Tap that instead. You can also touch and hold the address bar, then tap Share.",
+    };
+  }
+  if (iv >= 26) {
+    return {
+      id: "share", mock: "ios26-more-share", clip: "ios26-share", glyph: "dots", title: "Tap ••• then Share",
+      lead: "Tap the ••• button next to the address bar, then tap Share at the top of the menu.",
+      hint: "See a Share button (a square with an arrow) in the toolbar? Tap that instead.",
+    };
+  }
+  if (iv > 0) {
+    return {
+      id: "share", mock: "ios-share-add", glyph: "share", title: "Tap Share, then Add to Home Screen",
+      lead: "Tap the Share button (a square with an arrow) in Safari's toolbar: at the bottom of the screen on iPhone, at the top on iPad. Scroll down, tap Add to Home Screen, then tap Add.",
+      hint: "Don't see the toolbar? Tap the bottom of the screen. Add to Home Screen is below Copy and Add Bookmark, with a square and a + sign.",
+      oneStep: true,
+    };
+  }
+  // Version unknown: every layout in one step.
+  return {
+    id: "share", mock: "ios-share-add", glyph: "share", title: "Tap Share",
+    lead: "Tap the Share button (a square with an arrow). No Share button? Tap ••• next to the address bar, or ≡ at the left end of it, then Share.",
+    hint: "Don't see the toolbar? Tap the bottom of the screen.",
+  };
+}
+
 /**
  * flowFor({ os, browser, canPrompt, onAppPage }) → { kind, title, steps[] }
- * step: { id, title, lead, hint?, mock, clip?, item?, action?, showIcon? }
+ * step: { id, title, lead, hint?, mock, clip?, item?, action?, secondary?, showIcon?, glyph? }
  * As few steps as the browser allows: opening a menu and choosing the item
  * in it is one step, and so is the confirmation when it follows straight on.
  * `clip` is a short screen recording of the real thing (public/app/guide/).
+ * `glyph` is the small picture beside the step in the short list (InstallNudges).
+ * `iv` / `app` override the detected iOS version / in-app browser name (tests).
  */
-export function flowFor({ os, browser, canPrompt, onAppPage = true }) {
-  const iv = iosVersion();
-
+export function flowFor({ os, browser, canPrompt, onAppPage = true, iv = iosVersion(), app = inAppName() }) {
   if (browser === "inapp") {
     const ios = os === "ios";
     const target = ios ? "Safari" : "Chrome";
+    const where = app ? `${app}'s built-in browser` : "another app's built-in browser";
     return {
       kind: "inapp",
-      title: `Open this page in ${target}`,
+      title: `Open this page in ${target} first`,
       steps: [{
-        id: "menu", mock: ios ? "inapp-ios-open" : "inapp-android-open", title: `Tap ${ios ? "•••" : "⋮"} then Open in ${target}`,
-        lead: `You're in another app's built-in browser, which can't install apps. Tap ${ios ? "•••" : "⋮"} (three dots, usually at the top right or bottom right), then Open in ${target}. This guide carries on there.`,
-        hint: `It may say Open in browser or Open in system browser. No menu? Copy the link below, then open ${target} and paste it into the address bar.`,
+        id: "menu", mock: ios ? "inapp-ios-open" : "inapp-android-open", glyph: ios ? "dots" : "kebab",
+        title: `Tap ${ios ? "•••" : "⋮"} then Open in ${target}`,
+        lead: `You're in ${where}, which can't add apps to your Home ${ios ? "Screen" : "screen"}. Tap ${ios ? "•••" : "⋮"} (top or bottom right), then Open in ${target} or Open in browser.`,
+        hint: `No such option? Copy the link and paste it into ${target}'s address bar. This guide carries on there.`,
         action: "copy-link",
       }],
     };
@@ -57,28 +110,19 @@ export function flowFor({ os, browser, canPrompt, onAppPage = true }) {
 
   if (os === "ios") {
     if (browser === "safari") {
+      const share = iosSafariShare(iv);
       return {
         kind: "ios-safari",
         title: "Add TTFC to your Home Screen",
         steps: [
           ...openAppPage(onAppPage),
-          ...(iv >= 26 ? [{
-            id: "share", mock: "ios26-more-share", clip: "ios26-share", title: "Tap ••• then Share",
-            lead: "At the bottom right of the screen, tap the ••• button, then tap Share at the top of the menu.",
-            hint: "Already see a Share button (a square with an arrow pointing up)? Tap that instead.",
-          }, {
-            id: "add", mock: "ios26-viewmore-add", clip: "ios26-add", title: "Tap Add to Home Screen, then Add",
-            lead: "In the Share sheet, tap View More (the round button with a down arrow), then Add to Home Screen, then Add at the top right.",
-            hint: "Already see Add to Home Screen in the list? Tap it straight away. Leave Open as Web App switched on.",
-          }] : [{
-            id: "share", mock: "ios-share-add", title: "Tap Share, then Add to Home Screen",
-            lead: "At the bottom of the screen, tap the Share button (a square with an arrow pointing up). Scroll down the list, tap Add to Home Screen, then tap Add at the top right.",
-            hint: "Don't see the toolbar? Tap the bottom of the screen. Add to Home Screen is below Copy and Add Bookmark, with a square and a + sign.",
-          }]),
+          share,
+          ...(share.oneStep ? [] : [ADD_STEP(iv)]),
           FIND_IOS,
         ],
       };
     }
+    // Chrome and Edge on iOS 16.4+ can add web apps from their own Share menu; Safari always can.
     if ((browser === "chrome" || browser === "edge") && iv >= 16.4) {
       const name = browser === "chrome" ? "Chrome" : "Edge";
       return {
@@ -87,9 +131,11 @@ export function flowFor({ os, browser, canPrompt, onAppPage = true }) {
         steps: [
           ...openAppPage(onAppPage),
           {
-            id: "share", mock: browser === "chrome" ? "ios-chrome-share-add" : "ios-edge-share-add", title: "Tap Share, then Add to Home Screen",
-            lead: (browser === "chrome" ? "In the address bar at the top, tap the Share icon (a square with an arrow pointing up)" : "In Edge's toolbar, tap the Share icon (a square with an arrow pointing up)") + ". Scroll down the list, tap Add to Home Screen, then tap Add.",
-            hint: `In ${name}, Share may sit under the ••• menu instead. Tap ••• and then Share.`,
+            id: "share", mock: browser === "chrome" ? "ios-chrome-share-add" : "ios-edge-share-add", glyph: "share",
+            title: "Tap Share, then Add to Home Screen",
+            lead: (browser === "chrome" ? "In Chrome, tap the Share icon (a square with an arrow) in the address bar" : "In Edge's toolbar, tap the Share icon (a square with an arrow)") + ". Scroll down, tap Add to Home Screen, then tap Add.",
+            hint: `In ${name}, Share may sit under the ••• menu instead. Not in the list? Open this page in Safari: copy the link and paste it into Safari's address bar.`,
+            secondary: "copy-link",
           },
           FIND_IOS,
         ],
@@ -97,9 +143,9 @@ export function flowFor({ os, browser, canPrompt, onAppPage = true }) {
     }
     return {
       kind: "ios-other",
-      title: "Open this page in Safari",
+      title: "Open this page in Safari first",
       steps: [{
-        id: "safari", mock: "copy", title: "Open the app page in Safari",
+        id: "safari", mock: "copy", glyph: "safari", title: "Open the app page in Safari",
         lead: "This browser can't add apps to your Home Screen. Safari can. Copy the link, then open it in Safari: this guide carries on there.",
         hint: "Open Safari (the blue compass icon), tap the address bar and paste the link.",
         action: "copy-link",

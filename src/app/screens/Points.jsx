@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowUpCircle, BadgeCheck, BarChart3, Bookmark, Hand, Heart, MessageCircleQuestion, MessageSquare, ScanLine, Send, SquarePen, Users,
+  ArrowUpCircle, BadgeCheck, BarChart3, Bookmark, Hand, Heart, MessageCircleQuestion, MessageSquare, ScanLine, Send, Share2, SquarePen, Users,
 } from "lucide-react";
 import { useStore } from "../lib/store";
 import {
@@ -10,6 +10,7 @@ import {
 import { bookmarks, social } from "../lib/social";
 import { fileURL } from "../lib/config";
 import { showAlert } from "../lib/ui";
+import { openAttending, prefetchAttending } from "../lib/engage";
 import { Avatar, Spinner, Switch, TopBar } from "../components/ui";
 
 /* =========================================================
@@ -21,7 +22,7 @@ import { Avatar, Spinner, Switch, TopBar } from "../components/ui";
 const STAT_ICON = {
   "session.saved": Bookmark, "network.connection": Users, "feed.post": SquarePen, "feed.comment": MessageSquare,
   "live.vote": BarChart3, "live.question": MessageCircleQuestion, "session.attended": Hand, "network.inPerson": ScanLine,
-  "network.request": Send, "feed.likes": Heart, "live.upvoted": ArrowUpCircle,
+  "network.request": Send, "feed.likes": Heart, "live.upvoted": ArrowUpCircle, "linkedin.share": Share2,
 };
 
 export default function Points() {
@@ -29,6 +30,9 @@ export default function Points() {
   const s = useStore(social);
 
   useEffect(() => { refreshPoints(true); loadLeaderboard(); }, []);
+  // The I'm-attending link, ready for the rule's button (a tap opens it straight away).
+  const attendingOpen = !!me?.rules?.some((r) => r.key === "linkedin.attending") && !(pointsLine(me, "linkedin.attending")?.count > 0);
+  useEffect(() => { if (attendingOpen) prefetchAttending(); }, [attendingOpen]);
 
   // Flips on the first tap (lib/points.js): disabled while it saves, back as it was with an alert if it couldn't.
   const toggle = async (show) => {
@@ -128,8 +132,11 @@ function RuleRow({ rule: r, me }) {
         <span style={{ flex: 1, minWidth: 0 }}>
           <b style={{ display: "block", fontSize: 14 }}>{r.label}</b>
           {r.description && <span className="tiny muted" style={{ display: "block", lineHeight: 1.4, marginTop: 2 }}>{r.description}</span>}
+          {r.key.startsWith("linkedin.") && <span className="tiny muted" style={{ display: "block", lineHeight: 1.4, marginTop: 2 }}>Points are added when you post with Post to LinkedIn.</span>}
         </span>
-        {go && !finished && <Link to={go.to} state={go.state} className="rule-go pressable">{go.title}</Link>}
+        {go && !finished && (go.action === "attending"
+          ? <button type="button" className="rule-go pressable" onClick={openAttending}>{go.title}</button>
+          : <Link to={go.to} state={go.state} className="rule-go pressable">{go.title}</Link>)}
       </div>
       {cap > 1 ? (
         <div className="rule-progress">

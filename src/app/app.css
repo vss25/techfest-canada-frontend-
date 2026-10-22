@@ -462,7 +462,7 @@ a { color: var(--pur-alt); }
 @keyframes sheetIn { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes toastIn { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
 
-.toast-wrap { position: fixed; left: 0; right: 0; bottom: calc(var(--tab-space) + 8px); z-index: 70; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; padding: 0 12px; }
+.toast-wrap { position: fixed; left: 0; right: 0; bottom: calc(var(--tab-space) + 8px + var(--home-bars, 0px)); z-index: 70; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; padding: 0 12px; }
 .toast {
   pointer-events: auto; max-width: 560px; width: 100%; display: flex; align-items: center; gap: 12px;
   padding: 12px 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
@@ -650,8 +650,24 @@ a { color: var(--pur-alt); }
 .feed-panel { background: var(--bg); border-radius: 24px 24px 0 0; padding: 10px 0 28px; min-height: 60dvh; }
 .compose-prompt { display: flex; align-items: center; gap: 12px; padding: 12px 16px; width: 100%; background: transparent; border: 0; text-align: left; color: inherit; }
 .compose-prompt .fake-input { flex: 1; min-height: 40px; display: flex; align-items: center; padding: 0 14px; border-radius: 999px; background: var(--elevated); color: var(--tx2); }
+/* Home's feed bars (Oct 22 2026): "What's on your mind?" docked above the tab bar on load (.home-dock); once the
+   feed reaches the top it slides away behind the tab bar while the same bar slides down from the top
+   (.pinned-bar), and on the festival days the Now / Next bar rises above the tab bar (.now-bar). All three stay
+   mounted and move with transform only, so the feed never shifts; Reduce Motion makes it instant (below). */
 .pinned-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 25; background: var(--chrome); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); padding-top: var(--safe-top); }
-.pinned-bar .inner { max-width: 640px; margin: 0 auto; display: flex; align-items: center; padding: 6px 4px 6px 0; }
+.pinned-bar .inner, .home-dock .inner { max-width: 640px; margin: 0 auto; display: flex; align-items: center; padding: 6px 4px 6px 0; }
+.home-dock { position: fixed; left: 0; right: 0; bottom: var(--tab-space); z-index: 24; background: var(--chrome); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border-top: 0.5px solid var(--rule); padding: 0 var(--safe-right) 0 var(--safe-left); }
+.home-dock .compose-prompt { padding-top: 4px; padding-bottom: 4px; }
+.pinned-bar, .home-dock, .now-bar { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease, visibility 0s linear 0.3s; }
+.pinned-bar:not(.is-on) { transform: translateY(-100%); opacity: 0; visibility: hidden; }
+.home-dock:not(.is-on) { transform: translateY(100%); opacity: 0; visibility: hidden; }
+.now-bar:not(.is-on) { transform: translateY(calc(100% + 16px)); opacity: 0; visibility: hidden; }
+.pinned-bar.is-on, .home-dock.is-on, .now-bar.is-on { transition-delay: 0s; }
+.page--home-bars { padding-bottom: calc(var(--tab-space) + 76px); }
+.now-bar { text-decoration: none; }
+.now-bar-tag { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; background: var(--pur-tint); color: var(--pur-alt); font-size: 12px; font-weight: 700; white-space: nowrap; }
+.now-bar-tag--next { background: var(--elevated); color: var(--tx2); }
+.now-bar-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .mini-bar {
   position: fixed; left: 12px; right: 12px; bottom: calc(var(--tab-space) + 8px); z-index: 24;
   max-width: 616px; margin: 0 auto; display: flex; align-items: center; gap: 10px; padding: 10px 14px;
@@ -698,11 +714,18 @@ a { color: var(--pur-alt); }
 .menu button.danger { color: var(--red); }
 .menu button:hover { background: var(--elevated); }
 /* Post Share menu: pops up above the Share button. */
-.post-share-wrap { position: relative; height: 0; }
-.post-share-menu { top: auto; bottom: 50px; right: 12px; min-width: 190px; }
-.post-share-menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px 6px; }
-.post-action .spin { animation: spin 0.8s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .post-action .spin { animation: none; } }
+/* Share a post (PostShareSheet): app tiles, three to a row. */
+.share-apps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 8px; padding: 4px 0 2px; }
+.share-app { display: flex; flex-direction: column; align-items: center; gap: 7px; min-height: 88px; padding: 6px 2px; border: 0; border-radius: var(--r-control); background: none; color: var(--tx); font: inherit; }
+.share-app-ico { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22); }
+.share-app-ico--ig { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285aeb 90%); }
+.share-app-ico--plain { background: var(--elevated); border: 1px solid var(--border); box-shadow: none; color: var(--tx); }
+.share-app-ico--plain svg { width: 24px; height: 24px; }
+.share-app-label { font-size: 13px; font-weight: 600; }
+.share-card-status { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 20px; margin: 0; text-align: center; }
+.share-card-status svg { width: 15px; height: 15px; flex: none; }
+.share-card-status .spin { animation: spin 0.8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .share-card-status .spin { animation: none; } }
 
 /* Composer */
 .media-strip { display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; touch-action: pan-x pan-y; }
@@ -713,6 +736,8 @@ a { color: var(--pur-alt); }
 .mention-list { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
 .mention-list button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 6px 12px; background: none; border: 0; border-bottom: 1px solid var(--border); text-align: left; }
 .mention-list button:last-child { border-bottom: 0; }
+.comment-mentions { padding: 0 12px; }
+.comment-mentions:empty { display: none; }
 
 /* Comments / chat bubbles */
 .comment { display: flex; gap: 10px; }
@@ -812,6 +837,7 @@ textarea.input--ios { min-height: 120px; }
 .inset-row + .inset-row { box-shadow: inset 64px 1px 0 -63px transparent; border-top: 1px solid var(--border); }
 /* Group page (iOS GroupDetailView / GroupMembersView). */
 .group-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+.group-head-share { margin-left: auto; flex: none; }
 .members-link { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--pur-alt); font-size: 12.5px; font-weight: 600; min-height: 24px; }
 .members-link svg { width: 10px; height: 10px; stroke-width: 3; }
 .pinned-strip { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
@@ -967,7 +993,7 @@ textarea.input--ios { min-height: 120px; }
 .transit-ico svg { width: 15px; height: 15px; }
 .transit-chev { width: 12px; height: 12px; color: var(--tx2); stroke-width: 3; flex: none; }
 /* iOS coachmark: a dark card above the tab bar. */
-.coachmark { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tab-space) + 8px); z-index: 30; width: min(608px, calc(100% - 32px)); display: flex; align-items: flex-start; gap: 12px; padding: 14px; border-radius: var(--r-control); background: rgb(26, 18, 51); border: 1px solid rgba(255, 255, 255, 0.12); color: #fff; box-shadow: var(--shadow); }
+.coachmark { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tab-space) + 8px + var(--home-bars, 0px)); z-index: 30; width: min(608px, calc(100% - 32px)); display: flex; align-items: flex-start; gap: 12px; padding: 14px; border-radius: var(--r-control); background: rgb(26, 18, 51); border: 1px solid rgba(255, 255, 255, 0.12); color: #fff; box-shadow: var(--shadow); }
 .coachmark b { display: block; font-size: 14px; font-weight: 700; }
 .coachmark span span, .coachmark > span > span { display: block; font-size: 12px; color: rgba(255, 255, 255, 0.85); margin-top: 3px; }
 .coachmark-ico { width: 38px; height: 38px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--pur); }
@@ -1030,6 +1056,21 @@ textarea.input--ios { min-height: 120px; }
 .poll-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
 .poll-card h2 { margin: 0; font-size: 15px; font-weight: 600; }
 .poll-foot { font-size: 11px; color: var(--tx2); }
+
+/* LinkedIn from the app (Oct 22 2026, LinkedInCta.jsx): the I'm-attending card on Home and "Share on LinkedIn". */
+.li-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--border); }
+.li-card .share-app-ico { width: 44px; height: 44px; border-radius: 12px; flex: none; }
+.li-card-title { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.3; }
+.li-card-sub { margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: var(--tx2); }
+.li-points { flex: none; padding: 4px 9px; border-radius: 999px; background: var(--pur-tint); color: var(--pur-alt); font-size: 13px; font-weight: 800; }
+.li-card-btn { background: #0A66C2; border-color: #0A66C2; color: #fff; }
+.list-row .share-app-ico { width: 34px; height: 34px; border-radius: 10px; box-shadow: none; flex: none; }
+.list-row .share-app-ico svg { width: 18px; height: 18px; }
+.li-share-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid color-mix(in srgb, #0A66C2 55%, transparent); background: color-mix(in srgb, #0A66C2 14%, transparent); color: var(--tx); font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.li-share-btn svg { color: #3d8fe0; }
+.li-share-btn--sm { min-height: 34px; padding: 0 12px; font-size: 12.5px; }
+.poll-card .li-share-btn { align-self: flex-start; margin-top: 4px; }
+.notify-prefs .toggle-row + .toggle-row { border-top: 1px solid var(--border); padding-top: 10px; }
 .poll-note { margin: 6px 0 0; text-align: center; font-size: 11px; color: var(--tx2); }
 .poll-opt { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; height: 44px; padding: 0 12px; border-radius: var(--r-control); background: var(--elevated); border: 1px solid var(--border); text-align: left; overflow: hidden; color: var(--tx); }
 .poll-opt .fill { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--pur) 35%, transparent); transition: width 0.4s ease; border-radius: var(--r-control); }
@@ -1363,6 +1404,11 @@ textarea.input--ios { min-height: 120px; }
 /* ---------- Install guide ---------- */
 
 .guide { display: flex; flex-direction: column; gap: 18px; }
+/* The install sheet's short list (AppNotices): the button each step starts with, then what to tap. */
+.install-steps { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.install-steps li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--r-control); background: var(--elevated); font-size: 16px; font-weight: 600; line-height: 1.3; }
+.install-step-glyph { flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--pur-alt); border: 1px solid var(--border); }
+.install-step-n { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 8px; border-radius: 50%; background: var(--pur); color: #fff; font-size: 12px; vertical-align: 1px; }
 .guide-progress { display: flex; gap: 6px; }
 .guide-progress i { flex: 1; height: 5px; border-radius: 3px; background: var(--rule); }
 .guide-progress i.on { background: var(--pur); }
@@ -1398,6 +1444,8 @@ textarea.input--ios { min-height: 120px; }
   .toast-wrap { bottom: 20px; }
   .mini-bar { bottom: 20px; left: 108px; }
   .pinned-bar { left: 96px; }
+  .home-dock { left: 96px; bottom: 0; padding-bottom: var(--safe-bottom); }
+  .page--home-bars { padding-bottom: 100px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -15,6 +15,7 @@ import {
 import { num, when } from "../format";
 import { EmailCopyEditor } from "../tickets/EmailCopyEditor";
 import { useLivePreview } from "../tickets/speakerEmailHooks";
+import EmailPreview from "./EmailPreview";
 
 /* =========================================================
    Admin → Website & app → App invite email (Oct 20 2026)
@@ -87,44 +88,6 @@ function TicketCell({ ticket: t }) {
 }
 
 /** The email in a sandboxed frame, at a desktop or phone width, in the dark or light version (the email follows the frame's colour scheme). */
-function InvitePreview({ preview, loading, error }) {
-  const [mode, setMode] = useState("html");
-  const [width, setWidth] = useState("desktop");
-  const [scheme, setScheme] = useState("dark");
-  const seg = (value, set, items, label) => (
-    <div className="flex gap-1" role="group" aria-label={label}>
-      {items.map(([k, text, Icon]) => (
-        <button key={k} type="button" aria-pressed={value === k} onClick={() => set(k)}
-          className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold ${value === k ? "bg-ttfc-purple/30 text-white" : "text-ttfc-muted hover:text-ttfc-text"}`}>
-          {Icon && <Icon className="h-3.5 w-3.5" aria-hidden="true" />}{text}
-        </button>
-      ))}
-    </div>
-  );
-  if (!preview) return loading ? <LoadingState label="Loading the preview…" /> : error ? <ErrorState error={error} title="Couldn't load the preview" /> : null;
-  return (
-    <div className="overflow-hidden rounded-xl border border-ttfc-line">
-      <div className="space-y-2 border-b border-ttfc-line bg-ttfc-panel2 px-3 py-2 text-xs">
-        <p className="truncate"><span className="text-ttfc-dim">Subject</span> <b>{preview.subject || "—"}</b></p>
-        {preview.preheader && <p className="truncate text-ttfc-muted"><span className="text-ttfc-dim">Preview text</span> {preview.preheader}</p>}
-        <div className="flex flex-wrap items-center gap-3">
-          {seg(mode, setMode, [["html", "Email"], ["text", "Plain text"]], "Email format")}
-          {mode === "html" && seg(width, setWidth, [["desktop", "Desktop", Monitor], ["phone", "Phone", Smartphone]], "Width")}
-          {mode === "html" && seg(scheme, setScheme, [["dark", "Dark", Moon], ["light", "Light", Sun]], "Colours")}
-          {loading && <span className="text-[11px] text-ttfc-dim">Updating…</span>}
-        </div>
-      </div>
-      {error && <p className="border-b border-ttfc-line bg-red-500/10 px-3 py-2 text-xs text-red-200">{error.message || String(error)}</p>}
-      {mode === "html" ? (
-        <div className="flex justify-center bg-ttfc-ink p-3">
-          <iframe title="App invite email preview" sandbox="" srcDoc={preview.html || ""} style={{ colorScheme: scheme }}
-            className={`block h-[72vh] min-h-[480px] rounded-lg border border-ttfc-line ${width === "phone" ? "w-[375px] max-w-full" : "w-full"} ${scheme === "light" ? "bg-[#f6f2fb]" : "bg-[#06020f]"}`} />
-        </div>
-      ) : <pre className="h-[72vh] min-h-[480px] overflow-auto whitespace-pre-wrap bg-ttfc-ink px-4 py-3 font-mono text-xs leading-relaxed text-ttfc-muted">{preview.text}</pre>}
-    </div>
-  );
-}
-
 /**
  * A group ("Send next N") or the people ticked: the names (up to NAMES_SHOWN) and the count, then Send. Type SEND
  * from `typeFrom` people. The server sends only to people on its own list who can get it now; the rest come back.
@@ -428,7 +391,7 @@ export default function AppInvite() {
         <div className="flex min-w-0 flex-col gap-4">
           <Card>
             <SectionTitle hint="A made-up attendee (Jane). Each person gets their own first name and email address.">Preview</SectionTitle>
-            <InvitePreview preview={preview.data} loading={preview.loading} error={preview.error} />
+            <EmailPreview title="App invite email preview" preview={preview.data} loading={preview.loading} error={preview.error} />
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <Button icon={Mail} loading={testing} onClick={sendTest}>Send me a test</Button>
               <span className="text-xs text-ttfc-dim">To your own email, with the wording above (saved or not). Subject starts “[Test]”, not counted.</span>

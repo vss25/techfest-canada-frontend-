@@ -1,12 +1,13 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { AtSign, ImagePlus, Link2, Video, X, Loader2 } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth } from "../lib/auth";
-import { cms } from "../lib/cms";
 import { createPost, social } from "../lib/social";
 import { fileURL, POST_TAGS } from "../lib/config";
 import { blobToDataURL, compressImage, uploadMedia, videoInfo } from "../lib/media";
-import { insertMention, mentionQuery } from "../lib/mentions";
+import { insertMention, keptMentions, mentionQuery, mentionSuggestions } from "../lib/mentions";
+import { MentionList } from "./Mentions";
+import { useMentionCandidates } from "../lib/useMentionCandidates";
 import { isDemoApi } from "../lib/api";
 import { showAlert } from "../lib/ui";
 import { Avatar, Button, Chip, IconButton, Sheet } from "./ui";
@@ -21,7 +22,6 @@ import { Avatar, Button, Chip, IconButton, Sheet } from "./ui";
 export default function Composer({ onClose }) {
   const a = useStore(auth);
   const s = useStore(social);
-  const c = useStore(cms);
   const [text, setText] = useState("");
   const [caret, setCaret] = useState(0);
   const [items, setItems] = useState([]); // {id, type, blob, previewUrl, width, height, duration}
@@ -40,21 +40,10 @@ export default function Composer({ onClose }) {
   const maxItems = media.enabled ? Math.max(1, media.maxItems || 6) : 1;
   const me = a.me || {};
 
-  const candidates = useMemo(() => {
-    const out = [];
-    const seen = new Set();
-    for (const sp of c.speakers) { const k = sp.name.toLowerCase(); if (!seen.has(k)) { seen.add(k); out.push({ type: "speaker", id: sp.id, name: sp.name, detail: [sp.title, sp.company].filter(Boolean).join(" · "), photo: sp.photo }); } }
-    for (const p of s.people) {
-      const k = p.name.toLowerCase();
-      if (seen.has(k) || p.id === me.id || s.blocked.includes(p.id)) continue;
-      seen.add(k);
-      out.push({ type: "user", id: p.id, name: p.name, detail: [p.jobTitle, p.organization].filter(Boolean).join(" · "), photo: fileURL(p.avatarUrl) });
-    }
-    return out;
-  }, [c.speakers, s.people, s.blocked, me.id]);
+  const candidates = useMentionCandidates();
 
   const q = mentionQuery(text, caret);
-  const suggestions = q === null ? [] : candidates.filter((x) => x.name.toLowerCase().includes(q.toLowerCase())).slice(0, 6);
+  const suggestions = mentionSuggestions(candidates, q);
   const pickList = candidates.filter((x) => !pickQuery || [x.name, x.detail].some((v) => v.toLowerCase().includes(pickQuery.toLowerCase()))).slice(0, 50);
 
   const tag = (x, fromPicker = false) => {
@@ -98,7 +87,7 @@ export default function Composer({ onClose }) {
     setPosting(true);
     try {
       const body = text.trim();
-      const payload = { body, topicTags: tags, linkUrl: link.trim(), ...(mentions.length ? { mentions: mentions.filter((m) => body.includes("@" + m.name)) } : {}) };
+      const payload = { body, topicTags: tags, linkUrl: link.trim(), ...(mentions.length ? { mentions: keptMentions(body, mentions) } : {}) };
       if (items.length && media.enabled) {
         const up = [];
         for (let i = 0; i < items.length; i++) {
@@ -143,16 +132,7 @@ export default function Composer({ onClose }) {
           aria-label="Post text"
           autoFocus
         />
-        {suggestions.length > 0 && (
-          <div className="mention-list" role="listbox" aria-label="Tag someone">
-            {suggestions.map((x) => (
-              <button key={x.type + x.id} type="button" role="option" aria-selected="false" onClick={() => tag(x)}>
-                <Avatar name={x.name} src={x.photo} size={30} round={x.type === "speaker"} />
-                <span style={{ minWidth: 0 }}><b className="small" style={{ display: "block" }}>{x.name}{x.type === "speaker" ? " · Speaker" : ""}</b><span className="tiny muted ellipsis" style={{ display: "block" }}>{x.detail}</span></span>
-              </button>
-            ))}
-          </div>
-        )}
+        <MentionList suggestions={suggestions} onPick={(x) => tag(x)} />
         <div className="row wrap" style={{ gap: 8 }}>
           <input ref={fileRef} type="file" hidden multiple={maxItems > 1} accept={media.enabled ? "image/*,video/*" : "image/*"} onChange={pick} />
           <Button size="sm" icon={media.enabled ? ImagePlus : ImagePlus} onClick={() => fileRef.current?.click()}>{items.length ? "Add more" : media.enabled ? "Photos / video" : "Photo"}</Button>

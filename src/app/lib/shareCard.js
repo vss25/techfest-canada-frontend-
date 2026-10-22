@@ -1,5 +1,5 @@
 import * as L from "./shareCardLayout.js";
-import { caption, copiedNote, orderedItems, PLATFORM_LABEL, shareUrl } from "./share.js";
+import { caption, orderedItems, PLATFORM_LABEL, sharePlan, SITE_URL } from "./share.js";
 import { fileURL } from "./config.js";
 import { initialsOf, showAlert } from "./ui.js";
 
@@ -9,11 +9,13 @@ import { initialsOf, showAlert } from "./ui.js";
    ShareCard.kt / PostShare.kt): 1080 × 1350 (Instagram 4:5)
    with the author, the text with its line breaks and
    highlighted #tags / @names, the photos and a TTFC footer.
-   Then navigator.share({ files: [card, ...photos], text })
-   where the browser can share files; otherwise the card is
-   downloaded, the caption copied and the app's web composer
-   opened. Pictures are fetched as blobs (CORS) and drawn from
-   those, so the canvas is never tainted.
+   The card is prepared when the share sheet opens; a tap on an
+   app then acts at once (lib/share.js sharePlan): X / LinkedIn
+   open their composer, Instagram the share sheet with a link
+   for a chat, WhatsApp / More… the share sheet with the card
+   (or the caption alone if the card isn't ready). Pictures are
+   fetched as blobs (CORS) and drawn from those, so the canvas
+   is never tainted.
 ========================================================= */
 
 const INK = {
@@ -341,6 +343,20 @@ export async function prepareShare(source) {
   };
 }
 
+// The last few cards, so opening the same post's share sheet again is instant.
+const cards = new Map();
+/** prepareShare(), remembered per post content (a failed one is tried again next time). */
+export function preparedShare(source) {
+  const key = JSON.stringify([source.authorName, source.subtitle, source.avatarUrl, source.body, source.link, source.media.map((m) => m.url)]);
+  if (!cards.has(key)) {
+    const job = prepareShare(source);
+    cards.set(key, job);
+    job.catch(() => cards.delete(key));
+    while (cards.size > 6) cards.delete(cards.keys().next().value);
+  }
+  return cards.get(key);
+}
+
 function copy(text) {
   try { navigator.clipboard?.writeText(text)?.catch?.(() => {}); } catch { /* no clipboard */ }
 }
@@ -353,39 +369,59 @@ function download(file) {
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
+const isPhoneOrTablet = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+
 /**
- * Shares a prepared post to `platform` ("instagram" | "whatsapp" |
- * "linkedin" | "x" | null for More…). Call it straight from the tap (no
- * await before it), as browsers only open the share sheet from a gesture.
- * If the gesture has expired, a toast offers a Share button (a fresh tap).
- * Returns "shared" (share sheet) or "fallback" (card downloaded).
+ * Opens an app's composer in a new tab / the in-app browser (the app itself through its universal link).
+ * → false when the browser didn't open it (then a toast offers a fresh tap that does).
  */
-export function sharePrepared(prepared, platform) {
-  const { source } = prepared;
-  const text = caption(source.authorName, source.body, source.link, platform);
-  copy(text);
+function openExternal(url, label) {
+  let w = null;
+  try { w = window.open(url, "_blank"); } catch { w = null; }
+  if (w) { try { w.opener = null; } catch { /* cross-origin already */ } return true; }
+  showAlert(`Open ${label}`, "Your post is ready. Tap Open.", { action: { label: "Open", run: () => { window.location.href = url; } }, ms: 10000 });
+  return false;
+}
+
+/** The card files that this browser will take in one share, card first (some refuse a mix or many files). */
+function cardFiles(prepared, platform) {
+  if (!prepared) return null;
   const files = orderedItems(platform, prepared.card, prepared.photos, prepared.videos, null).filter(Boolean);
-  const canFiles = (list) => { try { return !!navigator.canShare?.({ files: list }); } catch { return false; } };
-  // Some browsers refuse a mix (video + photos) or many files: fall back to fewer, card first.
-  const pick = [files, files.filter((f) => f.type.startsWith("image/")), [prepared.card]].find(canFiles);
-  if (navigator.share && pick) {
-    const data = platform === "instagram" ? { files: pick } : { files: pick, text };
-    let p;
-    try { p = navigator.share(data); } catch (e) { p = Promise.reject(e); }
-    p.catch((e) => {
-      if (e?.name === "NotAllowedError") {
-        showAlert("Your post card is ready", "Tap Share to open the share sheet.", { action: { label: "Share", run: () => sharePrepared(prepared, platform) }, ms: 10000 });
-      }
-    });
-    showAlert(copiedNote(platform));
-    return "shared";
-  }
-  // No file sharing here (e.g. a desktop browser): save the card, copy the caption, open the app's composer.
-  download(prepared.card);
-  const url = platform && shareUrl(platform, text);
-  if (url) window.open(url, "_blank", "noopener");
-  showAlert("Card saved and caption copied",
-    platform === "instagram" ? "Post the card from Instagram, then paste the caption."
-      : url ? `Add the card to your ${PLATFORM_LABEL[platform]} post.` : "Attach the card wherever you share it.");
-  return "fallback";
+  const ok = (list) => { try { return !!navigator.canShare?.({ files: list }); } catch { return false; } };
+  return [files, files.filter((f) => f.type.startsWith("image/")), [prepared.card]].find(ok) || null;
+}
+
+function systemShare(data, retry) {
+  let p;
+  try { p = navigator.share(data); } catch (e) { p = Promise.reject(e); }
+  p.catch((e) => {
+    if (e?.name === "AbortError") return; // closed the sheet
+    // The tap no longer counted, or the files weren't taken: one more tap shares again (text only if files failed).
+    const textOnly = e?.name !== "NotAllowedError";
+    showAlert(textOnly ? "Couldn't share the card" : "Ready to share", "Tap Share to open the share sheet.",
+      { action: { label: "Share", run: () => retry(textOnly) }, ms: 10000 });
+  });
+}
+
+/**
+ * Shares a post to `platform` ("instagram" | "whatsapp" | "linkedin" | "x" | null for More…), straight from
+ * the tap: no await before it. `prepared` is the card from prepareShare(), or null while it's still being made
+ * (then the caption goes without it rather than nothing happening).
+ */
+export function shareTo(source, prepared, platform, { textOnly = false } = {}) {
+  const text = caption(source.authorName, source.body, source.link, platform);
+  const files = textOnly ? null : cardFiles(prepared, platform);
+  const plan = sharePlan(platform, text, {
+    canShare: typeof navigator.share === "function", canShareCard: !!files, cardReady: !!prepared, mobile: isPhoneOrTablet(),
+  });
+  // Copy first, then open / share, all in this tap (Safari 26.5: copy then share, and copy then open, both work).
+  copy(platform === "instagram" && !source.link ? `${text}\n${SITE_URL}` : text);
+  const opened = plan.open ? openExternal(plan.open, PLATFORM_LABEL[platform] || "the app") : true;
+  const again = (onlyText) => shareTo(source, prepared, platform, { textOnly: onlyText });
+  if (plan.share === "card") systemShare({ files, text }, again);
+  else if (plan.share === "link") systemShare({ text, url: SITE_URL }, again);
+  else if (plan.share === "text") systemShare({ text }, again);
+  if (plan.download && prepared) download(prepared.card);
+  if (opened) showAlert(...plan.note);
+  return plan;
 }

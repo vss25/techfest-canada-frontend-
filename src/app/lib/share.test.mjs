@@ -2,7 +2,7 @@
 // Run: node --test src/app/lib/share.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { caption, copiedNote, orderedItems, shareUrl } from "./share.js";
+import { caption, copiedNote, INSTAGRAM_INBOX, orderedItems, sharePlan, shareUrl } from "./share.js";
 import { hashtags, normalize, overflow, runs, textStyle, tiles } from "./shareCardLayout.js";
 
 test("caption per app", () => {
@@ -24,8 +24,29 @@ test("media first, caption last", () => {
   assert.deepEqual(orderedItems(null, "card", [], [], "cap"), ["card", "cap"]);
   assert.deepEqual(orderedItems("x", "card", photos, ["v"], "cap"), ["card", "p1", "p2", "p3", "cap"]);
   assert.deepEqual(orderedItems("linkedin", "card", ["p1"], ["v"], "cap"), ["card", "p1", "cap"]);
-  assert.equal(copiedNote("instagram"), "Caption copied. Paste it in Instagram.");
+  assert.equal(copiedNote("instagram"), "Pick Instagram, then send it to a chat. Link copied too.");
   assert.equal(copiedNote("whatsapp"), "Pick WhatsApp. Caption copied too.");
+});
+
+test("every share tap does something, decided before any await (Oct 22 2026)", () => {
+  const phone = { canShare: true, canShareCard: true, cardReady: true, mobile: true };
+  assert.equal(sharePlan("x", "Hi", phone).open, "https://x.com/intent/post?text=Hi");
+  assert.equal(sharePlan("linkedin", "Hi", phone).open, "https://www.linkedin.com/feed/?shareActive=true&text=Hi");
+  assert.equal(sharePlan("instagram", "Hi", phone).share, "link");
+  assert.equal(sharePlan("instagram", "Hi", { ...phone, canShare: false }).open, INSTAGRAM_INBOX);
+  assert.equal(sharePlan("instagram", "Hi", { ...phone, mobile: false }).open, INSTAGRAM_INBOX);
+  assert.equal(sharePlan("whatsapp", "Hi", phone).share, "card");
+  assert.equal(sharePlan("whatsapp", "Hi", { ...phone, cardReady: false, canShareCard: false }).share, "text");
+  assert.equal(sharePlan(null, "Hi", { ...phone, canShareCard: false }).share, "text");
+  const desk = sharePlan("whatsapp", "Hi", { canShare: false, cardReady: true, mobile: false });
+  assert.equal(desk.open, "https://wa.me/?text=Hi");
+  assert.equal(desk.download, true);
+  for (const platform of ["instagram", "whatsapp", "linkedin", "x", null]) {
+    for (const env of [phone, {}, { canShare: true, mobile: true }]) {
+      const plan = sharePlan(platform, "Hi", env);
+      assert.ok(plan.note?.[0], `${platform}: a toast says what happened`);
+    }
+  }
 });
 
 const r = (text, highlight) => ({ text, highlight });

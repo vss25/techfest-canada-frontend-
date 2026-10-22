@@ -80,18 +80,22 @@ export function dismissWelcome() {
 // ---------- Service worker ----------
 //
 // Updates apply on their own:
-//  • checked on every launch and whenever the app comes back to the front
-//    (at most every 5 minutes): one request for /app/sw.js;
+//  • checked on every launch, whenever the app comes back to the front (at
+//    most once a minute) and every 10 minutes while it's open: one request
+//    for /app/sw.js (no-cache);
 //  • a new version found in the first seconds after launch (before any tap)
 //    or while the app is in the background reloads straight away, then says
 //    "Updated to the latest version";
 //  • if the person is typing or uploading, the "New version available"
 //    banner stays and the update applies the next time the app is hidden;
-//  • otherwise it applies on the next screen change or when hidden.
+//  • otherwise the banner shows too (Reload applies it now) and it applies
+//    on its own at the next screen change or when hidden. (Oct 22 2026: a
+//    phone that stayed on Home kept the old floating tab bar after a fix.)
 
 const UPDATED_FLAG = "ttfc.sw.updated";
-const LAUNCH_WINDOW = 4000;
-const RECHECK_MS = 5 * 60 * 1000;
+const LAUNCH_WINDOW = 8000;
+const RECHECK_MS = 60 * 1000;
+const POLL_MS = 10 * 60 * 1000;
 const startedAt = Date.now();
 let interacted = false;
 let registration = null;
@@ -153,8 +157,9 @@ async function onWaiting() {
     return;
   }
   if (document.visibilityState === "hidden" || inLaunchWindow()) { applyNow(); return; }
-  if (isMidTask()) { pwa.set({ updateReady: true }); return; } // banner; applied when hidden
-  pendingOnNav = true; // the next screen change (or hidden)
+  pwa.set({ updateReady: true }); // the banner: Reload now
+  if (isMidTask()) return; // applied when hidden
+  pendingOnNav = true; // or on its own at the next screen change (or hidden)
 }
 
 export function registerServiceWorker() {
@@ -190,6 +195,7 @@ export function registerServiceWorker() {
       });
     });
     checkForUpdate(true); // every launch
+    setInterval(() => { if (document.visibilityState === "visible") checkForUpdate(); }, POLL_MS);
   }).catch(() => { /* private mode etc.: the app still works online */ });
 
   const hadController = !!navigator.serviceWorker.controller;

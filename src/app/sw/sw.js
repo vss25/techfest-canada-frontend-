@@ -25,9 +25,14 @@
      fail the picture (Oct 21 2026: speaker photos went missing
      in long lists in Safari; see imageFirst).
    • Anything signed in, and every write: network only, never cached.
-   • Message notifications (Web Push, lib/webpush.js): shown
-     unless a window is open on that chat; a tap focuses an open
-     app window on the chat (/app/chat/<senderId>), else opens one.
+     The feed, comments, chats and account calls go straight to the
+     network even without a token (Oct 22 2026: a feed that's missing
+     a post the app already showed must never come from a cache).
+   • Notifications (Web Push, lib/webpush.js): messages, and since
+     Oct 22 2026 comments, replies, mentions and likes on your posts,
+     one per thread (tag); shown unless a window is open on that
+     screen; a tap focuses an open app window on it (routeOf), else
+     opens one.
 ========================================================= */
 
 const PRECACHE = self.__TTFC_PRECACHE__;
@@ -99,30 +104,52 @@ self.addEventListener("message", (event) => {
 const NOTIFY_ICON = "/app/icons/icon-192.png";
 const NOTIFY_BADGE = "/app/icons/icon-96.png";
 
-/** The screen a push opens: its `url` (the app's own routes: /app/chat/<senderId>, /app/group/<id>…), else a chat
-    built from thread "dm.<senderId>" (or `from`), else the tab its ttfc:// link names. */
+/**
+ * The screen a push opens (self-contained: sw.test.mjs runs it). Its `url` when it's one of the app's own routes
+ * (/app/post/<id>, /app/discussion/<id>, /app/group/<id>, /app/chat/<id>…), else built from `thread`
+ * (post.<id>, disc.<id>, group.<id>, dm.<senderId>), else from `kind` + `id`, else the tab its ttfc:// link names.
+ * Activity on a post (comment, reply, mention, like; Oct 22 2026) opens the post with its replies showing.
+ */
 function routeOf(d) {
-  if (typeof d.url === "string" && /^\/app\/[^/]/.test(d.url)) return d.url;
-  const sender = typeof d.thread === "string" && d.thread.startsWith("dm.") ? d.thread.slice(3) : (d.kind === "dm" && d.from) || "";
-  if (sender) return `/app/chat/${encodeURIComponent(sender)}`;
-  const tab = /^ttfc:\/\/tab\/(home|network|chats|schedule|profile)$/.exec(String(d.link || ""));
-  if (tab) return tab[1] === "home" ? "/app/" : `/app/${tab[1]}`;
-  return "/app/";
+  const POST_KINDS = ["comment", "reply", "mention", "like"];
+  const enc = encodeURIComponent;
+  const thread = typeof d.thread === "string" ? d.thread : "";
+  const dot = thread.indexOf(".");
+  const scope = dot > 0 ? thread.slice(0, dot) : "";
+  const tid = dot > 0 ? thread.slice(dot + 1) : "";
+  let url = typeof d.url === "string" && /^\/app\/[^/]/.test(d.url) ? d.url : "";
+  if (!url && tid) {
+    if (scope === "post") url = `/app/post/${enc(tid)}`;
+    else if (scope === "disc") url = `/app/discussion/${enc(tid)}`;
+    else if (scope === "group") url = `/app/group/${enc(tid)}`;
+    else if (scope === "dm") url = `/app/chat/${enc(tid)}`;
+  }
+  if (!url && d.kind === "dm" && d.from) url = `/app/chat/${enc(d.from)}`;
+  if (!url && POST_KINDS.includes(d.kind) && d.id) url = `/app/post/${enc(d.id)}`;
+  if (!url) {
+    const tab = /^ttfc:\/\/tab\/(home|network|chats|schedule|profile)$/.exec(String(d.link || ""));
+    url = tab ? (tab[1] === "home" ? "/app/" : `/app/${tab[1]}`) : "/app/";
+  }
+  if (/^\/app\/post\/[^/?#]+$/.test(url) && (POST_KINDS.includes(d.kind) || scope === "post")) url += "?comments=1";
+  return url;
 }
 
 const windows = () => self.clients.matchAll({ type: "window", includeUncontrolled: true });
-const pathOf = (u) => { try { return new URL(u).pathname; } catch { return ""; } };
+const pathOf = (u) => { try { return new URL(u, self.location.origin).pathname; } catch { return ""; } };
 
 self.addEventListener("push", (event) => {
   let d = {};
   try { d = event.data ? event.data.json() : {}; } catch { d = { body: event.data ? event.data.text() : "" }; }
   const url = routeOf(d);
   event.waitUntil((async () => {
-    // Someone reading that very chat sees the message arrive; no banner on top of it.
+    // Someone reading that very chat (or post) sees it arrive; no banner on top of it.
     const open = await windows();
-    if (open.some((c) => c.focused && c.visibilityState === "visible" && pathOf(c.url) === url)) return;
+    if (open.some((c) => c.focused && c.visibilityState === "visible" && pathOf(c.url) === pathOf(url))) return;
+    // One notification per thread: a newer push for the same post / chat replaces the older one (and still alerts).
+    // The payload: { title, body, link, thread, kind, id, url, tag, from } (services/push.js). renotify needs a tag.
+    const tag = (typeof d.tag === "string" && d.tag) || (typeof d.thread === "string" && d.thread) || undefined;
     await self.registration.showNotification(d.title || "TTFC", {
-      body: d.body || "", tag: d.thread || undefined, data: { url }, icon: NOTIFY_ICON, badge: NOTIFY_BADGE,
+      body: d.body || "", tag, renotify: !!tag, data: { ...d, url }, icon: NOTIFY_ICON, badge: NOTIFY_BADGE,
     });
   })());
 });
@@ -160,8 +187,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Signed-in API calls carry a token: never cached here.
+  // Signed-in API calls carry a token: never cached here. Nor is anything social or account-related.
   if (req.headers.has("Authorization")) return;
+  if (/\/api\/(social|community|auth|profile|app\/(?!content$))/.test(url.pathname)) return;
 
   if (url.origin === self.location.origin) {
     if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/app/icons/") || url.pathname.startsWith("/app/brand/") || /\.(woff2?|ttf)$/.test(url.pathname)) {

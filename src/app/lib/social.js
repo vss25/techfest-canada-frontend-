@@ -1,6 +1,8 @@
-import { del, get, post } from "./api";
+import { ApiError, del, get, post } from "./api";
 import { auth, can, isStaff } from "./auth";
 import { createStore, local } from "./store";
+import { mergeFeed } from "./feedMerge.js";
+import { markActive } from "./engage";
 
 /* =========================================================
    The signed-in layer (the web SyncService): people, connections,
@@ -69,6 +71,7 @@ export function watchIncoming({ whileHidden, notify }) {
 export function startSocial() {
   stopSocial();
   refreshAll();
+  markActive("open", 0);
   pollTimer = setInterval(() => {
     if (document.visibilityState !== "visible") {
       if (pollWhileHidden()) refreshThreads();
@@ -77,8 +80,14 @@ export function startSocial() {
     refreshThreads();
     refreshConnections();
     refreshNotifications();
+    markActive("open", 5 * 60 * 1000); // still here (the "What you missed" email skips what you've seen)
   }, 30000);
 }
+
+// Back in front: you're looking at the app again.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && pollTimer && signedIn()) markActive("foreground");
+});
 
 export function stopSocial() {
   clearInterval(pollTimer);
@@ -369,12 +378,47 @@ export function chatsHasNew(s) {
 
 // ---------- Feed ----------
 
+/*
+ * The feed never drops a post it has shown unless the post is really gone (Oct 22 2026: a speaker's new post
+ * vanished after a relaunch and came back seconds later, and a comment on it said "Not found"):
+ *  • Two refreshes can overlap (Home and the launch refresh both ask): only the newest answer counts.
+ *  • The request skips every cache (the service worker never caches signed-in calls either).
+ *  • A post this app has shown that a fresh page leaves out (newer than that page's oldest post) stays, and
+ *    is checked on its own: kept if it still opens, dropped only on 404 / 410. Posts deleted or removed here
+ *    are dropped at once.
+ */
+let feedSeq = 0;
+const gone = new Set();
+const FEED_LIMIT = 60;
+
 export async function refreshFeed() {
   if (!signedIn()) return;
+  const seq = ++feedSeq;
   try {
-    const feed = await get("social/feed?limit=60");
-    set({ feed: Array.isArray(feed) ? feed : [], feedLoaded: true, feedError: "" });
-  } catch (e) { set({ feedLoaded: true, feedError: e?.message || "" }); }
+    const fresh = await get(`social/feed?limit=${FEED_LIMIT}`, { cache: "no-store" });
+    if (seq !== feedSeq) return; // a newer refresh is on its way
+    const { feed, check } = mergeFeed(Array.isArray(fresh) ? fresh : [], social.get().feed, gone, FEED_LIMIT);
+    set({ feed, feedLoaded: true, feedError: "" });
+    check.slice(0, 5).forEach(recheckPost);
+  } catch (e) {
+    if (seq === feedSeq) set({ feedLoaded: true, feedError: e?.message || "" });
+  }
+}
+
+/** A post the feed left out: still there (keep, fresh copy) or really gone (drop)? */
+async function recheckPost(p) {
+  try {
+    const fresh = await fetchPost(p.id);
+    if (fresh?.id) patchPost(p.id, () => fresh);
+  } catch (e) {
+    if (e?.status === 404 || e?.status === 410) forgetPost(p.id);
+  }
+}
+
+/** Drops a post that's gone (deleted, removed, or the server says it isn't there any more). */
+export function forgetPost(id) {
+  gone.add(id);
+  set({ feed: social.get().feed.filter((x) => x.id !== id) });
 }
 
 const patchPost = (id, fn) => set({ feed: social.get().feed.map((p) => (p.id === id ? fn(p) : p)) });
@@ -393,8 +437,29 @@ export async function toggleLike(p) {
 
 export const fetchComments = (postId) => get(`social/feed/${postId}/comments`);
 
-export async function addComment(postId, body) {
-  const c = await post(`social/feed/${postId}/comments`, { body });
+/**
+ * A reply on a post. A 404 doesn't mean much on its own (Oct 22 2026: a brand-new post said "Not found" for a
+ * moment): the post is fetched again; if it's there the reply is sent once more, and only if the post is
+ * really gone does this say so ("This post isn't available any more.", and the post leaves the feed).
+ */
+export async function addComment(postId, body, mentions = []) {
+  const payload = { body, ...(mentions.length ? { mentions } : {}) };
+  let c;
+  try {
+    c = await post(`social/feed/${postId}/comments`, payload);
+  } catch (e) {
+    if (e?.status !== 404) throw e;
+    let still = null;
+    try { still = await fetchPost(postId); } catch (e2) {
+      if (e2?.status === 404 || e2?.status === 410) {
+        forgetPost(postId);
+        throw new ApiError("This post isn't available any more.", 404, { gone: true });
+      }
+      throw e;
+    }
+    if (still?.id) patchPost(postId, () => still);
+    c = await post(`social/feed/${postId}/comments`, payload);
+  }
   patchPost(postId, (x) => ({ ...x, commentCount: c.commentCount ?? x.commentCount + 1 }));
   return c;
 }
@@ -408,7 +473,7 @@ export async function createPost(payload) {
 export async function deletePost(p) {
   try {
     await del(`social/feed/${p.id}`);
-    set({ feed: social.get().feed.filter((x) => x.id !== p.id) });
+    forgetPost(p.id);
     return true;
   } catch (e) { return fail(e); }
 }
@@ -496,9 +561,12 @@ export async function toggleJoinGroup(g) {
   } catch (e) { fail(e); return null; }
 }
 
-export async function refreshGroupMessages(id) {
+/** A group's messages. Only the chat on screen counts as read (it's what the "What you missed" email leaves out);
+    every other fetch (the Chats list's previews, a hidden tab) is a ?peek=1. */
+export async function refreshGroupMessages(id, { open = false } = {}) {
+  const reading = open && document.visibilityState === "visible";
   try {
-    const list = await get(`community/groups/${id}/messages`);
+    const list = await get(`community/groups/${id}/messages${reading ? "" : "?peek=1"}`);
     set({ groupMessages: { ...social.get().groupMessages, [id]: list || [] } });
   } catch (e) {
     if (e?.status === 403) set({ groupMessages: { ...social.get().groupMessages, [id]: null } });

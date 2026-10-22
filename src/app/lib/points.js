@@ -91,6 +91,7 @@ export const ACTIVITY_STATS = [
   { key: "network.request", label: "Requests sent" },
   { key: "feed.likes", label: "Likes received" },
   { key: "live.upvoted", label: "Upvotes received" },
+  { key: "linkedin.share", label: "LinkedIn shares" },
 ];
 
 /** The breakdown line for a rule (what was counted and the points it earned). */
@@ -114,7 +115,8 @@ export function ruleCap(rule) {
 }
 
 /** Where a rule is earned, as a button on its row (null: nothing to open, e.g. likes from others).
-    `to` is a route; `state` asks that screen to open the scanner or the composer. */
+    `to` is a route; `state` asks that screen to open the scanner or the composer; `action` "attending" opens the
+    website's I'm-attending page for this person (lib/engage.js). */
 export function ruleGoal(key) {
   switch (key) {
     case "profile.linkedin": case "profile.topics": return { title: "Edit profile", to: "/profile/edit" };
@@ -123,6 +125,8 @@ export function ruleGoal(key) {
     case "network.inPerson": return { title: "Scan a badge", to: "/network", state: { scan: true } };
     case "feed.post": return { title: "Write a post", to: "/", state: { compose: true } };
     case "feed.comment": return { title: "Open feed", to: "/" };
+    case "linkedin.attending": return { title: "Post on LinkedIn", action: "attending" };
+    case "linkedin.share": return { title: "Schedule", to: "/schedule" };
     default: return null;
   }
 }

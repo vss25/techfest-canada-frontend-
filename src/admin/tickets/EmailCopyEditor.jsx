@@ -179,6 +179,7 @@ export function EmailCopyEditor({ fields = [], sections = [], value = {}, onChan
               {n > 0 && <span className="rounded-full bg-ttfc-pink/20 px-2 py-0.5 text-[11px] text-ttfc-contrast">{n} changed</span>}
             </summary>
             <div className="flex flex-col gap-4 border-t border-ttfc-line px-3 py-3">
+              {g.hint && <p className="-mb-1 text-xs text-ttfc-muted">{g.hint}</p>}
               {shown.map((f) => (
                 <FieldRow key={f.key} field={f} value={get(f)} builtIn={defaults?.[f.key]} onChange={(v) => put(f, v)} disabled={disabled} tierLabel={tierLabel} />
               ))}

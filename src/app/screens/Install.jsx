@@ -27,6 +27,10 @@ import { SWAG_PAGE, SWAG_THUMB } from "../../lib/swag.js";
        what happens in it written out;
      - "Done? Open TTFC from your Home Screen and sign in…";
      - troubleshooting.
+   While the swag giveaway is open, a card under the title: "Download
+   the app to win the TTFC swag kit" with "Only people using the TTFC
+   app can win" (the organiser: "download the app, and then only you
+   can get a chance to win this").
    Opens from the website's prompt (/app/?install=1), the emails
    (…/app/install?utm_…#r=<token>: main.jsx reports the visit),
    Profile › Install app and the in-app banners. On a computer it's
@@ -127,6 +131,17 @@ export default function Install() {
           </div>
         </header>
 
+        {swag.stage === "open" && (
+          <a className="install-swag pressable" href={SWAG_PAGE} target="_blank" rel="noopener">
+            <img src={SWAG_THUMB} alt="" width="600" height="508" decoding="async" />
+            <span>
+              <b>Download the app to win the TTFC swag kit</b>
+              <span><strong>{swag.pitch}.</strong> The top {swag.kits} on the leaderboard at {swag.cutoffShort} win; winners are told at the end of Day 1.</span>
+            </span>
+            <Gift aria-hidden="true" />
+          </a>
+        )}
+
         <section aria-labelledby="device-h" className="install-device">
           <h2 id="device-h" className="install-q">Which phone do you have?</h2>
           <Segmented capsule label="Your phone" value={device} onChange={pick} options={DEVICES} />
@@ -186,13 +201,6 @@ export default function Install() {
           </>
         )}
 
-        {swag.stage === "open" && (
-          <a className="install-swag pressable" href={SWAG_PAGE} target="_blank" rel="noopener">
-            <img src={SWAG_THUMB} alt="" width="600" height="508" decoding="async" />
-            <span><b>{swag.title}</b><span>Earn points in the app: the top {swag.kits} on the leaderboard at {swag.cutoffShort} each win one. See the rules.</span></span>
-            <Gift aria-hidden="true" />
-          </a>
-        )}
       </main>
     </div>
   );

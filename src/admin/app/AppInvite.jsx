@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   AlertTriangle, CheckCircle2, Clock, CreditCard, ExternalLink, Eye, Gift, Info, Layers, ListChecks, Mail, MailCheck, MailOpen, MailWarning,
   Monitor, Moon, MousePointerClick, RotateCcw, Save, Search, Send, Smartphone, Sun, Users, X,
@@ -16,8 +16,6 @@ import { num, when } from "../format";
 import { EmailCopyEditor } from "../tickets/EmailCopyEditor";
 import { useLivePreview } from "../tickets/speakerEmailHooks";
 import EmailPreview from "./EmailPreview";
-import { CAMPAIGNS, campaignByKey } from "./swagApi";
-import { SWAG_PAGE } from "../../lib/swag";
 
 /* =========================================================
    Admin → Website & app → App invite email (Oct 20 2026)
@@ -51,21 +49,25 @@ import { SWAG_PAGE } from "../../lib/swag";
        the server only sends to people on its own list (the rest are
        reported). Same background job as Send to everyone.
    Backend: /console/app-invite (routes/appInvite.js).
-   Campaigns (batch 7, Oct 22 2026, the organiser: "another email
-   campaign option to send to those who haven't downloaded the app
-   yet … a chance to win the swag kit"): a selector at the top,
-   "App invite" (as before) and "Win the swag kit" (app-swag-2026,
-   its own sends, so people can get each once; ?campaign= in the
-   address). The swag one only goes to people who have never signed
-   in to the app (no "Skip people already using the app" switch: it's
-   always on, and the server checks each person again when it sends),
-   and Send to everyone lists the names too. Each campaign's routes
-   are in ./swagApi.js (CAMPAIGNS).
+   The swag kit (Oct 22 2026, the organiser: "this is supposed to be
+   an advertisement for the app, not a separate campaign … download
+   the app, and then only you can get a chance to win this"): while
+   the giveaway is on (Website & app › Swag kit giveaway) this email
+   carries the swag block: the photo, "Download the app to win the TTFC
+   swag kit", "Only people using the TTFC app can win" and when the
+   winners are told. Its wording (swagSubject, which replaces the
+   subject then, swagHeadline, swagOnly, swagText) is the editor's
+   "swag" section, marked "Shown while the swag giveaway is on"; the
+   preview shows whichever version is live (GET /template swagOn,
+   version "swag" | "standard"). People who got the earlier invite can
+   get this version once: a row shows "Got the earlier invite on …"
+   (earlierSentAt) and, once sent, "Already got this version" (the
+   server's label). A send counts who was skipped for already using
+   the app (job.usingApp).
 ========================================================= */
 
+const BASE = "/console/app-invite";
 const plural = (n, one, many = `${one}s`) => `${num(n || 0)} ${n === 1 ? one : many}`;
-/** A send's error for the dialog (the swag email answers 409 swag_off while the giveaway is off). */
-const sendError = (e) => (e?.code === "swag_off" ? "Turn on the swag giveaway first (Website & app › Swag kit giveaway)." : e?.message || "Something went wrong");
 const STATUS = {
   sent: { tone: "good", icon: MailCheck, label: "Sent" },
   failed: { tone: "bad", icon: MailWarning, label: "Failed" },
@@ -105,7 +107,7 @@ function TicketCell({ ticket: t }) {
  * A group ("Send next N") or the people ticked: the names (up to NAMES_SHOWN) and the count, then Send. Type SEND
  * from `typeFrom` people. The server sends only to people on its own list who can get it now; the rest come back.
  */
-function BatchDialog({ base, campaignLabel, kind, people, size, skipUsing, typeFrom = 50, context, cooldownDays = 3, onClose, onStarted }) {
+function BatchDialog({ kind, people, size, skipUsing, typeFrom = 50, context, cooldownDays = 3, onClose, onStarted }) {
   const toast = useToast();
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
@@ -118,19 +120,19 @@ function BatchDialog({ base, campaignLabel, kind, people, size, skipUsing, typeF
     if (!armed || busy) return;
     setBusy(true); setErr("");
     try {
-      const r = await api.post(`${base}/send-batch`, {
+      const r = await api.post(`${BASE}/send-batch`, {
         kind, size: kind === "next" ? size : undefined, emails: people.map((x) => x.email), skipUsing, confirm: needsTyped ? "SEND" : "CONFIRM",
       });
       toast.success(`Sending to ${plural(r?.toSend ?? n, "person", "people")}…`);
       if (r?.dropped?.length) toast.info(`Not sent to ${plural(r.dropped.length, "person", "people")}: ${r.droppedText}.`, { duration: 9000 });
       onStarted?.(r);
       onClose();
-    } catch (e) { setErr(sendError(e)); } finally { setBusy(false); }
+    } catch (e) { setErr(e?.message || "Something went wrong"); } finally { setBusy(false); }
   };
   return (
     <Modal open onClose={() => { if (!busy) onClose(); }} size="lg" tone={needsTyped ? "danger" : "primary"}
       title={kind === "next" ? `Email the next ${plural(n, "person", "people")}?` : `Email the ${plural(n, "person", "people")} you picked?`}
-      description={`This sends the “${campaignLabel}” email from enquire@thetechfestival.com. It can't be undone.`}
+      description="This sends the app invite email from enquire@thetechfestival.com. It can't be undone."
       footer={(
         <>
           <Button onClick={onClose} disabled={busy}>Cancel</Button>
@@ -175,8 +177,8 @@ function BatchDialog({ base, campaignLabel, kind, people, size, skipUsing, typeF
   );
 }
 
-/** Send to everyone (or retry the failures): the count (and, when given, the names), and type SEND. */
-function SendAllDialog({ base, campaignLabel, toSend, skipUsing, retry, people, onClose, onStarted }) {
+/** Send to everyone (or retry the failures): the count, and type SEND. */
+function SendAllDialog({ toSend, skipUsing, retry, onClose, onStarted }) {
   const toast = useToast();
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
@@ -186,16 +188,16 @@ function SendAllDialog({ base, campaignLabel, toSend, skipUsing, retry, people, 
     if (!armed || busy) return;
     setBusy(true); setErr("");
     try {
-      const r = await api.post(`${base}/send-all`, { confirm: "SEND", skipUsing, ...(retry ? { only: "failed" } : {}) });
+      const r = await api.post(`${BASE}/send-all`, { confirm: "SEND", skipUsing, ...(retry ? { only: "failed" } : {}) });
       toast.success(`Sending to ${plural(r?.toSend ?? toSend, "person", "people")}…`);
       onStarted?.();
       onClose();
-    } catch (e) { setErr(sendError(e)); } finally { setBusy(false); }
+    } catch (e) { setErr(e?.message || "Something went wrong"); } finally { setBusy(false); }
   };
   return (
     <Modal open onClose={() => { if (!busy) onClose(); }} size="md" tone="danger"
       title={retry ? `Retry ${plural(toSend, "failed send")}?` : `Email ${plural(toSend, "person", "people")} now?`}
-      description={`This sends the “${campaignLabel}” email from enquire@thetechfestival.com. It can't be undone.`}
+      description="This sends the app invite email from enquire@thetechfestival.com. It can't be undone."
       footer={(
         <>
           <Button onClick={onClose} disabled={busy}>Cancel</Button>
@@ -203,19 +205,6 @@ function SendAllDialog({ base, campaignLabel, toSend, skipUsing, retry, people, 
         </>
       )}>
       <div className="flex flex-col gap-4 text-sm">
-        {people?.length > 0 && (
-          <div className="max-h-60 overflow-y-auto rounded-xl border border-ttfc-line" aria-label={`The ${plural(people.length, "person", "people")} it goes to`}>
-            <ol className="divide-y divide-ttfc-line/70">
-              {people.slice(0, NAMES_SHOWN).map((r, i) => (
-                <li key={r.email} className="grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-2 px-3 py-1.5">
-                  <span className="text-right font-mono text-[11px] text-ttfc-dim">{i + 1}</span>
-                  <span className="min-w-0 truncate"><b>{r.name || "No name"}</b> <span className="text-xs text-ttfc-muted">{r.email}</span></span>
-                </li>
-              ))}
-            </ol>
-            {people.length > NAMES_SHOWN && <p className="border-t border-ttfc-line px-3 py-2 text-xs text-ttfc-dim">and {plural(people.length - NAMES_SHOWN, "more person", "more people")}</p>}
-          </div>
-        )}
         <ul className="list-disc space-y-1 pl-5 text-ttfc-muted">
           <li>Sent one by one in the background (about {Math.max(1, Math.ceil((toSend * 0.6) / 60))} min). You can close this page.</li>
           {!retry && <li>{skipUsing ? "People already using the app are skipped." : "People already using the app get it too."} Anyone who already got it is skipped.</li>}
@@ -230,36 +219,10 @@ function SendAllDialog({ base, campaignLabel, toSend, skipUsing, retry, people, 
   );
 }
 
-/** The campaign picker above the page; each campaign is its own page state (wording, list, ticks). */
 export default function AppInvite() {
-  const [params, setParams] = useSearchParams();
-  const camp = campaignByKey(params.get("campaign") || "");
-  const picker = (
-    <div className="mb-6 flex flex-wrap items-center gap-2" role="group" aria-label="Email campaign">
-      <span className="mr-1 text-xs font-semibold uppercase tracking-[0.08em] text-ttfc-dim">Campaign</span>
-      {CAMPAIGNS.map((c) => (
-        <button key={c.key} type="button" aria-pressed={camp.key === c.key} className={campaignChip(camp.key === c.key)}
-          onClick={() => setParams(c.key === CAMPAIGNS[0].key ? {} : { campaign: c.key }, { replace: true })}>
-          {c.key === "app-swag-2026" ? <Gift className="h-4 w-4" aria-hidden="true" /> : <Mail className="h-4 w-4" aria-hidden="true" />}
-          {c.label}
-        </button>
-      ))}
-    </div>
-  );
-  return <CampaignPage key={camp.key} camp={camp} picker={picker} />;
-}
-
-const campaignChip = (on) => `inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold ${on
-  ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-ttfc-text" : "border-ttfc-line text-ttfc-muted hover:text-ttfc-text"}`;
-
-function CampaignPage({ camp, picker }) {
-  const BASE = camp.base;
-  const notOnAppOnly = camp.notOnAppOnly;
   const { isManagement } = useAdmin();
   const toast = useToast();
-  const [skipUsingPick, setSkipUsing] = useState(true);
-  // The swag email only goes to people who haven't opened the app: always skip anyone using it.
-  const skipUsing = notOnAppOnly || skipUsingPick;
+  const [skipUsing, setSkipUsing] = useState(true);
   const [kickedAt, setKickedAt] = useState(0);
   const [lastJob, setLastJob] = useState(null);
   const polling = !!lastJob?.running || (kickedAt > 0 && !(lastJob?.finishedAt && new Date(lastJob.finishedAt).getTime() >= kickedAt));
@@ -281,14 +244,22 @@ function CampaignPage({ camp, picker }) {
   useEffect(() => { if (t && !draft) setDraft({ ...t.copy, options: t.options }); }, [t, draft]);
   const value = draft || {};
   const { options = t?.options || {}, ...copy } = value;
-  // The swag email has no optional lines: its wording goes on its own.
-  const payload = t?.optionsMeta?.length ? { ...copy, options } : { ...copy };
-  const preview = useLivePreview(`${BASE}/preview`, payload, { enabled: !!t });
+  const preview = useLivePreview(`${BASE}/preview`, { ...copy, options }, { enabled: !!t });
   const dirty = !!t && JSON.stringify({ ...t.copy, options: t.options }) !== JSON.stringify(value);
   const isSet = (v) => (Array.isArray(v) ? v.length > 0 : typeof v === "string" && v.length > 0);
-  const isDefault = !!t && !Object.values(copy).some(isSet) && (!t.defaultOptions || JSON.stringify(options) === JSON.stringify(t.defaultOptions));
+  const isDefault = !!t && !Object.values(copy).some(isSet) && JSON.stringify(options) === JSON.stringify(t.defaultOptions);
 
   const data = recipients.data;
+  // The swag kit contest: on / off (null while unknown): the template's swagOn, else the version being sent.
+  const swagOn = typeof t?.swagOn === "boolean" ? t.swagOn
+    : t?.version ? t.version === "swag" : data?.version ? data.version === "swag" : null;
+  // Its wording is a section of the editor ("Shown while the swag giveaway is on"); its subject replaces the subject.
+  const swagSection = (t?.fields || []).find((f) => /^swag/.test(f.key))?.section;
+  const sections = (t?.sections || []).map((s) => (s.key === swagSection
+    ? { ...s, hint: `Shown while the swag giveaway is on${swagOn === true ? " (it's on now)" : swagOn === false ? " (it's off now)" : ""}. Its subject line replaces the usual subject while the contest is on.` }
+    : s));
+  const fields = (t?.fields || []).map((f) => (f.key === "swagSubject" && !f.hint
+    ? { ...f, hint: "Replaces the subject while the swag contest is on." } : f));
   const counts = data?.counts;
   const stats = data?.stats;
   const job = data?.job;
@@ -341,7 +312,7 @@ function CampaignPage({ camp, picker }) {
   const save = async () => {
     setSaving(true);
     try {
-      const r = await api.put(`${BASE}/template`, payload);
+      const r = await api.put(`${BASE}/template`, { ...copy, options });
       template.setData?.(r);
       setDraft({ ...r.copy, options: r.options });
       toast.success("Email wording saved");
@@ -350,7 +321,7 @@ function CampaignPage({ camp, picker }) {
   const sendTest = async () => {
     setTesting(true);
     try {
-      const r = await api.post(`${BASE}/send-test`, payload);
+      const r = await api.post(`${BASE}/send-test`, { ...copy, options });
       toast.success(`Test sent to ${r.to}. It shows the sample name (Jane) and your address.`);
     } catch (e) { toast.error(e); } finally { setTesting(false); }
   };
@@ -359,13 +330,11 @@ function CampaignPage({ camp, picker }) {
     <>
       <PageHeader
         eyebrow="Website & app"
-        title={camp.title}
-        description={`${camp.blurb} Sent from enquire@thetechfestival.com.`}
+        title="App invite email"
+        description="One email to everyone with a pass or a role at TTFC 2026: “Open the TTFC app”, how to add it to their home screen, and the email to sign in with. While the swag kit giveaway is on, it also says only people using the app can win the kit. Sent from enquire@thetechfestival.com."
         actions={(
           <>
-            {notOnAppOnly
-              ? <Button icon={ExternalLink} onClick={() => window.open(SWAG_PAGE, "_blank", "noopener")}>Open the rules page</Button>
-              : <Button icon={ExternalLink} onClick={() => window.open("/app/", "_blank", "noopener")}>Open the web app</Button>}
+            <Button icon={ExternalLink} onClick={() => window.open("/app/", "_blank", "noopener")}>Open the web app</Button>
             {isManagement && stats?.failed > 0 && (
               <Button icon={RotateCcw} disabled={running} onClick={() => setConfirm("retry")}>Retry failed ({num(stats.failed)})</Button>
             )}
@@ -379,25 +348,27 @@ function CampaignPage({ camp, picker }) {
         )}
       />
 
-      {picker}
-      {notOnAppOnly && data && data.swagEnabled === false && (
-        <Banner tone="warn" icon={AlertTriangle} className="mb-6" title="The swag giveaway is off"
-          action={<Link to="/admin/app/swag" className="text-sm font-semibold text-ttfc-pink hover:underline">Swag kit giveaway</Link>}>
-          Turn on the swag giveaway first: this email can't be sent while it's off. You can still preview it and send yourself a test.
-        </Banner>
-      )}
-      {notOnAppOnly && (
-        <Banner tone="info" icon={Gift} className="mb-6" title="Only people who haven't opened the TTFC app yet">
-          Anyone who has signed in to the app or the web app is left out, and the server checks each person again as it sends.
-          Each person gets this email once. The giveaway itself (on or off, kits, times, rules) is on{" "}
-          <Link to="/admin/app/swag" className="font-semibold text-ttfc-pink hover:underline">Swag kit giveaway</Link>.
-        </Banner>
-      )}
       {!isManagement && (
-        <Banner tone="info" icon={Info} className="mb-6" title={notOnAppOnly ? "Saving the wording and sending are for management" : "Saving the wording and sending to everyone are for management"}>
+        <Banner tone="info" icon={Info} className="mb-6" title="Saving the wording and sending to everyone are for management">
           You can preview the email, send yourself a test and send it to one person (here, or from their profile in{" "}
           <Link to="/admin/people" className="font-semibold text-ttfc-pink hover:underline">People</Link>).
         </Banner>
+      )}
+
+      {swagOn === true && (
+        <Banner tone="info" icon={Gift} className="mb-6" title="The swag kit giveaway is on: this email advertises it"
+          action={<Link to="/admin/app/swag" className="text-sm font-semibold text-ttfc-pink hover:underline">Swag kit giveaway</Link>}>
+          Everyone gets the swag block: the photo, “Download the app to win the TTFC swag kit”, “Only people using the TTFC app can win”
+          and that winners are told at the end of Day 1. People who got the email before the giveaway can get this version once
+          (“Already got this version” in the list).
+        </Banner>
+      )}
+      {swagOn === false && (
+        <p className="mb-6 text-sm text-ttfc-muted">
+          <Gift className="mr-1.5 inline h-4 w-4 align-[-3px] text-ttfc-dim" aria-hidden="true" />
+          The swag kit block isn't in the email while the giveaway is off. Turn it on in{" "}
+          <Link to="/admin/app/swag" className="font-semibold text-ttfc-pink hover:underline">Swag kit giveaway</Link>.
+        </p>
       )}
 
       {running && (
@@ -409,7 +380,10 @@ function CampaignPage({ camp, picker }) {
           <div className="h-2 overflow-hidden rounded-full bg-ttfc-contrast/5" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Send progress">
             <div className="h-2 rounded-full bg-gradient-to-r from-ttfc-purple via-ttfc-pink to-ttfc-orange transition-all" style={{ width: `${Math.max(2, pct)}%` }} />
           </div>
-          <p className="mt-2 text-xs text-ttfc-dim">Sent {num(job.sent)} · failed {num(job.failed)} · skipped {num(job.skipped)}. You can leave this page; it keeps going.</p>
+          <p className="mt-2 text-xs text-ttfc-dim">
+            Sent {num(job.sent)} · failed {num(job.failed)} · skipped {num(job.skipped)}
+            {job.usingApp > 0 && <> · {num(job.usingApp)} skipped — already using the app</>}. You can leave this page; it keeps going.
+          </p>
         </Card>
       )}
       {!running && job?.finishedAt && (
@@ -417,6 +391,7 @@ function CampaignPage({ camp, picker }) {
           title={`Last send${what ? ` (${what})` : ""} finished ${when(job.finishedAt)}: sent ${num(job.sent)}, failed ${num(job.failed)}`}>
           {job.failed ? "Failed ones show in the list. Retry failed sends them again." : "Everyone in that run was emailed."}
           {job.dropped > 0 && ` ${plural(job.dropped, "person", "people")} picked couldn't get it then and weren't sent to.`}
+          {job.usingApp > 0 && ` ${num(job.usingApp)} skipped — already using the app.`}
         </Banner>
       )}
 
@@ -434,32 +409,24 @@ function CampaignPage({ camp, picker }) {
           <SectionTitle hint={t?.updatedAt ? `Last saved ${when(t.updatedAt)}${t.updatedBy ? ` by ${t.updatedBy}` : ""}` : "The built-in wording"}>The email's wording</SectionTitle>
           {template.loading && !t ? <LoadingState label="Loading the wording…" /> : template.error && !t ? <ErrorState error={template.error} onRetry={template.reload} /> : t && (
             <div className="flex flex-col gap-4">
-              {t.optionsMeta?.length > 0 && (
-                <div className="rounded-xl border border-ttfc-line px-3 py-3">
-                  <p className="mb-2 text-sm font-semibold">Optional lines</p>
-                  <div className="flex flex-col gap-3">
-                    {t.optionsMeta.map((o) => (
-                      <Switch key={o.key} checked={options[o.key] !== false} onChange={(v) => setDraft({ ...value, options: { ...options, [o.key]: v } })}
-                        label={o.label} description={o.key === "appStore" && !t.appStoreUrl ? `${o.hint} The iPhone app isn't live yet, so it doesn't show for now.` : o.hint} />
-                    ))}
-                  </div>
+              <div className="rounded-xl border border-ttfc-line px-3 py-3">
+                <p className="mb-2 text-sm font-semibold">Optional lines</p>
+                <div className="flex flex-col gap-3">
+                  {(t.optionsMeta || []).map((o) => (
+                    <Switch key={o.key} checked={options[o.key] !== false} onChange={(v) => setDraft({ ...value, options: { ...options, [o.key]: v } })}
+                      label={o.label} description={o.key === "appStore" && !t.appStoreUrl ? `${o.hint} The iPhone app isn't live yet, so it doesn't show for now.` : o.hint} />
+                  ))}
                 </div>
-              )}
-              {notOnAppOnly && t.swag && (
-                <p className="rounded-xl border border-ttfc-line px-3 py-2 text-xs text-ttfc-muted">
-                  The giveaway's details in the email ({t.swag.kits} kits, points count until {t.swag.cutoffLabel || "the cutoff"}) come from{" "}
-                  <Link to="/admin/app/swag" className="font-semibold text-ttfc-pink hover:underline">Swag kit giveaway</Link>.
-                </p>
-              )}
-              <EmailCopyEditor fields={t.fields} sections={t.sections} value={copy} defaults={t.defaults} placeholders={t.placeholders}
+              </div>
+              <EmailCopyEditor fields={fields} sections={sections} value={copy} defaults={t.defaults} placeholders={t.placeholders}
                 onChange={(c) => setDraft({ ...c, options })}
                 note={t.canEdit ? "Changes show in the preview straight away. Save to use them for every send." : "You can try wording in the preview and your test; only management can save it."} />
               <div className="flex flex-wrap gap-2 border-t border-ttfc-line pt-4">
                 {t.canEdit && <Button variant="primary" icon={Save} loading={saving} disabled={!dirty} onClick={save}>Save wording</Button>}
                 <Button icon={RotateCcw} disabled={!dirty} onClick={() => setDraft({ ...t.copy, options: t.options })}>Undo changes</Button>
                 {t.canEdit && (
-                  <Button variant="ghost" icon={RotateCcw} disabled={isDefault} onClick={() => setDraft(t.defaultOptions ? { options: t.defaultOptions } : {})}
-                    title={t.defaultOptions ? "Every field back to the built-in wording and both lines on (then Save)" : "Every field back to the built-in wording (then Save)"}>Reset all to default</Button>
+                  <Button variant="ghost" icon={RotateCcw} disabled={isDefault} onClick={() => setDraft({ options: t.defaultOptions })}
+                    title="Every field back to the built-in wording and both lines on (then Save)">Reset all to default</Button>
                 )}
               </div>
             </div>
@@ -469,7 +436,7 @@ function CampaignPage({ camp, picker }) {
         <div className="flex min-w-0 flex-col gap-4">
           <Card>
             <SectionTitle hint="A made-up attendee (Jane). Each person gets their own first name and email address.">Preview</SectionTitle>
-            <EmailPreview title={`${camp.label} email preview`} preview={preview.data} loading={preview.loading} error={preview.error} />
+            <EmailPreview title="App invite email preview" preview={preview.data} loading={preview.loading} error={preview.error} />
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <Button icon={Mail} loading={testing} onClick={sendTest}>Send me a test</Button>
               <span className="text-xs text-ttfc-dim">To your own email, with the wording above (saved or not). Subject starts “[Test]”, not counted.</span>
@@ -479,21 +446,17 @@ function CampaignPage({ camp, picker }) {
       </div>
 
       <Card className="mt-8">
-        <SectionTitle hint={notOnAppOnly
-          ? "Everyone in People with a pass or a role who has never signed in to the TTFC app or the web app, once per email address."
-          : "Everyone in People with a pass (bought, given, complimentary, exhibitor or Speaker Pass) or a role (speaker, exhibitor, staff, volunteer, media, VIP), once per email address."}>Who gets it</SectionTitle>
+        <SectionTitle hint="Everyone in People with a pass (bought, given, complimentary, exhibitor or Speaker Pass) or a role (speaker, exhibitor, staff, volunteer, media, VIP), once per email address.">Who gets it</SectionTitle>
         {counts && (
           <>
             <p className="text-sm">
               <b>{plural(counts.people, "person", "people")}</b> · {num(counts.usingApp)} already use the app · <b className="text-ttfc-pink">{num(counts.willGet)} will get it</b>
               {counts.alreadySent > 0 && <span className="text-ttfc-muted"> · {num(counts.alreadySent)} already got it</span>}
             </p>
-            {!notOnAppOnly && (
-              <div className="mt-3 max-w-xl">
-                <Switch checked={skipUsing} onChange={setSkipUsing} label="Skip people already using the app"
-                  description="On: anyone who has signed in to the app or the web app isn't emailed. A send to one person always goes." />
-              </div>
-            )}
+            <div className="mt-3 max-w-xl">
+              <Switch checked={skipUsing} onChange={setSkipUsing} label="Skip people already using the app"
+                description="On: anyone who has signed in to the app or the web app isn't emailed. A send to one person always goes." />
+            </div>
             {Object.keys(counts.skippedBy || {}).length > 0 && (
               <p className="mt-3 text-xs text-ttfc-dim">
                 Left out: {Object.entries(counts.skippedBy).map(([k, n]) => `${num(n)} ${(rows.find((r) => r.reason === k)?.label || k).toLowerCase()}`).join(" · ")}.
@@ -578,7 +541,7 @@ function CampaignPage({ camp, picker }) {
           <tbody>
             {shown.slice(0, 500).map((r) => {
               const s = STATUS[r.status] || STATUS.pending;
-              const can = camp.sendOne && !!r.email && !HARD_SKIPS.has(r.reason) && !running && !(notOnAppOnly && r.usingApp);
+              const can = !!r.email && !HARD_SKIPS.has(r.reason) && !running;
               const waiting = r.reason === "alreadySent" && !r.sendAgain; // sent within the cool-down
               const isNext = isManagement && inNext.has(r.email);
               const isPicked = !!r.email && selected.has(r.email) && r.canSelect;
@@ -609,7 +572,9 @@ function CampaignPage({ camp, picker }) {
                       {r.opened && <Badge tone="good" icon={Eye}>Opened</Badge>}
                       {r.clicked && <Badge tone="orange" icon={MousePointerClick}>Clicked</Badge>}
                     </span>
-                    {r.reason && <span className="mt-1 block text-[11px] text-ttfc-dim">{waiting && r.sentAt ? `${r.label} · can go again ${when(new Date(r.sentAt).getTime() + (data.cooldownDays || 3) * DAY_MS)}` : r.label}</span>}
+                    {/* The server's label, also without a reason (e.g. "Already got this version" while the swag kit is on). */}
+                    {(r.reason || r.label) && <span className="mt-1 block text-[11px] text-ttfc-dim">{waiting && r.sentAt ? `${r.label} · can go again ${when(new Date(r.sentAt).getTime() + (data.cooldownDays || 3) * DAY_MS)}` : r.label}</span>}
+                    {r.earlierSentAt && <span className="mt-1 block text-[11px] text-ttfc-dim">Got the earlier invite on {when(r.earlierSentAt)}</span>}
                     {r.error && <span className="mt-1 block max-w-[240px] truncate text-[11px] text-red-200">{r.error}</span>}
                   </td>
                   <td className="text-right">
@@ -632,10 +597,10 @@ function CampaignPage({ camp, picker }) {
         open={!!one}
         onClose={() => setOne(null)}
         tone={one?.status === "sent" ? "danger" : "primary"}
-        title={`Email ${one?.name || one?.email || ""} the ${camp.label.toLowerCase()} email?`}
+        title={`Email ${one?.name || one?.email || ""} the app invite?`}
         body={one?.status === "sent"
           ? `They already got it${one.sentAt ? ` ${when(one.sentAt)}` : ""}. This sends it again to ${one.email} (not within ${data?.cooldownDays || 3} days of the last one).`
-          : `Sends “${camp.subjectHint}” to ${one?.email}.${one?.usingApp ? " They already use the app." : ""} Sending to everyone skips them afterwards.`}
+          : `Sends “Open the TTFC app” to ${one?.email}.${one?.usingApp ? " They already use the app." : ""} Sending to everyone skips them afterwards.`}
         confirmLabel={one?.status === "sent" ? "Send again" : "Send"}
         onConfirm={async () => {
           await api.post(`${BASE}/send-one`, { email: one.email });
@@ -645,15 +610,14 @@ function CampaignPage({ camp, picker }) {
       />
 
       {batch && (
-        <BatchDialog base={BASE} campaignLabel={camp.label} kind={batch.kind} people={batch.people} size={batch.size} context={batch.context} skipUsing={skipUsing}
+        <BatchDialog kind={batch.kind} people={batch.people} size={batch.size} context={batch.context} skipUsing={skipUsing}
           typeFrom={data?.typeSendFrom || 50} cooldownDays={data?.cooldownDays || 3}
           onClose={() => setBatch(null)}
           onStarted={() => { if (batch.kind === "selected") setSelected(new Set()); setKickedAt(Date.now()); recipients.reload(); }} />
       )}
 
       {confirm && (
-        <SendAllDialog base={BASE} campaignLabel={camp.label} toSend={confirm === "retry" ? stats?.failed || 0 : counts?.willGet || 0} skipUsing={skipUsing} retry={confirm === "retry"}
-          people={notOnAppOnly && confirm !== "retry" ? rows.filter((r) => r.willGet && r.email) : undefined}
+        <SendAllDialog toSend={confirm === "retry" ? stats?.failed || 0 : counts?.willGet || 0} skipUsing={skipUsing} retry={confirm === "retry"}
           onClose={() => setConfirm(null)} onStarted={() => { setKickedAt(Date.now()); recipients.reload(); }} />
       )}
     </>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Smartphone, Trophy, UserRoundPlus, Gift } from "lucide-react";
+import { BadgeCheck, Smartphone, Trophy, UserRoundPlus, Gift } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import useSiteSettings, { PUBLIC_API } from "../hooks/useSiteSettings";
@@ -14,6 +14,10 @@ import { SWAG_ALT, SWAG_PHOTO, fetchSwag, swagFrom, swagHowTo } from "../lib/swa
    number of kits and the times filled in): GET /api/app/swag, or the
    same worked out from the site settings until it answers
    (src/lib/swag.js). Light and dark like the rest of the site.
+   It's an advert for the app (the organiser, Oct 22 2026): the hero
+   says "Download the TTFC app to win" and, as loud as the button,
+   "Only people using the TTFC app can win" (the server's `pitch`);
+   winners are told at the end of Day 1.
 ========================================================= */
 
 const HOW_ICONS = [Smartphone, UserRoundPlus, Trophy];
@@ -50,9 +54,9 @@ export default function Swag() {
   const loaded = !!api || settings.loaded;
   const note = !loaded ? null
     : s.stage === "off" ? "The giveaway opens soon. Get the app now and start earning points."
-      : s.stage === "closed" ? `Points are in. Winners are told in the app at ${s.announceLabel}.`
+      : s.stage === "closed" ? `Points are in. Winners are told in the app at the end of Day 1 (${s.announceLabel}).`
         : s.stage === "announced" ? "The winners have been told in the app. Congratulations, and thank you for taking part!"
-          : `Open now. Points count until ${s.cutoffLabel}.`;
+          : `Open now. Points count until ${s.cutoffLabel}. Winners are told at the end of Day 1.`;
 
   return (
     <>
@@ -65,11 +69,18 @@ export default function Swag() {
             </figure>
             <div>
               <p style={{ margin: 0, display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: 999, background: c.chip, color: c.accent, fontSize: 13, fontWeight: 700, letterSpacing: 0.3 }}>
-                <Gift size={15} aria-hidden="true" /> TTFC 2026 · the app leaderboard
+                <Gift size={15} aria-hidden="true" /> {s.title}
               </p>
-              <h1 style={{ margin: "14px 0 0", fontSize: "clamp(32px, 6vw, 48px)", lineHeight: 1.08, fontWeight: 800, letterSpacing: -0.5 }}>{s.title}</h1>
+              <h1 style={{ margin: "14px 0 0", fontSize: "clamp(32px, 6vw, 48px)", lineHeight: 1.08, fontWeight: 800, letterSpacing: -0.5 }}>Download the TTFC app to win</h1>
+              <p style={{
+                margin: "16px 0 0", display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderRadius: 14,
+                background: c.chip, border: `1px solid ${c.line}`, color: c.text, fontSize: 18, lineHeight: 1.4, fontWeight: 800,
+              }}>
+                <BadgeCheck size={22} aria-hidden="true" style={{ flex: "none", marginTop: 1, color: c.accent }} />
+                <span>{s.pitch || "Only people using the TTFC app can win"}.</span>
+              </p>
               <p style={{ margin: "14px 0 0", fontSize: 18, lineHeight: 1.55, color: c.mid }}>
-                A TTFC backpack, bottle, mug, notebook, phone stand, umbrella and more. Earn points in the TTFC app: the top {s.kits} on the leaderboard each win one.
+                A TTFC backpack, bottle, mug, notebook, phone stand, umbrella and more. Download the app, sign in and earn points: the top {s.kits} on the leaderboard each win one.
               </p>
               {note && <p style={{ margin: "12px 0 0", fontSize: 15, fontWeight: 600, color: c.accent }}>{note}</p>}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 22 }}>

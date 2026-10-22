@@ -1,15 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { BarChart3, CalendarClock, CalendarPlus, Gift, Hash, Linkedin, ScanLine, Send, UserRoundPlus, X } from "lucide-react";
 import { openAttending } from "../lib/engage";
-import { SWAG_ALT, SWAG_THUMB, swagShort } from "../../lib/swag.js";
+import { SWAG_ALT, SWAG_PITCH_SHORT, SWAG_THUMB, swagShort } from "../../lib/swag.js";
 
 /* =========================================================
    One "Earn points" card in the feed (lib/feedCtas.js decides which
    and where; lib/useFeedCtas.js gives them to Home): a small eyebrow,
    the title, one line on why, one button, and "Not now" (✕) that
    hides the card for 3 days. Points come from the server's rules.
-   "Win the TTFC swag kit" (batch 7): the photo, the top N and the
-   cutoff, "See how to win" → the Leaderboard tab.
+   "Win the TTFC swag kit" (batch 7): the photo, "Only app users can
+   win", the top N and the cutoff, winners at the end of Day 1, "See
+   how to win" → the Leaderboard tab.
 ========================================================= */
 
 const CARDS = {
@@ -40,7 +41,7 @@ export default function FeedCta({ ctaKey, rules, liveSession, swag, onDismiss })
   const pts = card.rule ? (rules.find((r) => r.key === card.rule)?.points ?? card.fallback) : null;
   const points = pts ? `+${pts}${card.each ? " each" : ""}` : null;
   const why = ctaKey === "poll" && liveSession ? `${liveSession.title} is on now. Vote and see the room's answer.`
-    : ctaKey === "swag" && swag ? `Earn points in the app. The top ${swag.kits} on the leaderboard at ${swag.cutoffShort || swagShort(swag.cutoff)} each win a backpack, bottle, mug and more.`
+    : ctaKey === "swag" && swag ? `${SWAG_PITCH_SHORT}, and you're in. Earn points: the top ${swag.kits} on the leaderboard at ${swag.cutoffShort || swagShort(swag.cutoff)} each win a backpack, bottle, mug and more. Winners are told at the end of Day 1.`
       : card.why;
   const title = ctaKey === "swag" && swag?.title ? swag.title : card.title;
   const go = () => {

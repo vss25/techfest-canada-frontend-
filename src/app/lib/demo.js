@@ -731,7 +731,7 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     const g = swagFrom({ "swag.enabled": true, "swag.kits": 3 }, clockNow().getTime());
     return {
       enabled: g.enabled, title: g.title, kits: g.kits, cutoff: SWAG_DEFAULTS["swag.cutoff"], announce: SWAG_DEFAULTS["swag.announce"],
-      cutoffLabel: g.cutoffLabel, cutoffShort: g.cutoffShort, announceLabel: g.announceLabel, rules: g.rules,
+      cutoffLabel: g.cutoffLabel, cutoffShort: g.cutoffShort, announceLabel: g.announceLabel, rules: g.rules, appOnly: true, pitch: g.pitch,
       phase: g.stage === "off" ? "open" : g.stage, announced: false, rulesUrl: SWAG_URL, photoUrl: `https://www.thetechfestival.com${SWAG_PHOTO}`,
       installUrl: "https://www.thetechfestival.com/app/install",
     };

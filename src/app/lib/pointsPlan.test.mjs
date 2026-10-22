@@ -22,8 +22,8 @@ test("before the event: the most important first, max 4, no event-day ones", () 
   assert.ok(!keys(all).includes("feed.likes") && !keys(all).includes("live.upvoted"));
 });
 
-test("on the event days: scan a badge, vote, ask first", () => {
-  assert.deepEqual(keys(recommendedRules(RULES, none, true)), ["network.inPerson", "live.vote", "live.question", "linkedin.attending"]);
+test("on the event days: scan a badge, vote, ask, take part first (same order as iOS and Android)", () => {
+  assert.deepEqual(keys(recommendedRules(RULES, none, true)), ["network.inPerson", "live.vote", "live.question", "session.attended"]);
 });
 
 test("anything already done drops out (it's under Done), capped or not", () => {

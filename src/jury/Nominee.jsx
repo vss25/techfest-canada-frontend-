@@ -6,6 +6,7 @@ import {
 import { jury } from "./api";
 import { SCORE_VALUES, anchorFor, displayUrl, fmtToronto, fmtTotal, savedAgo, scoredCount, totalOf, cx } from "./juryLib";
 import { Button, Chip, Modal, RichText, Spinner } from "./ui";
+import { focusText } from "../lib/catalystCategories.js";
 
 /* One nominee: the profile (category, nominee, links, who nominated them,
    the statements) and the juror's assessment (the rubric's 1–5 scores with
@@ -312,6 +313,8 @@ export default function Nominee({ basePath, onToast }) {
 
   const nextAfter = data.nextId ? `${basePath}/n/${data.nextId}` : basePath;
   const category = n.categoryType === "special" ? n.specialAward : <>{n.pillar} <span aria-hidden="true">×</span><span className="sr-only">in</span> {n.sector}</>;
+  // The startup's focus as staff last set it: "<pillar> · <sector>" (older servers send only the sector).
+  const focus = n.focus || focusText(n);
 
   const primary = locked ? null : state === "submitted" ? (
     <Button variant="primary" onClick={() => go(nextAfter)}>{data.nextId ? <>Next nominee <ArrowRight className="j-ico" aria-hidden="true" /></> : "All nominations"}</Button>
@@ -353,7 +356,7 @@ export default function Nominee({ basePath, onToast }) {
               {n.nomineeType && <div><dt>Nominee</dt><dd>{n.nomineeType}</dd></div>}
               {n.nomineeOrganisation && <div><dt>Organisation</dt><dd>{n.nomineeOrganisation}</dd></div>}
               {n.nomineeLocation && <div><dt>Location</dt><dd>{n.nomineeLocation}</dd></div>}
-              {n.nomineeSector && <div><dt>Sector</dt><dd>{n.nomineeSector}</dd></div>}
+              {focus && <div><dt>Focus</dt><dd>{focus}</dd></div>}
               {n.website && <div><dt>Website</dt><dd><a href={n.website} target="_blank" rel="noopener noreferrer nofollow">{displayUrl(n.website)}<ExternalLink className="j-ico-xs" aria-label="(opens in a new tab)" /></a></dd></div>}
               {n.linkedin && <div><dt>LinkedIn</dt><dd><a href={n.linkedin} target="_blank" rel="noopener noreferrer nofollow">{displayUrl(n.linkedin)}<ExternalLink className="j-ico-xs" aria-label="(opens in a new tab)" /></a></dd></div>}
               <div><dt>Nomination</dt><dd>{n.nominatedBy}</dd></div>

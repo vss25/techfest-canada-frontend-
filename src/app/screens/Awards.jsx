@@ -59,7 +59,7 @@ export default function Awards() {
         <section className="stack-sm" aria-label="Catalyst Awards">
           <span className="eyebrow awards-eyebrow">Awards night · Oct 26, 2026</span>
           <h1 className="awards-hero">{total ? `${total}.` : "Catalyst Awards."}<br />One stage. Infinite impact.</h1>
-          <p className="muted" style={{ margin: 0, fontSize: 14 }}>Honouring the pioneers transforming industries through technology. 25 core categories across the 5×5 pillar-sector matrix, plus 3 special recognition awards.</p>
+          <p className="muted" style={{ margin: 0, fontSize: 14 }}>Honouring the pioneers transforming industries through technology. Categories span the 5×5 pillar-sector matrix and special recognition awards.</p>
         </section>
 
         <div className="award-counts">

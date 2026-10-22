@@ -64,7 +64,7 @@ function ResultDrawer({ row, criteria, onClose, onStatus }) {
       <div className="mb-6 overflow-x-auto rounded-2xl border border-ttfc-line">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-ttfc-line bg-white/[0.03] text-left text-[11px] font-bold uppercase tracking-[0.08em] text-ttfc-muted">
+            <tr className="border-b border-ttfc-line bg-ttfc-contrast/[0.03] text-left text-[11px] font-bold uppercase tracking-[0.08em] text-ttfc-muted">
               <th className="px-3 py-2.5">Juror</th>
               {criteria.map((c) => <th key={c.key} className="px-3 py-2.5" title={c.label}>{c.label.split(/\s+/)[0]}</th>)}
               <th className="px-3 py-2.5">Total</th><th className="px-3 py-2.5">Recommendation</th>
@@ -79,7 +79,7 @@ function ResultDrawer({ row, criteria, onClose, onStatus }) {
                 <td className="px-3 py-2.5 text-xs">{j.recommendation || "—"}</td>
               </tr>
             ))}
-            <tr className="bg-white/[0.03]">
+            <tr className="bg-ttfc-contrast/[0.03]">
               <td className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-ttfc-dim">Average</td>
               {criteria.map((c) => <td key={c.key} className="px-3 py-2.5 font-semibold tabular-nums">{fmtScore(row.perCriterion?.[c.key]?.avg)}</td>)}
               <td className="px-3 py-2.5 font-bold tabular-nums">{fmtScore(row.total)}</td><td />
@@ -189,7 +189,7 @@ export default function JuryResults() {
             <tbody>
               {groups.map((g) => (
                 <Fragment key={g.key}>
-                  <tr><td colSpan={6 + criteria.length} className="bg-white/[0.03] text-xs font-bold uppercase tracking-[0.12em] text-ttfc-orange">{g.short || g.label}</td></tr>
+                  <tr><td colSpan={6 + criteria.length} className="bg-ttfc-contrast/[0.03] text-xs font-bold uppercase tracking-[0.12em] text-ttfc-orange">{g.short || g.label}</td></tr>
                   {g.rows.map((r) => (
                     <tr key={r.id} className="is-clickable" onClick={() => setOpenId(r.id)}>
                       <td className="text-lg font-bold tabular-nums">{r.rank ?? <span className="text-xs font-normal text-ttfc-dim">—</span>}</td>

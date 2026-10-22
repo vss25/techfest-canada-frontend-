@@ -202,7 +202,7 @@ function PassPreview({ preview }) {
           <div className="flex gap-1" role="tablist" aria-label="Email format">
             {[["html", "Email"], ["text", "Plain text"]].map(([k, label]) => (
               <button key={k} type="button" role="tab" aria-selected={mode === k} onClick={() => setMode(k)}
-                className={`rounded-lg px-2.5 py-1 font-semibold ${mode === k ? "bg-ttfc-purple/30 text-white" : "text-ttfc-muted hover:text-ttfc-text"}`}>
+                className={`rounded-lg px-2.5 py-1 font-semibold ${mode === k ? "bg-ttfc-purple/30 text-ttfc-contrast" : "text-ttfc-muted hover:text-ttfc-text"}`}>
                 {label}
               </button>
             ))}
@@ -332,7 +332,7 @@ function PreviewDrawer({ id, row, canSend, mode = "pass", onSend, onClose, onRow
                     value={to} onChange={setTo} placeholder="speaker@company.com, assistant@company.com" />
                   <ListField label="Cc" hint="For this send. The usual list is set in Edit email." value={cc} onChange={setCc} placeholder="Nobody" />
                   <button type="button" onClick={() => setShowWording((v) => !v)} aria-expanded={showWording}
-                    className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-ttfc-pink hover:text-white">
+                    className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-ttfc-pink hover:text-ttfc-contrast">
                     <PenLine className="h-4 w-4" aria-hidden="true" /> {nudge ? "Reminder wording" : "Email wording for this speaker"}
                     <ChevronDown className={`h-4 w-4 transition ${showWording ? "rotate-180" : ""}`} aria-hidden="true" />
                   </button>

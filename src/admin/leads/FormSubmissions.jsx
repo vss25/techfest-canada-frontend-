@@ -284,7 +284,7 @@ export default function FormSubmissions() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="cursor-pointer align-top hover:bg-white/[0.03]" onClick={() => update({ id: r.id })}>
+                <tr key={r.id} className="cursor-pointer align-top hover:bg-ttfc-contrast/[0.03]" onClick={() => update({ id: r.id })}>
                   <td className="whitespace-nowrap text-ttfc-muted">{when(r.createdAt)}</td>
                   <td className="whitespace-nowrap">
                     <FormBadge form={r.form} />

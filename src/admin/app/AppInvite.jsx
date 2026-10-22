@@ -69,7 +69,7 @@ const TICKET_FILTERS = [["any", "Any ticket"], ["bought", "Bought"], ["given", "
 const GROUP_SIZES = [10, 20, 50, 100];
 const NAMES_SHOWN = 100;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const chip = (on) => `rounded-lg px-3 py-1.5 text-xs font-semibold ${on ? "bg-white/10 text-ttfc-text" : "text-ttfc-muted hover:bg-white/5 hover:text-ttfc-text"}`;
+const chip = (on) => `rounded-lg px-3 py-1.5 text-xs font-semibold ${on ? "bg-ttfc-contrast/10 text-ttfc-text" : "text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text"}`;
 /** What a multi-person send was, for the progress card and the banner. */
 const jobWhat = (job) => ({ all: "to everyone", retry: "of the failed ones", next: `to the next ${job?.size || ""}`.trim(), selected: "to the people picked" }[job?.kind] || "");
 
@@ -336,7 +336,7 @@ export default function AppInvite() {
             <p className="font-semibold">Sending{what ? ` ${what}` : ""}… {num(done)} of {num(job.total)}</p>
             <p className="text-ttfc-muted">Started {when(job.startedAt)}{job.by ? ` by ${job.by}` : ""}</p>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/5" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Send progress">
+          <div className="h-2 overflow-hidden rounded-full bg-ttfc-contrast/5" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Send progress">
             <div className="h-2 rounded-full bg-gradient-to-r from-ttfc-purple via-ttfc-pink to-ttfc-orange transition-all" style={{ width: `${Math.max(2, pct)}%` }} />
           </div>
           <p className="mt-2 text-xs text-ttfc-dim">Sent {num(job.sent)} · failed {num(job.failed)} · skipped {num(job.skipped)}. You can leave this page; it keeps going.</p>

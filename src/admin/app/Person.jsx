@@ -36,7 +36,7 @@ function MessagesPane({ id }) {
             <thead><tr><th>With</th><th>Last message</th><th>#</th><th>When</th></tr></thead>
             <tbody>
               {threads.data.map((t) => (
-                <tr key={t.threadKey} className={`is-clickable ${thread?.threadKey === t.threadKey ? "bg-white/5" : ""}`} tabIndex={0}
+                <tr key={t.threadKey} className={`is-clickable ${thread?.threadKey === t.threadKey ? "bg-ttfc-contrast/5" : ""}`} tabIndex={0}
                   onClick={() => setThread(t)} onKeyDown={(e) => e.key === "Enter" && setThread(t)}>
                   <td className="font-semibold">{t.otherName}{t.otherHidden && <HiddenBadge className="ml-1.5" />}</td>
                   <td className="max-w-[220px] truncate text-ttfc-muted">{t.last}</td>

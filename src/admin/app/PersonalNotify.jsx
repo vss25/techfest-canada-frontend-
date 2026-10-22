@@ -79,7 +79,7 @@ function RecipientPicker({ selected, onChange, error }) {
             <PersonAvatar r={r} size="h-6 w-6" />
             <span className="truncate">{fullName(r)}</span>
             <button type="button" onClick={(e) => { e.stopPropagation(); remove(r.id); }} aria-label={`Remove ${fullName(r)}`}
-              className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-ttfc-muted hover:bg-white/10 hover:text-ttfc-text ${focusRing}`}>
+              className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-ttfc-muted hover:bg-ttfc-contrast/10 hover:text-ttfc-text ${focusRing}`}>
               <X className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           </span>
@@ -126,7 +126,7 @@ function RecipientPicker({ selected, onChange, error }) {
                   aria-selected={i === active}
                   onMouseDown={(e) => { e.preventDefault(); add(r); }}
                   onMouseEnter={() => setActive(i)}
-                  className={`flex cursor-pointer items-center gap-3 px-3.5 py-2.5 ${i === active ? "bg-white/[0.07]" : ""}`}
+                  className={`flex cursor-pointer items-center gap-3 px-3.5 py-2.5 ${i === active ? "bg-ttfc-contrast/[0.07]" : ""}`}
                 >
                   <PersonAvatar r={r} size="h-9 w-9" />
                   <div className="min-w-0 flex-1">

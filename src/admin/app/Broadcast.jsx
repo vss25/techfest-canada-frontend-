@@ -73,7 +73,7 @@ function EveryoneAnnouncement({ canSend }) {
             )}
           </Field>
           <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-ttfc-line p-4">
-            <input type="checkbox" checked={banner} onChange={(e) => setBanner(e.target.checked)} disabled={!canSend} className="mt-0.5 h-4 w-4 accent-[#E8458B]" />
+            <input type="checkbox" checked={banner} onChange={(e) => setBanner(e.target.checked)} disabled={!canSend} className="mt-0.5 h-4 w-4 accent-ttfc-pink" />
             <span>
               <span className="block text-sm font-semibold">Also show it as the banner at the top of Home</span>
               <span className="block text-xs text-ttfc-muted">Replaces the current Home announcement (first 280 characters).</span>

@@ -52,7 +52,7 @@ function SpeakerCard({ s, readOnly, onEdit, onToggleFeatured, onOrder }) {
           <Pencil className="h-3 w-3" aria-hidden="true" /> Edit
         </span>
         {s.featured && (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-ttfc-orange px-2 py-0.5 text-[11px] font-bold text-[#1a0f00] shadow">
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-ttfc-orange px-2 py-0.5 text-[11px] font-bold text-ttfc-ink shadow">
             <Star className="h-3 w-3" fill="currentColor" aria-hidden="true" /> Featured
           </span>
         )}
@@ -88,7 +88,7 @@ function SpeakerCard({ s, readOnly, onEdit, onToggleFeatured, onOrder }) {
             aria-pressed={!!s.featured}
             aria-label={s.featured ? `Unfeature ${s.name}` : `Feature ${s.name}`}
             title={s.featured ? "Featured — click to unfeature" : "Feature this speaker"}
-            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition disabled:opacity-50 ${s.featured ? "bg-ttfc-orange/20 text-ttfc-orange" : "text-ttfc-dim hover:bg-white/5 hover:text-ttfc-text"} ${focusRing}`}
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition disabled:opacity-50 ${s.featured ? "bg-ttfc-orange/20 text-ttfc-orange" : "text-ttfc-dim hover:bg-ttfc-contrast/5 hover:text-ttfc-text"} ${focusRing}`}
           >
             <Star className="h-4 w-4" fill={s.featured ? "currentColor" : "none"} aria-hidden="true" />
           </button>

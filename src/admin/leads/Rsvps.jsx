@@ -550,7 +550,7 @@ export default function Rsvps() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="cursor-pointer align-top hover:bg-white/[0.03]" onClick={() => update({ id: r.id })}>
+                <tr key={r.id} className="cursor-pointer align-top hover:bg-ttfc-contrast/[0.03]" onClick={() => update({ id: r.id })}>
                   <td className="max-w-[220px] text-xs">
                     <button type="button" onClick={(e) => { e.stopPropagation(); update({ id: r.id }); }}
                       className="block max-w-full truncate text-left text-sm font-semibold hover:text-ttfc-pink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ttfc-purple"

@@ -487,7 +487,7 @@ export default function CatalystNominations() {
           <thead><tr><th>Nominee</th><th>Category</th><th>Nominated by</th><th>Submitted</th><th>Status</th></tr></thead>
           <tbody>
             {shown.map((r) => (
-              <tr key={r.id} className="cursor-pointer hover:bg-white/[0.03]" onClick={() => setParam("id", r.id)}>
+              <tr key={r.id} className="cursor-pointer hover:bg-ttfc-contrast/[0.03]" onClick={() => setParam("id", r.id)}>
                 <td className="min-w-[200px] max-w-[280px]">
                   <button type="button" className="block max-w-full truncate text-left font-semibold hover:underline" onClick={(e) => { e.stopPropagation(); setParam("id", r.id); }}>{r.nomineeName}</button>
                   <span className="block truncate text-xs text-ttfc-muted">{[r.nomineeType, r.nomineeOrganisation].filter(Boolean).join(" · ")}</span>

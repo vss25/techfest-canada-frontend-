@@ -12,15 +12,16 @@ import { API } from "./lib/config";
 import { installViewportFix } from "./lib/viewport";
 import App from "./App.jsx";
 
-// Computers get the "made for your phone" page instead of the app (lib/desktopGate.js).
-const DesktopGate = lazy(() => import("./screens/DesktopGate"));
+// Computers get the "made for your phone" page instead of the app (lib/desktopGate.js); /app/install shows the
+// install page there too (screens/DesktopPages.jsx).
+const DesktopPages = lazy(() => import("./screens/DesktopPages"));
 
 // /app (no slash) → /app/ so the page sits inside the service worker's scope.
 if (window.location.pathname === "/app") {
   window.history.replaceState(window.history.state, "", "/app/" + window.location.search + window.location.hash);
 }
 
-// Opened from the app invite email's button (#r=<token>): count the visit, then tidy the address (lib/inviteVisit.js).
+// Opened from the app invite or swag email's button (/app/#r=<token>, /app/install?…#r=<token>): count the visit, then tidy the address (lib/inviteVisit.js).
 recordInviteVisit(API);
 
 const gated = desktopGated();
@@ -45,6 +46,6 @@ setTimeout(() => {
 
 createRoot(document.getElementById("app-root")).render(
   <StrictMode>
-    {gated ? <Suspense fallback={null}><DesktopGate /></Suspense> : <App />}
+    {gated ? <Suspense fallback={null}><DesktopPages /></Suspense> : <App />}
   </StrictMode>,
 );

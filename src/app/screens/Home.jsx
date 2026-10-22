@@ -449,7 +449,7 @@ export default function Home() {
             <div className="column stack-sm">
               {feed.items.map((x) => (x.type === "post"
                 ? <PostCard key={x.post.id} post={x.post} />
-                : <FeedCta key={`cta-${x.key}`} ctaKey={x.key} rules={feed.rules} liveSession={feed.liveSession} onDismiss={feed.dismiss} />))}
+                : <FeedCta key={`cta-${x.key}`} ctaKey={x.key} rules={feed.rules} liveSession={feed.liveSession} swag={feed.swag} onDismiss={feed.dismiss} />))}
             </div>
           )}
         </section>

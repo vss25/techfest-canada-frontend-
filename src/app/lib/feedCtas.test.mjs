@@ -42,4 +42,8 @@ test("each card only while it isn't done, dismissed for 3 days", () => {
   assert.deepEqual(eligibleCtas({ ...base, counted: null, activity: null, linkedinUrl: "x", topics: ["a", "b", "c"], saved: 4, requestsSent: 1 }), ["attending", "availability"]);
   // Event days: the scanner, and a poll when a session you saved is live.
   assert.deepEqual(eligibleCtas({ ...base, festivalDay: true, liveSession: { id: "d1-06", title: "T" } }).slice(-2), ["scan", "poll"]);
+  // The swag kit card (batch 7): while the giveaway is open; "Not now" hides it like the others.
+  assert.equal(eligibleCtas({ ...base, swagOpen: true }).at(-1), "swag");
+  assert.ok(!eligibleCtas({ ...base, swagOpen: false }).includes("swag"));
+  assert.ok(!eligibleCtas({ ...base, swagOpen: true, dismissed: { swag: now + 1000 } }).includes("swag"));
 });

@@ -21,10 +21,12 @@ export function signOut() {
 }
 
 export class ApiError extends Error {
-  constructor(message, status, code = "") {
+  /** `data`: the server's whole answer (e.g. a 409 with the new list in it). */
+  constructor(message, status, code = "", data = null) {
     super(message);
     this.status = status;
     this.code = code;
+    this.data = data;
   }
 }
 
@@ -63,7 +65,7 @@ export async function adminFetch(path, { method = "GET", body, signal } = {}) {
   }
   if (!res.ok) {
     const msg = data?.error || data?.message || `Request failed (${res.status})`;
-    throw new ApiError(msg === "maintenance" ? data?.message || msg : msg, res.status, data?.code || "");
+    throw new ApiError(msg === "maintenance" ? data?.message || msg : msg, res.status, data?.code || "", data);
   }
   return data;
 }

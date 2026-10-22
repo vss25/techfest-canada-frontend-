@@ -38,6 +38,8 @@ const Rsvp = lazy(() => import("./pages/Rsvp"));
 const Attending = lazy(() => import("./pages/Attending"));
 // Unlinked page the TTFC app opens (Oct 22 2026): a session's discussion or a poll as a LinkedIn post (noindex, not in any menu).
 const ShareLinkedin = lazy(() => import("./pages/ShareLinkedin"));
+// "Win the TTFC swag kit" rules page (Oct 22 2026): linked from the swag email, the apps and the install page.
+const Swag = lazy(() => import("./pages/Swag"));
 // Catalyst Awards jury portal: unlinked, noindex, light only (src/jury). Loaded only when someone opens it.
 const JuryPortal = lazy(() => import("./jury/JuryPortal"));
 import MaintenanceGate from "./components/MaintenanceGate";
@@ -146,6 +148,7 @@ function App() {
         <Route path="/rsvp" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><Rsvp /></Suspense>} />
         <Route path="/attending" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><Attending /></Suspense>} />
         <Route path="/share/linkedin" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><ShareLinkedin /></Suspense>} />
+        <Route path="/swag" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Swag /></Suspense>} />
       </Routes>
       <OffJury><TicketBar /></OffJury>
       </MaintenanceGate>

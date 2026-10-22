@@ -55,7 +55,8 @@ const KEYWORDS = {
     "shadow ban", "unhide", "show in app again", "harassment", "troublemaker", "block someone"],
   "app/text": ["app copy", "feature switches", "switches", "flags", "texts", "wording"],
   "app/pwa": ["web app", "installs", "install prompt", "home screen"],
-  "app/invite": ["app invite", "invite email", "download the app", "web app email", "email everyone", "add to home screen", "app email", "open the ttfc app"],
+  "app/invite": ["app invite", "invite email", "download the app", "web app email", "email everyone", "add to home screen", "app email", "open the ttfc app", "swag email", "win the swag kit email", "campaign"],
+  "app/swag": ["swag", "swag kit", "giveaway", "prize", "win", "winners", "announce winners", "leaderboard prize", "backpack"],
   "app/digest": ["what you missed", "digest", "summary email", "missed activity", "5 pm email", "activity email", "unsubscribe"],
   "app/rights": ["permissions", "rights matrix", "who can message", "connection requests", "posting", "share contact"],
   "app/broadcast": ["push", "notification", "notify", "announce", "send to everyone", "personal notification"],
@@ -103,10 +104,11 @@ export const ADMIN_INDEX = (() => {
     }
   }
   for (const [key, meta] of Object.entries(REGISTRY)) {
-    const page = meta.scope === "website" ? "Website switches › Website options" : "App text & switches";
+    const page = meta.scope === "website" ? "Website switches › Website options" : meta.scope === "swag" ? "" : "App text & switches";
+    const to = meta.scope === "website" ? "content/settings" : meta.scope === "swag" ? "app/swag" : "app/text";
     out.push({
       id: `setting:${key}`, type: "setting", title: meta.label, subtitle: [page, groupTitle(meta.scope, meta.group)].filter(Boolean).join(" › "),
-      link: link(meta.scope === "website" ? "content/settings" : "app/text", key), icon: ToggleRight, management: false,
+      link: link(to, key), icon: ToggleRight, management: false,
       keywords: [key, meta.type === "switch" ? "switch" : "text"], description: meta.description || "",
     });
   }

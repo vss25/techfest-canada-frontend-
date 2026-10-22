@@ -13,10 +13,15 @@ import { orgsApi, orgsFrom } from "./orgsApi";
    by the server from the website's partners, the speakers'
    organisations and the organisation of everyone with a pass,
    one entry per organisation. New organisations appear on their
-   own as people join. Staff can replace a logo, hide an
-   organisation from the apps' list, or merge two names that are
-   the same organisation ("merge X into Y"), or have the logo
-   searched for again. Changes show in the apps within a minute.
+   own as people join. Staff can add or change a logo (upload a
+   file up to 2 MB, paste an image link, or pick one the search
+   found; Oct 22 2026, the organiser: "allow the ability to add
+   logos of the organizations whose people are attending"),
+   remove one, hide an organisation from the apps' list, merge two
+   names that are the same organisation ("merge X into Y"), or have
+   the logo searched for again. "Missing logo" lists the ones still
+   without. A partner's logo is its website partner record's, so
+   those rows link there. Changes show in the apps within a minute.
    API calls: cms/orgsApi.js.
 ========================================================= */
 
@@ -26,7 +31,10 @@ const SOURCE = {
   auto: { label: "Found automatically", tone: "orange", hint: "Found from the people's work email or the website; check it" },
   "": { label: "No logo", tone: "neutral", hint: "The apps show the initials" },
 };
-const SHOW = [["all", "All"], ["nologo", "No logo"], ["auto", "Found automatically"], ["hidden", "Hidden from the apps"]];
+const SHOW = [["all", "All"], ["nologo", "Missing logo"], ["auto", "Found automatically"], ["hidden", "Hidden from the apps"]];
+const LOGO_MAX = 2 * 1024 * 1024;
+/** The partner record on the Partners page (opens its editor), else the Partners page searched by name. */
+const partnerLink = (o) => (o.partnerId ? `/admin/content/partners?edit=${encodeURIComponent(o.partnerId)}` : `/admin/content/partners?q=${encodeURIComponent(o.name)}`);
 
 function MergeDialog({ from, items, onClose, onDone }) {
   const toast = useToast();
@@ -83,7 +91,11 @@ export default function AttendingOrgs() {
   const [logoFor, setLogoFor] = useState(null);
   const [mergeFrom, setMergeFrom] = useState(null);
   const [busyKey, setBusyKey] = useState("");
-  const { items, aliases, updatedAt, cmsOk } = useMemo(() => orgsFrom(data), [data]);
+  const { items, aliases, updatedAt, cmsOk, counts: server } = useMemo(() => orgsFrom(data), [data]);
+  const missing = server.missingLogo;
+  const counts = useMemo(() => ({ all: server.total, nologo: server.missingLogo, auto: items.filter((o) => o.logoSource === "auto").length, hidden: items.filter((o) => o.hidden).length }), [items, server]);
+  // After a logo change: the server builds the list again (fresh=1), so the row shows it straight away.
+  const rebuilt = () => setFresh((n) => n + 1);
 
   const rows = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -123,9 +135,9 @@ export default function AttendingOrgs() {
   const clearLogo = async (o) => {
     setBusyKey(`clear:${o.key}`);
     try {
-      await orgsApi.clearLogo(o.companyName || o.name);
+      await orgsApi.clearLogo(o);
       toast.success(`${o.name}'s logo is removed`);
-      reload();
+      rebuilt();
     } catch (err) { toast.error(err); } finally { setBusyKey(""); }
   };
   const lookAgain = async (o) => {
@@ -154,9 +166,15 @@ export default function AttendingOrgs() {
           <Input value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" placeholder="Search organisations" aria-label="Search organisations" />
         </div>
         <Select value={show} onChange={(e) => setShow(e.target.value)} aria-label="Show">
-          {SHOW.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          {SHOW.map(([v, l]) => <option key={v} value={v}>{l}{data ? ` (${counts[v].toLocaleString()})` : ""}</option>)}
         </Select>
       </div>
+      {data && missing > 0 && show !== "nologo" && (
+        <Banner tone="info" icon={ImagePlus} className="mb-4" title={`${missing.toLocaleString()} ${missing === 1 ? "organisation has" : "organisations have"} no logo yet`}
+          action={<Button size="sm" onClick={() => setShow("nologo")}>Show them</Button>}>
+          The apps show their initials. Add a logo: upload a file (up to 2 MB), paste an image link, or pick one the search finds.
+        </Banner>
+      )}
 
       {loading ? <LoadingState label="Loading organisations…" /> : error && !data ? (
         <ErrorState error={error} onRetry={reload} title="Couldn't load the organisations" />
@@ -197,16 +215,18 @@ export default function AttendingOrgs() {
                     <td className="text-right tabular-nums">{o.attendeeCount}</td>
                     <td className="text-right tabular-nums">{o.speakerCount}</td>
                     <td className="whitespace-nowrap text-right">
-                      {o.logoSource === "website" ? (
-                        <Link to="/admin/content/partners" title="This logo is the website's: change it on the Partners page"
-                          className="mr-1 inline-flex h-8 items-center rounded-lg px-2 text-xs font-semibold text-ttfc-pink hover:underline">Edit on Partners</Link>
+                      {o.partner ? (
+                        <Link to={partnerLink(o)} title="A partner's logo is its website partner record's: add or change it there"
+                          className="mr-1 inline-flex h-8 items-center gap-1 rounded-lg border border-ttfc-line px-2.5 text-xs font-semibold text-ttfc-pink hover:border-ttfc-pink/60">
+                          <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />{o.logo ? "Change on Partners" : "Add on Partners"}
+                        </Link>
                       ) : (
-                        <Button size="sm" variant="ghost" icon={ImagePlus} onClick={() => setLogoFor(o)}>{o.logo ? "Replace logo" : "Add logo"}</Button>
+                        <Button size="sm" variant={o.logo ? undefined : "primary"} icon={ImagePlus} onClick={() => setLogoFor(o)}>{o.logo ? "Change logo" : "Add logo"}</Button>
                       )}
-                      {o.logoSource === "company" && (
+                      {o.logoSource === "company" && !o.partner && (
                         <Button size="sm" variant="ghost" icon={ImageOff} loading={busyKey === `clear:${o.key}`} onClick={() => clearLogo(o)} title="Remove the logo staff set; the automatic one (or the initials) shows">Remove logo</Button>
                       )}
-                      {(o.logoSource === "auto" || !o.logo) && o.logoSource !== "website" && (
+                      {(o.logoSource === "auto" || !o.logo) && !o.partner && (
                         <Button size="sm" variant="ghost" icon={SearchCheck} loading={busyKey === `lookup:${o.key}`} onClick={() => lookAgain(o)} title="Look for the logo on the internet again">Look again</Button>
                       )}
                       {o.hiddenBy === "partner" ? (
@@ -249,7 +269,7 @@ export default function AttendingOrgs() {
 
       {logoFor && (
         <LogoPicker open onClose={() => setLogoFor(null)} company={logoFor.companyName || logoFor.name} domain={logoFor.website || logoFor.autoDomain}
-          onSaved={() => { toast.info("The apps show the new logo within a minute"); reload(); }} />
+          orgKey={logoFor.key} maxBytes={LOGO_MAX} onSaved={() => { toast.info("The apps show the new logo within a minute"); rebuilt(); }} />
       )}
       {mergeFrom && <MergeDialog from={mergeFrom} items={items} onClose={() => setMergeFrom(null)} onDone={reload} />}
     </div>

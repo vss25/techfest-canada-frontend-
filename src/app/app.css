@@ -595,21 +595,31 @@ a { color: var(--pur-alt); }
 .todo-circle { width: 17px; height: 17px; color: var(--pur); flex: none; }
 :root:not([data-theme="light"]) .todo-circle { color: var(--pur-alt); }
 .todo-chev { width: 13px; height: 13px; color: var(--tx2); opacity: 0.7; stroke-width: 2.6; }
-.level-card { display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: var(--r-card); background: var(--pur); color: #fff; }
-.level-card h1 { font-size: 24.5px; margin: 0; font-weight: 700; }
-.level-total { font-size: 30px; font-weight: 700; line-height: 1; }
-.level-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.28); overflow: hidden; }
-.level-bar i { display: block; height: 100%; background: #fff; border-radius: 3px; }
 .accent-text { color: var(--pur); }
 :root:not([data-theme="light"]) .accent-text { color: var(--pur-alt); }
-/* Points: Your activity (iOS PointsView.activity) and How to earn more */
-.activity-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.activity-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; min-height: 96px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); text-align: center; }
-.activity-tile b { font-size: 20px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.activity-tile > span:last-child { font-size: 11px; font-weight: 600; color: var(--tx2); line-height: 1.25; }
-.activity-ico { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--pur-tint); color: var(--pur); }
-:root:not([data-theme="light"]) .activity-ico { color: var(--pur-alt); }
-.activity-ico svg { width: 15px; height: 15px; }
+/* Points (batch 6, Oct 22 2026): Leaderboard tab (your rank in one row, the switch, the board) and Your activity tab
+   (Recommended one-liners, Done chips, the level in one line, every other way to earn folded). Nothing animates. */
+.points-me { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r-control); background: var(--pur); color: #fff; }
+.points-me-rank { flex: none; min-width: 44px; height: 44px; padding: 0 6px; border-radius: 12px; display: inline-grid; place-items: center; background: rgba(255,255,255,.18); font-size: 17px; font-weight: 700; }
+.points-switch { padding: 0 14px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); }
+.points-switch .toggle-row { min-height: 48px; }
+.board-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.board-row { display: flex; align-items: center; gap: 12px; padding: 6px 8px; margin: 0 -8px; border-radius: 12px; }
+.board-row.is-me { background: var(--pur-tint); }
+.board-rank { width: 24px; text-align: right; flex: none; }
+.rule-line { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 8px 6px 10px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); }
+.rule-line-label { flex: 1; min-width: 0; font-size: 14px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.done-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.done-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px 0 8px; border-radius: 999px; background: var(--elevated); border: 1px solid var(--border); font-size: 12.5px; font-weight: 600; color: var(--tx); }
+.done-chip svg { width: 14px; height: 14px; color: var(--pur); flex: none; }
+.done-chip b { color: var(--pur); font-weight: 700; }
+:root:not([data-theme="light"]) .done-chip svg, :root:not([data-theme="light"]) .done-chip b { color: var(--pur-alt); }
+.level-line { display: flex; flex-direction: column; gap: 8px; }
+.fold-head { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 14px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); color: var(--tx); font: inherit; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
+.fold-chev { width: 16px; height: 16px; color: var(--tx2); flex: none; }
+.fold-chev.is-open { transform: rotate(180deg); }
+/* The tabs, pinned under the title (a capsule with the page's side margins). */
+.topbar-below .seg.seg--capsule:not(.seg--scroll) { margin: 0 16px; padding: 4px; }
 .rule-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); }
 .rule-points { flex: none; min-width: 44px; height: 26px; padding: 0 8px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--pur-tint); color: var(--pur); font-size: 13px; font-weight: 700; }
 :root:not([data-theme="light"]) .rule-points { color: var(--pur-alt); }
@@ -1659,30 +1669,15 @@ textarea.input--ios { min-height: 120px; }
 .awards-eyebrow { color: #e0408a; }
 .awards-eyebrow--orange { color: #f58733; }
 .awards-hero { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
-.award-counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 10px; }
-.award-count { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); color: inherit; text-decoration: none; min-width: 0; }
-.award-count b { font-size: 22px; font-weight: 700; line-height: 1.1; }
-.award-count > span { font-size: 10.5px; font-weight: 600; color: var(--tx2); overflow: hidden; text-overflow: ellipsis; }
-.award-count-ico { width: 18px; height: 18px; color: #e0408a; }
-.award-counts--one { grid-template-columns: 1fr; margin-top: -8px; }
-.award-counts--one .award-count { flex-direction: row; align-items: center; gap: 10px; }
-.award-counts--one .award-count > span { font-size: 13px; }
-.award-count--link { border-color: color-mix(in srgb, var(--pur) 55%, transparent); }
-.award-counts--one .award-count-chev { position: static; margin-left: auto; }
-.award-count-chev { position: absolute; top: 12px; right: 8px; width: 14px; height: 14px; color: var(--tx2); }
 .award-pillar { gap: 12px; padding: 12px 14px; border-radius: 14px; }
 .award-pillar b { font-size: 14px; }
 .award-pillar-star { width: 18px; height: 18px; color: #e0408a; fill: currentColor; flex: none; }
-.award-date { gap: 12px; }
-.award-date-when { width: 74px; flex: none; padding: 4px 8px; border-radius: 8px; background: var(--elevated); color: #e0408a; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
-.award-date-when.is-night { background: linear-gradient(135deg, var(--pur-core), #e0408a); color: #fff; }
 .app-row { display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 12px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); color: inherit; text-align: left; }
 .app-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .app-name { font-size: 15px; font-weight: 700; min-width: 0; }
 .app-web { width: 14px; height: 14px; flex: none; color: var(--pur-alt); }
 .app-line { display: flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--tx2); }
 .app-line svg { width: 12px; height: 12px; flex: none; }
-.app-by { font-size: 12px; font-weight: 600; color: var(--pur-alt); }
 .app-type { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--pur-tint); color: var(--pur-alt); }
 .app-type svg { width: 17px; height: 17px; }
 .app-detail { padding-bottom: 20px; }
@@ -1728,3 +1723,9 @@ textarea.input--ios { min-height: 120px; }
 .sos-count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--red); color: #fff; font-size: 12px; font-weight: 800; }
 .sos-row { align-items: flex-start; padding: 12px 14px; }
 .sos-row--new { border-color: color-mix(in srgb, var(--red) 55%, transparent); }
+
+/* Someone's profile (PersonProfile.jsx, Oct 22 2026): where they're from and their booth under the job line. */
+.person-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; font-size: 13px; color: var(--tx2); }
+.person-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.person-meta svg { width: 14px; height: 14px; }
+

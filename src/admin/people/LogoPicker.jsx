@@ -68,8 +68,11 @@ function Candidate({ c, picked, onPick, name }) {
  * @param {string} [p.personId]     the profile it was opened from
  * @param {string} [p.personName]
  * @param {boolean} [p.canOwn]      the person can have a logo of their own (has an account or a pass)
+ * @param {number}  [p.maxBytes]    the largest file to upload (Attending organisations: 2 MB)
+ * @param {string}  [p.orgKey]      the organisation's key (Attending organisations), so the logo lands on that entry
+ *                                  even when staff edit the name
  */
-export default function LogoPicker({ open, onClose, company = "", domain = "", personId = "", personName = "", canOwn = false, onSaved }) {
+export default function LogoPicker({ open, onClose, company = "", domain = "", personId = "", personName = "", canOwn = false, onSaved, maxBytes = 0, orgKey = "" }) {
   const toast = useToast();
   const [name, setName] = useState(company);
   const [site, setSite] = useState(domain);
@@ -102,6 +105,7 @@ export default function LogoPicker({ open, onClose, company = "", domain = "", p
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    if (maxBytes && file.size > maxBytes) { toast.error(`That file is over ${Math.round(maxBytes / 1024 / 1024)} MB. Use a smaller PNG, JPG, SVG or WebP.`); return; }
     try {
       const { dataUrl } = await prepareImage(file, { kind: "logo" });
       setPicked({ kind: "file", dataUrl, name: file.name });
@@ -112,7 +116,7 @@ export default function LogoPicker({ open, onClose, company = "", domain = "", p
   const save = async () => {
     setSaving(true); setSaveError("");
     try {
-      const body = { name: name.trim(), domain: site.trim(), personId: personId || undefined, forPerson };
+      const body = { name: name.trim(), domain: site.trim(), personId: personId || undefined, forPerson, key: !forPerson && orgKey ? orgKey : undefined };
       if (picked?.kind === "candidate") Object.assign(body, { url: picked.c.url, source: picked.c.source });
       else if (picked?.kind === "url") Object.assign(body, { url: pasted.trim(), source: "url" });
       else if (picked?.kind === "file") Object.assign(body, { data: picked.dataUrl });

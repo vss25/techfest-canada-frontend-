@@ -34,6 +34,18 @@ function person(id, name, jobTitle, organization, extra = {}) {
   };
 }
 
+/* What GET /social/users/:id adds to the card (backend batch 6): field of work, level, what they're here for, and
+   the profile colour the server works out (services/profileTag.js). */
+const DEMO_ABOUT = {
+  "p-hannah": { fieldOfWork: "Product & Commerce", jobLevel: "Manager", objectives: ["Find partners", "Learn about AI", "Meet investors"], profileTag: { key: "pass", label: "Connect" } },
+  "p-priya": { fieldOfWork: "Supply Chain & Logistics", jobLevel: "Director", objectives: ["Find vendors", "Share our work"], profileTag: { key: "pass", label: "Power" } },
+  "p-maya": { fieldOfWork: "Financial Services", jobLevel: "C-suite", objectives: ["Speak", "Meet founders"], profileTag: { key: "speaker", label: "Speaker" } },
+  "p-tom": { profileTag: { key: "pass", label: "Exhibitor" } },
+  "p-jordan": { profileTag: { key: "pass", label: "Exhibitor" } },
+  "p-nina": { profileTag: { key: "staff", label: "Staff" } },
+  "p-ben": { profileTag: { key: "volunteer", label: "Volunteer" } },
+};
+
 /* Free to meet (lib/availability.js): a whole day, a range split by place, a place on one block. */
 const DEMO_AVAILABILITY = {
   "p-hannah": { availabilitySlots: ["d1-08", "d1-10", "d1-12", "d1-14", "d1-16", "d1-18"], availabilitySpots: {}, meetingSpot: "Harbour Ballroom foyer" },
@@ -163,6 +175,8 @@ function seed() {
         topicTags: ["Quantum Computing"], linkUrl: "", media: [{ type: "image", url: site("/ft-conference.jpg"), posterUrl: "", width: 1600, height: 1067, duration: 0 }, { type: "image", url: site("/venue2.jpg"), posterUrl: "", width: 1600, height: 1067, duration: 0 }],
         mentions: [{ type: "user", id: "p-priya", name: "Priya Raman" }], likes: [], likeBase: 37, comments: [
           { id: "cm-1", authorId: "p-priya", authorName: "Priya Raman", authorTier: "", body: "Count me in. I'll bring our routing benchmarks.", status: "approved", createdAt: hoursAgo(4) },
+          // Someone who keeps their profile private (not in People; their profile answers 404): name and initials only.
+          { id: "cm-2", authorId: "p-quinn", authorName: "Quinn Harper", authorTier: "", body: "Same here, see you at Pier 4.", status: "approved", createdAt: hoursAgo(3) },
         ], createdAt: hoursAgo(5) },
       { id: "post-3", authorId: "p-hannah", authorName: "Hannah Liu", authorTitle: "Product Manager", authorOrg: "Shopify", authorTier: "", kind: "member",
         body: "Organising an informal CleanTech founders coffee on Day 2 morning before the keynote. Reply if you want in. Aiming for 8–10 people.",
@@ -470,12 +484,12 @@ function demoOrganisations(s) {
 /* Catalyst Awards (contract §6–7): fictional applications; never categories or contact details.
    QA: /app/?demo=1&award-apps=off shows the staff switch turned off (award-apps=on: back on). */
 const DEMO_APPLICATIONS = [
-  { id: "na-1", nomineeName: "Aurora Grid Labs", nomineeType: "Organisation", nomineeTitle: "", nomineeOrganisation: "Aurora Grid Labs", nomineeLocation: "Toronto, ON", nomineeWebsite: "https://example.com/aurora-grid", applicantName: "Priya Raman", selfNominated: false, submittedAt: "2026-08-14T15:20:00.000Z" },
-  { id: "na-2", nomineeName: "Dr. Leila Haddad", nomineeType: "Individual", nomineeTitle: "Chief Scientist", nomineeOrganisation: "Lakeview University AI Lab", nomineeLocation: "Waterloo, ON", nomineeWebsite: "", applicantName: "Leila Haddad", selfNominated: true, submittedAt: "2026-08-02T12:00:00.000Z" },
-  { id: "na-3", nomineeName: "Project Northstar", nomineeType: "Team / Project", nomineeTitle: "", nomineeOrganisation: "Maple Health Network", nomineeLocation: "Montréal, QC", nomineeWebsite: "https://example.com/northstar", applicantName: "Sofia Martins", selfNominated: false, submittedAt: "2026-08-21T09:45:00.000Z" },
-  { id: "na-4", nomineeName: "Qubit Labs", nomineeType: "Organisation", nomineeTitle: "", nomineeOrganisation: "Qubit Labs", nomineeLocation: "Vancouver, BC", nomineeWebsite: "https://example.com/qubit-labs", applicantName: "Marcus Chen", selfNominated: true, submittedAt: "2026-07-30T18:10:00.000Z" },
-  { id: "na-5", nomineeName: "Samuel Okoye", nomineeType: "Individual", nomineeTitle: "Founder & CEO", nomineeOrganisation: "VoltGrid Energy", nomineeLocation: "Calgary, AB", nomineeWebsite: "", applicantName: "Grace Kim", selfNominated: false, submittedAt: "2026-08-09T20:30:00.000Z" },
-  { id: "na-6", nomineeName: "CyberShield Response Team", nomineeType: "Team / Project", nomineeTitle: "", nomineeOrganisation: "CyberShield", nomineeLocation: "Ottawa, ON", nomineeWebsite: "https://example.com/cybershield", applicantName: "Tom Becker", selfNominated: false, submittedAt: "2026-08-27T14:05:00.000Z" },
+  { id: "na-1", nomineeName: "Aurora Grid Labs", nomineeType: "Organisation", nomineeTitle: "", nomineeOrganisation: "Aurora Grid Labs", nomineeLocation: "Toronto, ON", nomineeWebsite: "https://example.com/aurora-grid", submittedAt: "2026-08-14T15:20:00.000Z" },
+  { id: "na-2", nomineeName: "Dr. Leila Haddad", nomineeType: "Individual", nomineeTitle: "Chief Scientist", nomineeOrganisation: "Lakeview University AI Lab", nomineeLocation: "Waterloo, ON", nomineeWebsite: "", submittedAt: "2026-08-02T12:00:00.000Z" },
+  { id: "na-3", nomineeName: "Project Northstar", nomineeType: "Team / Project", nomineeTitle: "", nomineeOrganisation: "Maple Health Network", nomineeLocation: "Montréal, QC", nomineeWebsite: "https://example.com/northstar", submittedAt: "2026-08-21T09:45:00.000Z" },
+  { id: "na-4", nomineeName: "Qubit Labs", nomineeType: "Organisation", nomineeTitle: "", nomineeOrganisation: "Qubit Labs", nomineeLocation: "Vancouver, BC", nomineeWebsite: "https://example.com/qubit-labs", submittedAt: "2026-07-30T18:10:00.000Z" },
+  { id: "na-5", nomineeName: "Samuel Okoye", nomineeType: "Individual", nomineeTitle: "Founder & CEO", nomineeOrganisation: "VoltGrid Energy", nomineeLocation: "Calgary, AB", nomineeWebsite: "", submittedAt: "2026-08-09T20:30:00.000Z" },
+  { id: "na-6", nomineeName: "CyberShield Response Team", nomineeType: "Team / Project", nomineeTitle: "", nomineeOrganisation: "CyberShield", nomineeLocation: "Ottawa, ON", nomineeWebsite: "https://example.com/cybershield", submittedAt: "2026-08-27T14:05:00.000Z" },
 ].sort((a, b) => a.nomineeName.localeCompare(b.nomineeName));
 const DEMO_AWARD_CATEGORIES = 4;
 const APPS_OFF_KEY = "ttfc.demo.awardAppsOff";
@@ -812,7 +826,8 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     if (!p) throw new ApiError("Not found", 404);
     const c = m.id === ME ? null : s.connections.find((x) => x.userId === m.id && x.status !== "declined") || null;
     const full = s.people.find((x) => x.id === m.id);
-    return done({ ...p, fieldOfWork: "", jobLevel: "", objectives: [], connectionId: c?.id || "", connectionStatus: c?.status || "", ...shareFields(c, full) });
+    return done({ ...p, fieldOfWork: "", jobLevel: "", objectives: [], profileTag: null, ...(DEMO_ABOUT[m.id] || {}),
+      connectionId: c?.id || "", connectionStatus: c?.status || "", ...shareFields(c, full) });
   }
 
   // Connections

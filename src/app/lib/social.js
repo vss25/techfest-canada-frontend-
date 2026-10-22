@@ -165,11 +165,24 @@ export async function refreshPeople(q = "") {
 
 export const personById = (id, s = social.get()) => s.people.find((p) => p.id === id) || null;
 
+/**
+ * Someone's full profile from the server, every time it's opened (Oct 22 2026, the organiser: "profile picture and
+ * details disclosed by them are not visible when someone clicks on the person's name/photo"). This used to hand back
+ * the People list's copy whenever there was one, so the server's own answer (the contact details they share with
+ * you, the connection, a new photo) never came; and someone opened from a reply before the list arrived had nothing
+ * to show yet. Screens show the list's copy first and fill in from this. The list's copy is refreshed too.
+ */
 export async function fetchPerson(id) {
-  const known = personById(id);
-  if (known) return known;
-  return get(`social/users/${encodeURIComponent(id)}`);
+  const p = await get(`social/users/${encodeURIComponent(id)}`, { cache: "no-store" });
+  if (p?.id) {
+    const s = social.get();
+    if (s.people.some((x) => x.id === p.id)) set({ people: s.people.map((x) => (x.id === p.id ? { ...x, ...cardFields(p) } : x)) });
+  }
+  return p;
 }
+
+/** The card fields a fresh profile brings to the People list (not the share / connection fields). */
+const cardFields = (p) => Object.fromEntries(Object.entries(p).filter(([k]) => !/^(share|sharedContact|myShare|theirShare|connection)/.test(k)));
 
 // ---------- Connections ----------
 

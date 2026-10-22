@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Building2, ClipboardList, Link as LinkIcon, LogIn, MapPin, Ticket, User, Users } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, isSignedIn, signOut } from "../lib/auth";
-import { appliedBy, awards, loadApplications, matchesApplication, roleLine, websiteOf } from "../lib/awards";
+import { awards, loadApplications, matchesApplication, roleLine, websiteOf } from "../lib/awards";
 import { Button, DoneButton, Empty, Sheet, Spinner, TopBar } from "../components/ui";
 import { SearchField } from "../components/Filters";
 
@@ -12,9 +12,10 @@ import { SearchField } from "../components/Filters";
    the name of the applicant. Do not show which categories they
    applied for."). GET /api/app/awards/applications, pass
    holders only: the nominee, what they are (person, organisation
-   or team), title · organisation, where, their website, and who
-   applied ("Self-nominated" when it was themselves). A tap opens
-   the same details in a small sheet; nothing else is shown.
+   or team), title · organisation, where and their website. A tap
+   opens the same details in a small sheet; nothing else is shown.
+   Never who nominated them (Oct 22 2026, the organiser: "hide who
+   nominated the person or company"; the server stopped sending it).
 ========================================================= */
 
 const TYPE = {
@@ -32,7 +33,6 @@ function TypeIcon({ item }) {
 
 function Row({ item, onOpen }) {
   const role = roleLine(item);
-  const by = appliedBy(item);
   const web = websiteOf(item);
   return (
     <button type="button" className="app-row pressable" onClick={() => onOpen(item)}>
@@ -44,7 +44,6 @@ function Row({ item, onOpen }) {
         </span>
         {role && <span className="app-line ellipsis">{role}</span>}
         {item.nomineeLocation && <span className="app-line ellipsis"><MapPin aria-hidden="true" />{item.nomineeLocation}</span>}
-        {by && <span className="app-by">{by}</span>}
       </span>
     </button>
   );
@@ -53,7 +52,6 @@ function Row({ item, onOpen }) {
 function Detail({ item, onClose }) {
   const t = typeOf(item);
   const web = websiteOf(item);
-  const by = appliedBy(item);
   return (
     <Sheet open onClose={onClose} title={item.nomineeName} medium actions={{ right: <DoneButton onClick={onClose} /> }}>
       <div className="sheet-body stack app-detail">
@@ -63,7 +61,6 @@ function Detail({ item, onClose }) {
           {item.nomineeOrganisation && <><dt>Organisation</dt><dd>{item.nomineeOrganisation}</dd></>}
           {item.nomineeLocation && <><dt>Location</dt><dd>{item.nomineeLocation}</dd></>}
           {web && <><dt>Website</dt><dd><a href={web} target="_blank" rel="noopener noreferrer">{web.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "")}</a></dd></>}
-          {by && <><dt>Applicant</dt><dd>{item.selfNominated ? "Self-nominated" : String(item.applicantName).trim()}</dd></>}
         </dl>
       </div>
     </Sheet>

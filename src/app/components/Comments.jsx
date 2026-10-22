@@ -73,13 +73,15 @@ export default function Comments({ post, onClose }) {
           // A tap on the name or photo opens their profile (yours: your own; a speaker: their page).
           const to = authorPath(c, { meId: a.me?.id, blocked: s.blocked, people: FEATURES.network });
           const photo = <Avatar name={c.authorName} src={fileURL(avatarFor(c, s.people) || (c.authorId && c.authorId === a.me?.id ? a.me?.avatarUrl : ""))} size={32} />;
+          // Their name and photo go along, for while the profile loads (and if it's private).
+          const peek = { peek: { name: c.authorName, avatarUrl: avatarFor(c, s.people) } };
           return (
           <div key={c.id} className="comment">
-            {to ? <Link to={to} className="comment-avatar-link" onClick={onClose} tabIndex={-1} aria-label={`${c.authorName}'s profile`}>{photo}</Link> : photo}
+            {to ? <Link to={to} state={peek} className="comment-avatar-link" onClick={onClose} tabIndex={-1} aria-label={`${c.authorName}'s profile`}>{photo}</Link> : photo}
             <div style={{ minWidth: 0, flex: 1 }}>
               <div className="comment-bubble">
                 <div className="row" style={{ gap: 6 }}>
-                  {to ? <Link to={to} className="small bold comment-author-link" onClick={onClose}>{c.authorName}</Link> : <b className="small">{c.authorName}</b>}
+                  {to ? <Link to={to} state={peek} className="small bold comment-author-link" onClick={onClose}>{c.authorName}</Link> : <b className="small">{c.authorName}</b>}
                   {c.authorId === a.me?.id && <span className="tiny bold" style={{ color: "var(--pur-alt)" }}>You</span>}
                   {c.status === "rejected" || c.status === "held" ? <span className="tiny bold" style={{ color: "var(--red)" }}>Held</span> : null}
                 </div>

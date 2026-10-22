@@ -6,14 +6,14 @@ import { createStore, local } from "./store";
    show the number of award categories that actually received
    eligible applications").
    • GET /api/app/awards/summary (public): { categoriesCount,
-     applicationsCount }: the Profile row, the Awards screen's
-     counts. Unknown (never loaded) → no number at all.
+     applicationsCount, enabled }. Since Oct 22 2026 (the organiser:
+     "hide the number of applicants … hide the number of awards")
+     only `enabled` is used: the apps show no counts anywhere.
    • GET /api/app/awards/applications (pass holders signed in):
      { enabled, total, categoriesCount, items: [{ id, nomineeName,
      nomineeType, nomineeTitle, nomineeOrganisation,
-     nomineeLocation, nomineeWebsite, applicantName,
-     selfNominated, submittedAt }] }. Never categories, status or
-     contact details. Staff can switch the list off ("Show award
+     nomineeLocation, nomineeWebsite, submittedAt }] }. Never
+     categories, status, contact details or who nominated them. Staff can switch the list off ("Show award
      applications in the app"): `enabled: false` hides it.
 ========================================================= */
 
@@ -62,11 +62,6 @@ export async function loadApplications() {
   }
 }
 
-const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
-/** "12 categories" for the Profile row, or null while the number isn't known (never 28 by default). */
-export const categoriesLine = (summary) => (summary?.categoriesCount != null ? plural(summary.categoriesCount, "category", "categories") : null);
-/** "12 Awards" (the hero and the count card), or null while unknown. */
-export const awardsLine = (summary) => (summary?.categoriesCount != null ? plural(summary.categoriesCount, "Award", "Awards") : null);
 
 /** An application's web address, only when it's http(s). */
 export function websiteOf(item) {
@@ -74,8 +69,6 @@ export function websiteOf(item) {
   return /^https?:\/\/[^\s]+$/i.test(u) ? u : "";
 }
 
-/** "Applied by Jane Doe" or "Self-nominated". */
-export const appliedBy = (item) => (item?.selfNominated ? "Self-nominated" : item?.applicantName ? `Applied by ${String(item.applicantName).trim()}` : "");
 
 /** The line under the name: title · organisation (an organisation nominated as itself isn't said twice). */
 export function roleLine(item) {

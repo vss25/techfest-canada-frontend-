@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import {
   BadgeCheck, Bell, BellRing, CalendarClock, Camera, ChevronRight, Download, FileText, Hand, HelpCircle, IdCard, Landmark, LifeBuoy, LogOut, Mic, Moon, Pencil, QrCode, RotateCcw,
@@ -12,7 +11,6 @@ import { social } from "../lib/social";
 import { pwa, promptInstall } from "../lib/pwa";
 import { theme, setTheme, THEME_LABEL } from "../lib/theme";
 import { points, refreshPoints } from "../lib/points";
-import { awards, categoriesLine, refreshAwardsSummary } from "../lib/awards";
 import { resetDemo } from "../lib/demo";
 import { fileURL, LINKS, shortTopic } from "../lib/config";
 import { confirmDialog } from "../lib/ui";
@@ -22,6 +20,7 @@ import AppleWalletButton from "../components/AppleWallet";
 import ContactCard from "../components/ContactCard";
 import { GetPassCard } from "../components/PassesSheet";
 import { profileTagView } from "../lib/profileTag";
+import { ProfileGlow, ProfileTagPill } from "../components/ProfileTag";
 import BrandMark from "../components/BrandMark";
 import { AttendingRow } from "../components/LinkedInCta";
 import { AvailabilityRows } from "../components/Availability";
@@ -56,41 +55,6 @@ const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 ========================================================= */
 
 const THEME_ICON = { system: Smartphone, light: Sun, dark: Moon };
-const TAG_ICON = { media: Camera, speaker: Mic, staff: IdCard, volunteer: Hand, pass: Ticket };
-
-/** The glow at the screen's edge: fixed to the viewport (safe areas included), the upper half only. The soft glow
-    sits under the header and its buttons, the 3px edge line over it (clear of the buttons), both under sheets and
-    toasts, never in the way of a tap or a scroll. It grows in from the top centre, breathes, and a highlight sweeps
-    the top edge now and then (app.css; still with reduced motion). Paused while the page is hidden; gone when you
-    leave the screen. */
-function ProfileGlow({ tag }) {
-  const [paused, setPaused] = useState(() => typeof document !== "undefined" && document.hidden);
-  useEffect(() => {
-    const onVisibility = () => setPaused(document.hidden);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, []);
-  const style = { "--tag": tag.colors.bg, "--tag-rgb": tag.colors.rgb };
-  const state = paused ? " is-paused" : "";
-  return createPortal(
-    <>
-      <div className={`profile-glow${state}`} data-tag={tag.key} style={style} aria-hidden="true" />
-      <div className={`profile-glow-edge${state}`} data-tag={tag.key} style={style} aria-hidden="true"><span className="profile-glow-sweep" /></div>
-    </>,
-    document.body,
-  );
-}
-
-/** Your pass type under your name: the colour and a small icon, no words (the icon tells the colours apart
-    for anyone who can't see the difference); screen readers hear "Pass colour: Speaker". */
-function ProfileTagPill({ tag }) {
-  const Icon = TAG_ICON[tag.key] || Ticket;
-  return (
-    <span className="profile-tag" data-tag={tag.key} style={{ "--tag": tag.colors.bg, "--tag-text": tag.colors.text, "--tag-rgb": tag.colors.rgb }}>
-      <Icon aria-hidden="true" /><span className="sr-only">{`Pass colour: ${tag.text}`}</span>
-    </span>
-  );
-}
 
 function Row({ to, href, icon, title, onClick, tone, badge }) {
   const Icon = icon;
@@ -216,7 +180,6 @@ export default function Profile() {
   const a = useStore(auth);
   const s = useStore(social);
   const pts = useStore(points);
-  const { summary: awardSummary } = useStore(awards);
   const navigate = useNavigate();
   const [settings, setSettings] = useState(false);
   const [scan, setScan] = useState(false);
@@ -225,7 +188,6 @@ export default function Profile() {
   const user = a.user;
 
   useEffect(() => { if (signedIn) refreshPoints(); }, [signedIn]);
-  useEffect(() => { if (signedIn) refreshAwardsSummary(); }, [signedIn]);
 
   if (!signedIn) {
     return (
@@ -351,12 +313,12 @@ export default function Profile() {
         {/* LinkedIn (Oct 22 2026): "Tell your network you're attending · +50 points", done once posted. */}
         <AttendingRow />
 
-        {/* Awards as a row like Connections; the count is the categories with eligible applications (no number until known). */}
+        {/* Awards as a row like Connections; no counts (Oct 22 2026). */}
         <Link to="/awards" className="list-row pressable" style={{ padding: 14 }}>
           <span className="lead-icon lead-icon--accent" style={{ width: 34, height: 34 }}><Trophy aria-hidden="true" /></span>
           <span style={{ flex: 1, minWidth: 0 }}>
             <b style={{ display: "block" }}>Catalyst Awards</b>
-            {categoriesLine(awardSummary) && <span className="tiny muted">{categoriesLine(awardSummary)}</span>}
+            <span className="tiny muted">How winners are chosen, and the applications</span>
           </span>
           <ChevronRight className="chev" aria-hidden="true" />
         </Link>

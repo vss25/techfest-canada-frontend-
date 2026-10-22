@@ -1512,6 +1512,7 @@ textarea.input--ios { min-height: 120px; }
 .install-swag b { font-size: 16px; }
 .install-swag > span > span { font-size: 14px; line-height: 1.4; color: var(--tx2); }
 .install-swag > svg { flex: none; width: 22px; height: 22px; color: var(--pur-alt); }
+.install-swag strong { color: var(--tx); font-weight: 700; }
 .install .mock svg { height: min(320px, 42dvh); }
 
 /* ---------- Desktop ---------- */

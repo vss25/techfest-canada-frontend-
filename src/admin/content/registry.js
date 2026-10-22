@@ -241,7 +241,7 @@ export const REGISTRY = {
   },
   "swag.announce": {
     scope: "swag", group: "swag", type: "text", management: true,
-    label: "Winners told at", description: "When the apps say the winners are out (Toronto time). Winners are told when management clicks Announce winners.",
+    label: "Winners told at", description: "The end of Day 1: when the apps say the winners are out (Toronto time). Winners are told when management clicks Announce winners.",
   },
   "swag.title": {
     scope: "swag", group: "swag", type: "text", management: true,

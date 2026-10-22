@@ -11,6 +11,12 @@
    swagFrom() works the same out from the raw settings (the fallback
    while it loads, and the admin page's preview). Same date words as
    the server ("3:00 PM on Tuesday, October 27", "Oct 27, 3 PM").
+   Oct 22 2026, the organiser: "this is supposed to be an advertisement
+   for the app … download the app, and then only you can get a chance
+   to win this … Winners will be told end of day 1". So the headline
+   everywhere is the pitch, "Only people using the TTFC app can win"
+   (GET /api/app/swag `pitch`, appOnly: true), and the winners are
+   told "at the end of Day 1" (cutoff Oct 26 4 PM, announce 5 PM).
    Pure, no imports: node --test src/lib/swag.test.mjs.
 ========================================================= */
 
@@ -21,18 +27,25 @@ export const SWAG_PHOTO = "/swag/swag-kit-1200.jpg";
 export const SWAG_THUMB = "/swag/swag-kit-600.jpg";
 export const SWAG_ALT = "TTFC swag kit: backpack, bottle, mug, notebook, umbrella and more";
 
+/** The key point, first everywhere (the server's `pitch`). */
+export const SWAG_PITCH = "Only people using the TTFC app can win";
+/** Short, for the in-app banner. */
+export const SWAG_PITCH_SHORT = "Only app users can win";
+export const SWAG_WHEN_WINNERS = "at the end of Day 1";
+
 export const SWAG_DEFAULT_RULES =
-  "Earn points in the TTFC app by connecting, saving sessions, posting and taking part. The top {kits} people on the " +
-  "leaderboard at {cutoff} each win a TTFC swag kit. Open to registered TTFC 2026 attendees with 'Show me on the " +
-  "leaderboard' on; TTFC staff, volunteers and their families can't win. Winners are told in the app at {announce} and " +
-  "collect their kit at the registration desk, Harbour Ballroom foyer, after answering a skill-testing question. No " +
-  "purchase necessary. Prizes have no cash value and can't be exchanged.";
+  "Only people using the TTFC app can win: download the app, sign in with your pass and earn points by connecting, " +
+  "saving sessions, posting and taking part. The top {kits} people on the leaderboard at {cutoff} each win a TTFC swag " +
+  "kit. Open to registered TTFC 2026 attendees with 'Show me on the leaderboard' on; TTFC staff, volunteers and their " +
+  "families can't win. Winners are told in the app at the end of Day 1 ({announce}) and collect their kit at the " +
+  "registration desk, Harbour Ballroom foyer, after answering a skill-testing question. No purchase necessary. Prizes " +
+  "have no cash value and can't be exchanged.";
 
 export const SWAG_DEFAULTS = Object.freeze({
   "swag.enabled": false,
   "swag.kits": 3,
-  "swag.cutoff": "2026-10-27T15:00:00-04:00",
-  "swag.announce": "2026-10-27T16:00:00-04:00",
+  "swag.cutoff": "2026-10-26T16:00:00-04:00",
+  "swag.announce": "2026-10-26T17:00:00-04:00",
   "swag.title": "Win the TTFC swag kit",
   "swag.rules": SWAG_DEFAULT_RULES,
 });
@@ -128,7 +141,7 @@ export function swagFrom(values, now = Date.now()) {
   const s = { enabled, kits, cutoff, announce, title: str(v["swag.title"], SWAG_DEFAULTS["swag.title"]) };
   const rulesRaw = str(v["swag.rules"], SWAG_DEFAULT_RULES);
   const stage = !enabled ? "off" : now >= announce ? "announced" : now >= cutoff ? "closed" : "open";
-  return { ...s, rulesRaw, rules: fillSwagText(rulesRaw, s), stage, ...labels(s) };
+  return { ...s, rulesRaw, rules: fillSwagText(rulesRaw, s), stage, ...labels(s), pitch: SWAG_PITCH, appOnly: true };
 }
 
 const labels = (s) => ({ cutoffLabel: swagWhen(s.cutoff), cutoffShort: swagShort(s.cutoff), announceLabel: swagWhen(s.announce) });
@@ -159,6 +172,8 @@ export function swagFromApi(r) {
     rules: str(r.rules, fillSwagText(SWAG_DEFAULT_RULES, s)),
     stage: r.enabled ? phase : "off",
     announced: !!r.announced,
+    pitch: str(r.pitch, SWAG_PITCH).replace(/\.$/, ""),
+    appOnly: r.appOnly !== false,
   };
 }
 
@@ -170,18 +185,19 @@ export async function fetchSwag(api) {
   } catch { return null; }
 }
 
-/** The three "how to win" lines (the /swag page and the app invite email use the same words). */
+/** The three "how to win" lines (the /swag page; the app invite email says the same). */
 export function swagHowTo(s) {
   return [
-    "Get the TTFC app on your phone and sign in with your pass.",
-    "Earn points by connecting, saving sessions, posting and taking part in polls and Q&A.",
-    `The top ${s.kits} on the leaderboard at ${s.cutoffLabel || swagWhen(s.cutoff)} each win a kit.`,
+    "Download the TTFC app and sign in with your pass. Only people using the app can win.",
+    "Earn points in the app by connecting, saving sessions, posting and taking part in polls and Q&A.",
+    `The top ${s.kits} on the leaderboard at ${s.cutoffLabel || swagWhen(s.cutoff)} each win a kit. Winners are told ${SWAG_WHEN_WINNERS}.`,
   ];
 }
 
-/** The Points banner's line: "Top 3 at Oct 27, 3 PM win" / "Winners announced — check your notifications". */
+/** The banner's second line: "Only app users can win · Top 3 at Oct 26, 4 PM" / "… Winners at the end of Day 1" /
+    "Winners announced — check your notifications". */
 export function swagBannerLine(s) {
   if (s.stage === "announced") return "Winners announced — check your notifications";
-  if (s.stage === "closed") return `Points are in. Winners at ${swagShort(s.announce)}`;
-  return `Top ${s.kits} at ${s.cutoffShort || swagShort(s.cutoff)} win`;
+  if (s.stage === "closed") return `Points are in. Winners ${SWAG_WHEN_WINNERS}`;
+  return `${SWAG_PITCH_SHORT} · Top ${s.kits} at ${s.cutoffShort || swagShort(s.cutoff)}`;
 }

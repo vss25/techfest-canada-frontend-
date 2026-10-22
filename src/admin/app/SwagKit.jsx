@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { BellRing, CalendarClock, ExternalLink, Gift, Info, Lock, Megaphone, RefreshCw, RotateCcw, Save, Trophy, Users } from "lucide-react";
 import { useApi } from "../hooks";
 import { useAdmin } from "../adminContext";
@@ -9,7 +10,7 @@ import {
 } from "../ui";
 import { num, when } from "../format";
 import {
-  SWAG_ALT, SWAG_DEFAULTS, SWAG_DEFAULT_RULES, SWAG_KEYS, SWAG_PAGE, SWAG_THUMB, fillSwagText, parseToronto, swagFrom, swagShort, swagWhen, torontoIso,
+  SWAG_ALT, SWAG_DEFAULTS, SWAG_DEFAULT_RULES, SWAG_KEYS, SWAG_PAGE, SWAG_PITCH, SWAG_THUMB, fillSwagText, parseToronto, swagFrom, swagShort, swagWhen, torontoIso,
   torontoLocalInput,
 } from "../../lib/swag";
 import { swagApi } from "./swagApi";
@@ -120,7 +121,7 @@ export default function SwagKit() {
       <PageHeader
         eyebrow="Website & app"
         title="Swag kit giveaway"
-        description="People earn points in the TTFC app; the top ones on the leaderboard at the cutoff each win a TTFC swag kit. The apps show a banner on the leaderboard and a card in the feed while it's on, and thetechfestival.com/swag has the rules."
+        description="An advert for the app: only people using the TTFC app can win. They earn points in the app; the top ones on the leaderboard at the cutoff each win a TTFC swag kit, and winners are told at the end of Day 1. While it's on, the App invite email carries the swag kit, the apps show a banner on the leaderboard and a card in the feed, and thetechfestival.com/swag has the rules."
         actions={(
           <>
             <Button icon={ExternalLink} onClick={() => window.open(SWAG_PAGE, "_blank", "noopener")}>Open the rules page</Button>
@@ -154,7 +155,10 @@ export default function SwagKit() {
           {settings.loading && !settings.data ? <LoadingState /> : settings.error && !settings.data ? <ErrorState error={settings.error} onRetry={settings.reload} /> : (
             <div className="flex flex-col gap-5">
               <Switch checked={form["swag.enabled"]} onChange={(v) => set("swag.enabled", v)} disabled={!isManagement || saving}
-                label="Giveaway on" description="On: the Points banner and the feed card in the apps, and the rules on /swag. Off: none of it shows (the /swag page says it opens soon)." />
+                label="Giveaway on" description="On: the swag kit in the App invite email, the Points banner and the feed card in the apps, and the rules on /swag. Off: none of it shows (the /swag page says it opens soon)." />
+              <p className="-mt-2 text-xs text-ttfc-muted">
+                The email's swag wording is on <Link to="/admin/app/invite" className="font-semibold text-ttfc-pink hover:underline">App invite email</Link>.
+              </p>
               <div className="grid gap-4 sm:grid-cols-3">
                 <Field label="Number of kits" hint="The top this many win (1–50).">
                   {(id) => <Input id={id} type="number" min={1} max={50} inputMode="numeric" value={form["swag.kits"]} onChange={(e) => set("swag.kits", e.target.value)} disabled={!isManagement} />}
@@ -162,7 +166,7 @@ export default function SwagKit() {
                 <Field label="Points count until" hint="Toronto time">
                   {(id) => <Input id={id} type="datetime-local" value={form["swag.cutoff"]} onChange={(e) => set("swag.cutoff", e.target.value)} disabled={!isManagement} />}
                 </Field>
-                <Field label="Winners told at" hint="Toronto time">
+                <Field label="Winners told at" hint="The end of Day 1, Toronto time">
                   {(id) => <Input id={id} type="datetime-local" value={form["swag.announce"]} onChange={(e) => set("swag.announce", e.target.value)} disabled={!isManagement} />}
                 </Field>
               </div>
@@ -192,7 +196,8 @@ export default function SwagKit() {
             <img src={SWAG_THUMB} alt={SWAG_ALT} width="600" height="508" className="h-24 w-28 flex-none rounded-xl object-cover" />
             <div className="min-w-0">
               <p className="text-lg font-bold leading-snug">{preview.title}</p>
-              <p className="mt-1 text-sm text-ttfc-muted">Top {preview.kits} at {swagWhen(preview.cutoff)} win · winners told {swagWhen(preview.announce)}</p>
+              <p className="mt-1 text-sm font-semibold">{SWAG_PITCH}.</p>
+              <p className="mt-0.5 text-sm text-ttfc-muted">Top {preview.kits} at {swagWhen(preview.cutoff)} win · winners told at the end of Day 1 ({swagWhen(preview.announce)})</p>
             </div>
           </div>
           <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ttfc-muted">{fillSwagText(form["swag.rules"] || SWAG_DEFAULT_RULES, preview)}</p>

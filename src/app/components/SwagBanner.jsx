@@ -6,8 +6,8 @@ import { SWAG_PAGE, SWAG_THUMB, swagBannerLine } from "../../lib/swag.js";
 
 /* =========================================================
    The swag kit banner at the top of Points › Leaderboard (batch 7,
-   Oct 22 2026): the photo, "Win the TTFC swag kit · Top 3 at Oct 27,
-   3 PM win", opening the rules (the website's /swag page, in the
+   Oct 22 2026): the photo, "Win the TTFC swag kit", "Only app users
+   can win · Top 3 at Oct 26, 4 PM", opening the rules (the website's /swag page, in the
    browser). After the announcement time: "Winners announced — check
    your notifications", opening Notifications. Nothing while the
    giveaway is off (Admin › Website & app › Swag kit giveaway).

@@ -1,21 +1,29 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Award, Crown, Download, History, Info, Inbox, Search, Star, Trash2, XCircle } from "lucide-react";
+import { AlertTriangle, Award, Crown, Download, History, Info, Inbox, Pencil, RotateCcw, Search, Star, Trash2, XCircle } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { ADMIN_API, api, getToken } from "../api";
 import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
 import {
-  Badge, Banner, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, Select, StatTile,
-  Tabs, TableWrap, Textarea,
+  Badge, Banner, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, LoadingState, Modal, PageHeader, Select, StatTile,
+  Tabs, TableWrap, Textarea, focusRing,
 } from "../ui";
-import { num, when } from "../format";
+import { day, num, when } from "../format";
+import {
+  categoryDirty, categoryFilterOptions, categoryOptions, categoryPayload, changedLine, focusDirty, focusPayload, focusSectorChoices,
+  formProblem, overrideForm, restoreWhat,
+} from "../../lib/catalystCategories.js";
 
 /* Admin → Catalyst Awards → Nominations (the jury: Jury, Allocation, Scoring rubric, Jury results)
    Every nomination from thetechfestival.com/awards/nominations. Saved by the
    backend (POST /api/nominations) and still emailed to baldeep@ and nicole@.
    Before Oct 2026 they were only emailed: "Recover emailed nominations" reads
    them back from the email service's log (badge "From email").
+   Management can change a nomination's award category and the nominee's
+   focus ("Edit category & focus"; the lists in lib/catalystCategories.js):
+   the jury, results and counts follow, what was submitted is kept and can
+   be restored.
    Backend: /api/console/nominations (routes/nominationsAdmin.js). */
 
 const STATUS = {
@@ -32,10 +40,13 @@ function StatusBadge({ status }) {
   return <Badge tone={s.tone} icon={s.icon}>{s.label}</Badge>;
 }
 
-function Section({ title, children }) {
+function Section({ title, action, children }) {
   return (
     <section className="mb-7">
-      <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-ttfc-dim">{title}</h3>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-ttfc-dim">{title}</h3>
+        {action}
+      </div>
       <dl className="divide-y divide-ttfc-line rounded-2xl border border-ttfc-line">{children}</dl>
     </section>
   );
@@ -57,6 +68,156 @@ const link = (href, text = href) => {
 };
 const mail = (e) => (e ? <a href={`mailto:${e}`} className="break-all text-ttfc-pink underline-offset-2 hover:underline">{e}</a> : "");
 
+const JURY_WARNING = "Jurors already assigned keep their scores; this changes where it's ranked.";
+const hasJury = (n) => (n?.jury?.assigned || 0) + (n?.jury?.scored || 0) > 0;
+
+/** "Edit category & focus": the award category (pillar × sector or a special award) and the nominee's focus. */
+function OverrideModal({ n, options, onClose, onSaved }) {
+  const toast = useToast();
+  const [f, setF] = useState(() => overrideForm(n, options));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [touched, setTouched] = useState(false); // what's missing shows once staff start changing things
+  const set = (k, v) => { setTouched(true); setF((x) => ({ ...x, [k]: v })); };
+  const catDirty = categoryDirty(f, n);
+  const focDirty = focusDirty(f, n);
+  const problem = catDirty ? formProblem(f, options) : "";
+  const offList = (v, list) => (v && !list.includes(v) ? v : "");
+  const oldPillar = n.categoryType === "matrix" ? offList(n.pillar, options.pillars) : "";
+  const oldSector = n.categoryType === "matrix" ? offList(n.sector, options.sectors) : "";
+
+  const save = async () => {
+    setSaving(true); setError("");
+    let last = null;
+    try {
+      if (catDirty) last = await api.patch(`${BASE}/${n.id}/category`, categoryPayload(f));
+      if (focDirty) last = await api.patch(`${BASE}/${n.id}/focus`, focusPayload(f));
+      onSaved(last);
+      toast.success(catDirty && focDirty ? "Category and focus changed" : catDirty ? "Category changed" : "Focus changed");
+      onClose();
+    } catch (err) {
+      if (last) onSaved(last); // the category went through before the focus failed
+      setError(err?.message || "Couldn't save. Try again.");
+    } finally { setSaving(false); }
+  };
+
+  const typeBtn = (key, label) => (
+    <button key={key} type="button" role="radio" aria-checked={f.categoryType === key} onClick={() => set("categoryType", key)}
+      className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${focusRing} ${f.categoryType === key
+        ? "border-ttfc-purple bg-ttfc-purple/20 text-ttfc-text" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/60 hover:text-ttfc-text"}`}>
+      {label}
+    </button>
+  );
+
+  return (
+    <Modal
+      open
+      onClose={() => { if (!saving) onClose(); }}
+      size="lg"
+      title="Edit category & focus"
+      description={`${n.nomineeName}. Everything that reads the category follows the change: jury lists, results, counts and filters. What they submitted is kept.`}
+      footer={(
+        <>
+          <Button onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button variant="primary" loading={saving} disabled={(!catDirty && !focDirty) || !!problem} onClick={save}>Save</Button>
+        </>
+      )}
+    >
+      {hasJury(n) && (
+        <Banner tone="warn" icon={AlertTriangle} className="mb-5" title={JURY_WARNING}>
+          {n.jury.assigned ? `${num(n.jury.assigned)} juror${n.jury.assigned === 1 ? "" : "s"} assigned` : "No jurors assigned now"}
+          {n.jury.scored ? `, ${num(n.jury.scored)} assessment${n.jury.scored === 1 ? "" : "s"} saved.` : "."}
+        </Banner>
+      )}
+
+      <fieldset className="mb-6">
+        <legend className="mb-2 text-[13px] font-semibold text-ttfc-text/90">Award category</legend>
+        <div role="radiogroup" aria-label="Award category type" className="mb-4 grid grid-cols-2 gap-2">
+          {typeBtn("matrix", "Pillar × sector")}
+          {typeBtn("special", "Special award")}
+        </div>
+        {f.categoryType === "matrix" ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Pillar" hint={oldPillar ? `Submitted as "${oldPillar}", which isn't one of the 5 pillars.` : ""}>
+              {(fid) => (
+                <Select id={fid} value={f.pillar} onChange={(e) => set("pillar", e.target.value)}>
+                  <option value="">Choose a pillar</option>
+                  {options.pillars.map((p) => <option key={p} value={p}>{p}</option>)}
+                </Select>
+              )}
+            </Field>
+            <Field label="Sector" hint={oldSector ? `Submitted as "${oldSector}", which isn't one of the 5 sectors.` : ""}>
+              {(fid) => (
+                <Select id={fid} value={f.sector} onChange={(e) => set("sector", e.target.value)}>
+                  <option value="">Choose a sector</option>
+                  {options.sectors.map((p) => <option key={p} value={p}>{p}</option>)}
+                </Select>
+              )}
+            </Field>
+          </div>
+        ) : (
+          <Field label="Special award">
+            {(fid) => (
+              <Select id={fid} value={f.specialAward} onChange={(e) => set("specialAward", e.target.value)}>
+                <option value="">Choose a special award</option>
+                {options.specialAwards.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
+              </Select>
+            )}
+          </Field>
+        )}
+      </fieldset>
+
+      <fieldset className="mb-6">
+        <legend className="mb-2 text-[13px] font-semibold text-ttfc-text/90">Nominee focus</legend>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Focus pillar">
+            {(fid) => (
+              <Select id={fid} value={f.nomineePillar} onChange={(e) => set("nomineePillar", e.target.value)}>
+                <option value="">None</option>
+                {options.pillars.map((p) => <option key={p} value={p}>{p}</option>)}
+              </Select>
+            )}
+          </Field>
+          <Field label="Focus sector">
+            {(fid) => (
+              <Select id={fid} value={f.nomineeSector} onChange={(e) => set("nomineeSector", e.target.value)}>
+                {focusSectorChoices(n.nomineeSector, options).map((o) => <option key={o.value || "none"} value={o.value}>{o.label}</option>)}
+              </Select>
+            )}
+          </Field>
+        </div>
+      </fieldset>
+
+      <Field label="Internal note (optional)" hint="Why it changed. Only staff see it; it isn't in the audit log.">
+        {(fid) => <Input id={fid} value={f.note} maxLength={500} onChange={(e) => set("note", e.target.value)} placeholder="e.g. Agreed with the jury chair: a better fit for Robotics" />}
+      </Field>
+
+      {((touched && problem) || error) && (
+        <p role="alert" className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error || problem}</p>
+      )}
+    </Modal>
+  );
+}
+
+/** "Changed by Mia Example, Oct 22, 2026 · submitted as …" for the category and/or the focus, with Restore. */
+function ChangesBanner({ n, canManage, onRestore }) {
+  if (!n.categoryChanged && !n.focusChanged) return null;
+  const sub = n.submitted || {};
+  return (
+    <Banner tone="info" icon={History} className="mb-7" title="Changed by staff"
+      action={canManage && <Button size="sm" icon={RotateCcw} onClick={onRestore}>Restore what they submitted</Button>}>
+      {n.categoryChanged && (
+        <p><span className="font-semibold">Category:</span> {changedLine(n.categoryChangedBy, n.categoryChangedAt ? day(n.categoryChangedAt) : "", sub.category)}
+          {n.categoryNote && <span className="block text-xs opacity-80">Note: {n.categoryNote}</span>}</p>
+      )}
+      {n.focusChanged && (
+        <p className={n.categoryChanged ? "mt-1.5" : ""}><span className="font-semibold">Focus:</span> {changedLine(n.focusChangedBy, n.focusChangedAt ? day(n.focusChangedAt) : "", sub.focus)}
+          {n.focusNote && n.focusNote !== n.categoryNote && <span className="block text-xs opacity-80">Note: {n.focusNote}</span>}</p>
+      )}
+    </Banner>
+  );
+}
+
 function NominationDrawer({ id, canManage, onClose, onSaved, onDeleted }) {
   const toast = useToast();
   const { data, error, loading, reload, setData } = useApi(id ? `${BASE}/${id}` : null);
@@ -64,6 +225,9 @@ function NominationDrawer({ id, canManage, onClose, onSaved, onDeleted }) {
   const [edit, setEdit] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [overriding, setOverriding] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const options = useMemo(() => categoryOptions(data?.options), [data?.options]);
   const form = edit && edit.id === id ? edit : { id, status: n?.status || "pending", adminNotes: n?.adminNotes || "" };
   const dirty = !!n && (form.status !== n.status || form.adminNotes !== (n.adminNotes || ""));
   const change = (k, v) => setEdit({ ...form, [k]: v });
@@ -72,13 +236,24 @@ function NominationDrawer({ id, canManage, onClose, onSaved, onDeleted }) {
     setSaving(true);
     try {
       const r = await api.patch(`${BASE}/${id}`, { status: form.status, adminNotes: form.adminNotes });
-      setData(r);
+      setData((d) => ({ ...d, nomination: r.nomination }));
       setEdit(null);
       onSaved(r.nomination);
       toast.success("Saved");
     } catch (err) { toast.error(err); } finally { setSaving(false); }
   };
-  const close = () => { setEdit(null); onClose(); };
+  const close = () => { setEdit(null); setOverriding(false); setRestoring(false); onClose(); };
+  const changed = (r) => {
+    if (!r?.nomination) return;
+    setData((d) => ({ ...d, nomination: r.nomination }));
+    onSaved(r.nomination);
+  };
+  const what = restoreWhat(n);
+  const restoreBody = n && what ? [
+    what !== "focus" ? `The category goes back to ${n.submitted?.category || "what they submitted"}.` : "",
+    what !== "category" ? `The focus goes back to ${n.submitted?.focus || "none"}.` : "",
+    what !== "focus" && hasJury(n) ? JURY_WARNING : "",
+  ].filter(Boolean).join(" ") : "";
 
   return (
     <Drawer
@@ -115,7 +290,9 @@ function NominationDrawer({ id, canManage, onClose, onSaved, onDeleted }) {
             </Field>
           </div>
 
-          <Section title="Category">
+          <ChangesBanner n={n} canManage={canManage} onRestore={() => setRestoring(true)} />
+
+          <Section title="Category" action={canManage && <Button size="sm" icon={Pencil} onClick={() => setOverriding(true)}>Edit category & focus</Button>}>
             <Row label="Award">{n.categoryLabel}</Row>
             {n.categoryType === "matrix" && <Row label="Pillar">{n.pillar}</Row>}
             {n.categoryType === "matrix" && <Row label="Sector">{n.sector}</Row>}
@@ -126,7 +303,7 @@ function NominationDrawer({ id, canManage, onClose, onSaved, onDeleted }) {
             <Row label="Type">{n.nomineeType}</Row>
             <Row label="Title">{n.nomineeTitle}</Row>
             <Row label="Organisation">{n.nomineeOrganisation}</Row>
-            <Row label="Sector">{n.nomineeSector}</Row>
+            <Row label="Focus">{n.focus}</Row>
             <Row label="Location">{n.nomineeLocation}</Row>
             <Row label="Email">{mail(n.nomineeEmail)}</Row>
             <Row label="Phone">{n.nomineePhone}</Row>
@@ -152,6 +329,20 @@ function NominationDrawer({ id, canManage, onClose, onSaved, onDeleted }) {
           </Section>
         </>
       )}
+      {overriding && n && <OverrideModal key={n.id} n={n} options={options} onClose={() => setOverriding(false)} onSaved={changed} />}
+      <ConfirmDialog
+        open={restoring && !!what}
+        onClose={() => setRestoring(false)}
+        tone="info"
+        title="Restore what they submitted?"
+        body={restoreBody}
+        confirmLabel="Restore"
+        onConfirm={async () => {
+          const r = await api.post(`${BASE}/${id}/restore-submitted`, { what });
+          changed(r);
+          toast.success("Restored what they submitted");
+        }}
+      />
       <ConfirmDialog
         open={deleting}
         onClose={() => setDeleting(false)}
@@ -188,7 +379,7 @@ export default function CatalystNominations() {
   };
 
   const rows = useMemo(() => data?.rows || [], [data]);
-  const categories = useMemo(() => [...new Set(rows.map((r) => r.category))].sort(), [rows]);
+  const categories = useMemo(() => categoryFilterOptions(rows, category), [rows, category]);
   const shown = useMemo(() => rows.filter((r) => (!status || r.status === status) && (!category || r.category === category) && (!dq
     || [r.nomineeName, r.nomineeOrganisation, r.nominatorName, r.nominatorOrganisation, r.category].some((v) => String(v || "").toLowerCase().includes(dq)))),
   [rows, status, category, dq]);
@@ -201,7 +392,8 @@ export default function CatalystNominations() {
 
   const onSaved = (n) => setData((d) => d && ({
     ...d,
-    rows: d.rows.map((r) => (r.id === n.id ? { ...r, status: n.status, hasNotes: !!n.adminNotes } : r)),
+    // Every row field the detail carries (status, category, focus, …), so the category filter and counts follow.
+    rows: d.rows.map((r) => (r.id === n.id ? { ...r, ...Object.fromEntries(Object.keys(r).filter((k) => k in n).map((k) => [k, n[k]])), hasNotes: !!n.adminNotes } : r)),
     counts: (() => {
       const before = d.rows.find((r) => r.id === n.id)?.status;
       if (!before || before === n.status) return d.counts;
@@ -280,7 +472,7 @@ export default function CatalystNominations() {
         </div>
         <Select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Category" className="sm:max-w-xs">
           <option value="">All categories</option>
-          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+          {categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </Select>
         <p className="text-sm text-ttfc-muted">{loading ? "Loading…" : `${num(shown.length)} shown`}</p>
       </div>
@@ -300,7 +492,11 @@ export default function CatalystNominations() {
                   <button type="button" className="block max-w-full truncate text-left font-semibold hover:underline" onClick={(e) => { e.stopPropagation(); setParam("id", r.id); }}>{r.nomineeName}</button>
                   <span className="block truncate text-xs text-ttfc-muted">{[r.nomineeType, r.nomineeOrganisation].filter(Boolean).join(" · ")}</span>
                 </td>
-                <td className="max-w-[260px]"><span className="block truncate text-sm" title={r.category}>{r.category}</span></td>
+                <td className="max-w-[260px]">
+                  <span className="block truncate text-sm" title={r.category}>{r.category}</span>
+                  {r.focus && <span className="block truncate text-xs text-ttfc-muted" title={`Focus: ${r.focus}`}>Focus: {r.focus}</span>}
+                  {(r.categoryChanged || r.focusChanged) && <span className="text-[11px] text-ttfc-dim">Changed by staff</span>}
+                </td>
                 <td className="max-w-[220px]">
                   <span className="block truncate text-sm">{r.selfNomination ? "Self-nomination" : r.nominatorName}</span>
                   {!r.selfNomination && r.nominatorOrganisation && <span className="block truncate text-xs text-ttfc-muted">{r.nominatorOrganisation}</span>}

@@ -1,45 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { PILLARS, SECTORS, SPECIAL_AWARDS } from "../lib/catalystCategories.js";
 
 const API = "https://techfest-canada-backend.onrender.com/api";
 
 /* ═══════════════════════════════════════════════════════
-   OPTIONS (from the PDF)
+   OPTIONS (from the PDF): the canonical lists, shared with the
+   admin panel and checked by the backend (lib/catalystCategories.js)
    ═══════════════════════════════════════════════════════ */
-
-const PILLARS = [
-  "AI & Machine Learning",
-  "Quantum Computing",
-  "Cybersecurity & Digital Trust",
-  "Robotics & Automation",
-  "CleanTech & Sustainability",
-];
-
-const SECTORS = [
-  "Financial Services & Banking",
-  "Healthcare & Life Sciences",
-  "Energy & Critical Infrastructure",
-  "Manufacturing, Supply Chain & Mobility",
-  "Public Sector, Defence & Security",
-];
-
-const SPECIAL_AWARDS = [
-  {
-    key: "lifetime",
-    label: "Lifetime Achievement Award",
-    desc: "Sustained leadership shaping Canada's technology landscape",
-  },
-  {
-    key: "rising",
-    label: "Rising Innovator Award",
-    desc: "An emerging founder, researcher or team (early-stage / under 35 / <5 yrs)",
-  },
-  {
-    key: "crossborder",
-    label: "Cross-Border Impact Award",
-    desc: "Outstanding Canada–international collaboration or market expansion",
-  },
-];
 
 const NOMINEE_TYPES = ["Individual", "Organisation", "Team / Project"];
 

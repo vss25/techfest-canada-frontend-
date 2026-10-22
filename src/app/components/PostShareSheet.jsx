@@ -21,8 +21,8 @@ const TILES = [
   { id: "x", label: "X", hint: "Post" },
 ];
 
-/** Plain app marks in each app's colour (no logos files: drawn here). */
-function AppMark({ id }) {
+/** Plain app marks in each app's colour (no logos files: drawn here). Also LinkedInCta's LinkedIn mark. */
+export function AppMark({ id }) {
   const svg = { width: 26, height: 26, viewBox: "0 0 24 24", "aria-hidden": true };
   if (id === "instagram") {
     return (

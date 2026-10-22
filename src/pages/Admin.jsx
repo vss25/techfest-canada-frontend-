@@ -47,6 +47,7 @@ import JuryRubric from "../admin/awards/JuryRubric";
 import JuryResults from "../admin/awards/JuryResults";
 import AttendingCampaign from "../admin/marketing/AttendingCampaign";
 import AppInvite from "../admin/app/AppInvite";
+import DigestEmails from "../admin/app/DigestEmails";
 import RsvpReminders from "../admin/marketing/RsvpReminders";
 import PeopleDirectory from "../admin/people/PeopleDirectory";
 import PersonProfile from "../admin/people/PersonProfile";
@@ -232,6 +233,7 @@ export default function Admin() {
 
             <Route path="marketing/attending" element={<AttendingCampaign />} />
             <Route path="app/invite" element={<AppInvite />} />
+            <Route path="app/digest" element={<DigestEmails />} />
             <Route path="marketing/rsvp-reminders" element={<RsvpReminders />} />
 
             <Route path="app" element={<AppOverview />} />

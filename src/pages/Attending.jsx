@@ -4,6 +4,7 @@ import {
   ZoomIn, ZoomOut,
 } from "lucide-react";
 import AuroraBackground from "../components/AuroraBackground";
+import { ATT_CSS as CSS } from "./attendingStyles";
 import { API } from "../lib/forms";
 import {
   CARD_FORMATS, DEFAULT_CROP, ZOOM_MAX, ZOOM_MIN, canvasPngBlob, cardFileName, clampCrop, drawCard, ensureGlyphs,
@@ -49,6 +50,13 @@ import {
    phone's share sheet finishes (share) and on "Download and open
    LinkedIn" (manual); "Post to LinkedIn" sends it with the draft so
    the post is theirs. Never waited for, never in the way.
+   From the TTFC app (Oct 22 2026): the app opens this page for the
+   signed-in person (GET /api/app/attending-link: their name and r
+   token, plus ?from=app). Then "Post to LinkedIn" is the main button
+   on phones too, because only a post made that way is confirmed and
+   earns the +50 points; the phone's share sheet is the second way.
+   Afterwards: "Back to the TTFC app". ?demo=1 (the app's demo mode)
+   never contacts the server or LinkedIn.
 ========================================================= */
 
 const SHAPES = ["square", "landscape"];
@@ -72,8 +80,9 @@ const filled = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => !!v
 
 /** First render: what the link (or the trip back from LinkedIn) brought. Doesn't change anything. */
 function initialState() {
-  if (typeof window === "undefined") return { fields: EMPTY, text: defaultPostText(), format: "square", picture: "", error: "", clear: false, returning: false, posted: null, postError: "", photoData: "", track: "", fromLink: false };
+  if (typeof window === "undefined") return { fields: EMPTY, text: defaultPostText(), format: "square", picture: "", error: "", clear: false, returning: false, posted: null, postError: "", photoData: "", track: "", fromLink: false, fromApp: false, demo: false };
   const frag = readFragment(window.location.hash);
+  const query = new URLSearchParams(window.location.search);
   const returning = !!(frag.linkedin || frag.linkedinError || frag.posted || frag.postError);
   const draft = returning ? peekDraft() : null;
   const saved = { ...EMPTY, ...(draft?.fields && typeof draft.fields === "object" ? draft.fields : {}) };
@@ -98,6 +107,9 @@ function initialState() {
     // Who the email link was for: from the link, or back from LinkedIn from the draft.
     track: frag.track || (returning && isTrackToken(draft?.r) ? draft.r : ""),
     fromLink: !!frag.track,
+    // Opened from the TTFC app (kept in the draft for the trip to LinkedIn and back).
+    fromApp: query.get("from") === "app" || (returning && draft?.app === true),
+    demo: query.get("demo") === "1",
   };
 }
 
@@ -175,6 +187,9 @@ export default function Attending() {
   const mobile = useMemo(() => isMobileDevice(), []);
   const ready = !!assets;
   const track = init.track; // "" without one (an older link, or opened some other way)
+  const { fromApp, demo } = init;
+  // From the app, phones post through LinkedIn too (confirmed, so it earns the points); the share sheet comes second.
+  const apiFirst = !mobile || fromApp;
 
   /* Hidden page: out of search engines, a quiet title, the dark page background. */
   useEffect(() => {
@@ -343,7 +358,13 @@ export default function Attending() {
     setPostError("");
     setPosted(null);
     setGuide(null);
-    const base = { fields, text, format, r: track };
+    const base = { fields, text, format, r: track, ...(fromApp ? { app: true } : {}) };
+    if (demo) { // the app's demo: nothing is sent anywhere
+      setPosting(false);
+      setPosted({ url: "", demo: true });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     let photoData = "";
     try { photoData = photo?.img ? photo.img.toDataURL("image/jpeg", 0.9) : ""; } catch { /* keep the rest */ }
     if (!photoData || !saveDraft({ ...base, photo: photoData, photoSource: photo.source, crop })) saveDraft(base);
@@ -365,23 +386,28 @@ export default function Attending() {
   };
 
   /* Sharing. Everything happens inside the click, so the share sheet, the copy and the new tab are allowed. */
-  const share = () => {
+  /* Phones: the share sheet with the PNG + text (straight to the LinkedIn app). → false when this browser can't. */
+  const shareWithSheet = () => {
     const canvas = canvasRef.current;
-    if (!canvas || !ready) return;
+    if (!canvas || !ready) return false;
     const name = cardFileName(format);
     const blob = canvasPngBlob(canvas);
     const file = typeof File === "function" ? new File([blob], name, { type: "image/png" }) : null;
+    if (!file || !canShareFile(file)) return false;
     setShared(false);
-    if (mobile && file && canShareFile(file)) {
-      if (copyTextNow(text)) flashCopied(); // in case the app keeps only the image
-      navigator.share({ files: [file], text, title: "I'm attending TTFC 2026" }).then(
-        () => { setShared(true); setGuide(null); sendAttendingEvent(track, "share"); },
-        (err) => { if (err?.name !== "AbortError") setGuide({ mode: "fallback", copied: true, name }); },
-      );
-      return;
-    }
+    if (copyTextNow(text)) flashCopied(); // in case the app keeps only the image
+    navigator.share({ files: [file], text, title: "I'm attending TTFC 2026" }).then(
+      () => { setShared(true); setGuide(null); sendAttendingEvent(track, "share"); },
+      (err) => { if (err?.name !== "AbortError") setGuide({ mode: "fallback", copied: true, name }); },
+    );
+    return true;
+  };
+  const share = () => {
+    if (!canvasRef.current || !ready) return;
+    if (!apiFirst && shareWithSheet()) return;
     postToLinkedin();
   };
+  const shareInstead = () => { if (!shareWithSheet()) shareManually(); };
 
   /* The manual way: download the image, copy the text, open LinkedIn's share box. */
   const shareManually = () => {
@@ -432,12 +458,15 @@ export default function Attending() {
           <span className="att-posted-icon"><Check size={22} aria-hidden="true" /></span>
           <div>
             <p className="att-posted-title">You’re on LinkedIn!</p>
-            <p className="att-posted-sub">Your post is live with your image attached. Thank you for spreading the word, see you in Toronto.</p>
+            <p className="att-posted-sub">{posted.demo
+              ? "Demo: nothing was posted. In the real app your post goes up with your image attached and +50 points are added."
+              : `Your post is live with your image attached.${fromApp ? " Your +50 points are added in the TTFC app." : ""} Thank you for spreading the word, see you in Toronto.`}</p>
             {posted.url && (
               <a className="att-text-btn" href={posted.url} target="_blank" rel="noopener noreferrer">
                 <ExternalLink size={14} aria-hidden="true" /> View your post
               </a>
             )}
+            {fromApp && <a className="att-back-app" href="/app/points">Back to the TTFC app</a>}
           </div>
         </div>
       )}
@@ -558,7 +587,7 @@ export default function Attending() {
             <p className="att-count" aria-live="off">{text.length.toLocaleString()} / 3,000</p>
             <p className="att-hint">
               <AtSign size={14} aria-hidden="true" />
-              {mobile ? (
+              {!apiFirst ? (
                 <span>To tag us, type <b>@{LINKEDIN_PAGE.name}</b> in LinkedIn and pick our page from the list.</span>
               ) : (
                 <span>We’ll tag <a className="att-link" href={LINKEDIN_PAGE.url} target="_blank" rel="noopener noreferrer">{LINKEDIN_PAGE.name}</a>’s LinkedIn page in your post.</span>
@@ -569,10 +598,18 @@ export default function Attending() {
           <div className="att-actions">
             <button type="button" className="att-btn" onClick={share} disabled={!ready || posting} aria-busy={!ready || posting || undefined}>
               {posting ? <Loader2 size={20} className="att-spin" aria-hidden="true" /> : <Linkedin size={20} aria-hidden="true" />}
-              {posting ? "Opening LinkedIn…" : mobile ? "Share on LinkedIn" : "Post to LinkedIn"}
+              {posting ? "Opening LinkedIn…" : apiFirst ? "Post to LinkedIn" : "Share on LinkedIn"}
             </button>
-            {!mobile && !postError && (
+            {apiFirst && !postError && (
               <p className="att-hint att-hint-center">LinkedIn asks you to allow it once, then your post goes up with the image attached.</p>
+            )}
+            {fromApp && (
+              <p className="att-hint att-hint-center att-points-note"><span><b>+50 points</b> in the TTFC app. Points are added when you post with Post to LinkedIn.</span></p>
+            )}
+            {fromApp && mobile && (
+              <button type="button" className="att-text-btn att-share-instead" onClick={shareInstead} disabled={!ready || posting}>
+                <Linkedin size={14} aria-hidden="true" /> Share with the LinkedIn app instead (no points)
+              </button>
             )}
             {postError && (
               <div className="att-error att-post-error" role="alert">
@@ -632,186 +669,3 @@ export default function Attending() {
     </div>
   );
 }
-
-const CSS = `
-body.att-open { background: #06020f !important; padding-bottom: 0 !important; }
-.att-root {
-  position: relative; min-height: 100vh; min-height: 100dvh; color: #fff; overflow-x: hidden;
-  font-family: 'DM Sans', system-ui, Helvetica, Arial, sans-serif;
-  display: flex; flex-direction: column; align-items: center;
-  padding: 26px 16px 32px; box-sizing: border-box;
-}
-.att-root *, .att-root *::before, .att-root *::after { box-sizing: border-box; }
-.att-brand { position: relative; z-index: 1; margin-bottom: 6px; }
-.att-brand img { height: 128px; max-width: 70vw; width: auto; display: block; }
-
-.att-hero { position: relative; z-index: 1; text-align: center; max-width: 720px; margin: 0 auto 26px; }
-.att-eyebrow { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; color: #ffc56b; margin: 0 0 12px; }
-.att-title { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: clamp(1.6rem, 5.6vw, 2.6rem); line-height: 1.12; letter-spacing: -0.3px; margin: 0;
-  background: linear-gradient(100deg, #fff 30%, #f6d0ff 70%, #ffd9a0); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.att-sub { margin: 14px auto 0; color: rgba(255,255,255,0.84); font-size: 16px; line-height: 1.6; max-width: 560px; }
-
-.att-grid { position: relative; z-index: 1; width: 100%; max-width: 1120px; display: grid; gap: 18px; grid-template-columns: 1fr; align-items: start; }
-@media (min-width: 960px) {
-  .att-grid { grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr); gap: 24px; }
-  .att-preview-col { position: sticky; top: 20px; }
-}
-
-.att-card {
-  position: relative; width: 100%; border-radius: 28px; padding: 22px;
-  background: linear-gradient(160deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.04) 100%), rgba(10,4,24,0.55);
-  -webkit-backdrop-filter: blur(24px) saturate(130%); backdrop-filter: blur(24px) saturate(130%);
-  border: 1px solid rgba(255,255,255,0.13);
-  box-shadow: 0 30px 90px rgba(3,0,12,0.55), inset 0 1px 0 rgba(255,255,255,0.14);
-}
-.att-card::before {
-  content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
-  background: linear-gradient(130deg, #7a3fd1, #e8458b 45%, #f5a623 90%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude; opacity: .35; transition: opacity .35s ease;
-}
-.att-card:hover::before, .att-card:focus-within::before { opacity: .8; }
-
-.att-preview-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.att-seg { display: inline-flex; padding: 4px; border-radius: 99px; background: rgba(6,2,15,0.5); border: 1px solid rgba(255,255,255,0.12); }
-.att-seg-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 99px; border: 0; cursor: pointer;
-  font: inherit; font-size: 13.5px; font-weight: 700; color: rgba(255,255,255,0.75); background: transparent; transition: background .2s, color .2s, box-shadow .2s; }
-.att-seg-btn:hover { color: #fff; }
-.att-seg-btn[data-on] { color: #fff; background: linear-gradient(120deg, rgba(122,63,209,0.75), rgba(232,69,139,0.6)); box-shadow: 0 6px 20px rgba(232,69,139,0.3); }
-.att-seg-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-.att-shape { display: inline-block; border: 1.5px solid currentColor; border-radius: 3px; opacity: .9; }
-.att-shape-square { width: 12px; height: 12px; }
-.att-shape-landscape { width: 16px; height: 9px; }
-.att-dims { font-family: 'Orbitron', sans-serif; font-size: 10.5px; letter-spacing: 1.2px; color: rgba(255,255,255,0.6); font-variant-numeric: tabular-nums; }
-
-.att-canvas-wrap { position: relative; width: 100%; border-radius: 18px; overflow: hidden; background: #06020f;
-  box-shadow: 0 24px 60px rgba(3,0,12,0.6), 0 0 0 1px rgba(255,255,255,0.08); }
-.att-canvas { display: block; width: 100%; height: 100%; outline: none; }
-.att-canvas[data-photo] { cursor: grab; touch-action: none; }
-.att-canvas[data-photo]:active { cursor: grabbing; }
-.att-canvas:focus-visible { box-shadow: inset 0 0 0 3px #e8458b; }
-.att-canvas-busy { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-  background: rgba(6,2,15,0.55); color: rgba(255,255,255,0.85); font-size: 14px; }
-
-.att-frame { margin-top: 14px; }
-.att-zoom { display: flex; align-items: center; gap: 8px; }
-.att-icon-btn { flex: none; width: 38px; height: 38px; border-radius: 99px; display: grid; place-items: center; cursor: pointer; color: #fff;
-  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16); transition: border-color .2s, background .2s; }
-.att-icon-btn:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.1); }
-.att-icon-btn:focus-visible { outline: 2px solid #e8458b; outline-offset: 2px; }
-.att-range { flex: 1; min-width: 0; height: 38px; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
-.att-range::-webkit-slider-runnable-track { height: 6px; border-radius: 99px; background: linear-gradient(90deg, #7a3fd1, #e8458b var(--fill), rgba(255,255,255,0.14) var(--fill)); }
-.att-range::-moz-range-track { height: 6px; border-radius: 99px; background: rgba(255,255,255,0.14); }
-.att-range::-moz-range-progress { height: 6px; border-radius: 99px; background: linear-gradient(90deg, #7a3fd1, #e8458b); }
-.att-range::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8px; border-radius: 99px; background: #fff; border: 0; box-shadow: 0 0 0 4px rgba(232,69,139,0.45), 0 4px 14px rgba(0,0,0,0.4); }
-.att-range::-moz-range-thumb { width: 22px; height: 22px; border-radius: 99px; background: #fff; border: 0; box-shadow: 0 0 0 4px rgba(232,69,139,0.45), 0 4px 14px rgba(0,0,0,0.4); }
-.att-range:focus-visible { outline: none; }
-.att-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px #e8458b; }
-.att-hint { display: flex; align-items: center; gap: 7px; margin: 10px 0 0; font-size: 13px; color: rgba(255,255,255,0.76); line-height: 1.5; }
-.att-hint-center { justify-content: center; margin-top: 14px; }
-.att-hint > svg { flex: none; }
-
-.att-controls { padding: 24px 24px 22px; }
-.att-step + .att-step { margin-top: 24px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,0.08); }
-.att-step-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.att-step-n { flex: none; width: 30px; height: 30px; border-radius: 99px; display: grid; place-items: center; font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 800;
-  background: linear-gradient(135deg, #7a3fd1, #e8458b); box-shadow: 0 0 16px rgba(232,69,139,0.45); }
-.att-step-title { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.6px; margin: 0; flex: 1; }
-.att-step-aside { margin: 0 !important; }
-
-.att-photo-actions { display: grid; grid-template-columns: 1fr; gap: 10px; }
-@media (min-width: 520px) { .att-photo-actions { grid-template-columns: 1fr 1fr; } .att-photo-actions[data-count="3"] .att-btn-li { grid-column: 1 / -1; } }
-.att-btn-li, .att-btn-soft { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 50px; padding: 0 18px; border-radius: 16px;
-  font: inherit; font-size: 15px; font-weight: 700; color: #fff; text-decoration: none; cursor: pointer; transition: transform .15s, box-shadow .25s, border-color .2s, background .2s; }
-.att-btn-li { background: linear-gradient(120deg, #0a66c2, #2b7fd6); box-shadow: 0 10px 28px rgba(10,102,194,0.35), inset 0 1px 0 rgba(255,255,255,0.25); }
-.att-btn-li:hover { box-shadow: 0 12px 34px rgba(10,102,194,0.5), inset 0 1px 0 rgba(255,255,255,0.25); }
-.att-btn-soft { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16); }
-.att-btn-soft:hover { border-color: rgba(255,255,255,0.36); background: rgba(255,255,255,0.1); box-shadow: 0 0 22px rgba(122,63,209,0.28); }
-.att-btn-soft:focus-within, .att-btn-li:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-.att-btn-li:active, .att-btn-soft:active { transform: scale(0.985); }
-.att-file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0 0 0 0); }
-.att-photo-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; margin-top: 12px; }
-.att-private { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 12.5px; color: rgba(255,255,255,0.72); }
-
-.att-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.att-field { margin-bottom: 12px; }
-.att-field:last-child { margin-bottom: 0; }
-.att-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; color: rgba(255,255,255,0.9); }
-.att-optional { color: rgba(255,255,255,0.62); font-weight: 500; }
-.att-input { width: 100%; height: 50px; border-radius: 14px; padding: 0 15px; font: inherit; font-size: 16px; color: #fff;
-  background: rgba(6,2,15,0.5); border: 1px solid rgba(255,255,255,0.15); outline: none; transition: border-color .2s, box-shadow .2s, background .2s; }
-.att-input::placeholder { color: rgba(255,255,255,0.3); }
-.att-input:hover { border-color: rgba(255,255,255,0.28); }
-.att-input:focus { border-color: #e8458b; box-shadow: 0 0 0 4px rgba(232,69,139,0.2), 0 0 24px rgba(232,69,139,0.18); background: rgba(6,2,15,0.65); }
-.att-textarea { height: auto; min-height: 160px; overflow-y: auto; padding: 13px 15px; resize: vertical; line-height: 1.55; font-size: 15px; }
-.att-count { margin: 6px 2px 0; text-align: right; font-size: 12px; color: rgba(255,255,255,0.6); font-variant-numeric: tabular-nums; }
-
-.att-actions { margin-top: 22px; }
-.att-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 58px; padding: 0 22px; border-radius: 99px; border: 0; cursor: pointer;
-  font: inherit; font-size: 17px; font-weight: 700; color: #fff; letter-spacing: 0.2px;
-  background: linear-gradient(90deg, #7a3fd1, #e8458b, #f5a623, #e8458b, #7a3fd1); background-size: 300% 100%; background-position: 0% 0;
-  box-shadow: 0 12px 34px rgba(232,69,139,0.38), inset 0 1px 0 rgba(255,255,255,0.3); transition: background-position .6s ease, transform .15s ease, box-shadow .25s; }
-.att-btn:hover:not(:disabled) { background-position: 60% 0; box-shadow: 0 14px 44px rgba(232,69,139,0.5), inset 0 1px 0 rgba(255,255,255,0.3); }
-.att-btn:active:not(:disabled) { transform: scale(0.985); }
-.att-btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-.att-btn:disabled { cursor: progress; opacity: 0.7; }
-.att-actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-.att-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 14px; border-radius: 99px; cursor: pointer;
-  font: inherit; font-size: 14.5px; font-weight: 700; color: #fff; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); transition: border-color .2s, background .2s, color .2s; }
-.att-btn-ghost:hover:not(:disabled) { border-color: rgba(255,255,255,0.42); background: rgba(255,255,255,0.1); }
-.att-btn-ghost:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-.att-btn-ghost:disabled { opacity: .6; cursor: progress; }
-.att-btn-ghost[data-done] { border-color: rgba(120,230,170,0.6); color: #b9f5d2; background: rgba(60,200,130,0.12); }
-
-.att-text-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; background: none; border: 0; padding: 4px 0; color: #ffb3d1; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; text-decoration: none; }
-.att-text-btn:hover { color: #fff; }
-.att-text-btn:focus-visible { outline: 2px solid #e8458b; outline-offset: 3px; border-radius: 6px; }
-.att-error { display: flex; gap: 7px; align-items: flex-start; margin: 12px 0 0; padding: 11px 13px; border-radius: 14px; font-size: 13.5px; line-height: 1.5; color: #ffc2cb;
-  background: rgba(255,90,110,0.1); border: 1px solid rgba(255,120,140,0.3); }
-.att-error svg { flex: none; margin-top: 2px; }
-.att-posted { position: relative; z-index: 1; display: flex; gap: 14px; align-items: flex-start; width: 100%; max-width: 720px; margin: 0 auto 22px; padding: 18px 20px; border-radius: 20px;
-  background: rgba(60,200,130,0.14); border: 1px solid rgba(120,230,170,0.45); box-shadow: 0 18px 50px rgba(0,0,0,0.35); }
-.att-posted-icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(120,230,170,0.22); color: #c9f7dc; }
-.att-posted-title { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 17px; margin: 2px 0 6px; color: #e9fff2; }
-.att-posted-sub { margin: 0 0 8px; font-size: 14.5px; line-height: 1.55; color: rgba(233,255,242,0.86); }
-.att-post-error > div { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.att-done { display: flex; align-items: center; gap: 8px; margin: 16px 0 0; padding: 12px 14px; border-radius: 14px; font-size: 14px; color: #c9f7dc; background: rgba(60,200,130,0.12); border: 1px solid rgba(120,230,170,0.35); }
-
-.att-guide { margin-top: 18px; padding: 16px 16px 12px; border-radius: 18px; background: linear-gradient(120deg, rgba(122,63,209,0.26), rgba(232,69,139,0.18)); border: 1px solid rgba(255,255,255,0.18); }
-.att-guide-title { margin: 0 0 12px; font-weight: 700; font-size: 15px; color: #ffd9a0; }
-.att-guide-steps { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 10px; }
-.att-guide-steps li { display: flex; gap: 11px; align-items: flex-start; font-size: 13.5px; line-height: 1.5; color: rgba(255,255,255,0.88); }
-.att-guide-steps b { color: #fff; }
-.att-guide-n { flex: none; width: 24px; height: 24px; border-radius: 99px; display: grid; place-items: center; font-size: 12px; font-weight: 800; margin-top: 1px;
-  border: 1.5px solid rgba(255,255,255,0.4); }
-.att-guide-steps li[data-done] .att-guide-n { border-color: transparent; background: linear-gradient(135deg, #7a3fd1, #e8458b); box-shadow: 0 0 12px rgba(232,69,139,0.5); }
-.att-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; overflow-wrap: anywhere; }
-
-.att-foot { position: relative; z-index: 1; margin: 24px 0 0; padding: 0; background: none; border: 0; font-size: 13px; color: rgba(255,255,255,0.72); text-align: center; line-height: 1.7; }
-.att-foot p { margin: 0; }
-.att-link { color: #ffb3d1; text-decoration: underline; text-underline-offset: 2px; }
-.att-link:hover { color: #fff; }
-.att-sr { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); border: 0; white-space: nowrap; }
-.att-spin { animation: attSpin 0.9s linear infinite; }
-@keyframes attSpin { to { transform: rotate(360deg); } }
-
-@media (max-width: 480px) {
-  .att-root { padding: 16px 16px 28px; }
-  .att-brand img { height: 96px; }
-  .att-hero { margin-bottom: 18px; }
-  .att-sub { font-size: 15px; }
-  .att-card { border-radius: 24px; padding: 16px; }
-  .att-controls { padding: 20px 16px 18px; }
-  .att-canvas-wrap { border-radius: 14px; }
-  .att-dims { display: none; }
-  .att-seg { width: 100%; }
-  .att-seg-btn { flex: 1; justify-content: center; }
-  .att-grid2 { gap: 10px; }
-  .att-grid2 .att-field:last-child { margin-bottom: 12px; }
-  .att-btn-ghost { font-size: 13.5px; padding: 0 8px; gap: 6px; white-space: nowrap; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .att-spin { animation-duration: 2s; }
-  .att-btn, .att-btn-li, .att-btn-soft { transition: none; }
-}
-`;

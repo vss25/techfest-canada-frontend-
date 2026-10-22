@@ -58,13 +58,13 @@ function MediaCarousel({ media, onDoubleTap }) {
   );
 }
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, startWithComments = false }) {
   const a = useStore(auth);
   const s = useStore(social);
   const c = useStore(cms);
   const [expanded, setExpanded] = useState(false);
   const [menu, setMenu] = useState(false);
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(!!startWithComments);
   const [burst, setBurst] = useState(0);
   const signedIn = isSignedIn(a);
   const mine = a.me?.id && post.authorId === a.me.id;

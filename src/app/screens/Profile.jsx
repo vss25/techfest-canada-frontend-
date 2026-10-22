@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  BadgeCheck, Bell, CalendarClock, Camera, ChevronRight, Download, FileText, Hand, HelpCircle, IdCard, Landmark, LogOut, Mic, Moon, Pencil, QrCode, RotateCcw,
+  BadgeCheck, Bell, BellRing, CalendarClock, Camera, ChevronRight, Download, FileText, Hand, HelpCircle, IdCard, Landmark, LogOut, Mic, Moon, Pencil, QrCode, RotateCcw,
   LogIn, ScanLine, ShieldCheck, Smartphone, Sun, Ticket, Trophy, Users,
 } from "lucide-react";
 import { useStore } from "../lib/store";
@@ -22,7 +22,7 @@ import ContactCard from "../components/ContactCard";
 import { GetPassCard } from "../components/PassesSheet";
 import { profileTagView } from "../lib/profileTag";
 import BrandMark from "../components/BrandMark";
-import { PushSetting } from "../components/PushControls";
+import { AttendingRow } from "../components/LinkedInCta";
 import { AvailabilityRows } from "../components/Availability";
 import { availabilitySummary } from "../lib/availability";
 
@@ -135,12 +135,8 @@ function SettingsSheet({ onClose }) {
       <div className="sheet-body stack" style={{ overflow: "auto", flex: 1, paddingBottom: 24 }}>
         <div className="settings-group">
           <Row icon={Bell} title="Notifications" to="/notifications" />
+          <Row icon={BellRing} title="Notification settings" to="/profile/notifications" />
         </div>
-
-        <section className="card stack-sm" aria-labelledby="push-h">
-          <h2 id="push-h" className="eyebrow">Message notifications</h2>
-          <PushSetting />
-        </section>
 
         <section className="card stack-sm" aria-labelledby="appearance-h">
           <h2 id="appearance-h" className="eyebrow">Appearance</h2>
@@ -324,6 +320,9 @@ export default function Profile() {
           </span>
           <ChevronRight className="chev" aria-hidden="true" />
         </Link>
+
+        {/* LinkedIn (Oct 22 2026): "Tell your network you're attending · +50 points", done once posted. */}
+        <AttendingRow />
 
         {/* Awards as a row like Connections; the count is the categories with eligible applications (no number until known). */}
         <Link to="/awards" className="list-row pressable" style={{ padding: 14 }}>

@@ -36,6 +36,10 @@ import AppLogin from "./pages/AppLogin";
 const Rsvp = lazy(() => import("./pages/Rsvp"));
 // Unlinked "I'm attending" page: opened from the campaign email (noindex, not in any menu).
 const Attending = lazy(() => import("./pages/Attending"));
+// Unlinked pages the TTFC app and its emails open (Oct 22 2026): a session chat or poll as a LinkedIn post, and the
+// "What you missed" email's unsubscribe link (noindex, not in any menu).
+const ShareLinkedin = lazy(() => import("./pages/ShareLinkedin"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 // Catalyst Awards jury portal: unlinked, noindex, light only (src/jury). Loaded only when someone opens it.
 const JuryPortal = lazy(() => import("./jury/JuryPortal"));
 import MaintenanceGate from "./components/MaintenanceGate";
@@ -143,6 +147,8 @@ function App() {
         <Route path="/app-login" element={<AppLogin />} />
         <Route path="/rsvp" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><Rsvp /></Suspense>} />
         <Route path="/attending" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><Attending /></Suspense>} />
+        <Route path="/share/linkedin" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><ShareLinkedin /></Suspense>} />
+        <Route path="/unsubscribe" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><Unsubscribe /></Suspense>} />
       </Routes>
       <OffJury><TicketBar /></OffJury>
       </MaintenanceGate>

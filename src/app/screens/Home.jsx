@@ -21,6 +21,7 @@ import PostCard from "../components/PostCard";
 import Composer from "../components/Composer";
 import Coachmark from "../components/Coachmark";
 import { GetPassCard } from "../components/PassesSheet";
+import { AttendingCard } from "../components/LinkedInCta";
 import { FeaturedRow, OrgGrid, PartnerSheet } from "../components/Orgs";
 import BrandMark from "../components/BrandMark";
 
@@ -379,6 +380,7 @@ export default function Home() {
 
         <div className="pad stack">
           {showChecklist && <Checklist steps={steps} onDismiss={() => { local.set(CHECKLIST_KEY, "1"); setChecklistHidden(true); }} />}
+          <AttendingCard />
           <Link to="/network/speakers" className="speakers-tile card-link pressable" aria-label="See all speakers">
             <span className="row" style={{ gap: 8, fontWeight: 600, fontSize: 16 }}><PeopleFill />Speakers</span>
             <span className="row" style={{ marginTop: 14 }}>

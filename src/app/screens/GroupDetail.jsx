@@ -17,6 +17,7 @@ import { MoreMenu } from "../components/Safety";
 import { ChatBubble, TypingIndicator } from "../components/ChatBubble";
 import { BubbleFill, PeopleFill } from "../components/Glyphs";
 import { guestAlert } from "../lib/passes";
+import { ShareOnLinkedIn } from "../components/LinkedInCta";
 
 /* =========================================================
    A group's home (iOS GroupDetailView): who's in it, the
@@ -142,6 +143,8 @@ export default function GroupDetail() {
             {g.memberCount} members{g.joined ? " · you're in" : ""}<ChevronRight aria-hidden="true" />
           </button>
         </span>
+        {/* A session's chat, on LinkedIn (Oct 22 2026). */}
+        {g.sessionId && g.joined && <span className="group-head-share"><ShareOnLinkedIn kind="discussion" id={g.id} sessionId={g.sessionId} small label="Share" /></span>}
       </div>
       {pinned.length > 0 && (
         <div className="column pinned-strip">

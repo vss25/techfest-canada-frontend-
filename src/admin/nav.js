@@ -68,6 +68,7 @@ export const NAV = [
       { to: "content/settings", label: "Website switches", icon: Settings2 },
       { to: "app/text", label: "App text & switches", icon: ToggleRight },
       { to: "app/invite", label: "App invite email", icon: MailPlus },
+      { to: "app/digest", label: "“What you missed” emails", icon: MailOpen },
     ],
   },
   {

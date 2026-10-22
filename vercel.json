@@ -43,6 +43,14 @@
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     },
     {
+      "source": "/share/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/:path([Uu][Nn][Ss][Uu][Bb][Ss][Cc][Rr][Ii][Bb][Ee]/?)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
       "source": "/awards/jury-admin",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     },

@@ -31,7 +31,7 @@ const SNOOZE_MS = 7 * 24 * 3600 * 1000;
 const DELAY_MS = 5000;
 
 /** Never interrupt staff, payments, sign-in links or forms, or the app itself. */
-const BLOCKED = [/^\/admin/, /checkout/, /\/pay(\/|$)/, /^\/app-login/, /^\/reset-password/, /^\/auth-success/, /^\/rsvp/, /^\/complete-profile/, /^\/kyc/, /^\/app(\/|$)/];
+const BLOCKED = [/^\/admin/, /checkout/, /\/pay(\/|$)/, /^\/app-login/, /^\/reset-password/, /^\/auth-success/, /^\/rsvp/, /^\/complete-profile/, /^\/kyc/, /^\/app(\/|$)/, /^\/share\//, /^\/unsubscribe/];
 
 const ss = {
   get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },

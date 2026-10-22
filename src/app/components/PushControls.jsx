@@ -41,7 +41,7 @@ export function PushBanner({ className }) {
   );
 }
 
-/** Settings › Message notifications. */
+/** Settings › Notifications › On this phone. */
 export function PushSetting() {
   const p = useStore(webPush);
   if (p.support === "unsupported") return <p className="tiny muted" style={{ margin: 0 }}>This browser can't show notifications.</p>;
@@ -56,8 +56,8 @@ export function PushSetting() {
   const blocked = p.permission === "denied";
   return (
     <Switch
-      label="New messages"
-      description={blocked ? `Notifications are blocked. ${BLOCKED_HELP}` : p.on ? "On for this phone." : "Turn on notifications to hear about new messages."}
+      label="Notifications"
+      description={blocked ? `Notifications are blocked. ${BLOCKED_HELP}` : p.on ? "On for this phone." : "Turn on to get messages, replies and mentions on this phone."}
       checked={p.on}
       disabled={blocked || p.busy}
       onChange={(v) => (v ? turnOnNotifications() : turnOffNotifications())}

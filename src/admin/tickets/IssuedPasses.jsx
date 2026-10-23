@@ -16,6 +16,8 @@ import { ManualDrawer, PdfModal } from "./ExhibitorManual";
 import { PassTemplateDrawer } from "./PassEmailTemplates";
 import { EmailCopyEditor, EmailPreview } from "./EmailCopyEditor";
 import { EXTRAS } from "../people/peopleMeta";
+import { MediaMark } from "../people/MediaBadges";
+import { MEDIA, MEDIA_HELP, passRowMedia } from "../people/mediaMark";
 
 /* =========================================================
    Admin → People & passes → Give a pass / Exhibitor passes
@@ -47,8 +49,14 @@ import { EXTRAS } from "../people/peopleMeta";
    that claims it is a VIP / Media too) and pick the Power Pass;
    Volunteer picks the Connect Pass (the Volunteer type itself is on
    their app account: People, management). Staff can still change the
-   pass, and a pass already given never changes by itself. VIPs and
-   Media get the CxO Breakfasts on Automatic.
+   pass, and a pass already given never changes by itself. On
+   Automatic VIPs get the CxO Breakfasts, Media (Oct 23 2026) Power
+   Pass privileges with the CxO Breakfasts on any pass: the form's
+   "Automatic (Yes / No)" comes from the server's preview, which knows
+   the marks. Edit switches Media Yes / No on a pass already given.
+   The list shows the dark-blue Media mark for whoever holds a pass
+   that is Media (People's answer, else the pass's own mark), on Give
+   a pass and Exhibitor passes alike.
 ========================================================= */
 
 const KINDS = {
@@ -124,8 +132,9 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, markTiers = M
   const preview = useLivePreview(`${BASE}/preview`, { ...(complete ? body : { ...body, name: "Jane Doe" }), ...(kind.booth ? {} : { vip: marks.vip, media: marks.media }), extras: allExtras });
   const tier = tiers.find((t) => t.key === form.tier);
   const setExtra = (key) => (e) => setForm((f) => ({ ...f, extras: { ...f.extras, [key]: e.target.value } }));
-  // On Automatic the CxO Breakfasts also come with a VIP or Media pass.
-  const autoOn = (key) => autoHas(tier, key) || (key === "cxo" && !kind.booth && (marks.vip || marks.media));
+  // On Automatic: the server's preview (it knows the VIP / Media marks: a VIP gets the CxO Breakfasts, Media all four),
+  // else the pass type's own rule while it loads.
+  const autoOn = (key) => (typeof preview.data?.extras?.[key]?.auto === "boolean" ? preview.data.extras[key].auto : autoHas(tier, key));
   /** A mark on or off. Switching one on picks its pass for a new pass (VIP / Media: Power; Volunteer: Connect, unless
       VIP or Media is on too); staff can still change the pass. An edit never changes the pass. */
   const toggleMark = (key) => {
@@ -203,19 +212,23 @@ function PassDrawer({ kind, row, tiers, defaultTier, defaultLabel, markTiers = M
                 {MARKS.map((m) => {
                   const on = marks[m.key];
                   const Icon = m.icon;
+                  // Media Yes is Media's dark blue, like everywhere else in the panel.
+                  const dark = on && m.key === "media";
                   return (
                     <button key={m.key} type="button" aria-pressed={on} onClick={() => toggleMark(m.key)}
-                      className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-ttfc-contrast" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}>
+                      title={m.key === "media" ? MEDIA_HELP : undefined}
+                      style={dark ? { background: MEDIA.bg, borderColor: MEDIA.bg, color: MEDIA.text } : undefined}
+                      className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${dark ? "" : on ? "border-ttfc-pink/60 bg-ttfc-pink/15 text-ttfc-contrast" : "border-ttfc-line text-ttfc-muted hover:border-ttfc-purple/50 hover:text-ttfc-text"} ${focusRing}`}>
                       {on ? <Check className="h-3 w-3" aria-hidden="true" /> : <Icon className="h-3 w-3" aria-hidden="true" />}
-                      {m.label}
+                      {m.label}{m.key === "media" && row ? (on ? ": Yes" : ": No") : ""}
                     </button>
                   );
                 })}
               </div>
               <p className="mt-2.5 text-xs leading-relaxed text-ttfc-muted">
                 {row
-                  ? "VIP and Media are saved on this pass: the account that uses it is a VIP / Media too. Changing them here doesn't change the pass."
-                  : "VIP and Media pick the Power Pass with the CxO Breakfasts, Volunteer the Connect Pass. You can still change the pass below. VIP and Media are saved on the pass; the Volunteer type is set on their app account in People (management)."}
+                  ? `VIP and Media are saved on this pass: the account that uses it is a VIP / Media too. ${MEDIA_HELP}, on any pass; a VIP gets the CxO Breakfasts. Changing them here doesn't change the pass.`
+                  : `VIP and Media pick the Power Pass, Volunteer the Connect Pass. You can still change the pass below. ${MEDIA_HELP}, on any pass; a VIP gets the CxO Breakfasts. VIP and Media are saved on the pass; the Volunteer type is set on their app account in People (management).`}
               </p>
             </fieldset>
           )}
@@ -384,7 +397,8 @@ function PassesPage({ kindName }) {
 
   const upsert = (row, isNew) => setData((d) => {
     if (!d) return d;
-    const list = isNew ? [row, ...(d.rows || [])] : (d.rows || []).map((r) => (r.id === row.id ? { ...r, ...row } : r));
+    // An edit's answer has no `personMedia` (People's view): show the pass's own mark until the list reloads.
+    const list = isNew ? [row, ...(d.rows || [])] : (d.rows || []).map((r) => (r.id === row.id ? { ...r, ...row, personMedia: undefined } : r));
     return { ...d, rows: list };
   });
   const copyId = (text) => navigator.clipboard?.writeText(text).then(() => toast.success("Copied"), () => toast.error("Couldn't copy."));
@@ -459,10 +473,10 @@ function PassesPage({ kindName }) {
                   <td>
                     <span className="block font-semibold">{r.label || r.tierLabel}</span>
                     {r.label && <span className="block text-xs text-ttfc-muted">{r.tierLabel}</span>}
-                    {(r.vip || r.media) && (
+                    {(r.vip || passRowMedia(r)) && (
                       <span className="mt-1 flex flex-wrap gap-1">
                         {r.vip && <Badge tone="orange">VIP</Badge>}
-                        {r.media && <Badge tone="purple">Media</Badge>}
+                        {passRowMedia(r) && <MediaMark />}
                       </span>
                     )}
                     {!r.rsvp && <span className="block text-[11px] text-ttfc-dim">No RSVP button</span>}
@@ -498,7 +512,7 @@ function PassesPage({ kindName }) {
         <PassDrawer kind={kind} row={editing.row} tiers={tiers} defaultTier={tiersApi.data?.defaultTier} defaultLabel={tiersApi.data?.defaultLabel || ""}
           markTiers={tiersApi.data?.markTiers || MARK_TIERS}
           emailFields={tiersApi.data || {}} onClose={() => setEditing(null)}
-          onSaved={(row, isNew) => { upsert(row, isNew); if (isNew) { setSending(row); reload(); } }} />
+          onSaved={(row, isNew) => { upsert(row, isNew); if (isNew) setSending(row); reload(); }} />
       )}
       {sending && <SendDrawer kind={kind} row={sending} canSend={canIssue} onClose={() => setSending(null)} onSent={(row) => { upsert(row, false); reload(); }} />}
       {manualOpen && <ManualDrawer base={BASE} canEdit={isManagement} onClose={() => setManualOpen(false)} />}

@@ -14,6 +14,7 @@ import ProfileEditor from "./ProfileEditor";
 import { TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE, typeTags } from "./personTypes";
 import { HIDDEN_LABEL, personPath } from "../people/peopleMeta";
 import { HiddenBadge } from "../people/HideFromApp";
+import { MediaMark } from "../people/MediaBadges";
 
 function MessagesPane({ id }) {
   const [revealed, setRevealed] = useState(false);
@@ -179,7 +180,7 @@ function PersonView({ id }) {
             {u.role === "admin" && <Badge tone="pink">Staff</Badge>}
             {u.role === "volunteer" && <Badge tone="purple">Volunteer</Badge>}
             {u.vip && <Badge tone={VIP_TONE}>{VIP_LABEL}</Badge>}
-            {typeTags(u.effectiveTypes, u.role).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}
+            {typeTags(u.effectiveTypes, u.role).map((t) => (t === "media" ? <MediaMark key={t} /> : <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>))}
             {u.banned && <Badge tone="bad">Suspended</Badge>}
             {u.appHidden && <HiddenBadge />}
           </div>

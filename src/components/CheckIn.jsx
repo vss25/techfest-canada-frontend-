@@ -6,7 +6,8 @@ import { avatarSrc, cardFrom, checkinTime, initialsOf } from "../lib/checkinCard
 
 /* Door check-in (Admin › Event day › Check-in). Every scan (camera or a typed ticket ID) goes to
    POST /api/checkin/scan and its answer replaces the card at once: the pass's colour band (VIP gold, Media dark
-   blue, Speaker red, Staff purple, Volunteer orange, any other pass green; the server picks it), the person's photo
+   blue, Speaker red, Staff purple, Volunteer orange, any other pass green; the server picks it; the pass's name small
+   beside any other word, "Media · Connect Pass"), the person's photo
    (initials on the band's colour while it loads or when there's none), name, title · company, the pass, the meals
    it includes and whether they were checked in now or before (amber). Helpers in src/lib/checkinCard.js. */
 
@@ -143,6 +144,8 @@ function ResultCard({ card }) {
     <article className="ci-card" aria-label={`${badge.label}: ${card.name || "no name"}`}>
       <div className="ci-band" style={{ background: badge.bg, color: badge.text }}>
         <span className="ci-band-label">{badge.label}</span>
+        {/* The pass's name, small, beside any other word: "Media · Connect Pass" (Oct 23 2026). */}
+        {card.bandSub && <span className="ci-band-pass">· {card.bandSub}</span>}
       </div>
 
       <div className={`ci-state ${already ? "is-already" : "is-in"}`}>

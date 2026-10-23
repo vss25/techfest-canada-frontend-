@@ -14,6 +14,8 @@ import CodeLabel from "./CodeLabel";
 import ReminderDialog from "./ReminderDialog";
 import NudgeDialog from "./NudgeDialog";
 import { HiddenBadge } from "./HideFromApp";
+import { MediaMark, PassBand } from "./MediaBadges";
+import { MEDIA_FILTER, isMedia, otherTypes } from "./mediaMark";
 import {
   ATTENDING_FILTER_OPTIONS, ATTENDING_HINT, ATTENDING_LABELS, ATTENDING_STAGE_HINTS, ATTENDING_STAGE_LABELS, ATTENDING_STAGE_TONE, ATTENDING_TONE, DAY_SHORT,
   OPENS_NOTE, PASS_STATUS_HINTS, PASS_STATUS_LABELS, PASS_TIERS, RSVP_EMAIL_FILTER_OPTIONS, RSVP_EMAIL_HINT, RSVP_FORM_FILTER, RSVP_STATUSES, RSVP_STATUS_LABELS,
@@ -42,6 +44,9 @@ import {
    Code (Oct 20 2026): the coupon code their pass was bought with
    ("SPRING20 · 20% off"), "No code", or what a pass staff made is
    ("Given by staff", never an internal marker); the search finds it.
+   Media (Oct 23 2026): a "Media?" filter (Yes / No / All, ?media=),
+   the dark-blue Media mark by their types like VIP, and each pass in
+   its door colour from the server's `band` ("Media · Connect Pass").
 ========================================================= */
 
 const PAGE = 50;
@@ -69,6 +74,8 @@ const FILTER_DEFS = [
   { key: "exhibitor", label: "Is Exhibitor?", options: YES_NO },
   { key: "rsvpEmail", label: "RSVP Email Sent?", options: RSVP_EMAIL_FILTER_OPTIONS },
   { key: "vip", label: "VIP?", options: YES_NO },
+  // Media Yes / No (Oct 23 2026): Power Pass privileges with the CxO Breakfasts, the dark-blue pass.
+  MEDIA_FILTER,
   { key: "attending", label: "I'm Attending", options: ATTENDING_FILTER_OPTIONS },
 ];
 // appHidden (yes | no) is in the address only: App moderation › Hidden people links to ?appHidden=yes.
@@ -286,12 +293,12 @@ export default function PeopleDirectory() {
           </p>
           {filtered && <Button size="sm" variant="ghost" onClick={clearAll}>Clear filters</Button>}
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-8">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-9">
           {FILTER_DEFS.map((fd) => (
             <label key={fd.key} className="flex min-w-0 flex-col justify-end">
               <span className="mb-1 block text-[11px] font-semibold uppercase leading-tight tracking-wide text-ttfc-dim">{fd.label}</span>
               <Select value={f[fd.key]} onChange={(e) => update({ [fd.key]: e.target.value, page: 0 })} className="w-full" aria-label={fd.label}>
-                <option value="">Any</option>
+                <option value="">{fd.any || "Any"}</option>
                 {fd.options.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
               </Select>
             </label>
@@ -324,8 +331,9 @@ export default function PeopleDirectory() {
                   <td>
                     <span className="flex max-w-[180px] flex-wrap gap-1">
                       {r.vip && <Badge tone={VIP_TONE} icon={Crown}>{VIP_LABEL}</Badge>}
-                      {r.types.map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t] || t}</Badge>)}
-                      {!r.types.length && !r.vip && <span className="text-ttfc-dim">None</span>}
+                      {isMedia(r) && <MediaMark />}
+                      {otherTypes(r.types).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t] || t}</Badge>)}
+                      {!r.types.length && !r.vip && !isMedia(r) && <span className="text-ttfc-dim">None</span>}
                     </span>
                   </td>
                   <td className="max-w-[240px]">
@@ -346,7 +354,7 @@ export default function PeopleDirectory() {
                   <td className="whitespace-nowrap">
                     {r.pass ? (
                       <>
-                        {r.pass.label}
+                        {r.band ? <PassBand band={r.band} /> : r.pass.label}
                         <span className="block text-[11px] text-ttfc-dim" title={PASS_STATUS_HINTS[r.passStatus]}>
                           {PASS_STATUS_LABELS[r.passStatus]}{r.passCount > 1 ? ` · +${r.passCount - 1} more` : ""}
                         </span>
@@ -403,6 +411,8 @@ export default function PeopleDirectory() {
         </>
       )}
       <p className="mt-4 text-xs text-ttfc-dim">
+        Pass: their main pass in the colour door staff see (VIP gold, Media dark blue, Speaker red, Staff purple, Volunteer orange, any other pass green).
+        Media: Power Pass privileges with the CxO Breakfasts on any pass.
         Extras: the meals and events on their main pass (CxO Breakfasts, luncheons, Gala, Awards); + was added by staff, struck through was taken off.
         Ticket value is what they paid for the pass after promo codes, before HST. RSVP email: {RSVP_EMAIL_HINT}{" "}
         I'm attending: {ATTENDING_HINT} {OPENS_NOTE}

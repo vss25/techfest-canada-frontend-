@@ -164,7 +164,8 @@ export function Select({ className, children, ...rest }) {
   );
 }
 
-export function Switch({ checked, onChange, label, description, disabled, id: idProp, size = "md", ariaLabel }) {
+/** `onColor`: the track's colour when on (e.g. Media's dark blue), instead of the pink-purple gradient. */
+export function Switch({ checked, onChange, label, description, disabled, id: idProp, size = "md", ariaLabel, onColor }) {
   const auto = useId();
   const id = idProp || auto;
   const track = size === "lg" ? "h-8 w-14" : "h-6 w-11";
@@ -179,9 +180,10 @@ export function Switch({ checked, onChange, label, description, disabled, id: id
       aria-label={label ? undefined : ariaLabel}
       disabled={disabled}
       onClick={() => onChange?.(!checked)}
+      style={checked && onColor ? { background: onColor, borderColor: onColor } : undefined}
       className={cx(
         "relative inline-flex shrink-0 items-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50",
-        track, checked ? "border-transparent bg-gradient-to-r from-ttfc-pink to-ttfc-purple" : "border-ttfc-line bg-ttfc-track", focusRing,
+        track, checked ? (onColor ? "" : "border-transparent bg-gradient-to-r from-ttfc-pink to-ttfc-purple") : "border-ttfc-line bg-ttfc-track", focusRing,
       )}
     >
       <span className={cx("inline-block translate-x-1 rounded-full bg-white shadow transition", knob, checked && shift)} />

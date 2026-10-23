@@ -6,6 +6,7 @@ import { Badge, Button, EmptyState, ErrorState, Input, LoadingState, PageHeader,
 import { ago } from "../format";
 import { PERSON_TYPES, TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE, typeTags } from "./personTypes";
 import { HiddenBadge } from "../people/HideFromApp";
+import { MediaMark } from "../people/MediaBadges";
 
 export default function People() {
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ export default function People() {
                         {u.role === "admin" && <Badge tone="pink">Staff</Badge>}
                         {u.role === "volunteer" && <Badge tone="purple">Volunteer</Badge>}
                         {u.vip && <Badge tone={VIP_TONE}>{VIP_LABEL}</Badge>}
-                        {typeTags(u.types, u.role).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>)}
+                        {typeTags(u.types, u.role).map((t) => (t === "media" ? <MediaMark key={t} /> : <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t]}</Badge>))}
                         {u.banned && <Badge tone="bad">Suspended</Badge>}
                         {u.appHidden && <HiddenBadge />}
                         {u.directoryHidden && <span title="Switched off the app's attendee list on their profile"><Badge>Not in attendee list</Badge></span>}

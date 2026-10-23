@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  PASS_BADGE, avatarSrc, badgeOf, cardFrom, checkinTime, initialsOf, mealsOf, outcomeOf, passNameOf,
+  PASS_BADGE, avatarSrc, badgeOf, bandSub, cardFrom, checkinTime, initialsOf, mealsOf, outcomeOf, passNameOf,
 } from "./checkinCard.js";
 
 const VIP = { key: "vip", label: "VIP", bg: "#F5C400", text: "#3D2E00" };
@@ -38,13 +38,13 @@ test("card: a check-in, an already-checked-in pass (its time), a ticket that isn
   });
   assert.deepEqual(now, {
     outcome: "checked_in", ticketId: "abc", name: "Vera Vip", title: "Minister", company: "Government of Ontario", badge: VIP,
-    passName: "Power Pass", avatarUrl: "/api/files/avatar/u1?v=3", meals: ["CxO Breakfasts", "Luncheons", "Awards Night"],
+    passName: "Power Pass", bandSub: "Power Pass", avatarUrl: "/api/files/avatar/u1?v=3", meals: ["CxO Breakfasts", "Luncheons", "Awards Night"],
     at: "2026-10-26T13:42:00Z", message: "",
   });
   const again = cardFrom({ status: 200, ticketId: "abc", body: { status: "already_checked_in", name: "Vera Vip", time: "2026-10-26T13:42:00Z", badge: VIP } });
   assert.deepEqual([again.outcome, again.at, again.badge.label, again.meals], ["already", "2026-10-26T13:42:00Z", "VIP", null]);
   const nope = cardFrom({ status: 404, ticketId: "zzz", body: { status: "invalid", message: "Ticket not found" } });
-  assert.deepEqual(nope, { outcome: "not_found", ticketId: "zzz", name: "", title: "", company: "", badge: null, passName: "", avatarUrl: "", meals: null, at: null, message: "Ticket not found" });
+  assert.deepEqual(nope, { outcome: "not_found", ticketId: "zzz", name: "", title: "", company: "", badge: null, passName: "", bandSub: "", avatarUrl: "", meals: null, at: null, message: "Ticket not found" });
   assert.equal(cardFrom({ status: 0, ticketId: "x", body: { error: "Can't reach the server." } }).message, "Can't reach the server.");
 });
 
@@ -76,4 +76,15 @@ test("initials and the check-in time (Toronto)", () => {
   assert.equal(checkinTime(at, new Date("2026-10-27T14:00:00Z")), "Mon, Oct 26, 9:42 AM");
   assert.equal(checkinTime(null), "");
   assert.equal(checkinTime("nope"), "");
+});
+
+test("the band: the pass's name small beside Media (dark blue), VIP and the others; nothing extra on the green band", () => {
+  const MEDIA = { key: "media", label: "Media", bg: "#0B3D91", text: "#FFFFFF" };
+  const card = cardFrom({ status: 200, body: { status: "success", ticketId: "abc", name: "Mo Press", badge: MEDIA, passName: "Connect Pass" } });
+  assert.deepEqual([card.badge.bg, card.badge.text, card.badge.label, card.bandSub], ["#0B3D91", "#FFFFFF", "Media", "Connect Pass"]);
+  assert.equal(bandSub(VIP, "Power Pass"), "Power Pass");
+  assert.equal(bandSub({ key: "pass", label: "Connect Pass" }, "Connect Pass"), "");
+  assert.equal(bandSub({ key: "pass", label: "Exhibitor" }, "Connect Pass"), "Connect Pass");
+  assert.equal(bandSub(MEDIA, ""), "");
+  assert.equal(cardFrom({ status: 404, body: { status: "invalid" } }).bandSub, "");
 });

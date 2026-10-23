@@ -41,12 +41,13 @@ export const PASS_TIERS = [
 export const passName = (key) => (key === "speaker" ? "Speaker Pass" : `${PASS_TIERS.find((x) => x.key === key)?.label || "—"} Pass`);
 
 /** The meals and events staff can add to (or take off) one pass, each Automatic / Yes / No (backend
-    services/passExtras.js, same keys and order). `auto`: who gets it on Automatic. */
+    services/passExtras.js, same keys and order). `auto`: who gets it on Automatic (Media = Yes since Oct 23 2026:
+    a Power Pass's extras plus the CxO Breakfasts, on any pass). */
 export const EXTRAS = [
-  { key: "cxo", label: "CxO Breakfasts", short: "CxO", auto: "Apex and Speaker Passes, speakers, VIPs and media on any pass" },
-  { key: "lunch", label: "Networking Luncheons", short: "Lunch", auto: "Influence, Power, Apex and Speaker Passes" },
-  { key: "gala", label: "Gala Dinner & Networking Reception", short: "Gala", auto: "Power, Apex and Speaker Passes" },
-  { key: "awards", label: "Catalyst Awards Night", short: "Awards", auto: "Power, Apex and Speaker Passes" },
+  { key: "cxo", label: "CxO Breakfasts", short: "CxO", auto: "Apex and Speaker Passes, and speakers, VIPs and Media on any pass" },
+  { key: "lunch", label: "Networking Luncheons", short: "Lunch", auto: "Influence, Power, Apex and Speaker Passes, and Media on any pass" },
+  { key: "gala", label: "Gala Dinner & Networking Reception", short: "Gala", auto: "Power, Apex and Speaker Passes, and Media on any pass" },
+  { key: "awards", label: "Catalyst Awards Night", short: "Awards", auto: "Power, Apex and Speaker Passes, and Media on any pass" },
 ];
 /** A pass's extras from the server ({ cxo: { override, auto, included }, … }), or only the CxO Breakfasts
     from an older server (cxoBreakfast / cxoOverride / cxoAuto). */

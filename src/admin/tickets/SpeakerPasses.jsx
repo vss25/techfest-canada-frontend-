@@ -17,6 +17,7 @@ import { SpeakerTemplateDrawer as TemplateDrawer, SpeakerWording } from "./PassE
 import { tidyCopy, useSpeakerWording } from "./passEmailHooks";
 import { listText, useLivePreview } from "./speakerEmailHooks";
 import { useInitialQuery } from "../search/deepLink";
+import { MediaMark } from "../people/MediaBadges";
 
 /* =========================================================
    Admin → Tickets & attendees → Speaker passes
@@ -660,6 +661,8 @@ export default function SpeakerPasses() {
                       {r.name || <span className="text-ttfc-dim">No name</span>}
                     </button>
                     {sub && <span className="block truncate text-xs text-ttfc-muted" title={sub}>{sub}</span>}
+                    {/* Media = Yes (Oct 23 2026): the speaker as People has them (their account or a pass marked Media). */}
+                    {r.media && <MediaMark className="mt-1" />}
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       <Button size="sm" variant="ghost" icon={Eye} onClick={() => openPreview(r.id)}>Preview</Button>
                       {isManagement && (

@@ -87,7 +87,8 @@ test("arc: bows to the left of travel, so there and back are two curves; nothing
 
 const overlap = (a, b) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
 
-for (const width of [343, 375, 560, 736, 1000]) {
+// 299 / 319: a phone's map inside its dark panel (Oct 23 2026: the map is always dark, in a padded panel).
+for (const width of [299, 319, 343, 375, 560, 736, 1000]) {
   test(`the organiser's journey at ${width} px: one label per city, inside the map, none on top of another`, () => {
     const L = layoutJourney(DEFAULT_JOURNEY, width, { projected });
     assert.equal(L.width, width);

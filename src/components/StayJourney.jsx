@@ -53,8 +53,11 @@ export function JourneyMap({ stops, active = -1, title = "Map of Canada: the TTF
     const el = ref.current;
     if (!el || typeof ResizeObserver === "undefined") return undefined;
     const ro = new ResizeObserver(() => {
-      const w = Math.round(el.getBoundingClientRect().width);
-      const family = getComputedStyle(el).fontFamily || "";
+      // The width inside the dark panel's border and padding.
+      const cs = getComputedStyle(el);
+      const px = (k) => parseFloat(cs[k]) || 0;
+      const w = Math.round(el.getBoundingClientRect().width - px("paddingLeft") - px("paddingRight") - px("borderLeftWidth") - px("borderRightWidth"));
+      const family = cs.fontFamily || "";
       if (w > 0) setBox((b) => (Math.abs(b.width - w) >= 1 || b.family !== family ? { width: w, family } : b));
     });
     ro.observe(el);
@@ -216,7 +219,14 @@ export const JOURNEY_CSS = `
   .jv-grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 28px; }
   .jv:not(.jv--compact) .jv-map { position: sticky; top: 96px; }
 }
-.jv-map { min-width: 0; }
+/* The map side is always dark, in light mode too (the organiser, Oct 23 2026): its own panel and colours,
+   whatever the host sets. The list keeps the host's theme. */
+.jv-map { min-width: 0; padding: 14px 12px 12px; border-radius: 20px; color-scheme: dark;
+  background: radial-gradient(120% 90% at 18% 0%, #1d1040 0%, #0e0722 55%, #07030f 100%);
+  border: 1px solid rgba(155,135,245,0.24); box-shadow: 0 18px 40px rgba(13,5,32,0.18);
+  --jv-text: #ffffff; --jv-mid: rgba(225,215,255,0.8); --jv-line: rgba(155,135,245,0.3); --jv-accent: #c4adff;
+  --jv-land: rgba(155,135,245,0.2); --jv-land-edge: rgba(196,173,255,0.45); --jv-route: #c4adff; --jv-label-bg: #150b2c; }
+@container (min-width: 600px) { .jv-map { padding: 22px 20px 16px; border-radius: 24px; } }
 .jv-svg { display: block; width: 100%; height: auto; overflow: visible; font-family: inherit; }
 .jv-land { fill: var(--jv-land, rgba(122,63,209,0.1)); stroke: var(--jv-land-edge, rgba(122,63,209,0.3)); stroke-width: 0.8; stroke-linejoin: round; }
 .jv-route { stroke: var(--jv-route, #7a3fd1); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0.1 6.5; }

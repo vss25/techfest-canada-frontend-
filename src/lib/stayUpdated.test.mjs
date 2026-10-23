@@ -4,12 +4,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ERRORS, INTERESTS, STAY_DEFAULTS, STAY_KEYS, blocks, checkForm, heroParts, joinWaitlist, lines, phoneDigits, sourceFrom, stayFrom } from "./stayUpdated.js";
 
-test("the defaults: the organiser's facts (Toronto, dates to be announced, the 5 × 5, 1000+ attendees across 2 days)", () => {
-  assert.equal(STAY_KEYS.length, 31);
-  assert.deepEqual(heroParts(STAY_DEFAULTS["stay.hero_title"]), { lead: "TTFC 2027", rest: ["Toronto", "Dates to be announced"] });
+test("the defaults: the organiser's facts (Toronto, November 2027, the 5 × 5, no attendee count)", () => {
+  assert.equal(STAY_KEYS.length, 34);
+  assert.deepEqual(heroParts(STAY_DEFAULTS["stay.hero_title"]), { lead: "TTFC 2027", rest: ["Toronto", "November 2027"] });
   assert.deepEqual(lines(STAY_DEFAULTS["stay.pillars"]), ["AI & Machine Learning", "Quantum Computing", "Cybersecurity & Digital Trust", "Robotics & Automation", "CleanTech & Sustainability"]);
   assert.deepEqual(lines(STAY_DEFAULTS["stay.sectors"]), ["Financial Services & Banking", "Healthcare & Life Sciences", "Energy & Critical Infrastructure", "Manufacturing, Supply Chain & Mobility", "Public Sector, National Defence & Security"]);
-  assert.equal(STAY_DEFAULTS["stay.stat"], "1000+ attendees across 2 days");
+  assert.equal(STAY_DEFAULTS["stay.stat"], "");
   assert.deepEqual(blocks(STAY_DEFAULTS["stay.expect"]).map((b) => b.title), ["Keynotes and executive panels", "Catalyst Awards", "The Expo", "CxO Breakfast", "Gala Dinner and networking", "Business meetings"]);
   assert.equal(STAY_DEFAULTS["stay.thanks"], "Thank you for your interest. Someone from our team will reach out.");
   assert.doesNotMatch(Object.values(STAY_DEFAULTS).join(" "), /App Store|Google Play|download/i, "no store mentions on this page");
@@ -69,4 +69,11 @@ test("joinWaitlist: the server's words for a refusal (with the field); plain wor
   await assert.rejects(joinWaitlist("https://x.test/api", {}, { fetchImpl: answer(503, { error: "maintenance", message: "Back soon." }) }), (e) => e.message === "Back soon.");
   // A 200 without a message still thanks them.
   assert.deepEqual(await joinWaitlist("https://x.test/api", {}, { fetchImpl: answer(200, { ok: true }) }), { message: STAY_DEFAULTS["stay.thanks"] });
+});
+
+test("the 2027 events: Toronto (two days, November) and four one-day briefings, dates to be announced", () => {
+  const b = blocks(STAY_DEFAULTS["stay.briefings"]);
+  assert.deepEqual(b.map((x) => x.title), ["Toronto", "Ottawa", "Montreal", "Calgary", "Vancouver"]);
+  assert.match(b[0].body, /two days in November 2027\. Dates to be announced/);
+  assert.ok(b.slice(1).every((x) => x.body === "One-day briefing event. Date to be announced."));
 });

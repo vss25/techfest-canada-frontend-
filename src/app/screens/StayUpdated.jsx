@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Award, CheckCircle2, Coffee, Handshake, Mic2, Store, Users, UtensilsCrossed } from "lucide-react";
+import { ArrowRight, Award, CheckCircle2, Coffee, Handshake, MapPin, Mic2, Store, Users, UtensilsCrossed } from "lucide-react";
 import { useStore } from "../lib/store";
 import { content, refreshContent } from "../lib/content";
 import { API } from "../lib/config";
@@ -129,7 +129,7 @@ export default function StayUpdated() {
             {hero.rest.length > 0 && <span className="wl-hero-rest">{hero.rest.map((p, i) => <span key={i}><span className="sr-only"> · </span>{p}</span>)}</span>}
           </h2>
           <p className="wl-hero-intro">{copy["stay.hero_intro"]}</p>
-          <p className="wl-stat"><Users aria-hidden="true" />{copy["stay.stat"]}</p>
+          {copy["stay.stat"] && <p className="wl-stat"><Users aria-hidden="true" />{copy["stay.stat"]}</p>}
           <a href="#wl-join" className="btn btn-primary pressable wl-hero-btn" onClick={(e) => { e.preventDefault(); document.getElementById("wl-join")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>{copy["stay.button"]}</a>
         </section>
 
@@ -137,6 +137,21 @@ export default function StayUpdated() {
         <div id="wl-join" style={{ scrollMarginTop: 72 }}>
           <Form copy={copy} />
         </div>
+
+        {blocks(copy["stay.briefings"]).length > 0 && (
+          <section className="stack-sm" aria-labelledby="wl-brief-h">
+            <h2 id="wl-brief-h" className="eyebrow">{copy["stay.briefings_title"]}</h2>
+            {copy["stay.briefings_intro"] && <p className="muted" style={{ margin: 0, fontSize: 14.5 }}>{copy["stay.briefings_intro"]}</p>}
+            <ul className="card wl-expect">
+              {blocks(copy["stay.briefings"]).map((b, i) => (
+                <li key={`${b.title}-${i}`}>
+                  <span className="lead-icon" aria-hidden="true"><MapPin /></span>
+                  <span><b>{b.title}</b>{b.body && <span className="tiny muted wl-expect-body">{b.body}</span>}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="stack-sm" aria-labelledby="wl-prog-h">
           <h2 id="wl-prog-h" className="eyebrow">{copy["stay.program_title"]}</h2>

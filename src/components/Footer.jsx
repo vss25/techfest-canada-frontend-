@@ -3,6 +3,7 @@ import { openCookieSettings } from "../lib/trackers";
 import { useEffect, useState } from "react";
 import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
 import StoreBadges from "./StoreBadges";
+import { WAITLIST_FORM_URL, goToWaitlistForm } from "../lib/stayUpdated";
 
 // Used when the matching Site settings field is empty.
 const DEFAULT_SOCIAL = {
@@ -45,8 +46,9 @@ export default function Footer() {
           <StoreBadges where="footer" size="sm" />
         </div>
 
-        {/* The TTFC 2027 waitlist (Oct 23 2026) */}
-        <Link to="/stay-updated"
+        {/* The TTFC 2027 waitlist (Oct 23 2026): lands on its form; on /stay-updated itself it scrolls to the form. */}
+        <Link to={WAITLIST_FORM_URL}
+          onClick={function (e) { if (window.location.pathname === "/stay-updated") { e.preventDefault(); goToWaitlistForm(); } }}
           style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 18px", borderRadius: 999, border: "1px solid " + (dark ? "rgba(155,135,245,0.30)" : "rgba(122,63,209,0.25)"), color: dark ? "#ffffff" : "#0d0520", fontSize: "0.88rem", fontWeight: 700, textDecoration: "none", transition: "opacity 0.2s ease" }}
           onMouseEnter={function (e) { e.currentTarget.style.opacity = "0.75"; }}
           onMouseLeave={function (e) { e.currentTarget.style.opacity = "1"; }}

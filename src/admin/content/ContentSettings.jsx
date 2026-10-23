@@ -10,7 +10,7 @@ import { useAdmin } from "../adminContext";
 
 /* One consistent editor for the texts & switches in GET/PUT /api/console/app-content.
    Used by Website switches → Website options (scope "website"), App text & switches (scope "app") and
-   2027 waitlist › Wording (scope "stay").
+   2027 waitlist › Wording (scope "stay") and › 2027 journey (scope "journey": the heading and introduction).
    Settings only management may change (ticket sales, pass upgrades: REGISTRY `management`, or the
    server's `managementOnly`) show disabled with "Management only" for everyone else; the server
    refuses them too. The guest offer's settings (HIDDEN_KEYS) aren't shown at all. */
@@ -29,6 +29,7 @@ const SAVED = {
   website: "Saved — live on the website within about a minute",
   app: "Saved — phones pick it up within about a minute",
   stay: "Saved — live on the waitlist page and in the web app within about a minute",
+  journey: "Saved — live on the waitlist page and in the web app within about a minute",
 };
 const clip = (s, n = 140) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 

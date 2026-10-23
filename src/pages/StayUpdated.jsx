@@ -1,30 +1,34 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ArrowDown, ArrowRight, Award, CheckCircle2, Coffee, Cpu, Factory, Handshake, MapPin, Mic2, Store, Users, UtensilsCrossed } from "lucide-react";
+import { ArrowDown, ArrowRight, CheckCircle2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import JourneyView from "../components/StayJourney";
 import useSiteSettings, { PUBLIC_API } from "../hooks/useSiteSettings";
-import { INTERESTS, blocks, checkForm, goToWaitlistForm, heroParts, joinWaitlist, lines, sourceFrom, stayFrom } from "../lib/stayUpdated";
+import { INTERESTS, checkForm, goToWaitlistForm, heroParts, joinWaitlist, sourceFrom, stayFrom } from "../lib/stayUpdated";
+import { journeyFrom } from "../lib/stayJourney";
 
 /* =========================================================
    /stay-updated: the TTFC 2027 waitlist (Oct 23 2026).
    The organiser: "Stay-updated to have preview of 2027 events and
    an bar to add the email and join the waitlist to attend. Also
    tickmark on sponsorship, exhibitor or delegation interest."
-   A teaser with no invented facts: "TTFC 2027 · Toronto · Dates to
-   be announced", the five technology pillars and five applied
-   sectors, what to expect (things true of TTFC 2026) and "1000+
-   attendees across 2 days"; then the waitlist bar: email + phone
-   (both required), three ticks, the consent line, and an in-place
-   thank-you with the server's message. Every word is a stay.* app
-   content key (Admin › Sales & emails › 2027 waitlist › Wording),
+   No invented facts: the hero ("TTFC 2027 · Toronto · November
+   2027"), the waitlist bar right under it (email + phone, both
+   required, three ticks, the consent line, an in-place thank-you
+   with the server's message), then the 2027 journey (the
+   organiser, Oct 23 2026: "Put canada's map and show cities to
+   show the journey"): a map of Canada with the stops in order and
+   the list of stops (components/StayJourney.jsx; the stops are the
+   stay.journey key, edited in Admin › Sales & emails › 2027
+   waitlist › 2027 journey). The 5 × 5 programme and "What to
+   expect" were removed the same day; no attendee count on 2027
+   material. Every word is a stay.* app content key (… › Wording),
    with the defaults in src/lib/stayUpdated.js. ?source=ios|android|
    webapp (links from the apps) is sent with the form. No store
    badges on this page. Light and dark like the rest of the site.
    The web app has the same page at /app/stay-updated.
 ========================================================= */
-
-const EXPECT_ICONS = [Mic2, Award, Store, Coffee, UtensilsCrossed, Handshake];
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => typeof document !== "undefined" && document.body.classList.contains("dark-mode"));
@@ -193,14 +197,17 @@ export default function StayUpdated() {
   useSeo(copy["stay.seo_title"], copy["stay.seo_description"]);
 
   const hero = heroParts(copy["stay.hero_title"]);
-  const pillars = lines(copy["stay.pillars"]);
-  const sectors = lines(copy["stay.sectors"]);
-  const expect = blocks(copy["stay.expect"]);
-  const briefings = blocks(copy["stay.briefings"]);
+  const stops = journeyFrom(copy["stay.journey"]);
 
   const t = dark
     ? { bg: "#06020f", bg2: "#0b0518", text: "#ffffff", mid: "rgba(225,215,255,0.8)", dim: "rgba(200,185,255,0.6)", card: "rgba(255,255,255,0.045)", line: "rgba(155,135,245,0.2)", accent: "#c4adff", chip: "rgba(155,135,245,0.16)", input: "rgba(255,255,255,0.06)", err: "#ff9b9b", skyline: 0.16 }
     : { bg: "#faf9ff", bg2: "#f2eefc", text: "#0d0520", mid: "rgba(13,5,32,0.72)", dim: "rgba(13,5,32,0.55)", card: "#ffffff", line: "rgba(122,63,209,0.16)", accent: "#6a2fc4", chip: "rgba(122,63,209,0.09)", input: "#ffffff", err: "#b42318", skyline: 0.22 };
+  // The journey's map and list (components/StayJourney.jsx): the land in a soft brand tint, opaque labels.
+  const journeyVars = {
+    "--jv-text": t.text, "--jv-mid": t.mid, "--jv-card": dark ? "#0f0820" : "#ffffff", "--jv-line": t.line, "--jv-accent": t.accent, "--jv-chip": t.chip,
+    "--jv-land": dark ? "rgba(155,135,245,0.2)" : "rgba(122,63,209,0.09)", "--jv-land-edge": dark ? "rgba(196,173,255,0.45)" : "rgba(122,63,209,0.3)",
+    "--jv-route": dark ? "#c4adff" : "#6a2fc4", "--jv-label-bg": dark ? "#150b2c" : "#ffffff",
+  };
 
   return (
     <>
@@ -210,7 +217,7 @@ export default function StayUpdated() {
         "--su-accent": t.accent, "--su-chip": t.chip, "--su-input": t.input, "--su-err": t.err,
       }}>
         <style>{`
-          .su { background: var(--su-bg); color: var(--su-text); min-height: 100vh; overflow-x: hidden; }
+          .su { background: var(--su-bg); color: var(--su-text); min-height: 100vh; overflow-x: hidden; overflow-x: clip; }
           .su-wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
           .su-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
           .su-hero { position: relative; padding: clamp(100px, 12vw, 132px) 0 clamp(56px, 7vw, 88px); text-align: center; isolation: isolate; }
@@ -232,8 +239,6 @@ export default function StayUpdated() {
             background: var(--su-card); font-size: clamp(13px, 2vw, 17px); font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--su-text); }
           .su-intro { max-width: 640px; margin: 22px auto 0; font-size: clamp(16px, 2.1vw, 19px); line-height: 1.6; color: var(--su-mid); }
           .su-hero-cta { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 18px; margin-top: 30px; }
-          .su-stat { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--su-line);
-            background: var(--su-card); font-weight: 700; font-size: 15px; color: var(--su-text); }
           .su-btn, .su-cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 26px; border: 0; border-radius: 999px;
             background: linear-gradient(135deg, #7a3fd1 0%, #f5a623 100%); color: #fff; font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 800;
             letter-spacing: 1px; text-transform: uppercase; text-decoration: none; cursor: pointer; box-shadow: 0 6px 20px rgba(122,63,209,0.28); transition: transform .15s, box-shadow .15s, opacity .15s; white-space: nowrap; }
@@ -245,25 +250,7 @@ export default function StayUpdated() {
           .su-sec--alt { background: var(--su-bg2); }
           .su-h2 { margin: 0; font-family: 'Orbitron', sans-serif; font-size: clamp(24px, 3.6vw, 34px); font-weight: 800; line-height: 1.15; }
           .su-lede { max-width: 680px; margin: 12px 0 0; font-size: 17px; line-height: 1.6; color: var(--su-mid); }
-          .su-grid2 { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); margin-top: 28px; }
-          .su-card { padding: 24px 22px; border-radius: 20px; background: var(--su-card); border: 1px solid var(--su-line); }
-          .su-h3 { margin: 0; font-size: 14px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: var(--su-accent); display: flex; align-items: center; gap: 8px; }
-          .su-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 4px; counter-reset: su; }
-          .su-list li { counter-increment: su; display: flex; align-items: baseline; gap: 12px; padding: 10px 0; border-top: 1px solid var(--su-line); font-size: 17px; font-weight: 600; line-height: 1.35; }
-          .su-list li:first-child { border-top: 0; }
-          .su-list li::before { content: counter(su, decimal-leading-zero); flex: none; width: 26px; font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 800; color: var(--su-accent); }
-          .su-cities { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
-          /* The first event is the main festival: a full-width card above the one-day briefings. */
-          .su-cities li:first-child { grid-column: 1 / -1; background: linear-gradient(135deg, var(--su-chip), var(--su-card)); }
-          .su-cities li:first-child b { font-size: 22px; }
-          .su-cities li { display: flex; gap: 12px; align-items: flex-start; padding: 18px; border-radius: 18px; background: var(--su-card); border: 1px solid var(--su-line); min-width: 0; }
-          .su-cities b { display: block; font-size: 18px; line-height: 1.25; }
-          .su-cities span.su-when { display: block; margin-top: 4px; font-size: 14px; color: var(--su-mid); }
-          .su-expect { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
-          .su-expect li { display: flex; gap: 14px; align-items: flex-start; }
-          .su-ico { flex: none; width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; background: var(--su-chip); color: var(--su-accent); }
-          .su-expect b { display: block; font-size: 17px; line-height: 1.3; }
-          .su-expect p { margin: 5px 0 0; font-size: 15px; line-height: 1.55; color: var(--su-mid); }
+          .su-journey { margin-top: 28px; }
           .su-join { position: relative; border-radius: 26px; padding: clamp(24px, 4vw, 40px); background: var(--su-card); border: 1px solid var(--su-line);
             box-shadow: 0 24px 60px rgba(122,63,209,${dark ? 0.22 : 0.12}); overflow: hidden; }
           .su-join::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, #7a3fd1 0 40%, #d9468f 40% 75%, #f5a623 75% 100%); }
@@ -324,7 +311,6 @@ export default function StayUpdated() {
             <p className="su-intro">{copy["stay.hero_intro"]}</p>
             <div className="su-hero-cta">
               <a href="#join" className="su-cta">{copy["stay.button"]} <ArrowDown size={16} aria-hidden="true" /></a>
-              {copy["stay.stat"] && <span className="su-stat"><Users size={18} aria-hidden="true" style={{ color: t.accent }} />{copy["stay.stat"]}</span>}
             </div>
           </div>
         </section>
@@ -339,54 +325,14 @@ export default function StayUpdated() {
           </div>
         </section>
 
-        {briefings.length > 0 && (
-          <section className="su-sec" aria-labelledby="su-brief">
-            <div className="su-wrap">
-              <h2 id="su-brief" className="su-h2">{copy["stay.briefings_title"]}</h2>
-              {copy["stay.briefings_intro"] && <p className="su-lede">{copy["stay.briefings_intro"]}</p>}
-              <ul className="su-cities">
-                {briefings.map((b, i) => (
-                  <li key={`${b.title}-${i}`}>
-                    <span className="su-ico" aria-hidden="true"><MapPin size={20} /></span>
-                    <span><b>{b.title}</b>{b.body && <span className="su-when">{b.body}</span>}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        )}
-
-        <section className="su-sec su-sec--alt" aria-labelledby="su-prog">
+        {/* The 2027 journey (the organiser, Oct 23 2026): the map of Canada and the stops, in order. */}
+        <section className="su-sec" aria-labelledby="su-journey">
           <div className="su-wrap">
-            <h2 id="su-prog" className="su-h2">{copy["stay.program_title"]}</h2>
-            <p className="su-lede">{copy["stay.program_intro"]}</p>
-            <div className="su-grid2">
-              <div className="su-card">
-                <h3 className="su-h3"><Cpu size={18} aria-hidden="true" />{copy["stay.pillars_title"]}</h3>
-                <ol className="su-list">{pillars.map((x) => <li key={x}>{x}</li>)}</ol>
-              </div>
-              <div className="su-card">
-                <h3 className="su-h3"><Factory size={18} aria-hidden="true" />{copy["stay.sectors_title"]}</h3>
-                <ol className="su-list">{sectors.map((x) => <li key={x}>{x}</li>)}</ol>
-              </div>
+            <h2 id="su-journey" className="su-h2">{copy["stay.journey_title"]}</h2>
+            {copy["stay.journey_intro"] && <p className="su-lede">{copy["stay.journey_intro"]}</p>}
+            <div className="su-journey" style={journeyVars}>
+              <JourneyView stops={stops} mapTitle={`Map of Canada: ${copy["stay.journey_title"]}`} />
             </div>
-          </div>
-        </section>
-
-        <section className="su-sec" aria-labelledby="su-expect">
-          <div className="su-wrap">
-            <h2 id="su-expect" className="su-h2">{copy["stay.expect_title"]}</h2>
-            <ul className="su-expect">
-              {expect.map((b, i) => {
-                const Icon = EXPECT_ICONS[i % EXPECT_ICONS.length];
-                return (
-                  <li key={`${b.title}-${i}`}>
-                    <span className="su-ico" aria-hidden="true"><Icon size={21} /></span>
-                    <span><b>{b.title}</b>{b.body && <p>{b.body}</p>}</span>
-                  </li>
-                );
-              })}
-            </ul>
           </div>
         </section>
       </main>

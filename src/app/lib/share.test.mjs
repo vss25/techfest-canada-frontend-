@@ -2,7 +2,7 @@
 // Run: node --test src/app/lib/share.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { caption, copiedNote, INSTAGRAM_INBOX, orderedItems, sharePlan, shareUrl } from "./share.js";
+import { caption, copiedNote, INSTAGRAM_INBOX, orderedItems, photosBesideCard, sharePlan, shareUrl } from "./share.js";
 import { hashtags, normalize, overflow, runs, textStyle, tiles } from "./shareCardLayout.js";
 
 test("caption per app", () => {
@@ -26,6 +26,26 @@ test("media first, caption last", () => {
   assert.deepEqual(orderedItems("linkedin", "card", ["p1"], ["v"], "cap"), ["card", "p1", "cap"]);
   assert.equal(copiedNote("instagram"), "Pick Instagram, then send it to a chat. Link copied too.");
   assert.equal(copiedNote("whatsapp"), "Pick WhatsApp. Caption copied too.");
+});
+
+test("each photo goes once: the card's photos aren't sent again (WhatsApp showed them twice, Oct 23 2026)", () => {
+  const photo = (file, shown = true) => ({ file, isVideo: false, shown });
+  const video = (file) => ({ file, isVideo: true, shown: true });
+  // A one-photo post: the card alone (it shows the photo), the caption with the link as its text.
+  const one = photosBesideCard([photo("p1")]);
+  assert.deepEqual(one, []);
+  const cap = caption("TTFC", "Doors open at 8", "https://example.com/agenda", "whatsapp");
+  assert.deepEqual(orderedItems("whatsapp", "card", one, [], cap), ["card", cap]);
+  assert.deepEqual(orderedItems(null, "card", one, [], cap), ["card", cap]);
+  assert.ok(cap.includes("https://example.com/agenda") && cap.includes("thetechfestival.com"), "the link stays in the text");
+  // Three photos fill the card; from the fourth on they're behind "+N", so those go as files.
+  assert.deepEqual(photosBesideCard([photo("p1"), photo("p2"), photo("p3")]), []);
+  assert.deepEqual(photosBesideCard([photo("p1"), photo("p2"), photo("p3"), photo("p4"), photo("p5")]), ["p4", "p5"]);
+  // A video takes a tile too; it isn't a photo (it still goes as the video).
+  assert.deepEqual(photosBesideCard([video("v1"), photo("p1"), photo("p2"), photo("p3")]), ["p3"]);
+  // A photo the card couldn't draw goes as a file; one that didn't download can't.
+  assert.deepEqual(photosBesideCard([photo("p1"), photo("p2", false), photo(null)]), ["p2"]);
+  assert.deepEqual(photosBesideCard([]), []);
 });
 
 test("every share tap does something, decided before any await (Oct 22 2026)", () => {

@@ -1,5 +1,5 @@
 import * as L from "./shareCardLayout.js";
-import { caption, orderedItems, PLATFORM_LABEL, sharePlan, SITE_URL } from "./share.js";
+import { caption, orderedItems, photosBesideCard, PLATFORM_LABEL, sharePlan, SITE_URL } from "./share.js";
 import { fileURL } from "./config.js";
 import { initialsOf, showAlert } from "./ui.js";
 
@@ -12,8 +12,9 @@ import { initialsOf, showAlert } from "./ui.js";
    The card is prepared when the share sheet opens; a tap on an
    app then acts at once (lib/share.js sharePlan): X / LinkedIn
    open their composer, Instagram the share sheet with a link
-   for a chat, WhatsApp / More… the share sheet with the card
-   (or the caption alone if the card isn't ready). Pictures are
+   for a chat, WhatsApp / More… the share sheet with the card,
+   any photos it doesn't show, a video and the caption (or the
+   caption alone if the card isn't ready). Pictures are
    fetched as blobs (CORS) and drawn from those, so the canvas
    is never tainted.
 ========================================================= */
@@ -338,7 +339,8 @@ export async function prepareShare(source) {
   return {
     source,
     card: new File([png], "TTFC-post-card.png", { type: "image/png" }),
-    photos: loaded.filter((l) => !l.isVideo && l.file).map((l) => l.file),
+    // Not the photos already drawn on the card: WhatsApp showed those twice (Oct 23 2026).
+    photos: photosBesideCard(loaded.map((l) => ({ file: l.file, isVideo: l.isVideo, shown: !!l.pic }))),
     videos: loaded.filter((l) => l.isVideo && l.file).map((l) => l.file),
   };
 }

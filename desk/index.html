@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>TTFC Check-in</title>
+    <!-- Unlisted staff tool: never indexed, never followed, never cached by search engines. -->
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="description" content="TTFC 2026 guest check-in, for TTFC staff and volunteers." />
+    <meta name="theme-color" content="#0B0823" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="TTFC Check-in" />
+    <meta name="application-name" content="TTFC Check-in" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no, email=no, address=no" />
+    <!-- The manifest and icons sit in the app's own folder (relative links: this page is only ever served there). -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="96x96" href="icons/icon-96.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+    <style>
+      html { background: #0B0823; }
+      html[data-theme="light"] { background: #F6F4FB; }
+      body { margin: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="ci-root"></div>
+    <noscript>TTFC Check-in needs JavaScript.</noscript>
+    <script type="module" src="/src/checkin/main.jsx"></script>
+  </body>
+</html>

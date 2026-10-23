@@ -57,9 +57,32 @@
     {
       "source": "/fact-sheet/(.*)",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/checkin-j0s8e5p4akvh/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
+        { "key": "Referrer-Policy", "value": "no-referrer" }
+      ]
+    },
+    {
+      "source": "/checkin-j0s8e5p4akvh/sw.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    },
+    {
+      "source": "/checkin-j0s8e5p4akvh/manifest.webmanifest",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" },
+        { "key": "Content-Type", "value": "application/manifest+json" }
+      ]
     }
   ],
   "redirects": [
+    {
+      "source": "/checkin-j0s8e5p4akvh",
+      "destination": "/checkin-j0s8e5p4akvh/",
+      "permanent": false
+    },
     {
       "source": "/first-timers",
       "destination": "/briefings",
@@ -78,6 +101,10 @@
     {
       "source": "/app/(.*)",
       "destination": "/app/index.html"
+    },
+    {
+      "source": "/checkin-j0s8e5p4akvh/(.*)",
+      "destination": "/checkin-j0s8e5p4akvh/index.html"
     },
     {
       "source": "/(.*)",

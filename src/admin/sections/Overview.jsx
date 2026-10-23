@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  Ticket, DollarSign, Smartphone, ShieldAlert, Power, PenSquare, ScanLine, Megaphone, ArrowRight, Activity, TicketPlus, Contact, Utensils,
+  Ticket, DollarSign, Smartphone, ShieldAlert, Power, PenSquare, ScanLine, Megaphone, ArrowRight, Activity, TicketPlus, Contact, Utensils, ClipboardList,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { useAdmin } from "../adminContext";
@@ -16,6 +16,7 @@ const greeting = () => {
 const quickActions = (isManagement) => [
   { to: "/admin/issued-passes", label: "Give a pass", body: "Create a pass and email it", icon: TicketPlus },
   { to: "/admin/people", label: "Find someone", body: "Their pass, meals, RSVP and emails", icon: Contact },
+  { to: "/admin/event-summary", label: "Event summary", body: "Passes, RSVPs, meals, check-in", icon: ClipboardList },
   { to: "/admin/rsvps", label: "Meal headcounts", body: "Who's coming to each meal and event", icon: Utensils },
   { to: "/admin/check-in", label: "Check-in", body: "Scan tickets at the door", icon: ScanLine },
   { to: "/admin/app/moderation", label: "Moderation", body: "Hide or approve flagged posts", icon: ShieldAlert },

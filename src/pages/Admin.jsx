@@ -42,6 +42,7 @@ import Waitlist2027 from "../admin/leads/Waitlist2027";
 import IndiaPavilion from "../admin/leads/IndiaPavilion";
 import FormSubmissions from "../admin/leads/FormSubmissions";
 import Rsvps from "../admin/leads/Rsvps";
+import EventSummary from "../admin/leads/EventSummary";
 import CatalystNominations from "../admin/awards/CatalystNominations";
 import JuryJurors from "../admin/awards/JuryJurors";
 import JuryAllocation from "../admin/awards/JuryAllocation";
@@ -241,6 +242,7 @@ function AdminPanel() {
             <Route path="brochure-downloads" element={<BrochureDownloads />} />
             <Route path="india-pavilion" element={<IndiaPavilion />} />
             <Route path="form-submissions" element={<FormSubmissions />} />
+            <Route path="event-summary" element={<EventSummary />} />
             <Route path="rsvps" element={<Rsvps />} />
             <Route path="awards" element={<CatalystNominations />} />
             <Route path="awards/jury" element={<JuryJurors />} />

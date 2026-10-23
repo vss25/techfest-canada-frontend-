@@ -15,7 +15,9 @@ import { detectOS, isStandalone } from "../../lib/pwaPlatform";
      service worker (sw/sw.js) shows the pushes; a tap opens
      the chat: /app/chat/<senderId>.
    • iPhone and iPad only get Web Push in the app added to the
-     Home Screen (iOS 16.4+): in a Safari tab we say so instead.
+     Home Screen (iOS 16.4+): in a Safari tab we point to the TTFC
+     app on the App Store instead (Oct 22 2026: no more Home
+     Screen install prompts).
    • Until the server has this device (it couldn't be reached,
      or demo mode), the app's own chat-list check notifies while
      the app is open in the background.
@@ -96,7 +98,7 @@ export async function turnOnNotifications() {
   const st = webPush.get();
   if (st.busy) return false;
   if (st.support !== "ok") {
-    showAlert("Notifications aren't available here", st.support === "install" ? "Add TTFC to your Home Screen to get message notifications." : "This browser can't show notifications.");
+    showAlert("Notifications aren't available here", st.support === "install" ? "Get the TTFC app from the App Store or Google Play to get message notifications." : "This browser can't show notifications.");
     return false;
   }
   webPush.set({ busy: true });

@@ -4,11 +4,13 @@ import StoreBadges from "./StoreBadges";
 import { phoneAppUrl } from "../lib/appStores";
 
 /* =========================================================
-   "Get the TTFC app on your phone" for computers: the web app
-   is phone-only, so a computer gets a QR code to /app on the
-   phone (opening the install guide there) and the store badges.
-   Shown by the 5-second prompt (InstallAppPrompt) and by the
-   menu's "Get the TTFC app" card on a computer (Navbar).
+   "Get the TTFC app on your phone" for computers: the App Store
+   and Google Play badges, and a QR code to /app/install on the
+   phone, which puts that phone's own store first (Oct 22 2026:
+   the store apps, never the web app's Home Screen install).
+   Shown by the 5-second prompt (InstallAppPrompt), the menu's
+   "Get the TTFC app" card on a computer (Navbar) and the
+   homepage's "Get the TTFC app" section (GetAppSection).
    `actions` = [{ label, onClick }] under the panel; Escape and
    the backdrop call onDismiss.
 ========================================================= */
@@ -42,11 +44,11 @@ export default function PhoneAppPanel({ onDismiss, actions = [], where = "prompt
           <img src="/app/icons/icon-192.png" width="48" height="48" alt="" style={{ borderRadius: 12, flex: "none", boxShadow: "0 4px 14px rgba(0,0,0,0.4)" }} />
           <h2 id="ttfc-phone-title" style={{ margin: 0, font: `700 20px/1.25 ${FONT}`, textAlign: "left" }}>Get the TTFC app on your phone</h2>
         </div>
-        <p style={{ margin: "10px 0 0", font: `400 15px/1.45 ${FONT}`, color: "rgba(219,206,255,0.82)" }}>Your pass, the schedule, live polls and chat.</p>
+        <p style={{ margin: "10px 0 0", font: `400 15px/1.45 ${FONT}`, color: "rgba(219,206,255,0.82)" }}>Free on the App Store and Google Play. Your pass, the schedule, live polls and chat.</p>
         <div style={{ background: "#fff", borderRadius: 16, padding: 14, margin: "16px auto 8px", width: "fit-content" }}>
-          <QRCodeSVG value={phoneAppUrl("/app/", { install: true })} size={176} level="M" title="QR code to open the TTFC app on your phone" />
+          <QRCodeSVG value={phoneAppUrl()} size={176} level="M" title="QR code that opens the TTFC app's App Store and Google Play links on your phone" />
         </div>
-        <p style={{ margin: "0 0 16px", font: `600 15px/1.4 ${FONT}` }}>Scan with your phone's camera</p>
+        <p style={{ margin: "0 0 16px", font: `600 15px/1.4 ${FONT}` }}>Scan with your phone's camera to get the app</p>
         <StoreBadges where={where} />
         <div style={{ display: "flex", justifyContent: actions.length > 1 ? "space-between" : "center", flexWrap: "wrap", gap: 4, marginTop: 10 }}>
           {actions.map((a, i) => <button key={a.label} type="button" onClick={a.onClick} autoFocus={i === 0} style={link}>{a.label}</button>)}

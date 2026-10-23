@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CalendarClock, ChevronDown, ChevronRight, Mail, Megaphone, ShieldCheck, Ticket, UserPlus, Users } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth } from "../lib/auth";
@@ -94,7 +94,7 @@ export default function Notifications() {
           );
         })}
         {/* Web only: a browser tab can't wake itself for a reminder. */}
-        <p className="tiny muted center" style={{ marginTop: 6 }}>Session reminders: the web app can't alert you when it's closed. Keep it open, or use the TTFC app on your phone for reminders.</p>
+        <p className="tiny muted center" style={{ marginTop: 6 }}>Session reminders: the web app can't alert you when it's closed. Keep it open, or <Link to="/install?from=reminders" style={{ color: "var(--pur-alt)", fontWeight: 700 }}>get the TTFC app</Link> from the App Store or Google Play for reminders.</p>
       </main>
     </div>
   );

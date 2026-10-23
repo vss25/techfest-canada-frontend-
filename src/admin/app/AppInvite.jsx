@@ -21,12 +21,14 @@ import EmailPreview from "./EmailPreview";
    Admin → Website & app → App invite email (Oct 20 2026)
    The organiser: "send emails to all people associated with the
    event to download the web app … allow customization as usual …
-   sent from enquire". One email, "Open the TTFC app", to everyone
-   with a pass or a role at TTFC 2026 (People), once per address:
-   the web app, how to add it to the home screen on an iPhone and on
-   Android, and the email to sign in with.
+   sent from enquire". One email to everyone with a pass or a role at
+   TTFC 2026 (People), once per address: since Oct 22–23 2026 "Get the
+   TTFC app" with the App Store and Google Play badges (the organiser:
+   "Prompt the users to download Android/iOS. Stop prompting people to
+   install the web app"), a small link to the web app, and the email
+   to sign in with (no home-screen steps any more).
      - Every word editable (management saves), with Reset to default,
-       the Google Play and App Store lines switched on or off, a live
+       the App Store and Google Play badges switched on or off, a live
        preview (desktop / phone, dark / light) and Send me a test.
      - Who gets it: counts, "Skip people already using the app" (on by
        default) and the list with why someone is left out.
@@ -331,7 +333,7 @@ export default function AppInvite() {
       <PageHeader
         eyebrow="Website & app"
         title="App invite email"
-        description="One email to everyone with a pass or a role at TTFC 2026: “Open the TTFC app”, how to add it to their home screen, and the email to sign in with. While the swag kit giveaway is on, it also says only people using the app can win the kit. Sent from enquire@thetechfestival.com."
+        description="One email to everyone with a pass or a role at TTFC 2026: “Get the TTFC app” with the App Store and Google Play badges, a small link to the web app, and the email to sign in with. While the swag kit giveaway is on, it also says only people using the app can win the kit. Sent from enquire@thetechfestival.com."
         actions={(
           <>
             <Button icon={ExternalLink} onClick={() => window.open("/app/", "_blank", "noopener")}>Open the web app</Button>
@@ -410,11 +412,11 @@ export default function AppInvite() {
           {template.loading && !t ? <LoadingState label="Loading the wording…" /> : template.error && !t ? <ErrorState error={template.error} onRetry={template.reload} /> : t && (
             <div className="flex flex-col gap-4">
               <div className="rounded-xl border border-ttfc-line px-3 py-3">
-                <p className="mb-2 text-sm font-semibold">Optional lines</p>
+                <p className="mb-2 text-sm font-semibold">Store badges</p>
                 <div className="flex flex-col gap-3">
                   {(t.optionsMeta || []).map((o) => (
                     <Switch key={o.key} checked={options[o.key] !== false} onChange={(v) => setDraft({ ...value, options: { ...options, [o.key]: v } })}
-                      label={o.label} description={o.key === "appStore" && !t.appStoreUrl ? `${o.hint} The iPhone app isn't live yet, so it doesn't show for now.` : o.hint} />
+                      label={o.label} description={o.key === "appStore" && !t.appStoreUrl ? `${o.hint} The App Store link isn't set on the server, so it doesn't show for now.` : o.hint} />
                   ))}
                 </div>
               </div>
@@ -600,7 +602,7 @@ export default function AppInvite() {
         title={`Email ${one?.name || one?.email || ""} the app invite?`}
         body={one?.status === "sent"
           ? `They already got it${one.sentAt ? ` ${when(one.sentAt)}` : ""}. This sends it again to ${one.email} (not within ${data?.cooldownDays || 3} days of the last one).`
-          : `Sends “Open the TTFC app” to ${one?.email}.${one?.usingApp ? " They already use the app." : ""} Sending to everyone skips them afterwards.`}
+          : `Sends the app invite (“Get the TTFC app”) to ${one?.email}.${one?.usingApp ? " They already use the app." : ""} Sending to everyone skips them afterwards.`}
         confirmLabel={one?.status === "sent" ? "Send again" : "Send"}
         onConfirm={async () => {
           await api.post(`${BASE}/send-one`, { email: one.email });

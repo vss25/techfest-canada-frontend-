@@ -737,7 +737,7 @@ function OutreachCard({ p, outreach, onSent }) {
         {outreach.appInvite && (
           <OutreachRow icon={Smartphone} title="App invite email" verdict={outreach.appInvite} button="Send app invite"
             status={<AppInviteSeen ai={outreach.appInvite} />}
-            confirmTitle={`Send ${p.name} the app invite?`} confirmBody={`To ${to}. “Open the TTFC app”: the web app, how to add it to their home screen, and the email to sign in with.`}
+            confirmTitle={`Send ${p.name} the app invite?`} confirmBody={`To ${to}. “Get the TTFC app”: the App Store and Google Play badges, a small link to the web app, and the email to sign in with.`}
             path={`${base}/app-invite`} sentMsg={(e) => `App invite sent to ${e}`} onSent={onSent} />
         )}
       </div>

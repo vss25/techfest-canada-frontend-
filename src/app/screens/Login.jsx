@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, Download, Eye, EyeOff, HelpCircle, KeyRound, Ticket, ArrowRight, Send, CheckCircle2, Loader2 } from "lucide-react";
+import { ChevronLeft, Eye, EyeOff, HelpCircle, KeyRound, Ticket, ArrowRight, Send, CheckCircle2, Loader2 } from "lucide-react";
 import { useStore, session } from "../lib/store";
 import { auth, enterGuest, requestEmailLink, ticketLogin, staffSignIn, verifyEmailCode, verifyEmailToken, cleanTicketId, isSignedIn } from "../lib/auth";
 import { pwa } from "../lib/pwa";
 import { EVENT } from "../lib/config";
 import { WelcomeCard } from "../components/AppNotices";
+import StoreBadges from "../../components/StoreBadges";
 
 /* =========================================================
    Sign-in, as in the apps: an emailed sign-in link + 6-digit
@@ -328,8 +329,12 @@ export default function Login() {
         {(mode === "email" || mode === "pass") && (
           <button type="button" className="staff-link" onClick={() => go("staff")}>Staff sign-in</button>
         )}
-        {!p.installed && !standalone && mode === "choose" && (
-          <Link to="/install" className="login-install"><Download aria-hidden="true" />Install the app</Link>
+        {/* Oct 22 2026: the App Store / Google Play apps (this phone's first), no web app install. */}
+        {mode === "choose" && (
+          <div className="login-get-app">
+            <span>Get the TTFC app</span>
+            <StoreBadges where="login" size="sm" />
+          </div>
         )}
         <p className="legal">
           By continuing, you confirm you're 18+ and agree to The&nbsp;Tech&nbsp;Festival&nbsp;Canada's{" "}

@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { detectOS, isForcedPlatform, isMobileDevice, isStandalone, markInstalled, markedInstalled } from "../lib/pwaPlatform";
 import { track } from "../lib/pwaEvents";
+import StoreBadges from "./StoreBadges";
 
 // Computers only (it carries the QR code library): phones never download it.
 const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
@@ -12,12 +13,13 @@ const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
    after 5 s of visible time (counted across page views), only
    when staff switch it on (App content › flag.pwaPrompt) or
    with ?pwa-preview=1.
-   • Phones and tablets: a bottom sheet; "Show me how" opens
-     /app/?install=1, where the step-by-step guide (and Chrome's
-     own install prompt) takes over, so installs land on /app/.
-   • Computers: the web app is phone-only, so "Get the TTFC app
-     on your phone": a QR code to /app on the phone plus the
-     store badges (PhoneAppPanel). No desktop install.
+   • Phones and tablets: a bottom sheet with the App Store and
+     Google Play badges, this phone's own store first (Oct 22
+     2026: the store apps; the web app isn't offered as a Home
+     Screen install any more).
+   • Computers: "Get the TTFC app on your phone": the store
+     badges and a QR code to /app/install on the phone
+     (PhoneAppPanel).
    "Not now" (or Escape / the backdrop) snoozes it for 7 days.
 ========================================================= */
 
@@ -137,10 +139,6 @@ export default function InstallAppPrompt() {
     track("pwa_prompt_dismissed", { reason: "already_installed" });
     close();
   };
-  const showMe = () => {
-    ss.set(SEEN_KEY, "1");
-    window.location.assign("/app/?install=1&from=prompt");
-  };
 
   if (isDesktop) {
     return (
@@ -157,7 +155,7 @@ export default function InstallAppPrompt() {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100000, display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: font }}>
-      <style>{"@keyframes ttfcSheetIn{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}@media (prefers-reduced-motion: reduce){.ttfc-sheet{animation:none!important}}.ttfc-sheet button:focus-visible{outline:2.5px solid #fff;outline-offset:2px}"}</style>
+      <style>{"@keyframes ttfcSheetIn{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}@media (prefers-reduced-motion: reduce){.ttfc-sheet{animation:none!important}}.ttfc-sheet button:focus-visible,.ttfc-sheet a:focus-visible{outline:2.5px solid #fff;outline-offset:2px}"}</style>
       <div onClick={notNow} aria-hidden="true" style={{ position: "absolute", inset: 0, background: "rgba(6,2,15,0.55)" }} />
       <section
         className="ttfc-sheet"
@@ -174,24 +172,17 @@ export default function InstallAppPrompt() {
           <div>
             <h2 id="ttfc-install-title" style={{ margin: 0, font: `700 20px/1.25 ${font}` }}>Get the TTFC app</h2>
             <p style={{ margin: "4px 0 0", font: `400 16px/1.4 ${font}`, color: "rgba(219,206,255,0.85)" }}>
-              Get the festival app: schedule, live polls, chat.
+              Your pass, the schedule, live polls and chat.
             </p>
           </div>
         </div>
         <p style={{ margin: "14px 0 18px", font: `400 15px/1.45 ${font}`, color: "rgba(219,206,255,0.78)" }}>
-          Free, no app store needed. It takes about 30 seconds and we'll show you every tap.
+          Free on the App Store and Google Play.
         </p>
-        <button
-          type="button"
-          onClick={showMe}
-          autoFocus
-          style={{ width: "100%", minHeight: 56, border: 0, borderRadius: 14, background: "#8B52E0", color: "#fff", font: `700 18px/1 ${font}`, cursor: "pointer" }}
-        >
-          Show me how
-        </button>
-        <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
-          <button type="button" onClick={notNow} style={link}>Not now</button>
-          <button type="button" onClick={already} style={link}>I've already installed it</button>
+        <StoreBadges where="prompt" />
+        <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 4, marginTop: 12 }}>
+          <button type="button" onClick={notNow} autoFocus style={link}>Not now</button>
+          <button type="button" onClick={already} style={link}>I already have the app</button>
         </div>
       </section>
     </div>

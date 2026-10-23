@@ -1,0 +1,42 @@
+// The App Store and Google Play links and which badge a device gets first.
+// Run: node --test src/lib/appStores.test.mjs
+import test from "node:test";
+import assert from "node:assert/strict";
+import { APP_STORE_URL, PLAY_STORE_URL, phoneAppUrl, storeNames, storePlan } from "./appStores.js";
+
+test("both store apps are live", () => {
+  assert.equal(APP_STORE_URL, "https://apps.apple.com/ca/app/the-tech-festival-canada/id6820764803");
+  assert.equal(PLAY_STORE_URL, "https://play.google.com/store/apps/details?id=com.atlaslinkmarkets.ttfc");
+  assert.equal(storeNames(), "the App Store or Google Play");
+});
+
+test("the phone's own store first and highlighted; a computer gets both, App Store first", () => {
+  const ids = (p) => p.stores.map((s) => s.id).join(",");
+  const ios = storePlan("ios");
+  assert.deepEqual([ids(ios), ios.primary, ios.phone], ["appstore,play", "appstore", true]);
+  assert.equal(ios.stores[0].url, APP_STORE_URL);
+  const android = storePlan("android");
+  assert.deepEqual([ids(android), android.primary], ["play,appstore", "play"]);
+  for (const os of ["desktop", "other", undefined]) {
+    const p = storePlan(os);
+    assert.deepEqual([ids(p), p.primary, p.phone], ["appstore,play", "", false]);
+  }
+});
+
+test("a store with no link never shows (no broken badge)", () => {
+  const noIos = { appstore: "", play: PLAY_STORE_URL };
+  const p = storePlan("ios", noIos);
+  assert.deepEqual([p.stores.map((s) => s.id), p.primary], [["play"], ""]);
+  assert.equal(storePlan("android", noIos).primary, "play");
+  assert.equal(storeNames(noIos), "Google Play");
+  assert.deepEqual(storePlan("desktop", { appstore: "", play: "" }).stores, []);
+  assert.equal(storeNames({ appstore: "", play: "" }), "");
+  assert.deepEqual(storePlan("ios", { appstore: "javascript:alert(1)", play: "" }).stores, []);
+});
+
+test("the desktop QR code opens the Get the TTFC app page on the phone", () => {
+  assert.equal(phoneAppUrl(), "https://www.thetechfestival.com/app/install?source=desktop-qr");
+  assert.equal(phoneAppUrl("/app/"), "https://www.thetechfestival.com/app/install?source=desktop-qr");
+  assert.equal(phoneAppUrl("/tickets"), "https://www.thetechfestival.com/app/install?source=desktop-qr");
+  assert.equal(phoneAppUrl("/app/session/x"), "https://www.thetechfestival.com/app/session/x?source=desktop-qr");
+});

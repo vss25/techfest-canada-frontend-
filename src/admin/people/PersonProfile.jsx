@@ -16,6 +16,8 @@ import RsvpEditor from "./RsvpEditor";
 import LogoPicker, { CompanyMark } from "./LogoPicker";
 import CodeLabel from "./CodeLabel";
 import { HideCard, HiddenBadge } from "./HideFromApp";
+import { MediaMark, PassBand } from "./MediaBadges";
+import { MEDIA, MEDIA_HELP, isMedia, otherTypes } from "./mediaMark";
 import { TEAM_TYPES, effectiveTypes, toggleType } from "../app/personTypes";
 import {
   ATTENDING_HINT, ATTENDING_LABELS, ATTENDING_STAGE_HINTS, ATTENDING_STAGE_LABELS, ATTENDING_TONE, OPENS_NOTE, TRACKED_FROM, nudgeCount, times,
@@ -57,6 +59,12 @@ import {
    hide someone causing trouble (shadow mode, they aren't told), with
    a private note; shown again with the option to take down what they
    posted while hidden. "Hidden from app" by their name.
+   Media Yes / No (Oct 23 2026, the organiser: "Media has privilege of
+   power pass with breakfast. Media yes is dark blue pass."): a switch
+   next to VIP (PATCH { media }, for accounts and pass-only people
+   alike; it's no longer one of the type chips, so there is one control),
+   the dark-blue Media mark by their name and their pass in its door
+   colour ("Media · Connect Pass", the server's `band`).
 ========================================================= */
 
 const DETAIL_KEYS = ["firstName", "lastName", "email", "phone", "linkedinUrl", "company", "jobTitle"];
@@ -70,13 +78,14 @@ const MARKS = [{ key: "auto", label: "Automatic" }, { key: "yes", label: "Yes" }
 const markKey = (m) => (m === true ? "yes" : m === false ? "no" : "auto");
 
 /* Their types as chips. An account: the App › People rules (stored types, automatic ones from their role
-   and passes, typesOff), Exhibitor is the Exhibitor switch. A pass-only person: Exhibitor and Media are saved
-   on their passes, Speaker comes from holding a Speaker Pass; the other types need an app account. */
-function TypeChips({ p, state, setState, exhibitor, setExhibitor, media, setMedia, disabled, canTeam }) {
+   and passes, typesOff), Exhibitor is the Exhibitor switch. A pass-only person: Exhibitor is saved on their
+   passes, Speaker comes from holding a Speaker Pass; the other types need an app account. Media isn't a chip:
+   it has its own Yes / No switch (MediaSwitch), so there's one control for it. */
+const CHIP_TYPES = PERSON_TYPES.filter((t) => t !== "media");
+function TypeChips({ p, state, setState, exhibitor, setExhibitor, disabled, canTeam }) {
   const acc = p.account;
-  const chips = PERSON_TYPES.map((t) => {
+  const chips = CHIP_TYPES.map((t) => {
     if (t === "exhibitor") return { t, on: exhibitor, toggle: () => setExhibitor(!exhibitor), note: p.exhibitorPass && exhibitor ? "from pass" : "" };
-    if (!acc && t === "media") return { t, on: media, toggle: () => setMedia(!media), note: media ? "on their passes" : "" };
     if (!acc) {
       if (t === "speaker") {
         const on = p.types.includes("speaker");
@@ -113,6 +122,29 @@ function TypeChips({ p, state, setState, exhibitor, setExhibitor, media, setMedi
   );
 }
 
+/* Media Yes / No, next to VIP, in Media's dark blue. Saved with PATCH { media }: an account's media type, or their
+   passes when they have no account (the account that claims one is Media too). */
+function MediaSwitch({ p, media, setMedia, disabled }) {
+  const fromPass = media && p.account && p.mediaPass && !(p.account.types || []).includes("media");
+  return (
+    <div className="mt-3 rounded-2xl border p-4 transition"
+      style={media ? { borderColor: MEDIA.bg, background: "rgba(11, 61, 145, 0.14)", boxShadow: `inset 4px 0 0 ${MEDIA.bg}` } : { boxShadow: `inset 4px 0 0 ${MEDIA.bg}` }}
+      data-media={media ? "yes" : "no"}>
+      <Switch checked={media} onChange={setMedia} disabled={disabled} label="Media" onColor={MEDIA.bg} description={MEDIA_HELP} />
+      <p className="mt-2 flex flex-wrap items-center gap-2 text-xs leading-relaxed text-ttfc-muted">
+        {media ? <MediaMark /> : <span className="font-semibold text-ttfc-text">No</span>}
+        <span>
+          {media ? "On any pass: the CxO Breakfasts, Networking Luncheons, Gala Dinner and Catalyst Awards Night. Their pass shows dark blue at the door and here."
+            : "Yes gives Power Pass privileges with the CxO Breakfasts on any pass, and the dark-blue pass colour."}
+          {" "}A pass's own Yes / No below still wins.
+        </span>
+      </p>
+      {fromPass && <p className="mt-1 text-xs text-ttfc-muted">From a pass of theirs marked Media.</p>}
+      {media && !p.account && <p className="mt-1 text-xs text-ttfc-muted">Saved on their passes (no app account yet).</p>}
+    </div>
+  );
+}
+
 function DetailsCard({ p, onSaved }) {
   const toast = useToast();
   const { isManagement } = useAdmin();
@@ -127,8 +159,8 @@ function DetailsCard({ p, onSaved }) {
   const [types, setTypes] = useState(startTypes);
   const [exhibitor, setExhibitor] = useState(!!p.exhibitor);
   const [vip, setVip] = useState(!!p.vip);
-  // Media for a pass-only person (saved on their passes); an account's Media is one of its types.
-  const startMedia = (p.types || []).includes("media");
+  // Media Yes / No: an account's media type, or saved on a pass-only person's passes (PATCH { media } either way).
+  const startMedia = isMedia(p);
   const [media, setMedia] = useState(startMedia);
   const [mark, setMark] = useState(startMark);
   const [saving, setSaving] = useState(false);
@@ -138,7 +170,7 @@ function DetailsCard({ p, onSaved }) {
   const typesChanged = !!p.account && (!sameList(types.types, startTypes.types) || !sameList(types.typesOff, startTypes.typesOff));
   const exChanged = exhibitor !== !!p.exhibitor;
   const vipChanged = vip !== !!p.vip;
-  const mediaChanged = !p.account && media !== startMedia;
+  const mediaChanged = media !== startMedia;
   const markChanged = mark !== startMark;
   const dirty = changed.length || typesChanged || exChanged || vipChanged || mediaChanged || markChanged;
   const set = (k) => (ev) => setForm((f) => ({ ...f, [k]: ev.target.value }));
@@ -187,10 +219,10 @@ function DetailsCard({ p, onSaved }) {
       <div className="mt-5">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ttfc-dim">Type</p>
         <TypeChips p={p} state={types} setState={setTypes} exhibitor={exhibitor} setExhibitor={setExhibitor}
-          media={media} setMedia={setMedia} disabled={disabled} canTeam={isManagement} />
+          disabled={disabled} canTeam={isManagement} />
         <p className="mt-2 text-xs leading-relaxed text-ttfc-dim">
-          Holding a Speaker Pass makes them a Speaker. Speakers, Media and VIPs get the CxO Breakfasts on any pass.
-          In the app, their own Profile page glows in their colour: VIP gold, Media dark blue, Speaker red, Staff purple, Volunteer orange, any other pass green.
+          Holding a Speaker Pass makes them a Speaker. Speakers and VIPs get the CxO Breakfasts on any pass; Media get Power Pass privileges with the CxO Breakfasts on any pass (the Media switch below).
+          Their pass colour, at the door and in the app: VIP gold, Media dark blue, Speaker red, Staff purple, Volunteer orange, any other pass green.
           {!p.account && " Without an app account, Exhibitor and Media are saved on their passes and Speaker comes from a Speaker Pass; the other types need an account."}
         </p>
       </div>
@@ -208,6 +240,7 @@ function DetailsCard({ p, onSaved }) {
           <p className="mt-2 text-xs text-ttfc-muted">Set on their pass before they had an app account.</p>
         )}
       </div>
+      <MediaSwitch p={p} media={media} setMedia={setMedia} disabled={disabled || !e.canEditMedia} />
       <div className="mt-3 rounded-2xl border border-ttfc-line p-4">
         <div className="flex flex-wrap items-center gap-2">
           <Mail className="h-4 w-4 text-ttfc-muted" aria-hidden="true" />
@@ -463,7 +496,7 @@ function PassesCard({ p, onSaved }) {
       )}
       {p.passes?.length > 0 && (
         <p className="mt-3 text-xs leading-relaxed text-ttfc-dim">
-          Automatic follows the pass: the luncheons come with Influence and up, the Gala Dinner and the Awards Night with Power, Apex and the Speaker Pass, the CxO Breakfasts with Apex, the Speaker Pass, and speakers, VIPs and media on any pass. Yes or No is for this pass only: it shows on their ticket in the app, in their pass emails and on the RSVP page, and counts them in the RSVP headcounts. Anything they already chose in their RSVP is never taken away.
+          Automatic follows the pass: the luncheons come with Influence and up, the Gala Dinner and the Awards Night with Power, Apex and the Speaker Pass, the CxO Breakfasts with Apex, the Speaker Pass, and speakers and VIPs on any pass. Media = Yes gets all four on any pass (Power Pass privileges with the CxO Breakfasts). Yes or No is for this pass only: it shows on their ticket in the app, in their pass emails and on the RSVP page, and counts them in the RSVP headcounts. Anything they already chose in their RSVP is never taken away.
           {e.canEditPass ? " Changing a pass is free and logged; it moves the inventory counts like an upgrade (the Speaker Pass has none)." : ""}
         </p>
       )}
@@ -833,7 +866,8 @@ function ProfileView({ id }) {
             <h1 className="text-2xl font-bold tracking-tight">{p.name}</h1>
             {p.appHidden && <HiddenBadge />}
             {p.vip && <Badge tone={VIP_TONE} icon={Crown}>{VIP_LABEL}</Badge>}
-            {p.types.map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t] || t}</Badge>)}
+            {isMedia(p) && <MediaMark />}
+            {otherTypes(p.types).map((t) => <Badge key={t} tone={TYPE_TONE[t]}>{TYPE_LABELS[t] || t}</Badge>)}
           </div>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-ttfc-muted">
             <CompanyMark url={p.logoUrl} name={p.company} size="sm" />
@@ -844,7 +878,12 @@ function ProfileView({ id }) {
             )}
           </p>
           <p className="mt-1.5 flex flex-wrap gap-2 text-xs">
-            <Badge tone={PASS_STATUS_TONE[p.passStatus]}>{p.pass ? `${p.pass.label}: ${PASS_STATUS_LABELS[p.passStatus]}` : "Pass: None"}</Badge>
+            {p.pass && p.band ? (
+              <>
+                <PassBand band={p.band} />
+                <Badge tone={PASS_STATUS_TONE[p.passStatus]}>{PASS_STATUS_LABELS[p.passStatus]}</Badge>
+              </>
+            ) : <Badge tone={PASS_STATUS_TONE[p.passStatus]}>{p.pass ? `${p.pass.label}: ${PASS_STATUS_LABELS[p.passStatus]}` : "Pass: None"}</Badge>}
             <Badge tone={RSVP_STATUS_TONE[r.status]}>{RSVP_STATUS_LABELS[r.status] || RSVP_STATUS_LABELS.none}{r.at ? ` · ${when(r.at)}` : ""}{r.status === "staff" && r.by ? ` · ${r.by}` : ""}</Badge>
             <span title={RSVP_EMAIL_HINT}>
               <Badge tone={p.rsvpEmail?.sent ? "good" : "neutral"} icon={Mail}>
@@ -879,7 +918,7 @@ function ProfileView({ id }) {
           {/* Hidden from the app: the first thing staff see on the right; otherwise the card sits further down. */}
           {data.appHide?.hidden && <HideCard personId={p.id} name={p.name} appHide={data.appHide} onChanged={reload} />}
           <OutreachCard p={p} outreach={data.outreach} onSent={reload} />
-          <DetailsCard key={JSON.stringify([p.name, p.firstName, p.lastName, p.email, p.phone, p.linkedinUrl, p.company, p.jobTitle, p.types, p.account, p.exhibitor, p.vip, p.rsvpEmail?.mark, p.rsvpEmail?.sent])} p={p} onSaved={reload} />
+          <DetailsCard key={JSON.stringify([p.name, p.firstName, p.lastName, p.email, p.phone, p.linkedinUrl, p.company, p.jobTitle, p.types, p.account, p.exhibitor, p.vip, p.media, p.rsvpEmail?.mark, p.rsvpEmail?.sent])} p={p} onSaved={reload} />
           <PassesCard p={p} onSaved={reload} />
           <LogoCard p={p} onSaved={reload} />
           <ContactCardCard items={data.contactCard} hasAccount={!!p.userId} />

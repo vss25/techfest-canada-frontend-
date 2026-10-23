@@ -12,7 +12,8 @@
      status    "success" | "already_checked_in" (200), "invalid" (404)
      badge     { key, label, bg, text }: the colour band, staff-facing
                (VIP gold > Media > Speaker > Staff > Volunteer > the
-               pass, green); painted as sent
+               pass, green); painted as sent, with the pass's name small
+               beside any word that isn't it ("Media · Connect Pass")
      avatarUrl uploaded photo (/api/files/avatar/…, on the API's
                host), else a speaker photo (https), else ""
      passName, name, title, company, extras { cxo, lunch, gala,
@@ -41,6 +42,13 @@ export function badgeOf(r) {
     return { key: str(b.key) || "pass", label: str(b.label), bg: b.bg, text: b.text };
   }
   return { ...PASS_BADGE, label: passNameOf(r) || "Pass" };
+}
+
+/** The pass's name, shown small in the band beside its word ("Media · Connect Pass", Oct 23 2026: "Media yes is dark
+    blue pass"), or "" when the band already says it (the green band is the pass's name). */
+export function bandSub(badge, passName) {
+  const name = str(passName);
+  return name && str(badge?.label).toLowerCase() !== name.toLowerCase() ? name : "";
 }
 
 /**
@@ -76,18 +84,21 @@ export function mealsOf(r) {
   return null;
 }
 
-/** Everything the card shows for one scan: { outcome, ticketId, name, title, company, badge, passName, avatarUrl, meals, at, message }. */
+/** Everything the card shows for one scan: { outcome, ticketId, name, title, company, badge, passName, bandSub, avatarUrl, meals, at, message }. */
 export function cardFrom({ status = 0, body = null, ticketId = "" } = {}) {
   const outcome = outcomeOf(status, body);
   const ok = outcome === "checked_in" || outcome === "already";
+  const badge = ok ? badgeOf(body) : null;
+  const passName = ok ? passNameOf(body) : "";
   return {
     outcome,
     ticketId: str(body?.ticketId) || str(ticketId),
     name: ok ? str(body?.name) : "",
     title: ok ? str(body?.title) : "",
     company: ok ? str(body?.company) : "",
-    badge: ok ? badgeOf(body) : null,
-    passName: ok ? passNameOf(body) : "",
+    badge,
+    passName,
+    bandSub: ok ? bandSub(badge, passName) : "",
     avatarUrl: ok ? str(body?.avatarUrl) : "",
     meals: ok ? mealsOf(body) : null,
     at: ok ? (outcome === "already" ? body?.time || body?.checkedInAt || null : body?.checkedInAt || null) : null,

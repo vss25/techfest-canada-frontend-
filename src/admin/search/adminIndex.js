@@ -7,7 +7,7 @@
    sidebar does. Settings open their page with ?highlight=<key>
    (AdminShell scrolls to it and flashes it).
 ========================================================= */
-import { CalendarClock, EyeOff, Tag, KeyRound, LayoutGrid, ToggleRight, TicketPlus, UserPlus, BellRing, Hash, Linkedin, MailOpen, MailPlus, Users } from "lucide-react";
+import { CalendarClock, Camera, EyeOff, Tag, KeyRound, LayoutGrid, ToggleRight, TicketPlus, UserPlus, BellRing, Hash, Linkedin, MailOpen, MailPlus, Users } from "lucide-react";
 import { NAV } from "../nav";
 import { REGISTRY, SCOPES } from "../content/registry";
 import { score } from "./match";
@@ -15,7 +15,7 @@ import { score } from "./match";
 /* Words staff might type for each page (by its path under /admin), besides its name and section. */
 const KEYWORDS = {
   "": ["dashboard", "home", "stats", "summary"],
-  people: ["directory", "attendees", "delegates", "contacts", "persons", "vip", "edit person", "delete person", "rsvp status", "exhibitor",
+  people: ["directory", "attendees", "delegates", "contacts", "persons", "vip", "edit person", "delete person", "rsvp status", "exhibitor", "media yes", "media no", "media filter",
     "opened email", "email opens", "who opened", "posted on linkedin", "linkedin posts", "rsvp form opened",
     "media", "press", "journalist", "staff", "volunteer", "speaker", "person type", "profile colour", "profile color",
     "coupon code", "promo code used", "discount code used", "hide from app", "hidden from app", "shadow ban"],
@@ -74,7 +74,10 @@ const ACTIONS = [
   { title: "Give a pass", where: "People & passes › Give a pass", to: "issued-passes", icon: TicketPlus, keywords: ["give someone a pass", "new pass"] },
   { title: "Email everyone to get the TTFC app", where: "Website & app › App invite email", to: "app/invite", icon: MailPlus, keywords: ["app invite", "download the app", "install the app", "web app email", "app store", "google play"] },
   { title: "Turn “What you missed” emails on or off", where: "Website & app › “What you missed” emails", to: "app/digest", icon: MailPlus, keywords: ["digest", "summary email", "missed", "test digest"] },
-  { title: "Mark someone as Media, VIP, Volunteer or Staff", where: "People & passes › People › their profile", to: "people", icon: Users, keywords: ["media tag", "press", "vip", "volunteer", "staff", "type", "profile colour", "profile color"] },
+  { title: "Mark someone as Media, VIP, Volunteer or Staff", where: "People & passes › People › their profile", to: "people", icon: Users, keywords: ["media tag", "media yes", "media switch", "press", "vip", "volunteer", "staff", "type", "profile colour", "profile color"] },
+  // Media = Yes (Oct 23 2026): the People filter, so "media" lands on everyone marked Media.
+  { title: "Media (Yes / No): everyone marked Media", where: "People & passes › People › Media? filter", to: "people?media=yes", icon: Camera,
+    keywords: ["media", "media yes", "media no", "media filter", "press", "journalist", "media pass", "dark blue pass", "power pass with breakfast"] },
   { title: "Hide someone from the app", where: "People & passes › People › their profile › Hide from app", to: "people", icon: EyeOff,
     keywords: ["hide from app", "shadow ban", "harassment", "troublemaker", "stop messages", "block someone", "unwanted messages", "safety"] },
   { title: "Hidden people (hidden from the app)", where: "Event day › App moderation › Hidden people", to: "app/moderation?tab=hidden", icon: EyeOff,

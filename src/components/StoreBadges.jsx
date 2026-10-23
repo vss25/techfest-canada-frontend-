@@ -8,9 +8,11 @@ import { track } from "../lib/pwaEvents";
    and the four-colour Play triangle) so they read the same on a
    light or a dark page. Both badges are always the same size and
    width (the organiser, Oct 23 2026: "Make the logo same size").
-   Device-aware order (lib/appStores.js storePlan): an iPhone / iPad
-   gets the App Store first, an Android phone Google Play; a
-   computer gets App Store, Google Play. A store whose link isn't
+   Device-aware (lib/appStores.js storePlan): an iPhone / iPad gets
+   only the App Store, an Android phone only Google Play (Oct 23
+   2026, App Store guideline 2.3.10: the iPhone app opens our pages
+   in its in-app browser); a computer gets App Store, Google Play.
+   A store whose link isn't
    set has no badge, and with neither nothing renders. On a
    computer the stores open in a new tab; on a phone in the same
    one (the App Store / Play Store app takes over, also from

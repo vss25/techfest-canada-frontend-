@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import AuthModal from "./AuthModal";
 import useSiteSettings from "../hooks/useSiteSettings";
 import { track } from "../lib/pwaEvents";
-import { isMobileDevice } from "../lib/pwaPlatform";
+import { detectOS, isMobileDevice } from "../lib/pwaPlatform";
+import { storeNames } from "../lib/appStores";
 
 // "Get the TTFC app" on a computer: the store badges and a QR code to the phone. Loaded on first use.
 const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
@@ -424,7 +425,7 @@ export default function Navbar() {
                     <img src="/app/icons/icon-96.png" alt="" width={44} height={44} style={{ borderRadius: 11, flexShrink: 0 }} />
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ display: "block", fontWeight: 800, fontSize: "0.95rem" }}>Get the TTFC app</span>
-                      <span style={{ display: "block", fontSize: "0.78rem", lineHeight: 1.35, color: textMuted }}>Free on the App Store and Google Play. Your pass, the schedule, live polls and chat.</span>
+                      <span style={{ display: "block", fontSize: "0.78rem", lineHeight: 1.35, color: textMuted }}>Free on {storeNames(undefined, detectOS())}. Your pass, the schedule, live polls and chat.</span>
                     </span>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ opacity: 0.6, flexShrink: 0 }}><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                   </a>

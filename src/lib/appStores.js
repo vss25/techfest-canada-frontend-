@@ -33,20 +33,25 @@ const usable = (u) => typeof u === "string" && /^https:\/\/\S+$/.test(u.trim());
 
 /**
  * The stores to show on a device. `os`: "ios" | "android" | "desktop" | "other" (lib/pwaPlatform.js detectOS).
- * → { stores: [{ id, os, top, name, label, url }], primary, phone }: on an iPhone / iPad or Android phone its own
- * store comes first and is the `primary` one (highlighted); on a computer both, App Store first, primary "".
+ * → { stores: [{ id, os, top, name, label, url }], primary, phone }: an iPhone / iPad or Android phone gets only
+ * its own store (the `primary` one); a computer both, App Store first, primary "". Only its own store since
+ * Oct 23 2026: the iPhone app opens our pages in its in-app browser, and Apple doesn't allow other platforms'
+ * names or badges in what its apps show (App Store guideline 2.3.10).
  * A store whose link isn't set is left out, so an empty URL never shows a badge.
  */
 export function storePlan(os, urls = LIVE) {
   const list = STORES.filter((s) => usable(urls?.[s.id])).map((s) => ({ ...s, url: urls[s.id].trim() }));
   const phone = os === "ios" || os === "android";
   const mine = phone ? list.find((s) => s.os === os) : null;
-  return { stores: mine ? [mine, ...list.filter((s) => s !== mine)] : list, primary: mine ? mine.id : "", phone };
+  return { stores: mine ? [mine] : list, primary: mine ? mine.id : "", phone };
 }
 
-/** "the App Store or Google Play" (only the live ones; "" when neither is). */
-export function storeNames(urls = LIVE) {
-  return STORES.filter((s) => usable(urls?.[s.id])).map((s) => (s.id === "appstore" ? "the App Store" : "Google Play")).join(" or ");
+/** "the App Store or Google Play" (only the live ones; "" when neither is). With a phone's `os`, only its own store,
+    like storePlan. */
+export function storeNames(urls = LIVE, os = "") {
+  const live = STORES.filter((s) => usable(urls?.[s.id]));
+  const mine = live.find((s) => s.os === os);
+  return (mine ? [mine] : live).map((s) => (s.id === "appstore" ? "the App Store" : "Google Play")).join(" or ");
 }
 
 /**

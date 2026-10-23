@@ -5,6 +5,14 @@ import Footer from "../components/Footer";
 import StoreBadges from "../components/StoreBadges";
 import useSiteSettings, { PUBLIC_API } from "../hooks/useSiteSettings";
 import { SWAG_ALT, SWAG_PHOTO, fetchSwag, swagFrom, swagHowTo } from "../lib/swag";
+import { detectOS } from "../lib/pwaPlatform";
+
+/* Who isn't involved, named for this device: an iPhone never sees Google named (App Store guideline 2.3.10). */
+const NOT_SPONSORS = {
+  ios: "Apple Inc. is not a sponsor of this giveaway and is not involved in it in any way.",
+  android: "Google LLC is not a sponsor of this giveaway and is not involved in it in any way.",
+  other: "Apple Inc. and Google LLC are not sponsors of this giveaway and are not involved in it in any way.",
+};
 
 /* =========================================================
    /swag: "Win the TTFC swag kit" (Oct 22 2026). The rules page the
@@ -92,7 +100,7 @@ export default function Swag() {
               <a href="#rules" style={{ display: "inline-flex", alignItems: "center", minHeight: 44, marginTop: 14, padding: "0 20px", borderRadius: 999, border: `1px solid ${c.line}`, color: c.text, fontSize: 15, fontWeight: 600, textDecoration: "none" }}>
                 Read the rules
               </a>
-              <p style={{ margin: "12px 0 0", fontSize: 13, color: c.mid }}>Free. No purchase necessary.</p>
+              <p style={{ margin: "12px 0 0", fontSize: 13, color: c.mid }}>Free to enter for TTFC 2026 pass holders. Quebec residents excluded.</p>
             </div>
           </div>
 
@@ -119,7 +127,7 @@ export default function Swag() {
             <p style={{ margin: "12px 0 0", fontSize: 16, lineHeight: 1.65, color: c.mid, whiteSpace: "pre-line" }}>{s.rules}</p>
             {/* Always shown, whatever staff write in the rules: the App Store requires it (guideline 5.3, Oct 23 2026). */}
             <p style={{ margin: "12px 0 0", fontSize: 16, lineHeight: 1.65, color: c.mid }}>
-              This giveaway is run and sponsored by AtlasLink Markets Inc., the organiser of The Tech Festival Canada. Apple Inc. and Google LLC are not sponsors of this giveaway and are not involved in it in any way.
+              This giveaway is run and sponsored by AtlasLink Markets Inc., the organiser of The Tech Festival Canada. {NOT_SPONSORS[detectOS()] || NOT_SPONSORS.other}
             </p>
             <p style={{ margin: "14px 0 0", fontSize: 14, color: c.mid }}>
               Questions? Email <a href="mailto:enquire@thetechfestival.com" style={{ color: c.accent, fontWeight: 600 }}>enquire@thetechfestival.com</a>.

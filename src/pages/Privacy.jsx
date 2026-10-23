@@ -164,7 +164,7 @@ var SECTIONS_TERMS = [
 var SECTIONS_APP = [
   {
     title: "1. Who can use the app",
-    body: "The TTFC app is for people aged 18 and over. When you first open it we ask for your date of birth to confirm this; we keep only the confirmation, never the date. Alcohol is served only in licensed areas of the event (such as the Apex lounge) to guests of legal drinking age in Ontario (19+) with valid photo ID.",
+    body: "The TTFC app is for people aged 18 and over. We don't ask for your date of birth. Alcohol is served only in licensed areas of the event (such as the Apex lounge) to guests of legal drinking age in Ontario (19+) with valid photo ID.",
   },
   {
     title: "2. What the app collects",

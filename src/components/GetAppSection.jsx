@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import StoreBadges from "./StoreBadges";
 import { storeNames } from "../lib/appStores";
+import { detectOS } from "../lib/pwaPlatform";
 import { isMobileDevice } from "../lib/pwaPlatform";
 import { track } from "../lib/pwaEvents";
 
@@ -20,7 +21,7 @@ const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
 export default function GetAppSection({ dark }) {
   const [qr, setQr] = useState(false);
   const [computer] = useState(() => !isMobileDevice());
-  const names = storeNames();
+  const names = storeNames(undefined, detectOS());
   if (!names) return null;
 
   const c = dark

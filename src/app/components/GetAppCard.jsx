@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import StoreBadges from "../../components/StoreBadges";
 import { storeNames } from "../../lib/appStores";
+import { detectOS } from "../../lib/pwaPlatform";
 import { track } from "../../lib/pwaEvents";
 import { IconButton } from "./ui";
 
@@ -25,7 +26,7 @@ function hiddenNow() {
 
 export default function GetAppCard() {
   const [hidden, setHidden] = useState(hiddenNow);
-  const names = storeNames();
+  const names = storeNames(undefined, detectOS());
   if (hidden || !names) return null;
   const hide = () => {
     try { localStorage.setItem(KEY, String(Date.now() + HIDE_MS)); } catch { /* storage blocked: hidden for this visit only */ }

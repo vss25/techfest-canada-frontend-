@@ -8,7 +8,7 @@ import { PLAY_STORE_URL } from "../../lib/appStores.js";
 test("a phone: both stores named, its own store's search hint, no QR, a link to keep using the web app", () => {
   const ios = getAppPage({ os: "ios" });
   assert.equal(ios.phone, true);
-  assert.match(ios.lead, /^Free on the App Store or Google Play\./);
+  assert.match(ios.lead, /^Free on the App Store\./);
   assert.match(ios.search, /“The Tech Festival Canada” in the App Store/);
   assert.equal(ios.qr, "");
   assert.deepEqual(ios.keep, { text: "Already using TTFC in your browser? You can keep using it here.", link: true });

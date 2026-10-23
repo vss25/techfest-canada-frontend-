@@ -33,7 +33,7 @@ export const STORE_NAME = "The Tech Festival Canada";
  */
 export function getAppPage({ os, standalone = false } = {}, urls) {
   const plan = storePlan(os, urls);
-  const names = storeNames(urls);
+  const names = storeNames(urls, os);
   const own = plan.stores.find((s) => s.id === plan.primary);
   const lead = names
     ? `Free on ${names}. Your pass, the schedule, live polls and chat on your phone.`

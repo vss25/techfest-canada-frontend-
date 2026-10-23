@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { detectOS, isForcedPlatform, isMobileDevice, isStandalone, markInstalled, markedInstalled } from "../lib/pwaPlatform";
 import { track } from "../lib/pwaEvents";
 import StoreBadges from "./StoreBadges";
+import { storeNames } from "../lib/appStores";
 
 // Computers only (it carries the QR code library): phones never download it.
 const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
@@ -177,7 +178,7 @@ export default function InstallAppPrompt() {
           </div>
         </div>
         <p style={{ margin: "14px 0 18px", font: `400 15px/1.45 ${font}`, color: "rgba(219,206,255,0.78)" }}>
-          Free on the App Store and Google Play.
+          Free on {storeNames(undefined, detectOS())}.
         </p>
         <StoreBadges where="prompt" />
         <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 4, marginTop: 12 }}>

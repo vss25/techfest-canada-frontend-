@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import StoreBadges from "./StoreBadges";
+import { storeNames } from "../lib/appStores";
+import { detectOS } from "../lib/pwaPlatform";
 
 export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Delegate Pass", userName = "" }) {
   const [isDark, setIsDark] = useState(true);
@@ -33,7 +35,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
     { icon: "🎟", title: "Ticket Confirmed", desc: "Check your email for your digital pass" },
     { icon: "📍", title: "The Westin Harbour Castle", desc: "Mon–Tue, October 26–27, 2026 · Toronto" },
     { icon: "🤝", title: "1000+ Attendees", desc: "Across 2 days. You're now part of the inner circle" },
-    { icon: "📱", title: "The TTFC App", desc: "Your pass, agenda and networking. On the App Store and Google Play" },
+    { icon: "📱", title: "The TTFC App", desc: `Your pass, agenda and networking. On ${storeNames(undefined, detectOS())}` },
   ];
 
   return (

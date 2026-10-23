@@ -8,15 +8,19 @@ test("both store apps are live", () => {
   assert.equal(APP_STORE_URL, "https://apps.apple.com/ca/app/the-tech-festival-canada/id6820764803");
   assert.equal(PLAY_STORE_URL, "https://play.google.com/store/apps/details?id=com.atlaslinkmarkets.ttfc");
   assert.equal(storeNames(), "the App Store or Google Play");
+  // An iPhone never sees Google Play named (App Store guideline 2.3.10), nor an Android phone the App Store.
+  assert.equal(storeNames(undefined, "ios"), "the App Store");
+  assert.equal(storeNames(undefined, "android"), "Google Play");
+  assert.equal(storeNames(undefined, "desktop"), "the App Store or Google Play");
 });
 
-test("the phone's own store first and highlighted; a computer gets both, App Store first", () => {
+test("a phone gets only its own store; a computer gets both, App Store first", () => {
   const ids = (p) => p.stores.map((s) => s.id).join(",");
   const ios = storePlan("ios");
-  assert.deepEqual([ids(ios), ios.primary, ios.phone], ["appstore,play", "appstore", true]);
+  assert.deepEqual([ids(ios), ios.primary, ios.phone], ["appstore", "appstore", true]);
   assert.equal(ios.stores[0].url, APP_STORE_URL);
   const android = storePlan("android");
-  assert.deepEqual([ids(android), android.primary], ["play,appstore", "play"]);
+  assert.deepEqual([ids(android), android.primary], ["play", "play"]);
   for (const os of ["desktop", "other", undefined]) {
     const p = storePlan(os);
     assert.deepEqual([ids(p), p.primary, p.phone], ["appstore,play", "", false]);

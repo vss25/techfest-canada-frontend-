@@ -36,10 +36,10 @@ export const SWAG_WHEN_WINNERS = "at the end of Day 1";
 export const SWAG_DEFAULT_RULES =
   "Only people using the TTFC app can win. Download the app, sign in and earn points by connecting, " +
   "saving sessions, posting and taking part. The top {kits} people on the leaderboard at {cutoff} each win a TTFC swag " +
-  "kit. Open to registered TTFC 2026 attendees with 'Show me on the leaderboard' on; TTFC staff, volunteers and their " +
-  "families can't win. Winners are told in the app at the end of Day 1 ({announce}) and collect their kit at the " +
-  "registration desk, Harbour Ballroom foyer, after answering a skill-testing question. No purchase necessary. Prizes " +
-  "have no cash value and can't be exchanged.";
+  "kit. Open to registered TTFC 2026 attendees with 'Show me on the leaderboard' on; Quebec residents, TTFC staff, " +
+  "volunteers and their families can't win. Winners are told in the app at the end of Day 1 ({announce}) and collect " +
+  "their kit at the registration desk, Harbour Ballroom foyer, after answering a skill-testing question. Free to enter " +
+  "for TTFC 2026 pass holders. Prizes have no cash value and can't be exchanged.";
 
 export const SWAG_DEFAULTS = Object.freeze({
   "swag.enabled": false,

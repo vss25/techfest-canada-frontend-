@@ -9,7 +9,8 @@ import { EMAIL_RE, HIDDEN_KEYS, REGISTRY, SCOPES, URL_RE, humanize, scopeOf } fr
 import { useAdmin } from "../adminContext";
 
 /* One consistent editor for the texts & switches in GET/PUT /api/console/app-content.
-   Used by Website switches → Website options (scope "website") and App text & switches (scope "app").
+   Used by Website switches → Website options (scope "website"), App text & switches (scope "app") and
+   2027 waitlist › Wording (scope "stay").
    Settings only management may change (ticket sales, pass upgrades: REGISTRY `management`, or the
    server's `managementOnly`) show disabled with "Management only" for everyone else; the server
    refuses them too. The guest offer's settings (HIDDEN_KEYS) aren't shown at all. */
@@ -27,6 +28,7 @@ function ManagementTag() {
 const SAVED = {
   website: "Saved — live on the website within about a minute",
   app: "Saved — phones pick it up within about a minute",
+  stay: "Saved — live on the waitlist page and in the web app within about a minute",
 };
 const clip = (s, n = 140) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 
@@ -46,7 +48,9 @@ function SettingRow({ item, meta, scope, onSaved }) {
   const stored = isSwitch ? item.value !== false && item.value !== "false" : String(item.value ?? "");
   const defText = String(item.default ?? "");
   const usingDefault = !isSwitch && (stored === "" || stored === defText);
-  const initial = isSwitch ? stored : usingDefault ? "" : stored;
+  // `prefill` (multi-line lists, e.g. the waitlist page's pillars): the box starts with the default text to edit in
+  // place, instead of an empty box with the default squeezed onto one placeholder line.
+  const initial = isSwitch ? stored : usingDefault ? (meta.prefill ? String(meta.fallback ?? defText) : "") : stored;
   const [value, setValue] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
@@ -82,13 +86,14 @@ function SettingRow({ item, meta, scope, onSaved }) {
     if (usingDefault) {
       status = meta.emptyHides && !fallback
         ? <>Empty — {meta.type === "url" ? "no link" : "nothing is shown"}.</>
-        : <>Using the default: <span className="text-ttfc-muted">“{clip(fallback.replace(/\n/g, " "))}”</span></>;
+        : meta.prefill ? <>Using the default text above.</>
+          : <>Using the default: <span className="text-ttfc-muted">“{clip(fallback.replace(/\n/g, " "))}”</span></>;
     } else {
       status = <>Custom{item.updatedBy ? ` · changed by ${item.updatedBy}${item.updatedAt ? `, ${when(item.updatedAt)}` : ""}` : ""}</>;
     }
   }
 
-  const placeholder = (meta.placeholder || fallback || "").replace(/\n/g, " ");
+  const placeholder = meta.prefill ? "" : (meta.placeholder || fallback || "").replace(/\n/g, " ");
   const common = {
     id: inputId,
     value,

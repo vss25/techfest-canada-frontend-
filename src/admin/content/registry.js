@@ -11,6 +11,7 @@
    management: only management may change it (shown disabled with
                "Management only" to staff; the server refuses it too,
                backend services/staffPowers.js)
+   prefill:   (multi-line lists) the box starts with the default text, to edit in place
 ========================================================= */
 
 export const SCOPES = {
@@ -32,6 +33,17 @@ export const SCOPES = {
       { id: "tickets", title: "Tickets & help" },
       { id: "privacy", title: "Privacy & community" },
       { id: "flags", title: "Feature switches", hint: "Turn parts of the app on or off for everyone. Pass upgrades and the website's install-the-app prompt are under Website switches › Selling." },
+    ],
+  },
+  /* "Stay updated" (Oct 23 2026): the TTFC 2027 waitlist page (website /stay-updated, the web app's
+     /app/stay-updated) and the "You're on the TTFC 2027 waitlist" email. Edited on their own page, Sales & emails ›
+     2027 waitlist › Wording (admin/leads/Waitlist2027.jsx). Any staff. */
+  stay: {
+    groups: [
+      { id: "stay-page", title: "The page: top and search results", hint: "thetechfestival.com/stay-updated and the same screen in the web app. Only say what's true: no 2027 dates, venue or numbers until they're announced." },
+      { id: "stay-preview", title: "The page: the 2027 preview" },
+      { id: "stay-form", title: "The page: the waitlist form" },
+      { id: "stay-email", title: "The email people get", hint: "Sent from enquire@ when someone joins (at most once a day per address, never to anyone who unsubscribed). Their ticks, the app badges and the footer are added for you." },
     ],
   },
   /* Edited on their own page, Website & app › Swag kit giveaway (admin/app/SwagKit.jsx: times in Toronto, a preview
@@ -226,6 +238,132 @@ export const REGISTRY = {
     label: "Audience Q&A", description: "Turn off to hide session Q&A in the app and stop new questions.",
   },
 
+  /* ---------------- Stay updated: the TTFC 2027 waitlist ---------------- */
+  "stay.seo_title": {
+    scope: "stay", group: "stay-page", type: "text",
+    label: "Browser tab and search title", description: "The page's title in the browser tab, in Google and when the link is shared.",
+  },
+  "stay.seo_description": {
+    scope: "stay", group: "stay-page", type: "textarea", rows: 2,
+    label: "Search description", description: "The short description under the title in Google and in link previews (about 150 characters).",
+  },
+  "stay.eyebrow": {
+    scope: "stay", group: "stay-page", type: "text",
+    label: "Small label above the headline", description: "The pill at the very top of the page.",
+  },
+  "stay.hero_title": {
+    scope: "stay", group: "stay-page", type: "text",
+    label: "Headline", description: "Parts separated by “ · ”: the first is the big gradient text, the rest the line under it.",
+  },
+  "stay.hero_intro": {
+    scope: "stay", group: "stay-page", type: "textarea", rows: 3,
+    label: "Introduction", description: "The paragraph under the headline.",
+  },
+  "stay.stat": {
+    scope: "stay", group: "stay-page", type: "text",
+    label: "Attendee line", description: "Shown in the top section of the page. The attendee count is always “1000+ attendees across 2 days”.",
+  },
+  "stay.program_title": {
+    scope: "stay", group: "stay-preview", type: "text",
+    label: "Programme heading", description: "Heading above the pillars and sectors.",
+  },
+  "stay.program_intro": {
+    scope: "stay", group: "stay-preview", type: "textarea", rows: 2,
+    label: "Programme introduction", description: "The line under the programme heading.",
+  },
+  "stay.pillars_title": {
+    scope: "stay", group: "stay-preview", type: "text",
+    label: "Pillars heading", description: "Heading of the technology pillars list.",
+  },
+  "stay.pillars": {
+    scope: "stay", group: "stay-preview", type: "textarea", prefill: true, rows: 5,
+    label: "Technology pillars", description: "One per line, in order.",
+  },
+  "stay.sectors_title": {
+    scope: "stay", group: "stay-preview", type: "text",
+    label: "Sectors heading", description: "Heading of the applied sectors list.",
+  },
+  "stay.sectors": {
+    scope: "stay", group: "stay-preview", type: "textarea", prefill: true, rows: 5,
+    label: "Applied sectors", description: "One per line, in order.",
+  },
+  "stay.expect_title": {
+    scope: "stay", group: "stay-preview", type: "text",
+    label: "“What to expect” heading", description: "Heading of the list of what happens at TTFC.",
+  },
+  "stay.expect": {
+    scope: "stay", group: "stay-preview", type: "textarea", prefill: true, rows: 12,
+    label: "What to expect", description: "One item per paragraph (leave an empty line between items). The first line of each is its title, the rest its description. Only things that are true of TTFC.",
+  },
+  "stay.form_title": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Form heading", description: "Heading of the waitlist form.",
+  },
+  "stay.form_intro": {
+    scope: "stay", group: "stay-form", type: "textarea", rows: 2,
+    label: "Form introduction", description: "The line under the form heading.",
+  },
+  "stay.field_email": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Email field label", description: "The label above the email box.",
+  },
+  "stay.field_phone": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Phone field label", description: "The label above the phone box.",
+  },
+  "stay.interests_label": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Tick boxes heading", description: "Above the three tick boxes. Nothing ticked means they want to attend.",
+  },
+  "stay.interest_sponsorship": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Tick box: sponsorship", description: "Also how the email to the person names it.",
+  },
+  "stay.interest_exhibitor": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Tick box: exhibiting", description: "Also how the email to the person names it.",
+  },
+  "stay.interest_delegation": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Tick box: delegation", description: "Also how the email to the person names it.",
+  },
+  "stay.consent": {
+    scope: "stay", group: "stay-form", type: "textarea", rows: 2,
+    label: "Consent line", description: "Under the form. A “Privacy Policy” link is always added after it.",
+  },
+  "stay.button": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Button", description: "The form's button, and the button at the top of the page.",
+  },
+  "stay.thanks_title": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Thank-you heading", description: "Shown in place of the form once someone has joined.",
+  },
+  "stay.thanks": {
+    scope: "stay", group: "stay-form", type: "textarea", rows: 2,
+    label: "Thank-you message", description: "Under the thank-you heading, on the website, in the web app and in the apps.",
+  },
+  "stay.email_subject": {
+    scope: "stay", group: "stay-email", type: "text",
+    label: "Subject", description: "The subject of the email people get when they join.",
+  },
+  "stay.email_heading": {
+    scope: "stay", group: "stay-email", type: "text",
+    label: "Heading", description: "The big line at the top of the email.",
+  },
+  "stay.email_intro": {
+    scope: "stay", group: "stay-email", type: "textarea", rows: 2,
+    label: "Thank you", description: "The paragraph under the heading.",
+  },
+  "stay.email_next": {
+    scope: "stay", group: "stay-email", type: "text",
+    label: "What happens next", description: "Under “What you asked about” (their ticks, or “Attending TTFC 2027”).",
+  },
+  "stay.email_button": {
+    scope: "stay", group: "stay-email", type: "text",
+    label: "Button", description: "Opens thetechfestival.com/stay-updated.",
+  },
+
   /* ---------------- Swag kit giveaway (batch 7) ---------------- */
   "swag.enabled": {
     scope: "swag", group: "swag", type: "switch", management: true,
@@ -261,7 +399,7 @@ export const HIDDEN_KEYS = new Set([
 ]);
 
 /** Scope for a key that isn't in the registry yet (keeps new backend keys editable). */
-export const scopeOf = (key) => REGISTRY[key]?.scope || (key.startsWith("site.") ? "website" : "app");
+export const scopeOf = (key) => REGISTRY[key]?.scope || (key.startsWith("site.") ? "website" : key.startsWith("stay.") ? "stay" : "app");
 
 /** Readable label for an unknown key, so raw keys are never shown. */
 export const humanize = (key) => {

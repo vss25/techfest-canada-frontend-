@@ -38,6 +38,7 @@ import Inventory from "../admin/tickets/Inventory";
 import EmailTracking from "../admin/staff/EmailTracking";
 import MyAccount from "../admin/staff/MyAccount";
 import BrochureDownloads from "../admin/leads/BrochureDownloads";
+import Waitlist2027 from "../admin/leads/Waitlist2027";
 import IndiaPavilion from "../admin/leads/IndiaPavilion";
 import FormSubmissions from "../admin/leads/FormSubmissions";
 import Rsvps from "../admin/leads/Rsvps";
@@ -204,6 +205,7 @@ function AdminPanel() {
             <Route path="attendees" element={<TicketManager />} />
             <Route path="speaker-passes" element={<SpeakerPasses />} />
             <Route path="purchase-email" element={<PurchaseEmail />} />
+            <Route path="waitlist-2027" element={<Waitlist2027 />} />
             <Route path="issued-passes" element={<IssuedPasses />} />
             <Route path="exhibitor-passes" element={<ExhibitorPasses />} />
             <Route path="inventory" element={<Inventory />} />

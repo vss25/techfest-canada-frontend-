@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  BadgeCheck, Bell, BellRing, CalendarClock, Camera, ChevronRight, Download, FileText, Hand, HelpCircle, IdCard, Landmark, LifeBuoy, LogOut, Mic, Moon, Pencil, QrCode, RotateCcw,
+  BadgeCheck, Bell, BellRing, CalendarClock, CalendarPlus, Camera, ChevronRight, Download, FileText, Hand, HelpCircle, IdCard, Landmark, LifeBuoy, LogOut, Mic, Moon, Pencil, QrCode, RotateCcw,
   LogIn, ScanLine, ShieldCheck, Smartphone, Sun, Ticket, Trophy, Users,
 } from "lucide-react";
 import { useStore } from "../lib/store";
@@ -151,6 +151,7 @@ function SettingsSheet({ onClose }) {
         <div className="settings-group">
           {/* Oct 22 2026: the App Store / Google Play apps, never the web app's Home Screen install. */}
           <Row icon={Download} title="Get the TTFC app" to="/install?from=profile" />
+          <Row icon={CalendarPlus} title="Stay updated for 2027" to="/stay-updated" />
           <Row icon={ShieldCheck} title="Privacy Policy" to="/legal/privacy" />
           <Row icon={FileText} title="Terms of Use" to="/legal/terms" />
           <Row icon={LifeBuoy} tone="sos" title="Help & SOS" to="/help" />
@@ -192,6 +193,7 @@ export default function Profile() {
           <Button variant="primary" size="lg" block icon={LogIn} onClick={() => signOut()}>Sign in</Button>
           <GetPassCard where="profile" />
           <div className="settings-group" style={{ width: "100%", marginTop: 18 }}>
+            <Row icon={CalendarPlus} title="Stay updated for 2027" to="/stay-updated" />
             <Row icon={ShieldCheck} title="Privacy Policy" to="/legal/privacy" />
             <Row icon={FileText} title="Terms of Use" to="/legal/terms" />
             <Row icon={LifeBuoy} tone="sos" title="Help & SOS" to="/help" />

@@ -44,6 +44,10 @@ const Swag = lazy(() => import("./pages/Swag"));
 const StayUpdated = lazy(() => import("./pages/StayUpdated"));
 // Catalyst Awards jury portal: unlinked, noindex, light only (src/jury). Loaded only when someone opens it.
 const JuryPortal = lazy(() => import("./jury/JuryPortal"));
+// The TTFC 2026 fact sheet (Oct 23 2026): UNLISTED, only at its direct link /fact-sheet/<token> (src/lib/factSheetRoute.js).
+// Not in any menu, footer or sitemap; noindex. Its own chunk, so its text isn't in the main bundle.
+const FactSheet = lazy(() => import("./pages/FactSheet"));
+import { FACT_SHEET_PATH, isFactSheetPath } from "./lib/factSheetRoute";
 import MaintenanceGate from "./components/MaintenanceGate";
 import CookieConsent from "./components/CookieConsent";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
@@ -57,12 +61,13 @@ const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const InstallAppPrompt = lazy(() => import("./components/InstallAppPrompt"));
 const SHOW_INSTALL_PROMPT = typeof window !== "undefined" && !isStandalone();
 
-/* The jury portal (/awards/jury-admin) is a focused tool for the Catalyst Awards jury: no ticket bar,
-   announcement, cookie banner or app prompt on it. The router matches paths ignoring case. */
+/* The jury portal (/awards/jury-admin) is a focused tool for the Catalyst Awards jury, and the unlisted fact sheet
+   a one-page document: no ticket bar, announcement, cookie banner or app prompt on them. The router matches paths
+   ignoring case, except the fact sheet's: only its exact link opens it (any other spelling is an unknown page). */
 const isJuryPath = (p) => /^\/awards\/jury-admin(\/|$)/i.test(p);
 function OffJury({ children }) {
   const { pathname } = useLocation();
-  return isJuryPath(pathname) ? null : children;
+  return isJuryPath(pathname) || isFactSheetPath(pathname) ? null : children;
 }
 
 /* The staff panel's light / dark choice (src/admin/theme.js; index.html applies it before the
@@ -164,6 +169,7 @@ function App() {
         <Route path="/share/linkedin" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><ShareLinkedin /></Suspense>} />
         <Route path="/swag" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Swag /></Suspense>} />
         <Route path="/stay-updated" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><StayUpdated /></Suspense>} />
+        <Route path={FACT_SHEET_PATH} caseSensitive element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><FactSheet /></Suspense>} />
       </Routes>
       <OffJury><TicketBar /></OffJury>
       </MaintenanceGate>

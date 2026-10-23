@@ -133,6 +133,11 @@ export default function StayUpdated() {
           <a href="#wl-join" className="btn btn-primary pressable wl-hero-btn" onClick={(e) => { e.preventDefault(); document.getElementById("wl-join")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>{copy["stay.button"]}</a>
         </section>
 
+        {/* The form straight after the hero (the organiser, Oct 23 2026: "Bring the contact form up"). */}
+        <div id="wl-join" style={{ scrollMarginTop: 72 }}>
+          <Form copy={copy} />
+        </div>
+
         <section className="stack-sm" aria-labelledby="wl-prog-h">
           <h2 id="wl-prog-h" className="eyebrow">{copy["stay.program_title"]}</h2>
           <p className="muted" style={{ margin: 0, fontSize: 14.5 }}>{copy["stay.program_intro"]}</p>
@@ -160,10 +165,6 @@ export default function StayUpdated() {
             })}
           </ul>
         </section>
-
-        <div id="wl-join" style={{ scrollMarginTop: 72 }}>
-          <Form copy={copy} />
-        </div>
       </main>
     </div>
   );

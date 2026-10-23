@@ -206,11 +206,11 @@ export default function StayUpdated() {
           .su { background: var(--su-bg); color: var(--su-text); min-height: 100vh; overflow-x: hidden; }
           .su-wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
           .su-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-          .su-hero { position: relative; padding: clamp(104px, 14vw, 150px) 0 clamp(120px, 15vw, 190px); text-align: center; isolation: isolate; }
+          .su-hero { position: relative; padding: clamp(100px, 12vw, 132px) 0 clamp(56px, 7vw, 88px); text-align: center; isolation: isolate; }
           .su-hero::before { content: ""; position: absolute; inset: 0; z-index: -2;
             background: radial-gradient(ellipse 70% 55% at 50% 0%, rgba(122,63,209,${dark ? 0.35 : 0.16}) 0%, transparent 70%),
                         radial-gradient(ellipse 45% 35% at 85% 30%, rgba(245,166,35,${dark ? 0.16 : 0.12}) 0%, transparent 70%); }
-          .su-skyline { position: absolute; left: 0; right: 0; bottom: 0; height: min(34vw, 300px); z-index: -1; pointer-events: none;
+          .su-skyline { position: absolute; left: 0; right: 0; bottom: 0; height: min(22vw, 190px); z-index: -1; pointer-events: none;
             background: url(/toronto-skyline.png) center bottom / cover no-repeat; opacity: ${t.skyline};
             ${dark ? "filter: invert(1) brightness(0.9);" : "mix-blend-mode: multiply;"}
             -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 55%, #000 75%, transparent 100%);
@@ -315,7 +315,17 @@ export default function StayUpdated() {
           </div>
         </section>
 
-        <section className="su-sec su-sec--alt" aria-labelledby="su-prog">
+        {/* The form straight after the hero (the organiser, Oct 23 2026: "Bring the contact form up"). */}
+        <section id="join" className="su-sec su-sec--alt" aria-labelledby="su-join" style={{ scrollMarginTop: 80, paddingTop: "clamp(24px, 4vw, 40px)" }}>
+          <div className="su-wrap">
+            <div className="su-join">
+              <h2 id="su-join" className="su-h2">{copy["stay.form_title"]}</h2>
+              <WaitlistForm copy={copy} source={source} />
+            </div>
+          </div>
+        </section>
+
+        <section className="su-sec" aria-labelledby="su-prog">
           <div className="su-wrap">
             <h2 id="su-prog" className="su-h2">{copy["stay.program_title"]}</h2>
             <p className="su-lede">{copy["stay.program_intro"]}</p>
@@ -332,7 +342,7 @@ export default function StayUpdated() {
           </div>
         </section>
 
-        <section className="su-sec" aria-labelledby="su-expect">
+        <section className="su-sec su-sec--alt" aria-labelledby="su-expect">
           <div className="su-wrap">
             <h2 id="su-expect" className="su-h2">{copy["stay.expect_title"]}</h2>
             <ul className="su-expect">
@@ -346,15 +356,6 @@ export default function StayUpdated() {
                 );
               })}
             </ul>
-          </div>
-        </section>
-
-        <section id="join" className="su-sec su-sec--alt" aria-labelledby="su-join" style={{ scrollMarginTop: 80 }}>
-          <div className="su-wrap">
-            <div className="su-join">
-              <h2 id="su-join" className="su-h2">{copy["stay.form_title"]}</h2>
-              <WaitlistForm copy={copy} source={source} />
-            </div>
           </div>
         </section>
       </main>

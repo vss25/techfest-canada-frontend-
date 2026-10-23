@@ -1,29 +1,30 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Award, CheckCircle2, Coffee, Handshake, MapPin, Mic2, Store, Users, UtensilsCrossed } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { useStore } from "../lib/store";
 import { content, refreshContent } from "../lib/content";
 import { API } from "../lib/config";
 import { isDemoApi } from "../lib/api";
 import { Button, TopBar } from "../components/ui";
-import { INTERESTS, blocks, checkForm, heroParts, joinWaitlist, lines, stayFrom } from "../../lib/stayUpdated";
+import { INTERESTS, checkForm, heroParts, joinWaitlist, stayFrom } from "../../lib/stayUpdated";
+import { journeyFrom } from "../../lib/stayJourney";
+import JourneyView from "../../components/StayJourney";
 
 /* =========================================================
    Stay updated (/app/stay-updated, Oct 23 2026): the TTFC 2027
    waitlist, the same page as thetechfestival.com/stay-updated in
-   the web app's look. "TTFC 2027 · Toronto · Dates to be
-   announced", the five pillars and five sectors, what to expect,
-   "1000+ attendees across 2 days", then email + phone (both
-   required), the three ticks and the consent line; the server's
-   thank-you replaces the form. Same API (POST /api/stay-updated,
+   the web app's look: the hero, email + phone (both required), the
+   three ticks and the consent line (the server's thank-you
+   replaces the form), then the 2027 journey: the map of Canada and
+   the stops (components/StayJourney.jsx, compact; stay.journey).
+   The 5 × 5 programme and "What to expect" were removed on Oct 23
+   2026; no attendee count on 2027 material. Same API (POST /api/stay-updated,
    source "webapp"), same staff-edited wording (stay.* app content
    keys, src/lib/stayUpdated.js). For everyone, guests and signed-
    out visitors included. Reached from Profile › Settings, the
    guest Profile and a small card on Home. No store badges here.
    In the demo nothing is sent (an in-app answer only).
 ========================================================= */
-
-const EXPECT_ICONS = [Mic2, Award, Store, Coffee, UtensilsCrossed, Handshake];
 
 function Form({ copy }) {
   const [email, setEmail] = useState("");
@@ -118,6 +119,7 @@ export default function StayUpdated() {
   useEffect(() => { refreshContent(); }, []);
   const copy = stayFrom(c.values);
   const hero = heroParts(copy["stay.hero_title"]);
+  const stops = journeyFrom(copy["stay.journey"]);
 
   return (
     <div className="page">
@@ -129,7 +131,6 @@ export default function StayUpdated() {
             {hero.rest.length > 0 && <span className="wl-hero-rest">{hero.rest.map((p, i) => <span key={i}><span className="sr-only"> · </span>{p}</span>)}</span>}
           </h2>
           <p className="wl-hero-intro">{copy["stay.hero_intro"]}</p>
-          {copy["stay.stat"] && <p className="wl-stat"><Users aria-hidden="true" />{copy["stay.stat"]}</p>}
           <a href="#wl-join" className="btn btn-primary pressable wl-hero-btn" onClick={(e) => { e.preventDefault(); document.getElementById("wl-join")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>{copy["stay.button"]}</a>
         </section>
 
@@ -138,47 +139,13 @@ export default function StayUpdated() {
           <Form copy={copy} />
         </div>
 
-        {blocks(copy["stay.briefings"]).length > 0 && (
-          <section className="stack-sm" aria-labelledby="wl-brief-h">
-            <h2 id="wl-brief-h" className="eyebrow">{copy["stay.briefings_title"]}</h2>
-            {copy["stay.briefings_intro"] && <p className="muted" style={{ margin: 0, fontSize: 14.5 }}>{copy["stay.briefings_intro"]}</p>}
-            <ul className="card wl-expect">
-              {blocks(copy["stay.briefings"]).map((b, i) => (
-                <li key={`${b.title}-${i}`}>
-                  <span className="lead-icon" aria-hidden="true"><MapPin /></span>
-                  <span><b>{b.title}</b>{b.body && <span className="tiny muted wl-expect-body">{b.body}</span>}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <section className="stack-sm" aria-labelledby="wl-prog-h">
-          <h2 id="wl-prog-h" className="eyebrow">{copy["stay.program_title"]}</h2>
-          <p className="muted" style={{ margin: 0, fontSize: 14.5 }}>{copy["stay.program_intro"]}</p>
-          <div className="card wl-list-card">
-            <h3 className="wl-h3">{copy["stay.pillars_title"]}</h3>
-            <ol className="wl-list">{lines(copy["stay.pillars"]).map((x) => <li key={x}>{x}</li>)}</ol>
+        {/* The 2027 journey (the organiser, Oct 23 2026): the map of Canada and the stops, in order. */}
+        <section className="stack-sm" aria-labelledby="wl-journey-h">
+          <h2 id="wl-journey-h" className="eyebrow">{copy["stay.journey_title"]}</h2>
+          {copy["stay.journey_intro"] && <p className="muted" style={{ margin: 0, fontSize: 14.5 }}>{copy["stay.journey_intro"]}</p>}
+          <div className="wl-journey">
+            <JourneyView stops={stops} compact mapTitle={`Map of Canada: ${copy["stay.journey_title"]}`} />
           </div>
-          <div className="card wl-list-card">
-            <h3 className="wl-h3">{copy["stay.sectors_title"]}</h3>
-            <ol className="wl-list">{lines(copy["stay.sectors"]).map((x) => <li key={x}>{x}</li>)}</ol>
-          </div>
-        </section>
-
-        <section className="stack-sm" aria-labelledby="wl-exp-h">
-          <h2 id="wl-exp-h" className="eyebrow">{copy["stay.expect_title"]}</h2>
-          <ul className="card wl-expect">
-            {blocks(copy["stay.expect"]).map((b, i) => {
-              const Icon = EXPECT_ICONS[i % EXPECT_ICONS.length];
-              return (
-                <li key={`${b.title}-${i}`}>
-                  <span className="lead-icon" aria-hidden="true"><Icon /></span>
-                  <span><b>{b.title}</b>{b.body && <span className="tiny muted wl-expect-body">{b.body}</span>}</span>
-                </li>
-              );
-            })}
-          </ul>
         </section>
       </main>
     </div>

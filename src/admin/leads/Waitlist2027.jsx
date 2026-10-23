@@ -9,6 +9,7 @@ import { Badge, Banner, Button, EmptyState, ErrorState, Input, LoadingState, Pag
 import { when } from "../format";
 import ContentSettings from "../content/ContentSettings";
 import EmailPreview from "../app/EmailPreview";
+import JourneyEditor from "./JourneyEditor";
 
 /* =========================================================
    Admin › Sales & emails › 2027 waitlist (Oct 23 2026)
@@ -20,9 +21,11 @@ import EmailPreview from "../app/EmailPreview";
    Read only. The team is emailed at enquire@ for each sign-up and
    the person gets "You're on the TTFC 2027 waitlist" (from
    enquire@, at most once a day per address).
-   Tabs: Sign-ups · Wording (the stay.* texts, ContentSettings
-   scope "stay") · Email preview (the person's email with the saved
-   wording; nothing is sent).
+   Tabs: Sign-ups · 2027 journey (the map's stops: JourneyEditor,
+   Oct 23 2026) · Wording (the stay.* texts, ContentSettings scope
+   "stay") · Email preview (the person's email with the saved
+   wording; nothing is sent). The journey editor stays mounted once
+   opened, so switching tabs keeps unsaved changes.
 ========================================================= */
 
 const PAGE = 50;
@@ -213,14 +216,17 @@ function Preview() {
 
 export default function Waitlist2027() {
   const [params, setParams] = useSearchParams();
-  const tab = ["signups", "wording", "email"].includes(params.get("tab")) ? params.get("tab") : "signups";
+  const tab = ["signups", "journey", "wording", "email"].includes(params.get("tab")) ? params.get("tab") : "signups";
   const setTab = (t) => { const p = new URLSearchParams(); if (t !== "signups") p.set("tab", t); setParams(p, { replace: true }); };
+  // Opened once, the journey editor stays mounted (hidden on other tabs), so unsaved changes survive a tab switch.
+  const [journeyOpened, setJourneyOpened] = useState(tab === "journey");
+  if (tab === "journey" && !journeyOpened) setJourneyOpened(true);
   return (
     <>
       <PageHeader
         eyebrow="Sales & emails"
         title="2027 waitlist"
-        description="People who joined the TTFC 2027 waitlist on the website, the web app or the apps, and what they're interested in. The team gets an email at enquire@thetechfestival.com for each sign-up; the person gets “You're on the TTFC 2027 waitlist”."
+        description="People who joined the TTFC 2027 waitlist on the website, the web app or the apps, and what they're interested in; the page's 2027 journey (the map of Canada and its stops) and its wording. The team gets an email at enquire@thetechfestival.com for each sign-up; the person gets “You're on the TTFC 2027 waitlist”."
         actions={(
           <a href="https://www.thetechfestival.com/stay-updated" target="_blank" rel="noopener noreferrer"
             className={`inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-ttfc-line bg-ttfc-panel2 px-4 text-sm font-semibold text-ttfc-text transition hover:border-ttfc-purple/60 ${focusRing}`}>
@@ -230,13 +236,15 @@ export default function Waitlist2027() {
       />
       <Tabs label="2027 waitlist" value={tab} onChange={setTab} tabs={[
         { key: "signups", label: "Sign-ups" },
+        { key: "journey", label: "2027 journey" },
         { key: "wording", label: "Wording" },
         { key: "email", label: "Email preview" },
       ]} />
       {tab === "signups" && <SignUps />}
+      {journeyOpened && <div hidden={tab !== "journey"}><JourneyEditor /></div>}
       {tab === "wording" && (
         <div className="space-y-4">
-          <p className="text-sm text-ttfc-muted">Every word on thetechfestival.com/stay-updated, the same screen in the web app and the email people get. Empty a field to go back to the default.</p>
+          <p className="text-sm text-ttfc-muted">Every word on thetechfestival.com/stay-updated, the same screen in the web app and the email people get (the map and its stops are on the 2027 journey tab). Empty a field to go back to the default.</p>
           <ContentSettings scope="stay" />
         </div>
       )}

@@ -8,61 +8,33 @@
    waitlist.js STAY_DEFAULTS, served by GET /api/app/content and
    edited in Admin › Sales & emails › 2027 waitlist › Wording). The
    defaults below are the same text, used while that hasn't loaded
-   or when a field is empty. The facts are the organiser's: Toronto,
-   dates to be announced, the 5 × 5 framework, things true of TTFC
-   2026, and always "1000+ attendees across 2 days".
+   or when a field is empty. The facts are the organiser's (Oct 23
+   2026): five one-day briefings (February Vancouver, April
+   Montreal, June Calgary and Toronto, September Ottawa), each on
+   one technology pillar and one sector, then the festival in
+   Toronto, two days in November 2027; dates to be announced for
+   every event; no attendee count on 2027 material. The journey
+   itself is stay.journey (src/lib/stayJourney.js, edited in Admin ›
+   … › 2027 journey). The 5 × 5 programme and "What to expect" were
+   taken off the page the same day.
 
    The form posts to POST {API}/stay-updated: { email, phone,
    interests, source, consent: true, _hp } → { ok, message }.
    No store badges here (lib/appStores.js storePlan decides those
-   elsewhere). Kept free of imports: node --test src/lib/stayUpdated.test.mjs.
+   elsewhere). Imports only the pure stayJourney.js: node --test src/lib/stayUpdated.test.mjs.
 ========================================================= */
+
+import { DEFAULT_JOURNEY_JSON, JOURNEY_KEY } from "./stayJourney.js";
 
 export const STAY_DEFAULTS = Object.freeze({
   "stay.seo_title": "Stay updated: TTFC 2027 in Toronto | The Tech Festival Canada",
-  "stay.seo_description": "TTFC 2027: two days in Toronto in November 2027, plus one-day briefing events in Ottawa, Montreal, Calgary and Vancouver. Dates to be announced. Join the waitlist.",
+  "stay.seo_description": "TTFC 2027 across Canada: one-day briefings in Vancouver, Montreal, Calgary, Toronto and Ottawa, then two days in Toronto in November 2027. Join the waitlist.",
   "stay.eyebrow": "Stay updated",
   "stay.hero_title": "TTFC 2027 · Toronto · November 2027",
-  "stay.hero_intro": "The Tech Festival Canada returns to Toronto for two days in November 2027, with one-day briefing events in Ottawa, Montreal, Calgary and Vancouver. Dates to be announced for every event. Join the waitlist and our team will keep you posted.",
-  "stay.stat": "", // no attendee count on the 2027 page (the organiser, Oct 23 2026)
-  "stay.program_title": "The 5 × 5 programme",
-  "stay.program_intro": "TTFC is built around five technology pillars and the sectors adopting them. Every keynote, panel and award sits where the two meet.",
-  "stay.pillars_title": "Five technology pillars",
-  "stay.pillars": [
-    "AI & Machine Learning",
-    "Quantum Computing",
-    "Cybersecurity & Digital Trust",
-    "Robotics & Automation",
-    "CleanTech & Sustainability",
-  ].join("\n"),
-  "stay.sectors_title": "Five applied sectors",
-  "stay.sectors": [
-    "Financial Services & Banking",
-    "Healthcare & Life Sciences",
-    "Energy & Critical Infrastructure",
-    "Manufacturing, Supply Chain & Mobility",
-    "Public Sector, National Defence & Security",
-  ].join("\n"),
-  // The 2027 events (the organiser, Oct 23 2026): the main festival in Toronto, two days in November 2027,
-  // and one-day briefing events in Ottawa, Montreal, Calgary and Vancouver. Dates to be announced for every event.
-  "stay.briefings_title": "TTFC 2027 events",
-  "stay.briefings_intro": "A two-day festival in Toronto in November 2027, with one-day briefing events in four more cities. Dates to be announced for every event.",
-  "stay.briefings": [
-    "Toronto\nThe Tech Festival Canada: two days in November 2027. Dates to be announced.",
-    "Ottawa\nOne-day briefing event. Date to be announced.",
-    "Montreal\nOne-day briefing event. Date to be announced.",
-    "Calgary\nOne-day briefing event. Date to be announced.",
-    "Vancouver\nOne-day briefing event. Date to be announced.",
-  ].join("\n\n"),
-  "stay.expect_title": "What to expect",
-  "stay.expect": [
-    "Keynotes and executive panels\nLeaders from government, industry and research on the main stage, with fireside chats and panels across every sector.",
-    "Catalyst Awards\nAn awards night celebrating the innovators, builders and leaders delivering real impact in frontier tech.",
-    "The Expo\nCompanies from Canada and around the world showing what they build, with demos and conversations with the people behind them.",
-    "CxO Breakfast\nAn invitation-only breakfast for CxOs and senior leaders: strategic conversations in a smaller setting.",
-    "Gala Dinner and networking\nAn evening with speakers, exhibitors, partners and senior attendees, with networking luncheons and breaks during the days.",
-    "Business meetings\nMeetings matched in advance between solution providers and the decision makers who need them.",
-  ].join("\n\n"),
+  "stay.hero_intro": "TTFC 2027 travels across Canada: five focused one-day briefings in Vancouver, Montreal, Calgary, Toronto and Ottawa, then The Tech Festival Canada, two days in Toronto in November 2027. Dates to be announced for every event. Join the waitlist and our team will keep you posted.",
+  "stay.journey_title": "TTFC 2027 across Canada",
+  "stay.journey_intro": "Five focused one-day briefings, each on one technology pillar and one sector, lead to two days in Toronto in November 2027. Dates to be announced for every event.",
+  [JOURNEY_KEY]: DEFAULT_JOURNEY_JSON,
   "stay.form_title": "Join the TTFC 2027 waitlist",
   "stay.form_intro": "Leave your email and phone number. Tick anything else you'd like to talk to us about.",
   "stay.field_email": "Email",
@@ -77,7 +49,7 @@ export const STAY_DEFAULTS = Object.freeze({
   "stay.thanks": "Thank you for your interest. Someone from our team will reach out.",
   "stay.email_subject": "You're on the TTFC 2027 waitlist",
   "stay.email_heading": "You're on the TTFC 2027 waitlist.",
-  "stay.email_intro": "Thank you for your interest in TTFC 2027: two days in Toronto in November 2027, plus one-day briefing events in Ottawa, Montreal, Calgary and Vancouver. Dates to be announced for every event.",
+  "stay.email_intro": "Thank you for your interest in TTFC 2027: one-day briefings in Vancouver, Montreal, Calgary, Toronto and Ottawa, then The Tech Festival Canada, two days in Toronto in November 2027. Dates to be announced for every event.",
   "stay.email_next": "Someone from our team will reach out.",
   "stay.email_button": "See what's coming in 2027",
 });
@@ -94,15 +66,6 @@ export function stayFrom(values) {
     if (typeof v === "string" && v.trim()) out[k] = v.trim();
   }
   return out;
-}
-
-/** One item per line (blank lines and stray spaces dropped). */
-export const lines = (text) => String(text ?? "").split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
-
-/** "What to expect": one item per paragraph, its first line the title, the rest the description. */
-export function blocks(text) {
-  return String(text ?? "").split(/\r?\n\s*\r?\n/).map((b) => lines(b)).filter((l) => l.length)
-    .map(([title, ...rest]) => ({ title, body: rest.join(" ") }));
 }
 
 /** "TTFC 2027 · Toronto · Dates to be announced" → { lead: "TTFC 2027", rest: ["Toronto", "Dates to be announced"] }. */

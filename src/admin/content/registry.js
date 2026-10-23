@@ -40,10 +40,17 @@ export const SCOPES = {
      2027 waitlist › Wording (admin/leads/Waitlist2027.jsx). Any staff. */
   stay: {
     groups: [
-      { id: "stay-page", title: "The page: top and search results", hint: "thetechfestival.com/stay-updated and the same screen in the web app. Only say what's true: no 2027 dates, venue or numbers until they're announced." },
-      { id: "stay-preview", title: "The page: the 2027 preview" },
+      { id: "stay-page", title: "The page: top and search results", hint: "thetechfestival.com/stay-updated and the same screen in the web app. Only say what's true: no 2027 dates, venue or numbers until they're announced. The map and its stops are on the 2027 journey tab." },
       { id: "stay-form", title: "The page: the waitlist form" },
       { id: "stay-email", title: "The email people get", hint: "Sent from enquire@ when someone joins (at most once a day per address, never to anyone who unsubscribed). Their ticks, the app badges and the footer are added for you." },
+    ],
+  },
+  /* The 2027 journey's heading and introduction (Oct 23 2026): shown on Sales & emails › 2027 waitlist › 2027 journey
+     (admin/leads/JourneyEditor.jsx) above its stops editor. The stops themselves (stay.journey, a JSON list) have
+     their own editor there: their scope "journey-stops" isn't a settings page. Any staff. */
+  journey: {
+    groups: [
+      { id: "journey-text", title: "Heading and introduction", hint: "Above the map on thetechfestival.com/stay-updated and in the web app. No dates, venues or numbers until they're announced." },
     ],
   },
   /* Edited on their own page, Website & app › Swag kit giveaway (admin/app/SwagKit.jsx: times in Toronto, a preview
@@ -259,53 +266,17 @@ export const REGISTRY = {
     scope: "stay", group: "stay-page", type: "textarea", rows: 3,
     label: "Introduction", description: "The paragraph under the headline.",
   },
-  "stay.stat": {
-    scope: "stay", group: "stay-page", type: "text",
-    label: "Attendee line", description: "Optional line in the top section, next to the button. Empty = not shown (the 2027 page has no attendee count).",
+  "stay.journey_title": {
+    scope: "journey", group: "journey-text", type: "text",
+    label: "Heading", description: "Above the map of Canada and the stops.",
   },
-  "stay.program_title": {
-    scope: "stay", group: "stay-preview", type: "text",
-    label: "Programme heading", description: "Heading above the pillars and sectors.",
+  "stay.journey_intro": {
+    scope: "journey", group: "journey-text", type: "textarea", rows: 3,
+    label: "Introduction", description: "One or two sentences under the heading.",
   },
-  "stay.program_intro": {
-    scope: "stay", group: "stay-preview", type: "textarea", rows: 2,
-    label: "Programme introduction", description: "The line under the programme heading.",
-  },
-  "stay.pillars_title": {
-    scope: "stay", group: "stay-preview", type: "text",
-    label: "Pillars heading", description: "Heading of the technology pillars list.",
-  },
-  "stay.pillars": {
-    scope: "stay", group: "stay-preview", type: "textarea", prefill: true, rows: 5,
-    label: "Technology pillars", description: "One per line, in order.",
-  },
-  "stay.sectors_title": {
-    scope: "stay", group: "stay-preview", type: "text",
-    label: "Sectors heading", description: "Heading of the applied sectors list.",
-  },
-  "stay.sectors": {
-    scope: "stay", group: "stay-preview", type: "textarea", prefill: true, rows: 5,
-    label: "Applied sectors", description: "One per line, in order.",
-  },
-  "stay.briefings_title": {
-    scope: "stay", group: "stay-preview", type: "text",
-    label: "Briefing events heading", description: "Heading of the briefing events in other cities.",
-  },
-  "stay.briefings_intro": {
-    scope: "stay", group: "stay-preview", type: "textarea", rows: 3,
-    label: "Briefing events intro", description: "One or two sentences under the heading.",
-  },
-  "stay.briefings": {
-    scope: "stay", group: "stay-preview", type: "textarea", prefill: true, rows: 10,
-    label: "Events", description: "One event per paragraph (leave an empty line between them). First line: the city; the line under it: what it is and the date, or \"Date to be announced\". The first one is shown large, as the main festival.",
-  },
-  "stay.expect_title": {
-    scope: "stay", group: "stay-preview", type: "text",
-    label: "“What to expect” heading", description: "Heading of the list of what happens at TTFC.",
-  },
-  "stay.expect": {
-    scope: "stay", group: "stay-preview", type: "textarea", prefill: true, rows: 12,
-    label: "What to expect", description: "One item per paragraph (leave an empty line between items). The first line of each is its title, the rest its description. Only things that are true of TTFC.",
+  "stay.journey": {
+    scope: "journey-stops", group: "journey-stops", type: "json",
+    label: "2027 journey: the stops", description: "The map's stops: month, city, briefing or festival, focus (technology pillar × sector), date, venue. Edited on Sales & emails › 2027 waitlist › 2027 journey.",
   },
   "stay.form_title": {
     scope: "stay", group: "stay-form", type: "text",

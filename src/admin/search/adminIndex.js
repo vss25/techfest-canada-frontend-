@@ -53,6 +53,7 @@ const KEYWORDS = {
   "app/activity": ["live", "feed", "events", "posts"],
   "app/moderation": ["reports", "held posts", "flagged", "review queue", "remove post", "hidden people", "hidden from app", "hide from app",
     "shadow ban", "unhide", "show in app again", "harassment", "troublemaker", "block someone"],
+  "waitlist-2027": ["stay updated", "2027", "waitlist", "journey", "briefings", "map", "cities", "tour", "pillar", "sector", "focus"],
   "app/text": ["app copy", "feature switches", "switches", "flags", "texts", "wording"],
   "app/pwa": ["web app", "installs", "install prompt", "home screen"],
   "app/invite": ["app invite", "invite email", "download the app", "web app email", "email everyone", "add to home screen", "app email", "open the ttfc app", "swag email", "win the swag kit email", "campaign"],
@@ -89,7 +90,7 @@ const ACTIONS = [
   { title: "Promo codes", where: "Sales & emails › Prices & stock", to: "inventory", icon: Tag, keywords: ["discount", "code", "coupon"] },
 ];
 
-const link = (to, highlight) => `${to ? `/admin/${to}` : "/admin"}${highlight ? `?highlight=${encodeURIComponent(highlight)}` : ""}`;
+const link = (to, highlight) => `${to ? `/admin/${to}` : "/admin"}${highlight ? `${String(to).includes("?") ? "&" : "?"}highlight=${encodeURIComponent(highlight)}` : ""}`;
 const groupTitle = (scope, id) => SCOPES[scope]?.groups.find((g) => g.id === id)?.title || "";
 
 /** Every entry: { id, type: "page" | "setting" | "action", title, subtitle, link, icon, management, keywords, description? }. */
@@ -104,8 +105,10 @@ export const ADMIN_INDEX = (() => {
     }
   }
   for (const [key, meta] of Object.entries(REGISTRY)) {
-    const page = meta.scope === "website" ? "Website switches › Website options" : meta.scope === "swag" ? "" : "App text & switches";
-    const to = meta.scope === "website" ? "content/settings" : meta.scope === "swag" ? "app/swag" : "app/text";
+    const page = meta.scope === "website" ? "Website switches › Website options" : meta.scope === "swag" ? ""
+      : meta.scope === "stay" ? "2027 waitlist › Wording" : meta.scope === "journey" || meta.scope === "journey-stops" ? "2027 waitlist › 2027 journey" : "App text & switches";
+    const to = meta.scope === "website" ? "content/settings" : meta.scope === "swag" ? "app/swag"
+      : meta.scope === "stay" ? "waitlist-2027?tab=wording" : meta.scope === "journey" || meta.scope === "journey-stops" ? "waitlist-2027?tab=journey" : "app/text";
     out.push({
       id: `setting:${key}`, type: "setting", title: meta.label, subtitle: [page, groupTitle(meta.scope, meta.group)].filter(Boolean).join(" › "),
       link: link(to, key), icon: ToggleRight, management: false,

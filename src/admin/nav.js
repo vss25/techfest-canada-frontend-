@@ -3,7 +3,7 @@ import {
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, Power, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
-import { Gavel, Gift, LifeBuoy, ListChecks, ListPlus, Network, Trophy } from "lucide-react";
+import { ClipboardList, Gavel, Gift, LifeBuoy, ListChecks, ListPlus, Network, Trophy } from "lucide-react";
 
 /* =========================================================
    Sidebar structure (the admin review, Oct 19 2026): five sections
@@ -34,6 +34,8 @@ export const NAV = [
   {
     title: "RSVPs & meals",
     items: [
+      // Event summary (Oct 23 2026): passes, RSVPs, meals and check-in for both days on one read-only page.
+      { to: "event-summary", label: "Event summary", icon: ClipboardList },
       { to: "rsvps", label: "Headcounts & RSVPs", icon: CalendarCheck },
       { to: "marketing/rsvp-reminders", label: "RSVP reminders", icon: BellRing },
     ],

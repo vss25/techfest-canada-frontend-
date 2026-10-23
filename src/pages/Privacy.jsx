@@ -45,7 +45,7 @@ var SECTIONS_PRIVACY = [
       "With professional advisors such as lawyers and auditors when needed",
       "With authorities or other parties when required by law or to protect rights, safety, and security",
     ],
-    after: "Service providers are expected to use personal information only to perform services for us and to protect it appropriately.",
+    after: "We require every service provider and partner that handles personal information for us to protect it to the same standard as this Privacy Policy and as the law requires, and to use it only to provide their services to us. Our main service providers include Render and Vercel (hosting), Sanity (event content), Stripe (payments), Resend (email delivery), Apple and Google push services (notifications), and Google Gemini (short summaries about organisations, written from public information only).",
   },
   {
     title: "6. Cross-border processing",
@@ -176,6 +176,12 @@ var SECTIONS_APP = [
       "Usage: screens you open, what you tap and search for, and the topics you look at, linked to your account (you can turn this off in Settings → Privacy & data)",
       "Device: app version, an anonymous device identifier and, if you allow notifications, a push token used to deliver notifications",
       "The camera is used only to scan ticket and connection QR codes; images are not stored or sent",
+      "Help & SOS: if you send a request, your name, the contact details on your account, the category, where you are at the venue and your message go to TTFC staff only, so they can reach you. Help & SOS is not an emergency service: in an emergency, call 911",
+      "Notifications: messages, replies, mentions, connection requests and announcements, and optional \"What you missed\" emails. Choose which you get in Settings → Notifications, or turn notifications off in your phone's settings",
+      "Read receipts: in direct and group messages, the sender can see when you have read their message",
+      "Points and the leaderboard: your points come from what you do in the app, including sessions or polls you choose to share on LinkedIn. If \"Show me on the leaderboard\" is on, other attendees see your name, photo and points there, and swag kit winners may be announced in the app",
+      "Sharing: when you share to LinkedIn or another app, we only record that you shared (for points). What you post there is covered by that service's own privacy policy",
+      "Your organisation: the organisation on your profile can appear in the app's list of attending organisations, with a logo we may find from its website or from your work email's domain (never the full address)",
     ],
   },
   {
@@ -188,7 +194,7 @@ var SECTIONS_APP = [
   },
   {
     title: "5. Deleting your account",
-    body: "You can delete your app account in Settings → Privacy & data. This removes your profile, posts, messages, connections and activity. Tickets you paid for stay valid at the door. App data is otherwise deleted or anonymised within 12 months after the event, except records we must keep by law.",
+    body: "You can delete your app account in Settings → Privacy & data. This removes your profile, posts, messages, connections and activity. Tickets you paid for stay valid at the door. App data is otherwise deleted or anonymised within 12 months after the event, except records we must keep by law. You can also ask us to delete your data, or withdraw your consent, by emailing legal@thetechfestival.com. You can turn off usage sharing in Settings → Privacy & data, and notifications in Settings → Notifications, at any time.",
   },
   {
     title: "6. Contact",
@@ -400,7 +406,7 @@ export default function Privacy() {
         <PolicyBlock
           title="Privacy Policy"
           subtitle="The Tech Festival Canada"
-          effective="October 19, 2026"
+          effective="October 23, 2026"
           intro="This website thetechfestival.com is organized by AtlasLink Markets Inc. We are responsible for the personal information handled through this site and related event services. This Privacy Policy explains how we collect, use, disclose, store, and protect personal information when you visit thetechfestival.com or interact with The Tech Festival Canada event services. We aim to comply with applicable Canadian privacy laws, including the Personal Information Protection and Electronic Documents Act and relevant provincial private sector privacy laws where they apply."
           sections={SECTIONS_PRIVACY}
           dark={dark}
@@ -441,7 +447,7 @@ export default function Privacy() {
           <PolicyBlock
             title="The TTFC App"
             subtitle="Privacy and Terms for the mobile app"
-            effective="October 9, 2026"
+            effective="October 23, 2026"
             intro="These sections apply to the TTFC mobile app in addition to the Privacy Policy and Terms of Use above. The full app versions are also shown inside the app (Settings → Privacy & data)."
             sections={SECTIONS_APP}
             dark={dark}

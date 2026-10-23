@@ -117,6 +117,10 @@ export default function Swag() {
           <section id="rules" aria-labelledby="rules-h" style={{ marginTop: 48, padding: "24px 22px", borderRadius: 20, background: c.card, border: `1px solid ${c.line}`, scrollMarginTop: 96 }}>
             <h2 id="rules-h" style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>The rules</h2>
             <p style={{ margin: "12px 0 0", fontSize: 16, lineHeight: 1.65, color: c.mid, whiteSpace: "pre-line" }}>{s.rules}</p>
+            {/* Always shown, whatever staff write in the rules: the App Store requires it (guideline 5.3, Oct 23 2026). */}
+            <p style={{ margin: "12px 0 0", fontSize: 16, lineHeight: 1.65, color: c.mid }}>
+              This giveaway is run and sponsored by AtlasLink Markets Inc., the organiser of The Tech Festival Canada. Apple Inc. and Google LLC are not sponsors of this giveaway and are not involved in it in any way.
+            </p>
             <p style={{ margin: "14px 0 0", fontSize: 14, color: c.mid }}>
               Questions? Email <a href="mailto:enquire@thetechfestival.com" style={{ color: c.accent, fontWeight: 600 }}>enquire@thetechfestival.com</a>.
             </p>

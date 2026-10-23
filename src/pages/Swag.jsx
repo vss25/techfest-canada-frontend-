@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BadgeCheck, Smartphone, Trophy, UserRoundPlus, Gift } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import StoreBadges from "../components/StoreBadges";
 import useSiteSettings, { PUBLIC_API } from "../hooks/useSiteSettings";
 import { SWAG_ALT, SWAG_PHOTO, fetchSwag, swagFrom, swagHowTo } from "../lib/swag";
 
@@ -9,7 +10,8 @@ import { SWAG_ALT, SWAG_PHOTO, fetchSwag, swagFrom, swagHowTo } from "../lib/swa
    /swag: "Win the TTFC swag kit" (Oct 22 2026). The rules page the
    app invite email ("Win the swag kit"), the apps' Points banner and
    the install page link to: the photo, the title, how to win in
-   three lines, a "Get the app" button (→ /app/install) and the rules
+   three lines, the App Store and Google Play badges (Oct 22 2026,
+   StoreBadges: this phone's own store first) and the rules
    staff write in Admin › Website & app › Swag kit giveaway (with the
    number of kits and the times filled in): GET /api/app/swag, or the
    same worked out from the site settings until it answers
@@ -83,17 +85,13 @@ export default function Swag() {
                 A TTFC backpack, bottle, mug, notebook, phone stand, umbrella and more. Download the app, sign in and earn points: the top {s.kits} on the leaderboard each win one.
               </p>
               {note && <p style={{ margin: "12px 0 0", fontSize: 15, fontWeight: 600, color: c.accent }}>{note}</p>}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 22 }}>
-                <a href="/app/install?from=swag" style={{
-                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 54, padding: "0 26px", borderRadius: 999,
-                  background: "linear-gradient(90deg, #7A3FD1, #E8458B)", color: "#fff", fontSize: 17, fontWeight: 700, textDecoration: "none",
-                }}>
-                  <Smartphone size={20} aria-hidden="true" /> Get the app
-                </a>
-                <a href="#rules" style={{ display: "inline-flex", alignItems: "center", minHeight: 54, padding: "0 22px", borderRadius: 999, border: `1px solid ${c.line}`, color: c.text, fontSize: 16, fontWeight: 600, textDecoration: "none" }}>
-                  Read the rules
-                </a>
-              </div>
+              <p style={{ margin: "22px 0 10px", display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 800, color: c.text }}>
+                <Smartphone size={18} aria-hidden="true" style={{ color: c.accent }} /> Get the app
+              </p>
+              <StoreBadges where="swag" align="start" />
+              <a href="#rules" style={{ display: "inline-flex", alignItems: "center", minHeight: 44, marginTop: 14, padding: "0 20px", borderRadius: 999, border: `1px solid ${c.line}`, color: c.text, fontSize: 15, fontWeight: 600, textDecoration: "none" }}>
+                Read the rules
+              </a>
               <p style={{ margin: "12px 0 0", fontSize: 13, color: c.mid }}>Free. No purchase necessary.</p>
             </div>
           </div>

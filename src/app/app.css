@@ -1514,6 +1514,25 @@ textarea.input--ios { min-height: 120px; }
 .install-swag > svg { flex: none; width: 22px; height: 22px; color: var(--pur-alt); }
 .install-swag strong { color: var(--tx); font-weight: 700; }
 .install .mock svg { height: min(320px, 42dvh); }
+/* Oct 22 2026: the page is the App Store / Google Play badges (StoreBadges), a QR code on a computer, and a link
+   back to the web app. The step, video and troubleshooting styles above are no longer used. */
+.install-stores { display: flex; flex-direction: column; gap: 14px; align-items: stretch; padding: 20px 16px; border-radius: var(--r-card); background: var(--surface); border: 2px solid var(--pur); }
+.install-stores-qr { display: flex; flex-direction: column; gap: 10px; align-items: center; padding-top: 6px; border-top: 1px solid var(--border); }
+.install-stores-qr .pass-qr { margin-top: 8px; max-width: 100%; box-sizing: border-box; }
+.install-stores-qr .pass-qr svg { max-width: 100%; height: auto; }
+.install-keep { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 12px 14px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); color: var(--tx); font-size: 15.5px; font-weight: 600; line-height: 1.4; text-decoration: none; }
+.install-keep span { flex: 1; min-width: 0; }
+.install-keep svg { flex: none; width: 18px; height: 18px; color: var(--tx2); }
+/* "The TTFC app is here" at the top of Home (components/GetAppCard.jsx). */
+.get-app-card { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--r-card); background: var(--surface); border: 2px solid var(--pur); }
+.get-app-head { display: flex; align-items: center; gap: 12px; padding-right: 30px; }
+.get-app-head .app-icon { flex: none; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+.get-app-head b { display: block; font-size: 17px; line-height: 1.25; }
+.get-app-head p { margin: 2px 0 0; font-size: 14px; line-height: 1.4; color: var(--tx2); }
+.get-app-x { position: absolute; top: 8px; right: 8px; }
+/* The sign-in screen's "Get the TTFC app" (screens/Login.jsx). */
+.login-get-app { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 2px 0 12px; }
+.login-get-app > span { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,.6); }
 
 /* ---------- Desktop ---------- */
 

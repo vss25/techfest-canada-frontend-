@@ -28,6 +28,8 @@ export const pwa = createStore({
   browser: detectBrowser(),
 });
 
+// Chrome's install offer is held back (preventDefault: no mini-infobar) and, since Oct 22 2026, never shown: the web
+// app isn't offered as an install any more, the App Store and Google Play apps are (components/GetAppCard.jsx).
 let deferred = null;
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
@@ -41,7 +43,7 @@ window.addEventListener("appinstalled", () => {
   track("pwa_installed", {});
 });
 
-/** Shows the browser's own install dialog. → "accepted" | "dismissed" | "unavailable" */
+/** Shows the browser's own install dialog (not offered anywhere since Oct 22 2026). → "accepted" | "dismissed" | "unavailable" */
 export async function promptInstall() {
   if (!deferred) return "unavailable";
   const e = deferred;

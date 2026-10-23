@@ -12,7 +12,7 @@ import { ToastHost, Spinner } from "./components/ui";
 import ShareSheetHost from "./components/ShareSheet";
 import PassesSheet from "./components/PassesSheet";
 import { myCard, profileTabDot } from "./lib/myCard";
-import { InstallNudges, OfflineBar, UpdatePrompt } from "./components/AppNotices";
+import { OfflineBar, UpdatePrompt } from "./components/AppNotices";
 import LivePollPill from "./components/LivePollPill";
 import { showAlert } from "./lib/ui";
 import { onScreenChange } from "./lib/pwa";
@@ -88,7 +88,7 @@ function Boot() {
   // A tap on a message notification while the app is open: straight to that chat.
   useEffect(() => listenForNotificationTaps(navigate), [navigate]);
 
-  // /app/?install=1 (from the website's prompt) → the guide.
+  // /app/?install=1 (older website links and emails) → "Get the TTFC app" (the store badges).
   useEffect(() => {
     const q = new URLSearchParams(location.search);
     if (q.get("install") === "1" && !location.pathname.startsWith("/install")) {
@@ -182,7 +182,6 @@ function Shell() {
         <SplashDone />
       </Suspense>
       {showTabs && <TabBar chatsDot={FEATURES.chats && chatsHasNew(s)} profileDot={(mode === "user" || mode === "demo") && profileTabDot(mc)} />}
-      {!signedOut && <InstallNudges />}
       <UpdatePrompt />
     </div>
   );

@@ -16,6 +16,7 @@ import { PeopleFill, TrophyFill } from "../components/Glyphs";
 import { points, refreshPoints } from "../lib/points";
 import { theme, setTheme, THEME_LABEL } from "../lib/theme";
 import { WelcomeCard } from "../components/AppNotices";
+import GetAppCard from "../components/GetAppCard";
 import SiteAnnouncement from "../components/SiteAnnouncement";
 import PostCard from "../components/PostCard";
 import Composer from "../components/Composer";
@@ -39,7 +40,8 @@ import BrandMark from "../components/BrandMark";
    session on now / next, or thank you (Oct 22 2026). The TTFC mark sits
    in the middle of the top row (a tap pops it and scrolls to the
    top) and the divider under the hero is in the logo's colours
-   (Oct 20 2026).
+   (Oct 20 2026). First under the header: "The TTFC app is here"
+   with the App Store and Google Play badges (Oct 22 2026).
 ========================================================= */
 
 function Countdown({ now, target }) {
@@ -389,6 +391,8 @@ export default function Home() {
 
       <main id="main" className="stack-lg" style={{ paddingTop: 10 }}>
         <div className="pad stack">
+          {/* Oct 22 2026: the App Store and Google Play apps first (dismissible for a week). */}
+          <GetAppCard />
           <WelcomeCard />
           {!signedIn && (
             <div className="banner">

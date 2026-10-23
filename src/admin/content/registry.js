@@ -81,8 +81,8 @@ export const REGISTRY = {
   },
   "flag.pwaPrompt": {
     scope: "website", group: "selling", type: "switch",
-    label: "Install-the-app prompt on the website",
-    description: "Shows phone visitors to thetechfestival.com a \"Get the TTFC app\" sheet with step-by-step install help. The web app at /app works either way.",
+    label: "\"Get the TTFC app\" prompt on the website",
+    description: "Shows visitors to thetechfestival.com a \"Get the TTFC app\" pop-up with the App Store and Google Play badges (a QR code to the phone on a computer). The homepage, footer and menu show the badges either way.",
   },
   "site.nominations_open": {
     scope: "website", group: "forms", type: "switch",

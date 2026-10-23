@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import StoreBadges from "./StoreBadges";
 
 export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Delegate Pass", userName = "" }) {
   const [isDark, setIsDark] = useState(true);
@@ -32,7 +33,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
     { icon: "🎟", title: "Ticket Confirmed", desc: "Check your email for your digital pass" },
     { icon: "📍", title: "The Westin Harbour Castle", desc: "Mon–Tue, October 26–27, 2026 · Toronto" },
     { icon: "🤝", title: "1000+ Attendees", desc: "Across 2 days. You're now part of the inner circle" },
-    { icon: "📱", title: "The TTFC App", desc: "Your pass, agenda and networking. Coming soon to iPhone & Android" },
+    { icon: "📱", title: "The TTFC App", desc: "Your pass, agenda and networking. On the App Store and Google Play" },
   ];
 
   return (
@@ -191,6 +192,12 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
                     </motion.div>
                   ))}
                 </div>
+
+                {/* Get the TTFC app (Oct 22 2026: live on the App Store and Google Play) */}
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", color: muted, marginBottom: 10 }}>Get the TTFC app</div>
+                  <StoreBadges where="post_purchase" size="sm" />
+                </motion.div>
 
                 {/* CTAs */}
                 <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>

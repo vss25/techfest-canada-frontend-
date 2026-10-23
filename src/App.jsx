@@ -50,8 +50,8 @@ import { isStandalone } from "./lib/pwaPlatform";
 // The staff panel is loaded only when someone opens it.
 const Admin = lazy(() => import("./pages/Admin"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
-// "Get the TTFC app" prompt: the install guide on phones and tablets, a QR code to the phone on
-// computers (the web app is phone-only). Not inside the installed app; loaded on its own.
+// "Get the TTFC app" prompt: the App Store / Google Play badges on phones and tablets, plus a QR code to the
+// phone on computers. Not inside the installed web app; loaded on its own.
 const InstallAppPrompt = lazy(() => import("./components/InstallAppPrompt"));
 const SHOW_INSTALL_PROMPT = typeof window !== "undefined" && !isStandalone();
 

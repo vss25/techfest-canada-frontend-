@@ -71,7 +71,7 @@ const KEYWORDS = {
 /* Things done on a page that people look for by name. */
 const ACTIONS = [
   { title: "Give a pass", where: "People & passes › Give a pass", to: "issued-passes", icon: TicketPlus, keywords: ["give someone a pass", "new pass"] },
-  { title: "Email everyone to get the web app", where: "Website & app › App invite email", to: "app/invite", icon: MailPlus, keywords: ["app invite", "download the app", "install the app", "web app email"] },
+  { title: "Email everyone to get the TTFC app", where: "Website & app › App invite email", to: "app/invite", icon: MailPlus, keywords: ["app invite", "download the app", "install the app", "web app email", "app store", "google play"] },
   { title: "Turn “What you missed” emails on or off", where: "Website & app › “What you missed” emails", to: "app/digest", icon: MailPlus, keywords: ["digest", "summary email", "missed", "test digest"] },
   { title: "Mark someone as Media, VIP, Volunteer or Staff", where: "People & passes › People › their profile", to: "people", icon: Users, keywords: ["media tag", "press", "vip", "volunteer", "staff", "type", "profile colour", "profile color"] },
   { title: "Hide someone from the app", where: "People & passes › People › their profile › Hide from app", to: "people", icon: EyeOff,

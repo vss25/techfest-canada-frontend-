@@ -8,7 +8,6 @@ import { useStore } from "../lib/store";
 import { auth, bestTicket, can, isSignedIn, isTeam, loadAccount, signOut } from "../lib/auth";
 import { staffSos } from "../lib/sos";
 import { social } from "../lib/social";
-import { pwa, promptInstall } from "../lib/pwa";
 import { theme, setTheme, THEME_LABEL } from "../lib/theme";
 import { points, refreshPoints } from "../lib/points";
 import { resetDemo } from "../lib/demo";
@@ -97,19 +96,9 @@ function SosInboxRow() {
     reminders are app-only: a browser can't alert you when the web app is closed.) */
 function SettingsSheet({ onClose }) {
   const a = useStore(auth);
-  const p = useStore(pwa);
   const t = useStore(theme);
-  const navigate = useNavigate();
   const user = a.user;
 
-  const install = async () => {
-    if (p.canPrompt) {
-      const outcome = await promptInstall();
-      if (outcome === "unavailable") navigate("/install?from=profile");
-      return;
-    }
-    navigate("/install?from=profile");
-  };
   const doSignOut = async () => {
     const ok = await confirmDialog({ title: "Sign out of TTFC?", message: "Your schedule and chats stay on your account. Sign in again any time.", confirm: "Sign out", destructive: true });
     if (ok) signOut();
@@ -160,8 +149,8 @@ function SettingsSheet({ onClose }) {
         </section>
 
         <div className="settings-group">
-          {!p.standalone && <Row icon={Download} title={p.installed ? "Open the installed app" : "Install the app"} onClick={install} />}
-          {p.standalone && <Row icon={Smartphone} title="Find TTFC on your Home Screen" to="/install?find=1" />}
+          {/* Oct 22 2026: the App Store / Google Play apps, never the web app's Home Screen install. */}
+          <Row icon={Download} title="Get the TTFC app" to="/install?from=profile" />
           <Row icon={ShieldCheck} title="Privacy Policy" to="/legal/privacy" />
           <Row icon={FileText} title="Terms of Use" to="/legal/terms" />
           <Row icon={LifeBuoy} tone="sos" title="Help & SOS" to="/help" />

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { openCookieSettings } from "../lib/trackers";
 import { useEffect, useState } from "react";
 import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
+import StoreBadges from "./StoreBadges";
 
 // Used when the matching Site settings field is empty.
 const DEFAULT_SOCIAL = {
@@ -37,6 +38,12 @@ export default function Footer() {
   return (
     <footer style={{ background: bg, borderTop: bTop, display: "flex", flexDirection: "column", alignItems: "center", overflow: "hidden" }}>
       <div style={{ background: bg, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "32px 6% 32px" }}>
+
+        {/* Get the TTFC app (Oct 22 2026): the App Store and Google Play, this phone's own store first */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, paddingBottom: 6 }}>
+          <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: lCol }}>Get the TTFC app</span>
+          <StoreBadges where="footer" size="sm" />
+        </div>
 
         {/* Social icons */}
         <div style={{ display: "flex", gap: 24, alignItems: "center" }}>

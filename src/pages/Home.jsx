@@ -10,6 +10,7 @@ import SponsorMarquee from "../components/SponsorMarquee";
 import NewsletterBar from "../components/NewsletterBar";
 import CommunityCarousel from "../components/CommunityCarousel";
 import SpeakerMarquee from "../components/SpeakerMarquee";
+import GetAppSection from "../components/GetAppSection";
 import useSiteSettings from "../hooks/useSiteSettings";
 import { HERO_POSTER, heroStillOnly, siteFileUrl } from "../lib/siteFiles";
 
@@ -298,6 +299,9 @@ export default function Home() {
         </motion.div>
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, zIndex: 4, background: "linear-gradient(to bottom, transparent, " + bg + ")", pointerEvents: "none" }} />
       </section>
+
+      {/* GET THE TTFC APP (Oct 22 2026): the App Store and Google Play, right under the hero */}
+      <GetAppSection dark={dark} />
 
       {/* OUR COMMUNITY (logo marquee) + 2026 SPEAKERS — between the Register pill and MEET BUILD SCALE */}
       <div id="our-community" style={{ background: bg }}>

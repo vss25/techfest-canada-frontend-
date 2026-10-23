@@ -8,12 +8,13 @@ import { IconButton, Switch } from "./ui";
 /* =========================================================
    "Turn on notifications" for new messages (lib/webpush.js):
    a banner at the top of Chats until it's on or dismissed, and
-   the switch in Settings. iPhone in a Safari tab: add the app
-   to the Home Screen first (Web Push only works there).
+   the switch in Settings. iPhone in a Safari tab, where Web Push
+   doesn't work: "Get the TTFC app" (the App Store app has
+   notifications; Oct 22 2026, no more "Add to Home Screen").
 ========================================================= */
 
 const BANNER_KEY = "ttfc.push.bannerDismissed";
-const INSTALL_TEXT = "Add TTFC to your Home Screen to get message notifications";
+const INSTALL_TEXT = "Get the TTFC app to get message notifications";
 
 /** `className`: the wrapper's (nothing renders when there's nothing to say). */
 export function PushBanner({ className }) {
@@ -34,7 +35,7 @@ export function PushBanner({ className }) {
           <IconButton icon={X} label="Not now" small onClick={dismiss} />
         </div>
         {install
-          ? <Link to="/install?from=push" className="btn btn-block">Show me how</Link>
+          ? <Link to="/install?from=push" className="btn btn-block">Get the app</Link>
           : <button type="button" className="btn btn-block" onClick={turnOnNotifications} disabled={p.busy}>Turn on notifications</button>}
       </div>
     </div>
@@ -49,7 +50,7 @@ export function PushSetting() {
     return (
       <div className="stack-sm">
         <span className="small">{INSTALL_TEXT}.</span>
-        <Link to="/install?from=push-settings" className="small bold" style={{ color: "var(--pur-alt)" }}>Show me how</Link>
+        <Link to="/install?from=push-settings" className="small bold" style={{ color: "var(--pur-alt)" }}>Get the app</Link>
       </div>
     );
   }

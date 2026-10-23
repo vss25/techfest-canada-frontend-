@@ -5,6 +5,7 @@ import { listTime } from "../lib/time";
 import { READ_BLUE, RECEIPT_LABEL } from "../lib/receipts";
 import { givenName } from "../lib/ui";
 import { whoIsTyping } from "../lib/typing";
+import { startTypingPoll } from "../lib/typingPoll";
 import { Avatar, Popover } from "./ui";
 
 /* =========================================================
@@ -86,25 +87,19 @@ export function ChatBubble({ text, mine, author, avatarUrl, authorTo, timestamp,
   );
 }
 
-/** "Alex is typing" above a group or discussion composer; polls every 2.5 s, collapses when nobody is. */
+/** "Alex is typing" above a group or discussion composer; polls every 2.5 s (one check at a time, lib/typingPoll),
+    collapses when nobody is. */
 export function TypingIndicator({ scope, id }) {
   const [names, setNames] = useState([]);
   const [phase, setPhase] = useState(0);
   useEffect(() => {
     if (!id) return undefined;
-    let alive = true, tick = 0;
-    const loop = async () => {
-      if (!alive) return;
-      if (tick % 6 === 0 && document.visibilityState === "visible") {
-        const who = await whoIsTyping(scope, id);
-        if (alive) setNames(who);
-      }
-      tick += 1;
-      if (alive) setPhase((p) => (p + 1) % 3);
-    };
-    loop();
-    const t = setInterval(loop, 420);
-    return () => { alive = false; clearInterval(t); };
+    return startTypingPoll({
+      check: () => whoIsTyping(scope, id),
+      onNames: setNames,
+      onTick: () => setPhase((p) => (p + 1) % 3),
+      isVisible: () => document.visibilityState === "visible",
+    });
   }, [scope, id]);
   const label = names.length === 0 ? ""
     : names.length === 1 ? `${givenName(names[0])} is typing`

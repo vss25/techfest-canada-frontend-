@@ -6,6 +6,7 @@ import { API } from "../utils/api";
 import useSiteSettings from "../hooks/useSiteSettings";
 import { TicketSalesNotice } from "../components/SiteNotices";
 import { promoFromUrl } from "../lib/promoOffer";
+import { PRICE_RISE, wasPrice } from "../lib/priceRise";
 
 function CheckIcon() {
   return (
@@ -239,6 +240,8 @@ function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded, sale
   const [hovered, setHovered] = useState(false);
 
   const price = inventoryItem?.price ?? meta.defaultPrice;
+  // After the Oct 23 2026 rise: the earlier price, crossed out (lib/priceRise.js).
+  const was = inventoryItem ? wasPrice(meta.tier, price) : null;
   const remaining = inventoryItem ? Math.max(inventoryItem.total - inventoryItem.sold, 0) : null;
   // Hard flag in PASS_META wins over inventory
   const soldOut = meta.soldOut === true || (remaining !== null && remaining <= 0);
@@ -262,6 +265,13 @@ function PassCard({ meta, inventoryItem, onPurchase, dark, inventoryLoaded, sale
       {soldOut && !meta.featured && <div style={{ position:"absolute", top:-14, left:"50%", transform:"translateX(-50%)", background: dark?"rgba(255,255,255,0.14)":"rgba(13,5,32,0.72)", color: dark?"rgba(255,255,255,0.85)":"#ffffff", fontSize:"0.62rem", fontWeight:800, letterSpacing:"1.4px", textTransform:"uppercase", padding:"5px 16px", borderRadius:999, whiteSpace:"nowrap", fontFamily:"'Orbitron', sans-serif", border: dark?"1px solid rgba(255,255,255,0.18)":"none" }}>Sold Out</div>}
 
       <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.72rem", letterSpacing:"1.5px", textTransform:"uppercase", color: meta.featured?(dark?"#f5a623":"#d98a14"):(dark?"rgba(160,100,255,0.85)":"#7a3fd1"), marginBottom:8 }}>{meta.label}</div>
+
+      {inventoryLoaded && was && (
+        <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:6 }}>
+          <span aria-label={`Was $${was.toLocaleString()}`} style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"1.05rem", color:textLight, textDecoration:"line-through", textDecorationThickness:"2px" }}>${was.toLocaleString()}</span>
+          <span style={{ fontSize:"0.6rem", fontWeight:800, letterSpacing:"1px", textTransform:"uppercase", color: dark?"#ff7aa8":"#c2185b", background: dark?"rgba(255,122,168,0.14)":"rgba(194,24,91,0.08)", padding:"3px 9px", borderRadius:999 }}>Price went up {PRICE_RISE.label}</span>
+        </div>
+      )}
 
       <div style={{ display:"flex", alignItems:"baseline", gap:6, marginBottom:2, minHeight:"2.6rem" }}>
         {inventoryLoaded ? (

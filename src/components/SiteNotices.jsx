@@ -4,6 +4,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
 import { withOrdinals } from "../lib/ordinals";
+import { announcementText } from "../lib/priceRise";
 
 /* Public-site pieces driven by Site settings → Website options in the admin panel. */
 
@@ -33,7 +34,8 @@ export function AnnouncementBar() {
   const { pathname } = useLocation();
   const [dismissed, setDismissed] = useState(readDismissed);
   const ref = useRef(null);
-  const text = s["site.announcement"];
+  // A "prices go up" notice reads as gone up once the Oct 23 2026 rise has happened (lib/priceRise.js).
+  const text = announcementText(s["site.announcement"]);
   const link = safeUrl(s["site.announcement_link"]);
   const show = !!text && dismissed !== text && !isStaffPath(pathname) && !isFocusedPath(pathname);
 

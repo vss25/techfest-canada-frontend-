@@ -6,6 +6,8 @@
    runs it. The card itself: lib/shareCard.js.
 ========================================================= */
 
+import { MAX_TILES } from "./shareCardLayout.js";
+
 export const FESTIVAL_HANDLE = "@thetechfestival";
 export const LINKEDIN_PAGE = "https://www.linkedin.com/company/thetechfestival";
 export const WEBSITE = "thetechfestival.com";
@@ -42,11 +44,26 @@ export function caption(author, body, link = "", platform = null) {
 }
 
 /**
- * What goes to the share sheet, in order: the post card, the photos, the
- * video, then the caption. Media before text, so WhatsApp / LinkedIn keep
- * the pictures. Instagram gets media only (its caption comes from the
- * clipboard). X takes at most 4 photos and no video beside them; LinkedIn
- * can't mix photos and a video in one post, so those two get photos only.
+ * The photos that go beside the card: only the ones it doesn't show. The card
+ * draws the post's first three pictures, so sending those as files as well put
+ * the same photo in WhatsApp twice, once inside the card and once on its own
+ * (Oct 23 2026). `loaded`: the post's media in order, as { file, isVideo, shown }
+ * (shown: its picture was drawn on the card). Videos aren't photos; they still
+ * go, since the card can't play them.
+ */
+export function photosBesideCard(loaded) {
+  return loaded.filter((m, i) => m && !m.isVideo && m.file && !(i < MAX_TILES && m.shown)).map((m) => m.file);
+}
+
+/**
+ * What goes to the share sheet, in order: the post card, the photos it
+ * doesn't show (photosBesideCard), the video, then the caption as plain
+ * text with the link in it. No separate link item, so an app adds no link
+ * preview picture next to the card: the caption rides on the card. Media
+ * before text, so WhatsApp / LinkedIn keep the pictures. Instagram gets media
+ * only (its caption comes from the clipboard). X takes at most 4 photos and no
+ * video beside them; LinkedIn can't mix photos and a video in one post, so
+ * those two get photos only.
  */
 export function orderedItems(platform, card, photos, videos, captionItem) {
   if (platform === "instagram") return [card, ...photos, ...videos];

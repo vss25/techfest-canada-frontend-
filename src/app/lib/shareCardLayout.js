@@ -100,5 +100,8 @@ export function tiles(count, rect) {
   ];
 }
 
+/** The card shows the post's first three pictures; the third says "+N" for the rest. */
+export const MAX_TILES = 3;
+
 /** How many photos didn't fit in the grid ("+2" on the last tile). */
-export function overflow(count) { return Math.max(0, count - 3); }
+export function overflow(count) { return Math.max(0, count - MAX_TILES); }

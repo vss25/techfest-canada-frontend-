@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { STAY_KEYS } from "../lib/stayUpdated";
 
 /* =========================================================
    Website options edited in the admin panel (Site settings →
@@ -38,6 +39,9 @@ export const SITE_DEFAULTS = {
   "swag.announce": "",
   "swag.title": "",
   "swag.rules": "",
+  /* "Stay updated" (the TTFC 2027 waitlist page, Admin › Sales & emails › 2027 waitlist › Wording): read through
+     src/lib/stayUpdated.js stayFrom(), which has the defaults for empty values. */
+  ...Object.fromEntries(STAY_KEYS.map((k) => [k, ""])),
 };
 
 let state = { ...SITE_DEFAULTS, loaded: false };

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Bell, BarChart3, House as HomeIcon, Building2, CalendarDays, ChevronRight, Circle, Eye, ImagePlus, ListChecks, Megaphone, MessageSquareQuote, Moon, Smartphone, Sun, X, UserRoundPen } from "lucide-react";
+import { Bell, BarChart3, House as HomeIcon, Building2, CalendarClock, CalendarDays, ChevronRight, Circle, Eye, ImagePlus, ListChecks, Megaphone, MessageSquareQuote, Moon, Smartphone, Sun, X, UserRoundPen } from "lucide-react";
 import { useStore, local } from "../lib/store";
 import { auth, can, firstName, isSignedIn, signOut } from "../lib/auth";
 import { cms, featuredSpeakers, heroSession, pollsOn, qaOn, roomOf, speakerById, timeRange } from "../lib/cms";
@@ -26,6 +26,7 @@ import FeedCta from "../components/FeedCta";
 import { useFeedCtas } from "../lib/useFeedCtas";
 import { FeaturedRow, OrgGrid, PartnerSheet } from "../components/Orgs";
 import BrandMark from "../components/BrandMark";
+import { stayFrom } from "../../lib/stayUpdated";
 
 /* =========================================================
    Home, merged with the feed (iOS FeedView / HomeTabView):
@@ -433,6 +434,15 @@ export default function Home() {
             </span>
           </Link>
           <OrgsPreview />
+          {/* The TTFC 2027 waitlist (Oct 23 2026): /stay-updated, in the waitlist page's own (editable) words. */}
+          <Link to="/stay-updated" className="card wl-card pressable">
+            <span className="lead-icon" aria-hidden="true"><CalendarClock /></span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <b>{stayFrom(ct.values)["stay.hero_title"]}</b>
+              <span className="tiny muted">{stayFrom(ct.values)["stay.button"]}</span>
+            </span>
+            <ChevronRight aria-hidden="true" style={{ width: 16, height: 16, flex: "none", color: "var(--tx2)" }} />
+          </Link>
         </div>
 
         <div ref={sentinel} aria-hidden="true" style={{ height: 1 }} />

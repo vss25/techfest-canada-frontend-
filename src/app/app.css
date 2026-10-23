@@ -1810,3 +1810,44 @@ textarea.input--ios { min-height: 120px; }
 .person-meta span { display: inline-flex; align-items: center; gap: 4px; }
 .person-meta svg { width: 14px; height: 14px; }
 
+
+/* Stay updated: the TTFC 2027 waitlist (screens/StayUpdated.jsx, Oct 23 2026). */
+.wl-hero { position: relative; overflow: hidden; padding: 22px 18px 18px; text-align: center;
+  background: radial-gradient(ellipse 90% 70% at 50% 0%, color-mix(in srgb, var(--pur-core) 34%, transparent) 0%, transparent 70%), var(--surface); }
+.wl-hero-title { margin: 0; line-height: 1.05; }
+.wl-hero-lead { display: block; font-size: 44px; font-weight: 900; letter-spacing: -1px;
+  background: linear-gradient(135deg, #8b52e0 10%, #d9468f 55%, #f5a623 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.wl-hero-rest { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
+.wl-hero-rest > span { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--elevated);
+  font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--tx); }
+.wl-hero-intro { margin: 14px 0 0; font-size: 15px; line-height: 1.5; color: var(--tx2); }
+.wl-stat { display: inline-flex; align-items: center; gap: 8px; margin: 14px 0 0; padding: 8px 14px; border-radius: 999px; background: var(--pur-tint); color: var(--tx); font-weight: 700; font-size: 14px; }
+.wl-stat svg { width: 17px; height: 17px; color: var(--pur-alt); }
+.wl-hero-btn { display: flex; width: 100%; margin-top: 16px; }
+.wl-h2 { margin: 0; font-size: 19px; font-weight: 800; }
+.wl-h3 { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--pur-alt); }
+.wl-list { list-style: none; margin: 8px 0 0; padding: 0; counter-reset: wl; }
+.wl-list li { counter-increment: wl; display: flex; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--border); font-weight: 600; font-size: 15px; }
+.wl-list li:first-child { border-top: 0; }
+.wl-list li::before { content: counter(wl, decimal-leading-zero); flex: none; width: 22px; font-size: 11px; font-weight: 800; color: var(--pur-alt); }
+.wl-expect { list-style: none; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+.wl-expect li { display: flex; gap: 12px; align-items: flex-start; }
+.wl-expect b { display: block; font-size: 15px; }
+.wl-expect-body { display: block; margin-top: 2px; font-size: 13.5px; line-height: 1.45; }
+.wl-ticks { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.wl-ticks legend { margin-bottom: 8px; padding: 0; }
+.wl-tick { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border-radius: var(--r-control); border: 1px solid var(--border); background: var(--elevated); font-weight: 600; cursor: pointer; }
+.wl-tick.is-on { border-color: var(--pur); background: var(--pur-tint); }
+.wl-tick input { width: 20px; height: 20px; margin: 0; accent-color: var(--pur); }
+.wl-tick:focus-within { outline: 2.5px solid var(--pur-alt); outline-offset: 2px; }
+.wl-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.wl-form .input[aria-invalid="true"] { border-color: #ff6b5e; }
+.wl-thanks { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 24px 18px; }
+.wl-thanks-ico { width: 48px; height: 48px; color: #2fa36b; }
+.wl-thanks-title { margin: 0; font-size: 20px; font-weight: 800; outline: none; }
+/* The Home card. */
+.wl-card { display: flex; align-items: center; gap: 12px; padding: 14px; text-decoration: none; color: inherit; }
+.wl-card b { display: block; font-size: 15px; }
+.wl-expect .lead-icon, .wl-card .lead-icon { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--pur-tint); color: var(--pur-alt); flex: none; }
+.wl-expect .lead-icon svg, .wl-card .lead-icon svg { width: 19px; height: 19px; }
+.wl-card .tiny { display: block; margin-top: 2px; }

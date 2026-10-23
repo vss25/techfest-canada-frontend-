@@ -22,6 +22,7 @@ const MORE_DROPDOWN = [
   { label: "Volunteer", path: "/volunteer" },
   { label: "Organizers", path: "/organizers" },
   { label: "Media", path: "/media" },
+  { label: "Stay updated for 2027", path: "/stay-updated" },
 ];
 
 

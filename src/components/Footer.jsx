@@ -45,6 +45,13 @@ export default function Footer() {
           <StoreBadges where="footer" size="sm" />
         </div>
 
+        {/* The TTFC 2027 waitlist (Oct 23 2026) */}
+        <Link to="/stay-updated"
+          style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 18px", borderRadius: 999, border: "1px solid " + (dark ? "rgba(155,135,245,0.30)" : "rgba(122,63,209,0.25)"), color: dark ? "#ffffff" : "#0d0520", fontSize: "0.88rem", fontWeight: 700, textDecoration: "none", transition: "opacity 0.2s ease" }}
+          onMouseEnter={function (e) { e.currentTarget.style.opacity = "0.75"; }}
+          onMouseLeave={function (e) { e.currentTarget.style.opacity = "1"; }}
+        >Stay updated for 2027<span aria-hidden="true" style={{ color: lCol }}>→</span></Link>
+
         {/* Social icons */}
         <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
           <a href={social.linkedin} aria-label="LinkedIn" target="_blank" rel="noopener noreferrer"

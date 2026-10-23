@@ -2,6 +2,7 @@ import { ApiError, del, get, post } from "./api";
 import { auth, can, isStaff } from "./auth";
 import { createStore, local } from "./store";
 import { mergeFeed } from "./feedMerge.js";
+import { addRead, applyActivity, createSeenGate, mergeNotifications, seenBody, unsyncedReads } from "./readState.js";
 import { markActive } from "./engage";
 
 /* =========================================================
@@ -49,7 +50,7 @@ const blank = () => ({
   chatsSeenAt: Number(local.get(CHATS_SEEN, 0)),
   chatReadAt: local.json(CHAT_READ, {}),
   groupReadAt: local.json(GROUP_READ, {}),
-  activity: { feed: 0, discussions: 0 },
+  activity: { feed: 0, discussions: 0, latest: { feed: null, discussions: null } },
   repliedTo: local.json(REPLIED, []),
   lastError: "",
 });
@@ -355,20 +356,27 @@ export function markGroupRead(id) {
   set({ groupReadAt: next });
 }
 
-/** Activity dots (iOS ActivityService): replies in discussions you follow, reactions on your posts. */
+/* Activity dots (iOS ActivityService): replies in discussions you follow, reactions on your posts.
+   A count asked for before or while a section was marked seen is ignored (lib/readState.js): it used to bring the
+   dot straight back. "Seen" sends the newest event the dot counted (upTo), so only what was counted is marked. */
+const seenGate = createSeenGate();
+
 export async function refreshActivity() {
   if (!signedIn()) return;
+  const token = seenGate.begin();
   try {
-    const r = await get("social/activity/unread");
-    set({ activity: { feed: Number(r?.feed) || 0, discussions: Number(r?.discussions) || 0 } });
+    const r = await get("social/activity/unread", { cache: "no-store" });
+    set({ activity: applyActivity(social.get().activity, r, (s) => seenGate.accepts(token, s)) });
   } catch { /* keep */ }
 }
 
 export async function markActivitySeen(section) {
   const a = social.get().activity;
   if (!(a[section] > 0)) return;
+  const body = seenBody(section, a);
+  seenGate.seenStart(section);
   set({ activity: { ...a, [section]: 0 } });
-  post("social/activity/seen", { section }).catch(() => {});
+  try { await post("social/activity/seen", body); } catch { /* not stored: the next poll shows the dot again */ } finally { seenGate.seenEnd(section); }
 }
 
 export const fetchGroupMembers = (id) => get(`community/groups/${encodeURIComponent(id)}/members`);
@@ -539,17 +547,29 @@ export async function toggleBookmark(sessionId) {
 
 // ---------- Notifications ----------
 
+/* Read is for good (lib/readState.js, Oct 23 2026): an answer never un-reads a staff message read here, only the
+   newest of overlapping refreshes counts, and one the server still calls unread is told again (another device,
+   or a "read" that never reached it). */
+let notifSeq = 0;
+
 export async function refreshNotifications() {
   if (!signedIn()) return;
+  const seq = ++notifSeq;
   try {
-    const r = await get("social/notifications");
-    set({ notifications: r.notifications || [], notifUnread: r.unread || 0 });
+    const r = await get("social/notifications", { cache: "no-store" });
+    if (seq !== notifSeq) return;
+    const s = social.get();
+    const incoming = r.notifications || [];
+    set({ notifications: mergeNotifications(s.notifications, incoming, s.readNotifs), notifUnread: r.unread || 0 });
+    const resend = unsyncedReads(incoming, s.readNotifs);
+    if (resend.length) post("social/notifications/read", { ids: resend }).catch(() => {});
   } catch { /* keep */ }
 }
 
-export function markNotificationsRead(ids) {
+/** `listed`: every id the list shows now; those are never dropped from the read list. */
+export function markNotificationsRead(ids, listed = []) {
   const s = social.get();
-  const next = [...new Set([...s.readNotifs, ...ids])].slice(-400);
+  const next = addRead(s.readNotifs, ids, listed);
   local.setJSON(READ_NOTIFS, next);
   set({ readNotifs: next });
   const server = ids.filter((id) => id.startsWith("pn-")).map((id) => id.slice(3));

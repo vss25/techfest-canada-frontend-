@@ -32,17 +32,18 @@ export default function Notifications() {
   // Invitations seen here count as read.
   const incoming = s.connections.incoming.filter((x) => !s.blocked.includes(x.user?.id));
   const outgoing = s.connections.outgoing.filter((x) => !s.blocked.includes(x.user?.id));
+  const items = notificationItems({ social: s, cms: c, auth: a, now });
+  const listedIds = items.map((n) => n.id);
   useEffect(() => {
     const ids = incoming.map((x) => `inv-${x.id}`).filter((id) => !social.get().readNotifs.includes(id));
-    if (ids.length) markNotificationsRead(ids);
+    if (ids.length) markNotificationsRead(ids, notificationItems({ social: social.get(), cms: cms.get(), auth: auth.get(), now: Date.now() }).map((n) => n.id));
   }, [incoming]);
 
-  const items = notificationItems({ social: s, cms: c, auth: a, now });
   const listed = items.filter((n) => n.kind !== "invitation");
   const unread = items.filter((n) => isUnread(n, s.readNotifs)).length;
 
   const open = (n) => {
-    markNotificationsRead([n.id]);
+    markNotificationsRead([n.id], listedIds);
     if (n.kind !== "personal") return;
     const r = routeForLink(n.link);
     if (!r) return;
@@ -55,7 +56,7 @@ export default function Notifications() {
       <TopBar title="Notifications" />
       <div className="notif-head">
         <span className="eyebrow">{unread === 0 ? "All caught up" : `${unread} unread`}</span>
-        <button type="button" className="notif-markall" disabled={unread === 0} onClick={() => markNotificationsRead(items.map((n) => n.id))}>Mark all as read</button>
+        <button type="button" className="notif-markall" disabled={unread === 0} onClick={() => markNotificationsRead(listedIds, listedIds)}>Mark all as read</button>
       </div>
       <main id="main" className="pad stack-sm" style={{ gap: 10, paddingTop: 12 }}>
         {incoming.length > 0 && <h2 className="list-label" style={{ paddingTop: 0 }}>{incoming.length === 1 ? "1 invitation" : `${incoming.length} invitations`}</h2>}

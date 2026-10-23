@@ -20,11 +20,11 @@
 
 export const STAY_DEFAULTS = Object.freeze({
   "stay.seo_title": "Stay updated: TTFC 2027 in Toronto | The Tech Festival Canada",
-  "stay.seo_description": "TTFC 2027 is coming to Toronto. Dates to be announced. Join the waitlist to hear about attending, sponsorship, exhibiting and delegations.",
+  "stay.seo_description": "TTFC 2027: two days in Toronto in November 2027, plus one-day briefing events in Ottawa, Montreal, Calgary and Vancouver. Dates to be announced. Join the waitlist.",
   "stay.eyebrow": "Stay updated",
-  "stay.hero_title": "TTFC 2027 · Toronto · Dates to be announced",
-  "stay.hero_intro": "The Tech Festival Canada is coming back to Toronto. Dates are still to be announced. Join the waitlist and our team will keep you posted on TTFC 2027.",
-  "stay.stat": "1000+ attendees across 2 days",
+  "stay.hero_title": "TTFC 2027 · Toronto · November 2027",
+  "stay.hero_intro": "The Tech Festival Canada returns to Toronto for two days in November 2027, with one-day briefing events in Ottawa, Montreal, Calgary and Vancouver. Dates to be announced for every event. Join the waitlist and our team will keep you posted.",
+  "stay.stat": "", // no attendee count on the 2027 page (the organiser, Oct 23 2026)
   "stay.program_title": "The 5 × 5 programme",
   "stay.program_intro": "TTFC is built around five technology pillars and the sectors adopting them. Every keynote, panel and award sits where the two meet.",
   "stay.pillars_title": "Five technology pillars",
@@ -43,6 +43,17 @@ export const STAY_DEFAULTS = Object.freeze({
     "Manufacturing, Supply Chain & Mobility",
     "Public Sector, National Defence & Security",
   ].join("\n"),
+  // The 2027 events (the organiser, Oct 23 2026): the main festival in Toronto, two days in November 2027,
+  // and one-day briefing events in Ottawa, Montreal, Calgary and Vancouver. Dates to be announced for every event.
+  "stay.briefings_title": "TTFC 2027 events",
+  "stay.briefings_intro": "A two-day festival in Toronto in November 2027, with one-day briefing events in four more cities. Dates to be announced for every event.",
+  "stay.briefings": [
+    "Toronto\nThe Tech Festival Canada: two days in November 2027. Dates to be announced.",
+    "Ottawa\nOne-day briefing event. Date to be announced.",
+    "Montreal\nOne-day briefing event. Date to be announced.",
+    "Calgary\nOne-day briefing event. Date to be announced.",
+    "Vancouver\nOne-day briefing event. Date to be announced.",
+  ].join("\n\n"),
   "stay.expect_title": "What to expect",
   "stay.expect": [
     "Keynotes and executive panels\nLeaders from government, industry and research on the main stage, with fireside chats and panels across every sector.",
@@ -66,7 +77,7 @@ export const STAY_DEFAULTS = Object.freeze({
   "stay.thanks": "Thank you for your interest. Someone from our team will reach out.",
   "stay.email_subject": "You're on the TTFC 2027 waitlist",
   "stay.email_heading": "You're on the TTFC 2027 waitlist.",
-  "stay.email_intro": "Thank you for your interest in TTFC 2027 in Toronto. Dates are to be announced.",
+  "stay.email_intro": "Thank you for your interest in TTFC 2027: two days in Toronto in November 2027, plus one-day briefing events in Ottawa, Montreal, Calgary and Vancouver. Dates to be announced for every event.",
   "stay.email_next": "Someone from our team will reach out.",
   "stay.email_button": "See what's coming in 2027",
 });
@@ -165,4 +176,17 @@ export async function joinWaitlist(api, { email, phone, interests = [], source =
   if (res.ok && data?.ok) return { message: String(data.message || "").trim() || STAY_DEFAULTS["stay.thanks"] };
   const msg = data?.error === "maintenance" ? data.message : data?.error || data?.message;
   throw Object.assign(new Error(typeof msg === "string" && msg ? msg : ERRORS.failed), { field: data?.field || "", status: res.status });
+}
+
+/** Where the footer button lands: the waitlist form on /stay-updated. */
+export const WAITLIST_FORM_URL = "/stay-updated#join";
+
+/** Scrolls to the waitlist form (#join) and puts the cursor in its first field. Browser only; does nothing elsewhere. */
+export function goToWaitlistForm() {
+  if (typeof document === "undefined") return;
+  const el = document.getElementById("join");
+  if (!el) return;
+  // An instant jump: a smooth scroll gets cancelled by the link's own navigation and by focusing the field.
+  el.scrollIntoView({ behavior: "auto", block: "start" });
+  el.querySelector("input")?.focus({ preventScroll: true });
 }

@@ -261,7 +261,7 @@ export const REGISTRY = {
   },
   "stay.stat": {
     scope: "stay", group: "stay-page", type: "text",
-    label: "Attendee line", description: "Shown in the top section of the page. The attendee count is always “1000+ attendees across 2 days”.",
+    label: "Attendee line", description: "Optional line in the top section, next to the button. Empty = not shown (the 2027 page has no attendee count).",
   },
   "stay.program_title": {
     scope: "stay", group: "stay-preview", type: "text",
@@ -286,6 +286,18 @@ export const REGISTRY = {
   "stay.sectors": {
     scope: "stay", group: "stay-preview", type: "textarea", prefill: true, rows: 5,
     label: "Applied sectors", description: "One per line, in order.",
+  },
+  "stay.briefings_title": {
+    scope: "stay", group: "stay-preview", type: "text",
+    label: "Briefing events heading", description: "Heading of the briefing events in other cities.",
+  },
+  "stay.briefings_intro": {
+    scope: "stay", group: "stay-preview", type: "textarea", rows: 3,
+    label: "Briefing events intro", description: "One or two sentences under the heading.",
+  },
+  "stay.briefings": {
+    scope: "stay", group: "stay-preview", type: "textarea", prefill: true, rows: 10,
+    label: "Events", description: "One event per paragraph (leave an empty line between them). First line: the city; the line under it: what it is and the date, or \"Date to be announced\". The first one is shown large, as the main festival.",
   },
   "stay.expect_title": {
     scope: "stay", group: "stay-preview", type: "text",

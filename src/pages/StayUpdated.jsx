@@ -1,10 +1,10 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ArrowDown, ArrowRight, Award, CheckCircle2, Coffee, Cpu, Factory, Handshake, Mic2, Store, Users, UtensilsCrossed } from "lucide-react";
+import { ArrowDown, ArrowRight, Award, CheckCircle2, Coffee, Cpu, Factory, Handshake, MapPin, Mic2, Store, Users, UtensilsCrossed } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import useSiteSettings, { PUBLIC_API } from "../hooks/useSiteSettings";
-import { INTERESTS, blocks, checkForm, heroParts, joinWaitlist, lines, sourceFrom, stayFrom } from "../lib/stayUpdated";
+import { INTERESTS, blocks, checkForm, goToWaitlistForm, heroParts, joinWaitlist, lines, sourceFrom, stayFrom } from "../lib/stayUpdated";
 
 /* =========================================================
    /stay-updated: the TTFC 2027 waitlist (Oct 23 2026).
@@ -182,7 +182,13 @@ export default function StayUpdated() {
   const settings = useSiteSettings();
   const copy = stayFrom(settings);
   const dark = useDarkMode();
-  const { search } = useLocation();
+  const { search, hash } = useLocation();
+  // Arriving from the footer button (/stay-updated#join): straight to the form, after the page has rendered.
+  useEffect(() => {
+    if (hash !== "#join") return undefined;
+    const id = setTimeout(goToWaitlistForm, 60);
+    return () => clearTimeout(id);
+  }, [hash]);
   const source = sourceFrom(search);
   useSeo(copy["stay.seo_title"], copy["stay.seo_description"]);
 
@@ -190,6 +196,7 @@ export default function StayUpdated() {
   const pillars = lines(copy["stay.pillars"]);
   const sectors = lines(copy["stay.sectors"]);
   const expect = blocks(copy["stay.expect"]);
+  const briefings = blocks(copy["stay.briefings"]);
 
   const t = dark
     ? { bg: "#06020f", bg2: "#0b0518", text: "#ffffff", mid: "rgba(225,215,255,0.8)", dim: "rgba(200,185,255,0.6)", card: "rgba(255,255,255,0.045)", line: "rgba(155,135,245,0.2)", accent: "#c4adff", chip: "rgba(155,135,245,0.16)", input: "rgba(255,255,255,0.06)", err: "#ff9b9b", skyline: 0.16 }
@@ -245,6 +252,13 @@ export default function StayUpdated() {
           .su-list li { counter-increment: su; display: flex; align-items: baseline; gap: 12px; padding: 10px 0; border-top: 1px solid var(--su-line); font-size: 17px; font-weight: 600; line-height: 1.35; }
           .su-list li:first-child { border-top: 0; }
           .su-list li::before { content: counter(su, decimal-leading-zero); flex: none; width: 26px; font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 800; color: var(--su-accent); }
+          .su-cities { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+          /* The first event is the main festival: a full-width card above the one-day briefings. */
+          .su-cities li:first-child { grid-column: 1 / -1; background: linear-gradient(135deg, var(--su-chip), var(--su-card)); }
+          .su-cities li:first-child b { font-size: 22px; }
+          .su-cities li { display: flex; gap: 12px; align-items: flex-start; padding: 18px; border-radius: 18px; background: var(--su-card); border: 1px solid var(--su-line); min-width: 0; }
+          .su-cities b { display: block; font-size: 18px; line-height: 1.25; }
+          .su-cities span.su-when { display: block; margin-top: 4px; font-size: 14px; color: var(--su-mid); }
           .su-expect { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
           .su-expect li { display: flex; gap: 14px; align-items: flex-start; }
           .su-ico { flex: none; width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; background: var(--su-chip); color: var(--su-accent); }
@@ -310,7 +324,7 @@ export default function StayUpdated() {
             <p className="su-intro">{copy["stay.hero_intro"]}</p>
             <div className="su-hero-cta">
               <a href="#join" className="su-cta">{copy["stay.button"]} <ArrowDown size={16} aria-hidden="true" /></a>
-              <span className="su-stat"><Users size={18} aria-hidden="true" style={{ color: t.accent }} />{copy["stay.stat"]}</span>
+              {copy["stay.stat"] && <span className="su-stat"><Users size={18} aria-hidden="true" style={{ color: t.accent }} />{copy["stay.stat"]}</span>}
             </div>
           </div>
         </section>
@@ -325,7 +339,24 @@ export default function StayUpdated() {
           </div>
         </section>
 
-        <section className="su-sec" aria-labelledby="su-prog">
+        {briefings.length > 0 && (
+          <section className="su-sec" aria-labelledby="su-brief">
+            <div className="su-wrap">
+              <h2 id="su-brief" className="su-h2">{copy["stay.briefings_title"]}</h2>
+              {copy["stay.briefings_intro"] && <p className="su-lede">{copy["stay.briefings_intro"]}</p>}
+              <ul className="su-cities">
+                {briefings.map((b, i) => (
+                  <li key={`${b.title}-${i}`}>
+                    <span className="su-ico" aria-hidden="true"><MapPin size={20} /></span>
+                    <span><b>{b.title}</b>{b.body && <span className="su-when">{b.body}</span>}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        <section className="su-sec su-sec--alt" aria-labelledby="su-prog">
           <div className="su-wrap">
             <h2 id="su-prog" className="su-h2">{copy["stay.program_title"]}</h2>
             <p className="su-lede">{copy["stay.program_intro"]}</p>
@@ -342,7 +373,7 @@ export default function StayUpdated() {
           </div>
         </section>
 
-        <section className="su-sec su-sec--alt" aria-labelledby="su-expect">
+        <section className="su-sec" aria-labelledby="su-expect">
           <div className="su-wrap">
             <h2 id="su-expect" className="su-h2">{copy["stay.expect_title"]}</h2>
             <ul className="su-expect">

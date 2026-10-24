@@ -1,4 +1,6 @@
 import { DESK_PATH } from "../deskPath.js";
+import { createUpdateController } from "./updatePolicy.js";
+import { RESUME_KEY } from "./device.js";
 
 /* =========================================================
    TTFC Check-in: its own service worker (<DESK_PATH>sw.js, scope
@@ -6,57 +8,54 @@ import { DESK_PATH } from "../deskPath.js";
    and the app installs on its own (iPad / iPhone Add to Home Screen,
    Android Chrome, desktop Chrome / Edge). Nothing depends on it being
    installed: a browser tab works the same.
-   Updates apply themselves, but never in the middle of a shift: at
-   launch (first 8 s, before any tap), or when the app is in the
-   background. While a station is running in front, the header shows
-   "Update ready" and a tap reloads (the chime needs a tap again after
-   a reload, so we never reload a running desk on our own).
+   Updates (lib/updatePolicy.js): a new version applies itself only
+   while no station is running (sign-in, loading, the station picker,
+   the Start screen). A running station is never reloaded on its own,
+   in front or in the background: the header shows "Update ready · tap
+   to reload", and after that tap the station opens on its Start
+   screen, so one more tap turns the chime back on.
 ========================================================= */
 
 const listeners = new Set();
-let updateReady = false;
 let reg = null;
-const started = Date.now();
-let interacted = false;
-["pointerdown", "keydown"].forEach((t) => window.addEventListener(t, () => { interacted = true; }, { capture: true, once: true }));
 
 export const onUpdate = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
-export const isUpdateReady = () => updateReady;
 
-function apply() {
-  const w = reg?.waiting;
-  if (!w) return;
+function activate(w) {
   let done = false;
-  navigator.serviceWorker.addEventListener("controllerchange", () => { if (!done) { done = true; window.location.reload(); } }, { once: true });
+  const reload = () => { if (!done) { done = true; window.location.reload(); } };
+  navigator.serviceWorker.addEventListener("controllerchange", reload, { once: true });
   w.postMessage({ type: "SKIP_WAITING" });
-  setTimeout(() => { if (!done) { done = true; window.location.reload(); } }, 3000);
+  setTimeout(reload, 3000);
 }
 
-function waiting() {
-  if (!reg?.waiting) return;
-  if (document.visibilityState === "hidden" || (!interacted && Date.now() - started < 8000)) { apply(); return; }
-  updateReady = true;
-  listeners.forEach((fn) => fn(true));
-}
+const updates = createUpdateController({
+  activate,
+  reload: () => window.location.reload(),
+  onReady: (v) => listeners.forEach((fn) => fn(v)),
+});
+export const isUpdateReady = () => updates.ready();
+/** The screen the app shows ("station" while a station is running): updates wait while it is. */
+export const setAppScreen = (name) => updates.setScreen(name);
 
-/** "Update ready" tapped. */
-export function applyUpdate() { if (reg?.waiting) apply(); else window.location.reload(); }
+/** "Update ready" tapped: reload into the new version; the station comes back on its Start screen. */
+export function applyUpdate(station = "") {
+  try { if (station) sessionStorage.setItem(RESUME_KEY, station); } catch { /* blocked: the sound bar asks instead */ }
+  updates.applyNow();
+}
 
 export function registerDeskWorker() {
   if (!("serviceWorker" in navigator)) return;
   if (import.meta.env.DEV && new URLSearchParams(window.location.search).get("sw") !== "1") return;
   navigator.serviceWorker.register(`${DESK_PATH}sw.js`, { scope: DESK_PATH }).then((r) => {
     reg = r;
-    if (r.waiting && navigator.serviceWorker.controller) waiting();
+    if (r.waiting && navigator.serviceWorker.controller) updates.found(r.waiting);
     r.addEventListener("updatefound", () => {
       const w = r.installing;
-      w?.addEventListener("statechange", () => { if (w.state === "installed" && navigator.serviceWorker.controller) waiting(); });
+      w?.addEventListener("statechange", () => { if (w.state === "installed" && navigator.serviceWorker.controller) updates.found(r.waiting || w); });
     });
     r.update().catch(() => {});
     setInterval(() => { if (document.visibilityState === "visible") r.update().catch(() => {}); }, 10 * 60 * 1000);
   }).catch(() => { /* private mode: works online */ });
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden" && reg?.waiting) apply();
-    if (document.visibilityState === "visible") reg?.update().catch(() => {});
-  });
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg?.update().catch(() => {}); });
 }

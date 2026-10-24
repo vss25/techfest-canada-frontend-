@@ -7,6 +7,7 @@ import { SearchBox } from "../components.jsx";
 import { byLine } from "../lib/byLine.js";
 import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
+import { useUndoExpiry } from "../hooks.js";
 
 /* MEDIA DESK ("media query queue"). Media guests (Media = Yes, whatever their pass) check in here, and the lobby's
    arrivals of media guests ring here. The queue of media queries: who, outlet, what they asked for, New → In progress
@@ -20,11 +21,12 @@ export default function Media({ onOpen, layout }) {
   const p = pending();
   const staff = !!d.session?.staff;
   const media = useMemo(() => s.guests.filter((g) => g.marks?.media), [s.guests]);
-  const checkIn = useCallback((g) => {
+  const checkIn = useCallback((g, done) => {
     if (statusOf(s, g, pending()).media) return;
-    act({ point: "media", guest: g, undoText: `${g.name}: checked in at the media desk.` });
+    act({ point: "media", guest: g, undoText: `${g.name}: checked in at the media desk.`, onDone: done });
   }, [s]);
-  const { q, setQ, sel, results, inputRef } = useGuestSearch(media, { onEnter: checkIn, version: s.version + p.length });
+  const { q, setQ, sel, results, inputRef, done } = useGuestSearch(media, { onEnter: checkIn, version: s.version + p.length });
+  useUndoExpiry();
   const list = q ? results : [...media].sort((a, b) => {
     const sa = statusOf(s, a, p);
     const sb = statusOf(s, b, p);
@@ -45,8 +47,8 @@ export default function Media({ onOpen, layout }) {
             <GuestRow key={g.key} guest={g} selected={i === sel && !!q} onOpen={onOpen}
               extra={<span className="ci-row-extra"><span className={`ci-rsvp ${st.arrived ? "is-yes" : ""}`}>{st.arrived ? `Arrived ${byLine(st.arrived)}` : "Not arrived yet"}</span></span>}
               status={st.media ? `Checked in ${byLine(st.media)}` : ""} statusTone={st.media ? "good" : ""}
-              actions={st.media ? (undo ? <button type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span className="ci-done">✓</span>)
-                : <button type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g)}>Checked in</button>} />
+              actions={st.media ? (undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span key="done" className="ci-done">✓</span>)
+                : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>Checked in</button>} />
           );
         })}
       </ul>

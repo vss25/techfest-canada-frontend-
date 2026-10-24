@@ -1,4 +1,4 @@
-import { useDesk, setStation, signOut } from "../lib/desk.js";
+import { useDesk, setStation, requestSignOut } from "../lib/desk.js";
 import { dayHeading } from "../lib/timers.js";
 
 /* Pick this device's station (remembered on the device; switch any time from the header). Both roles can use every
@@ -29,7 +29,7 @@ export default function Stations({ onPicked }) {
           );
         })}
       </div>
-      <p className="ci-center"><button type="button" className="ci-btn ci-btn-ghost" onClick={signOut}>Sign out</button></p>
+      <p className="ci-center"><button type="button" className="ci-btn ci-btn-ghost" onClick={requestSignOut} disabled={d.signingOut}>{d.signingOut ? "Sending taps…" : "Sign out"}</button></p>
     </main>
   );
 }

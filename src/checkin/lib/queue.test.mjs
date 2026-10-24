@@ -1,14 +1,33 @@
-/* node --test src/checkin/lib/queue.test.mjs: taps are stored first, sent in order, kept through no connection and
-   server errors, never lost across a restart, sent once (the same clientId), refusals kept for "Admit anyway", a 401
-   pauses the queue, and undoing a tap not sent yet just removes both. */
+/* node --test src/checkin/lib/queue.test.mjs: taps are stored first (one storage key each), sent in order, kept through
+   no connection and server errors, never lost across a restart, sent once (the same clientId), refusals kept for
+   "Admit anyway", a 401 pauses the queue. Undo (contract C2): a tap that never left the device just goes; any other
+   (sent with no answer, being sent, restored from storage, already recorded) gets an undo by reference after it,
+   never dropped. Two tabs on one device never overwrite each other's taps; a tab that has gone has its taps sent by
+   another. Storage failures are reported and written again. Each tap carries who made it (C3) and the server's time
+   (C4); the queue's bookkeeping is never sent. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createQueue, newClientId, retryable, QUEUE_KEY } from "./queue.js";
+import { ITEM_PREFIX, QUEUE_KEY, createQueue, newClientId, retryable } from "./queue.js";
 
-function memoryStorage() {
+/** One device's localStorage, shared by the tabs made from it; each tab hears the others' changes (the storage event). */
+function deviceStorage() {
   const m = new Map();
-  return { get: (k) => (m.has(k) ? m.get(k) : null), set: (k, v) => { m.set(k, v); return true; }, raw: m };
+  const subs = new Set();
+  let full = false;
+  const tab = () => {
+    const mine = new Set();
+    const tell = (k, v) => { for (const fn of subs) if (!mine.has(fn)) fn(k, v); };
+    return {
+      get: (k) => (m.has(k) ? m.get(k) : null),
+      set: (k, v) => { if (full) return false; m.set(k, v); tell(k, v); return true; },
+      remove: (k) => { m.delete(k); tell(k, null); },
+      keys: (p) => [...m.keys()].filter((k) => k.startsWith(p)),
+      subscribe: (fn) => { mine.add(fn); subs.add(fn); return () => { subs.delete(fn); mine.delete(fn); }; },
+    };
+  };
+  return { tab, raw: m, setFull: (v) => { full = v; } };
 }
+const onDisk = (dev) => [...dev.raw.entries()].filter(([k]) => k.startsWith(ITEM_PREFIX)).map(([, v]) => JSON.parse(v));
 /** Timers the test runs by hand. */
 function manualTimers() {
   const pending = [];
@@ -21,32 +40,45 @@ function manualTimers() {
     count: () => pending.length,
   };
 }
-const tick = () => new Promise((r) => setImmediate(r));
+const offline = async () => { throw Object.assign(new Error("offline"), { status: 0 }); };
+const okAll = (sent) => async (actions) => { sent?.push(...actions); return { results: actions.map((a) => ({ clientId: a.clientId, ok: true })) }; };
+const mark = (key, extra = {}) => ({ kind: "mark", point: "arrived", key, station: "lobby", ...extra });
 
-test("a tap is stored before anything is sent, and survives a restart", async () => {
-  const storage = memoryStorage();
+test("a tap is stored (its own key) before anything is sent, and survives a restart", async () => {
+  const dev = deviceStorage();
   const timers = manualTimers();
-  const q = createQueue({ storage, send: async () => { throw Object.assign(new Error("offline"), { status: 0 }); }, ...timers });
-  const it = q.add({ kind: "mark", point: "arrived", key: "g1", station: "lobby" });
+  const q = createQueue({ storage: dev.tab(), send: offline, ...timers });
+  const it = q.add(mark("g1"));
   assert.match(it.clientId, /^[A-Za-z0-9_-]{8,64}$/);
-  assert.ok(JSON.parse(storage.get(QUEUE_KEY)).some((x) => x.clientId === it.clientId), "on disk at once");
+  assert.ok(dev.raw.has(ITEM_PREFIX + it.clientId), "on disk at once");
   await timers.run(1);
-  // The app is closed while sending; a new queue (next launch) still has it, ready to send.
-  const raw = JSON.parse(storage.get(QUEUE_KEY));
-  raw[0].state = "sending";
-  storage.set(QUEUE_KEY, JSON.stringify(raw));
-  const again = createQueue({ storage, send: async () => ({ results: [] }), ...manualTimers() });
+  // The app is closed while sending; a new queue (next launch) still has it, ready to send (and known to maybe be sent).
+  const raw = JSON.parse(dev.raw.get(ITEM_PREFIX + it.clientId));
+  dev.raw.set(ITEM_PREFIX + it.clientId, JSON.stringify({ ...raw, state: "sending" }));
+  const again = createQueue({ storage: dev.tab(), send: async () => ({ results: [] }), ...manualTimers() });
   assert.equal(again.items().length, 1);
   assert.equal(again.items()[0].state, "pending");
+  assert.equal(again.items()[0].sentOnce, true);
+});
+
+test("an older version's single list is moved over (nothing lost in the update)", () => {
+  const dev = deviceStorage();
+  dev.raw.set(QUEUE_KEY, JSON.stringify([
+    { clientId: "told000001", kind: "mark", point: "arrived", key: "g1", state: "pending", tries: 0, addedAt: 1 },
+    { clientId: "told000002", kind: "mark", point: "checked_in", key: "g2", state: "sending", tries: 1, addedAt: 2 },
+  ]));
+  const q = createQueue({ storage: dev.tab(), send: offline, ...manualTimers() });
+  assert.deepEqual(q.items().map((x) => [x.clientId, x.state]), [["told000001", "pending"], ["told000002", "pending"]]);
+  assert.equal(dev.raw.has(QUEUE_KEY), false, "the old list is gone once moved");
+  assert.equal(onDisk(dev).length, 2);
 });
 
 test("sent in order, in batches; offline and server errors keep everything and retry with backoff", async () => {
-  const storage = memoryStorage();
   const timers = manualTimers();
   const sent = [];
   let mode = "offline";
   const q = createQueue({
-    storage, ...timers,
+    storage: deviceStorage().tab(), ...timers,
     send: async (actions) => {
       sent.push(actions.map((a) => a.clientId));
       if (mode === "offline") throw Object.assign(new Error("offline"), { status: 0 });
@@ -54,10 +86,9 @@ test("sent in order, in batches; offline and server errors keep everything and r
       return { results: actions.map((a) => ({ clientId: a.clientId, ok: true, events: [] })) };
     },
   });
-  const a = q.add({ kind: "mark", point: "arrived", key: "g1", station: "lobby" });
-  const b = q.add({ kind: "mark", point: "arrived", key: "g2", station: "lobby" });
+  const a = q.add(mark("g1"));
+  const b = q.add(mark("g2"));
   await timers.run(1);
-  // Offline: both kept, retried after 1 s, then 2 s…
   assert.equal(q.items().length, 2);
   assert.deepEqual(sent[0], [a.clientId, b.clientId], "in the order tapped");
   mode = "500";
@@ -70,14 +101,26 @@ test("sent in order, in batches; offline and server errors keep everything and r
   assert.deepEqual(sent.at(-1), [a.clientId, b.clientId], "the same ids every time: the server does each once");
 });
 
+test("each tap carries who made it (queuedBy) and the server's time (clientAt); the queue's bookkeeping isn't sent", async () => {
+  const sent = [];
+  const timers = manualTimers();
+  const serverTime = Date.parse("2026-10-26T13:00:00Z");
+  const q = createQueue({ storage: deviceStorage().tab(), send: okAll(sent), now: () => serverTime, tabId: () => "pA", ...timers });
+  q.add(mark("g1", { queuedBy: { id: "u1", name: "Val Volunteer" } }));
+  await timers.run(1);
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent[0].queuedBy, { id: "u1", name: "Val Volunteer" });
+  assert.equal(sent[0].clientAt, "2026-10-26T13:00:00.000Z", "the corrected clock, not the device's");
+  for (const k of ["state", "tries", "addedAt", "sentOnce", "ord", "owner", "sendingAt", "undoneBy"]) assert.ok(!(k in sent[0]), k);
+});
+
 test("refused taps are kept with the reason (Admit anyway retries them); retryable statuses aren't refusals", async () => {
   const timers = manualTimers();
   const results = [];
-  let override = false;
   const q = createQueue({
-    storage: memoryStorage(), ...timers,
-    onResult: (it, r) => results.push([it.clientId, r.ok]),
-    send: async (actions) => ({ results: actions.map((a) => (a.override || override
+    storage: deviceStorage().tab(), ...timers,
+    onResult: (it, r, outcome) => results.push([it.clientId, outcome]),
+    send: async (actions) => ({ results: actions.map((a) => (a.override
       ? { clientId: a.clientId, ok: true }
       : { clientId: a.clientId, ok: false, status: 409, code: "outside_window", error: "Day 1 · CxO Breakfast · closed", window: { text: "closed" } })) }),
   });
@@ -89,27 +132,132 @@ test("refused taps are kept with the reason (Admit anyway retries them); retryab
   q.retry(it.clientId, { override: true });
   await timers.run();
   assert.equal(q.items().length, 0);
-  assert.deepEqual(results, [[it.clientId, false], [it.clientId, true]]);
+  assert.deepEqual(results, [[it.clientId, "failed"], [it.clientId, "ok"]]);
   assert.deepEqual([0, 408, 429, 500, 503].map(retryable), [true, true, true, true, true]);
   assert.deepEqual([400, 403, 404, 409].map(retryable), [false, false, false, false]);
-  void override;
 });
 
-test("an undo of a tap still in the queue removes both; otherwise an undo is queued after it", async () => {
+test("refused taps survive a reload (the Needs attention list) and can be dismissed", async () => {
+  const dev = deviceStorage();
+  const q = createQueue({ storage: dev.tab(), ...manualTimers(), send: async (a) => ({ results: a.map((x) => ({ clientId: x.clientId, ok: false, status: 409, code: "not_included", error: "Not on their pass." })) }) });
+  const it = q.add(mark("g1"));
+  await q.flush();
+  const after = createQueue({ storage: dev.tab(), ...manualTimers(), send: offline });
+  assert.deepEqual(after.failed().map((x) => [x.clientId, x.error]), [[it.clientId, "Not on their pass."]]);
+  assert.equal(after.dismiss(it.clientId), true);
+  assert.equal(onDisk(dev).length, 0);
+});
+
+test("undo of a tap that never left the device: both just go, nothing is sent", async () => {
   const timers = manualTimers();
   const sent = [];
-  const q = createQueue({ storage: memoryStorage(), ...timers, send: async (actions) => { sent.push(...actions); return { results: actions.map((a) => ({ clientId: a.clientId, ok: true })) }; } });
-  const it = q.add({ kind: "mark", point: "arrived", key: "g1", station: "lobby" });
+  const q = createQueue({ storage: deviceStorage().tab(), ...timers, send: okAll(sent) });
+  const it = q.add(mark("g1"));
   assert.deepEqual(q.undo(it.clientId), { local: true });
   await timers.run();
   assert.equal(sent.length, 0, "nothing reached the server");
-  const it2 = q.add({ kind: "mark", point: "arrived", key: "g2", station: "lobby" });
+  // A refused tap (the server recorded nothing) goes too.
+  const r = createQueue({ storage: deviceStorage().tab(), ...manualTimers(), send: async (a) => ({ results: a.map((x) => ({ clientId: x.clientId, ok: false, status: 409, code: "not_included" })) }) });
+  const f = r.add(mark("g2"));
+  await r.flush();
+  assert.equal(r.failed().length, 1);
+  assert.deepEqual(r.undo(f.clientId), { local: true });
+  assert.equal(r.items().length, 0);
+});
+
+test("undo of a tap already recorded: an undo by reference (target) is queued and sent", async () => {
+  const timers = manualTimers();
+  const sent = [];
+  const q = createQueue({ storage: deviceStorage().tab(), ...timers, send: okAll(sent) });
+  const it = q.add(mark("g2"));
   await timers.run();
-  const u = q.undo(it2.clientId, { station: "lobby" });
+  const u = q.undo(it.clientId, { station: "lobby" });
   assert.equal(u.local, false);
-  assert.equal(u.item.ref, it2.clientId);
+  assert.equal(u.item.target, it.clientId);
+  assert.equal(u.item.ref, it.clientId, "also as ref (older servers)");
   await timers.run();
   assert.deepEqual(sent.map((a) => a.kind), ["mark", "undo"]);
+  assert.equal(sent[1].target, it.clientId);
+});
+
+test("W1: the send threw after the server recorded the tap (answer lost): undo is never dropped, the server gets [mark, undo]", async () => {
+  const timers = manualTimers();
+  const server = new Map(); // clientId → recorded; tomb:<clientId> → an undo arrived first
+  const batches = [];
+  let drop = true;
+  const q = createQueue({
+    storage: deviceStorage().tab(), ...timers,
+    send: async (actions) => {
+      batches.push(actions.map((a) => a.kind));
+      for (const a of actions) {
+        if (a.kind === "mark" && !server.has(`tomb:${a.clientId}`)) server.set(a.clientId, true);
+        if (a.kind === "undo") { if (server.has(a.target)) server.delete(a.target); else server.set(`tomb:${a.target}`, true); }
+      }
+      if (drop) { drop = false; throw Object.assign(new Error("connection reset"), { status: 0 }); }
+      return { results: actions.map((a) => ({ clientId: a.clientId, ok: true })) };
+    },
+  });
+  const it = q.add(mark("g1"));
+  await timers.run(1);
+  assert.equal(server.get(it.clientId), true, "the server has it");
+  assert.equal(q.items()[0].state, "pending", "waiting to retry, as far as the device knows");
+  // The volunteer taps Undo during the retry wait.
+  const u = q.undo(it.clientId, { station: "lobby" });
+  assert.equal(u.local, false, "might be on the server: undone there");
+  assert.deepEqual(q.pending().map((x) => x.kind), ["mark", "undo"]);
+  await q.flush();
+  assert.deepEqual(batches.at(-1), ["mark", "undo"], "the tap first, then its undo, in one batch");
+  assert.equal(server.has(it.clientId), false, "not marked on the server");
+  assert.equal(q.items().length, 0);
+});
+
+test("W1: undo while the tap is being sent, and undo of a tap restored as 'sending' after a restart", async () => {
+  let release = null;
+  const sent = [];
+  const q = createQueue({
+    storage: deviceStorage().tab(), ...manualTimers(),
+    send: (actions) => new Promise((r) => { sent.push(...actions); release = () => r({ results: actions.map((a) => ({ clientId: a.clientId, ok: true })) }); }),
+  });
+  const it = q.add(mark("g1"));
+  const flushing = q.flush();
+  await new Promise((r) => setImmediate(r));
+  assert.equal(q.undo(it.clientId).local, false, "being sent: undone by reference");
+  release();
+  await flushing;
+  const second = q.flush();
+  await new Promise((r) => setImmediate(r));
+  release();
+  await second;
+  assert.deepEqual(sent.map((a) => a.kind), ["mark", "undo"]);
+  assert.equal(q.items().length, 0);
+
+  // Restored from storage while it was being sent (the app was closed mid-send).
+  const dev = deviceStorage();
+  const q1 = createQueue({ storage: dev.tab(), ...manualTimers(), send: offline, tabId: () => "pA" });
+  const t = q1.add(mark("g9"));
+  const raw = JSON.parse(dev.raw.get(ITEM_PREFIX + t.clientId));
+  dev.raw.set(ITEM_PREFIX + t.clientId, JSON.stringify({ ...raw, state: "sending" }));
+  const q2 = createQueue({ storage: dev.tab(), ...manualTimers(), send: offline, tabId: () => "pA" });
+  assert.equal(q2.undo(t.clientId).local, false, "it may have arrived: undone by reference");
+});
+
+test("an undo the server had nothing for (404: never reached it) is done, and its tap goes too; a refused tap that was undone just goes", async () => {
+  const timers = manualTimers();
+  const outcomes = [];
+  let first = true;
+  const q = createQueue({
+    storage: deviceStorage().tab(), ...timers, onResult: (it, r, o) => outcomes.push([it.kind, o]),
+    send: async (actions) => {
+      if (first) { first = false; throw Object.assign(new Error("lost"), { status: 0 }); }
+      return { results: actions.map((a) => (a.kind === "undo" ? { clientId: a.clientId, ok: false, status: 404, error: "Nothing to undo" } : { clientId: a.clientId, ok: false, status: 409, code: "outside_window" })) };
+    },
+  });
+  const it = q.add(mark("g1"));
+  await timers.run(1);
+  q.undo(it.clientId);
+  await q.flush();
+  assert.equal(q.items().length, 0, "nothing left, nothing in Needs attention");
+  assert.deepEqual(outcomes, [["mark", "dropped"], ["undo", "ok"]]);
 });
 
 test("signed out (401): the queue keeps everything and waits for a new sign-in", async () => {
@@ -117,10 +265,10 @@ test("signed out (401): the queue keeps everything and waits for a new sign-in",
   let authAsked = 0;
   let ok = false;
   const q = createQueue({
-    storage: memoryStorage(), ...timers, onAuth: () => { authAsked += 1; },
+    storage: deviceStorage().tab(), ...timers, onAuth: () => { authAsked += 1; },
     send: async (actions) => { if (!ok) throw Object.assign(new Error("401"), { status: 401 }); return { results: actions.map((a) => ({ clientId: a.clientId, ok: true })) }; },
   });
-  q.add({ kind: "mark", point: "arrived", key: "g1", station: "lobby" });
+  q.add(mark("g1"));
   await timers.run();
   assert.equal(authAsked, 1);
   assert.equal(q.isPaused(), true);
@@ -130,8 +278,94 @@ test("signed out (401): the queue keeps everything and waits for a new sign-in",
   ok = true;
   q.resume();
   await timers.run();
-  await tick();
   assert.equal(q.items().length, 0);
+});
+
+test("W3: two tabs on one device never overwrite each other's taps; a tab thrown away loses nothing", async () => {
+  const dev = deviceStorage();
+  const live = new Set(["pA", "pB"]);
+  const alive = async () => new Set(live);
+  const a = createQueue({ storage: dev.tab(), send: offline, tabId: () => "pA", alive, ...manualTimers() });
+  const b = createQueue({ storage: dev.tab(), send: offline, tabId: () => "pB", alive, ...manualTimers() });
+  const a1 = a.add(mark("g1"));
+  const a2 = a.add(mark("g2"));
+  const a3 = a.add(mark("g3"));
+  const b1 = b.add({ kind: "mark", point: "media", key: "g4", station: "media" });
+  await a.flush();
+  await b.flush();
+  // Each sees the other's taps (the storage event), and the storage has all four.
+  assert.equal(a.items().length, 4);
+  assert.equal(b.items().length, 4);
+  assert.deepEqual(onDisk(dev).map((x) => x.clientId).sort(), [a1, a2, a3, b1].map((x) => x.clientId).sort());
+  // Tab A goes (closed, crashed) while still offline: a new tab still has every tap.
+  live.delete("pA");
+  const c = createQueue({ storage: dev.tab(), send: offline, tabId: () => "pC", alive: async () => new Set(["pB", "pC"]), ...manualTimers() });
+  assert.equal(c.items().length, 4, "nothing lost");
+});
+
+test("W3: a tab sends its own taps, never a live tab's; the taps of a tab that has gone are sent by another", async () => {
+  const dev = deviceStorage();
+  const live = new Set(["pA", "pB"]);
+  const alive = async () => new Set(live);
+  const sentA = [];
+  const sentB = [];
+  let online = false;
+  const a = createQueue({ storage: dev.tab(), send: (x) => (online ? okAll(sentA)(x) : offline()), tabId: () => "pA", alive, ...manualTimers() });
+  const b = createQueue({ storage: dev.tab(), send: (x) => (online ? okAll(sentB)(x) : offline()), tabId: () => "pB", alive, ...manualTimers() });
+  const ta = a.add(mark("g1"));
+  const tb = b.add(mark("g2"));
+  online = true;
+  await b.flush();
+  assert.deepEqual(sentB.map((x) => x.clientId), [tb.clientId], "B sends its own only");
+  assert.equal(a.items().length, 1, "A hears that B's tap went");
+  // A goes before it gets a connection: B takes its tap over.
+  live.delete("pA");
+  await b.flush();
+  assert.deepEqual(sentB.map((x) => x.clientId), [tb.clientId, ta.clientId]);
+  assert.equal(onDisk(dev).length, 0);
+  assert.equal(sentA.length, 0);
+});
+
+test("W3: an undo in one tab of a tap that tab didn't make is by reference (never a silent local drop)", () => {
+  const dev = deviceStorage();
+  const alive = async () => new Set(["pA", "pB"]);
+  const a = createQueue({ storage: dev.tab(), send: offline, tabId: () => "pA", alive, ...manualTimers() });
+  const b = createQueue({ storage: dev.tab(), send: offline, tabId: () => "pB", alive, ...manualTimers() });
+  const t = a.add(mark("g1"));
+  const u = b.undo(t.clientId);
+  assert.equal(u.local, false);
+  assert.equal(u.item.owner, "pA", "the tap's own tab sends it, after the tap");
+});
+
+test("W4: a tap that can't be stored is reported (not saved on this device), space is freed, and it is written again", async () => {
+  const dev = deviceStorage();
+  const timers = manualTimers();
+  const persist = [];
+  let freed = 0;
+  const q = createQueue({ storage: dev.tab(), send: offline, onPersist: (ok) => persist.push(ok), onStorageFull: () => { freed += 1; }, ...timers });
+  dev.setFull(true);
+  const it = q.add(mark("g1"));
+  assert.deepEqual(persist, [false], "said at once");
+  assert.equal(q.persisted(), false);
+  assert.ok(freed >= 1, "the cached list is dropped to make room");
+  assert.equal(q.pending().length, 1, "still kept (and sent) from memory");
+  dev.setFull(false);
+  for (let i = 0; i < 6 && timers.count(); i++) await timers.run(1);
+  assert.equal(q.persisted(), true, "written again");
+  assert.equal(persist.at(-1), true);
+  assert.ok(dev.raw.has(ITEM_PREFIX + it.clientId));
+});
+
+test("drain: sends this tab's taps now (sign-out with a connection)", async () => {
+  const sent = [];
+  const q = createQueue({ storage: deviceStorage().tab(), send: okAll(sent) });
+  q.add(mark("g1"));
+  q.add(mark("g2"));
+  const left = await q.drain(1000);
+  assert.equal(left, 0);
+  assert.equal(sent.length, 2);
+  q.pause();
+  assert.equal(q.isPaused(), true);
 });
 
 test("tap ids are unique and the right shape", () => {

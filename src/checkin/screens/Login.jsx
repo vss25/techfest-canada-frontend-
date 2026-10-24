@@ -4,7 +4,7 @@ import { DESK_NAME } from "../deskPath.js";
 
 /* Sign-in: TTFC staff and volunteer accounts only (POST /api/auth/login with staffOnly, then the desk checks the
    check-in right). Volunteers' logins are made by management in Admin › More › Staff accounts. */
-export default function Login({ again = false }) {
+export default function Login({ again = false, notice = "" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,7 +21,8 @@ export default function Login({ again = false }) {
       <form className="ci-login-card" onSubmit={submit} noValidate>
         <img src="icons/icon-192.png" alt="" width="72" height="72" className="ci-login-icon" />
         <h1>{DESK_NAME}</h1>
-        <p className="ci-muted">{again ? "Your sign-in has ended. Sign in again: taps saved on this device are kept and sent after." : "For TTFC staff and volunteers. Sign in with the email and password you were given."}</p>
+        {notice && <p className="ci-error" role="alert">{notice}</p>}
+        <p className="ci-muted">{again ? "Your sign-in has ended. Sign in again: taps saved on this device are kept and sent after (still recorded as made by whoever made them)." : "For TTFC staff and volunteers. Sign in with the email and password you were given."}</p>
         <label className="ci-field">
           <span>Email</span>
           <input type="email" inputMode="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} required />

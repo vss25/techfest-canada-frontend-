@@ -1,4 +1,5 @@
 import { GROUPS, groupOf } from "./passColors.js";
+import { eventDayInfo, stationStates as localStationStates } from "./stationTime.js";
 
 /* =========================================================
    TTFC Check-in: what a device knows, and how it changes
@@ -8,8 +9,15 @@ import { GROUPS, groupOf } from "./passColors.js";
    a cursor), then events (the live stream or the polling fallback,
    each with the rows it changed). Applying the same event twice, or
    events out of order, ends the same: a mark row only replaces the one
-   held when its `rev` is higher; events already seen (by `seq`) are
-   skipped.
+   held when its `rev` is higher; a guest's pass collected, desk note
+   and inclusions only change for an event newer (by `seq`) than the
+   last one applied to them (or than the snapshot's cursor); events
+   already seen (by `seq`) are skipped.
+
+   Marks are per Toronto day. The device works out today itself too
+   (rollDay, from the server-corrected clock): offline at the start of
+   Day 2 it drops Day 1's marks (a guest's pass collected stays) so
+   returning guests can be marked again.
 
    A guest's status for a point today is the earliest set mark among
    their passes (`keys`). Taps waiting in the device's queue (offline,
@@ -58,6 +66,10 @@ export function fromSnapshot(snap, { clientNow = Date.now(), prev = null } = {})
     attendance: snap.attendance || [],
     seen: prev?.seen || new Set(),
     version: (prev?.version || 0) + 1,
+    // The snapshot holds everything up to its cursor: older pass / note / inclusions events never undo it.
+    baseCursor: Number(snap.cursor) || 0,
+    lastSeq: new Map(),
+    maxSeq: Number(snap.cursor) || 0,
   };
   setGuests(s, snap.guests || []);
   for (const b of s.booths) s.boothByKey.set(b.key, b);
@@ -71,6 +83,17 @@ function setGuests(s, guests) {
   s.byKey = new Map();
   for (const g of guests) for (const k of g.keys?.length ? g.keys : [g.key]) s.byKey.set(k, g);
 }
+
+/** Is this event newer than the last one applied to `k` (a guest's pass, note or inclusions)? Then it's the last one. */
+function newer(s, k, seq) {
+  const have = s.lastSeq.has(k) ? s.lastSeq.get(k) : s.baseCursor || 0;
+  if (!(seq > have)) return false;
+  s.lastSeq.set(k, seq);
+  return true;
+}
+
+/** Staff just changed a guest's inclusions here: events already out there (older) don't undo it. */
+export function heldInclusions(s, key) { if (s && key) s.lastSeq.set(`inc|${key}`, Math.max(s.maxSeq || 0, s.lastSeq.get(`inc|${key}`) || 0)); }
 
 /** Keep a mark if it's for today and newer than the one held. */
 function putMark(s, m) {
@@ -96,10 +119,11 @@ export function applyEvents(s, events = [], { live = true, now = Date.now() } = 
     if (!ev || !ev.seq || s.seen.has(ev.seq)) continue;
     s.seen.add(ev.seq);
     if (s.seen.size > SEEN_MAX) s.seen = new Set([...s.seen].slice(-SEEN_MAX / 2));
+    if (ev.seq > (s.maxSeq || 0)) s.maxSeq = ev.seq;
     for (const m of ev.marks || []) if (putMark(s, m)) changed = true;
     if (ev.pass?.key) {
       const g = s.byKey.get(ev.pass.key);
-      if (g && (g.keys?.length <= 1 || g.key === ev.pass.key)) {
+      if (g && (g.keys?.length <= 1 || g.key === ev.pass.key) && newer(s, `pass|${g.key}`, ev.seq)) {
         g.passCollected = !!ev.pass.collected;
         g.passCollectedAt = ev.pass.collected ? ev.pass.collectedAt || g.passCollectedAt || null : null;
         changed = true;
@@ -108,16 +132,20 @@ export function applyEvents(s, events = [], { live = true, now = Date.now() } = 
     if (ev.kind === "note") {
       const g = s.byKey.get(ev.key);
       const k = g ? g.key : ev.key;
-      if (ev.note) s.notes[k] = { text: ev.note, by: ev.by?.name || "", at: ev.at };
-      else delete s.notes[k];
-      changed = true;
+      if (newer(s, `note|${k}`, ev.seq)) {
+        if (ev.note) s.notes[k] = { text: ev.note, by: ev.by?.name || "", at: ev.at };
+        else delete s.notes[k];
+        changed = true;
+      }
     }
     if (ev.kind === "inclusions") {
       const g = s.byKey.get(ev.key);
       if (g && g.key === ev.key && ev.extras) {
-        g.extras = { ...ev.extras };
-        if (ev.extrasView) g.extrasView = ev.extrasView;
-        changed = true;
+        if (newer(s, `inc|${g.key}`, ev.seq)) {
+          g.extras = { ...ev.extras };
+          if (ev.extrasView) g.extrasView = ev.extrasView;
+          changed = true;
+        }
       } else if (g) refresh = true;
     }
     if (ev.kind === "guest") refresh = true;
@@ -139,6 +167,26 @@ export function applyEvents(s, events = [], { live = true, now = Date.now() } = 
   return { changed, refresh, arrivals };
 }
 
+/* ---------- Today, on the device ---------- */
+
+/**
+ * The device's own idea of today (from `now`, the server-corrected clock), when it's later than the state's: offline at
+ * the start of Day 2, Day 1's marks go (each day's statuses start empty; a guest's pass collected stays: "Has pass"),
+ * today and the stations' states are worked out here (lib/stationTime.js). → true if the day changed. Mutates `s`.
+ */
+export function rollDay(s, now = Date.now()) {
+  if (!s?.today?.date) return false;
+  const info = eventDayInfo(now);
+  if (!(info.date > s.today.date)) return false;
+  s.today = info;
+  for (const [k, m] of s.marks) if (m.day !== info.date) s.marks.delete(k);
+  const keys = (s.stations || []).map((x) => x.key).filter(Boolean);
+  s.stationStates = localStationStates(s.windows, now, keys.length ? keys : undefined);
+  s.dayFromDevice = true;
+  s.version += 1;
+  return true;
+}
+
 /* ---------- Status ---------- */
 
 /**
@@ -148,35 +196,67 @@ export function applyEvents(s, events = [], { live = true, now = Date.now() } = 
 export function statusOf(s, g, pending = [], me = s.me) {
   const out = {};
   const keys = g.keys?.length ? g.keys : [g.key];
-  const undone = new Set(pending.filter((p) => p.kind === "undo").map((p) => p.ref));
-  const resets = pending.filter((p) => p.kind === "reset" && keys.includes(p.key)).map((p) => p.point);
+  const today = s.today?.date || "";
+  const q = prepPending(pending, today);
+  const resets = [];
+  for (const k of keys) for (const pt of q.resets.get(k) || []) resets.push(pt);
   for (const point of POINTS) {
     let best = null;
     for (const k of keys) {
       const m = s.marks.get(mkey(k, point));
-      if (!m || !m.at || undone.has(m.ref)) continue;
+      if (!m || !m.at || q.undone.has(m.ref) || (today && m.day && m.day !== today)) continue;
       if (!best || ms(m.at) < ms(best.at)) best = m;
     }
     if (best && (resets.includes(point) || (point === "checked_in" && resets.includes("arrived")))) best = null;
     out[point] = best;
   }
-  for (const p of pending) {
-    if (p.kind !== "mark" || !keys.includes(p.key) || undone.has(p.clientId)) continue;
-    const virt = { at: p.clientAt, by: me ? { id: me.id, name: me.name } : null, station: p.station, override: p.override ? "outside_window" : "", note: p.note || "", ref: p.clientId, pending: true };
-    if (!out[p.point]) out[p.point] = virt;
-    if (p.point === "checked_in" && !out.arrived) out.arrived = virt;
+  for (const k of keys) {
+    for (const p of q.marks.get(k) || []) {
+      if (q.undone.has(p.clientId)) continue;
+      const by = p.queuedBy?.name ? { id: p.queuedBy.id, name: p.queuedBy.name } : me ? { id: me.id, name: me.name } : null;
+      const virt = { at: p.clientAt, by, station: p.station, override: p.override ? "outside_window" : "", note: p.note || "", ref: p.clientId, pending: true, practice: !!today && !s.today?.eventDay };
+      if (!out[p.point]) out[p.point] = virt;
+      if (p.point === "checked_in" && !out.arrived) out.arrived = virt;
+    }
   }
   return out;
 }
+
+/* The queue's taps, sorted once per list of them (a screen asks statusOf for every guest with the same list). */
+const prepCache = new WeakMap();
+function prepPending(pending, today) {
+  const hit = pending && typeof pending === "object" ? prepCache.get(pending) : null;
+  if (hit && hit.today === today) return hit;
+  const undone = new Set();
+  const resets = new Map();
+  const marks = new Map();
+  for (const p of pending || []) {
+    if (!p) continue;
+    if (p.kind === "undo") { if (p.target || p.ref) undone.add(p.target || p.ref); continue; }
+    if (p.kind === "reset") { if (!resets.has(p.key)) resets.set(p.key, []); resets.get(p.key).push(p.point); continue; }
+    if (p.kind !== "mark") continue;
+    // A tap made on another day (queued offline yesterday) isn't today's mark.
+    if (today && p.clientAt && torontoDay(p.clientAt) !== today) continue;
+    if (!marks.has(p.key)) marks.set(p.key, []);
+    marks.get(p.key).push(p);
+  }
+  const out = { today, undone, resets, marks };
+  if (pending && typeof pending === "object") prepCache.set(pending, out);
+  return out;
+}
+const dayFmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", year: "numeric", month: "2-digit", day: "2-digit" });
+const torontoDay = (at) => { const t = ms(at); return Number.isFinite(t) ? dayFmt.format(new Date(t)) : ""; };
 const POINTS = ["arrived", "checked_in", "cxo", "lunch", "evening", "media", "av", "exhibitor", "flag_cxo", "flag_lunch", "flag_evening"];
 
 /** A booth's "set up" mark today (queue on top). */
 export function boothStatus(s, booth, pending = [], me = s.me) {
-  const undone = new Set(pending.filter((p) => p.kind === "undo").map((p) => p.ref));
+  const today = s.today?.date || "";
+  const q = prepPending(pending, today);
   const m = s.marks.get(mkey(booth.key, "booth"));
-  if (m?.at && !undone.has(m.ref)) return m;
-  const p = pending.find((x) => x.kind === "mark" && x.point === "booth" && x.key === booth.key && !undone.has(x.clientId));
-  return p ? { at: p.clientAt, by: me ? { id: me.id, name: me.name } : null, station: p.station, ref: p.clientId, pending: true } : null;
+  if (m?.at && !q.undone.has(m.ref) && !(today && m.day && m.day !== today)) return m;
+  const p = (q.marks.get(booth.key) || []).find((x) => x.point === "booth" && !q.undone.has(x.clientId));
+  const by = p?.queuedBy?.name ? { id: p.queuedBy.id, name: p.queuedBy.name } : me ? { id: me.id, name: me.name } : null;
+  return p ? { at: p.clientAt, by, station: p.station, ref: p.clientId, pending: true } : null;
 }
 
 /** The lobby / pass desk line for a guest: "not_arrived" | "on_the_way" | "checked_in". */
@@ -190,8 +270,8 @@ export function deskStage(st) {
 export function collectedBefore(g, today) {
   if (!g?.passCollected) return false;
   if (!g.passCollectedAt) return true;
-  const d = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(g.passCollectedAt));
-  return !!today?.date && d < today.date;
+  const d = torontoDay(g.passCollectedAt);
+  return !!today?.date && !!d && d < today.date;
 }
 
 /* ---------- Counters ---------- */
@@ -242,6 +322,9 @@ export function counters(s, station, { pending = [], item = null } = {}) {
   return out;
 }
 
+/** Latest first, each time read once. */
+const latestFirst = (list, at) => list.map((x) => [ms(at(x)) || 0, x]).sort((a, b) => b[0] - a[0]).map((p) => p[1]);
+
 /** Guests on the way up (arrived today, not checked in), newest arrival first. */
 export function onTheWay(s, pending = []) {
   const out = [];
@@ -249,17 +332,17 @@ export function onTheWay(s, pending = []) {
     const st = statusOf(s, g, pending);
     if (st.arrived && !st.checked_in) out.push({ g, st });
   }
-  return out.sort((a, b) => ms(b.st.arrived.at) - ms(a.st.arrived.at));
+  return latestFirst(out, (x) => x.st.arrived.at);
 }
 
-/** Guests checked in today, latest first. */
+/** Guests checked in today, latest first (`limit`: how many; the full count is the list's length with Infinity). */
 export function checkedInToday(s, pending = [], limit = 200) {
   const out = [];
   for (const g of s.guests) {
     const st = statusOf(s, g, pending);
     if (st.checked_in) out.push({ g, st });
   }
-  return out.sort((a, b) => ms(b.st.checked_in.at) - ms(a.st.checked_in.at)).slice(0, limit);
+  return latestFirst(out, (x) => x.st.checked_in.at).slice(0, limit);
 }
 
 /** Today's taps at a point, latest first (the lobby's recent arrivals, a meal station's admitted list). */
@@ -269,5 +352,5 @@ export function markedToday(s, point, pending = [], limit = 30) {
     const st = statusOf(s, g, pending);
     if (st[point]) out.push({ g, st, m: st[point] });
   }
-  return out.sort((a, b) => ms(b.m.at) - ms(a.m.at)).slice(0, limit);
+  return latestFirst(out, (x) => x.m.at).slice(0, limit);
 }

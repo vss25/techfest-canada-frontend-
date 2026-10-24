@@ -1,7 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { badgeOf, chipsOf, GROUP_COLORS } from "./lib/passColors.js";
 import { boxLetter } from "./lib/search.js";
-import { answerConfirm, dismissBanner, dismissToast, useDesk } from "./lib/desk.js";
+import { answerConfirm, closeTray, dismissAllFailed, dismissBanner, dismissTap, dismissToast, openTray, retryTap, useDesk } from "./lib/desk.js";
+import { describeTap, trayActions } from "./lib/tapText.js";
+import { timeText } from "./lib/timers.js";
 import { ALLERGY_KEYS, DIETARY_LABELS, DIETARY_ORDER, EXTRA_LABELS, EXTRA_ORDER } from "./lib/constants.js";
 
 /* Shared pieces of the TTFC Check-in screens. */
@@ -76,7 +78,7 @@ export function SearchBox({ value, onChange, inputRef, placeholder = "Search a g
         autoCorrect="off"
         autoCapitalize="words"
         spellCheck={false}
-        enterKeyHint="go"
+        enterKeyHint="search"
       />
       {value && <button type="button" className="ci-search-clear" onClick={() => { onChange(""); inputRef?.current?.focus(); }} aria-label="Clear search">×</button>}
     </div>
@@ -112,7 +114,7 @@ export function Counters({ big = [], groups = [], marks = [] }) {
   );
 }
 
-/** Live / Reconnecting / Offline, and taps waiting to be sent. */
+/** Live / Reconnecting / Offline, taps waiting to be sent (and whether they're saved on the device), refused taps. */
 export function ConnPill() {
   const d = useDesk();
   const n = d.queueItems.filter((x) => x.state !== "failed").length;
@@ -121,10 +123,59 @@ export function ConnPill() {
   return (
     <span className="ci-conn-wrap">
       <span className={`ci-conn is-${d.conn}`} role="status" aria-live="polite"><span className="ci-conn-dot" aria-hidden="true" />{label}</span>
-      {n > 0 && <span className="ci-pending" title="Taps saved on this device, sent when the connection is back">{n} pending</span>}
-      {failed > 0 && <span className="ci-pending is-failed">{failed} not recorded</span>}
+      {n > 0 && (d.persistOk
+        ? <span className="ci-pending" title="Taps saved on this device, sent when the connection is back">{n} pending</span>
+        : <span className="ci-pending is-failed" title="These taps could NOT be saved on this device: don't reload or close the app until they're sent">{n} pending · not saved</span>)}
+      {failed > 0 && <button type="button" className="ci-pending is-failed ci-pending-btn" onClick={openTray} aria-label={`${failed} not recorded: review`}>{failed} not recorded ›</button>}
     </span>
   );
+}
+
+/** Needs attention: the taps the server refused (they stay on the device until retried or dismissed, reloads too). */
+export function AttentionSheet() {
+  const d = useDesk();
+  const list = d.queueItems.filter((x) => x.state === "failed");
+  return (
+    <Sheet title="Needs attention" onClose={closeTray}>
+      <p className="ci-small ci-muted">These taps were not recorded: the server refused them. Admit anyway, try again, or dismiss once it's sorted.</p>
+      {!list.length && <p className="ci-empty">Nothing needs attention.</p>}
+      <ul className="ci-attention">
+        {list.map((it) => {
+          const t = describeTap(it, { state: d.state, items: d.queueItems });
+          const acts = trayActions(it);
+          return (
+            <li key={it.clientId} className="ci-attention-row">
+              <div className="ci-attention-main">
+                <b>{t.who || "Someone"}</b> · {t.what}
+                <span className="ci-small ci-muted">{[t.where, timeText(t.at), t.by ? `by ${t.by}` : ""].filter(Boolean).join(" · ")}</span>
+                <span className="ci-attention-why">{it.window?.text || it.error || "Not recorded."}</span>
+              </div>
+              <div className="ci-attention-actions">
+                {acts.includes("override") && <button type="button" className="ci-btn ci-btn-warn" onClick={() => retryTap(it.clientId, { override: true })}>Admit anyway</button>}
+                {acts.includes("retry") && <button type="button" className="ci-btn ci-btn-primary" onClick={() => retryTap(it.clientId)}>Try again</button>}
+                <button type="button" className="ci-btn ci-btn-ghost" onClick={() => dismissTap(it.clientId)}>Dismiss</button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {list.length > 1 && <p className="ci-center"><button type="button" className="ci-btn ci-btn-ghost" onClick={dismissAllFailed}>Dismiss all</button></p>}
+    </Sheet>
+  );
+}
+
+/** Each arrival at this station flashes the screen's edge in the guest's colour (for when the sound is down). */
+export function ArrivalFlash() {
+  const d = useDesk();
+  const f = d.flash;
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    if (!f?.seq) return undefined;
+    const t = setTimeout(() => setShown(f.seq), 1700);
+    return () => clearTimeout(t);
+  }, [f?.seq]);
+  if (!f?.seq || shown === f.seq) return null;
+  return <div key={f.seq} className="ci-flash" style={{ "--gbg": f.bg }} aria-hidden="true" />;
 }
 
 /** Toasts at the bottom ("Priya Sharma: Arrived · Undo"). */
@@ -193,16 +244,21 @@ export function ConfirmDialog() {
   );
 }
 
-/** A plain side sheet / bottom sheet (phones). */
+/**
+ * A plain side sheet / bottom sheet (phones). The focus moves into it once, when it opens, and back when it closes:
+ * never on a re-render (live updates re-render every second at peak; a note being typed keeps its keyboard).
+ */
 export function Sheet({ title, onClose, children, wide = false }) {
   const ref = useRef(null);
+  const closeRef = useRef(onClose);
+  useLayoutEffect(() => { closeRef.current = onClose; });
   useEffect(() => {
     const prev = document.activeElement;
     ref.current?.focus();
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e) => { if (e.key === "Escape") closeRef.current?.(); };
     document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("keydown", onKey); prev?.focus?.(); };
-  }, [onClose]);
+    return () => { document.removeEventListener("keydown", onKey); prev?.focus?.({ preventScroll: true }); };
+  }, []);
   return (
     <div className="ci-sheet-wrap" data-modal-open onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <aside className={`ci-sheet${wide ? " is-wide" : ""}`} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref}>

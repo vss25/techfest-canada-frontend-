@@ -4,7 +4,7 @@
    to the total), Media / VIP / Exhibitor as yes / no counts, and the meal station's admitted / entitled / RSVP'd. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applyEvents, boothStatus, checkedInToday, collectedBefore, counters, deskStage, fromSnapshot, markedToday, onTheWay, statusOf } from "./state.js";
+import { applyEvents, boothStatus, checkedInToday, collectedBefore, counters, deskStage, fromSnapshot, heldInclusions, markedToday, onTheWay, rollDay, statusOf } from "./state.js";
 
 const DAY = "2026-10-26";
 const guest = (key, name, tier, marks = {}, extra = {}) => ({
@@ -155,4 +155,99 @@ test("media, exhibitor and AV counters cover their own guests", () => {
   const e = counters(s, "exhibitor");
   assert.deepEqual([e.totals.total, e.booths.total, e.booths.setUp], [1, 1, 0]);
   assert.equal(counters(s, "av").totals.total, 1);
+});
+
+/* ---------- W5: a new day on the device (offline at the start of Day 2) ---------- */
+
+const WINDOWS = {
+  lobby: { day1: { open: "07:00", close: "23:00", source: "default" }, day2: { open: "07:00", close: "23:00", source: "default" } },
+  desk: { day1: { open: "07:00", close: "23:00", source: "default" }, day2: { open: "07:00", close: "23:00", source: "default" } },
+  lunch: { day1: { open: "12:05", close: "13:50", source: "fallback", session: { start: "12:35", end: "13:20", title: "Networking Lunch" } }, day2: { open: "11:30", close: "13:15", source: "fallback", session: { start: "12:00", end: "12:45", title: "Lunch" } } },
+};
+
+test("W5: a cached Day 1 list opened offline on Day 2: Day 1's marks go, returning guests can be marked; the pass collected stays", () => {
+  const snapshot = { ...snap(), windows: WINDOWS, stations: [{ key: "lobby" }, { key: "desk" }, { key: "lunch" }],
+    stationStates: { lobby: { open: false, code: "closed", text: "Day 1 · Lobby · closed" } } };
+  const s = fromSnapshot(snapshot);
+  const a = s.byKey.get("gA");
+  const b = s.byKey.get("gB");
+  b.passCollected = true;
+  b.passCollectedAt = "2026-10-26T12:30:00Z";
+  assert.ok(statusOf(s, a).arrived, "arrived on Day 1");
+  // Tue Oct 27, 7:30 AM Toronto, no connection.
+  const tue = Date.parse("2026-10-27T11:30:00Z");
+  assert.equal(rollDay(s, tue), true);
+  assert.equal(s.today.date, "2026-10-27");
+  assert.equal(s.today.eventDay, "day2");
+  assert.equal(statusOf(s, a).arrived, null, "Arrived can be tapped again");
+  assert.equal(deskStage(statusOf(s, b)), "not_arrived", "Checked in can be tapped again");
+  assert.equal(collectedBefore(b, s.today), true, "Has pass (collected Mon)");
+  assert.equal(s.stationStates.lobby.open, true, "the lobby's Day 2 hours, worked out on the device");
+  assert.equal(s.stationStates.lunch.code, "later");
+  assert.match(s.stationStates.lunch.text, /^Day 2 · Networking Luncheon · opens at 11:30 AM/);
+  assert.equal(s.stationStates.lunch.item.key, "lunch_d2");
+  // Day 1 marks arriving late are not today's; the same day again changes nothing.
+  applyEvents(s, [{ seq: 90, kind: "mark", key: "gF", marks: [mark("gF", "arrived", 3, "2026-10-26T20:00:00Z")] }]);
+  assert.equal(statusOf(s, s.byKey.get("gF")).arrived, null);
+  assert.equal(rollDay(s, tue + 60000), false);
+  assert.equal(rollDay(s, Date.parse("2026-10-26T20:00:00Z")), false, "never back to an earlier day");
+});
+
+test("W5: a tap queued offline yesterday isn't today's mark; a mark held for another day never counts", () => {
+  const s = fromSnapshot(snap());
+  const f = s.byKey.get("gF");
+  const yesterday = { clientId: "t-y", kind: "mark", point: "arrived", key: "gF", clientAt: "2026-10-25T21:00:00Z", station: "lobby" };
+  assert.equal(statusOf(s, f, [yesterday]).arrived, null);
+  s.marks.set("gF|lunch", { ...mark("gF", "lunch", 1, "2026-10-25T16:00:00Z"), day: "2026-10-25" });
+  assert.equal(statusOf(s, f).lunch, null);
+});
+
+test("C3: a queued tap shows who made it (not whoever is signed in now)", () => {
+  const s = fromSnapshot(snap());
+  const t = { clientId: "t1", kind: "mark", point: "arrived", key: "gF", clientAt: "2026-10-26T13:05:00Z", station: "lobby", queuedBy: { id: "u9", name: "Vic Volunteer" } };
+  assert.equal(statusOf(s, s.byKey.get("gF"), [t]).arrived.by.name, "Vic Volunteer");
+});
+
+/* ---------- W16: pass / note / inclusions only change for newer events ---------- */
+
+test("W16: pass, note and inclusions events delivered out of order end on the newest; older than the snapshot never apply", () => {
+  const s = fromSnapshot(snap()); // cursor 10
+  const g = s.byKey.get("gA");
+  const on = { seq: 50, kind: "inclusions", key: "gA", extras: { cxo: true, lunch: true, gala: true, awards: true } };
+  const off = { seq: 51, kind: "inclusions", key: "gA", extras: { cxo: false, lunch: true, gala: true, awards: true } };
+  applyEvents(s, [off]);
+  applyEvents(s, [on]);
+  assert.equal(g.extras.cxo, false, "51 is newer than 50");
+  const collected = { seq: 60, kind: "mark", key: "gA", marks: [], pass: { key: "gA", collected: true, collectedAt: "2026-10-26T13:00:00Z" } };
+  const given = { seq: 61, kind: "undo", key: "gA", marks: [], pass: { key: "gA", collected: false } };
+  applyEvents(s, [given]);
+  applyEvents(s, [collected]);
+  assert.equal(g.passCollected, false);
+  applyEvents(s, [{ seq: 71, kind: "note", key: "gA", note: "", at: "2026-10-26T13:02:00Z" }]);
+  applyEvents(s, [{ seq: 70, kind: "note", key: "gA", note: "Old note", at: "2026-10-26T13:01:00Z" }]);
+  assert.equal(s.notes.gA, undefined);
+  // An event older than the snapshot's cursor (a late tail) doesn't undo what the snapshot says.
+  applyEvents(s, [{ seq: 9, kind: "inclusions", key: "gB", extras: { cxo: false, lunch: false, gala: false, awards: false } }]);
+  assert.equal(s.byKey.get("gB").extras.cxo, true);
+});
+
+test("W16: after staff change inclusions here, older events still on their way don't undo it", () => {
+  const s = fromSnapshot(snap());
+  applyEvents(s, [{ seq: 30, kind: "mark", key: "gF", marks: [] }]);
+  const g = s.byKey.get("gA");
+  g.extras = { ...g.extras, cxo: true };
+  heldInclusions(s, "gA");
+  applyEvents(s, [{ seq: 25, kind: "inclusions", key: "gA", extras: { cxo: false, lunch: true, gala: true, awards: true } }]);
+  assert.equal(g.extras.cxo, true);
+  applyEvents(s, [{ seq: 31, kind: "inclusions", key: "gA", extras: { cxo: false, lunch: true, gala: true, awards: true } }]);
+  assert.equal(g.extras.cxo, false, "a newer change does");
+});
+
+test("W17: the checked-in list can be counted in full (the screen draws the latest 80)", () => {
+  const s = fromSnapshot(snap());
+  const many = Array.from({ length: 120 }, (_, i) => ({ key: `gm${i}`, keys: [`gm${i}`], name: `Guest ${i}`, tier: "connect", marks: {}, extras: {}, rsvp: { options: [] } }));
+  s.guests = [...s.guests, ...many];
+  for (const g of many) { s.byKey.set(g.key, g); s.marks.set(`${g.key}|checked_in`, mark(g.key, "checked_in", 1, "2026-10-26T13:00:00Z")); }
+  assert.equal(checkedInToday(s, [], Infinity).length, 121);
+  assert.equal(checkedInToday(s, [], 80).length, 80);
 });

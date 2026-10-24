@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { useDesk, pending } from "../lib/desk.js";
+import { useCallback, useMemo, useState } from "react";
+import { deskVersion, useDesk, pending } from "../lib/desk.js";
 import { checkedInToday, collectedBefore, deskStage, onTheWay, statusOf } from "../lib/state.js";
 import { badgeOf } from "../lib/passColors.js";
 import { clockText, secondsSince, timeText, timerLevel, weekday } from "../lib/timers.js";
@@ -8,51 +8,58 @@ import { BoxHint, Chips, Inclusions, PassBand, SearchBox } from "../components.j
 import { byLine } from "../lib/byLine.js";
 import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
-import { useLayout, useNow } from "../hooks.js";
+import { useLayout, useNow, useUndoExpiry } from "../hooks.js";
 
 /* FLOOR 1 — Pass desk. "On the way up": everyone the lobby marked Arrived, newest on top, each card big enough to read
    from the desk (name, company, pass colour, what to hand over, the badge box, the time since they arrived: amber
-   after 60 s, red after 2 min). Tap Checked in when the pass is handed over. "Checked in": latest first. A search for
-   people who came straight up. Day 2: "Has pass (collected Mon)". */
+   after 60 s, red after 2 min). Tap Checked in when the pass is handed over. "Checked in": latest first (the latest
+   80 shown, the count is everyone's). A search for people who came straight up. Day 2: "Has pass (collected Mon)".
+   The lists are worked out when something changes, not every second: only each card's own timer ticks. */
+
+const SHOW_DONE = 80;
 
 export default function Desk({ onOpen }) {
   const d = useDesk();
   const s = d.state;
   const p = pending();
-  const now = useNow(1000);
+  const v = deskVersion();
   const layout = useLayout();
   const [tab, setTab] = useState("way");
-  const checkIn = useCallback((g) => {
+  useUndoExpiry();
+  const checkIn = useCallback((g, done) => {
     const st = statusOf(s, g, pending());
     if (st.checked_in) return;
-    act({ point: "checked_in", guest: g, undoText: `${g.name}: checked in, pass handed over.` });
+    act({ point: "checked_in", guest: g, undoText: `${g.name}: checked in, pass handed over.`, onDone: done });
   }, [s]);
-  const { q, setQ, sel, results, inputRef, lookingUp } = useGuestSearch(s.guests, { onEnter: checkIn, version: s.version + p.length });
-  const way = onTheWay(s, p);
-  const done = checkedInToday(s, p, 80);
+  const { q, setQ, sel, results, inputRef, lookingUp, done } = useGuestSearch(s.guests, { onEnter: checkIn, version: s.version + p.length });
+  // Worked out again when anything on the desk changes (v: every live event, tap, queue change), not on the timers' ticks.
+  const way = useMemo(() => onTheWay(s, pending()), [s, v]); // eslint-disable-line react-hooks/exhaustive-deps
+  const doneAll = useMemo(() => checkedInToday(s, pending(), Infinity), [s, v]); // eslint-disable-line react-hooks/exhaustive-deps
+  const doneShown = doneAll.length > SHOW_DONE ? doneAll.slice(0, SHOW_DONE) : doneAll;
 
   const wayCol = (
     <section className="ci-col" aria-labelledby="ci-way-h">
       <h2 className="ci-h2" id="ci-way-h">On the way up <span className="ci-count">{way.length}</span></h2>
       {!way.length && <p className="ci-empty">Nobody on the way up. Arrivals from the lobby appear here at once, with a chime.</p>}
       <ul className="ci-cards">
-        {way.map(({ g, st }) => <WayCard key={g.key} g={g} st={st} now={now} today={s.today} note={s.notes[g.key]} onOpen={onOpen} onCheckIn={checkIn} />)}
+        {way.map(({ g, st }) => <WayCard key={g.key} g={g} st={st} today={s.today} note={s.notes[g.key]} onOpen={onOpen} onCheckIn={checkIn} />)}
       </ul>
     </section>
   );
   const doneCol = (
     <section className="ci-col" aria-labelledby="ci-done-h">
-      <h2 className="ci-h2" id="ci-done-h">Checked in today <span className="ci-count">{done.length}</span></h2>
-      {!done.length && <p className="ci-empty">No check-ins yet today.</p>}
+      <h2 className="ci-h2" id="ci-done-h">Checked in today <span className="ci-count">{doneAll.length}</span></h2>
+      {!doneAll.length && <p className="ci-empty">No check-ins yet today.</p>}
       <ul className="ci-list ci-list-compact">
-        {done.map(({ g, st }) => {
+        {doneShown.map(({ g, st }) => {
           const undo = undoFor(g, "checked_in");
           return (
             <GuestRow key={g.key} guest={g} onOpen={onOpen} status={`Checked in ${byLine(st.checked_in)}`} statusTone="good"
-              actions={undo ? <button type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span className="ci-done">✓</span>} />
+              actions={undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span key="done" className="ci-done">✓</span>} />
           );
         })}
       </ul>
+      {doneAll.length > doneShown.length && <p className="ci-muted ci-pad">Showing the latest {doneShown.length} of {doneAll.length}. Search to find anyone else.</p>}
     </section>
   );
 
@@ -69,11 +76,11 @@ export default function Desk({ onOpen }) {
               const stage = deskStage(st);
               return (
                 <GuestRow key={g.key} guest={g} selected={i === sel} onOpen={onOpen}
-                  status={stage === "checked_in" ? `Checked in ${byLine(st.checked_in)}` : stage === "on_the_way" ? `On the way up · ${clockText(secondsSince(st.arrived.at, now))}` : collectedBefore(g, s.today) ? `Has pass (collected ${weekday(g.passCollectedAt)})` : "Not arrived"}
+                  status={stage === "checked_in" ? `Checked in ${byLine(st.checked_in)}` : stage === "on_the_way" ? <>On the way up · <Elapsed at={st.arrived.at} /></> : collectedBefore(g, s.today) ? `Has pass (collected ${weekday(g.passCollectedAt)})` : "Not arrived"}
                   statusTone={stage === "checked_in" ? "good" : stage === "on_the_way" ? "info" : ""}
                   extra={<span className="ci-row-extra"><Inclusions guest={g} /><BoxHint guest={g} /></span>}
-                  actions={stage === "checked_in" ? <span className="ci-done">✓</span>
-                    : <button type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g)}>Checked in</button>} />
+                  actions={stage === "checked_in" ? <span key="done" className="ci-done">✓</span>
+                    : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>Checked in</button>} />
               );
             })}
           </ul>
@@ -83,7 +90,7 @@ export default function Desk({ onOpen }) {
         <>
           <div className="ci-tabs" role="tablist">
             <button type="button" role="tab" aria-selected={tab === "way"} className={tab === "way" ? "is-on" : ""} onClick={() => setTab("way")}>On the way up ({way.length})</button>
-            <button type="button" role="tab" aria-selected={tab === "done"} className={tab === "done" ? "is-on" : ""} onClick={() => setTab("done")}>Checked in ({done.length})</button>
+            <button type="button" role="tab" aria-selected={tab === "done"} className={tab === "done" ? "is-on" : ""} onClick={() => setTab("done")}>Checked in ({doneAll.length})</button>
           </div>
           {tab === "way" ? wayCol : doneCol}
         </>
@@ -94,7 +101,14 @@ export default function Desk({ onOpen }) {
   );
 }
 
-function WayCard({ g, st, now, today, note, onOpen, onCheckIn }) {
+/** "0:35" since `at`, ticking on its own (the rest of the screen doesn't re-render every second). */
+function Elapsed({ at }) {
+  const now = useNow(1000);
+  return <>{clockText(secondsSince(at, now))}</>;
+}
+
+function WayCard({ g, st, today, note, onOpen, onCheckIn }) {
+  const now = useNow(1000);
   const band = badgeOf(g);
   const secs = secondsSince(st.arrived.at, now);
   const level = timerLevel(secs);

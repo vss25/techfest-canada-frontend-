@@ -7,7 +7,7 @@ import { SearchBox } from "../components.jsx";
 import { byLine } from "../lib/byLine.js";
 import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
-import { useNow } from "../hooks.js";
+import { useNow, useUndoExpiry } from "../hooks.js";
 
 /* AV STATION. Speakers and their sessions today (the live agenda: time, room, title), sorted by who speaks next;
    anyone due within 60 minutes who hasn't been AV checked is highlighted. "AV checked" (slides and mic done), with an
@@ -22,12 +22,13 @@ export default function Av({ onOpen }) {
   const [notes, setNotes] = useState({});
   const [all, setAll] = useState(false);
   const speakers = useMemo(() => s.guests.filter((g) => g.marks?.speaker), [s.guests]);
-  const check = useCallback((g) => {
+  const check = useCallback((g, done) => {
     const st = statusOf(s, g, pending());
     if (st.av) return;
-    act({ point: "av", guest: g, note: (notes[g.key] || "").trim().slice(0, 80), undoText: `${g.name}: AV checked.` });
+    act({ point: "av", guest: g, note: (notes[g.key] || "").trim().slice(0, 80), undoText: `${g.name}: AV checked.`, onDone: done });
   }, [s, notes]);
-  const { q, setQ, sel, results, inputRef } = useGuestSearch(speakers, { onEnter: check, version: s.version + p.length });
+  const { q, setQ, sel, results, inputRef, done } = useGuestSearch(speakers, { onEnter: check, version: s.version + p.length });
+  useUndoExpiry();
 
   const rows = useMemo(() => {
     const list = speakers.map((g) => ({ g, next: nextSession(g.sessions || [], { eventDay, now }), st: statusOf(s, g, p) }));
@@ -52,10 +53,10 @@ export default function Av({ onOpen }) {
     return (
       <GuestRow key={g.key} guest={g} selected={i === sel && !!q} onOpen={onOpen} extra={extra}
         status={st.av ? `AV checked ${byLine(st.av)}${st.av.note ? ` · “${st.av.note}”` : ""}` : due ? "Due soon" : ""} statusTone={st.av ? "good" : due ? "warn" : ""}
-        actions={st.av ? (undo ? <button type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span className="ci-done">✓</span>) : (
-          <span className="ci-av-act">
+        actions={st.av ? (undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span key="done" className="ci-done">✓</span>) : (
+          <span key="act" className="ci-av-act">
             <input className="ci-input ci-input-s" placeholder="Note (optional)" maxLength={80} value={notes[g.key] || ""} onChange={(e) => setNotes({ ...notes, [g.key]: e.target.value })} aria-label={`AV note for ${g.name}`} />
-            <button type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => check(g)}>AV checked</button>
+            <button type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => check(g, done)}>AV checked</button>
           </span>
         )} />
     );

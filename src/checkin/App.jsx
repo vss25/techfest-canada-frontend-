@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { desk, useDesk, load, markStarted, pending, setStation, signOut } from "./lib/desk.js";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { desk, useDesk, load, markStarted, openTray, pending, requestSignOut, setStation, signOut, unlock } from "./lib/desk.js";
 import { counters } from "./lib/state.js";
-import { applyTheme, audioReady, chime, keepAwake, remember, THEME_KEY, unlockAudio } from "./lib/device.js";
-import { applyUpdate, isUpdateReady, onUpdate } from "./lib/pwa.js";
+import { applyTheme, audioReady, keepAwake, remember, THEME_KEY, unlockAudio } from "./lib/device.js";
+import { applyUpdate, isUpdateReady, onUpdate, setAppScreen } from "./lib/pwa.js";
 import { dayHeading } from "./lib/timers.js";
-import { Banners, ConfirmDialog, ConnPill, Counters, Toasts } from "./components.jsx";
-import { useLayout } from "./hooks.js";
+import { ArrivalFlash, AttentionSheet, Banners, ConfirmDialog, ConnPill, Counters, Toasts } from "./components.jsx";
+import { useKeyboard, useLayout } from "./hooks.js";
 import Login from "./screens/Login.jsx";
 import Stations from "./screens/Stations.jsx";
 import Lobby from "./screens/Lobby.jsx";
@@ -18,17 +18,27 @@ import GuestSheet from "./screens/GuestSheet.jsx";
 
 /* TTFC Check-in: sign in → pick the station → Start (sound + keep the screen on) → the station. Header: the station
    (tap to switch), today and what's on ("Day 1 · CxO Breakfast · open until 9:25 AM" and where the times come from),
-   Live / Reconnecting / Offline, taps waiting to be sent. Counters across the top. Works the same in a browser tab
-   and installed. */
+   Live / Reconnecting / Offline, taps waiting to be sent, refused taps (Needs attention). Counters across the top.
+   Works the same in a browser tab and installed. */
 
 const SCREENS = { lobby: Lobby, desk: Desk, breakfast: Meal, lunch: Meal, evening: Meal, av: Av, exhibitor: Exhibitor, media: Media };
 const ANNOUNCES = new Set(["desk", "av", "exhibitor", "media"]);
 const pct = (n, of) => (of ? `${n}/${of}` : `${n}`);
+const VOLUME_HINT = "If you can't hear the chime, check the iPad volume (and that this device's sound isn't muted).";
+
+/** Sound on, from a tap: the chime once now, the screen kept awake, arrivals chime from now on. */
+function soundOn() {
+  unlockAudio({ ring: true });
+  keepAwake();
+  markStarted();
+}
 
 export default function App() {
   const d = useDesk();
   const layout = useLayout();
+  const kb = useKeyboard();
   const [open, setOpen] = useState(null);
+  const closeSheet = useCallback(() => setOpen(null), []);
   const [picking, setPicking] = useState(false);
   const [menu, setMenu] = useState(false);
   const [update, setUpdate] = useState(isUpdateReady());
@@ -44,27 +54,36 @@ export default function App() {
     return () => { document.removeEventListener("keydown", on); document.removeEventListener("pointerdown", off); };
   }, []);
 
-  if (!d.session?.token) return <><Login /><Toasts /></>;
-  if (d.needSignIn) return <><Login again /><Toasts /></>;
   const s = d.state;
-  if (!s) {
+  const stationInfo = s?.stations.find((x) => x.key === d.station);
+  const screen = !d.session?.token || d.needSignIn ? "login"
+    : !s ? "loading"
+      : !d.station || !stationInfo || stationInfo.enabled === false || picking ? "stations"
+        : !d.started && d.picked ? "start"
+          : d.locked ? "locked" : "station";
+  // A new version applies itself only while no station is running (lib/updatePolicy.js).
+  useEffect(() => { setAppScreen(screen === "locked" ? "station" : screen); }, [screen]);
+  // Every station screen keeps the screen awake, after a reload too (asked again on the next tap if refused now).
+  useEffect(() => { if (screen === "station" || screen === "locked") keepAwake(); }, [screen, d.station]);
+
+  if (screen === "login") return <><Login again={!!d.session?.token && d.needSignIn} notice={d.authNotice} /><Toasts /></>;
+  if (screen === "loading") {
     return (
       <main className="ci-loading">
-        {d.loadError ? (<><p>{d.loadError}</p><button type="button" className="ci-btn ci-btn-primary" onClick={() => load()}>Try again</button><button type="button" className="ci-btn ci-btn-ghost" onClick={signOut}>Sign out</button></>)
+        {d.loadError ? (<><p>{d.loadError}</p><button type="button" className="ci-btn ci-btn-primary" onClick={() => load()}>Try again</button><button type="button" className="ci-btn ci-btn-ghost" onClick={() => signOut()}>Sign out</button></>)
           : <p>Loading the guest list…</p>}
       </main>
     );
   }
-  const stationInfo = s.stations.find((x) => x.key === d.station);
-  if (!d.station || !stationInfo || stationInfo.enabled === false || picking) {
-    return <><Stations onPicked={() => setPicking(false)} /><Toasts /></>;
-  }
-  if (!d.started && d.picked) return <StartGate station={stationInfo} />;
+  if (screen === "stations") return <><Stations onPicked={() => setPicking(false)} /><ConfirmDialog /><Toasts /></>;
+  if (screen === "start") return <StartGate station={stationInfo} />;
+  if (screen === "locked") return <><LockScreen /><ConfirmDialog /><Toasts /></>;
 
   const Screen = SCREENS[d.station] || Lobby;
   const st = s.stationStates?.[d.station];
+  const waiting = d.queueItems.filter((x) => x.state !== "failed").length;
   return (
-    <div className={`ci-app is-${layout.kind}${keys ? " is-keys" : ""}`}>
+    <div className={`ci-app is-${layout.kind}${keys ? " is-keys" : ""}${kb ? " is-kb" : ""}`}>
       <header className="ci-header">
         <div className="ci-header-row">
           <img src="icons/icon-96.png" alt="" width="36" height="36" className="ci-logo" />
@@ -83,14 +102,24 @@ export default function App() {
           {st?.detail && <span className="ci-when-detail">{st.detail}</span>}
         </div>
         {menu && <Menu onClose={() => setMenu(false)} onPick={() => { setMenu(false); setPicking(true); }} />}
-        {ANNOUNCES.has(d.station) && <Banners station={d.station} onOpen={setOpen} max={layout.kind === "phone" ? 1 : layout.short || window.innerHeight < 950 ? 2 : 3} />}
+        {ANNOUNCES.has(d.station) && <Banners station={d.station} onOpen={setOpen} max={kb || layout.kind === "phone" ? 1 : layout.short || window.innerHeight < 950 ? 2 : 3} />}
       </header>
-      {update && <button type="button" className="ci-update" onClick={applyUpdate}>A new version is ready · tap to update</button>}
-      {ANNOUNCES.has(d.station) && !audioReady() && <button type="button" className="ci-update is-warn" onClick={() => { unlockAudio(); chime(); keepAwake(); markStarted(); }}>🔇 Sound is off · tap to turn the chime on</button>}
+      {!d.persistOk && <p className="ci-update is-bad" role="alert">⚠ Taps can't be saved on this device (its storage is full or blocked). Keep the app open until they're sent; still trying to save them.</p>}
+      {update && (
+        <button type="button" className="ci-update" onClick={() => applyUpdate(d.station)}>
+          Update ready · tap to reload{waiting ? ` (the ${waiting} tap${waiting === 1 ? "" : "s"} waiting stay on this device)` : ""}
+        </button>
+      )}
+      {ANNOUNCES.has(d.station) && !audioReady() && <button type="button" className="ci-update is-warn" onClick={soundOn}>🔇 Sound is off · tap to turn the chime on</button>}
+      {d.othersHere > 0 && <p className="ci-update is-warn" role="status">{stationInfo.label} is also open in another tab or window on this device. Use one and close the other.</p>}
+      {d.dayStale && <p className="ci-update is-warn" role="status">{dayHeading(s.today)}: today's list hasn't loaded yet (no connection). Guests can be marked; earlier marks from today show once it loads.</p>}
+      {s.today?.date && !s.today.eventDay && <p className="ci-update" role="status">Not an event day: taps are practice marks only (they don't check anyone in, and can be undone).</p>}
       <StationCounters station={d.station} item={st?.item || null} />
       <main className="ci-main"><Screen onOpen={setOpen} layout={layout} /></main>
       {layout.kind === "laptop" && <p className="ci-keys">Type to search · ↑ ↓ to pick · Enter = {{ lobby: "Arrived", desk: "Checked in", breakfast: "Admitted", lunch: "Admitted", evening: "Admitted", media: "Checked in", av: "AV checked", exhibitor: "Checked in" }[d.station]} · Esc clears</p>}
-      {open && <GuestSheet guest={open} onClose={() => setOpen(null)} />}
+      {open && <GuestSheet guest={open} onClose={closeSheet} />}
+      {d.trayOpen && <AttentionSheet />}
+      {ANNOUNCES.has(d.station) && <ArrivalFlash />}
       <ConfirmDialog />
       <Toasts />
     </div>
@@ -150,8 +179,8 @@ function StartGate({ station }) {
   const d = useDesk();
   const announces = ANNOUNCES.has(station.key);
   const start = () => {
-    unlockAudio();
-    if (announces) setTimeout(() => chime(), 50);
+    // The tap unlocks sound (the chime once now, for the stations that announce arrivals) and keeps the screen awake.
+    unlockAudio({ ring: announces });
     keepAwake();
     markStarted();
   };
@@ -163,9 +192,39 @@ function StartGate({ station }) {
         <p className="ci-start-sub">{station.sub}</p>
         <p className="ci-when-text">{d.state?.stationStates?.[station.key]?.text}</p>
         <button type="button" className="ci-btn ci-btn-primary ci-btn-xxl" onClick={start} autoFocus>Start the {station.key === "desk" ? "desk" : "station"}</button>
-        <p className="ci-small ci-muted">{announces ? "This turns on the arrival chime (you'll hear it once now) and keeps the screen awake." : "This keeps the screen awake while you work."} On an iPad, also set Settings › Display & Brightness › Auto-Lock to Never.</p>
+        <p className="ci-small ci-muted">{announces ? `This turns on the arrival chime (you'll hear it once now) and keeps the screen awake. Each arrival also flashes the screen. ${VOLUME_HINT}` : "This keeps the screen awake while you work."} On an iPad, also set Settings › Display & Brightness › Auto-Lock to Never.</p>
         <button type="button" className="ci-btn ci-btn-ghost" onClick={() => setStation("")}>Pick another station</button>
       </div>
+    </main>
+  );
+}
+
+/** A staff sign-in left unused for 30 minutes on this device: the password again (or sign out, then in as yourself). */
+function LockScreen() {
+  const d = useDesk();
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!password) { setError("Enter the password."); return; }
+    setBusy(true);
+    setError("");
+    try { await unlock(password); } catch (err) { setError(err.message || "That didn't work."); } finally { setBusy(false); }
+  };
+  return (
+    <main className="ci-login">
+      <form className="ci-login-card" onSubmit={submit} noValidate>
+        <h1>Locked</h1>
+        <p className="ci-muted">This device is signed in as staff ({d.session?.user?.name}) and hasn't been used for 30 minutes. Enter the password to carry on, or sign out so someone else can sign in. Arrivals still come in meanwhile.</p>
+        <label className="ci-field">
+          <span>Password for {d.session?.email || d.session?.user?.name}</span>
+          <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus />
+        </label>
+        {error && <p className="ci-error" role="alert">{error}</p>}
+        <button type="submit" className="ci-btn ci-btn-primary ci-btn-xl" disabled={busy}>{busy ? "Checking…" : "Unlock"}</button>
+        <button type="button" className="ci-btn ci-btn-ghost" onClick={requestSignOut} disabled={d.signingOut}>{d.signingOut ? "Sending taps…" : "Sign out"}</button>
+      </form>
     </main>
   );
 }
@@ -174,21 +233,20 @@ function Menu({ onClose, onPick }) {
   const d = useDesk();
   const [theme, setTheme] = useState(remember.get(THEME_KEY, "dark"));
   const pick = (t) => { remember.set(THEME_KEY, t); setTheme(t); applyTheme(t); };
-  const waiting = d.queueItems.length;
+  const failed = d.queueItems.filter((x) => x.state === "failed").length;
   return (
     <div className="ci-menu" role="menu" onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}>
       <p className="ci-menu-who"><b>{d.session.user?.name}</b><br /><span className="ci-muted">{d.session.staff ? "Staff" : "Volunteer"}</span></p>
       <button type="button" role="menuitem" onClick={onPick}>Switch station</button>
+      {failed > 0 && <button type="button" role="menuitem" className="is-bad" onClick={() => { onClose(); openTray(); }}>Needs attention ({failed})</button>}
       <button type="button" role="menuitem" onClick={() => { load({ quiet: false, refresh: true }); onClose(); }}>Reload the guest list</button>
-      <button type="button" role="menuitem" onClick={() => { unlockAudio(); chime(); }}>Test the chime</button>
+      <button type="button" role="menuitem" onClick={soundOn}>Test the chime</button>
+      <p className="ci-small ci-muted ci-menu-hint">{VOLUME_HINT}</p>
       <div className="ci-menu-theme" role="group" aria-label="Theme">
         {["dark", "light", "auto"].map((t) => <button key={t} type="button" className={theme === t ? "is-on" : ""} onClick={() => pick(t)}>{t === "auto" ? "Auto" : t === "dark" ? "Dark" : "Light"}</button>)}
       </div>
       {d.session.staff && <a role="menuitem" href="/admin/check-in" target="_blank" rel="noreferrer">Desk settings (Admin)</a>}
-      <button type="button" role="menuitem" className="is-bad" onClick={() => {
-        if (waiting && !window.confirm(`${waiting} tap(s) on this device haven't reached the server yet. Signing out keeps them and sends them after the next sign-in on this device. Sign out?`)) return;
-        signOut();
-      }}>Sign out</button>
+      <button type="button" role="menuitem" className="is-bad" disabled={d.signingOut} onClick={() => { onClose(); requestSignOut(); }}>{d.signingOut ? "Sending taps…" : "Sign out"}</button>
       <button type="button" role="menuitem" onClick={onClose}>Close</button>
       {d.session.staff && <Attendance rows={d.state?.attendance || []} />}
       <p className="ci-small ci-muted">{desk.state?.agendaRead ? "Times from the live agenda." : "Agenda not readable: times as of Oct 23."}</p>

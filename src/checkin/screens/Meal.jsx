@@ -7,6 +7,7 @@ import { byLine } from "../lib/byLine.js";
 import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
 import { timeText } from "../lib/timers.js";
+import { useUndoExpiry } from "../hooks.js";
 
 /* CxO BREAKFAST · LUNCH · EVENING ENTRY (Awards Night on Day 1, the Gala on Day 2).
    Find the guest (or browse the list): green "Included today" or red "Not on their pass" for today's item (the pass's
@@ -35,14 +36,15 @@ export default function Meal({ onOpen }) {
   const [busy, setBusy] = useState("");
 
   const included = useCallback((g) => (item ? !!g.extras?.[item.extra] : null), [item]);
-  const admit = useCallback((g) => {
+  const admit = useCallback((g, done) => {
     const st = statusOf(s, g, pending());
     if (st[point]) { toast(`Already admitted at ${timeText(st[point].at)}${st[point].by?.name ? ` by ${st[point].by.name}` : ""}.`, { tone: "warn" }); return; }
     if (item && !g.extras?.[item.extra]) { toast(`${g.name}: ${item.label} isn't on their pass.`, { tone: "bad" }); return; }
-    act({ point, guest: g, undoText: `${g.name}: admitted to ${item?.label || "the event"}.` });
+    act({ point, guest: g, undoText: `${g.name}: admitted to ${item?.label || "the event"}.`, onDone: done });
   }, [s, point, item]);
   const rank = useCallback((g) => (included(g) ? 0 : 1), [included]);
-  const { q, setQ, sel, results, inputRef, lookingUp } = useGuestSearch(s.guests, { rank, onEnter: admit, version: s.version + p.length });
+  const { q, setQ, sel, results, inputRef, lookingUp, done } = useGuestSearch(s.guests, { rank, onEnter: admit, version: s.version + p.length });
+  useUndoExpiry();
 
   const list = useMemo(() => {
     if (q || !item) return [];
@@ -61,7 +63,7 @@ export default function Meal({ onOpen }) {
     try {
       await setInclusion(g, item.extra, true);
       toast(`${item.label} switched on for ${g.name}'s pass (logged).`, { tone: "ok" });
-      act({ point, guest: g, undoText: `${g.name}: admitted to ${item.label}.` });
+      act({ point, guest: g, undoText: `${g.name}: admitted to ${item.label}.`, onDone: done });
     } catch (err) {
       toast(err.message || "Couldn't switch it on. Check the connection.", { tone: "bad" });
     } finally { setBusy(""); }
@@ -71,7 +73,7 @@ export default function Meal({ onOpen }) {
     const st = statusOf(s, g, p);
     const inc = included(g);
     const rsvpd = item ? g.rsvp?.options?.includes(item.key) : false;
-    const done = st[point];
+    const admitted = st[point];
     const flagged = st[flagPoint];
     const undo = undoFor(g, point);
     const extra = (
@@ -82,14 +84,14 @@ export default function Meal({ onOpen }) {
       </span>
     );
     let actions;
-    if (done) actions = undo ? <button type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span className="ci-done">✓</span>;
-    else if (inc || !item) actions = <button type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => admit(g)}>Admitted</button>;
-    else if (staff) actions = <button type="button" className="ci-btn ci-btn-warn ci-btn-cta" disabled={busy === g.key} onClick={() => includeAndAdmit(g)}>{busy === g.key ? "Switching on…" : `Include ${item.short} + admit`}</button>;
-    else actions = flagged ? <span className="ci-row-status is-warn">Sent to staff</span>
-      : <button type="button" className="ci-btn ci-btn-warn ci-btn-cta" onClick={() => act({ point: flagPoint, guest: g, undoText: `${g.name}: sent to staff.` })}>Sent to staff</button>;
+    if (admitted) actions = undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span key="done" className="ci-done">✓</span>;
+    else if (inc || !item) actions = <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => admit(g, done)}>Admitted</button>;
+    else if (staff) actions = <button key="incl" type="button" className="ci-btn ci-btn-warn ci-btn-cta" disabled={busy === g.key} onClick={() => includeAndAdmit(g)}>{busy === g.key ? "Switching on…" : `Include ${item.short} + admit`}</button>;
+    else actions = flagged ? <span key="flagged" className="ci-row-status is-warn">Sent to staff</span>
+      : <button key="flag" type="button" className="ci-btn ci-btn-warn ci-btn-cta" onClick={() => act({ point: flagPoint, guest: g, undoText: `${g.name}: sent to staff.`, onDone: done })}>Sent to staff</button>;
     return (
       <GuestRow key={g.key} guest={g} selected={i === sel && !!q} onOpen={onOpen} extra={extra}
-        status={done ? `Admitted ${byLine(done)}` : flagged ? `Sent to staff ${byLine(flagged)}` : ""} statusTone={done ? "good" : flagged ? "warn" : ""}
+        status={admitted ? `Admitted ${byLine(admitted)}` : flagged ? `Sent to staff ${byLine(flagged)}` : ""} statusTone={admitted ? "good" : flagged ? "warn" : ""}
         actions={actions} />
     );
   };

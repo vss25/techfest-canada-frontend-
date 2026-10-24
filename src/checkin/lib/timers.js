@@ -39,29 +39,36 @@ export function timerLevel(seconds) {
   return "ok";
 }
 
+// Made once (a new Intl.DateTimeFormat per row, every second, adds up on an older iPad).
+const timeFmt = new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", minute: "2-digit" });
+const weekdayFmt = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short" });
+const dateFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const minutesFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+const headingFmt = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" });
+
 /** "10:42 AM", Toronto. */
 export function timeText(at) {
   const t = ms(at);
-  return Number.isFinite(t) ? new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", minute: "2-digit" }).format(new Date(t)) : "";
+  return Number.isFinite(t) ? timeFmt.format(new Date(t)) : "";
 }
 
 /** "Mon", Toronto (the day a pass was collected). */
 export function weekday(at) {
   const t = ms(at);
-  return Number.isFinite(t) ? new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short" }).format(new Date(t)) : "";
+  return Number.isFinite(t) ? weekdayFmt.format(new Date(t)) : "";
 }
 
 /** "2026-10-26", Toronto. */
 export function torontoDate(at) {
   const t = ms(at);
-  return Number.isFinite(t) ? new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(t)) : "";
+  return Number.isFinite(t) ? dateFmt.format(new Date(t)) : "";
 }
 
 /** Minutes past midnight in Toronto. */
 export function torontoMinutes(at) {
   const t = ms(at);
   if (!Number.isFinite(t)) return null;
-  const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(t)).map((x) => [x.type, x.value]));
+  const p = Object.fromEntries(minutesFmt.formatToParts(new Date(t)).map((x) => [x.type, x.value]));
   return (Number(p.hour) % 24) * 60 + Number(p.minute);
 }
 
@@ -103,6 +110,6 @@ export function untilText(minutes) {
 /** "Day 1 · Mon, Oct 26" / "Before the event · Fri, Oct 23" from the server's today ({ date, label }). */
 export function dayHeading(today) {
   if (!today?.date) return "";
-  const d = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" }).format(new Date(`${today.date}T12:00:00Z`));
+  const d = headingFmt.format(new Date(`${today.date}T12:00:00Z`));
   return `${today.label} · ${d}`;
 }

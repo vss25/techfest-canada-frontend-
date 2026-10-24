@@ -2,42 +2,58 @@
    TTFC Check-in service worker (<desk path>sw.js, scope = the desk
    path). Built by vite.config.js (ttfcDeskPwa): the placeholders become
    the files the app needs offline, a version hash and the scope.
-   • The app shell and its hashed JS/CSS, icons, manifest: precached.
-     The app opens with no connection after its first visit; the guest
-     list comes from the device's own copy, taps queue on the device.
-   • Opening the app: the network first (2.5 s), then the cached copy,
-     so a new version is picked up at launch.
+   • A version installs whole or not at all: its page, every hashed
+     JS/CSS file that page names, icons and manifest go into the
+     version's own cache (ttfc-desk-shell-<version>). If any page or
+     script doesn't download, the install fails and the working version
+     stays as it was.
+   • Opening the app: the page from the active version's own cache,
+     which always has that page's scripts next to it. Nothing fetched
+     while the app is open is ever written over it, so a flaky load
+     after a deploy can't leave a page whose scripts are missing. A new
+     version is picked up through the update (lib/pwa.js): it installs
+     in the background, then takes over (activate swaps the caches).
+     Before any version is installed: the network, else "No connection".
    • The API (guests, taps, the live stream) is never cached here: it's
      on another host, and every call carries a sign-in.
-   • Updates wait for the page to say when (lib/pwa.js: at launch or
-     in the background, never while a station is running in front).
+   • Updates wait for the page to say when (lib/pwa.js: never while a
+     station is running).
    Caches start with "ttfc-desk-": the attendee app's worker (/app/sw.js)
    only ever removes its own "ttfc-app-" caches, and this one only its own.
+   Tested with the built file: node --test src/checkin/sw.test.mjs
 ========================================================= */
 
 const PRECACHE = self.__DESK_PRECACHE__;
 const VERSION = self.__DESK_VERSION__;
 const SCOPE = self.__DESK_SCOPE__;
 const SHELL = `ttfc-desk-shell-${VERSION}`;
-const NAV_TIMEOUT = 2500;
+const isScript = (u) => /^\/assets\//.test(u) && /\.(js|css)$/.test(u);
+/** The /assets/ files a page names (scripts, styles, preloads). */
+const assetsIn = (html) => [...String(html).matchAll(/(?:src|href)="(\/assets\/[^"?#]+)"/g)].map((m) => m[1]);
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(SHELL);
-    await Promise.all(PRECACHE.map(async (url) => {
+    const get = async (url) => {
       try {
         const res = await fetch(new Request(url, { cache: "reload" }));
         if (res.ok) await cache.put(url, res);
-      } catch { /* fetched on first use instead */ }
-    }));
-    // The page and its scripts must be in, or this version doesn't install (the working one stays).
-    for (const u of PRECACHE.filter((x) => x === SCOPE || (/^\/assets\//.test(x) && /\.(js|css)$/.test(x)))) {
+      } catch { /* checked below */ }
+    };
+    await Promise.all(PRECACHE.map(get));
+    // The page as it was downloaded may be newer than this list (a deploy in between): it gets what it names, too.
+    const page = await cache.match(SCOPE);
+    const named = page ? assetsIn(await page.clone().text()) : [];
+    await Promise.all(named.filter((u) => !PRECACHE.includes(u)).map(get));
+    // The page and every script it needs must be in, or this version doesn't install (the working one stays).
+    for (const u of new Set([SCOPE, ...PRECACHE.filter(isScript), ...named.filter(isScript)])) {
       if (!(await cache.match(u))) throw new Error(`TTFC Check-in: ${u} didn't download; keeping the current version`);
     }
     if (!self.registration.active) await self.skipWaiting();
   })());
 });
 
+// The new version takes over: the older versions' caches go (each version only ever reads its own).
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const names = await caches.keys();
@@ -66,33 +82,30 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
+/** The app's page: this version's own copy (installed together with its scripts); never replaced while it runs. */
 async function shell(req) {
   const cache = await caches.open(SHELL);
-  const network = fetch(req).then((res) => {
-    if (res.ok && res.type === "basic") cache.put(SCOPE, res.clone());
-    return res;
-  });
-  const timeout = new Promise((resolve) => setTimeout(() => resolve(null), NAV_TIMEOUT));
-  const res = await Promise.race([network.catch(() => null), timeout]);
-  if (res && res.ok) return res;
-  const cached = await cache.match(SCOPE);
-  if (cached) return cached;
-  if (res) return res;
-  try { return await network; } catch { return offline(); }
+  const page = await cache.match(SCOPE);
+  if (page) return page;
+  try { return await fetch(req); } catch { return offline(); }
 }
 
 async function cacheFirst(req) {
   const cache = await caches.open(SHELL);
-  const hit = await cache.match(req, { ignoreVary: true, ignoreSearch: true });
+  const hit = (await cache.match(req, { ignoreVary: true, ignoreSearch: true }))
+    // A hashed file is the same in any cache that has it (e.g. a waiting version's).
+    || (url(req).pathname.startsWith("/assets/") ? await caches.match(req, { ignoreVary: true, ignoreSearch: true }) : undefined);
   if (hit) return hit;
   try {
     const res = await fetch(req);
-    if (res.ok) cache.put(req, res.clone()).catch(() => {});
+    // Hashed files never change, so one fetched now can be kept; the page itself never is (above).
+    if (res.ok && url(req).pathname.startsWith("/assets/")) cache.put(req, res.clone()).catch(() => {});
     return res;
   } catch {
     return new Response("", { status: 504, statusText: "Offline" });
   }
 }
+const url = (req) => new URL(req.url);
 
 function offline() {
   return new Response(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TTFC Check-in · Offline</title>

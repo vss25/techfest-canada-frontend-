@@ -1,19 +1,29 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { buildIndex, search, ticketIdQuery } from "./lib/search.js";
 import { desk, lookupTicket } from "./lib/desk.js";
-import { useSearchKeys } from "./hooks.js";
+import { revealSelected, useSearchKeys } from "./hooks.js";
+
+const finePointer = () => {
+  try { return window.matchMedia("(any-pointer: fine)").matches && !window.matchMedia("(pointer: coarse)").matches; } catch { return false; }
+};
 
 /**
  * The search every station uses: instant, on the device, over `guests`; a typed ticket ID is looked up on the server
- * for volunteers (they don't hold ticket IDs). Keyboard: typing anywhere, ↑ ↓, Enter (onEnter(guest)), Esc.
+ * for volunteers (they don't hold ticket IDs). Keyboard: typing anywhere, ↑ ↓ (scrolls to the row), Enter
+ * (onEnter(guest, done) on a clear choice: hooks.js useSearchKeys), Esc.
+ * `done()`: call after a station's action. The search box is cleared and gets the focus back (after a search, or on a
+ * laptop), so the next name typed starts a new search and Enter can never land on the row's new Undo button.
  */
 export function useGuestSearch(guests, { rank = null, onEnter, limit = 40, version = 0 } = {}) {
   const [q, setQRaw] = useState("");
   const [sel, setSel] = useState(0);
-  // A new search starts at the top result.
-  const setQ = useCallback((v) => { setQRaw(v); setSel(0); }, []);
+  const navigated = useRef(false);
+  // A new search starts at the top result, not picked yet.
+  const setQ = useCallback((v) => { setQRaw(v); setSel(0); navigated.current = false; }, []);
   const [looked, setLooked] = useState(null); // { q, key } from the server
   const inputRef = useRef(null);
+  const qRef = useRef(q);
+  useLayoutEffect(() => { qRef.current = q; });
   const index = useMemo(() => buildIndex(guests), [guests]);
   const local = useMemo(() => search(index, q, { limit, rank }), [index, q, rank, limit, version]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -30,11 +40,22 @@ export function useGuestSearch(guests, { rank = null, onEnter, limit = 40, versi
   const found = looked && looked.q === tid && looked.key ? guests.find((g) => (g.keys || [g.key]).includes(looked.key)) : null;
   const results = local.length ? local : found ? [found] : [];
 
+  // ↑ ↓ moved the highlight: keep it on screen.
+  useEffect(() => { if (q && navigated.current) revealSelected(); }, [sel, q]);
+
+  const done = useCallback(() => {
+    const had = !!qRef.current;
+    if (had) setQ("");
+    if (had || finePointer()) inputRef.current?.focus();
+  }, [setQ]);
+
   useSearchKeys({
     inputRef, count: results.length, selected: sel, setSelected: setSel,
-    onEnter: (i) => { const g = results[i] || results[0]; if (g) onEnter?.(g); },
+    onEnter: (i) => { const g = results[i] || results[0]; if (g) onEnter?.(g, done); },
     onEscape: () => setQ(""),
-    onType: (ch) => { setQRaw((v) => v + ch); setSel(0); },
+    onType: (ch) => { setQRaw((v) => v + ch); setSel(0); navigated.current = false; },
+    onNavigate: () => { navigated.current = true; },
+    navigated: () => navigated.current,
   });
-  return { q, setQ, sel, setSel, results, inputRef, lookingUp: !!tid && !local.length && !desk.session?.staff && !(looked && looked.q === tid) };
+  return { q, setQ, sel, setSel, results, inputRef, done, lookingUp: !!tid && !local.length && !desk.session?.staff && !(looked && looked.q === tid) };
 }

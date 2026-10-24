@@ -11,11 +11,14 @@ const LABEL = {
 };
 const YES = { breakfast: "Admit anyway", lunch: "Admit anyway", evening: "Admit anyway" };
 
-/** Record `point` for a guest (or a booth key) at the current station. */
-export function act({ point, key, guest = null, note, undoText }) {
+/** Record `point` for a guest (or a booth key) at the current station. `onDone`: once the tap is queued (the search clears). */
+export function act({ point, key, guest = null, note, undoText, onDone = null }) {
   const station = desk.station;
   const st = desk.state?.stationStates?.[station];
-  const go = (override) => tap({ kind: "mark", point, key: key || guest?.key, override: !!override, ...(note ? { note } : {}) }, { undoText });
+  const go = (override) => {
+    tap({ kind: "mark", point, key: key || guest?.key, override: !!override, ...(note ? { note } : {}) }, { undoText });
+    try { onDone?.(); } catch { /* the screen's problem */ }
+  };
   if (st && !st.open) {
     askConfirm({
       title: `${LABEL[station] || "This station"} is closed right now`,

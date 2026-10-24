@@ -50,7 +50,12 @@ export function createLive({ getCursor, onEvents, onCursor, onReset, onServerTim
       const res = await fetch(`${API}/checkin/desk/stream?since=${encodeURIComponent(getCursor() || 0)}`, {
         headers: { Authorization: `Bearer ${token}`, Accept: "text/event-stream" }, cache: "no-store", signal: mine.signal,
       });
-      if (res.status === 401 || res.status === 403) { onAuth?.(res.status); throw new ApiError("signed out", res.status); }
+      if (res.status === 401 || res.status === 403) {
+        let code = "";
+        try { code = (await res.json())?.code || ""; } catch { /* no body */ }
+        onAuth?.(res.status, code);
+        throw new ApiError("signed out", res.status);
+      }
       if (!res.ok || !res.body) throw new ApiError(`stream ${res.status}`, res.status);
       const reader = res.body.getReader();
       const dec = new TextDecoder();
@@ -98,7 +103,7 @@ export function createLive({ getCursor, onEvents, onCursor, onReset, onServerTim
       if (Number.isFinite(r.cursor)) onCursor?.(r.cursor);
       if (!streamHealthy()) setStatus("reconnecting");
     } catch (err) {
-      if (err.status === 401 || err.status === 403) onAuth?.(err.status);
+      if (err.status === 401 || err.status === 403) onAuth?.(err.status, err.code || "");
       pollFails += 1;
       if (offlineNow() || pollFails >= 2) setStatus("offline");
     }

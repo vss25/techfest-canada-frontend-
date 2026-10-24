@@ -7,6 +7,7 @@ import { SearchBox } from "../components.jsx";
 import { byLine } from "../lib/byLine.js";
 import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
+import { useUndoExpiry } from "../hooks.js";
 
 /* LOBBY — Arrivals. Ask the guest's name, find them, tap Arrived (one tap): the pass desk upstairs is told at once.
    A quick toast with Undo (15 s). Nothing else to fill in. */
@@ -18,12 +19,13 @@ export default function Lobby({ onOpen }) {
   const d = useDesk();
   const s = d.state;
   const p = pending();
-  const arrive = useCallback((g) => {
+  const arrive = useCallback((g, done) => {
     const st = statusOf(s, g, pending());
     if (st.arrived || st.checked_in) return;
-    act({ point: "arrived", guest: g, undoText: `${g.name}: arrived. The pass desk has been told.` });
+    act({ point: "arrived", guest: g, undoText: `${g.name}: arrived. The pass desk has been told.`, onDone: done });
   }, [s]);
-  const { q, setQ, sel, results, inputRef, lookingUp } = useGuestSearch(s.guests, { rank: rankLobby, onEnter: arrive, version: s.version + p.length });
+  const { q, setQ, sel, results, inputRef, lookingUp, done } = useGuestSearch(s.guests, { rank: rankLobby, onEnter: arrive, version: s.version + p.length });
+  useUndoExpiry();
   const recent = markedToday(s, "arrived", p, 12);
 
   const row = (g, i) => {
@@ -35,9 +37,9 @@ export default function Lobby({ onOpen }) {
       <GuestRow key={g.key} id={`res-${i}`} guest={g} selected={i === sel && !!q} onOpen={onOpen}
         status={status} statusTone={stage === "checked_in" ? "good" : stage === "on_the_way" ? "info" : ""}
         actions={stage === "not_arrived"
-          ? <button type="button" className="ci-btn ci-btn-primary ci-btn-cta" onClick={() => arrive(g)}>Arrived</button>
-          : undo ? <button type="button" className="ci-btn ci-btn-ghost ci-btn-cta" onClick={undo}>Undo</button>
-            : <span className="ci-done" aria-label="Done">✓</span>} />
+          ? <button key="act" type="button" className="ci-btn ci-btn-primary ci-btn-cta" onClick={() => arrive(g, done)}>Arrived</button>
+          : undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost ci-btn-cta" onClick={undo}>Undo</button>
+            : <span key="done" className="ci-done" aria-label="Done">✓</span>} />
     );
   };
 

@@ -3,7 +3,7 @@
    ready" instead and is never reloaded on its own. Applied by itself on the Start screen, it comes back there. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { autoUpdateAllowed, createUpdateController, updateScreen } from "./updatePolicy.js";
+import { appScreen, autoUpdateAllowed, createUpdateController, stationShown, updateScreen } from "./updatePolicy.js";
 
 const controller = () => {
   const applied = [];
@@ -81,4 +81,23 @@ test("what each screen counts as", () => {
   u.setScreen("station", { station: "desk" });
   u.applyNow({ station: "desk" });
   assert.deepEqual(reloads, ["desk"]);
+});
+
+test("what the app shows; a station shown straight away (a relaunch, a new tab) counts as run, and so does the picker over it", () => {
+  const on = { signedIn: true, hasList: true, station: "lobby", stationOk: true };
+  assert.equal(appScreen({}), "login");
+  assert.equal(appScreen({ ...on, needSignIn: true }), "login");
+  assert.equal(appScreen({ ...on, hasList: false }), "loading");
+  assert.equal(appScreen({ ...on, station: "" }), "stations");
+  assert.equal(appScreen({ ...on, stationOk: false }), "stations", "a station switched off");
+  assert.equal(appScreen({ ...on, picking: true, started: true }), "stations", "the picker over a running station");
+  assert.equal(appScreen({ ...on, picked: true }), "start", "just picked here: the Start screen");
+  assert.equal(appScreen({ ...on, picked: true, started: true }), "station");
+  assert.equal(appScreen({ ...on }), "station", "kept on the device, not picked in this tab (reload, relaunch, new tab): straight on");
+  assert.equal(appScreen({ ...on, locked: true }), "locked");
+  assert.equal(stationShown("station"), true);
+  assert.equal(stationShown("locked"), true);
+  for (const x of ["login", "loading", "stations", "start"]) assert.equal(stationShown(x), false, x);
+  // Restored straight on the station, never started: the picker opened over it is the station's, update-wise.
+  assert.equal(updateScreen({ screen: "stations", started: false, startedBefore: false, picking: true }), "station");
 });

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { desk, useDesk, load, markStarted, openTray, pending, requestSignOut, setStation, startedHere, unlock } from "./lib/desk.js";
-import { updateScreen } from "./lib/updatePolicy.js";
+import { desk, useDesk, load, markShown, markStarted, openTray, pending, requestSignOut, setStation, startedHere, unlock } from "./lib/desk.js";
+import { appScreen, stationShown, updateScreen } from "./lib/updatePolicy.js";
 import { counters } from "./lib/state.js";
 import { applyTheme, audioReady, keepAwake, remember, THEME_KEY, unlockAudio } from "./lib/device.js";
 import { applyUpdate, isUpdateReady, onUpdate, setAppScreen } from "./lib/pwa.js";
@@ -61,14 +61,16 @@ export default function App() {
 
   const s = d.state;
   const stationInfo = s?.stations.find((x) => x.key === d.station);
-  const screen = !d.session?.token || d.needSignIn ? "login"
-    : !s ? "loading"
-      : !d.station || !stationInfo || stationInfo.enabled === false || picking ? "stations"
-        : !d.started && d.picked ? "start"
-          : d.locked ? "locked" : "station";
-  // A new version applies itself only while no station has run in this tab: never once one is started, the picker
-  // open over it or not (lib/updatePolicy.js).
-  const updateAs = updateScreen({ screen, started: d.started, startedBefore: startedHere() });
+  const screen = appScreen({
+    signedIn: !!d.session?.token, needSignIn: d.needSignIn, hasList: !!s, station: d.station,
+    stationOk: !!stationInfo && stationInfo.enabled !== false, picking, started: d.started, picked: d.picked, locked: d.locked,
+  });
+  // A station (or its lock screen) on screen counts as run in this tab, Start button or not: a station kept on the device
+  // opens straight on its screen after a Home Screen relaunch or in a new tab (lib/updatePolicy.js).
+  useEffect(() => { if (stationShown(screen)) markShown(); }, [screen]);
+  // A new version applies itself only while no station has run in this tab: never once one is started or shown, the
+  // picker open over it or not (lib/updatePolicy.js).
+  const updateAs = updateScreen({ screen, started: d.started, startedBefore: startedHere(), picking });
   useEffect(() => { setAppScreen(updateAs, { station: d.station }); }, [updateAs, d.station]);
   // Every station screen keeps the screen awake, after a reload too (asked again on the next tap if refused now).
   useEffect(() => { if (screen === "station" || screen === "locked") keepAwake(); }, [screen, d.station]);

@@ -9,7 +9,10 @@
    in front or in the background, and neither the station picker opened
    over it (Switch station) nor the Start screen it leads to changes
    that: its chime, banners and own Undo (of a tap made seconds before
-   the switch) would be lost. It shows "Update ready ·
+   the switch) would be lost. A station that opens straight on its
+   screen in a new session (a Home Screen relaunch, a new tab: the
+   station is kept on the device, the tab's own memory is new) counts
+   as run the moment it shows, Start button or not. It shows "Update ready ·
    tap to reload" instead; the taps waiting on the device are kept
    through the reload. A reload applied by itself from the Start screen
    comes back on that Start screen (resume), like the tap does.
@@ -21,13 +24,31 @@ export const AUTO_UPDATE_SCREENS = Object.freeze(["login", "loading", "stations"
 export const autoUpdateAllowed = (screen) => AUTO_UPDATE_SCREENS.includes(screen);
 
 /**
- * The screen the update policy is told about, from what the app shows. `started`: a station is started now (sound on,
- * banners, own Undo), the picker may be open over it; `startedBefore`: a station was started earlier in this tab (this
- * sign-in). Any station screen, the lock screen, and the picker and Start screen once a station has run here count as
- * "station".
+ * What the app shows (App.jsx), from the desk's state: "login" | "loading" | "stations" (the picker) | "start" (the
+ * Start screen of a station just picked here) | "locked" | "station". A station kept on the device opens straight on
+ * its screen after a reload, a Home Screen relaunch or in a new tab (no Start screen: nothing is missed meanwhile).
  */
-export function updateScreen({ screen = "loading", started = false, startedBefore = false } = {}) {
-  if (screen === "locked") return "station";
+export function appScreen({ signedIn = false, needSignIn = false, hasList = false, station = "", stationOk = false, picking = false, started = false, picked = false, locked = false } = {}) {
+  if (!signedIn || needSignIn) return "login";
+  if (!hasList) return "loading";
+  if (!station || !stationOk || picking) return "stations";
+  if (!started && picked) return "start";
+  return locked ? "locked" : "station";
+}
+
+/** A station's own screen (or its lock screen) is showing: from now on a station has run in this tab. */
+export const stationShown = (screen) => screen === "station" || screen === "locked";
+
+/**
+ * The screen the update policy is told about, from what the app shows. `started`: a station is started now (sound on,
+ * banners, own Undo), the picker may be open over it; `startedBefore`: a station was started or shown earlier in this
+ * tab (this sign-in); `picking`: the picker was opened over a station (the header's station button, Switch station).
+ * Any station screen, the lock screen, the picker opened over a station, and the picker and Start screen once a
+ * station has run here count as "station".
+ */
+export function updateScreen({ screen = "loading", started = false, startedBefore = false, picking = false } = {}) {
+  if (stationShown(screen)) return "station";
+  if (screen === "stations" && picking) return "station";
   if ((screen === "stations" || screen === "start") && (started || startedBefore)) return "station";
   return screen || "loading";
 }

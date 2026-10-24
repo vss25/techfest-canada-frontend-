@@ -778,6 +778,12 @@ export function setStation(key) {
 const STARTED_HERE_KEY = "ttfc.desk.startedHere";
 export const startedHere = () => sessionStore.get(STARTED_HERE_KEY) === "1";
 export function markStarted() { desk.started = true; sessionStore.set(STARTED_HERE_KEY, "1"); emit(); }
+/**
+ * A station's screen (or its lock screen) has shown in this tab: the same mark as Start, without the sound. A station
+ * kept on the device opens straight on its screen in a new session (a Home Screen relaunch, a new tab: this tab's
+ * memory starts empty), so the Start button may never be pressed there; its taps (and their Undo) start all the same.
+ */
+export function markShown() { if (!startedHere()) sessionStore.set(STARTED_HERE_KEY, "1"); }
 
 onSession((s) => { desk.session = s; emit(); });
 

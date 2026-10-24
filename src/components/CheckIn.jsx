@@ -1,15 +1,17 @@
 import { useCallback, useRef, useState } from "react";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import { AlertTriangle, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info, Loader2, XCircle } from "lucide-react";
 import { ADMIN_API, adminFetch } from "../admin/api";
-import { avatarSrc, cardFrom, checkinTime, initialsOf } from "../lib/checkinCard";
+import { PRACTICE_TEXT, avatarSrc, cardFrom, checkinTime, initialsOf } from "../lib/checkinCard";
 
 /* Door check-in (Admin › Event day › Check-in). Every scan (camera or a typed ticket ID) goes to
    POST /api/checkin/scan and its answer replaces the card at once: the pass's colour band (VIP gold, Media dark
    blue, Speaker red, Staff purple, Volunteer orange, any other pass green; the server picks it; the pass's name small
    beside any other word, "Media · Connect Pass"), the person's photo
    (initials on the band's colour while it loads or when there's none), name, title · company, the pass, the meals
-   it includes and whether they were checked in now or before (amber). Helpers in src/lib/checkinCard.js. */
+   it includes and whether they were checked in now or before (amber). On a day that isn't Day 1 / Day 2 the server
+   checks nothing in (Oct 24 2026): the same card with a neutral "Practice scan" banner, and whether their pass was
+   collected before. Helpers in src/lib/checkinCard.js. */
 
 const ORIGIN = ADMIN_API.replace(/\/api\/?$/, "");
 
@@ -122,7 +124,7 @@ const PROBLEM = {
 };
 
 function ResultCard({ card }) {
-  if (card.outcome !== "checked_in" && card.outcome !== "already") {
+  if (card.outcome !== "checked_in" && card.outcome !== "already" && card.outcome !== "practice") {
     const p = PROBLEM[card.outcome] || PROBLEM.error;
     return (
       <article className="ci-card ci-problem" role="alert">
@@ -138,19 +140,26 @@ function ResultCard({ card }) {
 
   const { badge } = card;
   const already = card.outcome === "already";
+  // Not an event day: nothing was checked in (neutral, not an error); the card as on the day.
+  const practice = card.outcome === "practice";
   const time = checkinTime(card.at);
   const job = [card.title, card.company].filter(Boolean).join(" · ");
   return (
-    <article className="ci-card" aria-label={`${badge.label}: ${card.name || "no name"}`}>
+    <article className="ci-card" aria-label={`${practice ? "Practice scan. " : ""}${badge.label}: ${card.name || "no name"}`}>
       <div className="ci-band" style={{ background: badge.bg, color: badge.text }}>
         <span className="ci-band-label">{badge.label}</span>
         {/* The pass's name, small, beside any other word: "Media · Connect Pass" (Oct 23 2026). */}
         {card.bandSub && <span className="ci-band-pass">· {card.bandSub}</span>}
       </div>
 
-      <div className={`ci-state ${already ? "is-already" : "is-in"}`}>
-        {already ? <AlertTriangle aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" />}
-        <span>{already ? `Already checked in${time ? ` at ${time}` : ""}` : "Checked in now"}</span>
+      <div className={`ci-state ${practice ? "is-practice" : already ? "is-already" : "is-in"}`}>
+        {practice ? <Info aria-hidden="true" /> : already ? <AlertTriangle aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" />}
+        <span>
+          {practice ? PRACTICE_TEXT : already ? `Already checked in${time ? ` at ${time}` : ""}` : "Checked in now"}
+          {practice && card.collectedBefore && (
+            <span className="ci-state-sub">Their pass was already collected{time ? ` (${time})` : ""}</span>
+          )}
+        </span>
       </div>
 
       <div className="ci-body">
@@ -175,7 +184,7 @@ function ResultCard({ card }) {
         </div>
       )}
 
-      <p className="ci-ticket">Ticket <code>{card.ticketId}</code>{!already && time ? ` · ${time}` : ""}</p>
+      <p className="ci-ticket">Ticket <code>{card.ticketId}</code>{!already && !practice && time ? ` · ${time}` : ""}</p>
     </article>
   );
 }

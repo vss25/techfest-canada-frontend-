@@ -9,7 +9,11 @@
 
    POST /api/checkin/scan answers (the backend's
    services/checkinCard.js):
-     status    "success" | "already_checked_in" (200), "invalid" (404)
+     status    "success" | "already_checked_in" | "practice" (200),
+               "invalid" (404)
+     practice  (Oct 24 2026) a scan on a day that isn't Day 1 / Day 2:
+               the same card, but NOTHING was checked in; with
+               alreadyCheckedIn (collected before) and then its time
      badge     { key, label, bg, text }: the colour band, staff-facing
                (VIP gold > Media > Speaker > Staff > Volunteer > the
                pass, green); painted as sent, with the pass's name small
@@ -54,6 +58,7 @@ export function bandSub(badge, passName) {
 /**
  * The scan's outcome from the HTTP status (0 = no answer) and the server's body:
  *   "checked_in"  checked in now          "already"  already checked in (amber)
+ *   "practice"    not an event day: the card, nothing checked in (neutral, Oct 24 2026)
  *   "not_found"   no such ticket (red)    "invalid"  the request was refused as bad (red)
  *   "error"       anything else: no connection, no check-in right, server error (red)
  */
@@ -61,6 +66,7 @@ export function outcomeOf(status, body) {
   if (status >= 200 && status < 300) {
     if (body?.status === "already_checked_in") return "already";
     if (body?.status === "success") return "checked_in";
+    if (body?.status === "practice") return "practice";
     return "error";
   }
   if (status === 404 || body?.status === "invalid") return "not_found";
@@ -84,10 +90,26 @@ export function mealsOf(r) {
   return null;
 }
 
-/** Everything the card shows for one scan: { outcome, ticketId, name, title, company, badge, passName, bandSub, avatarUrl, meals, at, message }. */
+/** The banner of a practice scan (a day that isn't Day 1 / Day 2): neutral, not a check-in and not an error. */
+export const PRACTICE_TEXT = "Practice scan — not an event day, nothing was checked in";
+
+/** When the pass was collected: now (checked_in), before (already: its time; practice: only when it was collected). */
+function atOf(outcome, body) {
+  if (outcome === "checked_in") return body?.checkedInAt || null;
+  if (outcome === "already") return body?.time || body?.checkedInAt || null;
+  if (outcome === "practice") return body?.alreadyCheckedIn ? body?.time || null : null;
+  return null;
+}
+
+/**
+ * Everything the card shows for one scan: { outcome, ticketId, name, title, company, badge, passName, bandSub, avatarUrl,
+ * meals, at, collectedBefore, message }. collectedBefore: the pass was collected before this scan (already; a practice
+ * scan's alreadyCheckedIn). A practice scan carries the person's card like a check-in, and the server's message.
+ */
 export function cardFrom({ status = 0, body = null, ticketId = "" } = {}) {
   const outcome = outcomeOf(status, body);
-  const ok = outcome === "checked_in" || outcome === "already";
+  const practice = outcome === "practice";
+  const ok = outcome === "checked_in" || outcome === "already" || practice;
   const badge = ok ? badgeOf(body) : null;
   const passName = ok ? passNameOf(body) : "";
   return {
@@ -101,8 +123,9 @@ export function cardFrom({ status = 0, body = null, ticketId = "" } = {}) {
     bandSub: ok ? bandSub(badge, passName) : "",
     avatarUrl: ok ? str(body?.avatarUrl) : "",
     meals: ok ? mealsOf(body) : null,
-    at: ok ? (outcome === "already" ? body?.time || body?.checkedInAt || null : body?.checkedInAt || null) : null,
-    message: ok ? "" : str(body?.error) || str(body?.message),
+    at: atOf(outcome, body),
+    collectedBefore: outcome === "already" || (practice && body?.alreadyCheckedIn === true),
+    message: practice ? str(body?.message) : ok ? "" : str(body?.error) || str(body?.message),
   };
 }
 

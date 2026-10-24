@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  PASS_BADGE, avatarSrc, badgeOf, bandSub, cardFrom, checkinTime, initialsOf, mealsOf, outcomeOf, passNameOf,
+  PASS_BADGE, PRACTICE_TEXT, avatarSrc, badgeOf, bandSub, cardFrom, checkinTime, initialsOf, mealsOf, outcomeOf, passNameOf,
 } from "./checkinCard.js";
 
 const VIP = { key: "vip", label: "VIP", bg: "#F5C400", text: "#3D2E00" };
@@ -12,6 +12,7 @@ const ORIGIN = "https://techfest-canada-backend.onrender.com";
 test("outcome: checked in, already, not found, invalid, anything else", () => {
   assert.equal(outcomeOf(200, { status: "success" }), "checked_in");
   assert.equal(outcomeOf(200, { status: "already_checked_in" }), "already");
+  assert.equal(outcomeOf(200, { status: "practice", practice: true }), "practice");
   assert.equal(outcomeOf(404, { status: "invalid", message: "Ticket not found" }), "not_found");
   assert.equal(outcomeOf(400, { error: "Ticket ID required" }), "invalid");
   for (const s of [0, 401, 403, 500, 503]) assert.equal(outcomeOf(s, {}), "error", String(s));
@@ -39,12 +40,12 @@ test("card: a check-in, an already-checked-in pass (its time), a ticket that isn
   assert.deepEqual(now, {
     outcome: "checked_in", ticketId: "abc", name: "Vera Vip", title: "Minister", company: "Government of Ontario", badge: VIP,
     passName: "Power Pass", bandSub: "Power Pass", avatarUrl: "/api/files/avatar/u1?v=3", meals: ["CxO Breakfasts", "Luncheons", "Awards Night"],
-    at: "2026-10-26T13:42:00Z", message: "",
+    at: "2026-10-26T13:42:00Z", collectedBefore: false, message: "",
   });
   const again = cardFrom({ status: 200, ticketId: "abc", body: { status: "already_checked_in", name: "Vera Vip", time: "2026-10-26T13:42:00Z", badge: VIP } });
-  assert.deepEqual([again.outcome, again.at, again.badge.label, again.meals], ["already", "2026-10-26T13:42:00Z", "VIP", null]);
+  assert.deepEqual([again.outcome, again.at, again.badge.label, again.meals, again.collectedBefore], ["already", "2026-10-26T13:42:00Z", "VIP", null, true]);
   const nope = cardFrom({ status: 404, ticketId: "zzz", body: { status: "invalid", message: "Ticket not found" } });
-  assert.deepEqual(nope, { outcome: "not_found", ticketId: "zzz", name: "", title: "", company: "", badge: null, passName: "", bandSub: "", avatarUrl: "", meals: null, at: null, message: "Ticket not found" });
+  assert.deepEqual(nope, { outcome: "not_found", ticketId: "zzz", name: "", title: "", company: "", badge: null, passName: "", bandSub: "", avatarUrl: "", meals: null, at: null, collectedBefore: false, message: "Ticket not found" });
   assert.equal(cardFrom({ status: 0, ticketId: "x", body: { error: "Can't reach the server." } }).message, "Can't reach the server.");
 });
 
@@ -87,4 +88,29 @@ test("the band: the pass's name small beside Media (dark blue), VIP and the othe
   assert.equal(bandSub({ key: "pass", label: "Exhibitor" }, "Connect Pass"), "Connect Pass");
   assert.equal(bandSub(MEDIA, ""), "");
   assert.equal(cardFrom({ status: 404, body: { status: "invalid" } }).bandSub, "");
+});
+
+test("practice scan (not an event day, Oct 24 2026): the person's card, nothing checked in, never an error or 'invalid'", () => {
+  const MSG = "Not an event day: nothing was checked in.";
+  const fresh = cardFrom({
+    status: 200, ticketId: "TECHFEST:ABC",
+    body: {
+      status: "practice", practice: true, ticketId: "abc", alreadyCheckedIn: false, message: MSG, name: "Vera Vip", title: "Minister",
+      company: "Government of Ontario", badge: VIP, passName: "Power Pass", avatarUrl: "/api/files/avatar/u1?v=3",
+      extras: { cxo: true, lunch: true, gala: true, awards: true },
+    },
+  });
+  assert.deepEqual(fresh, {
+    outcome: "practice", ticketId: "abc", name: "Vera Vip", title: "Minister", company: "Government of Ontario", badge: VIP,
+    passName: "Power Pass", bandSub: "Power Pass", avatarUrl: "/api/files/avatar/u1?v=3",
+    meals: ["CxO Breakfasts", "Luncheons", "Gala Dinner", "Awards Night"], at: null, collectedBefore: false, message: MSG,
+  });
+  // Collected before (a scan before this change, or Day 1 seen after the event): the time it was collected.
+  const before = cardFrom({ status: 200, body: { status: "practice", practice: true, ticketId: "gst1", alreadyCheckedIn: true, time: "2026-10-21T18:30:00Z", name: "Gus Guest", passName: "Connect Pass" } });
+  assert.deepEqual([before.outcome, before.collectedBefore, before.at, before.badge, before.name], ["practice", true, "2026-10-21T18:30:00Z", { ...PASS_BADGE, label: "Connect Pass" }, "Gus Guest"]);
+  // A stray time without alreadyCheckedIn isn't a collection.
+  assert.equal(cardFrom({ status: 200, body: { status: "practice", alreadyCheckedIn: false, time: "2026-10-21T18:30:00Z" } }).at, null);
+  assert.equal(PRACTICE_TEXT, "Practice scan — not an event day, nothing was checked in");
+  // An unknown ticket is still "not found" on any day.
+  assert.equal(cardFrom({ status: 404, body: { status: "invalid", message: "Ticket not found" } }).outcome, "not_found");
 });

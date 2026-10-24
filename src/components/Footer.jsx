@@ -35,6 +35,8 @@ export default function Footer() {
   var tCol = dark ? "rgba(200,185,255,0.40)" : "rgba(90,40,180,0.45)";
   var lCol = dark ? "rgba(185,158,255,0.75)" : "#7a3fd1";
   var bTop = dark ? "1px solid rgba(155,135,245,0.10)" : "1px solid rgba(122,63,209,0.10)";
+  var showAgenda = site["site.show_agenda"] !== false;
+  var pillStyle = { display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 18px", borderRadius: 999, border: "1px solid " + (dark ? "rgba(155,135,245,0.30)" : "rgba(122,63,209,0.25)"), color: dark ? "#ffffff" : "#0d0520", fontSize: "0.88rem", fontWeight: 700, textDecoration: "none", transition: "opacity 0.2s ease" };
 
   return (
     <footer style={{ background: bg, borderTop: bTop, display: "flex", flexDirection: "column", alignItems: "center", overflow: "hidden" }}>
@@ -46,13 +48,20 @@ export default function Footer() {
           <StoreBadges where="footer" size="sm" />
         </div>
 
-        {/* The TTFC 2027 waitlist (Oct 23 2026): lands on its form; on /stay-updated itself it scrolls to the form. */}
-        <Link to={WAITLIST_FORM_URL}
-          onClick={function (e) { if (window.location.pathname === "/stay-updated") { e.preventDefault(); goToWaitlistForm(); } }}
-          style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 18px", borderRadius: 999, border: "1px solid " + (dark ? "rgba(155,135,245,0.30)" : "rgba(122,63,209,0.25)"), color: dark ? "#ffffff" : "#0d0520", fontSize: "0.88rem", fontWeight: 700, textDecoration: "none", transition: "opacity 0.2s ease" }}
-          onMouseEnter={function (e) { e.currentTarget.style.opacity = "0.75"; }}
-          onMouseLeave={function (e) { e.currentTarget.style.opacity = "1"; }}
-        >Stay updated for 2027<span aria-hidden="true" style={{ color: lCol }}>→</span></Link>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 10 }}>
+          {/* The programme at a glance (Oct 24 2026), while the agenda is on (like the menu's AGENDA and Programme). */}
+          {showAgenda && <Link to="/programme" style={pillStyle}
+            onMouseEnter={function (e) { e.currentTarget.style.opacity = "0.75"; }}
+            onMouseLeave={function (e) { e.currentTarget.style.opacity = "1"; }}
+          >Programme<span aria-hidden="true" style={{ color: lCol }}>→</span></Link>}
+          {/* The TTFC 2027 waitlist (Oct 23 2026): lands on its form; on /stay-updated itself it scrolls to the form. */}
+          <Link to={WAITLIST_FORM_URL}
+            onClick={function (e) { if (window.location.pathname === "/stay-updated") { e.preventDefault(); goToWaitlistForm(); } }}
+            style={pillStyle}
+            onMouseEnter={function (e) { e.currentTarget.style.opacity = "0.75"; }}
+            onMouseLeave={function (e) { e.currentTarget.style.opacity = "1"; }}
+          >Stay updated for 2027<span aria-hidden="true" style={{ color: lCol }}>→</span></Link>
+        </div>
 
         {/* Social icons */}
         <div style={{ display: "flex", gap: 24, alignItems: "center" }}>

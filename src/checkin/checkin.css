@@ -288,8 +288,6 @@ p.ci-update { display: flex; align-items: center; padding: 8px 14px; line-height
 .ci-banner { display: flex; gap: 8px; align-items: stretch; background: var(--panel); border: 2px solid var(--gbg); border-left-width: 12px; border-radius: 16px; box-shadow: var(--shadow); animation: ci-in 0.35s ease-out; overflow: hidden; }
 .ci-banner-text { flex: 1; min-width: 0; text-align: left; background: transparent; border: 0; padding: 9px 14px; font-size: 19px; font-weight: 800; overflow-wrap: anywhere; }
 .ci-banner-bell { margin-right: 8px; }
-.ci-banner-lead::before { content: " "; }
-.ci-banner-fact::before { content: " · "; }
 .ci-banner-ok { border: 0; background: var(--panel2); padding: 0 18px; font-weight: 800; min-width: 96px; }
 .ci-banner-more { text-align: center; font-weight: 700; color: var(--muted); }
 /* Above the on-screen keyboard too (--kb: the height it covers, set from visualViewport in hooks.js useKeyboard). */
@@ -371,10 +369,10 @@ p.ci-update { display: flex; align-items: center; padding: 8px 14px; line-height
   .ci-banner-text { font-size: 16px; padding: 7px 12px; display: grid; gap: 1px; align-content: center; line-height: 1.25; }
   .ci-banner-who { display: flex; align-items: baseline; min-width: 0; }
   .ci-banner-name { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; }
-  .ci-banner-lead { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: var(--muted); }
-  .ci-banner-lead::before { content: "\00a0"; }
+  .ci-banner-lead { flex: 1 1 0; min-width: 0; margin-left: 0.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: var(--muted); }
   .ci-banner-facts { display: block; font-size: 15px; overflow-wrap: anywhere; }
-  .ci-banner-fact:first-child::before { content: none; }
+  .ci-banner-facts > .ci-banner-sep:first-child { display: none; }
+  .ci-banner-fact { display: inline-block; } /* a fact wraps as a whole ("Box G" never splits) unless it alone is too long */
   .ci-banner-ok { min-width: 72px; padding: 0 10px; }
   .ci-when-detail { display: none; }
   .ci-counter-chips { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }

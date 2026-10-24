@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { badgeOf, chipsOf, GROUP_COLORS } from "./lib/passColors.js";
 import { boxLetter } from "./lib/search.js";
 import { answerConfirm, closeTray, dismissAllFailed, dismissBanner, dismissTap, dismissToast, openTray, retryTap, useDesk } from "./lib/desk.js";
@@ -220,8 +220,12 @@ function BannerWords({ x, icon }) {
   if (!p) return <>{icon}{x.text}</>;
   return (
     <>
-      <span className="ci-banner-who">{icon}<span className="ci-banner-name">{p.name}</span>{p.lead && <span className="ci-banner-lead">{p.lead}</span>}</span>
-      {p.facts.length > 0 && <span className="ci-banner-facts">{p.facts.map((f, i) => <span key={i} className="ci-banner-fact">{f}</span>)}</span>}
+      <span className="ci-banner-who">{icon}<span className="ci-banner-name">{p.name}</span>{p.lead && <>{" "}<span className="ci-banner-lead">{p.lead}</span></>}</span>
+      {p.facts.length > 0 && (
+        <span className="ci-banner-facts">
+          {p.facts.map((f, i) => <Fragment key={i}><span className="ci-banner-sep"> · </span><span className="ci-banner-fact">{f}</span></Fragment>)}
+        </span>
+      )}
     </>
   );
 }
@@ -248,7 +252,7 @@ export function Banners({ station, onOpen, max = 3 }) {
         const band = badgeOf(x.guest);
         return (
           <div key={x.key} className={`ci-banner${band.noPass ? " is-issue" : ""}`} style={band.neutral ? undefined : { "--gbg": band.bg }}>
-            <button type="button" className="ci-banner-text" onClick={() => onOpen?.(x.guest)} aria-label={x.text}>
+            <button type="button" className="ci-banner-text" onClick={() => onOpen?.(x.guest)}>
               <BannerWords x={x} icon={<span className="ci-banner-bell" aria-hidden="true">{band.noPass ? ISSUE_PASS.icon : "🔔"}</span>} />
             </button>
             <button type="button" className="ci-banner-ok" onClick={() => dismissBanner(station, x.key)}>Got it</button>

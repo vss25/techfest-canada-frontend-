@@ -44,6 +44,8 @@ export default function Notifications() {
 
   const open = (n) => {
     markNotificationsRead([n.id], listedIds);
+    // "<name> connected with you" (someone scanned your pass): their profile.
+    if (n.to) { navigate(n.to); return; }
     if (n.kind !== "personal") return;
     const r = routeForLink(n.link);
     if (!r) return;
@@ -90,6 +92,7 @@ export default function Notifications() {
                     From the TTFC team{n.link && n.link !== "ttfc://tab/home" && <> · {linkLabel(n.link)}<ChevronRight aria-hidden="true" /></>}
                   </span>
                 )}
+                {n.to && <span className="notif-meta">View profile<ChevronRight aria-hidden="true" /></span>}
               </span>
             </button>
           );

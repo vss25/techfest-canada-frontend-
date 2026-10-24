@@ -18,6 +18,14 @@ const ID_RX = /^[A-Za-z0-9_-]{1,40}$/;
 const PLACEHOLDER_RX = /@ticket\.thetechfestival\.com$/i;
 
 export const SHARE_OFF_ERROR = "Contact sharing is off for your pass type.";
+/* The QR code on the pass (email, PDF ticket, Apple Wallet, the apps) connects whoever scans it with you and gives them
+   what you share by QR (the My QR checklist: contactQrShare, else your share-by-default details). The organiser, Oct 24
+   2026: "tell people in the app whatever they allow to share, will be shared with the QR code printed on the pass." */
+export const PASS_SHARE_NOTE = "Whatever you allow to share here is also shared with anyone who scans the QR code on your pass (your email, PDF ticket, Apple Wallet or the app).";
+/** Under the entry QR on the Pass screen, followed by where that's set (PASS_SHARE_WHERE, a link to it). */
+export const PASS_DOOR_NOTE = "Show this at the door. Anyone who scans it gets the contact details you allow to share";
+export const PASS_SHARE_WHERE = "Profile › My QR";
+export const PASS_SHARE_PATH = "/profile/pass?tab=connect";
 export const TOO_MANY_ERROR = `You can add up to ${MAX_CONTACT_ITEMS} contact details.`;
 
 /** Names, placeholders and keyboards per kind (spec section 3). */

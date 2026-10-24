@@ -3,16 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { isDemoApi } from "../lib/api";
 import { demoConnectFromCode, demoKnows } from "../lib/demo";
-import { scanWithSharing } from "../lib/myCard";
+import { scanPassWithSharing, scanWithSharing } from "../lib/myCard";
 import { parseQR } from "../lib/qr";
+import { scanAction } from "../lib/scanAction";
 import { Camera } from "lucide-react";
 import { Sheet } from "./ui";
 
 /* =========================================================
-   Scan someone's connect QR (iOS BadgeScannerView): the scan
-   connects you "met in person" on both sides straight away.
-   Uses the camera scanner the admin check-in already uses
-   (loaded only when someone opens it).
+   Scan someone's connect QR or ENTRY QR (iOS BadgeScannerView;
+   "one QR for everything", Oct 24 2026): either connects you
+   "met in person" on both sides straight away, after "Share your
+   contact details" (lib/scanAction.js). The web app has no staff
+   check-in from a scan, so everyone connects. Uses the camera
+   scanner the admin check-in already uses (loaded only when
+   someone opens it).
 ========================================================= */
 
 export default function BadgeScanner({ onClose, onConnected }) {
@@ -23,17 +27,17 @@ export default function BadgeScanner({ onClose, onConnected }) {
 
   const handle = async (raw) => {
     if (busy || !raw) return;
-    const p = parseQR(raw);
-    if (!p) { setError("That's not a TTFC code."); return; }
-    if (p.kind === "session") { onClose(); navigate(`/session/${encodeURIComponent(p.id)}/live`); return; }
-    if (p.kind === "pass") { setError("That's a door pass. Ask for their connect QR (Profile › Connect QR)."); return; }
-    // Demo mode keeps codes it can't look up (no user id, or someone outside the demo) on this device.
-    const local = isDemoApi() && (!p.userId || !demoKnows(p.userId));
-    if (p.kind === "connect" && !p.userId && !local) { setError(`${p.name} needs the latest TTFC app for in-person connect.`); return; }
+    const a = scanAction(raw, { demo: isDemoApi(), knows: demoKnows });
+    if (a.type === "invalid" || a.type === "oldApp") { setError(a.error); return; }
+    if (a.type === "session") { onClose(); navigate(`/session/${encodeURIComponent(a.id)}/live`); return; }
     // Pick what to share ("Share your contact details"), then connect in person (lib/myCard.js).
     setBusy(true);
     onClose();
-    if (await scanWithSharing({ userId: local ? "" : p.userId, name: p.name, connectLocal: local ? (share) => demoConnectFromCode(p, share) : null })) onConnected?.();
+    if (a.type === "pass") {
+      if (await scanPassWithSharing(a.ticketId)) onConnected?.();
+      return;
+    }
+    if (await scanWithSharing({ userId: a.userId, name: a.name, connectLocal: a.local ? (share) => demoConnectFromCode(parseQR(raw), share) : null })) onConnected?.();
   };
 
   return (
@@ -44,7 +48,7 @@ export default function BadgeScanner({ onClose, onConnected }) {
             <div className="scan-denied">
               <Camera aria-hidden="true" />
               <b>Camera access is off</b>
-              <span>Allow the camera for this site in your browser's settings to scan badges.</span>
+              <span>Allow the camera for this site in your browser's settings to scan QR codes.</span>
             </div>
           ) : (
             <Scanner
@@ -57,7 +61,7 @@ export default function BadgeScanner({ onClose, onConnected }) {
           )}
           <div className="scan-caption" role={error ? "alert" : undefined}>
             <b className={error ? "scan-error" : undefined}>{busy ? "Connecting…" : error || "Point at a TTFC badge, pass or session QR"}</b>
-            <span>Badge → instant in-person connection · Pass → verify · Session → join the poll</span>
+            <span>Connect QR or pass → connect in person · Session → join the poll</span>
           </div>
         </div>
       </div>

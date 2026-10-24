@@ -1,6 +1,7 @@
 import { ApiError, get, put } from "./api";
 import { auth, can, firstName } from "./auth";
-import { connectInPerson, connectionWith, refreshConnections, requestConnection, respondConnection, social } from "./social";
+import { connectByPass, connectInPerson, connectionWith, refreshConnections, requestConnection, respondConnection, social } from "./social";
+import { passOutcome } from "./scanAction";
 import { createStore, local } from "./store";
 import { showAlert } from "./ui";
 import {
@@ -206,14 +207,16 @@ export function clearAddRequest() {
  *   moment     request | accept | scan | vcard | manage
  *   person     { id, name } (vcard: me)
  *   conn       the connection with them, if any (myShare / mySharePicked)
- *   onConfirm  (share: ids | undefined) → { ok } | { error }; share is undefined when sharing is off
+ *   onConfirm  (share: ids | undefined) → { ok } | { error } | { close } (close: a final refusal the caller already
+ *              showed; the sheet closes and the promise gives false); share is undefined when sharing is off
+ *   pass       a scanned entry QR: the person isn't known until the server answers
  * → Promise<boolean> (true when the action went through)
  */
-export function openShareSheet({ moment, person, conn = null, onConfirm }) {
+export function openShareSheet({ moment, person, conn = null, onConfirm, pass = false }) {
   const open = myCard.get().sheet;
   if (open) open.resolve(false);
   return new Promise((resolve) => {
-    myCard.set({ sheet: { moment, person, conn, onConfirm, resolve, key: Date.now() } });
+    myCard.set({ sheet: { moment, person, conn, onConfirm, resolve, pass, key: Date.now() } });
     if (!myCard.get().card || myCard.get().failed) refreshCard();
   });
 }
@@ -267,6 +270,32 @@ export function scanWithSharing({ userId, name, connectLocal }) {
       if (!c) return { error: social.get().lastError || "Couldn't connect. Check your connection and try again." };
       showAlert("Connected in person", `${c.user?.name || name} is now in your network. ${sharedSentence(countOf(c, share))}`);
       return { ok: true };
+    },
+  });
+}
+
+/**
+ * Someone's ENTRY QR was scanned (contract C-PASS) → the same sheet as a connect code, then POST
+ * connections/by-pass with `share`. We don't know who it is until the server answers, so the sheet says "the person
+ * whose pass you scanned". A final refusal (not a pass we know, not on the app, your own pass) closes the sheet with a toast;
+ * network trouble stays on the sheet to try again.
+ */
+export function scanPassWithSharing(ticketId) {
+  if (!canShareContact()) {
+    const o = passOutcome({ error: { status: 403, data: { code: "share_off" } } });
+    showAlert(o.title, o.message);
+    return Promise.resolve(false);
+  }
+  return openShareSheet({
+    moment: "scan", person: { id: "", name: "" }, pass: true,
+    async onConfirm(share) {
+      const o = passOutcome(await connectByPass(ticketId, share));
+      if (o.ok) {
+        showAlert(o.title, o.alreadyConnected ? "They're in your network." : `${sharedSentence(countOf(o.conn, share))} They'll get a notification.`);
+        return { ok: true };
+      }
+      if (o.close) { showAlert(o.title, o.message); return { close: true }; }
+      return { error: o.message };
     },
   });
 }

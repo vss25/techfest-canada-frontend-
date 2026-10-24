@@ -87,7 +87,7 @@ function ShareSheet({ sh }) {
   const subtitle = {
     request: `${full} sees what you tick once they accept.`,
     accept: `With ${full}`,
-    scan: `With ${full}`,
+    scan: sh.pass ? "With the person whose pass you scanned" : `With ${full}`,
     vcard: "Sent as a contact card (.vcf) with your name, title and company.",
     manage: `${given} sees only what's ticked. Changes show for them straight away.`,
   }[moment];
@@ -112,8 +112,9 @@ function ShareSheet({ sh }) {
     try { r = sh.onConfirm(share); } catch (e) { fail(e?.message); return; }
     if (r && typeof r.then === "function") {
       setBusy(true);
-      r.then((res) => (res?.ok ? closeShareSheet(true) : fail(res?.error)), (e) => fail(e?.message));
+      r.then((res) => (res?.ok ? closeShareSheet(true) : res?.close ? closeShareSheet(false) : fail(res?.error)), (e) => fail(e?.message));
     } else if (r?.ok) closeShareSheet(true);
+    else if (r?.close) closeShareSheet(false);
     else fail(r?.error);
   };
 

@@ -2,14 +2,17 @@ import { bestTicket } from "./auth";
 import { dayLabel, roomOf, sessionById } from "./cms";
 import { bookmarks } from "./social";
 import { FEATURES } from "./config";
+import { serverItem } from "./notifRows";
 
 /* =========================================================
    The Notifications list (iOS NotificationsListView.items):
    built from what has happened — invitations, new connections,
    upcoming saved sessions, announcements, moderation outcomes,
-   staff messages (server) and the linked pass. Read state is
-   kept on this device; staff messages also report "read" to
-   the server. The bell counts exactly what the list calls unread.
+   staff messages (server), "<name> connected with you" (server,
+   kind "conn": someone scanned your pass, Oct 24 2026) and the
+   linked pass. Read state is kept on this device; server rows
+   also report "read" to the server. The bell counts exactly what
+   the list calls unread.
 ========================================================= */
 
 export function notificationItems({ social: s, cms: c, auth: a, now }) {
@@ -19,7 +22,11 @@ export function notificationItems({ social: s, cms: c, auth: a, now }) {
     const u = conn.user || {};
     out.push({ id: `inv-${conn.id}`, kind: "invitation", title: `${u.name} wants to connect`, detail: [u.jobTitle, u.organization].filter(Boolean).join(" · "), date: conn.createdAt, conn });
   }
+  const server = s.notifications.map(serverItem);
+  // A connection someone made by scanning my pass is told by its server row ("… connected with you"), not twice.
+  const told = new Set(server.filter((n) => n.connectionId).map((n) => n.connectionId));
   for (const conn of s.connections.accepted) {
+    if (told.has(conn.id)) continue;
     const u = conn.user || {};
     const inPerson = conn.kind === "inPerson";
     out.push({
@@ -45,9 +52,7 @@ export function notificationItems({ social: s, cms: c, auth: a, now }) {
   for (const g of s.groups.filter((x) => x.ownerId === meId)) {
     out.push({ id: `grp-${g.id}-${g.status}`, kind: "moderation", title: g.status === "approved" ? "Your group is listed" : g.status === "pending" ? "Group under review" : "Group not approved", detail: g.name, date: g.createdAt, link: `/group/${encodeURIComponent(g.id)}` });
   }
-  for (const n of s.notifications) {
-    out.push({ id: `pn-${n.id}`, kind: "personal", title: n.title, detail: n.body, date: n.createdAt, link: n.link || "ttfc://tab/home", serverRead: !!n.readAt, from: n.sentByName });
-  }
+  out.push(...server);
   const t = bestTicket(a.user);
   if (t) out.push({ id: `tkt-${t.ticketId}`, kind: "ticket", title: `${t.tierName} linked`, detail: "Your QR pass is ready in Profile → My pass.", date: t.purchasedAt || "2026-09-01T00:00:00Z", link: "/profile/pass" });
   return out.sort((x, y) => Date.parse(y.date || 0) - Date.parse(x.date || 0));

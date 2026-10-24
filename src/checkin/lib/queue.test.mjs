@@ -7,7 +7,7 @@
    (C4); the queue's bookkeeping is never sent. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ITEM_PREFIX, QUEUE_KEY, createQueue, newClientId, retryable } from "./queue.js";
+import { ITEM_PREFIX, OFFLINE_CHECK_MS, OFFLINE_PROBE_MS, QUEUE_KEY, createQueue, newClientId, retryable } from "./queue.js";
 
 /** One device's localStorage, shared by the tabs made from it; each tab hears the others' changes (the storage event). */
 function deviceStorage() {
@@ -135,6 +135,84 @@ test("refused taps are kept with the reason (Admit anyway retries them); retryab
   assert.deepEqual(results, [[it.clientId, "failed"], [it.clientId, "ok"]]);
   assert.deepEqual([0, 408, 429, 500, 503].map(retryable), [true, true, true, true, true]);
   assert.deepEqual([400, 403, 404, 409].map(retryable), [false, false, false, false]);
+});
+
+test("Admit anyway / Try again by someone else after a shift change: sent as theirs (queuedBy), the first tapper kept on the device only", async () => {
+  const timers = manualTimers();
+  const sent = [];
+  let refuse = true;
+  const q = createQueue({
+    storage: deviceStorage().tab(), ...timers,
+    send: async (actions) => {
+      sent.push(...actions);
+      return { results: actions.map((a) => (refuse ? { clientId: a.clientId, ok: false, status: 409, code: "outside_window", error: "closed" } : { clientId: a.clientId, ok: true })) };
+    },
+  });
+  const it = q.add({ kind: "mark", point: "cxo", key: "g1", station: "breakfast", queuedBy: { id: "uA", name: "Alice" } });
+  await timers.run(1);
+  assert.equal(q.failed().length, 1);
+  refuse = false;
+  q.retry(it.clientId, { override: true, queuedBy: { id: "uB", name: "Bob" } });
+  assert.deepEqual(q.items()[0].tappedBy, { id: "uA", name: "Alice" }, "who first tapped it, for the device's own list");
+  await timers.run(1);
+  const last = sent.at(-1);
+  assert.deepEqual([last.override, last.queuedBy], [true, { id: "uB", name: "Bob" }], "Bob decided to admit: recorded as Bob");
+  assert.ok(!("tappedBy" in last), "the queue's own field isn't sent");
+  // The same person retrying keeps it as it was (nothing to remember).
+  refuse = true;
+  const it2 = q.add({ kind: "mark", point: "cxo", key: "g2", station: "breakfast", queuedBy: { id: "uB", name: "Bob" } });
+  await timers.run(1);
+  q.retry(it2.clientId, { queuedBy: { id: "uB", name: "Bob" } });
+  assert.equal(q.items().find((x) => x.clientId === it2.clientId).tappedBy, undefined);
+});
+
+test("the device says it's offline: nothing is sent, so an Undo just drops the tap; sent once it's back; a try a minute anyway", async () => {
+  const timers = manualTimers();
+  let t = 1_000_000;
+  let online = false;
+  const sent = [];
+  let attempts = 0;
+  const q = createQueue({
+    storage: deviceStorage().tab(), ...timers, clock: () => t, now: () => t, online: () => online,
+    send: async (actions) => { attempts += 1; if (!online) throw Object.assign(new TypeError("Failed to fetch"), { status: 0 }); sent.push(...actions); return { results: actions.map((a) => ({ clientId: a.clientId, ok: true })) }; },
+  });
+  const it = q.add(mark("g1"));
+  await timers.run(1);
+  assert.equal(attempts, 0, "not even tried");
+  assert.equal(timers.next()?.ms, OFFLINE_CHECK_MS, "looked at again later");
+  assert.equal(q.items()[0].sentOnce, undefined);
+  const u = q.undo(it.clientId);
+  assert.equal(u.local, true, "never left the device: the Undo just drops it (no mark + undo pair on the server)");
+  assert.equal(q.items().length, 0);
+  // Still "offline" after a minute (the device may be wrong): one try anyway, then once a minute.
+  q.add(mark("g2"));
+  t += OFFLINE_PROBE_MS;
+  await q.flush();
+  assert.equal(attempts, 1, "one try after a minute offline");
+  await q.flush();
+  assert.equal(attempts, 1, "not again within the minute");
+  // Back online (the online event resumes the queue): sent.
+  online = true;
+  q.resume();
+  await timers.run(3);
+  assert.deepEqual(sent.map((a) => a.key), ["g2"]);
+  assert.equal(q.items().length, 0);
+});
+
+test("a device wrongly saying it's offline still sends: the minute's try gets an answer, so it's believed no more", async () => {
+  const timers = manualTimers();
+  let t = 5_000_000;
+  const sent = [];
+  const q = createQueue({ storage: deviceStorage().tab(), ...timers, clock: () => t, now: () => t, online: () => false, send: okAll(sent) });
+  q.add(mark("g1"));
+  await q.flush();
+  assert.equal(sent.length, 0);
+  t += OFFLINE_PROBE_MS;
+  await q.flush();
+  assert.deepEqual(sent.map((a) => a.key), ["g1"], "the minute's try went through");
+  q.add(mark("g2"));
+  await q.flush();
+  assert.deepEqual(sent.map((a) => a.key), ["g1", "g2"], "and from then on taps go at once");
 });
 
 test("refused taps survive a reload (the Needs attention list) and can be dismissed", async () => {

@@ -14,7 +14,10 @@ export const STATION_LABELS = Object.freeze({
   lobby: "Lobby", desk: "Pass desk", breakfast: "CxO Breakfast", lunch: "Lunch", evening: "Evening entry", media: "Media desk", av: "AV station", exhibitor: "Exhibitor desk",
 });
 
-/** → { who, what, where, by, at } for a queued tap (`state`: the device's, for the guest's name; `items`: the queue). */
+/**
+ * → { who, what, where, by, tappedBy, at } for a queued tap (`state`: the device's, for the guest's name; `items`: the
+ * queue). `by`: who it's recorded as (queuedBy); `tappedBy`: who first tapped it, when someone else retried it since.
+ */
 export function describeTap(it, { state = null, items = [] } = {}) {
   const g = it?.key ? state?.byKey?.get(it.key) : null;
   const booth = it?.key ? state?.boothByKey?.get(it.key) : null;
@@ -31,7 +34,9 @@ export function describeTap(it, { state = null, items = [] } = {}) {
   else if (it?.kind === "unknown_arrival") what = "No details found: arrival";
   else if (it?.kind === "unknown_done") what = `No details found: ${({ sent_to_help: "sent to help desk", pass_issued: "pass issued", left: "left" })[it.outcome] || "closed"}`;
   else if (it?.kind === "unknown_link") what = `No details found: found them${state?.byKey?.get(it.guestKey)?.name ? ` (${state.byKey.get(it.guestKey).name})` : ""}`;
-  return { who, what, where: STATION_LABELS[it?.station] || "", by: it?.queuedBy?.name || "", at: it?.clientAt || "" };
+  const by = it?.queuedBy?.name || "";
+  const first = it?.tappedBy?.name || "";
+  return { who, what, where: STATION_LABELS[it?.station] || "", by, tappedBy: first && first !== by ? first : "", at: it?.clientAt || "" };
 }
 
 /**

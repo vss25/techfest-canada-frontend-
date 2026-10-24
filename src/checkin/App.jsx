@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { desk, useDesk, load, markStarted, openTray, pending, requestSignOut, setStation, signOut, unlock } from "./lib/desk.js";
+import { desk, useDesk, load, markStarted, openTray, pending, requestSignOut, setStation, unlock } from "./lib/desk.js";
 import { counters } from "./lib/state.js";
 import { applyTheme, audioReady, keepAwake, remember, THEME_KEY, unlockAudio } from "./lib/device.js";
 import { applyUpdate, isUpdateReady, onUpdate, setAppScreen } from "./lib/pwa.js";
@@ -70,11 +70,17 @@ export default function App() {
 
   if (screen === "login") return <><Login again={!!d.session?.token && d.needSignIn} notice={d.authNotice} /><Toasts /></>;
   if (screen === "loading") {
+    // No list on the device yet (first open, or its copy was dropped to make room for taps). Sign out asks first, like
+    // everywhere else, when taps are still on the device.
     return (
-      <main className="ci-loading">
-        {d.loadError ? (<><p>{d.loadError}</p><button type="button" className="ci-btn ci-btn-primary" onClick={() => load()}>Try again</button><button type="button" className="ci-btn ci-btn-ghost" onClick={() => signOut()}>Sign out</button></>)
-          : <p>Loading the guest list…</p>}
-      </main>
+      <>
+        <main className="ci-loading">
+          {d.loadError ? (<><p>{d.loadError}</p><button type="button" className="ci-btn ci-btn-primary" onClick={() => load()}>Try again</button><button type="button" className="ci-btn ci-btn-ghost" onClick={requestSignOut} disabled={d.signingOut}>{d.signingOut ? "Sending taps…" : "Sign out"}</button></>)
+            : <p>Loading the guest list…</p>}
+        </main>
+        <ConfirmDialog />
+        <Toasts />
+      </>
     );
   }
   if (screen === "stations") return <><Stations onPicked={() => setPicking(false)} /><ConfirmDialog /><Toasts /></>;

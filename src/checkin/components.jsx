@@ -163,7 +163,7 @@ export function AttentionSheet() {
             <li key={it.clientId} className="ci-attention-row">
               <div className="ci-attention-main">
                 <b>{t.who || "Someone"}</b> · {t.what}
-                <span className="ci-small ci-muted">{[t.where, timeText(t.at), t.by ? `by ${t.by}` : ""].filter(Boolean).join(" · ")}</span>
+                <span className="ci-small ci-muted">{[t.where, timeText(t.at), t.by ? `by ${t.by}${t.tappedBy ? ` (first tapped by ${t.tappedBy})` : ""}` : ""].filter(Boolean).join(" · ")}</span>
                 <span className="ci-attention-why">{it.window?.text || it.error || "Not recorded."}</span>
               </div>
               <div className="ci-attention-actions">

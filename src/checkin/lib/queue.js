@@ -10,6 +10,11 @@
      - no connection / server error / too many requests: kept, retried
        (1 s, 2 s, 4 s … up to 15 s, and at once when the device is back
        online or back in front);
+     - the device says it has no network (navigator.onLine false):
+       nothing is sent (so a tap made now has never left the device and
+       its Undo just drops it); sent once it's back (and one try a
+       minute anyway, in case the device is wrong: if that try gets an
+       answer, its "offline" is ignored until it says online again);
      - signed out (401): kept, sent after signing in again;
      - refused (e.g. outside the station's hours, not on their pass):
        kept as "failed" with the reason, for the person to retry ("Admit
@@ -43,9 +48,12 @@ export const QUEUE_KEY = "ttfc.desk.queue.v1";
 export const ITEM_PREFIX = "ttfc.desk.q2.";
 export const BATCH = 20;
 /** The queue's own bookkeeping: never sent to the server. */
-const QUEUE_FIELDS = new Set(["state", "tries", "addedAt", "error", "code", "window", "status", "sentOnce", "ord", "owner", "undoneBy", "sendingAt"]);
+const QUEUE_FIELDS = new Set(["state", "tries", "addedAt", "error", "code", "window", "status", "sentOnce", "ord", "owner", "undoneBy", "sendingAt", "tappedBy"]);
 const BACKOFF = [1000, 2000, 4000, 8000, 15000];
 const REPAIR_MS = 5000;
+/** The device says it's offline: looked at again this often, and once a minute a try anyway (in case it's wrong). */
+export const OFFLINE_CHECK_MS = 15000;
+export const OFFLINE_PROBE_MS = 60000;
 
 /** A tap id: time + randomness, 8–64 of [A-Za-z0-9_-]. */
 export function newClientId(prefix = "t", rand = Math.random) {
@@ -84,7 +92,7 @@ const byOrd = (a, b) => (a.ord || 0) - (b.ord || 0) || (a.addedAt || 0) - (b.add
 export const undoTarget = (it) => it?.target || it?.ref || "";
 
 /**
- * createQueue({ storage, send, onResult, onChange, onAuth, onPersist, onStorageFull, tabId, alive, now, clock, setTimer, clearTimer })
+ * createQueue({ storage, send, onResult, onChange, onAuth, onPersist, onStorageFull, tabId, alive, online, now, clock, setTimer, clearTimer })
  *   send(actions) → Promise<{ results: [...] }> (throws { status } when the request itself failed)
  *   onResult(item, result, outcome)  each answer; outcome "ok" | "retry" | "failed" | "dropped" (refused, but undone already)
  *   onChange(items)      whenever the queue changes (this page's or another's)
@@ -92,12 +100,13 @@ export const undoTarget = (it) => it?.target || it?.ref || "";
  *   onPersist(ok)        false: a tap couldn't be written to the device's storage (kept in memory, written again)
  *   onStorageFull()      called before writing again after a failed write (free some space)
  *   tabId()              this page's id (lib/tabs.js); alive() → Promise<Set> of the ids of the pages still open
+ *   online()             false: the device says it has no network (nothing is sent; see above)
  *   now()                the server's time on this device: each tap's clientAt (the shared contract's C4)
  *   clock()              the device's own clock (order, timers)
  */
 export function createQueue({
   storage = browserStorage, send, onResult = () => {}, onChange = () => {}, onAuth = () => {},
-  onPersist = () => {}, onStorageFull = () => {}, tabId = () => "", alive = async () => null,
+  onPersist = () => {}, onStorageFull = () => {}, tabId = () => "", alive = async () => null, online = () => true,
   now = () => Date.now(), clock = () => Date.now(),
   setTimer = (fn, ms) => setTimeout(fn, ms), clearTimer = (t) => clearTimeout(t),
 } = {}) {
@@ -107,6 +116,11 @@ export function createQueue({
   let repairTimer = null;
   let attempt = 0;
   let paused = false;
+  let offlineSince = null;
+  let lastProbe = -Infinity;
+  /** A try made while the device said "offline" got an answer: it's wrong about that until it says "online" again. */
+  let offlineWrong = false;
+  let probing = false;
   const inFlight = new Set();
   const unsaved = new Set();
   let persistOk = true;
@@ -239,10 +253,14 @@ export function createQueue({
     return { local: false, item: u };
   }
 
-  /** Try a refused tap again, e.g. with { override: true } ("Admit anyway"). This page sends it. */
+  /**
+   * Try a refused tap again, e.g. with { override: true } ("Admit anyway"). This page sends it. A patch's queuedBy (the
+   * person deciding now, C3) replaces the tap's; who first tapped it is kept here (tappedBy, never sent).
+   */
   function retry(clientId, patch = {}) {
     const it = items.find((x) => x.clientId === clientId);
     if (!it || inFlight.has(clientId)) return null;
+    if (patch.queuedBy && it.queuedBy && String(patch.queuedBy.id) !== String(it.queuedBy.id) && !it.tappedBy) it.tappedBy = it.queuedBy;
     Object.assign(it, patch, { state: "pending", error: "", code: "", status: 0, window: null, tries: 0, owner: me() });
     save([it]);
     changed();
@@ -273,8 +291,28 @@ export function createQueue({
     items = [...next, ...fresh.values()].sort(byOrd);
   }
 
+  /** May this flush send? Not while the device says it's offline (one try a minute anyway). */
+  function mayTry() {
+    let on = true;
+    try { on = online() !== false; } catch { /* assume online */ }
+    probing = false;
+    if (on) { offlineSince = null; offlineWrong = false; return true; }
+    if (offlineWrong) return true;
+    const t = clock();
+    if (offlineSince === null) offlineSince = t;
+    if (t - offlineSince < OFFLINE_PROBE_MS || t - lastProbe < OFFLINE_PROBE_MS) return false;
+    if (!items.some((x) => x.state === "pending" || x.state === "sending")) return false; // nothing to try with
+    lastProbe = t;
+    probing = true;
+    return true;
+  }
+
   async function doFlush() {
     if (paused) return;
+    if (!mayTry()) {
+      if (items.some((x) => x.state === "pending")) schedule(OFFLINE_CHECK_MS);
+      return;
+    }
     const live = await alive().catch(() => null);
     if (paused) return;
     const mine = (x) => !x.owner || x.owner === me() || (live ? !live.has(x.owner) : false);
@@ -317,6 +355,7 @@ export function createQueue({
       return;
     }
     attempt = 0;
+    if (probing) offlineWrong = true;
     const byId = new Map(results.map((r) => [r.clientId, r]));
     let again = false;
     for (const it of batch) {
@@ -367,7 +406,7 @@ export function createQueue({
   return {
     add, undo, retry, dismiss, flush, drain,
     /** Start sending again (after signing in, coming back online). */
-    resume() { paused = false; attempt = 0; schedule(0); },
+    resume() { paused = false; attempt = 0; offlineSince = null; schedule(0); },
     /** Stop sending (signed out): everything stays on the device. */
     pause() { paused = true; if (timer) clearTimer(timer); timer = null; },
     items: () => items.slice(),

@@ -28,9 +28,16 @@ import { UNDO_MS } from "./constants.js";
      when the server can't be asked (offline at the start of Day 2,
      offline across a station's hours).
    • Who made a tap: each queued tap carries queuedBy (the person
-     signed in when it was tapped), so taps sent after a shift change
-     are still recorded as theirs (contract C3).
-   • A staff sign-in left unused for 30 minutes locks (password again).
+     signed in when it was tapped, as the server named them at sign-in),
+     so taps sent after a shift change are still recorded as theirs
+     (contract C3). "Admit anyway" / "Try again" are the person deciding
+     now: theirs.
+   • One sign-in at a time: anything still on its way for an earlier
+     sign-in (a list download during a shift change) is never applied
+     to the next one.
+   • A staff sign-in left unused for 30 minutes locks (password again),
+     after a reload or a Home Screen relaunch too (the last use is kept
+     with the sign-in).
    • Sign out: the person's taps are sent first (with a connection), then
      the sign-in, the cached list and everything in memory go.
 ========================================================= */
@@ -152,7 +159,7 @@ function noteFailure(item) {
       const it = list[0];
       const { who } = describeTap(it, { state: desk.state, items: desk.queueItems });
       const action = it.code === "outside_window"
-        ? { label: "Admit anyway", fn: () => queue.retry(it.clientId, { override: true }) }
+        ? { label: "Admit anyway", fn: () => retryTap(it.clientId, { override: true }) }
         : { label: "Review", fn: openTray };
       toast(`${who ? `${who}: ` : ""}not recorded. ${it.window?.text || it.error || ""}`.trim(), { tone: "bad", ms: 20000, key: "fail", action });
     } else {
@@ -163,10 +170,21 @@ function noteFailure(item) {
 
 const queue = createQueue({
   storage: browserStorage,
-  send: (actions) => api("/checkin/desk/actions", { method: "POST", body: { actions } }),
+  send: async (actions) => {
+    const token = desk.session?.token || "";
+    try {
+      return await api("/checkin/desk/actions", { method: "POST", body: { actions }, token });
+    } catch (err) {
+      // An earlier sign-in's answer (signed out while it was on its way) says nothing about this one: just try again.
+      if (err?.status === 401 && token !== (desk.session?.token || "")) throw new ApiError(err.message, 0);
+      throw err;
+    }
+  },
   tabId: () => tabs.id,
   alive: () => tabs.alive(),
   now: serverNow,
+  // The device says it has no network: taps wait unsent (an Undo then just drops one), tried again once it's back.
+  online: () => typeof navigator === "undefined" || navigator.onLine !== false,
   onChange: (items) => { desk.queueItems = items; if (!items.some((x) => x.state === "failed")) desk.trayOpen = false; tidyBanners(); emit(); },
   onAuth: () => { desk.needSignIn = true; emit(); },
   onPersist: (ok) => { desk.persistOk = ok; emit(); },
@@ -192,16 +210,23 @@ desk.queueItems = queue.items();
 desk.persistOk = queue.persisted();
 export const pending = () => queue.pending();
 export const failedTaps = () => queue.failed();
-export const retryTap = (clientId, patch) => queue.retry(clientId, patch);
+/** "Admit anyway" / "Try again" (Needs attention, the refusal toast): the person signed in now decides, so it's theirs (C3). */
+export const retryTap = (clientId, patch = {}) => queue.retry(clientId, { ...patch, ...signedInAs() });
 export const dismissTap = (clientId) => queue.dismiss(clientId);
 export function dismissAllFailed() { for (const it of queue.failed()) queue.dismiss(it.clientId); }
 export function openTray() { desk.trayOpen = true; emit(); }
 export function closeTray() { desk.trayOpen = false; emit(); }
 
-const signedInAs = () => {
-  const u = desk.session?.user;
-  return u?.id ? { queuedBy: { id: String(u.id), name: u.name || "" } } : {};
+/**
+ * Who this sign-in is: the server's answer at sign-in (/checkin/desk/me), kept as session.identity. Every tap's queuedBy
+ * (C3). A list load only refreshes the name and staff flag the header shows (session.user), never this. (A sign-in
+ * kept by an older version of the app has only `user`.)
+ */
+export const identityOf = (session) => {
+  const u = session?.identity || session?.user;
+  return u?.id ? { id: String(u.id), name: u.name || "" } : null;
 };
+const signedInAs = () => { const u = identityOf(desk.session); return u ? { queuedBy: u } : {}; };
 
 /**
  * A tap at the current station: { kind: "mark", point, key, override?, note? } | reset | note | query_add | query_update.
@@ -277,14 +302,14 @@ function handleEvents(events, { live = true } = {}) {
   if (!s || !events?.length) return;
   recent = [...recent, ...events].slice(-300);
   const r = applyEvents(s, events, { live, now: serverNow() });
-  for (const a of r.arrivals) {
+  for (const a of standingArrivals(s, r.arrivals, queue.pending())) {
     if (a.unknown) {
       // Only the pass desk hears about a NO DETAILS FOUND arrival.
       desk.banners.desk.add({ key: a.unknown.key, unknown: a.unknown, guest: null, at: a.at, by: a.by, text: `${NO_DETAILS.badge}: ${a.unknown.name}${a.unknown.company ? ` (${a.unknown.company})` : ""} · check ID, send to help desk` });
       if (desk.station === "desk") { chime(); desk.flash = { seq: ++flashSeq, bg: "", unknown: true }; }
       continue;
     }
-    for (const st of notifyStations(a.guest)) {
+    for (const st of a.stations) {
       desk.banners[st].add({ key: a.guest.key, guest: a.guest, at: a.at, by: a.by, text: bannerText(a.guest, st, { eventDay: s.today?.eventDay, now: serverNow() }) });
       // The chime plays whenever sound is on (chime() does nothing until a tap unlocked it); the screen flashes too.
       if (st === desk.station) { chime(); desk.flash = { seq: ++flashSeq, bg: badgeOf(a.guest).bg }; }
@@ -293,6 +318,35 @@ function handleEvents(events, { live = true } = {}) {
   tidyBanners();
   if (r.refresh) { clearTimeout(refreshTimer); refreshTimer = setTimeout(() => load({ quiet: true }), 1500); }
   emit();
+}
+
+/**
+ * A batch's arrivals still standing once the WHOLE batch is applied (each guest once), with the stations still to tell
+ * (not done there yet). An arrival and its undo in one batch (e.g. an offline tap and its Undo, sent together) announce
+ * nothing: no chime, no flash, no banner. `pendingTaps`: the device's queue (a local Undo counts too).
+ */
+export function standingArrivals(s, arrivals = [], pendingTaps = []) {
+  const out = [];
+  const seen = new Set();
+  let open = null;
+  for (const a of arrivals) {
+    if (a.unknown) {
+      open ||= new Set(unknownsOf(s, pendingTaps, { open: true }).map((u) => u.key));
+      if (!open.has(a.unknown.key) || seen.has(a.unknown.key)) continue;
+      seen.add(a.unknown.key);
+      out.push(a);
+      continue;
+    }
+    const g = s.byKey.get(a.guest?.key) || a.guest;
+    if (!g || seen.has(g.key)) continue;
+    const x = statusOf(s, g, pendingTaps);
+    if (!x.arrived) continue;
+    const stations = notifyStations(g).filter((st) => !x[DONE_POINT[st]]);
+    if (!stations.length) continue;
+    seen.add(g.key);
+    out.push({ ...a, guest: g, stations });
+  }
+  return out;
 }
 
 /** A banner stays while the guest is still on the way to that station: arrived (not undone or reset), not done there. */
@@ -345,26 +399,55 @@ const clockSig = (s) => JSON.stringify([s?.today?.date, s?.today?.eventDay, s?.a
   Object.entries(s?.stationStates || {}).map(([k, v]) => `${k}|${v?.code}|${v?.text}|${v?.detail || ""}|${v?.open}`)]);
 let lastServerStates = 0;
 
-let loading = null;
-let loadAgain = null;
-/** (Re)load everything from the server (one at a time). Events that came in meanwhile are applied on top. */
+/**
+ * +1 at every sign-in and sign-out. Whatever was asked for under an earlier one (a list still downloading when the shift
+ * changed, a clock check) is never applied to the next person's session.
+ */
+let sessionGen = 0;
+let loader = null;
+let wanted = null;
+/** Two load requests as one: quiet only if both are; a full refresh if either asks. */
+export const mergeLoads = (a, b = {}) => ({ quiet: (a ? !!a.quiet : true) && !!b.quiet, refresh: !!(a?.refresh || b.refresh) });
+/**
+ * (Re)load everything from the server, one load at a time. A request while one runs (a new guest's event, the 3-minute
+ * reload, "Reload the guest list") gets one more load after it, never dropped: the running one may have been built
+ * before what it was asked for. → resolves when the list asked for is in (or has failed).
+ */
 export function load(opts = {}) {
-  if (loading) { if (opts.refresh || !loadAgain) loadAgain = { quiet: true, ...(loadAgain || {}), ...opts }; return loading; }
-  loading = doLoad(opts).finally(() => {
-    loading = null;
-    const again = loadAgain;
-    loadAgain = null;
-    if (again && again.refresh) load(again);
-  });
-  return loading;
+  const g = sessionGen;
+  if (loader && loader.gen === g) {
+    wanted = mergeLoads(wanted, opts);
+    return loader.promise;
+  }
+  wanted = mergeLoads(null, opts);
+  let promise = null;
+  promise = (async () => {
+    try {
+      while (wanted && g === sessionGen) {
+        const o = wanted;
+        wanted = null;
+        await doLoad(o, g);
+      }
+    } finally {
+      if (loader?.promise === promise) loader = null;
+    }
+  })();
+  loader = { gen: g, promise };
+  return promise;
 }
-async function doLoad({ quiet = false, refresh = false } = {}) {
-  if (!desk.session?.token) return;
+async function doLoad({ quiet = false, refresh = false } = {}, g = sessionGen) {
+  const token = desk.session?.token;
+  if (!token) return;
+  // Still the sign-in this load was for?
+  const current = () => g === sessionGen && desk.session?.token === token;
   if (!quiet) { desk.loading = true; emit(); }
   try {
     // A big list on venue Wi-Fi: fine while it keeps arriving; given up when it stalls (lib/api.js).
-    const snap = await api(`/checkin/desk/snapshot${refresh ? "?refresh=1" : ""}`, { timeoutMs: 20000 });
-    if (!desk.session?.token) return;
+    const snap = await api(`/checkin/desk/snapshot${refresh ? "?refresh=1" : ""}`, { timeoutMs: 20000, token });
+    if (!current()) return;
+    // Someone else's list (never expected): never shown here.
+    const who = identityOf(desk.session);
+    if (who && snap.user?.id && String(snap.user.id) !== who.id) throw new ApiError("That guest list was for another sign-in. Reload the guest list, or sign out and in again.", 0);
     const fresh = fromSnapshot(snap, { clientNow: Date.now() });
     applyEvents(fresh, recent.filter((e) => e.seq > fresh.cursor), { live: false, now: serverNow() });
     desk.state = fresh;
@@ -375,20 +458,26 @@ async function doLoad({ quiet = false, refresh = false } = {}) {
     cacheSnapshot(snap);
     tidyBanners();
   } catch (err) {
+    if (!current()) return;
     if (err.status === 401) desk.needSignIn = true;
     desk.loadError = err.message || "Couldn't load the guest list.";
   } finally {
-    desk.loading = false;
-    emit();
+    if (current()) {
+      desk.loading = false;
+      emit();
+    }
   }
 }
 
 async function tickClock() {
-  if (!desk.session?.token || !desk.state) return;
+  const token = desk.session?.token;
+  if (!token || !desk.state) return;
+  const g = sessionGen;
+  const current = () => g === sessionGen && desk.session?.token === token;
   try {
-    const c = await api("/checkin/desk/clock", { timeoutMs: 8000 });
+    const c = await api("/checkin/desk/clock", { timeoutMs: 8000, token });
     const s = desk.state;
-    if (!s) return;
+    if (!s || !current()) return;
     const before = clockSig(s);
     // A new day by the server's clock: yesterday's marks go now, even if today's list can't be loaded yet.
     const rolled = rollDay(s, Date.parse(c.serverTime) || serverNow());
@@ -402,7 +491,7 @@ async function tickClock() {
     if (desk.dayStale) await load({ quiet: true });
     if (rolled || clockSig(s) !== before) emit();
   } catch (err) {
-    if (err.status === 401) { desk.needSignIn = true; emit(); }
+    if (err.status === 401 && current()) { desk.needSignIn = true; emit(); }
   }
 }
 
@@ -440,7 +529,8 @@ let localTimer = null;
 let fullTimer = null;
 let running = false;
 const onVisible = () => { if (document.visibilityState === "visible") { checkIdle(); localTick(); tickClock(); queue.flush(); } };
-const onOnline = () => { queue.resume(); tickClock(); };
+// Back online: the taps go, and a device with no list yet (its copy dropped, opened offline) loads it now.
+const onOnline = () => { queue.resume(); if (desk.state) tickClock(); else load(); };
 function startRunning() {
   if (running || !desk.session?.token) return;
   running = true;
@@ -476,15 +566,19 @@ function stopRunning() {
 
 export async function signIn(email, password) {
   const s = await apiSignIn(email, password);
-  const sameUser = desk.state && desk.state.me?.id === s.user?.id;
-  desk.session = { ...s, email: String(email || "").trim() };
+  const sameUser = !!desk.state && String(desk.state.me?.id ?? "") === String(s.user?.id ?? "");
+  // A new sign-in: nothing still on its way for the one before is applied to it; this one loads its own list.
+  sessionGen += 1;
+  lastUse = Date.now();
+  savedUse = lastUse;
+  desk.session = { ...s, email: String(email || "").trim(), identity: identityOf(s), lastUse };
   setSession(desk.session);
   desk.needSignIn = false;
   desk.locked = false;
+  desk.loading = false;
   desk.authNotice = "";
   desk.endedReason = "";
-  lastUse = Date.now();
-  if (!sameUser) desk.state = null;
+  if (!sameUser) { desk.state = null; recent = []; }
   queue.resume();
   if (running) { load(); live.kick(); } else startRunning();
   emit();
@@ -493,6 +587,9 @@ export async function signIn(email, password) {
 
 /** Everything about the person signed in goes; the taps waiting on the device stay (each says who made it). */
 function endSession(reason = "") {
+  sessionGen += 1;
+  loader = null;
+  wanted = null;
   stopRunning();
   queue.pause();
   setSession(null);
@@ -503,6 +600,7 @@ function endSession(reason = "") {
   desk.picked = false;
   desk.needSignIn = false;
   desk.locked = false;
+  desk.loading = false;
   desk.loadError = "";
   desk.dayStale = false;
   desk.trayOpen = false;
@@ -549,9 +647,24 @@ function passwordRequired() {
 }
 
 export const STAFF_IDLE_MS = 30 * 60 * 1000;
+/** The last use is written to the sign-in at most this often (and when the app is hidden or closed). */
+export const USE_SAVE_MS = 60 * 1000;
 /** Has a staff sign-in gone unused long enough to lock? */
 export const staffIdle = ({ staff = false, lastUse = 0, now = Date.now(), idleMs = STAFF_IDLE_MS } = {}) => !!staff && now - lastUse >= idleMs;
-let lastUse = Date.now();
+/** When a kept sign-in was last used: its own record (an older version's sign-in: when it was made). */
+export const lastUseOf = (session) => Number(session?.lastUse) || Number(session?.at) || 0;
+let lastUse = lastUseOf(getSession());
+let savedUse = lastUse;
+/**
+ * Keep the last use with the sign-in (localStorage), so a reload or a Home Screen relaunch can't reopen an idle staff
+ * sign-in unlocked. Throttled; `force` when the app is hidden or closed. Never while locked (the lock stays locked).
+ */
+function saveUse(force = false) {
+  if (!desk.session?.token || desk.locked || lastUse <= savedUse) return;
+  if (!force && lastUse - savedUse < USE_SAVE_MS) return;
+  savedUse = lastUse;
+  setSession({ ...desk.session, lastUse });
+}
 /** A staff sign-in on a shared device, unused for 30 minutes: the screen locks until the password is entered again (or
     someone signs out and in as themselves). Arrivals still come in and chime meanwhile. */
 function checkIdle() {
@@ -565,8 +678,10 @@ export async function unlock(password) {
   return signIn(email, password);
 }
 if (typeof window !== "undefined") {
-  const used = () => { if (!desk.locked) lastUse = Date.now(); };
+  const used = () => { if (!desk.locked) { lastUse = Date.now(); saveUse(); } };
   for (const t of ["pointerdown", "keydown"]) window.addEventListener(t, used, { capture: true, passive: true });
+  window.addEventListener("pagehide", () => saveUse(true));
+  if (typeof document !== "undefined") document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveUse(true); });
   setInterval(checkIdle, 30 * 1000);
 }
 
@@ -590,6 +705,11 @@ onSession((s) => { desk.session = s; emit(); });
 
 export function boot() {
   tabs.start();
+  // A staff sign-in left unused for 30 minutes is locked before anything shows (main.jsx renders after boot): a reload
+  // or a Home Screen relaunch doesn't open it (its last use is kept with it).
+  lastUse = lastUseOf(desk.session);
+  savedUse = lastUse;
+  checkIdle();
   // Reloaded for an update the person tapped: the station comes back on its Start screen (one tap: sound back on).
   try {
     const r = sessionStorage.getItem(RESUME_KEY);

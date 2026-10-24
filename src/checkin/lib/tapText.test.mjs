@@ -8,7 +8,10 @@ const state = { byKey: new Map([["g1", { key: "g1", name: "Priya Sharma" }]]), b
 
 test("who, what, where, by whom", () => {
   const t = describeTap({ kind: "mark", point: "cxo", key: "g1", station: "breakfast", queuedBy: { id: "u1", name: "Val" }, clientAt: "2026-10-26T12:00:00Z" }, { state });
-  assert.deepEqual(t, { who: "Priya Sharma", what: "Admitted to the CxO Breakfast", where: "CxO Breakfast", by: "Val", at: "2026-10-26T12:00:00Z" });
+  assert.deepEqual(t, { who: "Priya Sharma", what: "Admitted to the CxO Breakfast", where: "CxO Breakfast", by: "Val", tappedBy: "", at: "2026-10-26T12:00:00Z" });
+  // Retried by someone else since (Admit anyway after a shift change): recorded as theirs, first tapped by Val.
+  const r = describeTap({ kind: "mark", point: "cxo", key: "g1", queuedBy: { id: "u2", name: "Bob" }, tappedBy: { id: "u1", name: "Val" } }, { state });
+  assert.deepEqual([r.by, r.tappedBy], ["Bob", "Val"]);
   assert.equal(describeTap({ kind: "mark", point: "booth", key: "b-A12", station: "exhibitor" }, { state }).who, "Booth A12");
   const items = [{ clientId: "t1", kind: "mark", point: "arrived", key: "g1" }];
   assert.deepEqual([describeTap({ kind: "undo", target: "t1" }, { state, items }).who, describeTap({ kind: "undo", target: "t1" }, { state, items }).what], ["Priya Sharma", "Undo"]);

@@ -17,6 +17,11 @@ const LEVELS = [
   { value: "management", label: "Management", help: "Everything, including sales, revenue, promo codes and staff settings." },
 ];
 
+/* Since the volunteer panel (Oct 23 2026) volunteers do open this panel: People, look-up only. The door check-in
+   hint above keeps its first part; its old last sentence ("They can't open this admin panel.") gives way to this. */
+const VOLUNTEER_PANEL_HINT = "They can also sign in here with a password to look people up (People only, read only: no contact details, money or codes).";
+const volunteerHint = () => `${VOLUNTEER_HINT.replace(/\s*They can't open this admin panel\.\s*$/, "")} ${VOLUNTEER_PANEL_HINT}`;
+
 function AddStaff({ onAdded }) {
   const toast = useToast();
   const blank = { email: "", name: "", password: "", role: "admin", staffRole: "staff" };
@@ -40,7 +45,7 @@ function AddStaff({ onAdded }) {
       if (f.password) body.password = f.password;
       const r = await api.post("/console/staff", body);
       if (volunteer) {
-        toast.success(r.created ? `${r.email} can now use the app's staff sign-in as a volunteer` : `${r.email} is now a volunteer`);
+        toast.success(r.created ? `${r.email} can now look people up here and use the app's staff sign-in as a volunteer` : `${r.email} is now a volunteer`);
       } else {
         const lvl = f.staffRole === "management" ? "management" : "staff";
         toast.success(r.created ? `${r.email} can now sign in (${lvl} access)` : `${r.email} now has ${lvl} access`);
@@ -71,7 +76,7 @@ function AddStaff({ onAdded }) {
             </button>
           ))}
         </div>
-        {volunteer && <p className="mt-1.5 text-xs text-ttfc-dim">{VOLUNTEER_HINT}</p>}
+        {volunteer && <p className="mt-1.5 text-xs text-ttfc-dim">{volunteerHint()}</p>}
       </fieldset>
       <Field label="Email" required error={errors.email}>
         {(id) => <Input id={id} type="email" autoComplete="off" value={f.email} onChange={set("email")} placeholder="name@company.com" />}
@@ -153,7 +158,7 @@ export default function StaffAccounts() {
 
   return (
     <>
-      <PageHeader eyebrow="More › Settings" title="Staff accounts" description="People who can sign in to this panel. Management sees everything; staff can't see sales, revenue, promo codes or staff settings. Volunteers only use the app's staff sign-in for door check-in." />
+      <PageHeader eyebrow="More › Settings" title="Staff accounts" description="People who can sign in to this panel. Management sees everything; staff can't see sales, revenue, promo codes or staff settings. Volunteers can sign in here to look people up (People only, read only: no contact details, money or codes) and use the app's staff sign-in for door check-in." />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0">
           {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !data?.length ? (
@@ -177,7 +182,7 @@ export default function StaffAccounts() {
                       {s.role === "volunteer" ? (
                         <div className="flex flex-col items-start gap-1.5">
                           <Badge tone="purple">Volunteer</Badge>
-                          <span className="text-xs text-ttfc-dim">App check-in only</span>
+                          <span className="text-xs text-ttfc-dim">People look-up + app check-in</span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-start gap-1.5">
@@ -218,7 +223,7 @@ export default function StaffAccounts() {
         onClose={() => setRemoving(null)}
         title={`Remove ${removing?.name || "this person"}'s ${removing?.role === "volunteer" ? "volunteer" : "staff"} access?`}
         body={removing?.role === "volunteer"
-          ? "Their account stays, but they can no longer use the app's staff sign-in or check people in. You can add them back any time."
+          ? "Their account stays, but they can no longer look people up in this panel, use the app's staff sign-in or check people in. You can add them back any time."
           : "Their account stays, but they can no longer sign in to the staff panel. You can add them back any time."}
         confirmLabel="Remove access"
         onConfirm={async () => {

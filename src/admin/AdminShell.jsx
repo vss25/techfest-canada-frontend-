@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { LogOut, Menu, X, ExternalLink } from "lucide-react";
 import { titleFor } from "./nav";
+import { volunteerMayOpen } from "./access";
 import SidebarNav from "./SidebarNav";
 import { focusRing, IconButton } from "./ui";
 import { initials } from "./format";
@@ -12,34 +13,19 @@ import { useAdminTheme } from "./theme";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
-function SiteStatusChip({ kill }) {
-  if (!kill) return null;
-  const off = kill.enabled;
-  return (
-    <Link
-      to="/admin/kill-switch"
-      className={cx(
-        "hidden items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold sm:inline-flex",
-        off ? "border-red-400/40 bg-red-500/15 text-red-200" : "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-        focusRing,
-      )}
-      title={off ? "The website and app are offline — click to manage" : "The website and app are live"}
-    >
-      <span className={cx("h-2 w-2 rounded-full", off ? "animate-pulse bg-red-400" : "bg-emerald-400")} aria-hidden="true" />
-      {off ? "Site OFFLINE" : "Site live"}
-    </Link>
-  );
-}
+/* No website-status chip in the top bar: the kill switch is gone (the organiser, Oct 23 2026: "Its risky"). The website and the apps
+   can't be taken offline from the panel; only the developers can, through Vercel / Render. */
 
 function SidebarContent({ onNavigate }) {
   const { theme } = useAdminTheme();
+  const { isVolunteer } = useAdmin();
   return (
     <nav aria-label="Admin sections" className="adm-sidebar-nav">
-      <Link to="/admin" onClick={onNavigate} className={cx("mb-6 flex items-center gap-3 rounded-xl px-2 py-1", focusRing)}>
+      <Link to={isVolunteer ? "/admin/people" : "/admin"} onClick={onNavigate} className={cx("mb-6 flex items-center gap-3 rounded-xl px-2 py-1", focusRing)}>
         <img src={theme === "light" ? "/Tech_Festival_Canada_Logo_Light_Transparent.webp" : "/Tech_Festival_Canada_Logo_Dark_Transparent.png"} alt="" className="h-12 w-auto" />
         <span className="leading-tight">
           <span className="font-display block text-[13px] font-bold text-ttfc-contrast">TTFC</span>
-          <span className="block text-[11px] font-medium text-ttfc-muted">Staff panel</span>
+          <span className="block text-[11px] font-medium text-ttfc-muted">{isVolunteer ? "Volunteer view" : "Staff panel"}</span>
         </span>
       </Link>
       <SidebarNav onNavigate={onNavigate} />
@@ -79,14 +65,15 @@ function useHighlightFromUrl(location, nonce) {
   }, [location.pathname, location.search, nonce]);
 }
 
-export default function AdminShell({ me, kill, onSignOut, children }) {
-  const { isManagement } = useAdmin();
+export default function AdminShell({ me, onSignOut, children }) {
+  const { isManagement, isVolunteer } = useAdmin();
   const [drawer, setDrawer] = useState(false);
   // Bumped when the global search opens a link: the page starts fresh from its URL (search, drawer, highlight),
   // even when it's the page already open.
   const [searchNonce, setSearchNonce] = useState(0);
   const location = useLocation();
-  const title = titleFor(location.pathname);
+  // Volunteers: every address but People is "Not available", so the bar says so too.
+  const title = isVolunteer && !volunteerMayOpen(location.pathname) && location.pathname.replace(/\/+$/, "") !== "/admin" ? "Not available" : titleFor(location.pathname);
   useHighlightFromUrl(location, searchNonce);
 
   useEffect(() => {
@@ -125,10 +112,21 @@ export default function AdminShell({ me, kill, onSignOut, children }) {
             <IconButton icon={Menu} label="Open menu" onClick={() => setDrawer(true)} className="lg:hidden" aria-expanded={drawer} />
             <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ttfc-text">{title}</p>
             <GlobalSearch onNavigated={() => setSearchNonce((n) => n + 1)} />
-            <SiteStatusChip kill={kill} />
             <ThemeSwitch />
             <div className="flex items-center gap-3 border-l border-ttfc-line pl-3">
-              {/* Your name opens My account (your level, change your password). */}
+              {isVolunteer ? (
+                // Volunteers have no My account page (account settings are for staff): just who's signed in.
+                <div className="flex min-w-0 items-center gap-3" title={me?.email || undefined}>
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ttfc-pink via-ttfc-purple to-ttfc-orange text-xs font-bold text-white" aria-hidden="true">
+                    {initials(me?.name, me?.email)}
+                  </span>
+                  <div className="hidden min-w-0 leading-tight md:block">
+                    <p className="truncate text-sm font-semibold text-ttfc-text">{me?.name || "Volunteer"}</p>
+                    <p className="truncate text-xs text-ttfc-dim">Volunteer · look-up only</p>
+                  </div>
+                </div>
+              ) : (
+              /* Your name opens My account (your level, change your password). */
               <NavLink to="/admin/account" aria-label={`My account: ${me?.name || "Staff"}`} title={`My account${me?.email ? ` (${me.email})` : ""}`} className={cx("flex min-w-0 items-center gap-3 rounded-xl hover:opacity-90", focusRing)}>
               <span
                 className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ttfc-pink via-ttfc-purple to-ttfc-orange text-xs font-bold text-white"
@@ -141,6 +139,7 @@ export default function AdminShell({ me, kill, onSignOut, children }) {
                 <p className="truncate text-xs text-ttfc-dim">{isManagement ? "Management" : "Staff"} · My account</p>
               </div>
               </NavLink>
+              )}
               <button
                 type="button"
                 onClick={onSignOut}

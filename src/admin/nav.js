@@ -1,6 +1,6 @@
 import {
   Activity, Award, BarChart3, BellRing, Building2, CalendarCheck, CalendarDays, Contact, Download, FileDown, Gem, GalleryHorizontal, GraduationCap,
-  Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, Power, ScanLine,
+  Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
 import { ClipboardList, Gavel, Gift, LifeBuoy, ListChecks, ListPlus, Network, Trophy } from "lucide-react";
@@ -10,12 +10,17 @@ import { ClipboardList, Gavel, Gift, LifeBuoy, ListChecks, ListPlus, Network, Tr
    named for event-week jobs plus a folded "More". `to` is relative
    to /admin, and every address is the same as before.
      management: true  management only (Sales, Staff accounts)
+     volunteer: true   also for volunteer accounts (People only, read
+                       only; access.js navFor)
      hidden: true      not in the sidebar, the address still works
                        (Home sponsors; My account is under your name
                        in the top bar)
      sub               a small heading inside More
    The section titles are also the pages' small section headings
    (PageHeader eyebrow; "More › Records" and so on in More).
+   No kill switch (the organiser, Oct 23 2026: "Its risky"): the
+   website can't be taken offline from the panel; only the
+   developers can, through Vercel / Render.
 ========================================================= */
 export const NAV = [
   {
@@ -25,7 +30,8 @@ export const NAV = [
   {
     title: "People & passes",
     items: [
-      { to: "people", label: "People", icon: Contact },
+      // The one page volunteers have (look-up only: VolunteerPeople.jsx, access.js).
+      { to: "people", label: "People", icon: Contact, volunteer: true },
       { to: "issued-passes", label: "Give a pass", icon: TicketPlus },
       { to: "speaker-passes", label: "Speaker passes", icon: IdCard },
       { to: "exhibitor-passes", label: "Exhibitor passes", icon: Store },
@@ -105,7 +111,6 @@ export const NAV = [
       { to: "app/rights", label: "App rights", icon: ShieldCheck, sub: "Settings" },
       { to: "app/audit", label: "Audit log", icon: ScrollText, sub: "Settings" },
       { to: "email-tracking", label: "Where website forms go", icon: MailCheck, sub: "Settings" },
-      { to: "kill-switch", label: "Kill switch", icon: Power, danger: true, sub: "Settings" },
     ],
   },
   {

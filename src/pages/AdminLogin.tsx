@@ -69,11 +69,11 @@ export default function AdminLogin() {
 
         <form onSubmit={handleLogin} className="rounded-[22px] border border-ttfc-line bg-ttfc-panel/90 p-7 shadow-2xl shadow-black/50 backdrop-blur-xl sm:p-8" noValidate>
           <h1 className="text-2xl font-bold tracking-tight text-ttfc-contrast">Sign in to the staff panel</h1>
-          <p className="mt-1.5 text-sm text-ttfc-muted">Use your TTFC staff account.</p>
+          <p className="mt-1.5 text-sm text-ttfc-muted">Use your TTFC staff or volunteer account.</p>
 
           {passwordRequired && !error && (
             <p role="status" className="mt-5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-2.5 text-sm text-amber-100">
-              You signed in with a code sent to your email. That works in the TTFC apps, but the admin panel needs your staff password.
+              That sign-in works in the TTFC apps, but the staff panel needs your email and password. Sign in below.
             </p>
           )}
           {expired && !passwordRequired && !error && (

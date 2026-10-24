@@ -48,7 +48,6 @@ const JuryPortal = lazy(() => import("./jury/JuryPortal"));
 // Not in any menu, footer or sitemap; noindex. Its own chunk, so its text isn't in the main bundle.
 const FactSheet = lazy(() => import("./pages/FactSheet"));
 import { FACT_SHEET_PATH, isFactSheetPath } from "./lib/factSheetRoute";
-import MaintenanceGate from "./components/MaintenanceGate";
 import CookieConsent from "./components/CookieConsent";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
 import { isStandalone } from "./lib/pwaPlatform";
@@ -105,7 +104,6 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <MaintenanceGate>
       <OffJury><AnnouncementBar /></OffJury>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -172,7 +170,6 @@ function App() {
         <Route path={FACT_SHEET_PATH} caseSensitive element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><FactSheet /></Suspense>} />
       </Routes>
       <OffJury><TicketBar /></OffJury>
-      </MaintenanceGate>
       <OffJury><CookieConsent /></OffJury>
       {SHOW_INSTALL_PROMPT && <OffJury><Suspense fallback={null}><InstallAppPrompt /></Suspense></OffJury>}
     </BrowserRouter>

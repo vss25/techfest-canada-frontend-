@@ -1,0 +1,1000 @@
+{
+  "_about": "Captured from the backend's own code (services/volunteerPanel.js volunteerList / volunteerRow / volunteerProfile and services/adminSearch.js runSearch with the volunteer viewer), run on fake people, in routes/people.js's envelopes, by volunteerApiFixture.capture.mjs. Regenerate when the backend changes its volunteer answers.",
+  "list": {
+    "volunteer": true,
+    "total": 7,
+    "page": 0,
+    "size": 50,
+    "rows": [
+      {
+        "id": "a-64b000000000000000000012",
+        "name": "Kai Speaker",
+        "jobTitle": "Chief Scientist",
+        "company": "Quantum Example",
+        "photoUrl": "",
+        "logoUrl": "",
+        "types": [
+          "speaker"
+        ],
+        "vip": false,
+        "media": false,
+        "exhibitor": false,
+        "speaker": true,
+        "band": {
+          "key": "speaker",
+          "label": "Speaker",
+          "bg": "#D01F2F",
+          "text": "#FFFFFF",
+          "passName": "Speaker Pass"
+        },
+        "pass": {
+          "label": "Speaker Pass",
+          "tier": "speaker",
+          "tierLabel": "Speaker Pass",
+          "printedLabel": "",
+          "pending": true,
+          "extras": {
+            "cxo": true,
+            "lunch": true,
+            "gala": true,
+            "awards": true
+          },
+          "checkedIn": false,
+          "checkedInAt": null,
+          "booth": "B7",
+          "exhibitorPass": false
+        },
+        "passCount": 1,
+        "rsvp": {
+          "status": "none",
+          "label": "Unconfirmed",
+          "days": [],
+          "dayLabels": []
+        },
+        "checkedIn": false,
+        "checkedInAt": null,
+        "booth": "B7"
+      },
+      {
+        "id": "u-64b000000000000000000005",
+        "name": "Mara Delegate",
+        "jobTitle": "Head of Digital",
+        "company": "Example Bank",
+        "photoUrl": "",
+        "logoUrl": "",
+        "types": [
+          "attendee"
+        ],
+        "vip": true,
+        "media": false,
+        "exhibitor": false,
+        "speaker": false,
+        "band": {
+          "key": "vip",
+          "label": "VIP",
+          "bg": "#F5C400",
+          "text": "#3D2E00",
+          "passName": "Power Pass"
+        },
+        "pass": {
+          "label": "Power Pass",
+          "tier": "power",
+          "tierLabel": "Power Pass",
+          "printedLabel": "",
+          "pending": false,
+          "extras": {
+            "cxo": true,
+            "lunch": true,
+            "gala": true,
+            "awards": true
+          },
+          "checkedIn": true,
+          "checkedInAt": "2026-10-26T12:00:00.000Z",
+          "booth": "",
+          "exhibitorPass": false
+        },
+        "passCount": 1,
+        "rsvp": {
+          "status": "attendee",
+          "label": "Confirmed by Individual",
+          "days": [
+            "day1",
+            "day2"
+          ],
+          "dayLabels": [
+            "Day 1",
+            "Day 2"
+          ]
+        },
+        "checkedIn": true,
+        "checkedInAt": "2026-10-26T12:00:00.000Z",
+        "booth": ""
+      },
+      {
+        "id": "u-64b000000000000000000004",
+        "name": "noname.staffer",
+        "jobTitle": "",
+        "company": "",
+        "photoUrl": "",
+        "logoUrl": "",
+        "types": [
+          "staff"
+        ],
+        "vip": false,
+        "media": false,
+        "exhibitor": false,
+        "speaker": false,
+        "band": null,
+        "pass": null,
+        "passCount": 0,
+        "rsvp": {
+          "status": "none",
+          "label": "Unconfirmed",
+          "days": [],
+          "dayLabels": []
+        },
+        "checkedIn": false,
+        "checkedInAt": null,
+        "booth": ""
+      },
+      {
+        "id": "a-64b000000000000000000011",
+        "name": "Omar Guest",
+        "jobTitle": "",
+        "company": "Robotics Example",
+        "photoUrl": "",
+        "logoUrl": "",
+        "types": [
+          "attendee"
+        ],
+        "vip": false,
+        "media": false,
+        "exhibitor": false,
+        "speaker": false,
+        "band": {
+          "key": "pass",
+          "label": "Connect Pass",
+          "bg": "#18A957",
+          "text": "#052E16",
+          "passName": "Connect Pass"
+        },
+        "pass": {
+          "label": "Connect Pass",
+          "tier": "connect",
+          "tierLabel": "Connect Pass",
+          "printedLabel": "",
+          "pending": false,
+          "extras": {
+            "cxo": false,
+            "lunch": false,
+            "gala": false,
+            "awards": false
+          },
+          "checkedIn": false,
+          "checkedInAt": null,
+          "booth": "",
+          "exhibitorPass": false
+        },
+        "passCount": 1,
+        "rsvp": {
+          "status": "none",
+          "label": "Unconfirmed",
+          "days": [],
+          "dayLabels": []
+        },
+        "checkedIn": false,
+        "checkedInAt": null,
+        "booth": ""
+      },
+      {
+        "id": "u-64b000000000000000000002",
+        "name": "Sam Staff",
+        "jobTitle": "",
+        "company": "",
+        "photoUrl": "",
+        "logoUrl": "",
+        "types": [
+          "staff"
+        ],
+        "vip": false,
+        "media": false,
+        "exhibitor": false,
+        "speaker": false,
+        "band": null,
+        "pass": null,
+        "passCount": 0,
+        "rsvp": {
+          "status": "none",
+          "label": "Unconfirmed",
+          "days": [],
+          "dayLabels": []
+        },
+        "checkedIn": false,
+        "checkedInAt": null,
+        "booth": ""
+      },
+      {
+        "id": "u-64b000000000000000000003",
+        "name": "Val Volunteer",
+        "jobTitle": "",
+        "company": "",
+        "photoUrl": "",
+        "logoUrl": "",
+        "types": [
+          "volunteer"
+        ],
+        "vip": false,
+        "media": false,
+        "exhibitor": false,
+        "speaker": false,
+        "band": null,
+        "pass": null,
+        "passCount": 0,
+        "rsvp": {
+          "status": "none",
+          "label": "Unconfirmed",
+          "days": [],
+          "dayLabels": []
+        },
+        "checkedIn": false,
+        "checkedInAt": null,
+        "booth": ""
+      },
+      {
+        "id": "a-64b000000000000000000013",
+        "name": "yara.leak@example.com",
+        "jobTitle": "Founder (zed.private@example.net)",
+        "company": "Call me 416 555 0199",
+        "photoUrl": "",
+        "logoUrl": "",
+        "types": [
+          "attendee"
+        ],
+        "vip": false,
+        "media": false,
+        "exhibitor": false,
+        "speaker": false,
+        "band": {
+          "key": "pass",
+          "label": "Connect Pass",
+          "bg": "#18A957",
+          "text": "#052E16",
+          "passName": "Connect Pass"
+        },
+        "pass": {
+          "label": "Connect Pass",
+          "tier": "connect",
+          "tierLabel": "Connect Pass",
+          "printedLabel": "",
+          "pending": false,
+          "extras": {
+            "cxo": false,
+            "lunch": false,
+            "gala": false,
+            "awards": false
+          },
+          "checkedIn": false,
+          "checkedInAt": null,
+          "booth": "",
+          "exhibitorPass": false
+        },
+        "passCount": 1,
+        "rsvp": {
+          "status": "none",
+          "label": "Unconfirmed",
+          "days": [],
+          "dayLabels": []
+        },
+        "checkedIn": false,
+        "checkedInAt": null,
+        "booth": ""
+      }
+    ],
+    "counts": {
+      "total": 7,
+      "byType": {
+        "attendee": 3,
+        "speaker": 1,
+        "exhibitor": 0,
+        "staff": 2,
+        "vendor": 0,
+        "volunteer": 1,
+        "media": 0,
+        "none": 0
+      },
+      "byRsvp": {
+        "attendee": 1,
+        "staff": 0,
+        "none": 6
+      },
+      "exhibitors": 0,
+      "vips": 1,
+      "media": 0,
+      "checkedIn": 1
+    },
+    "builtAt": "2026-10-26T12:00:00.000Z",
+    "banner": "Volunteer view: look-up only",
+    "extras": [
+      {
+        "key": "cxo",
+        "label": "CxO Breakfasts"
+      },
+      {
+        "key": "lunch",
+        "label": "Networking Luncheons"
+      },
+      {
+        "key": "gala",
+        "label": "Gala Dinner & Networking Reception"
+      },
+      {
+        "key": "awards",
+        "label": "Catalyst Awards Night"
+      }
+    ],
+    "filters": [
+      "type",
+      "pass",
+      "rsvp",
+      "exhibitor",
+      "vip",
+      "media"
+    ],
+    "sorts": [
+      "name",
+      "company",
+      "type",
+      "pass",
+      "rsvp",
+      "exhibitor",
+      "vip"
+    ]
+  },
+  "profiles": {
+    "mara": {
+      "volunteer": true,
+      "canonicalId": "u-64b000000000000000000005",
+      "person": {
+        "id": "u-64b000000000000000000005",
+        "name": "Mara Delegate",
+        "jobTitle": "Head of Digital",
+        "company": "Example Bank",
+        "photoUrl": "",
+        "logoUrl": "",
+        "types": [
+          "attendee"
+        ],
+        "vip": true,
+        "media": false,
+        "exhibitor": false,
+        "speaker": false,
+        "band": {
+          "key": "vip",
+          "label": "VIP",
+          "bg": "#F5C400",
+          "text": "#3D2E00",
+          "passName": "Power Pass"
+        },
+        "pass": {
+          "label": "Power Pass",
+          "tier": "power",
+          "tierLabel": "Power Pass",
+          "printedLabel": "",
+          "pending": false,
+          "extras": {
+            "cxo": true,
+            "lunch": true,
+            "gala": true,
+            "awards": true
+          },
+          "checkedIn": true,
+          "checkedInAt": "2026-10-26T12:00:00.000Z",
+          "booth": "",
+          "exhibitorPass": false
+        },
+        "passCount": 1,
+        "rsvp": {
+          "status": "attendee",
+          "label": "Confirmed by Individual",
+          "days": [
+            "day1",
+            "day2"
+          ],
+          "dayLabels": [
+            "Day 1",
+            "Day 2"
+          ],
+          "events": [
+            {
+              "key": "cxo_d1",
+              "label": "CxO Breakfast",
+              "day": "Day 1",
+              "time": "7:55 AM"
+            },
+            {
+              "key": "lunch_d1",
+              "label": "Networking Luncheon",
+              "day": "Day 1",
+              "time": "12:35 PM"
+            },
+            {
+              "key": "awards",
+              "label": "Catalyst Awards Night",
+              "day": "Day 1",
+              "time": "5:30 PM"
+            },
+            {
+              "key": "gala",
+              "label": "Gala Dinner & Networking Reception",
+              "day": "Day 2",
+              "time": "5:30 PM"
+            }
+          ],
+          "dietary": [
+            {
+              "key": "vegan",
+              "label": "Vegan"
+            },
+            {
+              "key": "nut_allergy",
+              "label": "Nut allergy"
+            },
+            {
+              "key": "other",
+              "label": "Other"
+            }
+          ],
+          "dietaryOther": "No mushrooms",
+          "accessibility": true
+        },
+        "checkedIn": true,
+        "checkedInAt": "2026-10-26T12:00:00.000Z",
+        "booth": "",
+        "passes": [
+          {
+            "label": "Power Pass",
+            "tier": "power",
+            "tierLabel": "Power Pass",
+            "printedLabel": "",
+            "pending": false,
+            "extras": {
+              "cxo": true,
+              "lunch": true,
+              "gala": true,
+              "awards": true
+            },
+            "checkedIn": true,
+            "checkedInAt": "2026-10-26T12:00:00.000Z",
+            "booth": "",
+            "exhibitorPass": false
+          }
+        ],
+        "sessions": []
+      },
+      "banner": "Volunteer view: look-up only",
+      "extras": [
+        {
+          "key": "cxo",
+          "label": "CxO Breakfasts"
+        },
+        {
+          "key": "lunch",
+          "label": "Networking Luncheons"
+        },
+        {
+          "key": "gala",
+          "label": "Gala Dinner & Networking Reception"
+        },
+        {
+          "key": "awards",
+          "label": "Catalyst Awards Night"
+        }
+      ],
+      "filters": [
+        "type",
+        "pass",
+        "rsvp",
+        "exhibitor",
+        "vip",
+        "media"
+      ],
+      "sorts": [
+        "name",
+        "company",
+        "type",
+        "pass",
+        "rsvp",
+        "exhibitor",
+        "vip"
+      ]
+    },
+    "kai": {
+      "volunteer": true,
+      "canonicalId": "a-64b000000000000000000012",
+      "person": {
+        "id": "a-64b000000000000000000012",
+        "name": "Kai Speaker",
+        "jobTitle": "Chief Scientist",
+        "company": "Quantum Example",
+        "photoUrl": "",
+        "logoUrl": "",
+        "types": [
+          "speaker"
+        ],
+        "vip": false,
+        "media": false,
+        "exhibitor": false,
+        "speaker": true,
+        "band": {
+          "key": "speaker",
+          "label": "Speaker",
+          "bg": "#D01F2F",
+          "text": "#FFFFFF",
+          "passName": "Speaker Pass"
+        },
+        "pass": {
+          "label": "Speaker Pass",
+          "tier": "speaker",
+          "tierLabel": "Speaker Pass",
+          "printedLabel": "",
+          "pending": true,
+          "extras": {
+            "cxo": true,
+            "lunch": true,
+            "gala": true,
+            "awards": true
+          },
+          "checkedIn": false,
+          "checkedInAt": null,
+          "booth": "B7",
+          "exhibitorPass": false
+        },
+        "passCount": 1,
+        "rsvp": {
+          "status": "none",
+          "label": "Unconfirmed",
+          "days": [],
+          "dayLabels": [],
+          "events": [],
+          "dietary": [],
+          "dietaryOther": "",
+          "accessibility": false
+        },
+        "checkedIn": false,
+        "checkedInAt": null,
+        "booth": "B7",
+        "passes": [
+          {
+            "label": "Speaker Pass",
+            "tier": "speaker",
+            "tierLabel": "Speaker Pass",
+            "printedLabel": "",
+            "pending": true,
+            "extras": {
+              "cxo": true,
+              "lunch": true,
+              "gala": true,
+              "awards": true
+            },
+            "checkedIn": false,
+            "checkedInAt": null,
+            "booth": "B7",
+            "exhibitorPass": false
+          }
+        ],
+        "sessions": [
+          {
+            "day": 1,
+            "start": "10:00",
+            "end": "10:30",
+            "title": "Quantum Computing in Finance",
+            "format": "Panel",
+            "role": "Panellist"
+          },
+          {
+            "day": 2,
+            "start": "14:00",
+            "end": "14:45",
+            "title": "Robots on the Factory Floor",
+            "format": "Keynote",
+            "role": "Speaker"
+          }
+        ]
+      },
+      "banner": "Volunteer view: look-up only",
+      "extras": [
+        {
+          "key": "cxo",
+          "label": "CxO Breakfasts"
+        },
+        {
+          "key": "lunch",
+          "label": "Networking Luncheons"
+        },
+        {
+          "key": "gala",
+          "label": "Gala Dinner & Networking Reception"
+        },
+        {
+          "key": "awards",
+          "label": "Catalyst Awards Night"
+        }
+      ],
+      "filters": [
+        "type",
+        "pass",
+        "rsvp",
+        "exhibitor",
+        "vip",
+        "media"
+      ],
+      "sorts": [
+        "name",
+        "company",
+        "type",
+        "pass",
+        "rsvp",
+        "exhibitor",
+        "vip"
+      ]
+    },
+    "omar": {
+      "volunteer": true,
+      "canonicalId": "a-64b000000000000000000011",
+      "person": {
+        "id": "a-64b000000000000000000011",
+        "name": "Omar Guest",
+        "jobTitle": "",
+        "company": "Robotics Example",
+        "photoUrl": "",
+        "logoUrl": "",
+        "types": [
+          "attendee"
+        ],
+        "vip": false,
+        "media": false,
+        "exhibitor": false,
+        "speaker": false,
+        "band": {
+          "key": "pass",
+          "label": "Connect Pass",
+          "bg": "#18A957",
+          "text": "#052E16",
+          "passName": "Connect Pass"
+        },
+        "pass": {
+          "label": "Connect Pass",
+          "tier": "connect",
+          "tierLabel": "Connect Pass",
+          "printedLabel": "",
+          "pending": false,
+          "extras": {
+            "cxo": false,
+            "lunch": false,
+            "gala": false,
+            "awards": false
+          },
+          "checkedIn": false,
+          "checkedInAt": null,
+          "booth": "",
+          "exhibitorPass": false
+        },
+        "passCount": 1,
+        "rsvp": {
+          "status": "none",
+          "label": "Unconfirmed",
+          "days": [],
+          "dayLabels": [],
+          "events": [],
+          "dietary": [],
+          "dietaryOther": "",
+          "accessibility": false
+        },
+        "checkedIn": false,
+        "checkedInAt": null,
+        "booth": "",
+        "passes": [
+          {
+            "label": "Connect Pass",
+            "tier": "connect",
+            "tierLabel": "Connect Pass",
+            "printedLabel": "",
+            "pending": false,
+            "extras": {
+              "cxo": false,
+              "lunch": false,
+              "gala": false,
+              "awards": false
+            },
+            "checkedIn": false,
+            "checkedInAt": null,
+            "booth": "",
+            "exhibitorPass": false
+          }
+        ],
+        "sessions": []
+      },
+      "banner": "Volunteer view: look-up only",
+      "extras": [
+        {
+          "key": "cxo",
+          "label": "CxO Breakfasts"
+        },
+        {
+          "key": "lunch",
+          "label": "Networking Luncheons"
+        },
+        {
+          "key": "gala",
+          "label": "Gala Dinner & Networking Reception"
+        },
+        {
+          "key": "awards",
+          "label": "Catalyst Awards Night"
+        }
+      ],
+      "filters": [
+        "type",
+        "pass",
+        "rsvp",
+        "exhibitor",
+        "vip",
+        "media"
+      ],
+      "sorts": [
+        "name",
+        "company",
+        "type",
+        "pass",
+        "rsvp",
+        "exhibitor",
+        "vip"
+      ]
+    },
+    "yara": {
+      "volunteer": true,
+      "canonicalId": "a-64b000000000000000000013",
+      "person": {
+        "id": "a-64b000000000000000000013",
+        "name": "yara.leak@example.com",
+        "jobTitle": "Founder (zed.private@example.net)",
+        "company": "Call me 416 555 0199",
+        "photoUrl": "",
+        "logoUrl": "",
+        "types": [
+          "attendee"
+        ],
+        "vip": false,
+        "media": false,
+        "exhibitor": false,
+        "speaker": false,
+        "band": {
+          "key": "pass",
+          "label": "Connect Pass",
+          "bg": "#18A957",
+          "text": "#052E16",
+          "passName": "Connect Pass"
+        },
+        "pass": {
+          "label": "Connect Pass",
+          "tier": "connect",
+          "tierLabel": "Connect Pass",
+          "printedLabel": "",
+          "pending": false,
+          "extras": {
+            "cxo": false,
+            "lunch": false,
+            "gala": false,
+            "awards": false
+          },
+          "checkedIn": false,
+          "checkedInAt": null,
+          "booth": "",
+          "exhibitorPass": false
+        },
+        "passCount": 1,
+        "rsvp": {
+          "status": "none",
+          "label": "Unconfirmed",
+          "days": [],
+          "dayLabels": [],
+          "events": [],
+          "dietary": [],
+          "dietaryOther": "",
+          "accessibility": false
+        },
+        "checkedIn": false,
+        "checkedInAt": null,
+        "booth": "",
+        "passes": [
+          {
+            "label": "Connect Pass",
+            "tier": "connect",
+            "tierLabel": "Connect Pass",
+            "printedLabel": "",
+            "pending": false,
+            "extras": {
+              "cxo": false,
+              "lunch": false,
+              "gala": false,
+              "awards": false
+            },
+            "checkedIn": false,
+            "checkedInAt": null,
+            "booth": "",
+            "exhibitorPass": false
+          }
+        ],
+        "sessions": []
+      },
+      "banner": "Volunteer view: look-up only",
+      "extras": [
+        {
+          "key": "cxo",
+          "label": "CxO Breakfasts"
+        },
+        {
+          "key": "lunch",
+          "label": "Networking Luncheons"
+        },
+        {
+          "key": "gala",
+          "label": "Gala Dinner & Networking Reception"
+        },
+        {
+          "key": "awards",
+          "label": "Catalyst Awards Night"
+        }
+      ],
+      "filters": [
+        "type",
+        "pass",
+        "rsvp",
+        "exhibitor",
+        "vip",
+        "media"
+      ],
+      "sorts": [
+        "name",
+        "company",
+        "type",
+        "pass",
+        "rsvp",
+        "exhibitor",
+        "vip"
+      ]
+    }
+  },
+  "search": {
+    "words": {
+      "query": {
+        "text": "kai",
+        "exact": ""
+      },
+      "minChars": 2,
+      "tooShort": false,
+      "groups": [
+        {
+          "key": "people",
+          "label": "People",
+          "total": 1,
+          "more": false,
+          "items": [
+            {
+              "type": "person",
+              "id": "a-64b000000000000000000012",
+              "title": "Kai Speaker",
+              "exact": false,
+              "subtitle": "Chief Scientist, Quantum Example · Speaker Pass",
+              "link": "/admin/people/a-64b000000000000000000012",
+              "badges": [
+                "Speaker"
+              ]
+            }
+          ],
+          "seeAll": {
+            "label": "See all in People",
+            "link": "/admin/people?q=kai"
+          }
+        }
+      ],
+      "failed": [],
+      "tookMs": 0
+    },
+    "exactEmail": {
+      "query": {
+        "text": "",
+        "exact": "email"
+      },
+      "minChars": 2,
+      "tooShort": false,
+      "groups": [
+        {
+          "key": "people",
+          "label": "People",
+          "total": 1,
+          "more": false,
+          "items": [
+            {
+              "type": "person",
+              "id": "u-64b000000000000000000005",
+              "title": "Mara Delegate",
+              "exact": true,
+              "subtitle": "Head of Digital, Example Bank · Power Pass",
+              "link": "/admin/people/u-64b000000000000000000005",
+              "badges": [
+                "VIP"
+              ]
+            }
+          ]
+        }
+      ],
+      "failed": [],
+      "tookMs": 0
+    },
+    "nameIsEmail": {
+      "query": {
+        "text": "",
+        "exact": "email"
+      },
+      "minChars": 2,
+      "tooShort": false,
+      "groups": [
+        {
+          "key": "people",
+          "label": "People",
+          "total": 1,
+          "more": false,
+          "items": [
+            {
+              "type": "person",
+              "id": "a-64b000000000000000000013",
+              "title": "yara.leak@example.com",
+              "exact": true,
+              "subtitle": "Founder (zed.private@example.net), Call me 416 555 0199 · Connect Pass",
+              "link": "/admin/people/a-64b000000000000000000013",
+              "badges": []
+            }
+          ]
+        }
+      ],
+      "failed": [],
+      "tookMs": 0
+    },
+    "localPart": {
+      "query": {
+        "text": "noname",
+        "exact": ""
+      },
+      "minChars": 2,
+      "tooShort": false,
+      "groups": [
+        {
+          "key": "people",
+          "label": "People",
+          "total": 1,
+          "more": false,
+          "items": [
+            {
+              "type": "person",
+              "id": "u-64b000000000000000000004",
+              "title": "noname.staffer",
+              "exact": false,
+              "subtitle": "Account, no pass",
+              "link": "/admin/people/u-64b000000000000000000004",
+              "badges": [
+                "Staff"
+              ]
+            }
+          ],
+          "seeAll": {
+            "label": "See all in People",
+            "link": "/admin/people?q=noname"
+          }
+        }
+      ],
+      "failed": [],
+      "tookMs": 0
+    }
+  }
+}

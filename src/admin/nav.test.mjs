@@ -94,7 +94,7 @@ test("volunteers may open People and one person's profile, nothing else", () => 
   assert.equal(VOLUNTEER_FORBIDDEN_TEXT, "Volunteer accounts can only look up people.");
 });
 
-test("the search for volunteers: People results only, no pages, no See all for an exact email or ticket ID", () => {
+test("the search for volunteers: People results only, masked, no pages, no See all for an exact email or ticket ID", () => {
   const groups = [
     { key: "tickets", label: "Tickets", items: [{ id: "t1", link: "/admin/attendees?q=x" }] },
     { key: "people", label: "People", items: [{ id: "u-1", link: "/admin/people/u-1" }, { id: "x", link: "/admin/app/people/1" }],
@@ -107,5 +107,14 @@ test("the search for volunteers: People results only, no pages, no See all for a
   assert.deepEqual(v[0].items.map((it) => it.id), ["u-1"]);
   assert.equal(v[0].seeAll.link, "/admin/people?q=jane");
   assert.equal(searchGroupsFor(groups, { isVolunteer: true, exact: true })[0].seeAll, null);
-  assert.deepEqual(volunteerRecents([{ link: "/admin/people/u-1" }, { link: "/admin/inventory" }, { link: "/admin/content/settings?highlight=k" }]), [{ link: "/admin/people/u-1" }]);
+  assert.deepEqual(volunteerRecents([{ link: "/admin/people/u-1", title: "Jane Doe" }, { link: "/admin/inventory" }, { link: "/admin/content/settings?highlight=k" }]),
+    [{ link: "/admin/people/u-1", title: "Jane Doe", subtitle: "" }]);
+  // Names that are an email (or its local part) and emails / phone numbers in a subtitle never show (volunteerMask.js).
+  const masked = searchGroupsFor([{ key: "people", label: "People", items: [
+    { id: "a-1", link: "/admin/people/a-1", title: "yara.leak@example.com", subtitle: "Call 416 555 0199 · Connect Pass" },
+    { id: "u-2", link: "/admin/people/u-2", title: "noname.staffer", subtitle: "Account, no pass" },
+  ] }], { isVolunteer: true, exact: true })[0].items;
+  assert.deepEqual(masked.map((it) => [it.title, it.subtitle]), [["No name", "Call (hidden) · Connect Pass"], ["No name", "Account, no pass"]]);
+  // Staff see the server's results as they are.
+  assert.equal(searchGroupsFor([{ key: "people", items: [{ id: "a-1", link: "/admin/people/a-1", title: "yara.leak@example.com" }] }])[0].items[0].title, "yara.leak@example.com");
 });

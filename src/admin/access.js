@@ -1,4 +1,5 @@
 import { NAV } from "./nav.js";
+import { maskName, maskText } from "./people/volunteerMask.js";
 
 /* =========================================================
    Who sees what in the admin panel.
@@ -57,9 +58,13 @@ export function volunteerMayOpen(pathname) {
   return !!m && m[1].length > 0;
 }
 
+/** A search result as a volunteer sees it: a name that is an email (or its local part) shows as "No name", and any
+ * email or long number in the title or subtitle is masked (people/volunteerMask.js; the server masks them too). */
+const volunteerItem = (it) => ({ ...it, title: maskName(it?.title) || "No name", subtitle: maskText(it?.subtitle, 200) });
+
 /**
- * The global search for a volunteer: only the server's People group, and only links into People. `exact`: the query
- * is an email or a ticket ID: no "See all in People" then (its link would carry the email or ticket ID).
+ * The global search for a volunteer: only the server's People group, and only links into People, masked. `exact`: the
+ * query is an email or a ticket ID: no "See all in People" then (its link would carry the email or ticket ID).
  */
 export function searchGroupsFor(groups = [], { isVolunteer = false, exact = false } = {}) {
   if (!isVolunteer) return groups;
@@ -67,10 +72,10 @@ export function searchGroupsFor(groups = [], { isVolunteer = false, exact = fals
     .filter((g) => g?.key === "people")
     .map((g) => ({
       ...g,
-      items: (g.items || []).filter((it) => volunteerMayOpen(String(it?.link || "").split("?")[0])),
+      items: (g.items || []).filter((it) => volunteerMayOpen(String(it?.link || "").split("?")[0])).map(volunteerItem),
       seeAll: !exact && g.seeAll && String(g.seeAll.link || "").startsWith("/admin/people?") ? g.seeAll : null,
     }));
 }
 
-/** Recently opened search results a volunteer may still open (People only). */
-export const volunteerRecents = (results = []) => results.filter((r) => volunteerMayOpen(String(r?.link || "").split("?")[0]));
+/** Recently opened search results a volunteer may still open (People only), masked like the results. */
+export const volunteerRecents = (results = []) => results.filter((r) => volunteerMayOpen(String(r?.link || "").split("?")[0])).map(volunteerItem);

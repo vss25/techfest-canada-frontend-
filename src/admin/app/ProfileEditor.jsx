@@ -16,14 +16,14 @@ import {
 const ROLES = [
   { value: "user", label: "Attendee", hint: "A regular app account." },
   { value: "admin", label: "Staff", hint: "Can sign in to this admin panel. New staff get the Staff level; change it under Staff accounts." },
-  { value: "volunteer", label: "Volunteer", hint: "Volunteers can use the app's staff sign-in for door check-in. They can't open this admin panel." },
+  { value: "volunteer", label: "Volunteer", hint: "Volunteers can sign in to this panel with a password to look people up (People only, read only: no contact details, money or codes) and use the app's staff sign-in for door check-in." },
 ];
 const roleLabel = (r) => ROLES.find((x) => x.value === r)?.label || "Attendee";
 
 /** What a role change does, for the confirm dialog. */
 function roleChangeText(from, to) {
   if (to === "admin") return "give them staff access to this admin panel";
-  if (to === "volunteer") return from === "admin" ? "replace their staff access with volunteer access (app check-in only)" : "make them a volunteer (app staff sign-in and door check-in)";
+  if (to === "volunteer") return from === "admin" ? "replace their staff access with volunteer access (People look-up + app check-in)" : "make them a volunteer (People look-up in this panel, app staff sign-in and door check-in)";
   return from === "volunteer" ? "remove their volunteer access" : "remove their staff access";
 }
 

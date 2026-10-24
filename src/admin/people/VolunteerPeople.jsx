@@ -4,14 +4,14 @@ import {
   Accessibility, ArrowDown, ArrowLeft, ArrowUp, CalendarCheck, ChevronLeft, ChevronRight, Contact, Crown, Eye, Mic2, Search, ShieldX, Store, Ticket, Users, Utensils,
 } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
-import { ADMIN_API } from "../api";
+import { ADMIN_API, adminFetch } from "../api";
 import { Badge, Banner, Button, Card, EmptyState, ErrorState, Input, LoadingState, PageHeader, SectionTitle, Select, StatTile, TableWrap, focusRing } from "../ui";
 import { initials, when } from "../format";
 import { CompanyMark } from "./LogoPicker";
 import { MediaMark, PassBand } from "./MediaBadges";
 import { isMedia, otherTypes } from "./mediaMark";
 import { DAY_SHORT, RSVP_STATUS_LABELS, RSVP_STATUS_TONE, TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE, personPath } from "./peopleMeta";
-import { VOLUNTEER_COLUMNS, VOLUNTEER_FILTERS, volunteerProfile, volunteerQuery, volunteerRow } from "./volunteerView";
+import { VOLUNTEER_COLUMNS, VOLUNTEER_FILTERS, exactLookup, lookupResults, volunteerProfile, volunteerQuery, volunteerRow } from "./volunteerView";
 import { NOT_FOR_VOLUNTEERS, VOLUNTEER_FORBIDDEN, VOLUNTEER_FORBIDDEN_TEXT } from "../access";
 
 /* =========================================================
@@ -20,7 +20,9 @@ import { NOT_FOR_VOLUNTEERS, VOLUNTEER_FORBIDDEN, VOLUNTEER_FORBIDDEN_TEXT } fro
    Read only: no edits, switches, logo picker, delete, CSV or
    sends. The list (GET /console/people) and one profile
    (GET /console/people/:id) are the only things it asks the
-   server for; what it shows is volunteerView.js's allowed
+   server for, plus POST /console/search for an exact email or
+   ticket ID typed in the list's search (so it never goes in an
+   address or a log); what it shows is volunteerView.js's allowed
    fields (name, job title, company, photo / logo, their marks,
    pass and Pending, what the pass includes, RSVP days, meals,
    dietary and accessibility needs, arrival, booth, speaking
@@ -133,25 +135,90 @@ const Exhibitor = ({ r }) => (r.exhibitor
   ? <span className="block"><Badge tone="purple">Yes</Badge>{r.booth && <span className="block text-[11px] text-ttfc-muted">Booth {r.booth}</span>}</span>
   : <span className="text-ttfc-muted">No</span>);
 
+/**
+ * An exact email address or ticket ID typed in the list's search: looked up with POST /console/search (the terms stay
+ * in the request body, never in an address, the browser's history or the hosting logs), the People results only.
+ */
+function ExactLookup({ q }) {
+  const [nonce, setNonce] = useState(0);
+  const [res, setRes] = useState({ key: "", items: null, more: false, error: null });
+  const key = `${q}#${nonce}`;
+  useEffect(() => {
+    const ctrl = new AbortController();
+    adminFetch("/console/search", { method: "POST", body: { q }, signal: ctrl.signal }).then(
+      (data) => setRes({ key, items: lookupResults(data), more: !!(data?.groups || []).find((g) => g?.key === "people")?.more, error: null }),
+      (error) => { if (error?.name !== "AbortError") setRes({ key, items: null, more: false, error }); },
+    );
+    return () => ctrl.abort();
+  }, [q, key]);
+
+  if (res.key !== key) return <LoadingState label="Looking them up…" />;
+  if (isForbidden(res.error)) return <NotForVolunteers />;
+  if (res.error) return <ErrorState error={res.error} onRetry={() => setNonce((n) => n + 1)} title="Couldn't look them up" />;
+  if (!res.items.length) {
+    return <EmptyState icon={Users} title="No one found" body="No one has that email address or ticket ID. Check it, or search by their name or company." />;
+  }
+  return (
+    <section aria-label="Look-up results">
+      <p className="mb-2 text-xs text-ttfc-dim">
+        {res.items.some((r) => r.exact) ? "Found by an exact email address or ticket ID (not shown here)." : "Matches for your search."} Filters don't apply to this look-up.
+      </p>
+      <ul className="space-y-3">
+        {res.items.map((r) => (
+          <li key={r.id}>
+            <Link to={r.link} className={cx("flex items-center gap-3 rounded-[18px] border border-ttfc-line bg-ttfc-panel p-4 transition hover:border-ttfc-purple/50", focusRing)}>
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-ttfc-pink via-ttfc-purple to-ttfc-orange text-sm font-bold text-white" aria-hidden="true">
+                {initials(r.name)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold text-ttfc-text">{r.name}</span>
+                {r.subtitle && <span className="block truncate text-xs text-ttfc-muted">{r.subtitle}</span>}
+              </span>
+              {r.badges.length > 0 && (
+                <span className="hidden flex-wrap justify-end gap-1 sm:flex">{r.badges.map((b) => <Badge key={b} tone="neutral">{b}</Badge>)}</span>
+              )}
+              <ChevronRight className="h-4 w-4 shrink-0 text-ttfc-dim" aria-hidden="true" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {res.more && <p className="mt-3 text-xs text-ttfc-dim">Showing the first {res.items.length}. Add more of their name to narrow it down.</p>}
+    </section>
+  );
+}
+
 /* /admin/people for a volunteer. */
 export function VolunteerDirectory() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState(params.get("q") || "");
   const dq = useDebounced(q.trim(), 300);
+  // An exact email or ticket ID: POST /console/search (ExactLookup), not the list's GET.
+  const exact = exactLookup(dq);
   const view = Object.fromEntries(params);
   const query = volunteerQuery({ ...view, q: dq });
   const page = Number(query.get("page")) || 0;
   const sort = query.get("sort") || "name";
   const dir = query.get("dir") === "desc" ? "desc" : "asc";
-  const { data, error, loading, reload, refreshing } = useApi(`/console/people?${query}`);
+  const { data, error, loading, reload, refreshing } = useApi(exact ? null : `/console/people?${query}`);
 
   const update = (next) => {
     const p = new URLSearchParams(params);
     for (const [k, v] of Object.entries(next)) { if (v === "" || v == null || v === 0) p.delete(k); else p.set(k, String(v)); }
     setParams(p, { replace: true });
   };
-  // The search stays on the page, not in the address (an exact email or ticket ID finds someone; it isn't kept anywhere).
+  // A search from a link (the top bar's "See all in People") moves into the box and out of the address.
+  const linked = params.get("q");
+  useEffect(() => {
+    if (linked == null) return;
+    const p = new URLSearchParams(params);
+    p.delete("q");
+    setParams(p, { replace: true });
+  }, [linked, params, setParams]);
+  const [lastLinked, setLastLinked] = useState(linked);
+  if (linked !== lastLinked) { setLastLinked(linked); if (linked != null) setQ(linked); }
+  // The search stays on the page, not in the address. Name and company words go to GET /console/people?q=; an exact
+  // email or ticket ID goes by POST (ExactLookup), so it never lands in an address, the browser's history or a log.
   const onSearch = (v) => { setQ(v); update({ q: "", page: 0 }); };
   const onSort = (key) => update({ sort: key === "name" ? "" : key, dir: sort === key && dir === "asc" ? "desc" : "", page: 0 });
   const clearAll = () => { setQ(""); update(Object.fromEntries(["q", "page", "sort", "dir", ...VOLUNTEER_FILTERS.map((f) => f.key)].map((k) => [k, ""]))); };
@@ -165,7 +232,7 @@ export function VolunteerDirectory() {
   const open = (id) => navigate(personPath(id));
   const count = (n) => (typeof n === "number" ? n.toLocaleString() : undefined);
 
-  if (isForbidden(error)) return <NotForVolunteers />;
+  if (!exact && isForbidden(error)) return <NotForVolunteers />;
 
   return (
     <>
@@ -190,7 +257,7 @@ export function VolunteerDirectory() {
             <Input type="search" value={q} onChange={(e) => onSearch(e.target.value)} placeholder="Search name or company" className="pl-9" aria-label="Search people" />
           </div>
           <p className="text-sm text-ttfc-muted" aria-live="polite">
-            {loading ? "Loading…" : `${total.toLocaleString()} ${total === 1 ? "person" : "people"}`}{refreshing && !loading ? " · updating…" : ""}
+            {exact ? "Exact look-up" : loading ? "Loading…" : `${total.toLocaleString()} ${total === 1 ? "person" : "people"}`}{!exact && refreshing && !loading ? " · updating…" : ""}
           </p>
           {filtered && <Button size="sm" variant="ghost" onClick={clearAll}>Clear filters</Button>}
         </div>
@@ -207,7 +274,7 @@ export function VolunteerDirectory() {
         </div>
       </div>
 
-      {loading ? <LoadingState label="Loading people…" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !rows.length ? (
+      {exact ? <ExactLookup q={dq} /> : loading ? <LoadingState label="Loading people…" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !rows.length ? (
         <EmptyState icon={Users} title={filtered ? "No one matches" : "No one yet"} body={filtered ? "Try a different search or filter." : undefined} />
       ) : (
         <>
@@ -328,7 +395,7 @@ function PassCard({ v }) {
 
 function RsvpCard({ v }) {
   const r = v.rsvp;
-  const events = v.specialEvents;
+  const events = r.events;
   return (
     <Card>
       <SectionTitle hint="What they told us in their RSVP: the days they're coming, their meals and anything catering needs to know.">RSVP</SectionTitle>
@@ -341,8 +408,6 @@ function RsvpCard({ v }) {
         <Row label="Meals and events">
           {events.length ? (
             <ul className="space-y-0.5">{events.map((e) => <li key={e.key}><span className="font-medium">{e.label}</span> <span className="text-ttfc-dim">{[e.day, e.time].filter(Boolean).join(", ")}</span></li>)}</ul>
-          ) : r.meals.length ? (
-            <ul className="space-y-0.5">{r.meals.map((m) => <li key={m}>{m}</li>)}</ul>
           ) : <Nothing />}
         </Row>
         <Row label="Dietary needs">
@@ -371,10 +436,12 @@ function SpeakingCard({ v }) {
       {!v.sessions.length ? <p className="text-sm text-ttfc-muted">No sessions listed for them yet.</p> : (
         <ul className="divide-y divide-ttfc-line text-sm">
           {v.sessions.map((s) => (
-            <li key={s.key} className="flex flex-wrap items-baseline gap-x-3 py-2">
-              <span className="w-36 shrink-0 whitespace-nowrap tabular-nums text-ttfc-muted">{[s.day, s.time].filter(Boolean).join(" · ")}</span>
-              <span className="min-w-0 flex-1 font-medium">{s.title}</span>
-              {s.stage && <span className="text-xs text-ttfc-dim">{s.stage}</span>}
+            <li key={s.key} className="py-2.5">
+              <p className="font-medium text-ttfc-text">{s.title}</p>
+              <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+                <span className="whitespace-nowrap tabular-nums text-ttfc-muted">{[s.day, s.time].filter(Boolean).join(" · ")}</span>
+                {(s.format || s.role) && <span className="text-ttfc-dim">{[s.format, s.role].filter(Boolean).join(" · ")}</span>}
+              </p>
             </li>
           ))}
         </ul>

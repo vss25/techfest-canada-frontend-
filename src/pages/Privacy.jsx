@@ -42,6 +42,7 @@ var SECTIONS_PRIVACY = [
     list: [
       "With service providers who help us operate the Services such as website hosting, registration platforms, payment processing, email delivery, analytics, and customer support",
       "With event partners only where this is clearly described at the point of collection and where you have provided consent when required, for example for matchmaking or partner follow-up",
+      "With other attendees, when you choose: the contact details you choose to share in the TTFC app go to the people you connect with and to anyone who scans the QR code on your pass",
       "With professional advisors such as lawyers and auditors when needed",
       "With authorities or other parties when required by law or to protect rights, safety, and security",
     ],
@@ -171,7 +172,8 @@ var SECTIONS_APP = [
     body: "In addition to the information described in the Privacy Policy above, the app handles:",
     list: [
       "Profile details you choose to add: title, organisation, country, LinkedIn URL, job level and function, topics, goals, tagline, profile photo, meeting availability and, if you choose, salutation and gender. If you answered these on the ticket checkout, the app pre-fills them so you are not asked twice",
-      "Contact details you choose to add (for example a phone number, extra email or social handles) and, each time you connect, which of them you share with that person. Only the people you share them with can see them",
+      "Contact details you choose to add (for example a phone number, extra email or social handles) and which of them you share: with each person you connect with, and with anyone who scans the QR code on your pass (in your email, PDF ticket, Apple Wallet or the app). You choose what is shared in the app's sharing settings. Only the people you share them with can see them",
+      "Connecting by scanning a pass: if you scan another attendee's pass QR code in the app, you are connected with them, they are notified that you connected, and each of you receives the contact details the other has chosen to share. At the event entrance, TTFC staff and volunteers scan passes to check people in",
       "Content you create: posts, comments, discussions, direct and group messages, session questions, poll votes and connection requests",
       "Usage: screens you open, what you tap and search for, and the topics you look at, linked to your account (you can turn this off in Settings → Privacy & data)",
       "Device: app version, an anonymous device identifier and, if you allow notifications, a push token used to deliver notifications",
@@ -186,7 +188,7 @@ var SECTIONS_APP = [
   },
   {
     title: "3. What other attendees see",
-    body: "Signed-in attendees can see your name, ticket type, profile photo and the profile details you add. They see your email address or other contact details only if you share them with that person when you connect. Everyone with a pass is listed in the attendee directory. To be taken off it, contact the TTFC team at enquire@thetechfestival.com.",
+    body: "Signed-in attendees can see your name, ticket type, profile photo and the profile details you add. They see your email address or other contact details only if you share them: when you connect with them, or when they scan the QR code on your pass, in which case they receive the details you have chosen to share and you are notified. Everyone with a pass is listed in the attendee directory. To be taken off it, contact the TTFC team at enquire@thetechfestival.com.",
   },
   {
     title: "4. Community rules (zero tolerance)",
@@ -406,7 +408,7 @@ export default function Privacy() {
         <PolicyBlock
           title="Privacy Policy"
           subtitle="The Tech Festival Canada"
-          effective="October 23, 2026"
+          effective="October 24, 2026"
           intro="This website thetechfestival.com is organized by AtlasLink Markets Inc. We are responsible for the personal information handled through this site and related event services. This Privacy Policy explains how we collect, use, disclose, store, and protect personal information when you visit thetechfestival.com or interact with The Tech Festival Canada event services. We aim to comply with applicable Canadian privacy laws, including the Personal Information Protection and Electronic Documents Act and relevant provincial private sector privacy laws where they apply."
           sections={SECTIONS_PRIVACY}
           dark={dark}
@@ -447,7 +449,7 @@ export default function Privacy() {
           <PolicyBlock
             title="The TTFC App"
             subtitle="Privacy and Terms for the mobile app"
-            effective="October 23, 2026"
+            effective="October 24, 2026"
             intro="These sections apply to the TTFC mobile app in addition to the Privacy Policy and Terms of Use above. The full app versions are also shown inside the app (Settings → Privacy & data)."
             sections={SECTIONS_APP}
             dark={dark}

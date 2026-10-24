@@ -67,6 +67,20 @@ export function eventDayInfo(at = Date.now()) {
 
 export const mealItem = (station, eventDay) => (eventDay && MEAL_ITEMS[station]?.[eventDay]) || null;
 
+/**
+ * Contract C9 (the organiser, Oct 23): the Lobby (Arrived), the Pass desk (Checked in), the Media desk, the AV station
+ * and the Exhibitor desk are open ALL DAY on an event day: never refused, asked or recorded as an override for the
+ * time (an exhibitor arriving at 6:00 AM for booth setup is one tap). Their header says "Day 1 · Arrivals open all
+ * day". "Admit anyway" stays for the CxO Breakfast, the Lunch and the evening (Awards Night / Gala) only. The same as
+ * the backend's services/checkinDeskTime.js ALL_DAY_STATIONS / WINDOWED_STATIONS.
+ */
+export const ALL_DAY_STATIONS = Object.freeze(["lobby", "desk", "media", "av", "exhibitor"]);
+export const ASKING_STATIONS = Object.freeze(["breakfast", "lunch", "evening"]);
+const ALL_DAY_TEXT = Object.freeze({
+  lobby: "Arrivals open all day", desk: "Pass desk open all day", media: "Media desk open all day", av: "AV station open all day",
+  exhibitor: "Exhibitor desk open all day",
+});
+
 const SOURCE_WORD = { agenda: "agenda", fallback: "agenda as of Oct 23", staff: "set by staff", default: "default hours" };
 function windowDetail(w) {
   if (!w) return "Closed today";
@@ -103,6 +117,10 @@ export function stationState({ station, at = Date.now(), windows = {} } = {}) {
       : `${info.label} · ${next ? `${next.dayLabel} is ${next.dayShort} · ${next.item ? next.item.short : lower(STATION_LABELS[station])} opens ${fmtClock(next.open)}` : `Day 1 is ${DAY_SHORT.day1}`}`;
     return { ...base, open: false, opensAt: null, closesAt: null, next, text, code: info.phase === "after" ? "after" : "before" };
   }
+  // Contract C9: open all day on an event day (whatever hours are saved for it).
+  if (ALL_DAY_STATIONS.includes(station)) {
+    return { ...base, detail: "", open: true, allDay: true, opensAt: null, closesAt: null, next: null, text: `${info.label} · ${ALL_DAY_TEXT[station]}`, code: "open" };
+  }
   const label = `${info.label} · ${whatOn(station, info.eventDay)}`;
   if (!w) {
     const next = nextAfter();
@@ -114,34 +132,24 @@ export function stationState({ station, at = Date.now(), windows = {} } = {}) {
   return { ...base, open: false, opensAt: null, closesAt: null, next, text: `${label} · closed${next ? `: ${nextText(next)}` : ""}`, code: "closed" };
 }
 
-/* ---------- Which stations keep hours ---------- */
-
-/**
- * The organiser (Oct 23): Arrived (lobby) and Checked in (pass desk) are never blocked or warned by time on an event
- * day: an exhibitor arriving at 6:00 AM for booth setup is one tap. Their header says "Day 1 · Arrivals open all day".
- * "Admit anyway" stays for the meal and evening stations only; the media, AV and exhibitor desks show their hours but
- * never ask (a tap outside them is recorded as outside the hours, audited by the server).
- */
-export const ALL_DAY_STATIONS = Object.freeze(["lobby", "desk"]);
-export const ASKING_STATIONS = Object.freeze(["breakfast", "lunch", "evening"]);
-const ALL_DAY_TEXT = { lobby: "Arrivals open all day", desk: "Pass desk open all day" };
-
-/** What a station's header and picker tile show: the lobby and pass desk are open all day on an event day. */
+/** What a station's header and picker tile show (a server from before contract C9 still sends the all-day stations'
+    hours): open all day on an event day, as stationState says. */
 export function stationView(station, st) {
   if (!st || !ALL_DAY_STATIONS.includes(station) || !st.eventDay) return st;
-  return { ...st, open: true, code: "open", opensAt: null, closesAt: null, next: null, text: `${st.dayLabel || DAY_LABELS[st.eventDay] || ""} · ${ALL_DAY_TEXT[station]}`, detail: "" };
+  return { ...st, open: true, allDay: true, code: "open", opensAt: null, closesAt: null, next: null, text: `${st.dayLabel || DAY_LABELS[st.eventDay] || ""} · ${ALL_DAY_TEXT[station]}`, detail: "" };
 }
+
+/* ---------- How a tap goes ---------- */
 
 /**
  * How a tap at a station goes, from its state (the server's, or worked out here):
- *   "ask"       closed: "Admit anyway?" first (meal and evening stations, on an event day)
- *   "override"  outside the station's hours, recorded straight away as such (media, AV, exhibitor desks)
- *   "tap"       just recorded (open; the lobby and pass desk all day; any station on a day that isn't an event day,
- *               where every mark is a practice mark: contract C6)
+ *   "ask"  closed: "Admit anyway?" first, then recorded as an override (meal and evening stations, on an event day)
+ *   "tap"  just recorded: open; the lobby, pass desk, media, AV and exhibitor desks at any hour (C9); any station on a
+ *          day that isn't an event day, where every mark is a practice mark (contract C6)
  */
 export function tapRule(station, st) {
-  if (!st || st.open || !st.eventDay || ALL_DAY_STATIONS.includes(station)) return "tap";
-  return ASKING_STATIONS.includes(station) ? "ask" : "override";
+  if (!st || st.open || !st.eventDay || !ASKING_STATIONS.includes(station)) return "tap";
+  return "ask";
 }
 
 /** Every station's state at a moment, from the windows the device holds. */

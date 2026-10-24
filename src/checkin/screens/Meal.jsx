@@ -99,7 +99,7 @@ export default function Meal({ onOpen }) {
 
   return (
     <div className="ci-station ci-meal">
-      {!item && <p className="ci-notice">{state?.text || "No event today."} Taps are recorded as overrides.</p>}
+      {!item && <p className="ci-notice">{state?.text || "No event today."} Taps here are practice marks.</p>}
       <SearchBox value={q} onChange={setQ} inputRef={inputRef} autoFocus placeholder={`Guest's name for ${item?.label || "entry"}`} />
       {q ? (
         <section aria-label="Search results">

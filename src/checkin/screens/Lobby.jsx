@@ -44,7 +44,7 @@ export default function Lobby({ onOpen }) {
     const st = statusOf(s, g, p);
     const stage = deskStage(st);
     const undo = undoFor(g, "arrived");
-    const status = stage === "checked_in" ? `Checked in at ${timeText(st.checked_in.at)}` : stage === "on_the_way" ? `On the way up · ${byLine(st.arrived)}` : noPassOf(g) ? ISSUE_PASS.reading : "Not arrived";
+    const status = stage === "checked_in" ? `${noPassOf(g) ? "Pass issued" : "Checked in"} at ${timeText(st.checked_in.at)}` : stage === "on_the_way" ? `On the way up · ${byLine(st.arrived)}` : noPassOf(g) ? ISSUE_PASS.reading : "Not arrived";
     return (
       <GuestRow key={g.key} id={`res-${i}`} guest={g} selected={i === sel && !!q} onOpen={onOpen} match={q ? matchOf(g) : null}
         status={status} statusTone={stage === "checked_in" ? "good" : stage === "on_the_way" ? "info" : noPassOf(g) ? "issue" : ""}

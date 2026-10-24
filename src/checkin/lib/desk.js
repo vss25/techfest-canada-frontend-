@@ -5,7 +5,7 @@ import { createLive } from "./live.js";
 import { browserStorage, createQueue } from "./queue.js";
 import { createTabs } from "./tabs.js";
 import { applyEvents, fromSnapshot, heldInclusions, rollDay, statusOf, unknownsOf } from "./state.js";
-import { ALL_DAY_STATIONS, stationStates as localStationStates } from "./stationTime.js";
+import { stationStates as localStationStates } from "./stationTime.js";
 import { bannerText, createBanners, notifyStations } from "./notify.js";
 import { badgeOf, noPassOf } from "./passColors.js";
 import { describeTap, signOutText } from "./tapText.js";
@@ -191,22 +191,15 @@ const queue = createQueue({
   onPersist: (ok) => { desk.persistOk = ok; emit(); },
   // The tap matters more than the cached list (it comes back with the next load).
   onStorageFull: () => { remember.set(SNAPSHOT_KEY, null); },
+  // Arrived / Checked in, the media, AV and exhibitor desks are never refused for the time on an event day (contract C9:
+  // the server holds only the meals and the evening to their hours), so a refusal is always someone's to decide.
   onResult: (item, r, outcome) => {
     if (outcome === "ok") {
       if (r?.events?.length) handleEvents(r.events, { live: true });
       if (r?.already && r.message) toast(r.message, { tone: "warn", key: `already-${item.key}` });
-    } else if (outcome === "failed" && allDayRetry(item, r)) {
-      // Arrived / Checked in are all day on an event day (the organiser, Oct 23): a server still holding them to its hours
-      // gets the same tap again as an override (audited there), never a question for the volunteer.
-      queue.retry(item.clientId, { override: true });
     } else if (outcome === "failed") noteFailure(item);
   },
 });
-/** A lobby or pass-desk tap refused only for the hours on an event day: sent again as an override. */
-export function allDayRetry(item, r) {
-  return !!item && !!r && r.code === "outside_window" && item.kind === "mark" && !item.override
-    && ALL_DAY_STATIONS.includes(item.station) && (item.point === "arrived" || item.point === "checked_in") && !!(r.window?.eventDay ?? desk.state?.today?.eventDay);
-}
 desk.queueItems = queue.items();
 desk.persistOk = queue.persisted();
 export const pending = () => queue.pending();

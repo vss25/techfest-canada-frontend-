@@ -34,7 +34,8 @@ export default function Desk({ onOpen }) {
   const checkIn = useCallback((g, done) => {
     const st = statusOf(s, g, pending());
     if (st.checked_in) return;
-    act({ point: "checked_in", guest: g, undoText: `${g.name}: checked in, pass handed over.`, onDone: done });
+    // ISSUE PASS (on the list, no pass on file): Checked in here = the pass was issued at the desk (contract C7).
+    act({ point: "checked_in", guest: g, undoText: noPassOf(g) ? `${g.name}: pass issued at the desk.` : `${g.name}: checked in, pass handed over.`, onDone: done });
   }, [s]);
   const { q, setQ, sel, results, inputRef, lookingUp, done, matchOf } = useGuestSearch(s.guests, { onEnter: checkIn, version: s.version + p.length });
   // Worked out again when anything on the desk changes (v: every live event, tap, queue change), not on the timers' ticks.
@@ -67,7 +68,7 @@ export default function Desk({ onOpen }) {
         {doneShown.map(({ g, st }) => {
           const undo = undoFor(g, "checked_in");
           return (
-            <GuestRow key={g.key} guest={g} onOpen={onOpen} status={`Checked in ${byLine(st.checked_in)}`} statusTone="good"
+            <GuestRow key={g.key} guest={g} onOpen={onOpen} status={`${noPassOf(g) ? "Pass issued" : "Checked in"} ${byLine(st.checked_in)}`} statusTone="good"
               actions={undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span key="done" className="ci-done">✓</span>} />
           );
         })}
@@ -90,11 +91,11 @@ export default function Desk({ onOpen }) {
               return (
                 <GuestRow key={g.key} guest={g} selected={i === sel} onOpen={onOpen}
                   match={matchOf(g)}
-                  status={stage === "checked_in" ? `Checked in ${byLine(st.checked_in)}` : stage === "on_the_way" ? <>On the way up · <Elapsed at={st.arrived.at} /></> : noPassOf(g) ? ISSUE_PASS.reading : collectedBefore(g, s.today) ? `Has pass (collected ${weekday(g.passCollectedAt)})` : "Not arrived"}
+                  status={stage === "checked_in" ? `${noPassOf(g) ? "Pass issued" : "Checked in"} ${byLine(st.checked_in)}` : stage === "on_the_way" ? <>On the way up · <Elapsed at={st.arrived.at} /></> : noPassOf(g) ? ISSUE_PASS.reading : collectedBefore(g, s.today) ? `Has pass (collected ${weekday(g.passCollectedAt)})` : "Not arrived"}
                   statusTone={stage === "checked_in" ? "good" : stage === "on_the_way" ? "info" : noPassOf(g) ? "issue" : ""}
                   extra={<span className="ci-row-extra"><Inclusions guest={g} /><BoxHint guest={g} /></span>}
                   actions={stage === "checked_in" ? <span key="done" className="ci-done">✓</span>
-                    : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>Checked in</button>} />
+                    : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>{noPassOf(g) ? "Pass issued" : "Checked in"}</button>} />
               );
             })}
           </ul>
@@ -199,7 +200,7 @@ function WayCard({ g, st, today, note, onOpen, onCheckIn }) {
       {g.pending && <p className="ci-card-note is-warn">Pending pass: not sent to them yet. Check with staff.</p>}
       <div className="ci-card-foot">
         <span className="ci-small ci-muted">Arrived {timeText(st.arrived.at)}{st.arrived.by?.name ? ` · ${st.arrived.by.name}` : ""}{st.arrived.pending ? " · pending" : ""}</span>
-        <button type="button" className="ci-btn ci-btn-good ci-btn-xl" onClick={() => onCheckIn(g)}>✓ Checked in</button>
+        <button type="button" className="ci-btn ci-btn-good ci-btn-xl" onClick={() => onCheckIn(g)}>{issue ? "✓ Pass issued" : "✓ Checked in"}</button>
       </div>
     </li>
   );

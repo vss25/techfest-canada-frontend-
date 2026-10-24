@@ -71,21 +71,29 @@ test("ISSUE PASS: their colour from the marks (Speaker red, Media dark blue, els
   assert.equal(ISSUE_PASS.reading, "On the list · no pass on file");
 });
 
-test("a 6:15 AM arrival on an event day: the lobby and the pass desk never ask, and say Arrivals open all day", () => {
-  const windows = { lobby: { day1: { open: "07:00", close: "23:00", source: "default" } }, desk: { day1: { open: "07:00", close: "23:00", source: "default" } },
+test("a 6:15 AM arrival on an event day: the lobby, pass desk, media, AV and exhibitor desks are open all day (C9)", () => {
+  const windows = { lobby: { day1: { open: "07:00", close: "23:00", source: "default", allDay: true } }, desk: { day1: { open: "07:00", close: "23:00", source: "default", allDay: true } },
     lunch: { day1: { open: "12:05", close: "13:50", source: "fallback", session: { start: "12:35", end: "13:20", title: "Networking Lunch" } } },
-    exhibitor: { day1: { open: "06:30", close: "18:00", source: "default" } } };
+    exhibitor: { day1: { open: "06:30", close: "18:00", source: "default", allDay: true } } };
   const at = Date.parse("2026-10-26T10:15:00Z"); // 6:15 AM Toronto
   const lobby = stationState({ station: "lobby", at, windows });
-  assert.equal(lobby.code, "later", "the server's hours would say opens at 7:00");
-  assert.equal(tapRule("lobby", lobby), "tap", "never asks, never an override");
-  assert.equal(tapRule("desk", stationState({ station: "desk", at, windows })), "tap");
-  assert.deepEqual([stationView("lobby", lobby).text, stationView("lobby", lobby).code, stationView("lobby", lobby).detail], ["Day 1 · Arrivals open all day", "open", ""]);
-  assert.equal(stationView("desk", stationState({ station: "desk", at, windows })).text, "Day 1 · Pass desk open all day");
-  // Meals keep "Admit anyway"; the exhibitor desk records it as outside its hours without asking.
+  assert.deepEqual([lobby.code, lobby.open, lobby.allDay, lobby.text, lobby.detail], ["open", true, true, "Day 1 · Arrivals open all day", ""], "as the server says (checkinDeskTime.js)");
+  for (const [st, text] of [["desk", "Pass desk open all day"], ["media", "Media desk open all day"], ["av", "AV station open all day"], ["exhibitor", "Exhibitor desk open all day"]]) {
+    const x = stationState({ station: st, at, windows });
+    assert.deepEqual([x.code, x.text], ["open", `Day 1 · ${text}`], st);
+    assert.equal(tapRule(st, x), "tap", `${st}: never asks, never an override`);
+  }
+  assert.equal(tapRule("lobby", lobby), "tap");
+  // A server from before C9 still sends the lobby's hours: shown open all day anyway, and never asked.
+  const old = { ...lobby, open: false, allDay: undefined, code: "later", text: "Day 1 · Lobby · opens at 7:00 AM", opensAt: "07:00" };
+  assert.deepEqual([stationView("lobby", old).text, stationView("lobby", old).code], ["Day 1 · Arrivals open all day", "open"]);
+  assert.equal(tapRule("lobby", old), "tap");
+  // Meals and the evening keep their hours and "Admit anyway"; even an old server's closed media desk is a plain tap.
   assert.equal(tapRule("lunch", stationState({ station: "lunch", at, windows })), "ask");
-  assert.equal(tapRule("exhibitor", stationState({ station: "exhibitor", at, windows })), "override");
-  // A day that isn't an event day: practice marks, never asked (C6).
+  assert.equal(tapRule("breakfast", { code: "closed", open: false, eventDay: "day1" }), "ask");
+  assert.equal(tapRule("evening", { code: "closed", open: false, eventDay: "day2" }), "ask");
+  assert.equal(tapRule("media", { code: "closed", open: false, eventDay: "day1" }), "tap");
+  // A day that isn't an event day: practice marks, never asked (C6), and nothing is "all day".
   const before = stationState({ station: "lunch", at: Date.parse("2026-10-24T15:00:00Z"), windows });
   assert.equal(tapRule("lunch", before), "tap");
   assert.equal(stationView("lobby", stationState({ station: "lobby", at: Date.parse("2026-10-24T15:00:00Z"), windows })).code, "before", "only event days are all day");

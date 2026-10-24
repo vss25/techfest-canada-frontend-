@@ -35,6 +35,7 @@ function device() {
   const caches = {
     async open(n) { if (!store.has(n)) store.set(n, new Map()); return new Cache(store.get(n)); },
     async keys() { return [...store.keys()]; },
+    async has(n) { return store.has(n); },
     async delete(n) { return store.delete(n); },
     async match(req) { for (const m of store.values()) { const e = m.get(keyOf(req)); if (e) return toRes(e); } return undefined; },
   };
@@ -85,6 +86,7 @@ test("a deploy plus a flaky load never leaves the cached page pointing at script
   // v2 tries to install: its script fails, so it doesn't; v1 stays whole.
   const v2 = dev.worker(render([SCOPE, "/assets/desk-v2.js"], "v2"));
   await assert.rejects(v2.install(), /didn't download/);
+  assert.deepEqual(shellOf(dev), ["ttfc-desk-shell-v1"], "the failed try left no partial cache behind");
   dev.net.offline = true;
   const html = await v1.open(SCOPE);
   assert.match(html, /desk-v1\.js/, "offline: v1's page");
@@ -115,6 +117,31 @@ test("a page newer than the worker's list (a deploy during the install) gets the
   dev2.net.files.set("/assets/desk-v2.js", "/* v2 */");
   const w2 = dev2.worker(render([SCOPE, "/assets/desk-v2.js"], "v2"));
   await assert.rejects(w2.install(), /desk-v3\.js didn't download/);
+});
+
+test("failed installs never pile up partial caches; one by the same name that was already there stays", async () => {
+  const dev = device();
+  dev.net.files.set(SCOPE, page("/assets/desk-v1.js"));
+  dev.net.files.set("/assets/desk-v1.js", "/* v1 */");
+  const v1 = dev.worker(render([SCOPE, "/assets/desk-v1.js"], "v1"));
+  await v1.install();
+  await v1.activate();
+  // Three deploys in a row on bad Wi-Fi: each new version's script fails, each try is cleaned up.
+  for (const v of ["v2", "v3", "v4"]) {
+    dev.net.files.set(SCOPE, page(`/assets/desk-${v}.js`));
+    dev.net.down.add(`/assets/desk-${v}.js`);
+    await assert.rejects(dev.worker(render([SCOPE, `/assets/desk-${v}.js`], v)).install(), /didn't download/);
+  }
+  assert.deepEqual(shellOf(dev), ["ttfc-desk-shell-v1"]);
+  assert.equal(dev.store.get("ttfc-desk-shell-v1").size, 2, "the working version's cache is whole");
+  // A cache by the same name that was there before the try (another worker's) is never this install's to remove.
+  dev.store.set("ttfc-desk-shell-v5", new Map([["/marker", { body: "x", status: 200, type: "text/plain" }]]));
+  dev.net.files.set(SCOPE, page("/assets/desk-v5.js"));
+  dev.net.down.add("/assets/desk-v5.js");
+  await assert.rejects(dev.worker(render([SCOPE, "/assets/desk-v5.js"], "v5")).install(), /didn't download/);
+  assert.ok(dev.store.get("ttfc-desk-shell-v5")?.has("/marker"), "kept");
+  dev.net.offline = true;
+  assert.match(await v1.open(SCOPE), /desk-v1\.js/);
 });
 
 test("before any version is installed, opening offline says so (with Try again)", async () => {

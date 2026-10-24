@@ -5,8 +5,9 @@
    • A version installs whole or not at all: its page, every hashed
      JS/CSS file that page names, icons and manifest go into the
      version's own cache (ttfc-desk-shell-<version>). If any page or
-     script doesn't download, the install fails and the working version
-     stays as it was.
+     script doesn't download, the install fails, what it downloaded is
+     removed (no partial cache piles up) and the working version stays
+     as it was.
    • Opening the app: the page from the active version's own cache,
      which always has that page's scripts next to it. Nothing fetched
      while the app is open is ever written over it, so a flaky load
@@ -33,6 +34,8 @@ const assetsIn = (html) => [...String(html).matchAll(/(?:src|href)="(\/assets\/[
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
+    // A cache by this name already there is another worker's of the same version (never this install's to remove).
+    const had = await caches.has(SHELL);
     const cache = await caches.open(SHELL);
     const get = async (url) => {
       try {
@@ -45,9 +48,13 @@ self.addEventListener("install", (event) => {
     const page = await cache.match(SCOPE);
     const named = page ? assetsIn(await page.clone().text()) : [];
     await Promise.all(named.filter((u) => !PRECACHE.includes(u)).map(get));
-    // The page and every script it needs must be in, or this version doesn't install (the working one stays).
+    // The page and every script it needs must be in, or this version doesn't install (the working one stays), and
+    // what it did download goes (a failed try never leaves a partial cache on the device; the next try starts clean).
     for (const u of new Set([SCOPE, ...PRECACHE.filter(isScript), ...named.filter(isScript)])) {
-      if (!(await cache.match(u))) throw new Error(`TTFC Check-in: ${u} didn't download; keeping the current version`);
+      if (!(await cache.match(u))) {
+        if (!had) await caches.delete(SHELL).catch(() => {});
+        throw new Error(`TTFC Check-in: ${u} didn't download; keeping the current version`);
+      }
     }
     if (!self.registration.active) await self.skipWaiting();
   })());

@@ -140,8 +140,10 @@ test("no list on the device and back online: it loads by itself (no Try again ne
 test("a staff sign-in's last use is kept with it: throttled, and at once when the app is hidden or closed", async () => {
   await D.signOut();
   const realNow = Date.now;
+  // One fixed moment plus the test's own steps: the clock never ticks between a use and the check of it.
+  const base = realNow();
   let skew = 0;
-  Date.now = () => realNow() + skew;
+  Date.now = () => base + skew;
   try {
     await D.signIn("alice@x", "pw");
     await wait();
@@ -155,9 +157,10 @@ test("a staff sign-in's last use is kept with it: throttled, and at once when th
     fire("pointerdown");
     assert.ok(stored().lastUse >= t0 + D.USE_SAVE_MS, "written once a minute of use has gone by");
     skew += 5000;
+    const usedAt = Date.now();
     fire("keydown");
     fire("pagehide");
-    assert.equal(stored().lastUse, Date.now(), "at once when the app closes");
+    assert.equal(stored().lastUse, usedAt, "at once when the app closes");
     assert.equal(D.lastUseOf(stored()), stored().lastUse);
     assert.equal(D.lastUseOf({ at: 5 }), 5, "an older version's sign-in: when it was made");
   } finally {

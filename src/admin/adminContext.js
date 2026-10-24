@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
 
-/** { me, kill, setKill, reloadKill } — shared by the shell and pages. */
-export const AdminContext = createContext({ me: null, kill: null, setKill: () => {}, reloadKill: () => {} });
+/** { me, access, isManagement, isVolunteer } — shared by the shell and pages (volunteers: People only, access.js). */
+export const AdminContext = createContext({ me: null, access: null, isManagement: false, isVolunteer: false });
 export const useAdmin = () => useContext(AdminContext);

@@ -6,6 +6,7 @@ import "../admin/admin.css";
 import AdminShell from "../admin/AdminShell";
 import Toaster from "../admin/Toaster";
 import { AdminContext } from "../admin/adminContext";
+import { VOLUNTEER_ACCESS, accountKind } from "../admin/access";
 import { AdminThemeContext, useAdminThemeRoot } from "../admin/theme";
 import { adminFetch, signOut, PASSWORD_REQUIRED } from "../admin/api";
 import { Button, ErrorState, ManagementOnly, Spinner } from "../admin/ui";
@@ -28,7 +29,6 @@ import Broadcast from "../admin/app/Broadcast";
 import AuditLog from "../admin/app/AuditLog";
 import PwaInstalls from "../admin/app/PwaInstalls";
 import StaffAccounts from "../admin/staff/StaffAccounts";
-import KillSwitch from "../admin/staff/KillSwitch";
 import TicketManager from "../admin/tickets/TicketManager";
 import SpeakerPasses from "../admin/tickets/SpeakerPasses";
 import IssuedPasses, { ExhibitorPasses } from "../admin/tickets/IssuedPasses";
@@ -57,6 +57,7 @@ import SwagKit from "../admin/app/SwagKit";
 import RsvpReminders from "../admin/marketing/RsvpReminders";
 import PeopleDirectory from "../admin/people/PeopleDirectory";
 import PersonProfile from "../admin/people/PersonProfile";
+import { NotForVolunteers, VolunteerDirectory, VolunteerProfile } from "../admin/people/VolunteerPeople";
 
 // Existing admin features — wrapped and restyled, logic unchanged.
 import CheckIn from "../components/CheckIn";
@@ -97,9 +98,7 @@ function AdminPanel() {
   const navigate = useNavigate();
   const [me, setMe] = useState(null);
   const [meError, setMeError] = useState(null);
-  const [kill, setKill] = useState(null);
-  const [killNonce, setKillNonce] = useState(0);
-  const [access, setAccess] = useState(null); // { staffRole, isManagement }
+  const [staffAccess, setAccess] = useState(null); // { staffRole, isManagement }
 
   const handleSignOut = useCallback(() => {
     signOut();
@@ -117,6 +116,8 @@ function AdminPanel() {
   }, []);
 
   // Access level: "management" sees everything; "staff" doesn't see sales, money, promo codes or staff settings.
+  // Volunteers (role "volunteer") see People only, read only (admin/access.js), and never ask for this.
+  const kind = accountKind(me);
   useEffect(() => {
     if (me?.role !== "admin") return undefined;
     let alive = true;
@@ -149,18 +150,12 @@ function AdminPanel() {
     };
   }, [navigate]);
 
-  // Website / app status for the top bar (every 60 s)
-  useEffect(() => {
-    if (me?.role !== "admin") return undefined;
-    let alive = true;
-    const load = () => adminFetch("/console/kill-switch").then((s) => alive && setKill(s), () => {});
-    load();
-    const t = setInterval(load, 60000);
-    return () => { alive = false; clearInterval(t); };
-  }, [me, killNonce]);
-
+  // Volunteers have one fixed access: People, read only, never management. (No kill switch any more, Oct 23 2026:
+  // the panel can't take the website or the apps offline; only the developers can, through Vercel / Render.)
+  const isVolunteer = kind === "volunteer";
+  const access = isVolunteer ? VOLUNTEER_ACCESS : staffAccess;
   const isManagement = !!access?.isManagement;
-  const ctx = useMemo(() => ({ me, kill, setKill, reloadKill: () => setKillNonce((n) => n + 1), access, isManagement }), [me, kill, access, isManagement]);
+  const ctx = useMemo(() => ({ me, access, isManagement, isVolunteer }), [me, access, isManagement, isVolunteer]);
 
   if (meError) {
     return (
@@ -172,14 +167,14 @@ function AdminPanel() {
       </FullScreen>
     );
   }
-  if (!me || (me.role === "admin" && !access)) {
+  if (!me || (kind === "staff" && !access)) {
     return (
       <FullScreen>
         <div className="flex flex-col items-center gap-3 text-sm text-ttfc-muted" role="status"><Spinner className="h-7 w-7" /> Opening the staff panel…</div>
       </FullScreen>
     );
   }
-  if (me.role !== "admin") {
+  if (kind === "none") {
     return (
       <FullScreen>
         <div className="w-full max-w-md rounded-[22px] border border-ttfc-line bg-ttfc-panel p-8 text-center">
@@ -197,7 +192,16 @@ function AdminPanel() {
   return (
     <AdminContext.Provider value={ctx}>
       <Toaster>
-        <AdminShell me={me} kill={kill} onSignOut={handleSignOut}>
+        <AdminShell me={me} onSignOut={handleSignOut}>
+          {isVolunteer ? (
+            // Volunteers: People only, read only. Any other address: "Not available for volunteer accounts".
+            <Routes>
+              <Route index element={<Navigate to="/admin/people" replace />} />
+              <Route path="people" element={<VolunteerDirectory />} />
+              <Route path="people/:id" element={<VolunteerProfile />} />
+              <Route path="*" element={<NotForVolunteers />} />
+            </Routes>
+          ) : (
           <Routes>
             <Route index element={<Overview />} />
 
@@ -270,12 +274,12 @@ function AdminPanel() {
             <Route path="app/pwa" element={<PwaInstalls />} />
 
             <Route path="staff" element={<ManagementOnly><StaffAccounts /></ManagementOnly>} />
-            <Route path="kill-switch" element={<KillSwitch />} />
             <Route path="email-tracking" element={<EmailTracking />} />
             <Route path="account" element={<MyAccount />} />
 
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
+          )}
         </AdminShell>
       </Toaster>
     </AdminContext.Provider>

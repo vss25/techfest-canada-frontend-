@@ -11,6 +11,8 @@
      new tab, Esc closes. ARIA combobox + listbox with groups.
    - Recent searches and opened results stay in this browser
      (recents.js), per staff account.
+   - Volunteers (People only, admin/access.js): no pages or settings,
+     only the server's People results and links into People.
 ========================================================= */
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -27,6 +29,7 @@ import { isSponsor } from "../../data/sponsors";
 import { exactTerm, highlight, readQuery } from "./match";
 import { searchAdminIndex } from "./adminIndex";
 import { clearRecents, loadRecents, rememberSearch } from "./recents";
+import { searchGroupsFor, volunteerRecents } from "../access";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || "");
@@ -61,7 +64,7 @@ function Marked({ text, q }) {
 }
 
 /** The search box in the top bar: a wide box on tablets and up, an icon on phones. Typing into it opens the palette. */
-function SearchTrigger({ onOpen }) {
+function SearchTrigger({ onOpen, volunteer }) {
   const onKeyDown = (e) => {
     if (e.key.length === 1 && e.key !== " " && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); onOpen(e.key); }
   };
@@ -73,26 +76,27 @@ function SearchTrigger({ onOpen }) {
         onKeyDown={onKeyDown}
         aria-haspopup="dialog"
         aria-keyshortcuts={IS_MAC ? "Meta+K" : "Control+K"}
-        aria-label={`Search the admin panel (${SHORTCUT})`}
+        aria-label={`${volunteer ? "Search people" : "Search the admin panel"} (${SHORTCUT})`}
         className={cx(
           "hidden h-10 w-60 items-center gap-2 rounded-xl border border-ttfc-line bg-ttfc-panel2/70 px-3 text-left text-sm text-ttfc-dim transition hover:border-ttfc-purple/60 hover:text-ttfc-muted md:flex lg:w-72 xl:w-96",
           focusRing,
         )}
       >
         <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <span className="min-w-0 flex-1 truncate">Search people, tickets, pages…</span>
+        <span className="min-w-0 flex-1 truncate">{volunteer ? "Search people…" : "Search people, tickets, pages…"}</span>
         <kbd className="rounded-md border border-ttfc-line bg-ttfc-ink px-1.5 py-0.5 font-sans text-[11px] font-semibold text-ttfc-muted" aria-hidden="true">{SHORTCUT}</kbd>
       </button>
-      <IconButton icon={Search} label="Search the admin panel" onClick={() => onOpen("")} onKeyDown={onKeyDown} aria-haspopup="dialog" className="md:hidden" />
+      <IconButton icon={Search} label={volunteer ? "Search people" : "Search the admin panel"} onClick={() => onOpen("")} onKeyDown={onKeyDown} aria-haspopup="dialog" className="md:hidden" />
     </>
   );
 }
 
 function Palette({ initial, onClose, onGo }) {
-  const { me, isManagement } = useAdmin();
+  const { me, isManagement, isVolunteer } = useAdmin();
   const userId = String(me?._id || me?.id || me?.email || "");
   const [text, setText] = useState(initial);
-  const [recents, setRecents] = useState(() => loadRecents(userId));
+  const [allRecents, setRecents] = useState(() => loadRecents(userId));
+  const recents = useMemo(() => (isVolunteer ? { ...allRecents, results: volunteerRecents(allRecents.results) } : allRecents), [allRecents, isVolunteer]);
   const [res, setRes] = useState({ for: "", data: null, error: null });
   const [nav, setNav] = useState({ key: "", index: 0 });
   const inputRef = useRef(null);
@@ -137,7 +141,7 @@ function Palette({ initial, onClose, onGo }) {
   const fresh = !q.tooShort && res.for === q.text;
   const loading = !q.tooShort && !fresh;
   const server = !q.tooShort && res.data && !res.data.tooShort ? res.data : null;
-  const pages = useMemo(() => searchAdminIndex(q, { isManagement }), [q, isManagement]);
+  const pages = useMemo(() => searchAdminIndex(q, { isManagement, isVolunteer }), [q, isManagement, isVolunteer]);
 
   /* Groups → one flat list of options (what ↑ ↓ walk through). */
   const groups = useMemo(() => {
@@ -158,7 +162,7 @@ function Palette({ initial, onClose, onGo }) {
       key: "pages", label: "Pages and settings", total: pages.total, more: pages.total > pages.items.length,
       options: pages.items.map((p) => ({ key: `p:${p.id}`, kind: "result", item: { ...p, icon: undefined }, icon: p.icon, title: p.title, subtitle: p.subtitle, groupLabel: "Pages and settings" })),
     }] : [];
-    const serverGroups = (server?.groups || []).map(withSponsorRule).map((g) => ({
+    const serverGroups = searchGroupsFor(server?.groups || [], { isVolunteer, exact: !!(q.email || q.ticket) }).map(withSponsorRule).map((g) => ({
       key: g.key, label: g.label, total: g.total, more: g.more, stale: !fresh,
       options: [
         ...g.items.map((it) => ({ key: `${g.key}:${it.type}:${it.id}`, kind: "result", item: it, title: it.title, subtitle: it.subtitle, groupLabel: g.label, stale: !fresh })),
@@ -167,7 +171,7 @@ function Palette({ initial, onClose, onGo }) {
     }));
     // An exact email / ticket ID hit comes first; otherwise pages, then the rest in the server's order.
     return server?.query?.exact ? [...serverGroups, ...pageGroup] : [...pageGroup, ...serverGroups];
-  }, [q, recents, pages, server, fresh]);
+  }, [q, recents, pages, server, fresh, isVolunteer]);
 
   const options = useMemo(() => groups.flatMap((g) => g.options), [groups]);
   const optionsKey = useMemo(() => options.map((o) => o.key).join("|"), [options]);
@@ -184,7 +188,8 @@ function Palette({ initial, onClose, onGo }) {
     if (o.kind === "clear") { clearRecents(); setRecents(loadRecents(userId)); inputRef.current?.focus(); return; }
     if (o.stale) return; // results for an older query: wait for this one's
     const link = o.kind === "all" ? o.link : o.item.link;
-    const next = rememberSearch(userId, o.recent ? "" : q.text, o.kind === "result"
+    // A volunteer's exact email / ticket ID search isn't kept in their recent searches (People never shows them either).
+    const next = rememberSearch(userId, o.recent || (isVolunteer && (q.email || q.ticket)) ? "" : q.text, o.kind === "result"
       ? { ...o.item, group: o.groupLabel } : null);
     if (newTab) { window.open(link, "_blank", "noopener"); setRecents(next); return; }
     onGo(link);
@@ -217,7 +222,9 @@ function Palette({ initial, onClose, onGo }) {
   const failed = fresh ? server?.failed || [] : [];
   const resultCount = groups.reduce((n, g) => n + g.options.filter((o) => o.kind === "result").length, 0);
   let status = "";
-  if (!text.trim()) status = recents.queries.length || recents.results.length ? "" : "Search people, tickets, passes, RSVPs, sessions, speakers, partners, leads, pages and settings.";
+  if (!text.trim()) status = recents.queries.length || recents.results.length ? "" : isVolunteer
+    ? "Search people by name or company. An exact email or ticket ID finds them too."
+    : "Search people, tickets, passes, RSVPs, sessions, speakers, partners, leads, pages and settings.";
   else if (q.tooShort) status = "Type at least 2 characters.";
   else if (res.error && res.for === q.text) status = res.error.message || "Search isn't working right now.";
   else if (loading && !resultCount) status = "Searching…";
@@ -231,12 +238,12 @@ function Palette({ initial, onClose, onGo }) {
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Search the admin panel"
+        aria-label={isVolunteer ? "Search people" : "Search the admin panel"}
         className="relative flex h-full w-full flex-col overflow-hidden bg-ttfc-panel text-ttfc-text shadow-2xl shadow-black/60 animate-in fade-in slide-in-from-top-2 sm:h-auto sm:max-h-[min(680px,82vh)] sm:max-w-2xl sm:rounded-[22px] sm:border sm:border-ttfc-line"
       >
         <div className="flex items-center gap-2 border-b border-ttfc-line px-3 sm:px-4">
           <Search className="h-5 w-5 shrink-0 text-ttfc-pink" aria-hidden="true" />
-          <label htmlFor={`${uid}-input`} className="sr-only">Search the admin panel</label>
+          <label htmlFor={`${uid}-input`} className="sr-only">{isVolunteer ? "Search people" : "Search the admin panel"}</label>
           <input
             id={`${uid}-input`}
             ref={inputRef}
@@ -257,7 +264,7 @@ function Palette({ initial, onClose, onGo }) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search people, tickets, passes, pages…"
+            placeholder={isVolunteer ? "Search people…" : "Search people, tickets, passes, pages…"}
             className="h-14 min-w-0 flex-1 bg-transparent px-1 text-base text-ttfc-text outline-none placeholder:text-ttfc-dim"
           />
           {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-ttfc-purple" aria-hidden="true" />}
@@ -360,6 +367,7 @@ function Palette({ initial, onClose, onGo }) {
  */
 export default function GlobalSearch({ onNavigated }) {
   const navigate = useNavigate();
+  const { isVolunteer } = useAdmin();
   const [open, setOpen] = useState(null); // null = closed, else { initial }
 
   useEffect(() => {
@@ -376,7 +384,7 @@ export default function GlobalSearch({ onNavigated }) {
 
   return (
     <>
-      <SearchTrigger onOpen={(initial) => setOpen({ initial })} />
+      <SearchTrigger onOpen={(initial) => setOpen({ initial })} volunteer={isVolunteer} />
       {open && (
         <Palette
           initial={open.initial}

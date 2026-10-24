@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
-import { NAV, navItemFor } from "./nav";
+import { navItemFor } from "./nav";
+import { navFor } from "./access";
 import { focusRing } from "./ui";
 import { useAdmin } from "./adminContext";
 
@@ -10,7 +11,8 @@ import { useAdmin } from "./adminContext";
    and remembers open or closed in this browser (localStorage,
    best effort: private windows just start folded). It opens by
    itself when the page you're on is inside it, so the current
-   link is always visible.
+   link is always visible. Volunteers see People only (access.js
+   navFor), staff everything but management's items.
 ========================================================= */
 
 const cx = (...a) => a.filter(Boolean).join(" ");
@@ -60,7 +62,7 @@ function ItemList({ items, onNavigate }) {
 }
 
 export default function SidebarNav({ onNavigate }) {
-  const { isManagement } = useAdmin();
+  const { isManagement, isVolunteer } = useAdmin();
   const { pathname } = useLocation();
   const [moreOpen, setMoreOpen] = useState(readOpen);
   const inMore = !!navItemFor(pathname)?.group?.collapsible;
@@ -77,9 +79,8 @@ export default function SidebarNav({ onNavigate }) {
 
   return (
     <div className="-mx-2 flex-1 space-y-6 overflow-y-auto px-2 pb-6">
-      {NAV.filter((g) => !g.hidden).map((group, gi) => {
-        const items = group.items.filter((it) => !it.hidden && (isManagement || !it.management));
-        if (!items.length) return null;
+      {navFor({ isManagement, isVolunteer }).map((group, gi) => {
+        const items = group.items;
         if (group.collapsible) {
           const id = `adm-nav-${gi}`;
           return (

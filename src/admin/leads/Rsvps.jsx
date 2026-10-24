@@ -27,9 +27,8 @@ import CodeLabel from "../people/CodeLabel";
    (POST /console/rsvps/:id/resolve); "Needs review" (?review=1) lists them.
    Days, experiences and dietary options are the same list the website uses
    (services/rsvp.js in the backend). Read from the staff list's `catalog`
-   when the backend sends it (it keeps working while the kill switch has the
-   public site, GET /api/rsvp/options included, switched off); otherwise from
-   GET /api/rsvp/options, and failing that from the summary's own keys.
+   when the backend sends it; otherwise from GET /api/rsvp/options, and
+   failing that from the summary's own keys.
    The pass extras' tiles (CxO Breakfasts, luncheons, Gala, Awards) also say
    how many passes are eligible: their pass includes it, or staff switched
    it on in People (GET /console/people/eligible).
@@ -66,8 +65,8 @@ const catalogFromSummary = (s) => {
 
 /** Days, experiences, passes and dietary options. `list` is the GET /console/rsvps response. */
 function useCatalog(list) {
-  // A backend that doesn't send `catalog` yet: ask the public endpoint, and if that's refused
-  // (the kill switch), fall back to the summary's keys so the headcounts never disappear.
+  // A backend that doesn't send `catalog` yet: ask the public endpoint, and if that's refused,
+  // fall back to the summary's keys so the headcounts never disappear.
   const sent = list?.catalog;
   const { data: pub, error: pubError } = useApi(list && !sent ? "/rsvp/options" : null);
   const data = sent || pub || (pubError ? catalogFromSummary(list?.summary) : null);

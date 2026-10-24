@@ -4,7 +4,7 @@
    status (backend services/people.js and services/rsvpStaff.js);
    this file only names them.
 ========================================================= */
-import { PERSON_TYPES, TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE } from "../app/personTypes";
+import { PERSON_TYPES, TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE } from "../app/personTypes.js";
 
 export { PERSON_TYPES, TYPE_FILTER_OPTIONS, TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE };
 

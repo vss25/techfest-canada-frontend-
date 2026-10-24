@@ -21,7 +21,7 @@ export default function AuditLog() {
       <PageHeader
         eyebrow="More › Settings"
         title="Audit log"
-        description="Every change made by staff — including website edits, the kill switch and every time someone opened private messages. Latest 300."
+        description="Every change made by staff — including website edits and every time someone opened private messages (older entries include the retired kill switch). Latest 300."
         actions={<Button icon={RefreshCw} onClick={reload} loading={refreshing && !loading}>Refresh</Button>}
       />
       <div className="relative mb-5 max-w-md">

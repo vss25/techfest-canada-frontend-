@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  Ticket, DollarSign, Smartphone, ShieldAlert, Power, PenSquare, ScanLine, Megaphone, ArrowRight, Activity, TicketPlus, Contact, Utensils, ClipboardList,
+  Ticket, DollarSign, Smartphone, ShieldAlert, PenSquare, ScanLine, Megaphone, ArrowRight, Activity, TicketPlus, Contact, Utensils, ClipboardList,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { useAdmin } from "../adminContext";
@@ -24,7 +24,7 @@ const quickActions = (isManagement) => [
 ];
 
 export default function Overview() {
-  const { me, kill, isManagement } = useAdmin();
+  const { me, isManagement } = useAdmin();
   const stats = useApi("/console/stats");
   // Money is management-only; staff see the ticket count from the ticket list instead.
   const sales = useApi(isManagement ? "/console/sales?range=week" : null);
@@ -42,17 +42,6 @@ export default function Overview() {
         description="Here's what's happening across tickets, the website and the app today."
       />
 
-      {kill?.enabled && (
-        <Banner
-          tone="danger"
-          icon={Power}
-          title="The website and app are OFFLINE"
-          className="mb-6"
-          action={<Link to="/admin/kill-switch" className={`rounded-xl bg-ttfc-contrast/10 px-3 py-2 text-sm font-semibold text-ttfc-contrast hover:bg-ttfc-contrast/20 ${focusRing}`}>Manage</Link>}
-        >
-          Visitors currently see: “{kill.message}”
-        </Banner>
-      )}
       {cms.data && cms.data.configured === false && (
         <Banner tone="warn" icon={PenSquare} className="mb-6" title="Website editing is read-only">
           Editing is read-only until SANITY_WRITE_TOKEN is added on Render.
@@ -95,7 +84,6 @@ export default function Overview() {
           <h2 className="mb-4 text-base font-semibold">At a glance</h2>
           <dl className="space-y-3 text-sm">
             {[
-              ["Website & app", kill ? (kill.enabled ? "Offline" : "Live") : "…", kill?.enabled ? "text-red-300" : "text-emerald-300"],
               ["Website editing", cms.data ? (cms.data.configured ? "On" : "Read-only") : cms.error ? "Unavailable" : "…", cms.data?.configured ? "text-emerald-300" : "text-amber-300"],
               ["App accounts", num(s.users)],
               ["Ticket holders on the app", num(s.ticketHolders)],

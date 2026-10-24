@@ -66,7 +66,6 @@ const KEYWORDS = {
   staff: ["team", "admins", "volunteers", "add staff", "management", "access level"],
   "email-tracking": ["opens", "clicks", "bounces", "deliverability"],
   account: ["password", "change password", "my profile", "sign in"],
-  "kill-switch": ["offline", "maintenance", "take the site down", "emergency", "turn off website", "turn off app"],
 };
 
 /* Things done on a page that people look for by name. */
@@ -124,9 +123,10 @@ export const ADMIN_INDEX = (() => {
   return out;
 })();
 
-/** Pages, settings and actions for this query (best first). Management-only ones only for management. */
-export function searchAdminIndex(q, { isManagement = false, limit = 5 } = {}) {
-  if (q.tooShort || q.email) return { items: [], total: 0 };
+/** Pages, settings and actions for this query (best first). Management-only ones only for management; none for
+    volunteers (they have People only: the server's People results are all their search shows). */
+export function searchAdminIndex(q, { isManagement = false, isVolunteer = false, limit = 5 } = {}) {
+  if (isVolunteer || q.tooShort || q.email) return { items: [], total: 0 };
   const hits = [];
   for (const e of ADMIN_INDEX) {
     if (e.management && !isManagement) continue;

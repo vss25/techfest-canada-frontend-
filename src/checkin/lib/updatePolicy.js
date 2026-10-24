@@ -3,12 +3,13 @@
    ---------------------------------------------------------
    A new version (a waiting service worker) is only applied by itself
    (it reloads the page) while no station has been running in this tab:
-   on the sign-in screen, the loading screen, the Start screen, and the
-   station picker before any station was started in this tab (its first
-   pick). Once a station has been started in a tab, it is never
-   reloaded on its own, in front or in the background, and the station
-   picker opened over it (Switch station) doesn't change that: its
-   chime, banners and own Undo would be lost. It shows "Update ready ·
+   on the sign-in screen, the loading screen, and the Start screen and
+   station picker before any station was started in this tab. Once a
+   station has been started in a tab, it is never reloaded on its own,
+   in front or in the background, and neither the station picker opened
+   over it (Switch station) nor the Start screen it leads to changes
+   that: its chime, banners and own Undo (of a tap made seconds before
+   the switch) would be lost. It shows "Update ready ·
    tap to reload" instead; the taps waiting on the device are kept
    through the reload. A reload applied by itself from the Start screen
    comes back on that Start screen (resume), like the tap does.
@@ -22,11 +23,12 @@ export const autoUpdateAllowed = (screen) => AUTO_UPDATE_SCREENS.includes(screen
 /**
  * The screen the update policy is told about, from what the app shows. `started`: a station is started now (sound on,
  * banners, own Undo), the picker may be open over it; `startedBefore`: a station was started earlier in this tab (this
- * sign-in). Any station screen, the lock screen, and the picker once a station has run here count as "station".
+ * sign-in). Any station screen, the lock screen, and the picker and Start screen once a station has run here count as
+ * "station".
  */
 export function updateScreen({ screen = "loading", started = false, startedBefore = false } = {}) {
   if (screen === "locked") return "station";
-  if (screen === "stations" && (started || startedBefore)) return "station";
+  if ((screen === "stations" || screen === "start") && (started || startedBefore)) return "station";
   return screen || "loading";
 }
 

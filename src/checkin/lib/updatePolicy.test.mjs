@@ -42,8 +42,13 @@ test("the station picker opened over a running station (Switch station) never ap
   // The lock screen of a running station: not either.
   u.setScreen(updateScreen({ screen: "locked", started: true, startedBefore: true }), { station: "desk" });
   assert.deepEqual(applied, []);
-  // The Start screen (nothing running yet): applied by itself, and it comes back on that Start screen.
+  // Leaving the picker for a Start screen after a station has run here: still not (the Undo of a tap made seconds
+  // before the switch would be lost); "Update ready" stays up.
   u.setScreen(updateScreen({ screen: "start", started: false, startedBefore: true }), { station: "lobby" });
+  assert.deepEqual(applied, [], "the Start screen once a station has run here");
+  assert.equal(u.ready(), true);
+  // The tap still applies it, back on that Start screen.
+  u.applyNow({ station: "lobby" });
   assert.deepEqual(applied, [["v2", "lobby"]]);
 });
 
@@ -67,7 +72,8 @@ test("what each screen counts as", () => {
   assert.equal(updateScreen({ screen: "stations", started: true }), "station", "the picker over a running station");
   assert.equal(updateScreen({ screen: "stations", startedBefore: true }), "station", "a station has run in this tab");
   assert.equal(updateScreen({ screen: "locked" }), "station");
-  assert.equal(updateScreen({ screen: "start", startedBefore: true }), "start");
+  assert.equal(updateScreen({ screen: "start", startedBefore: true }), "station", "a Start screen after a station ran here");
+  assert.equal(updateScreen({ screen: "start" }), "start", "the first Start screen");
   assert.equal(updateScreen({}), "loading");
   assert.equal(autoUpdateAllowed("station"), false);
   // Nothing waiting: the tap is a plain reload (still back on the Start screen).

@@ -90,7 +90,8 @@ function windowDetail(w) {
   return `Open ${fmtRange(w.open, w.close)} (${SOURCE_WORD[w.source] || "default hours"})`;
 }
 const whatOn = (station, eventDay) => mealItem(station, eventDay)?.label || STATION_LABELS[station] || station;
-const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+/** "Lobby" → "lobby" mid-sentence; an acronym stays as it is ("AV station"). */
+const lower = (s) => (/^[A-Z]{2}/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1));
 
 /**
  * Where a station is at a moment (`windows`: the server's, both days) → the server's stationState shape:
@@ -111,10 +112,14 @@ export function stationState({ station, at = Date.now(), windows = {} } = {}) {
   };
   const nextText = (n) => (n ? `next is ${n.dayLabel} ${n.item ? n.item.short : lower(STATION_LABELS[station])}, ${fmtClock(n.open)}` : "");
   if (!info.eventDay) {
-    const next = nextAfter();
+    // Before Day 1, an all-day station (C9) says so ("… · lobby open all day"), never the hours saved for it.
+    const allDay = ALL_DAY_STATIONS.includes(station);
+    const firstDay = EVENT_DAY_KEYS.find((d) => DATE_BY_DAY[d] > info.date);
+    const next = allDay ? (firstDay ? { eventDay: firstDay, dayLabel: DAY_LABELS[firstDay], dayShort: DAY_SHORT[firstDay], open: null, close: null, item: null, allDay: true } : null) : nextAfter();
+    const what = (n) => (n.allDay ? `${lower(STATION_LABELS[station])} open all day` : `${n.item ? n.item.short : lower(STATION_LABELS[station])} opens ${fmtClock(n.open)}`);
     const text = info.phase === "after"
       ? "TTFC 2026 is over: no event today"
-      : `${info.label} · ${next ? `${next.dayLabel} is ${next.dayShort} · ${next.item ? next.item.short : lower(STATION_LABELS[station])} opens ${fmtClock(next.open)}` : `Day 1 is ${DAY_SHORT.day1}`}`;
+      : `${info.label} · ${next ? `${next.dayLabel} is ${next.dayShort} · ${what(next)}` : `Day 1 is ${DAY_SHORT.day1}`}`;
     return { ...base, open: false, opensAt: null, closesAt: null, next, text, code: info.phase === "after" ? "after" : "before" };
   }
   // Contract C9: open all day on an event day (whatever hours are saved for it).

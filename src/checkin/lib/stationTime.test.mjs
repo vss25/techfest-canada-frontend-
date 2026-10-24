@@ -30,7 +30,17 @@ test("a station's state: opens at, open until, closed (next day), closed today, 
   const day2 = stationState({ station: "breakfast", at: at("2026-10-27T12:00:00Z"), windows: W });
   assert.deepEqual([day2.code, day2.text], ["closed", "Day 2 · CxO Breakfast · closed today"]);
   const before = stationState({ station: "lobby", at: at("2026-10-24T14:00:00Z"), windows: W });
-  assert.deepEqual([before.code, before.text], ["before", "Before the event · Day 1 is Mon Oct 26 · lobby opens 7:00 AM"]);
+  // An all-day station (C9) before Day 1: "open all day", as the backend says (checkinDeskTime.js), never its saved hours.
+  assert.deepEqual([before.code, before.open, before.text], ["before", false, "Before the event · Day 1 is Mon Oct 26 · lobby open all day"]);
+  assert.equal(before.next.allDay, true);
+  for (const [st, word] of [["desk", "pass desk"], ["media", "media desk"], ["av", "AV station"], ["exhibitor", "exhibitor desk"]]) {
+    assert.equal(stationState({ station: st, at: at("2026-10-25T13:00:00Z"), windows: W }).text, `Before the event · Day 1 is Mon Oct 26 · ${word} open all day`, st);
+  }
+  // Even with no hours saved for it.
+  assert.equal(stationState({ station: "lobby", at: at("2026-10-24T14:00:00Z"), windows: {} }).text, "Before the event · Day 1 is Mon Oct 26 · lobby open all day");
+  // A windowed station keeps its opening time.
+  assert.equal(stationState({ station: "breakfast", at: at("2026-10-24T14:00:00Z"), windows: W }).text, "Before the event · Day 1 is Mon Oct 26 · breakfast opens 7:25 AM");
+  assert.equal(stationState({ station: "lobby", at: at("2026-10-28T14:00:00Z"), windows: W }).text, "TTFC 2026 is over: no event today");
   assert.deepEqual(Object.keys(stationStates(W, at("2026-10-26T12:00:00Z"), ["lobby", "breakfast"])), ["lobby", "breakfast"]);
   assert.equal(fmtRange("11:30", "12:30"), "11:30 AM–12:30 PM");
 });

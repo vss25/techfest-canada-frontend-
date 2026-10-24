@@ -63,17 +63,19 @@ export function volunteerMayOpen(pathname) {
 const volunteerItem = (it) => ({ ...it, title: maskName(it?.title) || "No name", subtitle: maskText(it?.subtitle, 200) });
 
 /**
- * The global search for a volunteer: only the server's People group, and only links into People, masked. `exact`: the
- * query is an email or a ticket ID: no "See all in People" then (its link would carry the email or ticket ID).
+ * The global search for a volunteer: only the server's People group, and only links into People, masked. Never a
+ * "See all in People": its link carries the search in an address (/admin/people?q=…, and a full page load with
+ * Ctrl / ⌘ Enter sends it to the hosting logs), and a volunteer's People search shows the same closest few anyway
+ * (it is a POST, see people/volunteerView.js volunteerSearch). The group's count still says how many match.
  */
-export function searchGroupsFor(groups = [], { isVolunteer = false, exact = false } = {}) {
+export function searchGroupsFor(groups = [], { isVolunteer = false } = {}) {
   if (!isVolunteer) return groups;
   return groups
     .filter((g) => g?.key === "people")
     .map((g) => ({
       ...g,
       items: (g.items || []).filter((it) => volunteerMayOpen(String(it?.link || "").split("?")[0])).map(volunteerItem),
-      seeAll: !exact && g.seeAll && String(g.seeAll.link || "").startsWith("/admin/people?") ? g.seeAll : null,
+      seeAll: null,
     }));
 }
 

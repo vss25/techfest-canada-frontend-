@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Component, Fragment, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Accessibility, ArrowDown, ArrowLeft, ArrowUp, CalendarCheck, ChevronLeft, ChevronRight, Contact, Crown, Eye, Mic2, Search, ShieldX, Store, Ticket, Users, Utensils,
 } from "lucide-react";
@@ -11,18 +11,21 @@ import { CompanyMark } from "./LogoPicker";
 import { MediaMark, PassBand } from "./MediaBadges";
 import { isMedia, otherTypes } from "./mediaMark";
 import { DAY_SHORT, RSVP_STATUS_LABELS, RSVP_STATUS_TONE, TYPE_LABELS, TYPE_TONE, VIP_LABEL, VIP_TONE, personPath } from "./peopleMeta";
-import { VOLUNTEER_COLUMNS, VOLUNTEER_FILTERS, exactLookup, lookupResults, volunteerProfile, volunteerQuery, volunteerRow } from "./volunteerView";
+import {
+  VOLUNTEER_COLUMNS, VOLUNTEER_FILTERS, isListAnswer, isProfileAnswer, lookupAnswer, volunteerError, volunteerProfile, volunteerQuery, volunteerRequests, volunteerRow,
+} from "./volunteerView";
 import { NOT_FOR_VOLUNTEERS, VOLUNTEER_FORBIDDEN, VOLUNTEER_FORBIDDEN_TEXT } from "../access";
 
 /* =========================================================
    Admin → People for volunteer accounts (Oct 23 2026): the
    students helping at the event look people up, nothing else.
    Read only: no edits, switches, logo picker, delete, CSV or
-   sends. The list (GET /console/people) and one profile
-   (GET /console/people/:id) are the only things it asks the
-   server for, plus POST /console/search for an exact email or
-   ticket ID typed in the list's search (so it never goes in an
-   address or a log); what it shows is volunteerView.js's allowed
+   sends. The list (GET /console/people: filters, sorting and
+   pages only) and one profile (GET /console/people/:id) are the
+   only things it asks the server for, plus POST /console/search
+   for anything typed in the list's search (the text goes in the
+   body, so it never lands in an address, the browser's history
+   or a log, even half-typed); what it shows is volunteerView.js's allowed
    fields (name, job title, company, photo / logo, their marks,
    pass and Pending, what the pass includes, RSVP days, meals,
    dietary and accessibility needs, arrival, booth, speaking
@@ -135,36 +138,100 @@ const Exhibitor = ({ r }) => (r.exhibitor
   ? <span className="block"><Badge tone="purple">Yes</Badge>{r.booth && <span className="block text-[11px] text-ttfc-muted">Booth {r.booth}</span>}</span>
   : <span className="text-ttfc-muted">No</span>);
 
+/** A failed load or search, in words for a volunteer (volunteerError), with Try again. */
+function VolunteerErrorState({ error, onRetry, title = "Couldn't load this" }) {
+  return <ErrorState error={{ message: volunteerError(error) }} onRetry={onRetry} title={title} />;
+}
+
 /**
- * An exact email address or ticket ID typed in the list's search: looked up with POST /console/search (the terms stay
- * in the request body, never in an address, the browser's history or the hosting logs), the People results only.
+ * Never a blank page for a volunteer: if drawing the list or a profile ever throws (an answer in a shape nobody
+ * expected), this card shows instead, with Try again and a way back to People. Opening another page starts afresh.
+ * The error itself stays out of the page.
  */
-function ExactLookup({ q }) {
+class VolunteerGuard extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { failed: false, at: props.resetKey, attempt: 0 };
+  }
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  static getDerivedStateFromProps(props, state) {
+    return props.resetKey !== state.at ? { failed: false, at: props.resetKey } : null;
+  }
+
+  componentDidCatch(error) {
+    // What broke, never the data it was drawing.
+    console.error(`Volunteer panel: couldn't show this page (${error?.name || "Error"})`);
+  }
+
+  render() {
+    if (!this.state.failed) return <Fragment key={this.state.attempt}>{this.props.children}</Fragment>;
+    return (
+      <div className="mx-auto mt-6 max-w-md">
+        <ErrorState title="Couldn't show this page" error={{ message: "Something on this page didn't load properly. Try again, or go back to People and search again. If it keeps happening, ask a staff member." }}
+          onRetry={() => this.setState((s) => ({ failed: false, attempt: s.attempt + 1 }))} />
+        <div className="mt-4 text-center">
+          <Link to="/admin/people" className={cx("inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-ttfc-muted hover:text-ttfc-text", focusRing)}>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to People
+          </Link>
+        </div>
+      </div>
+    );
+  }
+}
+
+/**
+ * The list's search for a volunteer: POST /console/search with the text in the body (never in an address, the
+ * browser's history or the hosting logs), People results only. `send` "" → nothing is asked. While a newer search is on
+ * its way the last answer stays up (`stale`), so the results don't flicker as they type.
+ */
+function useVolunteerLookup(send) {
   const [nonce, setNonce] = useState(0);
-  const [res, setRes] = useState({ key: "", items: null, more: false, error: null });
-  const key = `${q}#${nonce}`;
+  const [res, setRes] = useState({ key: "", answer: null, error: null });
+  const key = send ? `${send}#${nonce}` : "";
   useEffect(() => {
+    if (!send) return undefined;
     const ctrl = new AbortController();
-    adminFetch("/console/search", { method: "POST", body: { q }, signal: ctrl.signal }).then(
-      (data) => setRes({ key, items: lookupResults(data), more: !!(data?.groups || []).find((g) => g?.key === "people")?.more, error: null }),
-      (error) => { if (error?.name !== "AbortError") setRes({ key, items: null, more: false, error }); },
+    const k = `${send}#${nonce}`;
+    adminFetch("/console/search", { method: "POST", body: { q: send }, signal: ctrl.signal }).then(
+      (data) => setRes({ key: k, answer: lookupAnswer(data), error: null }),
+      (error) => { if (error?.name !== "AbortError") setRes({ key: k, answer: null, error }); },
     );
     return () => ctrl.abort();
-  }, [q, key]);
+  }, [send, nonce]);
+  const stale = !!key && res.key !== key;
+  return {
+    answer: res.answer, error: stale ? null : res.error, stale,
+    // Nothing worth keeping up meanwhile (no answer yet, or the last one was a failure): show "Searching…".
+    loading: stale && !(res.answer?.ok && !res.answer.failed),
+    retry: () => setNonce((n) => n + 1),
+  };
+}
 
-  if (res.key !== key) return <LoadingState label="Looking them up…" />;
-  if (isForbidden(res.error)) return <NotForVolunteers />;
-  if (res.error) return <ErrorState error={res.error} onRetry={() => setNonce((n) => n + 1)} title="Couldn't look them up" />;
-  if (!res.items.length) {
-    return <EmptyState icon={Users} title="No one found" body="No one has that email address or ticket ID. Check it, or search by their name or company." />;
+/** The search's results: who matched (the closest few), or why there is nothing to show. */
+function LookupResults({ lookup, filtersSet }) {
+  const { answer: a, error, loading, stale, retry } = lookup;
+  if (loading) return <LoadingState label="Searching…" />;
+  if (isForbidden(error)) return <NotForVolunteers />;
+  if (error) return <VolunteerErrorState error={error} onRetry={retry} title="Couldn't search people" />;
+  if (!a) return <LoadingState label="Searching…" />;
+  if (!a.ok || a.failed) return <VolunteerErrorState error={null} onRetry={retry} title="Couldn't search people" />;
+  if (!a.items.length) {
+    return <EmptyState icon={Users} title="No one found" body="Check the spelling, or try their company. An exact email address or ticket ID finds them too." />;
   }
   return (
-    <section aria-label="Look-up results">
+    <section aria-label="Search results" aria-busy={stale} className={cx("transition-opacity", stale && "opacity-60")}>
       <p className="mb-2 text-xs text-ttfc-dim">
-        {res.items.some((r) => r.exact) ? "Found by an exact email address or ticket ID (not shown here)." : "Matches for your search."} Filters don't apply to this look-up.
+        {a.exact ? "Found by an exact email address or ticket ID (not shown here)." : a.more
+          ? `${a.total.toLocaleString()} people match. These are the closest ${a.items.length}: add more of their name or company to narrow it down.`
+          : `${a.items.length === 1 ? "1 person matches" : `${a.items.length} people match`}.`}
+        {filtersSet ? " Filters don't apply to a search: clear the search to use them." : ""}
       </p>
       <ul className="space-y-3">
-        {res.items.map((r) => (
+        {a.items.map((r) => (
           <li key={r.id}>
             <Link to={r.link} className={cx("flex items-center gap-3 rounded-[18px] border border-ttfc-line bg-ttfc-panel p-4 transition hover:border-ttfc-purple/50", focusRing)}>
               <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-ttfc-pink via-ttfc-purple to-ttfc-orange text-sm font-bold text-white" aria-hidden="true">
@@ -182,32 +249,39 @@ function ExactLookup({ q }) {
           </li>
         ))}
       </ul>
-      {res.more && <p className="mt-3 text-xs text-ttfc-dim">Showing the first {res.items.length}. Add more of their name to narrow it down.</p>}
     </section>
   );
 }
 
-/* /admin/people for a volunteer. */
+/* /admin/people for a volunteer (a failure to draw it shows a card, never a blank page). */
 export function VolunteerDirectory() {
+  const { pathname } = useLocation();
+  return <VolunteerGuard resetKey={pathname}><Directory /></VolunteerGuard>;
+}
+
+function Directory() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState(params.get("q") || "");
-  const dq = useDebounced(q.trim(), 300);
-  // An exact email or ticket ID: POST /console/search (ExactLookup), not the list's GET.
-  const exact = exactLookup(dq);
+  const dq = useDebounced(q, 300);
+  // Any search goes by POST /console/search, in the body; the list's GET only ever carries filters, sort and page.
   const view = Object.fromEntries(params);
-  const query = volunteerQuery({ ...view, q: dq });
+  const req = volunteerRequests(dq, view);
+  const { search } = req;
+  const searching = !!search.text;
+  const lookup = useVolunteerLookup(req.post?.q || "");
+  const query = volunteerQuery(view);
   const page = Number(query.get("page")) || 0;
   const sort = query.get("sort") || "name";
   const dir = query.get("dir") === "desc" ? "desc" : "asc";
-  const { data, error, loading, reload, refreshing } = useApi(exact ? null : `/console/people?${query}`);
+  const { data, error, loading, reload, refreshing } = useApi(req.get);
 
   const update = (next) => {
     const p = new URLSearchParams(params);
     for (const [k, v] of Object.entries(next)) { if (v === "" || v == null || v === 0) p.delete(k); else p.set(k, String(v)); }
     setParams(p, { replace: true });
   };
-  // A search from a link (the top bar's "See all in People") moves into the box and out of the address.
+  // A search in a link (an old "See all in People", a pasted address) moves into the box and out of the address.
   const linked = params.get("q");
   useEffect(() => {
     if (linked == null) return;
@@ -217,22 +291,30 @@ export function VolunteerDirectory() {
   }, [linked, params, setParams]);
   const [lastLinked, setLastLinked] = useState(linked);
   if (linked !== lastLinked) { setLastLinked(linked); if (linked != null) setQ(linked); }
-  // The search stays on the page, not in the address. Name and company words go to GET /console/people?q=; an exact
-  // email or ticket ID goes by POST (ExactLookup), so it never lands in an address, the browser's history or a log.
+  // The search stays on the page and in POST bodies: never in the address, the browser's history or a log.
   const onSearch = (v) => { setQ(v); update({ q: "", page: 0 }); };
   const onSort = (key) => update({ sort: key === "name" ? "" : key, dir: sort === key && dir === "asc" ? "desc" : "", page: 0 });
   const clearAll = () => { setQ(""); update(Object.fromEntries(["q", "page", "sort", "dir", ...VOLUNTEER_FILTERS.map((f) => f.key)].map((k) => [k, ""]))); };
 
-  const rows = (data?.rows || []).map(volunteerRow);
-  const total = data?.total ?? 0;
-  const size = data?.size || 50;
+  // An answer that isn't a list (a server error page, a Wi-Fi sign-in page) is an error, not "No one yet".
+  const listOk = isListAnswer(data);
+  const listError = error || (data !== undefined && !listOk ? { status: -1 } : null);
+  const rows = listOk ? data.rows.map(volunteerRow) : [];
+  const total = listOk && Number.isFinite(data.total) ? data.total : rows.length;
+  const size = listOk && Number.isFinite(data.size) && data.size > 0 ? data.size : 50;
   const pages = Math.max(1, Math.ceil(total / size));
-  const filtered = !!(dq || VOLUNTEER_FILTERS.some((f) => query.get(f.key)));
-  const c = data?.counts;
+  const filtersSet = VOLUNTEER_FILTERS.some((f) => query.get(f.key));
+  const filtered = !!(q.trim() || filtersSet);
+  const c = listOk && data.counts && typeof data.counts === "object" ? data.counts : null;
   const open = (id) => navigate(personPath(id));
   const count = (n) => (typeof n === "number" ? n.toLocaleString() : undefined);
+  const found = lookup.answer?.ok && !lookup.answer.failed ? lookup.answer : null;
+  const status = searching
+    ? search.tooShort ? "Keep typing…" : lookup.loading ? "Searching…" : lookup.error || !found ? "Search didn't work"
+      : found.exact ? "Exact look-up" : `${found.total.toLocaleString()} found${lookup.stale ? " · searching…" : ""}`
+    : loading ? "Loading…" : listError && !listOk ? "Couldn't load" : `${total.toLocaleString()} ${total === 1 ? "person" : "people"}${refreshing ? " · updating…" : ""}`;
 
-  if (!exact && isForbidden(error)) return <NotForVolunteers />;
+  if (!searching && isForbidden(error)) return <NotForVolunteers />;
 
   return (
     <>
@@ -256,16 +338,16 @@ export function VolunteerDirectory() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
             <Input type="search" value={q} onChange={(e) => onSearch(e.target.value)} placeholder="Search name or company" className="pl-9" aria-label="Search people" />
           </div>
-          <p className="text-sm text-ttfc-muted" aria-live="polite">
-            {exact ? "Exact look-up" : loading ? "Loading…" : `${total.toLocaleString()} ${total === 1 ? "person" : "people"}`}{!exact && refreshing && !loading ? " · updating…" : ""}
-          </p>
+          <p className="text-sm text-ttfc-muted" aria-live="polite">{status}</p>
           {filtered && <Button size="sm" variant="ghost" onClick={clearAll}>Clear filters</Button>}
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        {/* A search looks through everyone (the filters are for browsing the list), so they rest while it's on; on
+            phones they step aside so the results sit right under the box. */}
+        <div className={cx("grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6", searching && "max-sm:hidden opacity-60")} title={searching ? "Clear the search to use the filters" : undefined}>
           {VOLUNTEER_FILTERS.map((fd) => (
             <label key={fd.key} className="flex min-w-0 flex-col justify-end">
               <span className="mb-1 block text-[11px] font-semibold uppercase leading-tight tracking-wide text-ttfc-dim">{fd.label}</span>
-              <Select value={query.get(fd.key) || ""} onChange={(e) => update({ [fd.key]: e.target.value, page: 0 })} className="w-full" aria-label={fd.label}>
+              <Select value={query.get(fd.key) || ""} onChange={(e) => update({ [fd.key]: e.target.value, page: 0 })} className="w-full" aria-label={fd.label} disabled={searching}>
                 <option value="">{fd.any || "Any"}</option>
                 {fd.options.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
               </Select>
@@ -274,8 +356,11 @@ export function VolunteerDirectory() {
         </div>
       </div>
 
-      {exact ? <ExactLookup q={dq} /> : loading ? <LoadingState label="Loading people…" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !rows.length ? (
-        <EmptyState icon={Users} title={filtered ? "No one matches" : "No one yet"} body={filtered ? "Try a different search or filter." : undefined} />
+      {searching ? (search.tooShort
+        ? <EmptyState icon={Search} title="Keep typing" body="Type at least 2 letters of their name or company, or their full email address or ticket ID." />
+        : <LookupResults lookup={lookup} filtersSet={filtersSet} />
+      ) : loading ? <LoadingState label="Loading people…" /> : listError && !listOk ? <VolunteerErrorState error={listError} onRetry={reload} title="Couldn't load people" /> : !rows.length ? (
+        <EmptyState icon={Users} title={filtersSet ? "No one matches" : "No one yet"} body={filtersSet ? "Try a different filter." : undefined} />
       ) : (
         <>
           {/* Phones: one card per person. */}
@@ -467,32 +552,47 @@ function ArrivalCard({ v }) {
   );
 }
 
-/* /admin/people/:id for a volunteer. */
+/* /admin/people/:id for a volunteer (a failure to draw it shows a card, never a blank page). */
 export function VolunteerProfile() {
   const { id } = useParams();
-  return <ProfileView key={id} id={id} />;
+  const { pathname } = useLocation();
+  return <VolunteerGuard resetKey={pathname}><ProfileView key={id} id={id} /></VolunteerGuard>;
 }
+
+const BackToPeople = ({ className = "mb-5" }) => (
+  <Link to="/admin/people" className={cx("inline-flex items-center gap-1.5 rounded-lg text-sm font-semibold text-ttfc-muted hover:text-ttfc-text", className)}>
+    <ArrowLeft className="h-4 w-4" aria-hidden="true" /> People
+  </Link>
+);
 
 function ProfileView({ id }) {
   const navigate = useNavigate();
   const { data, error, loading, reload } = useApi(`/console/people/${encodeURIComponent(id)}`);
+  const ok = isProfileAnswer(data);
 
   // A guest pass later claimed by an account: show the person's own address (as for staff).
   useEffect(() => {
-    if (data?.canonicalId && data.canonicalId !== id) navigate(personPath(data.canonicalId), { replace: true });
-  }, [data, id, navigate]);
+    if (ok && typeof data.canonicalId === "string" && data.canonicalId && data.canonicalId !== id) navigate(personPath(data.canonicalId), { replace: true });
+  }, [ok, data, id, navigate]);
 
   if (isForbidden(error)) return <NotForVolunteers />;
   if (loading) return <LoadingState label="Loading person…" />;
-  if (error && !data) return <ErrorState error={error} onRetry={reload} title={error?.status === 404 ? "Person not found" : undefined} />;
+  if (!ok) {
+    // An error, or an answer that isn't a person (a server error page, a Wi-Fi sign-in page): never an empty profile.
+    const failure = error || { status: -1 };
+    return (
+      <>
+        <BackToPeople />
+        <VolunteerErrorState error={failure} onRetry={failure.status === 404 ? undefined : reload} title={failure.status === 404 ? "Person not found" : "Couldn't load this person"} />
+      </>
+    );
+  }
   const v = volunteerProfile(data);
   const photo = /^https:\/\//.test(v.photoUrl) ? v.photoUrl : v.photoUrl.startsWith("/api/") ? `${ADMIN_API.replace(/\/api\/?$/, "")}${v.photoUrl}` : "";
 
   return (
     <>
-      <Link to="/admin/people" className="mb-5 inline-flex items-center gap-1.5 rounded-lg text-sm font-semibold text-ttfc-muted hover:text-ttfc-text">
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" /> People
-      </Link>
+      <BackToPeople />
       <VolunteerBanner className="mb-5" />
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
         {photo ? (

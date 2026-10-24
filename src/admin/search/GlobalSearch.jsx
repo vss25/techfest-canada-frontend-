@@ -162,7 +162,7 @@ function Palette({ initial, onClose, onGo }) {
       key: "pages", label: "Pages and settings", total: pages.total, more: pages.total > pages.items.length,
       options: pages.items.map((p) => ({ key: `p:${p.id}`, kind: "result", item: { ...p, icon: undefined }, icon: p.icon, title: p.title, subtitle: p.subtitle, groupLabel: "Pages and settings" })),
     }] : [];
-    const serverGroups = searchGroupsFor(server?.groups || [], { isVolunteer, exact: !!(q.email || q.ticket) }).map(withSponsorRule).map((g) => ({
+    const serverGroups = searchGroupsFor(server?.groups || [], { isVolunteer }).map(withSponsorRule).map((g) => ({
       key: g.key, label: g.label, total: g.total, more: g.more, stale: !fresh,
       options: [
         ...g.items.map((it) => ({ key: `${g.key}:${it.type}:${it.id}`, kind: "result", item: it, title: it.title, subtitle: it.subtitle, groupLabel: g.label, stale: !fresh })),

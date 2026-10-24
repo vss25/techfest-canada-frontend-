@@ -44,27 +44,27 @@ export const VOLUNTEER_COLUMNS = [
 export const VOLUNTEER_SORTS = VOLUNTEER_COLUMNS.filter((c) => c.sort).map((c) => c.sort);
 
 /**
- * Is this search an exact email address or ticket ID (or an email being typed: anything with an "@")? Those are never
- * sent in an address (they would land in hosting logs and browser history): the list looks them up with
- * POST /console/search instead (ExactLookup in VolunteerPeople.jsx).
+ * What a volunteer typed in the list's search → what the panel sends. Every volunteer search goes in the body of
+ * POST /console/search, never in an address (Oct 23 2026, third round). The box is searched as they type, so a pause
+ * sends the text as it is so far: "mara.secret" (an email before its "@") or "beefcafe" (the start of a ticket ID)
+ * would otherwise land in GET /console/people?q=… in the hosting logs and the browser's network history, and from the
+ * text alone the panel can't tell a name from the first half of an email.
+ * → { text, send, tooShort }: `send` goes in the POST body ("" = nothing is sent); `tooShort`: something was typed but
+ * it is under the server's 2 characters (or has no letters or digits), so nothing is sent yet.
  */
-export function exactLookup(q) {
-  const text = String(q ?? "").trim();
-  if (text.includes("@")) return true;
-  const r = readQuery(text);
-  return r.tooShort ? false : !!(r.email || r.ticket);
+export function volunteerSearch(q) {
+  const r = readQuery(q);
+  return { text: r.text, send: r.tooShort ? "" : r.text, tooShort: !!r.text && r.tooShort };
 }
 
 /**
  * GET /console/people's query for a volunteer, from the address bar: only the allowed filters, sorts and the page.
  * A link with ?value=, ?code=, ?attending= or ?size=all (say, pasted from a staff member) is simply ignored, and so is
- * a search for an exact email or ticket ID (it goes by POST, see exactLookup): only name and company words go in q.
+ * any search: q never goes in this address (a volunteer's search is a POST, see volunteerSearch).
  */
 export function volunteerQuery(params) {
   const get = (k) => (typeof params?.get === "function" ? params.get(k) : params?.[k]) || "";
   const out = new URLSearchParams();
-  const q = String(get("q")).trim().slice(0, 120);
-  if (q && !exactLookup(q)) out.set("q", q);
   for (const f of VOLUNTEER_FILTERS) {
     const v = String(get(f.key));
     if (v && f.options.some((o) => o.key === v)) out.set(f.key, v);
@@ -75,6 +75,17 @@ export function volunteerQuery(params) {
   const page = Math.max(0, Math.min(10000, Math.floor(Number(get("page")) || 0)));
   out.set("page", String(page));
   return out;
+}
+
+/**
+ * The requests the volunteer list makes for what's in the search box (`typed`) and the address's filters (`params`):
+ * → { search, get, post }. A search → only `post` (POST /console/search { q }), and the list isn't asked; no search →
+ * only `get` (GET /console/people with the filters, sort and page). Nothing typed ever goes in `get`.
+ */
+export function volunteerRequests(typed, params) {
+  const search = volunteerSearch(typed);
+  if (search.text) return { search, get: null, post: search.send ? { q: search.send } : null };
+  return { search, get: `/console/people?${volunteerQuery(params)}`, post: null };
 }
 
 const str = (v, max = 200) => (typeof v === "string" ? v.trim().slice(0, max) : "");
@@ -131,8 +142,9 @@ export function arrivalOf(p, passes = []) {
 
 const RSVP_KEYS = ["attendee", "staff", "none"];
 
-/** A row of the volunteer list: only the allowed fields. */
-export function volunteerRow(r = {}) {
+/** A row of the volunteer list: only the allowed fields (anything that isn't an object draws as an empty row). */
+export function volunteerRow(row) {
+  const r = row && typeof row === "object" ? row : {};
   const pass = passView(r.pass, r.passStatus);
   const rsvpStatus = RSVP_KEYS.includes(r.rsvp?.status) ? r.rsvp.status : "none";
   return {
@@ -242,7 +254,7 @@ export function volunteerProfile(data = {}) {
 }
 
 /**
- * POST /console/search's People results, for the volunteer list's exact look-up: [{ id, name, subtitle, badges, exact, link }],
+ * POST /console/search's People results, for the volunteer list's search: [{ id, name, subtitle, badges, exact, link }],
  * masked like everything else, profile links only.
  */
 export function lookupResults(answer) {
@@ -257,4 +269,43 @@ export function lookupResults(answer) {
       exact: it.exact === true,
       link: String(it.link),
     }));
+}
+
+/**
+ * POST /console/search's whole answer, for the volunteer list's search → { ok, failed, tooShort, items, total, more,
+ * exact }. `ok` false: not a search answer at all (say, a Wi-Fi sign-in page that answered instead of the server), so the
+ * panel shows an error, not "No one found". `failed`: the server couldn't search People this time (its `failed` list).
+ * `total` / `more`: how many match when the server sent only the closest few (it sends at most 5 per group).
+ */
+export function lookupAnswer(answer) {
+  const ok = !!answer && typeof answer === "object" && Array.isArray(answer.groups);
+  const items = ok ? lookupResults(answer) : [];
+  const people = ok ? answer.groups.find((g) => g?.key === "people") : null;
+  const failed = ok && !people && list(answer.failed).some((f) => f?.key === "people");
+  const total = Number.isFinite(people?.total) ? Math.max(people.total, items.length) : items.length;
+  return {
+    ok, failed, tooShort: ok && answer.tooShort === true, items, total,
+    more: total > items.length, exact: items.some((r) => r.exact),
+  };
+}
+
+/** Is this GET /console/people answer a list (rows), and this GET /console/people/:id answer a person? */
+export const isListAnswer = (data) => !!data && typeof data === "object" && Array.isArray(data.rows);
+export const isProfileAnswer = (data) => !!data && typeof data === "object" && !!data.person && typeof data.person === "object";
+
+const TRY_LATER = "This isn't working right now. Try again in a moment, and if it keeps happening, ask a staff member.";
+
+/**
+ * What a volunteer is told when the list, a profile or the search fails: the server's own words when they are meant
+ * for people (a suspended account, too many look-ups, no connection), otherwise a plain "try again" (a server error, a
+ * page that wasn't the server, anything unexpected), never a status code or a technical message.
+ */
+export function volunteerError(error) {
+  const status = typeof error?.status === "number" ? error.status : -1;
+  const msg = typeof error?.message === "string" ? error.message.trim().slice(0, 200) : "";
+  if (status === 429 || error?.code === "rate_limited") return msg || "That's a lot of look-ups. Wait a minute and try again.";
+  if (status === 0) return msg || "Can't reach the server. Check your connection and try again.";
+  if (status === 404) return "No one with this link. Go back to People and search for them again.";
+  if ((status === 400 || status === 403 || status === 409) && msg && !/^Request failed \(\d+\)$/.test(msg)) return msg;
+  return TRY_LATER;
 }

@@ -7,8 +7,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
-  VOLUNTEER_COLUMNS, VOLUNTEER_FILTER_KEYS, VOLUNTEER_SORTS, arrivalOf, clock, exactLookup, inclusionsOf, lookupResults, rsvpOf, sessionsOf,
-  volunteerProfile, volunteerQuery, volunteerRow,
+  VOLUNTEER_COLUMNS, VOLUNTEER_FILTER_KEYS, VOLUNTEER_SORTS, arrivalOf, clock, inclusionsOf, isListAnswer, isProfileAnswer, lookupAnswer, lookupResults,
+  rsvpOf, sessionsOf, volunteerError, volunteerProfile, volunteerQuery, volunteerRequests, volunteerRow,
 } from "./volunteerView.js";
 import { maskName, maskText } from "./volunteerMask.js";
 import { searchGroupsFor, volunteerRecents } from "../access.js";
@@ -211,7 +211,7 @@ test("an email typed as a name, a staff account named after its email, a phone i
   assert.equal(staffer.name, "No name");
   // The top bar's search and the list's exact look-up (POST /console/search, People results).
   for (const answer of Object.values(API.search)) {
-    const groups = searchGroupsFor(answer.groups, { isVolunteer: true, exact: !!answer.query.exact });
+    const groups = searchGroupsFor(answer.groups, { isVolunteer: true });
     noFixtureSecrets(groups, "search");
     noFixtureSecrets(lookupResults(answer), "look-up");
   }
@@ -263,17 +263,11 @@ test("arrival: the first check-in of their passes; a person-level time counts to
 test("the list asks only for the allowed filters and sorts, with normal paging (no page size = all)", () => {
   const q = volunteerQuery(new URLSearchParams("q=Jane&type=speaker&pass=power&rsvp=attendee&exhibitor=yes&vip=no&media=yes&value=above&code=SPRING20"
     + "&rsvpEmail=yes&attending=posted&appHidden=yes&size=all&limit=100000&export=1&sort=value&page=2"));
-  assert.equal(q.toString(), "q=Jane&type=speaker&pass=power&rsvp=attendee&exhibitor=yes&vip=no&media=yes&page=2");
+  // No search in the list's address, ever (a volunteer's search is a POST: volunteerSearch).
+  assert.equal(q.toString(), "type=speaker&pass=power&rsvp=attendee&exhibitor=yes&vip=no&media=yes&page=2");
   assert.equal(volunteerQuery(new URLSearchParams("sort=company&dir=desc")).toString(), "sort=company&dir=desc&page=0");
   assert.equal(volunteerQuery(new URLSearchParams("rsvp=form&pass=gold&page=-3")).toString(), "page=0");
   assert.equal(volunteerQuery({ q: "  ", page: "abc" }).toString(), "page=0");
-  // An exact email or ticket ID never goes in the list's address: it is looked up by POST (exactLookup).
-  for (const q of ["mara.secret@example.com", "TTFC-AB12CD", "beefcafe0001", "TECHFEST:beefcafe0001", "mara.secret@exa", "mara@", "@example.com"]) {
-    assert.equal(exactLookup(q), true, q);
-    assert.equal(volunteerQuery({ q, type: "speaker" }).toString(), "type=speaker&page=0", q);
-  }
-  for (const q of ["Mara", "Example Bank", "B7", "", "a"]) assert.equal(exactLookup(q), false, q);
-  assert.equal(volunteerQuery({ q: "Example Bank" }).toString(), "q=Example+Bank&page=0");
   assert.deepEqual(VOLUNTEER_FILTER_KEYS, ["type", "pass", "rsvp", "exhibitor", "vip", "media"]);
   assert.deepEqual(VOLUNTEER_SORTS, ["name", "type", "company", "pass", "rsvp", "exhibitor"]);
 });
@@ -290,4 +284,114 @@ test("inclusions: effective Yes / No from either shape; clock", () => {
   assert.deepEqual(inclusionsOf(null), []);
   assert.equal(clock("09:30"), "9:30 AM");
   assert.equal(clock("17:00"), "5:00 PM");
+});
+
+/* Third round (Oct 23 2026): a volunteer's search never goes in an address, even half-typed. The list's box is
+   searched as they type (300 ms after a pause), so every prefix of what they type is a request that may go out. */
+test("every volunteer search goes in a POST body: no prefix of an email or ticket ID is ever in a GET address", () => {
+  const typed = ["mara.secret@example.com", "beefcafe0001", "TECHFEST:beefcafe0001", "omar.guest@example.com", "Mara Delegate", "Example Bank",
+    "jean-luc.x@example.com", "o'neil+ttfc@example.com", "BOOTH-GOLD", "José Núñez", "a.b_c+d"];
+  const view = { type: "speaker", sort: "company", page: "2" };
+  for (const full of typed) {
+    for (let i = 1; i <= full.length; i += 1) {
+      const prefix = full.slice(0, i);
+      const r = volunteerRequests(prefix, view);
+      assert.equal(r.get, null, `${prefix}: the list isn't asked while there is a search`);
+      if (r.post) assert.deepEqual(r.post, { q: prefix.trim() }, prefix);
+      else assert.equal(r.search.tooShort, true, `${prefix}: nothing sent only while it's too short`);
+    }
+  }
+  // The retest's own pauses: each went out as GET /console/people?q=… before; now each is a POST body.
+  for (const q of ["mara.secret", "beefcafe", "omar.guest"]) {
+    assert.deepEqual(volunteerRequests(q, {}), { search: { text: q, send: q, tooShort: false }, get: null, post: { q } });
+  }
+  // A search in the address (an old "See all in People" link) still never reaches the GET.
+  assert.equal(volunteerRequests("", { q: "mara.secret", type: "speaker" }).get, "/console/people?type=speaker&page=0");
+  // Nothing typed: the list, with the filters, sort and page only.
+  assert.deepEqual(volunteerRequests("", view), { search: { text: "", send: "", tooShort: false }, get: "/console/people?type=speaker&sort=company&page=2", post: null });
+  assert.equal(volunteerRequests("   ", {}).get, "/console/people?page=0");
+  // Under 2 characters (or nothing searchable): nothing goes out yet, and the list isn't shown under a half search.
+  for (const q of ["a", " M ", "@", "!!", ".."]) {
+    const r = volunteerRequests(q, {});
+    assert.equal(r.get, null, q);
+    assert.equal(r.post, null, q);
+    assert.equal(r.search.tooShort, true, q);
+  }
+  // Spaces are tidied the way the server reads them (no second request for a trailing space); 100 characters at most.
+  assert.deepEqual(volunteerRequests("  Mara   Delegate ", {}).post, { q: "Mara Delegate" });
+  assert.equal(volunteerRequests("x".repeat(300), {}).post.q.length, 100);
+});
+
+test("the list's search answer: the closest few and how many match; a failed or odd answer is an error, not 'No one found'", () => {
+  const words = lookupAnswer(API.search.words);
+  assert.equal(words.ok, true);
+  assert.equal(words.failed, false);
+  assert.ok(words.items.length > 0);
+  assert.equal(words.total >= words.items.length, true);
+  const exact = lookupAnswer(API.search.exactEmail);
+  assert.deepEqual([exact.exact, exact.total, exact.more, exact.items.map((r) => r.name)], [true, 1, false, ["Mara Delegate"]]);
+  // At most 5 per group from the server: the total says how many match.
+  const items = Array.from({ length: 5 }, (_, i) => ({ type: "person", id: `u-${i}`, title: `Alex ${i}`, link: `/admin/people/u-${i}` }));
+  const capped = lookupAnswer({ groups: [{ key: "people", total: 23, more: true, items }], failed: [] });
+  assert.deepEqual([capped.ok, capped.total, capped.more, capped.items.length], [true, 23, true, 5]);
+  // The server couldn't search People (services/adminSearch.js `failed`): an error.
+  const failed = lookupAnswer({ query: { text: "omar", exact: "" }, groups: [], failed: [{ key: "people", label: "People", reason: "error" }] });
+  assert.deepEqual([failed.ok, failed.failed, failed.items.length], [true, true, 0]);
+  // No one matches: fine, not an error.
+  assert.deepEqual(lookupAnswer({ groups: [], failed: [] }), { ok: true, failed: false, tooShort: false, items: [], total: 0, more: false, exact: false });
+  // Not a search answer at all (a Wi-Fi sign-in page answered 200 with HTML, so the panel got {}; null; a list).
+  for (const odd of [{}, null, undefined, "nope", [], { groups: "x" }, { rows: [] }]) {
+    const a = lookupAnswer(odd);
+    assert.equal(a.ok, false, JSON.stringify(odd));
+    assert.deepEqual(a.items, []);
+  }
+  assert.equal(lookupAnswer({ tooShort: true, groups: [] }).tooShort, true);
+  // Junk items never break it, and only People profile links come through.
+  assert.deepEqual(lookupAnswer({ groups: [{ key: "people", total: "3", items: [null, 4, { type: "person", id: 7, title: { a: 1 }, link: "/admin/people/u-7", badges: "VIP" }] }] }).items,
+    [{ id: "7", name: "No name", subtitle: "", badges: [], exact: false, link: "/admin/people/u-7" }]);
+});
+
+test("when the People endpoint errors, a volunteer gets plain words, never a status code or a technical message", () => {
+  const TRY = "This isn't working right now. Try again in a moment, and if it keeps happening, ask a staff member.";
+  // A server error (the V1 regex crash answered 500 "Something went wrong. Try again."), a gateway page, anything unexpected.
+  assert.equal(volunteerError({ status: 500, message: "Something went wrong. Try again." }), TRY);
+  assert.equal(volunteerError({ status: 502, message: "Request failed (502)" }), TRY);
+  assert.equal(volunteerError({ status: 503, message: "Invalid regular expression: /(?:mary\\-jane)/giu: Invalid escape" }), TRY);
+  assert.equal(volunteerError({ status: 400, message: "Request failed (400)" }), TRY);
+  assert.equal(volunteerError(new TypeError("Cannot read properties of undefined (reading 'map')")), TRY);
+  assert.equal(volunteerError(null), TRY);
+  assert.equal(volunteerError({ status: -1 }), TRY);
+  // Words meant for the volunteer stay.
+  assert.equal(volunteerError({ status: 0, message: "Can't reach the server. Check your connection and try again." }), "Can't reach the server. Check your connection and try again.");
+  assert.equal(volunteerError({ status: 429, code: "rate_limited", message: "That's a lot of look-ups. Wait a minute and try again." }), "That's a lot of look-ups. Wait a minute and try again.");
+  assert.equal(volunteerError({ status: 429 }), "That's a lot of look-ups. Wait a minute and try again.");
+  assert.equal(volunteerError({ status: 403, code: "suspended", message: "This account is suspended." }), "This account is suspended.");
+  assert.match(volunteerError({ status: 404, message: "Person not found" }), /search for them again/);
+});
+
+test("an answer that isn't a list or a person is an error; odd rows still draw", () => {
+  assert.equal(isListAnswer(API.list), true);
+  assert.equal(isListAnswer({ rows: [] }), true);
+  for (const odd of [undefined, null, {}, "x", { rows: {} }, { error: "Something went wrong. Try again." }]) assert.equal(isListAnswer(odd), false, JSON.stringify(odd));
+  assert.equal(isProfileAnswer(API.profiles.yara), true);
+  for (const odd of [undefined, null, {}, { person: null }, { person: "x" }, { canonicalId: "u-1" }]) assert.equal(isProfileAnswer(odd), false, JSON.stringify(odd));
+  for (const odd of [null, undefined, "x", 3, [], { pass: "x", rsvp: 4, types: "speaker", band: 1, passCount: "2" }]) {
+    const r = volunteerRow(odd);
+    assert.equal(r.name, "No name");
+    assert.deepEqual(r.types, []);
+  }
+  assert.equal(volunteerProfile({ person: { passes: [null, "x", { label: 3 }], sessions: [1], rsvp: [] } }).name, "No name");
+});
+
+test("the volunteer pages ask only through volunteerRequests and a POST search, and never draw a blank page", () => {
+  const page = fs.readFileSync(new URL("./VolunteerPeople.jsx", import.meta.url), "utf8");
+  // The list's GET is volunteerRequests' (filters, sort and page only); no address is built from the search box.
+  assert.deepEqual(page.match(/useApi\(.*?\);/g), ["useApi(req.get);", "useApi(`/console/people/${encodeURIComponent(id)}`);"]);
+  assert.doesNotMatch(page, /\/console\/people\?/);
+  assert.deepEqual(page.match(/adminFetch\([^)]*\)/g), ['adminFetch("/console/search", { method: "POST", body: { q: send }, signal: ctrl.signal })']);
+  // The list and the profile each sit in the guard, so a drawing error shows a card instead of a blank page.
+  const body = (name) => (page.match(new RegExp(`export function ${name}\\(\\) \\{[\\s\\S]*?\\n\\}`)) || [""])[0];
+  assert.match(body("VolunteerDirectory"), /<VolunteerGuard resetKey=\{pathname\}><Directory \/><\/VolunteerGuard>/);
+  assert.match(body("VolunteerProfile"), /<VolunteerGuard resetKey=\{pathname\}><ProfileView key=\{id\} id=\{id\} \/><\/VolunteerGuard>/);
+  assert.match(page, /static getDerivedStateFromError\(\)/);
 });

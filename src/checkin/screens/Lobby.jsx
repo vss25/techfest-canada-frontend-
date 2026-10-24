@@ -6,21 +6,24 @@ import { ISSUE_PASS, NO_DETAILS, UNKNOWN_LIMITS, cleanUnknown, outcomeText } fro
 import { timeText } from "../lib/timers.js";
 import { act, undoFor } from "../act.js";
 import { SearchBox, Sheet, SpecialBadge } from "../components.jsx";
-import { byLine } from "../lib/byLine.js";
 import GuestRow from "./GuestRow.jsx";
+import AppQr from "./AppQr.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
 import { useUndoExpiry } from "../hooks.js";
+import { cta, stateChip } from "../lib/vocab.js";
 
-/* LOBBY — Arrivals. Ask the guest's name, find them, tap Arrived (one tap): the pass desk upstairs is told at once.
+/* LOBBY — Arrivals. Ask the guest's name, find them, tap Mark arrived (one tap): Floor 1 upstairs is told at once.
    Everyone on the list is marked here, whatever their pass (media, exhibitors, speakers, VIPs, pending passes), at any
    hour of an event day; their own desk is told too. On the list with no pass on file: ISSUE PASS ("On the list · no
    pass on file"), the same one tap. Not on the list at all: "No details found: record arrival" (the name as typed)
-   tells the pass desk to check ID. A quick toast with Undo (15 s). */
+   tells the pass desk to check ID. A quick toast with Undo (15 s). Beside the list (a phone: a chip above it) the
+   "Get the TTFC app" QR code (AppQr.jsx), out of the way of all of that. */
+const CTA = cta("lobby");
 
 // Among equal matches, guests not arrived yet first.
 const rankLobby = (g) => (deskStage(statusOf(desk.state, g, pending())) === "not_arrived" ? 0 : 1);
 
-export default function Lobby({ onOpen }) {
+export default function Lobby({ onOpen, layout }) {
   const d = useDesk();
   const s = d.state;
   const p = pending();
@@ -29,7 +32,7 @@ export default function Lobby({ onOpen }) {
   const arrive = useCallback((g, done) => {
     const st = statusOf(s, g, pending());
     if (st.arrived || st.checked_in) return;
-    act({ point: "arrived", guest: g, undoText: `${g.name}: arrived. The pass desk has been told.`, onDone: done });
+    act({ point: "arrived", guest: g, undoText: `${g.name}: arrived. Floor 1 has been told.`, undoLabel: CTA.undo, onDone: done });
   }, [s]);
   const { q, setQ, sel, results, inputRef, lookingUp, done, matchOf } = useGuestSearch(s.guests, { rank: rankLobby, onEnter: arrive, version: s.version + p.length });
   useUndoExpiry();
@@ -44,14 +47,15 @@ export default function Lobby({ onOpen }) {
     const st = statusOf(s, g, p);
     const stage = deskStage(st);
     const undo = undoFor(g, "arrived");
-    const status = stage === "checked_in" ? `${noPassOf(g) ? "Pass issued" : "Checked in"} at ${timeText(st.checked_in.at)}` : stage === "on_the_way" ? `On the way up · ${byLine(st.arrived)}` : noPassOf(g) ? ISSUE_PASS.reading : "Not arrived";
+    const issue = noPassOf(g);
+    const state = stage === "checked_in" ? stateChip("checked_in", st.checked_in, { noPass: issue }) : stage === "on_the_way" ? stateChip("arrived", st.arrived, { by: true }) : null;
     return (
       <GuestRow key={g.key} id={`res-${i}`} guest={g} selected={i === sel && !!q} onOpen={onOpen} match={q ? matchOf(g) : null}
-        status={status} statusTone={stage === "checked_in" ? "good" : stage === "on_the_way" ? "info" : noPassOf(g) ? "issue" : ""}
+        state={state} status={issue ? ISSUE_PASS.reading : "Not arrived"} statusTone={issue ? "issue" : ""}
         actions={stage === "not_arrived"
-          ? <button key="act" type="button" className="ci-btn ci-btn-primary ci-btn-cta" onClick={() => arrive(g, done)}>Arrived</button>
-          : undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost ci-btn-cta" onClick={undo}>Undo</button>
-            : <span key="done" className="ci-done" aria-label="Done">✓</span>} />
+          ? <button key="act" type="button" className="ci-btn ci-btn-arrived ci-btn-cta" onClick={() => arrive(g, done)}>{CTA.label}</button>
+          : undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost ci-btn-cta" onClick={undo}>{CTA.undo}</button>
+            : null} />
     );
   };
 
@@ -61,9 +65,13 @@ export default function Lobby({ onOpen }) {
     </button>
   );
 
+  // The app QR: a column beside the list on an iPad or laptop, a chip above it on a phone (lib/appQr.js).
+  const inline = layout?.kind === "phone";
   return (
-    <div className="ci-station ci-lobby">
+    <div className={`ci-station ci-lobby${inline ? "" : " has-side"}`}>
+      <div className="ci-lobby-main">
       <SearchBox value={q} onChange={setQ} inputRef={inputRef} autoFocus placeholder="Guest's name, company or ticket ID" />
+      {inline && <AppQr searching={!!q} />}
       {q ? (
         <section aria-label="Search results">
           {lookingUp && <p className="ci-muted ci-pad">Looking up the ticket ID…</p>}
@@ -83,6 +91,8 @@ export default function Lobby({ onOpen }) {
           <ul className="ci-list">{recent.map((x, i) => (x.type === "guest" ? row(x.g, i) : <UnknownRow key={x.u.key} u={x.u} />))}</ul>
         </section>
       )}
+      </div>
+      {!inline && <AppQr searching={!!q} />}
       {unknownFor !== null && <UnknownForm name={unknownFor} onClose={() => setUnknownFor(null)} onDone={() => { setUnknownFor(null); done(); }} />}
     </div>
   );
@@ -100,9 +110,9 @@ function UnknownRow({ u }) {
       </div>
       <div className="ci-row-side">
         <span className="ci-row-status is-unknown">
-          {u.status === "open" ? `Pass desk told · ${timeText(u.at)}${u.byName ? ` by ${u.byName}` : ""}${u.pending ? " · pending" : ""}` : `Done: ${outcomeText(u.status)}`}
+          {u.status === "open" ? `Floor 1 told · ${timeText(u.at)}${u.byName ? ` by ${u.byName}` : ""}${u.pending ? " · pending" : ""}` : `Done: ${outcomeText(u.status)}`}
         </span>
-        <div className="ci-row-actions">{id ? <button type="button" className="ci-btn ci-btn-ghost ci-btn-cta" onClick={() => undoTap(id)}>Undo</button> : null}</div>
+        <div className="ci-row-actions">{id ? <button type="button" className="ci-btn ci-btn-ghost ci-btn-cta" onClick={() => undoTap(id)}>Undo arrival</button> : null}</div>
       </div>
     </li>
   );

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { desk, useDesk, load, markShown, markStarted, openTray, pending, requestSignOut, setStation, startedHere, unlock } from "./lib/desk.js";
+import { desk, useDesk, load, goHome, markShown, markStarted, openTray, pending, requestSignOut, startedHere, toast, unlock } from "./lib/desk.js";
 import { appScreen, stationShown, updateScreen } from "./lib/updatePolicy.js";
 import { counters } from "./lib/state.js";
 import { applyTheme, audioReady, keepAwake, remember, THEME_KEY, unlockAudio } from "./lib/device.js";
@@ -7,6 +7,8 @@ import { applyUpdate, isUpdateReady, onUpdate, setAppScreen } from "./lib/pwa.js
 import { dayHeading } from "./lib/timers.js";
 import { stationView } from "./lib/stationTime.js";
 import { ISSUE_PASS, NO_DETAILS } from "./lib/special.js";
+import { DESK_PATH } from "./deskPath.js";
+import { cta } from "./lib/vocab.js";
 import { ArrivalFlash, AttentionSheet, Banners, ConfirmDialog, ConnPill, Counters, Toasts } from "./components.jsx";
 import { useKeyboard, useLayout } from "./hooks.js";
 import Login from "./screens/Login.jsx";
@@ -20,10 +22,11 @@ import Media from "./screens/Media.jsx";
 import GuestSheet from "./screens/GuestSheet.jsx";
 import Counts from "./screens/Counts.jsx";
 
-/* TTFC Check-in: sign in → pick the station → Start (sound + keep the screen on) → the station. Header: the station
-   (tap to switch), today and what's on ("Day 1 · CxO Breakfast · open until 9:25 AM" and where the times come from),
-   Live / Reconnecting / Offline, taps waiting to be sent, refused taps (Needs attention). Counters across the top.
-   Works the same in a browser tab and installed. */
+/* TTFC Check-in: sign in → the home (/checkin/: pick the station) → its address (/checkin/lobby…, lib/routes.js) →
+   Start (sound + keep the screen on) → the station. Header: the station (tap: back to the home), today and what's on
+   ("Day 1 · CxO Breakfast · open until 9:25 AM" and where the times come from), Live / Reconnecting / Offline, taps
+   waiting to be sent, refused taps (Needs attention). Counters across the top. Works the same in a browser tab and
+   installed; the browser's back / forward move between the home and the stations. */
 
 const SCREENS = { lobby: Lobby, desk: Desk, breakfast: Meal, lunch: Meal, evening: Meal, av: Av, exhibitor: Exhibitor, media: Media };
 const ANNOUNCES = new Set(["desk", "av", "exhibitor", "media"]);
@@ -43,9 +46,11 @@ export default function App() {
   const kb = useKeyboard();
   const [open, setOpen] = useState(null);
   const closeSheet = useCallback(() => setOpen(null), []);
-  const [picking, setPicking] = useState(false);
   const [menu, setMenu] = useState(false);
   const [counts, setCounts] = useState(false);
+  // Another station (a tile, back / forward): whatever was open over the last one closes.
+  const [shownStation, setShownStation] = useState(d.station);
+  if (shownStation !== d.station) { setShownStation(d.station); setOpen(null); setMenu(false); setCounts(false); }
   const [update, setUpdate] = useState(isUpdateReady());
   useEffect(() => onUpdate(setUpdate), []);
   useEffect(() => { document.documentElement.dataset.layout = layout.kind; }, [layout.kind]);
@@ -61,16 +66,23 @@ export default function App() {
 
   const s = d.state;
   const stationInfo = s?.stations.find((x) => x.key === d.station);
+  const stationOk = !!stationInfo && stationInfo.enabled !== false;
   const screen = appScreen({
     signedIn: !!d.session?.token, needSignIn: d.needSignIn, hasList: !!s, station: d.station,
-    stationOk: !!stationInfo && stationInfo.enabled !== false, picking, started: d.started, picked: d.picked, locked: d.locked,
+    stationOk, started: d.started, picked: d.picked, locked: d.locked,
   });
+  // A station's address that this list doesn't have (the evening entry switched off by staff): the home, saying why.
+  useEffect(() => {
+    if (!s || !d.station || stationOk || !d.session?.token || d.needSignIn) return;
+    toast(`${stationInfo?.label || "That station"} is switched off (Admin › Event day › Check-in). Pick another station.`, { tone: "warn", ms: 8000 });
+    goHome({ replace: true });
+  }, [s, d.station, stationOk, stationInfo, d.session?.token, d.needSignIn]);
   // A station (or its lock screen) on screen counts as run in this tab, Start button or not: a station kept on the device
   // opens straight on its screen after a Home Screen relaunch or in a new tab (lib/updatePolicy.js).
   useEffect(() => { if (stationShown(screen)) markShown(); }, [screen]);
   // A new version applies itself only while no station has run in this tab: never once one is started or shown, the
   // picker open over it or not (lib/updatePolicy.js).
-  const updateAs = updateScreen({ screen, started: d.started, startedBefore: startedHere(), picking });
+  const updateAs = updateScreen({ screen, started: d.started, startedBefore: startedHere() });
   useEffect(() => { setAppScreen(updateAs, { station: d.station }); }, [updateAs, d.station]);
   // Every station screen keeps the screen awake, after a reload too (asked again on the next tap if refused now).
   useEffect(() => { if (screen === "station" || screen === "locked") keepAwake(); }, [screen, d.station]);
@@ -94,7 +106,7 @@ export default function App() {
     return (
       <>
         {update && <UpdateBar station={d.station} waiting={d.queueItems.filter((x) => x.state !== "failed").length} />}
-        <Stations onPicked={() => setPicking(false)} />
+        <Stations />
         <ConfirmDialog />
         <Toasts />
       </>
@@ -110,8 +122,8 @@ export default function App() {
     <div className={`ci-app is-${layout.kind}${keys ? " is-keys" : ""}${kb ? " is-kb" : ""}`}>
       <header className="ci-header">
         <div className="ci-header-row">
-          <img src="icons/icon-96.png" alt="" width="36" height="36" className="ci-logo" />
-          <button type="button" className="ci-station-btn" onClick={() => setPicking(true)} aria-label={`Station: ${stationInfo.label}. Switch station`}>
+          <img src={`${DESK_PATH}icons/icon-96.png`} alt="" width="36" height="36" className="ci-logo" />
+          <button type="button" className="ci-station-btn" onClick={() => goHome()} aria-label={`Station: ${stationInfo.label}. Switch station (home)`}>
             <span className="ci-station-btn-name">{stationInfo.label}</span>
             <span className="ci-station-btn-sub">{stationInfo.sub} ▾</span>
           </button>
@@ -125,7 +137,7 @@ export default function App() {
           <span className="ci-when-text">{st?.text || dayHeading(s.today)}</span>
           {st?.detail && <span className="ci-when-detail">{st.detail}</span>}
         </div>
-        {menu && <Menu onClose={() => setMenu(false)} onPick={() => { setMenu(false); setPicking(true); }} onCounts={() => { setMenu(false); setCounts(true); }} />}
+        {menu && <Menu onClose={() => setMenu(false)} onPick={() => { setMenu(false); goHome(); }} onCounts={() => { setMenu(false); setCounts(true); }} />}
         {ANNOUNCES.has(d.station) && <Banners station={d.station} onOpen={setOpen} max={kb || layout.kind === "phone" ? 1 : layout.short || window.innerHeight < 950 ? 2 : 3} />}
       </header>
       {!d.persistOk && <p className="ci-update is-bad" role="alert">⚠ Taps can't be saved on this device (its storage is full or blocked). Keep the app open until they're sent; still trying to save them.</p>}
@@ -136,7 +148,7 @@ export default function App() {
       {s.today?.date && !s.today.eventDay && <p className="ci-update" role="status">Not an event day: taps are practice marks only (they don't check anyone in, and can be undone).</p>}
       <StationCounters station={d.station} item={st?.item || null} />
       <main className="ci-main"><Screen onOpen={setOpen} layout={layout} /></main>
-      {layout.kind === "laptop" && <p className="ci-keys">Type to search · ↑ ↓ to pick · Enter = {{ lobby: "Arrived", desk: "Checked in", breakfast: "Admitted", lunch: "Admitted", evening: "Admitted", media: "Checked in", av: "AV checked", exhibitor: "Checked in" }[d.station]} · Esc clears</p>}
+      {layout.kind === "laptop" && <p className="ci-keys">Type to search · ↑ ↓ to pick · Enter = {cta(d.station, { item: st?.item || null }).label} · Esc clears</p>}
       {open && <GuestSheet guest={open} onClose={closeSheet} />}
       {d.trayOpen && <AttentionSheet />}
       {counts && d.session.staff && <Counts onClose={() => setCounts(false)} />}
@@ -179,7 +191,7 @@ function StationCounters({ station, item }) {
       { label: "Checked in today", n: t.checkedIn, of: t.total, tone: "good" },
       { label: "Passes collected", n: t.collected, of: t.total },
       { label: "On the way up", n: t.onTheWay, tone: t.onTheWay ? "info" : "" },
-      { label: "Arrived today", n: t.arrived },
+      { label: "Arrived today", n: t.arrived, tone: "info" },
     ];
     groups = c.groups.map((g) => ({ group: g.group, text: pct(g.checkedIn, g.total) }));
     mk = marks("checkedIn");
@@ -188,7 +200,7 @@ function StationCounters({ station, item }) {
   } else if (["breakfast", "lunch", "evening"].includes(station)) {
     big = item ? [
       { label: `Admitted · ${item.label}`, n: t.admitted, tone: "good" },
-      { label: "Included", n: t.entitled },
+      { label: "On the list", n: t.entitled },
       { label: "RSVP'd", n: t.rsvpd },
     ] : [{ label: "Admitted today", n: t.admitted }];
     groups = c.groups.filter((g) => g.entitled || g.admitted).map((g) => ({ group: g.group, text: pct(g.admitted, g.entitled) }));
@@ -233,7 +245,7 @@ function StartGate({ station, update = false, waiting = 0 }) {
         <p className="ci-when-text">{stationView(station.key, d.state?.stationStates?.[station.key])?.text}</p>
         <button type="button" className="ci-btn ci-btn-primary ci-btn-xxl" onClick={start} autoFocus>Start the {station.key === "desk" ? "desk" : "station"}</button>
         <p className="ci-small ci-muted">{announces ? `This turns on the arrival chime (you'll hear it once now) and keeps the screen awake. Each arrival also flashes the screen. ${VOLUME_HINT}` : "This keeps the screen awake while you work."} On an iPad, also set Settings › Display & Brightness › Auto-Lock to Never.</p>
-        <button type="button" className="ci-btn ci-btn-ghost" onClick={() => setStation("")}>Pick another station</button>
+        <button type="button" className="ci-btn ci-btn-ghost" onClick={() => goHome()}>Pick another station</button>
       </div>
     </main>
   );
@@ -277,7 +289,7 @@ function Menu({ onClose, onPick, onCounts }) {
   return (
     <div className="ci-menu" role="menu" onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}>
       <p className="ci-menu-who"><b>{d.session.user?.name}</b><br /><span className="ci-muted">{d.session.staff ? "Staff" : "Volunteer"}</span></p>
-      <button type="button" role="menuitem" onClick={onPick}>Switch station</button>
+      <button type="button" role="menuitem" onClick={onPick}>Switch station (home)</button>
       {d.session.staff && <button type="button" role="menuitem" onClick={onCounts}>Counts (staff): today and each day</button>}
       {failed > 0 && <button type="button" role="menuitem" className="is-bad" onClick={() => { onClose(); openTray(); }}>Needs attention ({failed})</button>}
       <button type="button" role="menuitem" onClick={() => { load({ quiet: false, refresh: true }); onClose(); }}>Reload the guest list</button>

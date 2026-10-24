@@ -6,12 +6,12 @@
 ========================================================= */
 
 export const POINT_LABELS = Object.freeze({
-  arrived: "Arrived", checked_in: "Checked in (pass handed over)", cxo: "Admitted to the CxO Breakfast", lunch: "Admitted to lunch",
+  arrived: "Marked arrived", checked_in: "Checked in · pass given", cxo: "Admitted to the CxO Breakfast", lunch: "Admitted to lunch",
   evening: "Admitted (evening entry)", media: "Checked in at the media desk", av: "AV checked", exhibitor: "Checked in at the exhibitor desk",
   booth: "Booth set up", flag_cxo: "Sent to staff (breakfast)", flag_lunch: "Sent to staff (lunch)", flag_evening: "Sent to staff (evening)",
 });
 export const STATION_LABELS = Object.freeze({
-  lobby: "Lobby", desk: "Pass desk", breakfast: "CxO Breakfast", lunch: "Lunch", evening: "Evening entry", media: "Media desk", av: "AV station", exhibitor: "Exhibitor desk",
+  lobby: "Lobby", desk: "Floor 1", breakfast: "CxO Breakfast", lunch: "Lunch", evening: "Evening entry", media: "Media desk", av: "AV station", exhibitor: "Exhibitor desk",
 });
 
 /**
@@ -40,11 +40,13 @@ export function describeTap(it, { state = null, items = [] } = {}) {
 }
 
 /**
- * What a refused tap's row offers: "override" (Admit anyway: outside the station's hours), "retry" (Try again: worth
- * another go, e.g. a stale list on the server), "dismiss" (always).
+ * What a refused tap's row offers: "override" (Admit anyway: outside the station's hours), "admit_override" (staff:
+ * Admit anyway (override) for a guest who isn't on the list, contract C11), "retry" (Try again: worth another go, e.g. a
+ * stale list on the server), "dismiss" (always).
  */
-export function trayActions(it) {
+export function trayActions(it, { staff = false } = {}) {
   const out = [];
+  if (it?.code === "not_included" && staff && it?.kind === "mark" && !it?.notIncluded) out.push("admit_override");
   if (it?.code === "outside_window") out.push("override");
   else if (!["undo_refused", "staff_only", "bad_request"].includes(it?.code || "") && it?.kind !== "undo" && it?.status !== 400) out.push("retry");
   out.push("dismiss");

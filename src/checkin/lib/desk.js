@@ -10,8 +10,9 @@ import { bannerParts, bannerText, createBanners, notifyStations } from "./notify
 import { badgeOf, noPassOf } from "./passColors.js";
 import { describeTap, signOutText } from "./tapText.js";
 import { NO_DETAILS, unknownArrivalAction, unknownDoneAction, unknownKey, unknownLinkAction } from "./special.js";
-import { RESUME_KEY, SNAPSHOT_KEY, chime, letSleep, onAudio, remember, setCount, stationStore } from "./device.js";
+import { RESUME_KEY, SNAPSHOT_KEY, chime, letSleep, onAudio, remember, setCount } from "./device.js";
 import { UNDO_MS } from "./constants.js";
+import { STATION_SLUGS, routeOf, stationPath } from "./routes.js";
 
 /* =========================================================
    TTFC Check-in: the running app (one per page)
@@ -40,6 +41,13 @@ import { UNDO_MS } from "./constants.js";
      with the sign-in).
    • Sign out: the person's taps are sent first (with a connection), then
      the sign-in, the cached list and everything in memory go.
+   • The station is the address (lib/routes.js, Oct 24 2026): /checkin/
+     is the home (the station picker), /checkin/lobby the Lobby, and so
+     on. Picking a station goes to its address (history.pushState), the
+     browser's back / forward switch stations, a reload or a new tab on
+     a station's address opens that station (nothing about it is kept
+     in the device's storage any more). A running station is still never
+     reloaded by itself (lib/updatePolicy.js).
 ========================================================= */
 
 const listeners = new Set();
@@ -51,10 +59,26 @@ function emit() {
   listeners.forEach((fn) => fn());
 }
 
+/* ---------- The address (lib/routes.js) ---------- */
+
+const loc = () => (typeof window !== "undefined" && window.location && typeof window.location.pathname === "string" ? window.location : null);
+const hist = () => (typeof window !== "undefined" && window.history && typeof window.history.pushState === "function" ? window.history : null);
+/** The station the address bar names now ("" = the home). */
+const addressStation = () => { const l = loc(); return l ? routeOf(l.pathname).station : ""; };
+/** Put `path` in the address bar (a new history entry, or in place of this one). */
+function goTo(path, { replace = false, keepQuery = false } = {}) {
+  const l = loc();
+  const h = hist();
+  if (!l || !h) return;
+  const url = `${path}${keepQuery ? l.search || "" : ""}`;
+  if (`${l.pathname}${keepQuery ? l.search || "" : ""}` === url) return;
+  try { (replace ? h.replaceState : h.pushState).call(h, { ttfcDesk: path }, "", url); } catch { /* a sandboxed page: the screen still changes */ }
+}
+
 export const desk = {
   session: getSession(),
   state: null,
-  station: stationStore.get(),
+  station: addressStation(),
   conn: "reconnecting",
   loading: false,
   loadError: "",
@@ -161,7 +185,9 @@ function noteFailure(item) {
       const { who } = describeTap(it, { state: desk.state, items: desk.queueItems });
       const action = it.code === "outside_window"
         ? { label: "Admit anyway", fn: () => retryTap(it.clientId, { override: true }) }
-        : { label: "Review", fn: openTray };
+        : it.code === "not_included" && desk.session?.staff && !it.notIncluded
+          ? { label: "Admit anyway (override)", fn: () => retryTap(it.clientId, { notIncluded: true }) }
+          : { label: "Review", fn: openTray };
       toast(`${who ? `${who}: ` : ""}not recorded. ${it.window?.text || it.error || ""}`.trim(), { tone: "bad", ms: 20000, key: "fail", action });
     } else {
       toast(`${list.length} taps not recorded.`, { tone: "bad", ms: 20000, key: "fail", action: { label: "Review", fn: openTray } });
@@ -226,12 +252,12 @@ const signedInAs = () => { const u = identityOf(desk.session); return u ? { queu
  * A tap at the current station: { kind: "mark", point, key, override?, note? } | reset | note | query_add | query_update.
  * Stored on the device at once (with who made it), shown, sent when it can be. → the queued item.
  */
-export function tap(action, { undoText = "" } = {}) {
+export function tap(action, { undoText = "", undoLabel = "Undo" } = {}) {
   const item = queue.add({ station: desk.station, ...action, ...signedInAs() });
   if (action.kind === "mark") desk.myTaps.set(item.clientId, { at: Date.now(), key: action.key, point: action.point });
   if (action.kind === "unknown_arrival") desk.myTaps.set(item.clientId, { at: Date.now(), key: unknownKey(item.clientId), point: "unknown" });
   if (undoText) {
-    toast(undoText, { tone: "ok", ms: UNDO_MS, key: `tap-${action.key}-${action.point}`, tapId: item.clientId, action: { label: "Undo", fn: () => undoTap(item.clientId) } });
+    toast(undoText, { tone: "ok", ms: UNDO_MS, key: `tap-${action.key}-${action.point}`, tapId: item.clientId, action: { label: undoLabel || "Undo", fn: () => undoTap(item.clientId) } });
   }
   emit();
   return item;
@@ -400,8 +426,10 @@ function tidyBanners() {
       return !!x.arrived && !x[DONE_POINT[st]];
     });
   }
-  setCount(desk.station === "desk" ? s.guests.filter((g) => { const x = statusOf(s, g, p); return x.arrived && !x.checked_in; }).length + openUnknown.size : desk.banners[desk.station]?.size() || 0);
+  setCount(desk.station === "desk" ? s.guests.filter((g) => { const x = statusOf(s, g, p); return x.arrived && !x.checked_in; }).length + openUnknown.size : desk.banners[desk.station]?.size() || 0, stationLabel());
 }
+/** The station's name for the tab title and the history entry ("Lobby · TTFC Check-in"). */
+const stationLabel = () => (desk.station ? desk.state?.stations?.find((x) => x.key === desk.station)?.label || "" : "");
 export function dismissBanner(station, key) { desk.banners[station]?.clear(key); emit(); }
 
 /* ---------- Loading, the clock, live ---------- */
@@ -685,6 +713,7 @@ function endSession(reason = "") {
   persistTimer = null;
   persistDirty = false;
   sessionStore.remove(STARTED_HERE_KEY);
+  ranHere = false;
   for (const b of Object.values(desk.banners)) b.keep(() => false);
   setCount(0);
   letSleep();
@@ -762,28 +791,45 @@ if (typeof window !== "undefined") {
 
 /* ---------- Station ---------- */
 
-export function setStation(key) {
-  desk.station = key || "";
+/**
+ * Switch this tab to a station ("" = the home, the station picker), and the address with it (lib/routes.js):
+ *   picked here (a home tile, "Pick another station"): a new history entry, then the Start screen (a tap for sound
+ *   and the screen lock);
+ *   `fromHistory` (the browser's back / forward): the address already says so; the station opens straight away, as
+ *   after a reload (nothing is missed; the header asks for a tap to turn the chime back on);
+ *   `replace`: in place of this history entry (an address put right, a station switched off).
+ */
+export function setStation(key, { fromHistory = false, replace = false } = {}) {
+  const next = STATION_SLUGS[key] ? key : "";
+  desk.station = next;
   desk.toasts = [];
-  // Just picked on this device: the Start screen (a tap for sound and the screen lock). After a reload the station opens
-  // straight away (nothing is missed); the header asks for a tap to turn the chime back on.
-  desk.picked = !!key;
-  stationStore.set(key || null);
+  desk.picked = !!next && !fromHistory;
   desk.started = false;
+  if (!fromHistory) goTo(stationPath(next), { replace });
   tidyBanners();
   emit();
   updateOthers();
 }
+/** The home (the station picker): /checkin/. */
+export const goHome = (opts) => setStation("", opts);
 /** A station was started in this tab (this sign-in), kept across reloads: updates then wait for a tap (updatePolicy.js). */
 const STARTED_HERE_KEY = "ttfc.desk.startedHere";
-export const startedHere = () => sessionStore.get(STARTED_HERE_KEY) === "1";
-export function markStarted() { desk.started = true; sessionStore.set(STARTED_HERE_KEY, "1"); emit(); }
+/** …and in this page's memory too (a tab whose storage is blocked still never reloads a station that ran). */
+let ranHere = false;
+export const startedHere = () => ranHere || sessionStore.get(STARTED_HERE_KEY) === "1";
+export function markStarted() { desk.started = true; ranHere = true; sessionStore.set(STARTED_HERE_KEY, "1"); emit(); }
 /**
- * A station's screen (or its lock screen) has shown in this tab: the same mark as Start, without the sound. A station
- * kept on the device opens straight on its screen in a new session (a Home Screen relaunch, a new tab: this tab's
+ * A station's screen (or its lock screen) has shown in this tab: the same mark as Start, without the sound. A station's
+ * address opens straight on its screen in a new session (a reload, a Home Screen relaunch, a new tab: this tab's
  * memory starts empty), so the Start button may never be pressed there; its taps (and their Undo) start all the same.
  */
-export function markShown() { if (!startedHere()) sessionStore.set(STARTED_HERE_KEY, "1"); }
+export function markShown() { ranHere = true; if (sessionStore.get(STARTED_HERE_KEY) !== "1") sessionStore.set(STARTED_HERE_KEY, "1"); }
+
+/** The browser's back / forward: the station the address names now. */
+function onPopState() {
+  const st = addressStation();
+  if (st !== desk.station) setStation(st, { fromHistory: true });
+}
 
 onSession((s) => { desk.session = s; emit(); });
 
@@ -794,11 +840,26 @@ export function boot() {
   lastUse = lastUseOf(desk.session);
   savedUse = lastUse;
   checkIdle();
-  // Reloaded for an update the person tapped: the station comes back on its Start screen (one tap: sound back on).
+  // The address is the station (lib/routes.js): a typed variant is put right in the address bar ("/checkin/Lobby/" →
+  // "/checkin/lobby"); an address that names no station opens the home ("/checkin/").
+  const l = loc();
+  if (l) {
+    const r = routeOf(l.pathname);
+    if (r.canonical) goTo(r.canonical, { replace: true, keepQuery: !r.station });
+    desk.station = r.station;
+  }
+  // Reloaded for an update the person tapped: the station comes back on its Start screen (one tap: sound back on). An
+  // update tapped in a version from before the station addresses reloads the home with the station to resume: it goes
+  // to that station's address.
   try {
     const r = sessionStorage.getItem(RESUME_KEY);
-    if (r) { sessionStorage.removeItem(RESUME_KEY); if (r === desk.station) desk.picked = true; }
+    if (r) {
+      sessionStorage.removeItem(RESUME_KEY);
+      if (r === desk.station) desk.picked = true;
+      else if (!desk.station && STATION_SLUGS[r]) { desk.station = r; desk.picked = true; goTo(stationPath(r), { replace: true }); }
+    }
   } catch { /* blocked */ }
+  window.addEventListener("popstate", onPopState);
   window.addEventListener("pagehide", () => tabs.stop());
   window.addEventListener("pageshow", (e) => { if (e.persisted) window.location.reload(); });
   if (desk.session?.token) startRunning();

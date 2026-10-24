@@ -14,8 +14,8 @@
      the front and on the next tap or key (some browsers only grant it
      then). Best effort: on an iPad also set Settings › Display &
      Brightness › Auto-Lock › Never.
-   • The station (per tab, the device's last one for a new tab), theme
-     and last snapshot remembered per device.
+   • The theme and the last snapshot remembered per device (the station
+     is the page's address since Oct 24 2026: lib/routes.js).
    Works the same in a browser tab and installed (Home Screen).
    chimeWav is pure; node --test src/checkin/lib/device.test.mjs
 ========================================================= */
@@ -203,24 +203,10 @@ const get = (k, d = null) => { try { const v = localStorage.getItem(k); return v
 const set = (k, v) => { try { if (v === null || v === undefined) localStorage.removeItem(k); else localStorage.setItem(k, v); return true; } catch { return false; } };
 export const remember = { get, set };
 
-export const STATION_KEY = "ttfc.desk.station";
-export const STATION_TAB_KEY = "ttfc.desk.station.tab";
 export const THEME_KEY = "ttfc.desk.theme";
 export const SNAPSHOT_KEY = "ttfc.desk.snapshot.v1";
 /** Set just before reloading for an update the person tapped: the station opens on its Start screen (sound back on). */
 export const RESUME_KEY = "ttfc.desk.resume";
-
-/** This tab's station (two tabs on a laptop can run two stations); a new tab starts on the device's last one. */
-export const stationStore = {
-  get() {
-    try { const v = sessionStorage.getItem(STATION_TAB_KEY); if (v !== null) return v; } catch { /* blocked */ }
-    return get(STATION_KEY, "") || "";
-  },
-  set(key) {
-    try { if (key) sessionStorage.setItem(STATION_TAB_KEY, key); else sessionStorage.removeItem(STATION_TAB_KEY); } catch { /* blocked */ }
-    set(STATION_KEY, key || null);
-  },
-};
 
 /** Dark by default (high contrast at arm's length); "light" or "auto" (the device's) if chosen. */
 export function applyTheme(t = get(THEME_KEY, "dark")) {
@@ -230,9 +216,10 @@ export function applyTheme(t = get(THEME_KEY, "dark")) {
   return dark ? "dark" : "light";
 }
 
-/** The app badge (installed apps that support it) and the tab title: how many are on the way up. */
-export function setCount(n) {
-  try { document.title = n > 0 ? `(${n}) TTFC Check-in` : "TTFC Check-in"; } catch { /* no document */ }
+/** The app badge (installed apps that support it) and the tab title: how many are on the way up, and the station
+    ("(2) Floor 1 · TTFC Check-in": a laptop's tabs and the browser's history say which is which). */
+export function setCount(n, station = "") {
+  try { document.title = `${n > 0 ? `(${n}) ` : ""}${station ? `${station} · ` : ""}TTFC Check-in`; } catch { /* no document */ }
   try {
     if (n > 0) navigator.setAppBadge?.(n)?.catch?.(() => {});
     else navigator.clearAppBadge?.()?.catch?.(() => {});

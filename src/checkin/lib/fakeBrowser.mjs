@@ -29,6 +29,33 @@ globalThis.document = {
   querySelector: () => null,
   title: "",
 };
+/* The address bar and the history (lib/routes.js: the station is the address). A test sets the starting address with
+   go(path) before importing desk.js; history.pushState / replaceState change it; back() pops (and fires popstate). */
+const ORIGIN = "https://www.thetechfestival.com";
+const entries = [{ url: new URL("/checkin/", ORIGIN), state: null }];
+let at = 0;
+const cur = () => entries[at].url;
+globalThis.location = {
+  get pathname() { return cur().pathname; },
+  get search() { return cur().search; },
+  get hash() { return cur().hash; },
+  get href() { return cur().href; },
+  get origin() { return ORIGIN; },
+  reload() { globalThis.__reloads = (globalThis.__reloads || 0) + 1; },
+};
+globalThis.history = {
+  get state() { return entries[at].state; },
+  get length() { return entries.length; },
+  pushState(state, _t, url) { entries.splice(at + 1); entries.push({ url: new URL(url, cur()), state }); at = entries.length - 1; },
+  replaceState(state, _t, url) { entries[at] = { url: new URL(url ?? cur().href, cur()), state }; },
+};
+/** Open the page at `path` (a fresh history). */
+export function go(path) { entries.splice(0, entries.length, { url: new URL(path, ORIGIN), state: null }); at = 0; }
+/** The browser's back / forward button: the address changes, then popstate. */
+export function back() { if (at > 0) { at -= 1; fire("popstate", { state: entries[at].state }); } }
+export function forward() { if (at < entries.length - 1) { at += 1; fire("popstate", { state: entries[at].state }); } }
+export const historyLength = () => entries.length;
+
 /** Fire a window (or, with doc: true, a document) event. */
 export function fire(type, e = {}, { doc = false } = {}) { for (const fn of [...((doc ? docOn : on)[type] || [])]) fn({ type, ...e }); }
 Object.defineProperty(globalThis, "navigator", { value: { onLine: true }, configurable: true, writable: true });

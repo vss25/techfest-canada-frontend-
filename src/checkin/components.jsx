@@ -1,11 +1,13 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { badgeOf, chipsOf, GROUP_COLORS } from "./lib/passColors.js";
 import { boxLetter } from "./lib/search.js";
-import { answerConfirm, closeTray, dismissAllFailed, dismissBanner, dismissTap, dismissToast, openTray, retryTap, useDesk } from "./lib/desk.js";
+import { answerConfirm, closeTray, dismissAllFailed, dismissBanner, dismissTap, dismissToast, openTray, retryTap, serverNow, useDesk } from "./lib/desk.js";
+import { bannerParts } from "./lib/notify.js";
 import { describeTap, trayActions } from "./lib/tapText.js";
 import { ISSUE_PASS, NO_DETAILS } from "./lib/special.js";
 import { timeText } from "./lib/timers.js";
 import { ALLERGY_KEYS, DIETARY_LABELS, DIETARY_ORDER, EXTRA_LABELS, EXTRA_ORDER } from "./lib/constants.js";
+import { TONE_ICON } from "./lib/vocab.js";
 
 /* Shared pieces of the TTFC Check-in screens. */
 
@@ -37,6 +39,49 @@ export function Chips({ guest }) {
   return (
     <span className="ci-chips">
       {chips.map((c) => (c.key === "issue_pass" ? <SpecialBadge key={c.key} kind="issue" size="s" /> : <span key={c.key} className={`ci-chip ci-chip-${c.key}`}>{c.label}</span>))}
+    </span>
+  );
+}
+
+/** A STOP sign (a red octagon with a white bar): "Not on the list". Drawn, so it looks the same on every device. */
+export function StopSign({ size = 22, title = "" }) {
+  return (
+    <svg className="ci-stop-sign" width={size} height={size} viewBox="0 0 24 24" role={title ? "img" : undefined} aria-hidden={title ? undefined : "true"} aria-label={title || undefined} focusable="false">
+      <path d="M7.03 1h9.94L23 7.03v9.94L16.97 23H7.03L1 16.97V7.03z" fill="#D7141E" stroke="#FFFFFF" strokeWidth="1.6" strokeLinejoin="round" />
+      <rect x="5.2" y="10.2" width="13.6" height="3.6" rx="0.8" fill="#FFFFFF" />
+    </svg>
+  );
+}
+
+/** A state chip (lib/vocab.js): icon + words + time, in the state's own colour, never a pass colour. */
+export function StateChip({ tone = "done", text, size = "m" }) {
+  if (!text) return null;
+  return (
+    <span className={`ci-state ci-state-${tone} ci-state-${size}`}>
+      <span className="ci-state-icon" aria-hidden="true">{tone === "stop" ? <StopSign size={size === "l" ? 26 : 18} /> : TONE_ICON[tone]}</span>
+      <span className="ci-state-text">{text}</span>
+    </span>
+  );
+}
+
+/* The inclusion summary (Floor 1's notification and cards, the guest sheet): the four meals and evenings, each ✓ or ✗,
+   in words too (never colour alone). The server's inclusions (guest.extras: any of their passes, staff's switches and
+   Media / VIP first, services/passExtras.js), so an admin's change shows as soon as its live event arrives. */
+const SUMMARY = [["cxo", "CxO Breakfast"], ["lunch", "Lunch"], ["gala", "Gala Dinner"], ["awards", "Catalyst Awards"]];
+export function InclusionSummary({ guest, size = "m", label = true }) {
+  if (!guest) return null;
+  const none = !!guest.noPass;
+  return (
+    <span className={`ci-isum ci-isum-${size}`} role="group" aria-label="Includes">
+      {label && <span className="ci-isum-label">Includes</span>}
+      {SUMMARY.map(([k, name]) => {
+        const on = !none && !!guest.extras?.[k];
+        return (
+          <span key={k} className={`ci-isum-item ${on ? "is-yes" : "is-no"}`} aria-label={`${name}: ${on ? "included" : "not included"}`}>
+            <span className="ci-isum-mark" aria-hidden="true">{on ? "✓" : "✗"}</span>{name}
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -158,7 +203,7 @@ export function AttentionSheet() {
       <ul className="ci-attention">
         {list.map((it) => {
           const t = describeTap(it, { state: d.state, items: d.queueItems });
-          const acts = trayActions(it);
+          const acts = trayActions(it, { staff: !!d.session?.staff });
           return (
             <li key={it.clientId} className="ci-attention-row">
               <div className="ci-attention-main">
@@ -167,6 +212,7 @@ export function AttentionSheet() {
                 <span className="ci-attention-why">{it.window?.text || it.error || "Not recorded."}</span>
               </div>
               <div className="ci-attention-actions">
+                {acts.includes("admit_override") && <button type="button" className="ci-btn ci-btn-warn" onClick={() => retryTap(it.clientId, { notIncluded: true })}>Admit anyway (override)</button>}
                 {acts.includes("override") && <button type="button" className="ci-btn ci-btn-warn" onClick={() => retryTap(it.clientId, { override: true })}>Admit anyway</button>}
                 {acts.includes("retry") && <button type="button" className="ci-btn ci-btn-primary" onClick={() => retryTap(it.clientId)}>Try again</button>}
                 <button type="button" className="ci-btn ci-btn-ghost" onClick={() => dismissTap(it.clientId)}>Dismiss</button>
@@ -233,6 +279,9 @@ function BannerWords({ x, icon }) {
 /** A station's arrival banners (newest on top, three at once). */
 export function Banners({ station, onOpen, max = 3 }) {
   const d = useDesk();
+  // The guest as the device knows them NOW (a staff change to their inclusions arrives as a live event after the
+  // banner went up: the summary follows it).
+  const now = (x) => d.state?.byKey?.get(x.key) || x.guest;
   const b = d.banners[station];
   if (!b) return null;
   const all = b.view();
@@ -249,11 +298,13 @@ export function Banners({ station, onOpen, max = 3 }) {
             </div>
           );
         }
-        const band = badgeOf(x.guest);
+        const g = now(x);
+        const band = badgeOf(g);
         return (
           <div key={x.key} className={`ci-banner${band.noPass ? " is-issue" : ""}`} style={band.neutral ? undefined : { "--gbg": band.bg }}>
-            <button type="button" className="ci-banner-text" onClick={() => onOpen?.(x.guest)}>
-              <BannerWords x={x} icon={<span className="ci-banner-bell" aria-hidden="true">{band.noPass ? ISSUE_PASS.icon : "🔔"}</span>} />
+            <button type="button" className="ci-banner-text" onClick={() => onOpen?.(g)}>
+              <BannerWords x={{ ...x, parts: bannerParts(g, station, { eventDay: d.state?.today?.eventDay, now: serverNow() }) }} icon={<span className="ci-banner-bell" aria-hidden="true">{band.noPass ? ISSUE_PASS.icon : "🔔"}</span>} />
+              {station === "desk" && <span className="ci-banner-incl"><InclusionSummary guest={g} size="s" /></span>}
             </button>
             <button type="button" className="ci-banner-ok" onClick={() => dismissBanner(station, x.key)}>Got it</button>
           </div>

@@ -16,10 +16,11 @@
     <meta name="application-name" content="TTFC Check-in" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no, email=no, address=no" />
-    <!-- The manifest and icons sit in the app's own folder (relative links: this page is only ever served there). -->
-    <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="icon" type="image/png" sizes="96x96" href="icons/icon-96.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+    <!-- The manifest and icons sit in the app's own folder, linked from the root: the page is served at every station's
+         address too (/checkin/lobby, /checkin/floor-1…: src/checkin/lib/routes.js). -->
+    <link rel="manifest" href="/checkin/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/checkin/icons/icon-96.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/checkin/icons/apple-touch-icon.png" />
     <style>
       html { background: #0B0823; }
       html[data-theme="light"] { background: #F6F4FB; }

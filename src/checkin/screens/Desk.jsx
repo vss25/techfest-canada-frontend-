@@ -6,15 +6,16 @@ import { ISSUE_PASS, NO_DETAILS, UNKNOWN_OUTCOMES } from "../lib/special.js";
 import { buildIndex, search } from "../lib/search.js";
 import { clockText, secondsSince, timeText, timerLevel, weekday } from "../lib/timers.js";
 import { act, undoFor } from "../act.js";
-import { BoxHint, Chips, Inclusions, PassBand, SearchBox, Sheet, SpecialBadge } from "../components.jsx";
-import { byLine } from "../lib/byLine.js";
+import { BoxHint, Chips, InclusionSummary, PassBand, SearchBox, Sheet, SpecialBadge, StateChip } from "../components.jsx";
+import { cta, onTheWayText, stateChip } from "../lib/vocab.js";
 import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
 import { useLayout, useNow, useUndoExpiry } from "../hooks.js";
 
 /* FLOOR 1 — Pass desk. "On the way up": everyone the lobby marked Arrived, newest on top, each card big enough to read
-   from the desk (name, company, pass colour, what to hand over, the badge box, the time since they arrived: amber
-   after 60 s, red after 2 min). Tap Checked in when the pass is handed over. "Checked in": latest first (the latest
+   from the desk (name, company, pass colour, the inclusion summary: CxO Breakfast / Lunch / Gala Dinner / Catalyst
+   Awards ✓ or ✗ as the server says, live; the badge box, the time since they arrived: amber after 60 s, red after
+   2 min). Tap "Check in & give pass" when the pass is handed over. "Checked in": latest first (the latest
    80 shown, the count is everyone's). A search for people who came straight up. Day 2: "Has pass (collected Mon)".
    ISSUE PASS (on the list, no pass on file): the card says so in big type ("Issue pass: name is on the list, no pass on
    file"), with a dashed outline. NO DETAILS FOUND (the lobby couldn't find them): a hatched card with a question mark,
@@ -35,7 +36,7 @@ export default function Desk({ onOpen }) {
     const st = statusOf(s, g, pending());
     if (st.checked_in) return;
     // ISSUE PASS (on the list, no pass on file): Checked in here = the pass was issued at the desk (contract C7).
-    act({ point: "checked_in", guest: g, undoText: noPassOf(g) ? `${g.name}: pass issued at the desk.` : `${g.name}: checked in, pass handed over.`, onDone: done });
+    act({ point: "checked_in", guest: g, undoText: noPassOf(g) ? `${g.name}: pass issued, checked in.` : `${g.name}: checked in · pass given.`, undoLabel: cta("desk").undo, onDone: done });
   }, [s]);
   const { q, setQ, sel, results, inputRef, lookingUp, done, matchOf } = useGuestSearch(s.guests, { onEnter: checkIn, version: s.version + p.length });
   // Worked out again when anything on the desk changes (v: every live event, tap, queue change), not on the timers' ticks.
@@ -68,8 +69,8 @@ export default function Desk({ onOpen }) {
         {doneShown.map(({ g, st }) => {
           const undo = undoFor(g, "checked_in");
           return (
-            <GuestRow key={g.key} guest={g} onOpen={onOpen} status={`${noPassOf(g) ? "Pass issued" : "Checked in"} ${byLine(st.checked_in)}`} statusTone="good"
-              actions={undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span key="done" className="ci-done">✓</span>} />
+            <GuestRow key={g.key} guest={g} onOpen={onOpen} state={stateChip("checked_in", st.checked_in, { noPass: noPassOf(g), by: true })}
+              actions={undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>{cta("desk").undo}</button> : null} />
           );
         })}
       </ul>
@@ -88,14 +89,20 @@ export default function Desk({ onOpen }) {
             {results.map((g, i) => {
               const st = statusOf(s, g, p);
               const stage = deskStage(st);
+              const issue = noPassOf(g);
+              const undo = stage === "checked_in" ? undoFor(g, "checked_in") : null;
+              // Checked in already (not this device's tap a moment ago): amber "Already checked in", so a second pass
+              // is never handed over by mistake.
+              const state = stage === "checked_in" ? stateChip("checked_in", st.checked_in, { noPass: issue, again: !undo, by: true }) : null;
               return (
                 <GuestRow key={g.key} guest={g} selected={i === sel} onOpen={onOpen}
                   match={matchOf(g)}
-                  status={stage === "checked_in" ? `${noPassOf(g) ? "Pass issued" : "Checked in"} ${byLine(st.checked_in)}` : stage === "on_the_way" ? <>On the way up · <Elapsed at={st.arrived.at} /></> : noPassOf(g) ? ISSUE_PASS.reading : collectedBefore(g, s.today) ? `Has pass (collected ${weekday(g.passCollectedAt)})` : "Not arrived"}
-                  statusTone={stage === "checked_in" ? "good" : stage === "on_the_way" ? "info" : noPassOf(g) ? "issue" : ""}
-                  extra={<span className="ci-row-extra"><Inclusions guest={g} /><BoxHint guest={g} /></span>}
-                  actions={stage === "checked_in" ? <span key="done" className="ci-done">✓</span>
-                    : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>{noPassOf(g) ? "Pass issued" : "Checked in"}</button>} />
+                  state={state}
+                  status={stage === "on_the_way" ? <OnTheWay at={st.arrived.at} /> : issue ? ISSUE_PASS.reading : collectedBefore(g, s.today) ? `Has pass (collected ${weekday(g.passCollectedAt)})` : "Not arrived"}
+                  statusTone={issue && stage !== "on_the_way" ? "issue" : ""}
+                  extra={<span className="ci-row-extra"><InclusionSummary guest={g} size="s" /><BoxHint guest={g} /></span>}
+                  actions={stage === "checked_in" ? (undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>{cta("desk").undo}</button> : null)
+                    : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>{cta("desk", { noPass: issue }).label}</button>} />
               );
             })}
           </ul>
@@ -166,10 +173,11 @@ function FindGuest({ u, guests, onClose }) {
   );
 }
 
-/** "0:35" since `at`, ticking on its own (the rest of the screen doesn't re-render every second). */
-function Elapsed({ at }) {
+/** "On the way up · 0:35" (the arrived state's chip), the time since `at` ticking on its own (the rest of the screen
+    doesn't re-render every second). */
+function OnTheWay({ at }) {
   const now = useNow(1000);
-  return <>{clockText(secondsSince(at, now))}</>;
+  return <StateChip tone="arrived" text={onTheWayText(clockText(secondsSince(at, now)))} />;
 }
 
 function WayCard({ g, st, today, note, onOpen, onCheckIn }) {
@@ -192,15 +200,14 @@ function WayCard({ g, st, today, note, onOpen, onCheckIn }) {
         <span className={`ci-timer is-${level}`} aria-label={`Arrived ${clockText(secs)} ago`}>⏱ {clockText(secs)}</span>
       </div>
       <div className="ci-card-hand">
-        <span className="ci-small ci-muted">Hand over</span>
-        <Inclusions guest={g} />
+        <InclusionSummary guest={g} size="m" />
       </div>
       {had && <p className="ci-card-had">Has pass (collected {weekday(g.passCollectedAt)}): wave them through, or check in for today.</p>}
       {note?.text && <p className="ci-card-note">📝 {note.text}</p>}
       {g.pending && <p className="ci-card-note is-warn">Pending pass: not sent to them yet. Check with staff.</p>}
       <div className="ci-card-foot">
-        <span className="ci-small ci-muted">Arrived {timeText(st.arrived.at)}{st.arrived.by?.name ? ` · ${st.arrived.by.name}` : ""}{st.arrived.pending ? " · pending" : ""}</span>
-        <button type="button" className="ci-btn ci-btn-good ci-btn-xl" onClick={() => onCheckIn(g)}>{issue ? "✓ Pass issued" : "✓ Checked in"}</button>
+        <StateChip {...stateChip("arrived", st.arrived, { by: true })} size="s" />
+        <button type="button" className="ci-btn ci-btn-good ci-btn-xl" onClick={() => onCheckIn(g)}>{cta("desk", { noPass: issue }).label}</button>
       </div>
     </li>
   );

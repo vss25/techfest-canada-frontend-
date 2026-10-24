@@ -81,6 +81,10 @@
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {
+      "source": "/:variant((?!checkin/)[Cc][Hh][Ee][Cc][Kk]-?[Ii][Nn])/:rest(.+)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
       "source": "/checkin-j0s8e5p4akvh",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
@@ -102,6 +106,11 @@
     {
       "source": "/:variant((?!checkin/$)[Cc][Hh][Ee][Cc][Kk]-?[Ii][Nn]/?)",
       "destination": "/checkin/",
+      "permanent": true
+    },
+    {
+      "source": "/:variant((?!checkin/)[Cc][Hh][Ee][Cc][Kk]-?[Ii][Nn])/:rest(.+)",
+      "destination": "/checkin/:rest",
       "permanent": true
     },
     {
@@ -136,6 +145,14 @@
     {
       "source": "/checkin/(.*)",
       "destination": "/checkin/index.html"
+    },
+    {
+      "source": "/get-app",
+      "destination": "/get-app/index.html"
+    },
+    {
+      "source": "/get-app/",
+      "destination": "/get-app/index.html"
     },
     {
       "source": "/(.*)",

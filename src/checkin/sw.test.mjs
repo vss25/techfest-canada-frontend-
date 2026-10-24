@@ -299,6 +299,22 @@ test("the built worker's version covers its page, its own code, the manifest and
 });
 
 
+test("every station's own address opens the app's page from the cache, offline too (Oct 24 2026: /checkin/lobby…)", async () => {
+  const dev = device();
+  const files = [SCOPE, "/assets/desk-a1.js"];
+  dev.net.files.set(SCOPE, page("/assets/desk-a1.js"));
+  dev.net.files.set("/assets/desk-a1.js", "js");
+  const w = dev.worker(render(files, "v1"));
+  await w.install();
+  await w.activate();
+  const cached = await w.open(SCOPE);
+  dev.net.offline = true;
+  for (const p of ["lobby", "floor-1", "cxo-breakfast", "lunch", "evening", "media", "av-station", "exhibitor-desk", "lobby/", "Lobby", "nope"]) {
+    assert.equal(await w.open(`${SCOPE}${p}`), cached, p);
+  }
+  assert.equal(await w.open(`${SCOPE}lobby?source=pwa`), cached);
+});
+
 test("the built worker (dist/) installs its whole app, serves its own page, and keeps it when a load fails", { skip: !existsSync(BUILT) && "no dist/ (run vite build first)" }, async () => {
   const dev = device();
   const code = readFileSync(BUILT, "utf8");
@@ -317,6 +333,7 @@ test("the built worker (dist/) installs its whole app, serves its own page, and 
   assert.equal(await w.open(SCOPE), cached);
   dev.net.offline = true;
   assert.equal(await w.open(SCOPE), cached);
+  for (const p of ["lobby", "floor-1", "lunch", "exhibitor-desk"]) assert.equal(await w.open(`${SCOPE}${p}`), cached, `offline ${p}`);
   for (const m of cached.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)) assert.equal((await w.get(m[1])).status, 200, m[1]);
   // One of its scripts failing to download: that version doesn't install.
   const dev2 = device();

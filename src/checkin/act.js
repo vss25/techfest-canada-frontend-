@@ -14,12 +14,16 @@ const LABEL = {
 };
 const YES = { breakfast: "Admit anyway", lunch: "Admit anyway", evening: "Admit anyway" };
 
-/** Record `point` for a guest (or a booth key) at the current station. `onDone`: once the tap is queued (the search clears). */
-export function act({ point, key, guest = null, note, undoText, onDone = null }) {
+/**
+ * Record `point` for a guest (or a booth key) at the current station. `onDone`: once the tap is queued (the search
+ * clears). `undoLabel`: the toast's button ("Undo arrived", lib/vocab.js). `notIncluded`: staff's "Admit anyway
+ * (override)" at a meal door for a guest who isn't on the list (contract C11, recorded as an override).
+ */
+export function act({ point, key, guest = null, note, undoText, undoLabel = "Undo", notIncluded = false, onDone = null }) {
   const station = desk.station;
   const st = desk.state?.stationStates?.[station];
   const go = (override) => {
-    tap({ kind: "mark", point, key: key || guest?.key, override: !!override, ...(note ? { note } : {}) }, { undoText });
+    tap({ kind: "mark", point, key: key || guest?.key, override: !!override, ...(notIncluded ? { notIncluded: true } : {}), ...(note ? { note } : {}) }, { undoText, undoLabel });
     try { onDone?.(); } catch { /* the screen's problem */ }
   };
   const rule = tapRule(station, st);

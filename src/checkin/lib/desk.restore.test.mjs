@@ -1,11 +1,12 @@
-/* node --test src/checkin/lib/desk.restore.test.mjs (S1): a station reopened in a NEW session (the Home Screen app
-   killed and relaunched, or a new tab: the sign-in, the station and the list are kept on the device, this tab's own
-   memory starts empty) opens straight on the station, without the Start screen, so its Start button is never pressed.
-   It counts as a station that has run here the moment it shows: Switch station then never applies a waiting update by
-   itself (the reload would lose the Undo of a tap made seconds before), and nor does the Start screen it leads to. */
+/* node --test src/checkin/lib/desk.restore.test.mjs (S1): a station's address opened in a NEW session (a reload, a new
+   tab, the Home Screen app relaunched on it: the sign-in and the list are kept on the device, the station is the
+   address, lib/routes.js; this tab's own memory starts empty) opens straight on the station, without the Start screen,
+   so its Start button is never pressed. It counts as a station that has run here the moment it shows: Switch station
+   (the home) then never applies a waiting update by itself (the reload would lose the Undo of a tap made seconds
+   before), and nor does the Start screen it leads to. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { json, net, wait } from "./fakeBrowser.mjs";
+import { go, json, net, wait } from "./fakeBrowser.mjs";
 
 const today = { date: "2026-10-26", eventDay: "day1", label: "Day 1" };
 const stations = [{ key: "lobby", label: "Lobby", enabled: true }, { key: "desk", label: "Pass desk", enabled: true }];
@@ -14,9 +15,10 @@ const snap = {
   serverTime: new Date().toISOString(), cursor: 5, today, user, staff: false, stations, windows: {}, stationStates: {},
   guests: [{ key: "g1", keys: ["g1"], name: "Guest One" }], marks: [], notes: {}, queries: [], booths: [],
 };
-// Kept on the device from the last session: the sign-in, the station, the list. This tab's sessionStorage is empty.
+// Kept on the device from the last session: the sign-in and the list; the page opens on the Lobby's address. This tab's
+// sessionStorage is empty.
 localStorage.setItem("ttfc.desk.session.v1", JSON.stringify({ token: "tok-v", user, identity: user, staff: false, email: "val@x", at: Date.now(), lastUse: Date.now() }));
-localStorage.setItem("ttfc.desk.station", "lobby");
+go("/checkin/lobby");
 localStorage.setItem("ttfc.desk.snapshot.v1", JSON.stringify({ userId: user.id, snap }));
 net.route = (url) => {
   if (url.includes("/checkin/desk/stream")) return new Promise(() => {});
@@ -46,7 +48,7 @@ test("restored in a new session: straight on the station, never started with the
   D.boot();
   await wait(40);
   assert.equal(sessionStorage.getItem("ttfc.desk.startedHere"), null, "a new session: this tab's memory is empty");
-  assert.equal(D.desk.station, "lobby", "the station kept on the device");
+  assert.equal(D.desk.station, "lobby", "the station the address names");
   assert.equal(D.desk.started, false, "the Start button was never pressed here");
   assert.equal(D.desk.picked, false, "not picked in this tab: no Start screen");
   const first = screenOf();
@@ -64,15 +66,18 @@ test("restored in a new session: straight on the station, never started with the
   assert.deepEqual(applied, []);
   assert.equal(u.ready(), true);
 
-  // A tap, then Switch station (the picker opens over the Lobby): no reload by itself, the tap's Undo stays.
-  const picker = screenOf({ picking: true });
+  // A tap, then Switch station (the home, /checkin/): no reload by itself, the tap's Undo stays.
+  D.goHome();
+  assert.equal(location.pathname, "/checkin/");
+  const picker = screenOf();
   assert.equal(picker.screen, "stations");
-  assert.equal(picker.updateAs, "station", "the picker over a relaunched station");
+  assert.equal(picker.updateAs, "station", "the home after a relaunched station ran here");
   u.setScreen(picker.updateAs, { station: D.desk.station });
   assert.deepEqual(applied, [], "Switch station on a relaunched Lobby never reloads by itself");
 
   // Its own tile again: the Start screen it leads to waits too.
   D.setStation("lobby");
+  assert.equal(location.pathname, "/checkin/lobby");
   const start = screenOf();
   assert.equal(start.screen, "start");
   assert.equal(start.updateAs, "station");

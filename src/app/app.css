@@ -1254,6 +1254,10 @@ textarea.input--ios { min-height: 120px; }
 .ticket-linked svg { width: 13px; height: 13px; }
 .ticket .pass-qr { margin: 10px auto 6px; padding: 16px; border-radius: 16px; }
 .ticket-venue { font-size: 13px; color: var(--tx2); }
+/* "Anyone who scans the QR on your pass gets what you share" (Oct 24 2026): short, on screen, never a tooltip. */
+.pass-share-note { margin: 0; padding: 8px 12px; border-radius: var(--r-control); background: var(--pur-tint); color: var(--tx); font-size: 12.5px; line-height: 1.45; text-align: center; max-width: 340px; }
+.pass-share-note a { color: var(--pur-alt); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.cc-empty .pass-share-note, .cc-panel .pass-share-note { text-align: left; max-width: none; }
 .ticket-link-h { margin: 0; font-size: 13px; font-weight: 600; color: var(--tx2); }
 /* My pass › What's included (iOS TicketDetailView includedBlock: 16 padding, 10 between rows, filled check). */
 .pass-incl { list-style: none; margin: 0; display: flex; flex-direction: column; gap: 10px; }

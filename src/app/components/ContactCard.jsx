@@ -5,7 +5,7 @@ import { useStore } from "../lib/store";
 import { cardOf, clearAddRequest, myCard, needsDetails, refreshCard, saveItems, setCardOpen, shareMyVCard } from "../lib/myCard";
 import {
   cardRowLabel, cleanLabel, cleanValue, detailCount, displayValue, itemTitle, kindName, KIND_META, CONTACT_KINDS, LABEL_CHIPS, MAX_CONTACT_ITEMS,
-  newItemId, TOO_MANY_ERROR, waysSummary,
+  newItemId, PASS_SHARE_NOTE, PASS_SHARE_PATH, TOO_MANY_ERROR, waysSummary,
 } from "../lib/contactCard";
 import { confirmDialog, showAlert } from "../lib/ui";
 import { Button, Chip, IconButton, Sheet, Switch } from "./ui";
@@ -19,7 +19,8 @@ import "./contactCard.css";
    than 2 details are filled in. Expanded: the ways people can
    reach you, each with a "Share by default" switch, then
    Organization / Residence and "Share my contact". Every change
-   saves the whole list (PUT /social/contact-card).
+   saves the whole list (PUT /social/contact-card). Says that what
+   you share is also given to anyone who scans your pass's QR.
 ========================================================= */
 
 export default function ContactCard({ org, country }) {
@@ -99,6 +100,7 @@ export default function ContactCard({ org, country }) {
                 <span className="cc-empty-ico" aria-hidden="true"><IdCard /></span>
                 <b>Add the ways people can reach you</b>
                 <p>Email, phone, WhatsApp, LinkedIn and more. You pick what to share each time you connect.</p>
+                <p className="pass-share-note">{PASS_SHARE_NOTE}</p>
                 {atLeastTwo}
                 <Button size="sm" icon={Plus} onClick={() => setPicker(true)}>Add contact detail</Button>
               </div>
@@ -128,6 +130,12 @@ export default function ContactCard({ org, country }) {
                   ))}
                 </div>
                 <p className="tiny muted" style={{ margin: 0 }}>Switched-on details are ticked for you each time you share. You still choose every time.</p>
+                {/* Pass scans give what My QR ticks: these switches until they tick there, then that list (Oct 24 2026). */}
+                {card.qrSharePicked ? (
+                  <p className="pass-share-note" style={{ margin: 0 }}>Anyone who scans the QR code on your pass (your email, PDF ticket, Apple Wallet or the app) gets what's ticked on <Link to={PASS_SHARE_PATH}>My QR</Link>.</p>
+                ) : (
+                  <p className="pass-share-note" style={{ margin: 0 }}>{PASS_SHARE_NOTE}</p>
+                )}
                 {suggestion}
                 {atLeastTwo}
                 <div className="row" style={{ gap: 8 }}>

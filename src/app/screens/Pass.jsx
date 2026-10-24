@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BadgeCheck, CheckCircle2, Link2, Plus, Share2, ShieldOff, Sun, Ticket } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useStore } from "../lib/store";
@@ -9,7 +9,7 @@ import { LINKS } from "../lib/config";
 import { connectPayload, passPayload } from "../lib/qr";
 import { showAlert } from "../lib/ui";
 import { canShareContact, cardOf, myCard, queueQrShare, refreshCard, requestAddDetail } from "../lib/myCard";
-import { defaultIds, keepKnown, qrContactFields, SHARE_OFF_ERROR } from "../lib/contactCard";
+import { defaultIds, keepKnown, PASS_DOOR_NOTE, PASS_SHARE_NOTE, PASS_SHARE_PATH, PASS_SHARE_WHERE, qrContactFields, SHARE_OFF_ERROR } from "../lib/contactCard";
 import { Button, Segmented, TopBar } from "../components/ui";
 import { ShareChecklist } from "../components/ShareSheet";
 import AppleWalletButton from "../components/AppleWallet";
@@ -21,6 +21,8 @@ import { passInclusions } from "../lib/inclusions";
    (iOS TicketDetailView "What's included": the server's
    tickets[].inclusions, else the pass's list, lib/inclusions.js)
    and the connect QR other attendees scan to connect in person.
+   Scanning the door QR connects too (Oct 24 2026) and gives what
+   the connect QR's checklist ticks, which both codes say.
 ========================================================= */
 
 export default function Pass() {
@@ -93,9 +95,11 @@ function PassCode({ ticket, name }) {
         <div className="pass-qr" role="img" aria-label={`Pass QR code for ${ticket.ticketId}`}>
           <QRCodeSVG value={passPayload(ticket.ticketId)} size={208} level="M" marginSize={0} />
         </div>
+        {/* The same QR as the pass email, PDF ticket and Apple Wallet: it also connects whoever scans it (Oct 24 2026). */}
+        <p className="pass-share-note">{PASS_DOOR_NOTE} (<Link to={PASS_SHARE_PATH} replace>{PASS_SHARE_WHERE}</Link>).</p>
         {ticket.checkedIn && <span className="ticket-linked"><CheckCircle2 aria-hidden="true" />Checked in</span>}
         <span className="ticket-venue">The Westin Harbour Castle · Toronto, Canada</span>
-        <span className="tiny muted row" style={{ gap: 6, justifyContent: "center" }}><Sun aria-hidden="true" style={{ width: 13, height: 13 }} />Show this at the door. Turn your screen brightness up.</span>
+        <span className="tiny muted row" style={{ gap: 6, justifyContent: "center" }}><Sun aria-hidden="true" style={{ width: 13, height: 13 }} />Turn your screen brightness up.</span>
       </section>
       {/* As on iOS (TicketDetailView): Apple devices only; the same badge as on the Profile. */}
       <AppleWalletButton ticketId={ticket.ticketId} />
@@ -185,6 +189,7 @@ function ConnectCode({ me, name }) {
           </>
         )}
       </section>
+      {signedIn && canShare && <p className="pass-share-note" style={{ textAlign: "left", width: "100%" }}>{PASS_SHARE_NOTE}</p>}
       <p className="muted small" style={{ margin: 0 }}>Show this when you meet someone. When they scan it, you're connected in person and they get what's ticked here. You can change it later from their profile.</p>
       <Button block icon={Share2} onClick={share}>Share as text</Button>
     </div>

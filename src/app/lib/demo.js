@@ -852,6 +852,12 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
     const all = s.connections.map(connectionDTO);
     return done({ accepted: all.filter((c) => c.status === "accepted"), incoming: all.filter((c) => c.status === "pending" && c.direction === "incoming"), outgoing: all.filter((c) => c.status === "pending" && c.direction === "outgoing") });
   }
+  // Connect by pass (C-PASS): the demo knows only its own pass; sample people have no passes to scan.
+  if (is("POST", "social/connections/by-pass")) {
+    const id = String(body.ticketId || "").trim().replace(/^TECHFEST:/i, "").replace(/\s+/g, "").toLowerCase();
+    if ((s.tickets || []).some((t) => String(t.ticketId || "").toLowerCase() === id)) throw new ApiError("That's your own pass.", 400, { code: "self", error: "That's your own pass." });
+    throw new ApiError("That isn't a TTFC pass we know.", 404, { code: "not_found", error: "That isn't a TTFC pass we know." });
+  }
   if (is("POST", "social/connections/request") || is("POST", "social/connections/in-person")) {
     const p = card(body.toUserId);
     if (!p) throw new ApiError("User not found", 404);

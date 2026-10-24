@@ -260,6 +260,18 @@ export async function connectInPerson(userId, share) {
   } catch (e) { fail(e); return null; }
 }
 
+/**
+ * Scanned someone's ENTRY QR (contract C-PASS): connected with the pass holder in person, like their connect QR.
+ * → { result } (the connection, with alreadyConnected) or { error } (the ApiError: status, data.code); never throws.
+ */
+export async function connectByPass(ticketId, share) {
+  try {
+    const result = await post("social/connections/by-pass", { ticketId, ...(Array.isArray(share) ? { share } : {}) });
+    await refreshConnections();
+    return { result };
+  } catch (error) { return { error }; }
+}
+
 // ---------- Messages ----------
 
 export async function refreshThreads() {

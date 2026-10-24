@@ -220,8 +220,8 @@ function Connected({ onScan, signedIn }) {
       <div className="pad">
         <div className="inperson">
           <span className="inperson-ico" aria-hidden="true"><ScanLine /></span>
-          <div style={{ flex: 1, minWidth: 0 }}><b>Met someone? Scan their badge</b><span>Instant connection, contact details exchanged.</span></div>
-          <button type="button" className="scan-btn pressable" onClick={onScan} aria-label="Scan a badge">SCAN</button>
+          <div style={{ flex: 1, minWidth: 0 }}><b>Met someone? Scan their QR</b><span>Their connect QR or pass. Instant connection, contact details exchanged.</span></div>
+          <button type="button" className="scan-btn pressable" onClick={onScan} aria-label="Scan a connect QR or pass">SCAN</button>
         </div>
         <div className="net-empty">
           <PeopleSlash aria-hidden="true" />
@@ -268,7 +268,7 @@ export default function Network() {
     <div className="glass-group">
       <IconButton icon={QrCode} label="My connect QR" onClick={openMyQR} />
       {/* Labelled, so it reads as "scan someone" next to your own QR. */}
-      <button type="button" className="glass-item pressable" onClick={openScanner} aria-label="Scan a badge"><ScanLine aria-hidden="true" />Scan</button>
+      <button type="button" className="glass-item pressable" onClick={openScanner} aria-label="Scan a connect QR or pass"><ScanLine aria-hidden="true" />Scan</button>
     </div>
   );
   const pills = (

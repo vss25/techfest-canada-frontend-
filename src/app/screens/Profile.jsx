@@ -266,7 +266,7 @@ export default function Profile() {
               </span>
             </Link>
             <Link to="/profile/pass?tab=connect" className="pass-strip-btn pressable" aria-label="My connect QR"><span><QrCode aria-hidden="true" /></span>My QR</Link>
-            <button type="button" className="pass-strip-btn pressable" onClick={() => setScan(true)} aria-label="Scan a badge"><span><ScanLine aria-hidden="true" /></span>Scan</button>
+            <button type="button" className="pass-strip-btn pressable" onClick={() => setScan(true)} aria-label="Scan a connect QR or pass"><span><ScanLine aria-hidden="true" /></span>Scan</button>
           </div>
           {ticket && <AppleWalletButton ticketId={ticket.ticketId} />}
         </div>

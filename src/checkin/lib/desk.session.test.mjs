@@ -169,3 +169,17 @@ test("a staff sign-in's last use is kept with it: throttled, and at once when th
   await D.signOut();
   assert.equal(localStorage.getItem("ttfc.desk.session.v1"), null, "signed out: nothing kept");
 });
+
+test("W7: a station started in this tab is remembered for the update policy (a reload too), until signing out", async () => {
+  await D.signIn("bob@x", "pw");
+  await wait();
+  assert.equal(D.startedHere(), false, "the first pick: an update may apply itself");
+  D.setStation("lobby");
+  D.markStarted();
+  assert.equal(D.startedHere(), true);
+  assert.equal(sessionStorage.getItem("ttfc.desk.startedHere"), "1", "kept in the tab (a reload doesn't forget it)");
+  D.setStation("breakfast");
+  assert.equal(D.startedHere(), true, "switching station: still a station that has run here");
+  await D.signOut();
+  assert.equal(D.startedHere(), false, "signed out: nothing runs");
+});

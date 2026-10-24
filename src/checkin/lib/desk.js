@@ -106,6 +106,7 @@ onAudio(() => emit());
 const sessionStore = {
   get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },
   set: (k, v) => { try { sessionStorage.setItem(k, v); } catch { /* blocked */ } },
+  remove: (k) => { try { sessionStorage.removeItem(k); } catch { /* blocked */ } },
 };
 const tabs = createTabs({
   storage: browserStorage, session: sessionStore, locks: (typeof navigator !== "undefined" && navigator.locks) || null,
@@ -610,6 +611,7 @@ function endSession(reason = "") {
   desk.endedReason = reason;
   desk.myTaps.clear();
   recent = [];
+  sessionStore.remove(STARTED_HERE_KEY);
   for (const b of Object.values(desk.banners)) b.keep(() => false);
   setCount(0);
   letSleep();
@@ -699,7 +701,10 @@ export function setStation(key) {
   emit();
   updateOthers();
 }
-export function markStarted() { desk.started = true; emit(); }
+/** A station was started in this tab (this sign-in), kept across reloads: updates then wait for a tap (updatePolicy.js). */
+const STARTED_HERE_KEY = "ttfc.desk.startedHere";
+export const startedHere = () => sessionStore.get(STARTED_HERE_KEY) === "1";
+export function markStarted() { desk.started = true; sessionStore.set(STARTED_HERE_KEY, "1"); emit(); }
 
 onSession((s) => { desk.session = s; emit(); });
 

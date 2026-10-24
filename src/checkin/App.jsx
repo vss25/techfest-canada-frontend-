@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { desk, useDesk, load, markStarted, openTray, pending, requestSignOut, setStation, unlock } from "./lib/desk.js";
+import { desk, useDesk, load, markStarted, openTray, pending, requestSignOut, setStation, startedHere, unlock } from "./lib/desk.js";
+import { updateScreen } from "./lib/updatePolicy.js";
 import { counters } from "./lib/state.js";
 import { applyTheme, audioReady, keepAwake, remember, THEME_KEY, unlockAudio } from "./lib/device.js";
 import { applyUpdate, isUpdateReady, onUpdate, setAppScreen } from "./lib/pwa.js";
@@ -63,8 +64,10 @@ export default function App() {
       : !d.station || !stationInfo || stationInfo.enabled === false || picking ? "stations"
         : !d.started && d.picked ? "start"
           : d.locked ? "locked" : "station";
-  // A new version applies itself only while no station is running (lib/updatePolicy.js).
-  useEffect(() => { setAppScreen(screen === "locked" ? "station" : screen); }, [screen]);
+  // A new version applies itself only while no station has run in this tab: never once one is started, the picker
+  // open over it or not (lib/updatePolicy.js).
+  const updateAs = updateScreen({ screen, started: d.started, startedBefore: startedHere() });
+  useEffect(() => { setAppScreen(updateAs, { station: d.station }); }, [updateAs, d.station]);
   // Every station screen keeps the screen awake, after a reload too (asked again on the next tap if refused now).
   useEffect(() => { if (screen === "station" || screen === "locked") keepAwake(); }, [screen, d.station]);
 
@@ -83,7 +86,16 @@ export default function App() {
       </>
     );
   }
-  if (screen === "stations") return <><Stations onPicked={() => setPicking(false)} /><ConfirmDialog /><Toasts /></>;
+  if (screen === "stations") {
+    return (
+      <>
+        {update && <UpdateBar station={d.station} waiting={d.queueItems.filter((x) => x.state !== "failed").length} />}
+        <Stations onPicked={() => setPicking(false)} />
+        <ConfirmDialog />
+        <Toasts />
+      </>
+    );
+  }
   if (screen === "start") return <StartGate station={stationInfo} />;
   if (screen === "locked") return <><LockScreen /><ConfirmDialog /><Toasts /></>;
 
@@ -113,11 +125,7 @@ export default function App() {
         {ANNOUNCES.has(d.station) && <Banners station={d.station} onOpen={setOpen} max={kb || layout.kind === "phone" ? 1 : layout.short || window.innerHeight < 950 ? 2 : 3} />}
       </header>
       {!d.persistOk && <p className="ci-update is-bad" role="alert">⚠ Taps can't be saved on this device (its storage is full or blocked). Keep the app open until they're sent; still trying to save them.</p>}
-      {update && (
-        <button type="button" className="ci-update" onClick={() => applyUpdate(d.station)}>
-          Update ready · tap to reload{waiting ? ` (the ${waiting} tap${waiting === 1 ? "" : "s"} waiting stay on this device)` : ""}
-        </button>
-      )}
+      {update && <UpdateBar station={d.station} waiting={waiting} />}
       {ANNOUNCES.has(d.station) && !audioReady() && <button type="button" className="ci-update is-warn" onClick={soundOn}>🔇 Sound is off · tap to turn the chime on</button>}
       {d.othersHere > 0 && <p className="ci-update is-warn" role="status">{stationInfo.label} is also open in another tab or window on this device. Use one and close the other.</p>}
       {d.dayStale && <p className="ci-update is-warn" role="status">{dayHeading(s.today)}: today's list hasn't loaded yet (no connection). Guests can be marked; earlier marks from today show once it loads.</p>}
@@ -131,6 +139,15 @@ export default function App() {
       <ConfirmDialog />
       <Toasts />
     </div>
+  );
+}
+
+/** "Update ready · tap to reload": the station comes back on its Start screen; taps waiting stay on the device. */
+function UpdateBar({ station, waiting }) {
+  return (
+    <button type="button" className="ci-update" onClick={() => applyUpdate(station)}>
+      Update ready · tap to reload{waiting ? ` (the ${waiting} tap${waiting === 1 ? "" : "s"} waiting stay on this device)` : ""}
+    </button>
   );
 }
 

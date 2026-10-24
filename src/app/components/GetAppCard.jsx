@@ -4,6 +4,9 @@ import StoreBadges from "../../components/StoreBadges";
 import { storeNames } from "../../lib/appStores";
 import { detectOS } from "../../lib/pwaPlatform";
 import { track } from "../../lib/pwaEvents";
+import { isNativeVisit } from "../../lib/nativeVisit";
+import { useStore } from "../lib/store";
+import { getAppSnooze, snoozeGetApp } from "../lib/getAppSnooze";
 import { IconButton } from "./ui";
 
 /* =========================================================
@@ -13,25 +16,22 @@ import { IconButton } from "./ui";
    App Store and Google Play badges, this phone's own store first
    (StoreBadges). A card on the page, nothing is sent to anyone.
    × hides it on this device for 7 days (localStorage; a blocked
-   storage just shows it again next time). Nothing when neither
-   store link is set (lib/appStores.js).
+   storage just shows it again next time), and so does "Not now"
+   on the "Get the TTFC app" sheet (components/StorePrompt.jsx):
+   one snooze for both (lib/getAppSnooze.js). Nothing when neither store link is set
+   (lib/appStores.js), or for someone who came from the iPhone or
+   Android app (lib/nativeVisit.js: they have it already).
 ========================================================= */
 
-const KEY = "ttfc.getApp.hiddenUntil";
-const HIDE_MS = 7 * 24 * 3600 * 1000;
-
-function hiddenNow() {
-  try { return Number(localStorage.getItem(KEY) || 0) > Date.now(); } catch { return false; }
-}
-
 export default function GetAppCard() {
-  const [hidden, setHidden] = useState(hiddenNow);
+  const { until } = useStore(getAppSnooze);
+  const [shownAt] = useState(() => Date.now());
+  const [fromStoreApp] = useState(() => isNativeVisit());
   const names = storeNames(undefined, detectOS());
-  if (hidden || !names) return null;
+  if (until > shownAt || !names || fromStoreApp) return null;
   const hide = () => {
-    try { localStorage.setItem(KEY, String(Date.now() + HIDE_MS)); } catch { /* storage blocked: hidden for this visit only */ }
     track("pwa_store_card_dismiss", { where: "home" });
-    setHidden(true);
+    snoozeGetApp();
   };
   return (
     <section className="get-app-card" aria-labelledby="get-app-h">

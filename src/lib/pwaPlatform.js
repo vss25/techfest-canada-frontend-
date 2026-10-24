@@ -33,17 +33,25 @@ function forced() {
 /** A QA override is on (events aren't sent then, so stats stay real). */
 export const isForcedPlatform = () => !!forced();
 
+/**
+ * "ios" | "android" | "desktop" | "other" from a user agent and the screen's touch points (pure: pwaPlatform.test.mjs).
+ * iPadOS Safari reports itself as a Mac ("Macintosh", navigator.platform "MacIntel"); more than one touch point gives
+ * it away (a Mac has none). Android tablets say Android without "Mobile": still "android".
+ */
+export function osFrom(u = "", maxTouchPoints = 0) {
+  const s = String(u || "");
+  if (/iPhone|iPad|iPod/i.test(s)) return "ios";
+  if (/Macintosh/.test(s) && Number(maxTouchPoints) > 1) return "ios";
+  if (/Android/i.test(s)) return "android";
+  if (/Windows|Macintosh|Linux|CrOS|X11/i.test(s)) return "desktop";
+  return "other";
+}
+
 /** "ios" | "android" | "desktop" | "other" */
 export function detectOS(given) {
   const f = given ? "" : forced();
   if (f) return f.split("-")[0] === "inapp" ? (f.split("-")[1] || "ios") : f.split("-")[0];
-  const u = given || ua();
-  if (/iPhone|iPad|iPod/i.test(u)) return "ios";
-  // iPadOS reports itself as a Mac; touch points give it away.
-  if (/Macintosh/.test(u) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1) return "ios";
-  if (/Android/i.test(u)) return "android";
-  if (/Windows|Macintosh|Linux|CrOS|X11/i.test(u)) return "desktop";
-  return "other";
+  return osFrom(given || ua(), typeof navigator !== "undefined" ? navigator.maxTouchPoints : 0);
 }
 
 /**

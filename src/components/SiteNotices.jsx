@@ -5,6 +5,7 @@ import Footer from "./Footer";
 import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
 import { withOrdinals } from "../lib/ordinals";
 import { announcementText } from "../lib/priceRise";
+import { isAppDownloadLink, isNativeVisit } from "../lib/nativeVisit";
 
 /* Public-site pieces driven by Site settings → Website options in the admin panel. */
 
@@ -28,16 +29,20 @@ function useBodyDark() {
 const DISMISS_KEY = "ttfc_announcement_dismissed";
 const readDismissed = () => { try { return localStorage.getItem(DISMISS_KEY) || ""; } catch { return ""; } };
 
-/** Slim bar above the navbar on every public page. Dismissal is remembered per message. */
+/** Slim bar above the navbar on every public page. Dismissal is remembered per message. An announcement that
+    links to the App Store, Google Play or /app/install isn't shown to visitors who came from the iPhone or Android
+    app (lib/nativeVisit.js, Oct 24 2026): they have it. */
 export function AnnouncementBar() {
   const s = useSiteSettings();
   const { pathname } = useLocation();
   const [dismissed, setDismissed] = useState(readDismissed);
+  const [fromStoreApp] = useState(() => isNativeVisit());
   const ref = useRef(null);
   // A "prices go up" notice reads as gone up once the Oct 23 2026 rise has happened (lib/priceRise.js).
   const text = announcementText(s["site.announcement"]);
   const link = safeUrl(s["site.announcement_link"]);
-  const show = !!text && dismissed !== text && !isStaffPath(pathname) && !isFocusedPath(pathname);
+  const appNudge = fromStoreApp && isAppDownloadLink(s["site.announcement_link"]);
+  const show = !!text && dismissed !== text && !isStaffPath(pathname) && !isFocusedPath(pathname) && !appNudge;
 
   useLayoutEffect(() => {
     const body = document.body;

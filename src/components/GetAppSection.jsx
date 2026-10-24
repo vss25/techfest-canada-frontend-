@@ -4,6 +4,7 @@ import { storeNames } from "../lib/appStores";
 import { detectOS } from "../lib/pwaPlatform";
 import { isMobileDevice } from "../lib/pwaPlatform";
 import { track } from "../lib/pwaEvents";
+import { isNativeVisit } from "../lib/nativeVisit";
 
 // Computers only (it carries the QR code library): phones never download it.
 const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
@@ -15,14 +16,17 @@ const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
    also"): the App Store and Google Play badges (this phone's own
    store first, StoreBadges) and, on a computer, "Get it on your
    phone" with a QR code (PhoneAppPanel). Light and dark like the
-   page (`dark`). Nothing when neither store link is set.
+   page (`dark`). Nothing when neither store link is set, or for
+   visitors who came from the iPhone or Android app (?source=ios …,
+   lib/nativeVisit.js: they have it already, Oct 24 2026).
 ========================================================= */
 
 export default function GetAppSection({ dark }) {
   const [qr, setQr] = useState(false);
   const [computer] = useState(() => !isMobileDevice());
+  const [fromStoreApp] = useState(() => isNativeVisit());
   const names = storeNames(undefined, detectOS());
-  if (!names) return null;
+  if (!names || fromStoreApp) return null;
 
   const c = dark
     ? { bg: "#06020f", card: "linear-gradient(135deg, rgba(122,63,209,0.22), rgba(245,166,35,0.08))", edge: "rgba(155,135,245,0.32)", text: "#ffffff", mid: "rgba(225,215,255,0.78)", accent: "#c4adff" }

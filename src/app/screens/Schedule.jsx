@@ -9,6 +9,7 @@ import { hourLabel } from "../lib/time";
 import { useNow } from "../lib/ui";
 import { Chip, Segmented, Sheet, Spinner } from "../components/ui";
 import SessionRow from "../components/SessionRow";
+import { StayAgendaSection } from "../components/StaySignup";
 import Coachmark from "../components/Coachmark";
 import { EVENT, LINKS } from "../lib/config";
 import SiteAnnouncement from "../components/SiteAnnouncement";
@@ -23,7 +24,8 @@ import { detectOS } from "../../lib/pwaPlatform";
    Maps), Explore the venue (Cvent's 3D room and floor plans),
    getting here. On the festival days it opens on
    what's on now (or next). Guests are asked to get a pass
-   before saving, as on iOS.
+   before saving, as on iOS. Under each day's sessions: "Stay
+   updated for TTFC 2027", the 2027 waitlist form (Oct 24 2026).
 ========================================================= */
 
 const FILTERS = [
@@ -145,6 +147,8 @@ export default function Schedule() {
             </section>
           ))
         )}
+        {/* The end of the agenda (Oct 24 2026): "Stay updated for TTFC 2027", the 2027 waitlist sign-up itself. */}
+        {day !== 3 && c.loaded && <StayAgendaSection />}
       </main>
       <Coachmark id="schedule" title="Two days, one timeline" message="Switch days, filter by type, tap a session to register." icon={Calendar} />
     </div>

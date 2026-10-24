@@ -7,6 +7,7 @@ import useSiteSettings from "../hooks/useSiteSettings";
 import { track } from "../lib/pwaEvents";
 import { detectOS, isMobileDevice } from "../lib/pwaPlatform";
 import { storeNames } from "../lib/appStores";
+import { isNativeVisit } from "../lib/nativeVisit";
 
 // "Get the TTFC app" on a computer: the store badges and a QR code to the phone. Loaded on first use.
 const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
@@ -39,6 +40,8 @@ export default function Navbar() {
   const navRef = useRef<HTMLElement>(null);
   const [navHeight, setNavHeight] = useState(92);
   const [phoneQr, setPhoneQr] = useState(false);
+  // Came from the iPhone or Android app (?source=ios …, lib/nativeVisit.js): they have it, so no "Get the TTFC app" card.
+  const [fromStoreApp] = useState(() => isNativeVisit());
   const location = useLocation();
   const site = useSiteSettings();
   const showAgenda = site["site.show_agenda"] !== false;
@@ -414,8 +417,8 @@ export default function Navbar() {
                 variants={{ show: { transition: { staggerChildren: 0.035 } } }}
                 style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "8px 20px 24px" }}
               >
-                {/* Always here, for people who closed the prompt: the App Store / Google Play page (/app/install, its own page, so a plain link). */}
-                <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
+                {/* Always here (not for visitors from the store apps): the App Store / Google Play page (/app/install, its own page, so a plain link). */}
+                {!fromStoreApp && <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
                   <a href="/app/install?from=drawer"
                     onClick={(e) => {
                       setMobileOpen(false);
@@ -433,7 +436,7 @@ export default function Navbar() {
                     </span>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ opacity: 0.6, flexShrink: 0 }}><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                   </a>
-                </motion.div>
+                </motion.div>}
 
                 {navItems.filter((item) => !item.hasDropdown).map((item) => {
                   const active = location.pathname === item.path;

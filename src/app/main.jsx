@@ -8,6 +8,7 @@ import "./lib/theme";
 import { desktopGated } from "./lib/desktopGate";
 import { track } from "../lib/pwaEvents";
 import { recordInviteVisit } from "./lib/inviteVisit";
+import { rememberNativeVisit } from "../lib/nativeVisit";
 import { API } from "./lib/config";
 import { installViewportFix } from "./lib/viewport";
 import App from "./App.jsx";
@@ -20,6 +21,9 @@ const DesktopPages = lazy(() => import("./screens/DesktopPages"));
 if (window.location.pathname === "/app") {
   window.history.replaceState(window.history.state, "", "/app/" + window.location.search + window.location.hash);
 }
+
+// Opened from the iPhone or Android app (?source=ios …): no "Get the TTFC app" nudges in this tab (lib/nativeVisit.js).
+rememberNativeVisit();
 
 // Opened from the app invite or swag email's button (/app/#r=<token>, /app/install?…#r=<token>): count the visit, then tidy the address (lib/inviteVisit.js).
 recordInviteVisit(API);

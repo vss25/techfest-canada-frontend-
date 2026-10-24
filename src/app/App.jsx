@@ -14,6 +14,7 @@ import PassesSheet from "./components/PassesSheet";
 import { myCard, profileTabDot } from "./lib/myCard";
 import { OfflineBar, UpdatePrompt } from "./components/AppNotices";
 import LivePollPill from "./components/LivePollPill";
+import StorePrompt from "./components/StorePrompt";
 import { showAlert } from "./lib/ui";
 import { onScreenChange } from "./lib/pwa";
 import { listenForNotificationTaps, syncNotifications } from "./lib/webpush";
@@ -186,6 +187,8 @@ function Shell() {
       </Suspense>
       {showTabs && <TabBar chatsDot={FEATURES.chats && chatsHasNew(s)} profileDot={(mode === "user" || mode === "demo") && profileTabDot(mc)} />}
       <UpdatePrompt />
+      {/* "Get the TTFC app" with this phone's own store, for web app users (lib/storePrompt.js decides when). */}
+      <StorePrompt />
     </div>
   );
 }

@@ -18,8 +18,17 @@
    … › 2027 journey). The 5 × 5 programme and "What to expect" were
    taken off the page the same day.
 
-   The form posts to POST {API}/stay-updated: { email, phone,
-   interests, source, consent: true, _hp } → { ok, message }.
+   The form posts to POST {API}/stay-updated: { name, company,
+   email, phone, interests, source, consent: true, _hp } → { ok,
+   message }. Name and company since Oct 24 2026 (the organiser:
+   "On the waitlist page form, also add name and company name. For
+   people who use this in the app, we should have the details
+   prefilled since those details are required to be on the app"),
+   then the same day: "Please only keep email mandatory in the stay
+   updated form." So only the email is required; a name, company or
+   phone that is given is checked with the server's rules (backend
+   services/waitlist.js validateSignup). prefillFrom() reads a
+   signed-in account (GET /api/auth/me) for the forms to start from.
    No store badges here (lib/appStores.js storePlan decides those
    elsewhere). Imports only the pure stayJourney.js: node --test src/lib/stayUpdated.test.mjs.
 ========================================================= */
@@ -36,7 +45,9 @@ export const STAY_DEFAULTS = Object.freeze({
   "stay.journey_intro": "Five focused one-day briefings, each on one technology pillar and one sector, lead to two days in Toronto in November 2027. Dates to be announced for every event.",
   [JOURNEY_KEY]: DEFAULT_JOURNEY_JSON,
   "stay.form_title": "Join the TTFC 2027 waitlist",
-  "stay.form_intro": "Leave your email and phone number. Tick anything else you'd like to talk to us about.",
+  "stay.form_intro": "Only your email is needed; your name, company and phone number help our team reach out. Tick anything else you'd like to talk to us about.",
+  "stay.field_name": "Your name",
+  "stay.field_company": "Company or organisation",
   "stay.field_email": "Email",
   "stay.field_phone": "Phone",
   "stay.interests_label": "I'm also interested in (optional)",
@@ -78,11 +89,20 @@ export function heroParts(title) {
 
 const EMAIL = /^[^\s@<>"',;:()[\]]+@[^\s@<>"',;:()[\]]+\.[^\s@<>"',;:()[\].]{2,}$/;
 export const PHONE_DIGITS = Object.freeze({ min: 7, max: 20 });
+/** The name: 2–80 characters, letters in any language (with accents), spaces, hyphens, apostrophes (' ’) and dots. */
+export const NAME_LENGTH = Object.freeze({ min: 2, max: 80 });
+/** The company or organisation: up to 120 characters. */
+export const MAX_COMPANY = 120;
+const NAME_CHARS = /^[\p{L}\p{M} .'’‐-]+$/u;
+const HAS_LETTER = /\p{L}/u;
 
+/** Only the email is required; the name, company and phone are checked when given (the server's words). */
 export const ERRORS = Object.freeze({
+  nameLength: "Enter your name in 2 to 80 characters, or leave it empty.",
+  nameBad: "Use letters for your name, with spaces, hyphens, apostrophes or dots if you like.",
+  companyLong: "Keep your company or organisation to 120 characters.",
   emailMissing: "Enter your email address.",
   emailBad: "That email address doesn't look right. Check it and try again.",
-  phoneMissing: "Enter your phone number.",
   phoneBad: "That phone number doesn't look right. Use digits, with + ( ) - or spaces if you like.",
   network: "We couldn't reach our server. Check your connection and try again.",
   failed: "Something went wrong. Please try again, or email enquire@thetechfestival.com.",
@@ -96,17 +116,63 @@ export function phoneDigits(v) {
   return /^\d+$/.test(d) ? d : null;
 }
 
-/** { email?: string, phone?: string } problems in plain words ({} = fine). */
-export function checkForm({ email, phone }) {
+/** "  Priya   Raman " → "Priya Raman": control characters out, spaces tidied (as the server stores it). */
+// eslint-disable-next-line no-control-regex
+export const tidy = (v) => String(v ?? "").replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
+
+/** Fields that may be left empty (the form marks them "(optional)"). */
+export const OPTIONAL = Object.freeze(["name", "company", "phone"]);
+
+/** { name?, company?, email?, phone? } problems in plain words ({} = fine), the server's rules: only the email is
+    required; a name, company or phone that is given must be right. */
+export function checkForm({ name, company, email, phone }) {
   const errors = {};
+  const n = tidy(name);
+  if (n && (n.length < NAME_LENGTH.min || n.length > NAME_LENGTH.max)) errors.name = ERRORS.nameLength;
+  else if (n && (!NAME_CHARS.test(n) || !HAS_LETTER.test(n))) errors.name = ERRORS.nameBad;
+  if (tidy(company).length > MAX_COMPANY) errors.company = ERRORS.companyLong;
   const e = String(email ?? "").trim();
   if (!e) errors.email = ERRORS.emailMissing;
   else if (e.length > 254 || !EMAIL.test(e)) errors.email = ERRORS.emailBad;
   const p = String(phone ?? "").trim();
   const d = phoneDigits(p);
-  if (!p) errors.phone = ERRORS.phoneMissing;
-  else if (d === null || d.length < PHONE_DIGITS.min || d.length > PHONE_DIGITS.max) errors.phone = ERRORS.phoneBad;
+  if (p && (d === null || d.length < PHONE_DIGITS.min || d.length > PHONE_DIGITS.max)) errors.phone = ERRORS.phoneBad;
   return errors;
+}
+
+/** The form's fields in order: the first with a problem gets the cursor. */
+export const FIELDS = Object.freeze(["name", "company", "email", "phone"]);
+export const firstProblem = (errors) => FIELDS.find((k) => errors?.[k]) || "";
+
+/**
+ * What a signed-in account already tells us, for the form to start from (Oct 24 2026: the name and organisation are
+ * required in the app, so people shouldn't type them again). `user`: GET /api/auth/me (name, organization, email,
+ * contactItems, tickets[].details); `me`: GET /api/social/me (the web app's card: name, organization, email), used
+ * where `user` has nothing. The phone: their contact card's phone (not the sign-in email's row), else the newest
+ * pass's checkout answer. "" for anything unknown; nothing is checked here (the form checks on Join).
+ * @returns {{ name: string, company: string, email: string, phone: string }}
+ */
+export function prefillFrom(user, me = null) {
+  const u = user && typeof user === "object" ? (user.user && typeof user.user === "object" ? user.user : user) : {};
+  const m = me && typeof me === "object" ? me : {};
+  const pick = (...vals) => { for (const v of vals) { const t = tidy(typeof v === "string" ? v : ""); if (t) return t; } return ""; };
+  const card = (Array.isArray(u.contactItems) ? u.contactItems : []).find((i) => i && i.kind === "phone" && !i.account && tidy(i.value));
+  const time = (t) => new Date(t?.purchaseDate || t?.createdAt || 0).getTime() || 0;
+  const passes = (Array.isArray(u.tickets) ? u.tickets : []).filter((t) => t && t.details && typeof t.details === "object").sort((a, b) => time(b) - time(a));
+  const fromPass = passes.map((t) => t.details.phone).find((p) => typeof p === "string" && tidy(p));
+  return {
+    name: pick(u.name, m.name, [u.firstName, u.lastName].filter((x) => typeof x === "string").join(" ")).slice(0, NAME_LENGTH.max),
+    company: pick(u.organization, u.organisation, u.company, m.organization, m.organisation, m.company).slice(0, MAX_COMPANY),
+    email: pick(u.email, m.email).slice(0, 254),
+    phone: pick(card?.value, fromPass).slice(0, 40),
+  };
+}
+
+/** `values` with only its empty fields filled from `prefill` (what someone has typed is never replaced). */
+export function fillEmpty(values, prefill) {
+  const out = { ...values };
+  for (const k of FIELDS) if (!String(out[k] ?? "").trim() && prefill?.[k]) out[k] = prefill[k];
+  return out;
 }
 
 /** ?source=ios|android|webapp from the apps' links; anything else is the website. */
@@ -118,17 +184,17 @@ export function sourceFrom(search, fallback = "website") {
 }
 
 /**
- * Sends the form. → { message } on success; throws an Error with `field` ("email" | "phone" | …) and a message in
+ * Sends the form. → { message } on success; throws an Error with `field` ("name" | "company" | "email" | "phone" | …) and a message in
  * plain words otherwise. `fetchImpl` for tests.
  */
-export async function joinWaitlist(api, { email, phone, interests = [], source = "website", hp = "" }, { fetchImpl = globalThis.fetch } = {}) {
+export async function joinWaitlist(api, { name, company, email, phone, interests = [], source = "website", hp = "" }, { fetchImpl = globalThis.fetch } = {}) {
   let res;
   try {
     res = await fetchImpl(`${String(api).replace(/\/+$/, "")}/stay-updated`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
-        email: String(email ?? "").trim(), phone: String(phone ?? "").trim(),
+        name: tidy(name), company: tidy(company), email: String(email ?? "").trim(), phone: String(phone ?? "").trim(),
         interests: INTERESTS.filter((k) => interests.includes(k)), source, consent: true, _hp: hp,
       }),
     });

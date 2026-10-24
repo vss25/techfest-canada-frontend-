@@ -11,7 +11,8 @@ import JourneyView from "../../components/StayJourney";
 /* =========================================================
    Stay updated (/app/stay-updated, Oct 23 2026): the TTFC 2027
    waitlist, the same page as thetechfestival.com/stay-updated in
-   the web app's look: the hero, email + phone (both required), the
+   the web app's look: the hero, name, company, email + phone (all
+   required; prefilled for a signed-in account), the
    three ticks and the consent line (the server's thank-you
    replaces the form), then the 2027 journey: the map of Canada and
    the stops (components/StayJourney.jsx, compact; stay.journey).

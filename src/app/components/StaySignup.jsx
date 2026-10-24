@@ -1,13 +1,17 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CalendarClock, CheckCircle2, ChevronRight } from "lucide-react";
 import { useStore } from "../lib/store";
+import { auth } from "../lib/auth";
 import { content } from "../lib/content";
 import { API } from "../lib/config";
 import { isDemoApi } from "../lib/api";
 import { markStayJoined, stayJoined } from "../lib/stayJoined";
 import { Button } from "./ui";
-import { INTERESTS, checkForm, heroParts, joinWaitlist, stayFrom } from "../../lib/stayUpdated";
+import { INTERESTS, checkForm, fillEmpty, firstProblem, heroParts, joinWaitlist, prefillFrom, stayFrom } from "../../lib/stayUpdated";
+
+/** " (optional)" after a field's label: only the email is required (Oct 24 2026). */
+const Optional = () => <span className="wl-opt"> (optional)</span>;
 
 /* =========================================================
    The TTFC 2027 waitlist sign-up in the web app (Oct 23–24 2026),
@@ -16,52 +20,78 @@ import { INTERESTS, checkForm, heroParts, joinWaitlist, stayFrom } from "../../l
    "Stay updated for TTFC 2027" card (StayHomeCard), the screen.
    The organiser (Oct 24 2026): "Add the stay-updated section for
    someone to sign up for 2027 on the app too."
-   The same as the website's form (src/lib/stayUpdated.js): email +
-   phone (both required), the three ticks, the consent line, the
+   The same as the website's form (src/lib/stayUpdated.js): name,
+   company (Oct 24 2026), email and phone; only the email is
+   required (the organiser, Oct 24 2026: "Please only keep email
+   mandatory in the stay updated form."), the others say
+   "(optional)"; the three ticks, the consent line, the
    staff-edited stay.* wording (Admin › Sales & emails › 2027
    waitlist › Wording), POST /api/stay-updated with source
    "webapp"; the server's thank-you replaces the form. In the demo
    nothing is sent (an in-app answer only). No store badges here.
+   Signed in (or the demo): the fields start from the account, the
+   organiser (Oct 24 2026): "For people who use this in the app, we
+   should have the details prefilled since those details are
+   required to be on the app": the account's name and organisation
+   (GET /api/auth/me, else the /social/me card), its email and its
+   phone (contact card, else a pass's checkout answer), prefillFrom
+   in src/lib/stayUpdated.js. Only empty fields are filled, once per
+   account load; everything stays editable. Guests: empty.
 ========================================================= */
 
 /** The form. `heading`: the title's level ("h2" on the screen, "h3" inside a section); `home`: a Back to Home link
     on the thank-you. */
 export function StayForm({ copy, heading = "h2", home = true }) {
   const id = useId();
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const { mode, user, me } = useStore(auth);
+  const signedIn = mode === "user" || mode === "demo";
+  const prefill = useMemo(() => (signedIn ? prefillFrom(user, me) : null), [signedIn, user, me]);
+  const [values, setValues] = useState(() => fillEmpty({ name: "", company: "", email: "", phone: "" }, prefill));
   const [ticks, setTicks] = useState([]);
   const [hp, setHp] = useState("");
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState("");
-  const emailRef = useRef(null);
-  const phoneRef = useRef(null);
+  const refs = { name: useRef(null), company: useRef(null), email: useRef(null), phone: useRef(null) };
   const thanksRef = useRef(null);
   const H = heading;
 
   useEffect(() => { if (done) thanksRef.current?.focus(); }, [done]);
+  // The account loads after the screen opens (or changes): fill what's still empty, once per account load, so a field
+  // someone cleared on purpose stays clear.
+  const applied = useRef(JSON.stringify(prefill));
+  useEffect(() => {
+    const key = JSON.stringify(prefill);
+    if (!prefill || key === applied.current) return;
+    applied.current = key;
+    setValues((v) => fillEmpty(v, prefill));
+  }, [prefill]);
   const toggle = (k) => setTicks((t) => (t.includes(k) ? t.filter((x) => x !== k) : [...t, k]));
+  const set = (k) => (e) => {
+    const v = e.target.value;
+    setValues((x) => ({ ...x, [k]: v }));
+    if (errors[k]) setErrors((x) => ({ ...x, [k]: "" }));
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     if (sending) return;
-    const found = checkForm({ email, phone });
+    const found = checkForm(values);
     setErrors(found);
     setFormError("");
-    if (found.email) { emailRef.current?.focus(); return; }
-    if (found.phone) { phoneRef.current?.focus(); return; }
+    const first = firstProblem(found);
+    if (first) { refs[first].current?.focus(); return; }
     setSending(true);
     try {
       if (isDemoApi()) { await new Promise((r) => setTimeout(r, 400)); setDone(copy["stay.thanks"]); return; }
-      const r = await joinWaitlist(API, { email, phone, interests: ticks, source: "webapp", hp });
+      const r = await joinWaitlist(API, { ...values, interests: ticks, source: "webapp", hp });
       markStayJoined();
       setDone(r.message || copy["stay.thanks"]);
     } catch (err) {
-      if (err.field === "email" || err.field === "phone") {
+      if (refs[err.field]) {
         setErrors({ [err.field]: err.message });
-        (err.field === "email" ? emailRef : phoneRef).current?.focus();
+        refs[err.field].current?.focus();
       } else setFormError(err.message);
     } finally { setSending(false); }
   };
@@ -82,19 +112,35 @@ export function StayForm({ copy, heading = "h2", home = true }) {
       <H id={`${id}-h`} className="wl-h2">{copy["stay.form_title"]}</H>
       <p className="muted" style={{ margin: 0, fontSize: 14.5 }}>{copy["stay.form_intro"]}</p>
       <label className="field">
+        <span className="field-label">{copy["stay.field_name"]}<Optional /></span>
+        <input ref={refs.name} className="input" type="text" name="name" autoComplete="name" autoCapitalize="words" spellCheck={false}
+          maxLength={80} value={values.name} placeholder="Jane Doe" disabled={sending}
+          aria-invalid={errors.name ? true : undefined} aria-describedby={errors.name ? `${id}-name-err` : undefined}
+          onChange={set("name")} />
+        {errors.name && <span id={`${id}-name-err`} className="error-text">{errors.name}</span>}
+      </label>
+      <label className="field">
+        <span className="field-label">{copy["stay.field_company"]}<Optional /></span>
+        <input ref={refs.company} className="input" type="text" name="organization" autoComplete="organization" maxLength={120}
+          value={values.company} placeholder="Acme Inc." disabled={sending}
+          aria-invalid={errors.company ? true : undefined} aria-describedby={errors.company ? `${id}-company-err` : undefined}
+          onChange={set("company")} />
+        {errors.company && <span id={`${id}-company-err`} className="error-text">{errors.company}</span>}
+      </label>
+      <label className="field">
         <span className="field-label">{copy["stay.field_email"]}</span>
-        <input ref={emailRef} className="input" type="email" name="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false}
-          required maxLength={254} value={email} placeholder="you@company.com" disabled={sending}
+        <input ref={refs.email} className="input" type="email" name="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false}
+          required maxLength={254} value={values.email} placeholder="you@company.com" disabled={sending}
           aria-invalid={errors.email ? true : undefined} aria-describedby={errors.email ? `${id}-email-err` : undefined}
-          onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors((x) => ({ ...x, email: "" })); }} />
+          onChange={set("email")} />
         {errors.email && <span id={`${id}-email-err`} className="error-text">{errors.email}</span>}
       </label>
       <label className="field">
-        <span className="field-label">{copy["stay.field_phone"]}</span>
-        <input ref={phoneRef} className="input" type="tel" name="phone" inputMode="tel" autoComplete="tel" required maxLength={40} value={phone}
+        <span className="field-label">{copy["stay.field_phone"]}<Optional /></span>
+        <input ref={refs.phone} className="input" type="tel" name="phone" inputMode="tel" autoComplete="tel" maxLength={40} value={values.phone}
           placeholder="+1 416 555 0100" disabled={sending}
           aria-invalid={errors.phone ? true : undefined} aria-describedby={errors.phone ? `${id}-phone-err` : undefined}
-          onChange={(e) => { setPhone(e.target.value); if (errors.phone) setErrors((x) => ({ ...x, phone: "" })); }} />
+          onChange={set("phone")} />
         {errors.phone && <span id={`${id}-phone-err`} className="error-text">{errors.phone}</span>}
       </label>
       <fieldset className="wl-ticks" disabled={sending}>

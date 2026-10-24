@@ -32,7 +32,15 @@ test("the website build has no kill-switch page, header chip, banner, search ent
   assert.equal(existsSync(src("admin/staff/KillSwitch.jsx")), false);
   assert.equal(existsSync(src("components/MaintenanceGate.jsx")), false);
   const admin = read("pages/Admin.jsx");
-  assert.doesNotMatch(admin, /KillSwitch|kill-switch|console\/kill/);
+  // The one exception: an old bookmark to /admin/kill-switch lands on a "removed" notice (KillSwitchRemoved), which
+  // only shows words and a link back to Overview: it calls nothing and switches nothing.
+  const notice = admin.match(/function KillSwitchRemoved\(\) \{[\s\S]*?\n\}\n/)?.[0] || "";
+  assert.match(notice, /The kill switch has been removed/);
+  assert.doesNotMatch(notice, /fetch|api\.|adminFetch|post\(/);
+  assert.match(admin, /<Route path="kill-switch" element={<KillSwitchRemoved \/>} \/>/);
+  const rest = admin.replace(notice, "").replace(/<Route path="kill-switch" element={<KillSwitchRemoved \/>} \/>/, "")
+    .replace(/\/\* The kill switch was removed for everyone[^\n]*\n/, "");
+  assert.doesNotMatch(rest, /KillSwitch|kill-switch|console\/kill/);
   assert.doesNotMatch(admin, /setKill|reloadKill/);
   assert.doesNotMatch(read("admin/AdminShell.jsx"), /SiteStatusChip|\/admin\/kill-switch|Site OFFLINE|Site live"/);
   assert.doesNotMatch(read("admin/sections/Overview.jsx"), /kill/i);

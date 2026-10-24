@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { LogOut, ShieldX } from "lucide-react";
 
 import "../admin/admin.css";
@@ -81,6 +81,18 @@ function useAdminBody(dark) {
 
 function FullScreen({ children }) {
   return <div className="ttfc-admin flex min-h-screen items-center justify-center p-6">{children}</div>;
+}
+
+/* The kill switch was removed for everyone (Oct 23 2026): an old bookmark to it says so instead of a silent redirect. */
+function KillSwitchRemoved() {
+  return (
+    <div role="status" className="flex flex-col items-center justify-center rounded-[18px] border border-ttfc-line bg-ttfc-panel/60 px-6 py-12 text-center">
+      <ShieldX className="mb-3 h-7 w-7 text-ttfc-muted" aria-hidden="true" />
+      <p className="font-semibold text-ttfc-text">The kill switch has been removed</p>
+      <p className="mt-1 max-w-md text-sm text-ttfc-muted">The website and apps can't be taken offline from the staff panel any more. Only the developers can do that, through the hosting dashboards.</p>
+      <Link to="/admin" className="mt-4 rounded-xl bg-ttfc-contrast/10 px-3 py-2 text-sm font-semibold text-ttfc-contrast">Back to Overview</Link>
+    </div>
+  );
 }
 
 /* Light / dark theme (admin/theme.js): System, Light or Dark, chosen in the top bar. */
@@ -276,6 +288,7 @@ function AdminPanel() {
             <Route path="staff" element={<ManagementOnly><StaffAccounts /></ManagementOnly>} />
             <Route path="email-tracking" element={<EmailTracking />} />
             <Route path="account" element={<MyAccount />} />
+            <Route path="kill-switch" element={<KillSwitchRemoved />} />
 
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>

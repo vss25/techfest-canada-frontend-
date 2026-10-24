@@ -10,7 +10,7 @@ const TYPES = [
   { value: "admin", label: "Staff" },
   { value: "volunteer", label: "Volunteer" },
 ];
-const VOLUNTEER_HINT = "Volunteers can use the app's staff sign-in for door check-in. They can't open this admin panel.";
+const VOLUNTEER_HINT = "Volunteers can use the app's staff sign-in and the TTFC Check-in desk app (Event day › Check-in has its link) for door check-in. They can't open this admin panel.";
 
 const LEVELS = [
   { value: "staff", label: "Staff", help: "Everything except sales, revenue, promo codes and staff settings." },

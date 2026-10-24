@@ -9,6 +9,7 @@ import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, ErrorState, LoadingState, PageHeader, SectionTitle, StatTile, TableWrap } from "../ui";
 import { personPath } from "../people/peopleMeta";
 import { csvFileName, dietChips, pctText, summaryCsv, torontoTime } from "./eventSummaryParts";
+import { OVERALL_LABEL, attendanceView } from "../../checkin/lib/attendance.js";
 
 /* Admin › RSVPs & meals › Event summary (Oct 23 2026). The organiser: "Create an admin panel summary of
    registration, breakfast included, lunch, dinner, etc. pass types, day 1 and day 2". Read only: one call,
@@ -192,6 +193,87 @@ function CheckinSection({ s }) {
   );
 }
 
+/**
+ * Attendance by day (contract C10): from the check-in desk app's marks (each person once per point per day; practice
+ * marks never). Day 1 | Day 2: arrived, checked in, each meal's admitted / entitled with RSVP'd, % of RSVP'd,
+ * no-shows and overrides; then by pass type; ISSUE PASS and NO DETAILS FOUND. The same words as the desk's staff Counts
+ * screen (src/checkin/lib/attendance.js). Refreshed with the page.
+ */
+function AttendanceSection({ s }) {
+  if (!s.attendance) {
+    return <p className="text-sm text-ttfc-muted">Attendance by day isn’t available from the server yet. It appears here once the check-in desk counts reach this page.</p>;
+  }
+  const v = attendanceView(s.attendance);
+  const o = v.overall;
+  return (
+    <>
+      {o && (
+        // Both days together, each person once (the server's overall): someone who came on both days counts once here.
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label={`${OVERALL_LABEL}: ${o.text}`}>
+          <StatTile label="Arrived, Day 1 or Day 2" value={num(o.arrived ?? undefined)} icon={Users} tone="purple" hint="each person once" />
+          <StatTile label="Checked in, Day 1 or Day 2" value={num(o.checkedIn ?? undefined)} icon={UserCheck} tone="good" hint="each person once" />
+          <StatTile label="Came on both days" value={num(o.bothDays ?? undefined)} icon={CalendarCheck} tone="pink" hint="arrived on Day 1 and on Day 2" />
+        </div>
+      )}
+      <TableWrap className={COMPACT}>
+        <thead>
+          <tr>
+            <th className="w-[34%]">Count</th>
+            {v.days.map((d) => <th key={d.key} className={R}><Short full={d.label} short={d.key === "day1" ? "Day 1" : "Day 2"} /></th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {v.rows.map((r) => (
+            <tr key={r.key} className="align-top">
+              <td className="font-semibold">{r.label}</td>
+              {r.cells.map((c, i) => (
+                <td key={v.days[i].key} className={R}>
+                  {c.label && <span className="block text-[11px] font-normal text-ttfc-dim">{c.label}</span>}
+                  <span className="text-[15px] font-semibold text-ttfc-text">{c.main}</span>
+                  {c.sub && <span className="block text-[11px] font-normal leading-snug text-ttfc-muted">{c.sub}</span>}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </TableWrap>
+      {v.byPass.length > 0 && (
+        <div className="mt-4 grid gap-4 2xl:grid-cols-2">
+          {v.byPass.map((d) => (
+            <div key={d.day}>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ttfc-dim">By pass type · {d.label}</p>
+              <TableWrap className={COMPACT}>
+                <thead>
+                  <tr>
+                    <th><Short full="Pass type" short="Pass" /></th>{d.rows.some((r) => r.people !== null) && <th className={R}>People</th>}<th className={R}><Short full="Arrived" short="Arr." /></th><th className={R}><Short full="Checked in" short="In" /></th>
+                    <th className={R}>CxO</th><th className={R}>Lunch</th><th className={R}>Dinner</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.rows.map((r) => (
+                    <tr key={r.key}>
+                      <td>{r.label}</td>{d.rows.some((x) => x.people !== null) && <td className={R}>{num(r.people ?? undefined)}</td>}<td className={R}>{num(r.arrived)}</td><td className={R}>{num(r.checkedIn)}</td>
+                      <td className={R}>{num(r.cxo)}</td><td className={R}>{num(r.lunch)}</td><td className={R}>{num(r.dinner)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </TableWrap>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="mt-3 text-sm leading-relaxed text-ttfc-muted">
+        From the check-in desk app: each person once per point per day{o ? " (and once across both days in the tiles above)" : ""},
+        practice taps before the event never counted.
+        “Admitted / entitled”: admitted at the door out of everyone whose pass includes it; no-shows are people who RSVP’d
+        and weren’t admitted; overrides were admitted outside the hours with “Admit anyway” (counted in the admitted
+        number too). By pass type, each person is in one colour group, as on the desk (VIP, then Media, then Speaker, then
+        the pass type).{v.builtAt ? ` Counted ${torontoTime(v.builtAt)} Toronto time.` : ""}
+      </p>
+    </>
+  );
+}
+
 const MEAL_SHORT = { cxo_d1: "CxO D1", cxo_d2: "CxO D2", lunch_d1: "Lunch D1", lunch_d2: "Lunch D2", awards: "Awards", gala: "Gala" };
 
 export default function EventSummary() {
@@ -292,6 +374,13 @@ export default function EventSummary() {
                 </ul>
               </Card>
             )}
+          </section>
+
+          <section className="mb-8" aria-labelledby="sum-attendance">
+            <SectionTitle hint="Arrivals, check-ins and each meal and evening, per event day, from the check-in desk app. Live with this page.">
+              <span id="sum-attendance">Attendance by day</span>
+            </SectionTitle>
+            <AttendanceSection s={s} />
           </section>
 
           <section className="mb-8" aria-labelledby="sum-checkin">

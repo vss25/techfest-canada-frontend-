@@ -61,6 +61,8 @@ import { NotForVolunteers, VolunteerDirectory, VolunteerProfile } from "../admin
 
 // Existing admin features — wrapped and restyled, logic unchanged.
 import CheckIn from "../components/CheckIn";
+// TTFC Check-in, the desk app (Oct 23 2026): its unlisted link, QR code, install steps and station hours.
+import { DeskAppCard, DeskSettings } from "../admin/checkin/DeskApp";
 
 const EVENT_DAY = "Event day"; // the sidebar section (admin/nav.js)
 const LOGO_STRIPS = "More › Logo strips";
@@ -226,7 +228,7 @@ function AdminPanel() {
             <Route path="issued-passes" element={<IssuedPasses />} />
             <Route path="exhibitor-passes" element={<ExhibitorPasses />} />
             <Route path="inventory" element={<Inventory />} />
-            <Route path="check-in" element={<Legacy eyebrow={EVENT_DAY} title="Check-in" description="Point the camera at a ticket's QR code to check the attendee in. Allow camera access when your browser asks."><CheckIn /></Legacy>} />
+            <Route path="check-in" element={<Legacy eyebrow={EVENT_DAY} title="Check-in" description="Point the camera at a ticket's QR code to check the attendee in. Allow camera access when your browser asks. The check-in desk app (lobby, pass desk, meals, media, AV, exhibitors) is below."><CheckIn /><div className="mt-6"><DeskAppCard /><DeskSettings /></div></Legacy>} />
             <Route path="analytics" element={<ManagementOnly><SalesAnalytics /></ManagementOnly>} />
 
             <Route path="content" element={<Navigate to="/admin/content/speakers" replace />} />

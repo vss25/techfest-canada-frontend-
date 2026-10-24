@@ -4,11 +4,12 @@ import { createClock } from "./clock.js";
 import { createLive } from "./live.js";
 import { browserStorage, createQueue } from "./queue.js";
 import { createTabs } from "./tabs.js";
-import { applyEvents, fromSnapshot, heldInclusions, rollDay, statusOf } from "./state.js";
-import { stationStates as localStationStates } from "./stationTime.js";
+import { applyEvents, fromSnapshot, heldInclusions, rollDay, statusOf, unknownsOf } from "./state.js";
+import { ALL_DAY_STATIONS, stationStates as localStationStates } from "./stationTime.js";
 import { bannerText, createBanners, notifyStations } from "./notify.js";
-import { badgeOf } from "./passColors.js";
+import { badgeOf, noPassOf } from "./passColors.js";
 import { describeTap, signOutText } from "./tapText.js";
+import { NO_DETAILS, unknownArrivalAction, unknownDoneAction, unknownKey, unknownLinkAction } from "./special.js";
 import { RESUME_KEY, SNAPSHOT_KEY, chime, letSleep, onAudio, remember, setCount, stationStore } from "./device.js";
 import { UNDO_MS } from "./constants.js";
 
@@ -166,7 +167,7 @@ const queue = createQueue({
   tabId: () => tabs.id,
   alive: () => tabs.alive(),
   now: serverNow,
-  onChange: (items) => { desk.queueItems = items; if (!items.some((x) => x.state === "failed")) desk.trayOpen = false; emit(); },
+  onChange: (items) => { desk.queueItems = items; if (!items.some((x) => x.state === "failed")) desk.trayOpen = false; tidyBanners(); emit(); },
   onAuth: () => { desk.needSignIn = true; emit(); },
   onPersist: (ok) => { desk.persistOk = ok; emit(); },
   // The tap matters more than the cached list (it comes back with the next load).
@@ -175,9 +176,18 @@ const queue = createQueue({
     if (outcome === "ok") {
       if (r?.events?.length) handleEvents(r.events, { live: true });
       if (r?.already && r.message) toast(r.message, { tone: "warn", key: `already-${item.key}` });
+    } else if (outcome === "failed" && allDayRetry(item, r)) {
+      // Arrived / Checked in are all day on an event day (the organiser, Oct 23): a server still holding them to its hours
+      // gets the same tap again as an override (audited there), never a question for the volunteer.
+      queue.retry(item.clientId, { override: true });
     } else if (outcome === "failed") noteFailure(item);
   },
 });
+/** A lobby or pass-desk tap refused only for the hours on an event day: sent again as an override. */
+export function allDayRetry(item, r) {
+  return !!item && !!r && r.code === "outside_window" && item.kind === "mark" && !item.override
+    && ALL_DAY_STATIONS.includes(item.station) && (item.point === "arrived" || item.point === "checked_in") && !!(r.window?.eventDay ?? desk.state?.today?.eventDay);
+}
 desk.queueItems = queue.items();
 desk.persistOk = queue.persisted();
 export const pending = () => queue.pending();
@@ -200,6 +210,7 @@ const signedInAs = () => {
 export function tap(action, { undoText = "" } = {}) {
   const item = queue.add({ station: desk.station, ...action, ...signedInAs() });
   if (action.kind === "mark") desk.myTaps.set(item.clientId, { at: Date.now(), key: action.key, point: action.point });
+  if (action.kind === "unknown_arrival") desk.myTaps.set(item.clientId, { at: Date.now(), key: unknownKey(item.clientId), point: "unknown" });
   if (undoText) {
     toast(undoText, { tone: "ok", ms: UNDO_MS, key: `tap-${action.key}-${action.point}`, tapId: item.clientId, action: { label: "Undo", fn: () => undoTap(item.clientId) } });
   }
@@ -242,6 +253,17 @@ export function nextUndoExpiry() {
   return next;
 }
 
+/* ---------- NO DETAILS FOUND (contract C8) ---------- */
+
+/** The lobby couldn't find the person: record the arrival with the name as typed ({ name, company, note }, cleaned). */
+export function recordUnknown(value) {
+  return tap(unknownArrivalAction(value), { undoText: `${value.name}: arrival recorded (no details found). The pass desk has been told.` });
+}
+/** The pass desk closes a NO DETAILS FOUND card: "sent_to_help" | "pass_issued" | "left". */
+export function closeUnknown(key, outcome) { return tap(unknownDoneAction(key, outcome)); }
+/** Staff found them on the list: that guest is marked Arrived, the card goes. */
+export function linkUnknown(key, guestKey) { return tap(unknownLinkAction(key, guestKey)); }
+
 /* ---------- Events, banners ---------- */
 
 let recent = [];
@@ -256,6 +278,12 @@ function handleEvents(events, { live = true } = {}) {
   recent = [...recent, ...events].slice(-300);
   const r = applyEvents(s, events, { live, now: serverNow() });
   for (const a of r.arrivals) {
+    if (a.unknown) {
+      // Only the pass desk hears about a NO DETAILS FOUND arrival.
+      desk.banners.desk.add({ key: a.unknown.key, unknown: a.unknown, guest: null, at: a.at, by: a.by, text: `${NO_DETAILS.badge}: ${a.unknown.name}${a.unknown.company ? ` (${a.unknown.company})` : ""} · check ID, send to help desk` });
+      if (desk.station === "desk") { chime(); desk.flash = { seq: ++flashSeq, bg: "", unknown: true }; }
+      continue;
+    }
     for (const st of notifyStations(a.guest)) {
       desk.banners[st].add({ key: a.guest.key, guest: a.guest, at: a.at, by: a.by, text: bannerText(a.guest, st, { eventDay: s.today?.eventDay, now: serverNow() }) });
       // The chime plays whenever sound is on (chime() does nothing until a tap unlocked it); the screen flashes too.
@@ -272,13 +300,15 @@ function tidyBanners() {
   const s = desk.state;
   if (!s) return;
   const p = queue.pending();
+  const openUnknown = new Set(unknownsOf(s, p, { open: true }).map((u) => u.key));
   for (const st of ANNOUNCE) {
     desk.banners[st].keep((b) => {
+      if (b.unknown) return openUnknown.has(b.key);
       const x = statusOf(s, s.byKey.get(b.key) || b.guest, p);
       return !!x.arrived && !x[DONE_POINT[st]];
     });
   }
-  setCount(desk.station === "desk" ? s.guests.filter((g) => { const x = statusOf(s, g, p); return x.arrived && !x.checked_in; }).length : desk.banners[desk.station]?.size() || 0);
+  setCount(desk.station === "desk" ? s.guests.filter((g) => { const x = statusOf(s, g, p); return x.arrived && !x.checked_in; }).length + openUnknown.size : desk.banners[desk.station]?.size() || 0);
 }
 export function dismissBanner(station, key) { desk.banners[station]?.clear(key); emit(); }
 
@@ -575,6 +605,7 @@ export function boot() {
 /** Switch a pass extra (cxo | lunch | gala | awards) Yes / No / automatic (null) for the guest's main pass. */
 export async function setInclusion(g, extra, value) {
   if (!desk.session?.staff) throw new ApiError("Only staff can change inclusions.", 403);
+  if (noPassOf(g)) throw new ApiError("No pass on file: issue a pass first (at the pass desk, or Admin › People).", 400);
   if (!g.personId || !g.ticketId) throw new ApiError("The guest list is still loading from the server. Try again in a moment.", 0);
   const r = await api(`/console/people/${encodeURIComponent(g.personId)}/passes/${encodeURIComponent(g.ticketId)}`, { method: "PATCH", body: { extras: { [extra]: value } } });
   const t = (r.person?.passes || []).find((p) => p.ticketId === g.ticketId);

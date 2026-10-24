@@ -382,6 +382,56 @@ p.ci-update { display: flex; align-items: center; padding: 8px 14px; line-height
 .ci-attention-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .ci-menu-hint { margin: 0 12px 6px; }
 
+/* ---------- ISSUE PASS and NO DETAILS FOUND (lib/special.js) ----------
+   Never a pass colour alone: ISSUE PASS = a ticket and a DASHED outline on the page's own background;
+   NO DETAILS FOUND = a question mark on a HATCHED (striped) panel with a thick SOLID outline. */
+.ci-flag { display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; font-weight: 900; letter-spacing: 0.06em; white-space: nowrap; line-height: 1.1; }
+.ci-flag-s { font-size: 12px; padding: 3px 8px; }
+.ci-flag-m { font-size: 14px; padding: 4px 10px; }
+.ci-flag-l { font-size: 17px; padding: 6px 12px; }
+.ci-flag-icon { display: inline-grid; place-items: center; font-style: normal; }
+.ci-flag-issue { background: var(--bg); color: var(--text); border: 2px dashed var(--text); }
+.ci-flag-unknown, .ci-schip-unknown, .ci-btn-unknown, .ci-row.is-unknown, .ci-card.is-unknown, .ci-banner.is-unknown {
+  --hatch: color-mix(in srgb, var(--text) 16%, transparent);
+  background-image: repeating-linear-gradient(-45deg, var(--hatch) 0 6px, transparent 6px 14px);
+}
+.ci-flag-unknown { background-color: var(--panel); color: var(--text); border: 3px solid var(--text); }
+.ci-flag-unknown .ci-flag-icon, .ci-card-big.is-unknown .ci-flag-icon, .ci-schip-unknown .ci-flag-icon, .ci-btn-unknown .ci-flag-icon, .ci-banner.is-unknown .ci-flag-icon {
+  width: 1.4em; height: 1.4em; border-radius: 50%; background: var(--text); color: var(--bg); font-weight: 900;
+}
+/* A pass band for someone with no pass on file and no Speaker / Media colour: neutral, dashed (not Other's grey). */
+.ci-pass.is-neutral { background: transparent; color: var(--text); border: 2px dashed var(--line2); }
+.ci-row.is-issue { border-style: dashed; border-width: 2px 2px 2px 8px; border-color: var(--text); border-left-color: var(--gbg, var(--text)); }
+.ci-row-status.is-issue { color: var(--text); font-weight: 800; }
+.ci-row.is-unknown { background-color: var(--panel); border: 3px solid var(--text); border-left-width: 8px; }
+.ci-row-status.is-unknown { color: var(--text); }
+/* No pass colour of their own: the page's text colour stands in (an inline Speaker / Media colour wins). */
+.ci-card.is-issue, .ci-row.is-issue, .ci-card.is-unknown, .ci-banner.is-issue { --gbg: var(--text); }
+.ci-card.is-issue { border-style: dashed; border-width: 3px; }
+.ci-card.is-issue:not(.is-amber):not(.is-red) { border-color: var(--text); border-top-color: var(--gbg); }
+.ci-card.is-unknown { background-color: var(--panel); border-width: 4px; border-style: solid; }
+.ci-card.is-unknown:not(.is-amber):not(.is-red) { border-color: var(--text); }
+.ci-card-big { margin: 8px 0; padding: 10px 12px; border-radius: 12px; font-size: 22px; font-weight: 900; line-height: 1.2; display: flex; gap: 10px; align-items: center; }
+.ci-card-big.is-issue { border: 3px dashed var(--text); background: var(--bg); }
+.ci-card-big.is-unknown { border: 3px solid var(--text); background: var(--bg); }
+.ci-unknown-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.ci-schip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 12px; font-size: 14px; font-weight: 700; white-space: nowrap; color: var(--text); }
+.ci-schip-issue { border: 2px dashed var(--text); background: var(--bg); }
+.ci-schip-unknown { border: 2px solid var(--text); background-color: var(--panel); }
+.ci-btn-unknown { background-color: var(--panel); color: var(--text); border: 3px solid var(--text); font-weight: 800; }
+.ci-banner.is-issue { border-style: dashed; }
+.ci-banner.is-unknown { border: 3px solid var(--text); border-left-width: 12px; background-color: var(--panel); }
+.ci-flash.is-unknown { box-shadow: inset 0 0 0 10px var(--text), inset 0 0 60px 10px color-mix(in srgb, var(--text) 40%, transparent); }
+.ci-nomatch { display: grid; gap: 12px; justify-items: start; }
+.ci-nomatch p { margin: 0; }
+.ci-cantfind { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 12px 4px; }
+.ci-unknown-form { display: grid; gap: 12px; }
+.ci-find-list { margin-top: 10px; }
+/* What matched a search. */
+.ci-hit { font-weight: 900; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.ci-match { justify-self: start; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--info); }
+.ci-match-fuzzy-name, .ci-match-fuzzy-company { color: var(--warn); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

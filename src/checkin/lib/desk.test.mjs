@@ -2,7 +2,7 @@
    ticket IDs, person ids) in its cached guest list, and a staff sign-in left unused for 30 minutes locks. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { STAFF_IDLE_MS, cacheableSnapshot, staffIdle } from "./desk.js";
+import { STAFF_IDLE_MS, allDayRetry, cacheableSnapshot, staffIdle } from "./desk.js";
 
 test("the cached list (localStorage) has no emails, ticket IDs or person ids; everything a station needs stays", () => {
   const snap = {
@@ -24,4 +24,14 @@ test("a staff sign-in locks after 30 minutes unused; a volunteer's never does", 
   assert.equal(staffIdle({ staff: true, lastUse: 0, now: STAFF_IDLE_MS - 1 }), false);
   assert.equal(staffIdle({ staff: true, lastUse: 0, now: STAFF_IDLE_MS }), true);
   assert.equal(staffIdle({ staff: false, lastUse: 0, now: 10 * STAFF_IDLE_MS }), false);
+});
+
+test("a lobby / pass-desk tap a server refuses only for its hours on an event day is sent again as an override (never asked)", () => {
+  const refusal = { ok: false, status: 409, code: "outside_window", window: { eventDay: "day1", code: "later", text: "Day 1 · Lobby · opens at 7:00 AM" } };
+  assert.equal(allDayRetry({ kind: "mark", point: "arrived", station: "lobby" }, refusal), true);
+  assert.equal(allDayRetry({ kind: "mark", point: "checked_in", station: "desk" }, refusal), true);
+  assert.equal(allDayRetry({ kind: "mark", point: "arrived", station: "lobby", override: true }, refusal), false, "once");
+  assert.equal(allDayRetry({ kind: "mark", point: "lunch", station: "lunch" }, { ...refusal, window: { eventDay: "day1" } }), false, "meals keep Admit anyway");
+  assert.equal(allDayRetry({ kind: "mark", point: "arrived", station: "lobby" }, { ...refusal, code: "not_found" }), false);
+  assert.equal(allDayRetry({ kind: "mark", point: "arrived", station: "lobby" }, { ...refusal, window: { eventDay: null } }), false, "not an event day");
 });

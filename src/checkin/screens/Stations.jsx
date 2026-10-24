@@ -1,5 +1,6 @@
 import { useDesk, setStation, requestSignOut } from "../lib/desk.js";
 import { dayHeading } from "../lib/timers.js";
+import { stationView } from "../lib/stationTime.js";
 
 /* Pick this device's station (remembered on the device; switch any time from the header). Both roles can use every
    station. The evening entry is optional: staff switch it off in Admin › Event day › Check-in › Desk settings. */
@@ -17,7 +18,7 @@ export default function Stations({ onPicked }) {
       </header>
       <div className="ci-station-grid">
         {list.map((st) => {
-          const state = s.stationStates?.[st.key];
+          const state = stationView(st.key, s.stationStates?.[st.key]);
           return (
             <button key={st.key} type="button" className={`ci-station-tile${d.station === st.key ? " is-current" : ""}`} onClick={() => { setStation(st.key); onPicked?.(); }}>
               <span className="ci-station-icon" aria-hidden="true">{ICONS[st.key]}</span>

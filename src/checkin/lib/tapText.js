@@ -19,7 +19,8 @@ export function describeTap(it, { state = null, items = [] } = {}) {
   const g = it?.key ? state?.byKey?.get(it.key) : null;
   const booth = it?.key ? state?.boothByKey?.get(it.key) : null;
   const target = it?.kind === "undo" ? items.find((x) => x.clientId === (it.target || it.ref)) : null;
-  const who = g?.name || (booth ? `Booth ${booth.booth}` : "") || it?.who || (target && state?.byKey?.get(target.key)?.name) || "";
+  const unknown = it?.kind === "unknown_arrival" ? it : it?.target?.startsWith?.("u:") ? state?.unknowns?.get(it.target) || items.find((x) => `u:${x.clientId}` === it.target) : null;
+  const who = g?.name || (booth ? `Booth ${booth.booth}` : "") || it?.who || unknown?.name || (target && (state?.byKey?.get(target.key)?.name || target.name)) || "";
   let what = "Tap";
   if (it?.kind === "mark") what = POINT_LABELS[it.point] || it.point;
   else if (it?.kind === "undo") what = "Undo";
@@ -27,6 +28,9 @@ export function describeTap(it, { state = null, items = [] } = {}) {
   else if (it?.kind === "note") what = it.note ? "Desk note" : "Desk note cleared";
   else if (it?.kind === "query_add") what = "Media query added";
   else if (it?.kind === "query_update") what = "Media query changed";
+  else if (it?.kind === "unknown_arrival") what = "No details found: arrival";
+  else if (it?.kind === "unknown_done") what = `No details found: ${({ sent_to_help: "sent to help desk", pass_issued: "pass issued", left: "left" })[it.outcome] || "closed"}`;
+  else if (it?.kind === "unknown_link") what = `No details found: found them${state?.byKey?.get(it.guestKey)?.name ? ` (${state.byKey.get(it.guestKey).name})` : ""}`;
   return { who, what, where: STATION_LABELS[it?.station] || "", by: it?.queuedBy?.name || "", at: it?.clientAt || "" };
 }
 

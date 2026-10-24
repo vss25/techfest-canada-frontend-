@@ -1,9 +1,12 @@
 import { askConfirm, desk, myRecentTap, pending, tap, undoTap } from "./lib/desk.js";
 import { statusOf } from "./lib/state.js";
+import { tapRule } from "./lib/stationTime.js";
 import { EXTRA_LABELS } from "./lib/constants.js";
 
-/* The stations' big buttons, with the time rule: outside a station's hours (or on a day that isn't an event day) a
-   tap asks first and is recorded as an override ("Admit anyway"); the server checks the same and audits it. */
+/* The stations' big buttons, with the time rule (lib/stationTime.js tapRule): the lobby (Arrived) and the pass desk
+   (Checked in) never ask, all day on an event day; a meal or evening station outside its hours asks first and is
+   recorded as an override ("Admit anyway"); the media, AV and exhibitor desks record a tap outside their hours as such
+   without asking; a day that isn't an event day only makes practice marks. The server checks the same and audits. */
 
 const LABEL = {
   lobby: "The lobby", desk: "The pass desk", breakfast: "The CxO Breakfast", lunch: "Lunch", evening: "The evening entry",
@@ -19,7 +22,9 @@ export function act({ point, key, guest = null, note, undoText, onDone = null })
     tap({ kind: "mark", point, key: key || guest?.key, override: !!override, ...(note ? { note } : {}) }, { undoText });
     try { onDone?.(); } catch { /* the screen's problem */ }
   };
-  if (st && !st.open) {
+  const rule = tapRule(station, st);
+  if (rule === "override") { go(true); return; }
+  if (rule === "ask") {
     askConfirm({
       title: `${LABEL[station] || "This station"} is closed right now`,
       text: st.text,

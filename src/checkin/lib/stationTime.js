@@ -114,6 +114,36 @@ export function stationState({ station, at = Date.now(), windows = {} } = {}) {
   return { ...base, open: false, opensAt: null, closesAt: null, next, text: `${label} · closed${next ? `: ${nextText(next)}` : ""}`, code: "closed" };
 }
 
+/* ---------- Which stations keep hours ---------- */
+
+/**
+ * The organiser (Oct 23): Arrived (lobby) and Checked in (pass desk) are never blocked or warned by time on an event
+ * day: an exhibitor arriving at 6:00 AM for booth setup is one tap. Their header says "Day 1 · Arrivals open all day".
+ * "Admit anyway" stays for the meal and evening stations only; the media, AV and exhibitor desks show their hours but
+ * never ask (a tap outside them is recorded as outside the hours, audited by the server).
+ */
+export const ALL_DAY_STATIONS = Object.freeze(["lobby", "desk"]);
+export const ASKING_STATIONS = Object.freeze(["breakfast", "lunch", "evening"]);
+const ALL_DAY_TEXT = { lobby: "Arrivals open all day", desk: "Pass desk open all day" };
+
+/** What a station's header and picker tile show: the lobby and pass desk are open all day on an event day. */
+export function stationView(station, st) {
+  if (!st || !ALL_DAY_STATIONS.includes(station) || !st.eventDay) return st;
+  return { ...st, open: true, code: "open", opensAt: null, closesAt: null, next: null, text: `${st.dayLabel || DAY_LABELS[st.eventDay] || ""} · ${ALL_DAY_TEXT[station]}`, detail: "" };
+}
+
+/**
+ * How a tap at a station goes, from its state (the server's, or worked out here):
+ *   "ask"       closed: "Admit anyway?" first (meal and evening stations, on an event day)
+ *   "override"  outside the station's hours, recorded straight away as such (media, AV, exhibitor desks)
+ *   "tap"       just recorded (open; the lobby and pass desk all day; any station on a day that isn't an event day,
+ *               where every mark is a practice mark: contract C6)
+ */
+export function tapRule(station, st) {
+  if (!st || st.open || !st.eventDay || ALL_DAY_STATIONS.includes(station)) return "tap";
+  return ASKING_STATIONS.includes(station) ? "ask" : "override";
+}
+
 /** Every station's state at a moment, from the windows the device holds. */
 export function stationStates(windows, at = Date.now(), stations = STATION_KEYS) {
   return Object.fromEntries(stations.map((k) => [k, stationState({ station: k, at, windows })]));

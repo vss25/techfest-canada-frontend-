@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useDesk, pending, setInclusion, setPersonFlag, tap, toast, fetchHistory } from "../lib/desk.js";
 import { collectedBefore, statusOf } from "../lib/state.js";
+import { noPassOf } from "../lib/passColors.js";
+import { ISSUE_PASS } from "../lib/special.js";
+import { companyOf } from "../lib/search.js";
 import { timeText, weekday, clock12 } from "../lib/timers.js";
 import { BoxHint, Chips, Dietary, Inclusions, PassBand, Sheet } from "../components.jsx";
 import { byLine } from "../lib/byLine.js";
@@ -34,6 +37,8 @@ export default function GuestSheet({ guest, onClose }) {
     try { await fn(); toast("Saved (logged).", { tone: "ok", ms: 2500 }); } catch (err) { toast(err.message || "Not saved. Check the connection.", { tone: "bad" }); } finally { setBusy(""); }
   };
   const view = g.extrasView || {};
+  const issue = noPassOf(g);
+  const company = companyOf(g);
   return (
     <Sheet title={g.name} onClose={onClose} wide>
       <div className="ci-sheet-top">
@@ -41,10 +46,11 @@ export default function GuestSheet({ guest, onClose }) {
         <Chips guest={g} />
         <BoxHint guest={g} />
       </div>
-      {(g.title || g.company) && <p className="ci-sheet-job">{[g.title, g.company].filter(Boolean).join(" · ")}</p>}
+      {(g.title || company) && <p className="ci-sheet-job">{[g.title, company].filter(Boolean).join(" · ")}</p>}
+      {issue && <p className="ci-card-big is-issue"><span className="ci-flag-icon" aria-hidden="true">{ISSUE_PASS.icon}</span>{ISSUE_PASS.card}. Mark them Arrived as usual; the pass desk issues the pass.</p>}
       {staff && g.email && <p className="ci-sheet-email">✉ {g.email}{g.ticketId ? <span className="ci-muted"> · ticket {String(g.ticketId).toUpperCase()}</span> : null}</p>}
       {g.pending && <p className="ci-notice is-warn">Pending pass: staff made it and haven't sent it yet.</p>}
-      <p className="ci-small">{g.passCollected ? `Pass collected${g.passCollectedAt ? ` ${collectedBefore(g, s.today) ? weekday(g.passCollectedAt) : "today"} at ${timeText(g.passCollectedAt)}` : ""}` : "Pass not collected yet"}{g.booth ? ` · Booth ${String(g.booth).toUpperCase()}` : ""}</p>
+      <p className="ci-small">{issue ? ISSUE_PASS.reading : g.passCollected ? `Pass collected${g.passCollectedAt ? ` ${collectedBefore(g, s.today) ? weekday(g.passCollectedAt) : "today"} at ${timeText(g.passCollectedAt)}` : ""}` : "Pass not collected yet"}{g.booth ? ` · Booth ${String(g.booth).toUpperCase()}` : ""}</p>
       {note?.text && <p className="ci-card-note">📝 {note.text} <span className="ci-muted">({note.by})</span></p>}
 
       <h3 className="ci-h3">Includes</h3>
@@ -69,7 +75,8 @@ export default function GuestSheet({ guest, onClose }) {
         ))}
       </ul>
 
-      {staff && (
+      {staff && issue && <p className="ci-small ci-muted">No pass on file, so no inclusions to switch: issue a pass first (Admin › People).</p>}
+      {staff && !issue && (
         <>
           <h3 className="ci-h3">Inclusions on this pass (staff)</h3>
           <p className="ci-small ci-muted">Automatic follows the pass's rules. Changes are saved in Admin › People and logged.</p>
@@ -89,6 +96,10 @@ export default function GuestSheet({ guest, onClose }) {
               );
             })}
           </ul>
+        </>
+      )}
+      {staff && (
+        <>
           <h3 className="ci-h3">Marks (staff)</h3>
           <ul className="ci-switches">
             {[["media", "Media"], ["vip", "VIP"], ["exhibitor", "Exhibitor"]].map(([k, lab]) => (

@@ -1,5 +1,6 @@
-import { GROUPS, groupOf } from "./passColors.js";
+import { GROUPS, groupOf, noPassOf } from "./passColors.js";
 import { eventDayInfo, stationStates as localStationStates } from "./stationTime.js";
+import { isUnknownKey, unknownKey } from "./special.js";
 
 /* =========================================================
    TTFC Check-in: what a device knows, and how it changes
@@ -24,10 +25,19 @@ import { eventDayInfo, stationStates as localStationStates } from "./stationTime
    or not answered yet) are shown on top ("pending"), and an undo
    waiting in the queue hides what it undoes.
 
+   NO DETAILS FOUND arrivals (lib/special.js, contract C8): the lobby
+   couldn't find the person; the server's unknown_arrival event opens a
+   card at the pass desk (s.unknowns, keyed "u:<clientId>"), closed by
+   unknown_done (Sent to help desk / Pass issued / Left), unknown_link
+   (staff found the guest: that guest's arrived mark comes with it) or
+   an undo. Each card only changes for a newer event.
+
    Counters: each person once, in one colour group (passColors.js:
-   VIP > Media > Speaker > pass type), so the groups add up to the
-   total; Media, VIP and Exhibitor also counted as yes / no marks
-   (overlapping the groups).
+   VIP > Media > Speaker > pass type), so the groups and the ISSUE PASS
+   line (on the list, no pass on file: never in a pass type's count)
+   add up to the total; Media, VIP and Exhibitor also counted as yes /
+   no marks (overlapping the groups). NO DETAILS FOUND arrivals are
+   their own count (never in the totals).
    Pure; node --test src/checkin/lib/state.test.mjs
 ========================================================= */
 
@@ -61,6 +71,7 @@ export function fromSnapshot(snap, { clientNow = Date.now(), prev = null } = {})
     marks: new Map(),
     notes: { ...(snap.notes || {}) },
     queries: new Map(),
+    unknowns: new Map(),
     booths: snap.booths || [],
     boothByKey: new Map(),
     attendance: snap.attendance || [],
@@ -75,8 +86,22 @@ export function fromSnapshot(snap, { clientNow = Date.now(), prev = null } = {})
   for (const b of s.booths) s.boothByKey.set(b.key, b);
   for (const m of snap.marks || []) putMark(s, m);
   for (const q of snap.queries || []) s.queries.set(q.id, q);
+  for (const u of snap.unknowns || []) {
+    const key = u?.key || (u?.clientId ? unknownKey(u.clientId) : "");
+    if (isUnknownKey(key) && sameDay(s, u.day, u.at)) s.unknowns.set(key, unknownFrom(u, key));
+  }
   return s;
 }
+
+/** A NO DETAILS FOUND card from the server (snapshot row or unknown_arrival event). */
+function unknownFrom(u, key) {
+  const status = u.undone ? "undone" : u.status || (u.outcome ? u.outcome : "open");
+  return {
+    key, clientId: key.slice(2), name: String(u.name || "").slice(0, 80), company: String(u.company || "").slice(0, 80), note: String(u.note || "").slice(0, 200),
+    at: u.at || null, byName: u.byName || u.by?.name || "", station: u.station || "lobby", status, outcome: u.outcome || "", doneAt: u.doneAt || null, doneBy: u.doneBy || "", guestKey: u.guestKey || "",
+  };
+}
+const sameDay = (s, day, at) => !s.today?.date || (day ? day === s.today.date : !at || torontoDay(at) === s.today.date);
 
 function setGuests(s, guests) {
   s.guests = guests;
@@ -148,6 +173,26 @@ export function applyEvents(s, events = [], { live = true, now = Date.now() } = 
         }
       } else if (g) refresh = true;
     }
+    const evKind = ev.kind || ev.type;
+    if (evKind === "unknown_arrival" || evKind === "unknown_done" || evKind === "unknown_link" || (evKind === "undo" && isUnknownKey(ev.key || ev.target || ""))) {
+      const key = isUnknownKey(ev.key) ? ev.key : isUnknownKey(ev.target) ? ev.target : ev.clientId && evKind === "unknown_arrival" ? unknownKey(ev.clientId) : "";
+      // Only an arrival is checked against today; a close / link / undo applies to the card its key names, whenever.
+      if (key && (evKind !== "unknown_arrival" || sameDay(s, ev.day, ev.at)) && newer(s, `unk|${key}`, ev.seq)) {
+        const have = s.unknowns.get(key);
+        if (evKind === "unknown_arrival") {
+          const u = unknownFrom(ev, key);
+          s.unknowns.set(key, u);
+          if (u.status === "open" && (live || now - ms(ev.at) <= RECENT_ARRIVAL_MS)) arrivals.push({ unknown: u, at: u.at, by: u.byName, seq: ev.seq, station: u.station });
+        } else if (have) {
+          have.status = evKind === "undo" ? "undone" : evKind === "unknown_link" ? "linked" : ev.outcome || "done";
+          have.outcome = evKind === "unknown_done" ? ev.outcome || "" : have.outcome;
+          have.guestKey = ev.guestKey || have.guestKey;
+          have.doneAt = ev.at || null;
+          have.doneBy = ev.byName || ev.by?.name || "";
+        }
+        changed = true;
+      }
+    }
     if (ev.kind === "guest") refresh = true;
     if (ev.kind === "query" && ev.query) {
       const have = s.queries.get(ev.query.id);
@@ -180,6 +225,7 @@ export function rollDay(s, now = Date.now()) {
   if (!(info.date > s.today.date)) return false;
   s.today = info;
   for (const [k, m] of s.marks) if (m.day !== info.date) s.marks.delete(k);
+  for (const [k, u] of s.unknowns || []) if (!u.at || torontoDay(u.at) !== info.date) s.unknowns.delete(k);
   const keys = (s.stations || []).map((x) => x.key).filter(Boolean);
   s.stationStates = localStationStates(s.windows, now, keys.length ? keys : undefined);
   s.dayFromDevice = true;
@@ -234,6 +280,12 @@ function prepPending(pending, today) {
     if (!p) continue;
     if (p.kind === "undo") { if (p.target || p.ref) undone.add(p.target || p.ref); continue; }
     if (p.kind === "reset") { if (!resets.has(p.key)) resets.set(p.key, []); resets.get(p.key).push(p.point); continue; }
+    // Staff found a NO DETAILS FOUND arrival on the list: that guest has arrived.
+    if (p.kind === "unknown_link" && p.guestKey) {
+      if (!marks.has(p.guestKey)) marks.set(p.guestKey, []);
+      marks.get(p.guestKey).push({ ...p, kind: "mark", point: "arrived", key: p.guestKey });
+      continue;
+    }
     if (p.kind !== "mark") continue;
     // A tap made on another day (queued offline yesterday) isn't today's mark.
     if (today && p.clientAt && torontoDay(p.clientAt) !== today) continue;
@@ -289,6 +341,7 @@ export function counters(s, station, { pending = [], item = null } = {}) {
   const totals = emptyLine();
   const groups = Object.fromEntries(GROUPS.map((g) => [g, emptyLine()]));
   const marks = { vip: emptyLine(), media: emptyLine(), exhibitor: emptyLine() };
+  const issuePass = emptyLine();
   const meal = MEAL_STATIONS.includes(station);
   const eventDay = s.today?.eventDay || null;
   for (const g of s.guests) {
@@ -309,12 +362,15 @@ export function counters(s, station, { pending = [], item = null } = {}) {
     };
     const add = (into) => { for (const k of Object.keys(line)) into[k] += line[k]; };
     add(totals);
-    add(groups[groupOf(g)]);
+    // On the list with no pass on file: their own line, never a pass type's.
+    if (noPassOf(g)) add(issuePass);
+    else add(groups[groupOf(g)]);
     if (g.marks?.vip) add(marks.vip);
     if (g.marks?.media) add(marks.media);
     if (g.marks?.exhibitor) add(marks.exhibitor);
   }
-  const out = { totals, groups: GROUPS.filter((k) => groups[k].total > 0).map((k) => ({ group: k, ...groups[k] })), marks };
+  const out = { totals, groups: GROUPS.filter((k) => groups[k].total > 0).map((k) => ({ group: k, ...groups[k] })), marks, issuePass };
+  if (station === "lobby" || station === "desk") out.unknown = unknownCounts(s, pending);
   if (station === "exhibitor") {
     out.booths = { total: s.booths.length, setUp: s.booths.filter((b) => boothStatus(s, b, pending)).length };
   }
@@ -324,6 +380,45 @@ export function counters(s, station, { pending = [], item = null } = {}) {
 
 /** Latest first, each time read once. */
 const latestFirst = (list, at) => list.map((x) => [ms(at(x)) || 0, x]).sort((a, b) => b[0] - a[0]).map((p) => p[1]);
+
+/* ---------- NO DETAILS FOUND arrivals ---------- */
+
+/**
+ * Today's NO DETAILS FOUND arrivals, the queue on top: the server's, plus this device's taps not answered yet; a queued
+ * undo / unknown_done / unknown_link closes one here at once. → [{ key, name, company, note, at, byName, status,
+ * pending? }] newest first (`open`: only those still waiting at the pass desk).
+ */
+export function unknownsOf(s, pending = [], { open = false } = {}) {
+  const closing = new Set();
+  const undone = new Set();
+  for (const p of pending || []) {
+    if ((p.kind === "unknown_done" || p.kind === "unknown_link") && p.target) closing.add(p.target);
+    if (p.kind === "undo" && (p.target || p.ref)) undone.add(p.target || p.ref);
+  }
+  const out = [];
+  for (const u of s.unknowns?.values() || []) {
+    if (u.status === "undone" || undone.has(u.clientId)) continue;
+    const status = closing.has(u.key) ? "closing" : u.status;
+    if (open && status !== "open") continue;
+    out.push(status === u.status ? u : { ...u, status });
+  }
+  const today = s.today?.date || "";
+  for (const p of pending || []) {
+    if (p.kind !== "unknown_arrival" || undone.has(p.clientId)) continue;
+    const key = unknownKey(p.clientId);
+    if (s.unknowns?.has(key) || (today && p.clientAt && torontoDay(p.clientAt) !== today)) continue;
+    const status = closing.has(key) ? "closing" : "open";
+    if (open && status !== "open") continue;
+    out.push({ key, clientId: p.clientId, name: p.name, company: p.company || "", note: p.note || "", at: p.clientAt, byName: p.queuedBy?.name || "", station: p.station, status, pending: true });
+  }
+  return latestFirst(out, (u) => u.at);
+}
+
+/** NO DETAILS FOUND today: { total, open } (never in the pass-type totals). */
+export function unknownCounts(s, pending = []) {
+  const all = unknownsOf(s, pending);
+  return { total: all.length, open: all.filter((u) => u.status === "open").length };
+}
 
 /** Guests on the way up (arrived today, not checked in), newest arrival first. */
 export function onTheWay(s, pending = []) {

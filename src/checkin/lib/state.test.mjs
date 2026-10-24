@@ -4,7 +4,7 @@
    to the total), Media / VIP / Exhibitor as yes / no counts, and the meal station's admitted / entitled / RSVP'd. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applyEvents, boothStatus, checkedInToday, collectedBefore, counters, deskStage, fromSnapshot, heldInclusions, markedToday, onTheWay, rollDay, statusOf } from "./state.js";
+import { applyEvents, boothStatus, checkedInToday, collectedBefore, counters, deskStage, fromSnapshot, heldInclusions, markedToday, onTheWay, rollDay, statusOf, unknownCounts, unknownsOf } from "./state.js";
 
 const DAY = "2026-10-26";
 const guest = (key, name, tier, marks = {}, extra = {}) => ({
@@ -250,4 +250,77 @@ test("W17: the checked-in list can be counted in full (the screen draws the late
   for (const g of many) { s.byKey.set(g.key, g); s.marks.set(`${g.key}|checked_in`, mark(g.key, "checked_in", 1, "2026-10-26T13:00:00Z")); }
   assert.equal(checkedInToday(s, [], Infinity).length, 121);
   assert.equal(checkedInToday(s, [], 80).length, 80);
+});
+
+/* ---------- C7 ISSUE PASS, C8 NO DETAILS FOUND ---------- */
+
+const noPass = (key, name, m = {}) => ({ ...guest(key, name, null, m), tier: null, passName: null, noPass: true });
+
+test("C7: on the list with no pass on file: their own counter line, never a pass type's; groups + ISSUE PASS = total", () => {
+  const sn = snap();
+  sn.guests = [...sn.guests, noPass("pS", "Nora Nopass", { speaker: true }), noPass("pE", "Xan Exhib", { exhibitor: true })];
+  sn.marks = [...sn.marks, mark("pS", "arrived", 1, "2026-10-26T12:59:00Z")];
+  const s = fromSnapshot(sn);
+  const c = counters(s, "lobby");
+  assert.deepEqual([c.issuePass.total, c.issuePass.arrived], [2, 1]);
+  assert.equal(c.groups.find((x) => x.group === "speaker").total, 1, "the no-pass speaker isn't in Speaker");
+  assert.equal(c.groups.reduce((n, x) => n + x.total, 0) + c.issuePass.total, c.totals.total);
+  assert.equal(c.marks.exhibitor.total, 2, "Exhibitor (all) still counts them");
+});
+
+const unk = (seq, clientId, extra = {}) => ({ seq, type: "unknown_arrival", key: `u:${clientId}`, name: "Jo Bloggs", company: "Acme", note: "says registered", at: "2026-10-26T13:01:00Z", byName: "Val", ...extra });
+
+test("C8: an unknown_arrival event opens a NO DETAILS FOUND card (announced at the desk); done / link / undo close it", () => {
+  const s = fromSnapshot(snap());
+  const r = applyEvents(s, [unk(60, "c1")], { live: true, now: Date.parse("2026-10-26T13:01:05Z") });
+  assert.equal(r.arrivals.length, 1);
+  assert.equal(r.arrivals[0].unknown.key, "u:c1");
+  assert.deepEqual(unknownsOf(s, [], { open: true }).map((u) => [u.key, u.name, u.company, u.note, u.byName]), [["u:c1", "Jo Bloggs", "Acme", "says registered", "Val"]]);
+  applyEvents(s, [{ seq: 61, type: "unknown_done", key: "u:c1", outcome: "sent_to_help", at: "2026-10-26T13:03:00Z", byName: "Sam" }]);
+  assert.equal(unknownsOf(s, [], { open: true }).length, 0);
+  assert.equal(unknownsOf(s)[0].status, "sent_to_help");
+  // Staff found them: the guest's arrived mark comes with the event; the card goes.
+  applyEvents(s, [unk(62, "c2", { name: "Gus G" })]);
+  applyEvents(s, [{ seq: 63, kind: "unknown_link", key: "u:c2", guestKey: "gF", marks: [mark("gF", "arrived", 1, "2026-10-26T13:04:00Z")] }]);
+  assert.equal(unknownsOf(s).find((u) => u.key === "u:c2").status, "linked");
+  assert.ok(statusOf(s, s.byKey.get("gF")).arrived);
+  // Undone in the lobby.
+  applyEvents(s, [unk(64, "c3")]);
+  applyEvents(s, [{ seq: 65, kind: "undo", key: "u:c3", target: "c3" }]);
+  assert.equal(unknownsOf(s).some((u) => u.key === "u:c3"), false);
+  assert.deepEqual(unknownCounts(s), { total: 2, open: 0 }, "two today, none waiting (the undone one doesn't count)");
+});
+
+test("C8: out of order or twice ends the same; a card from another day or older than the snapshot never opens", () => {
+  const s = fromSnapshot(snap()); // cursor 10
+  applyEvents(s, [{ seq: 71, type: "unknown_done", key: "u:c9", outcome: "left" }]);
+  applyEvents(s, [unk(70, "c9")]);
+  assert.equal(unknownsOf(s, [], { open: true }).length, 0, "the close came first: stays closed");
+  applyEvents(s, [unk(72, "c8"), unk(72, "c8")]);
+  assert.equal(unknownsOf(s).filter((u) => u.key === "u:c8").length, 1);
+  applyEvents(s, [unk(9, "c7")]);
+  assert.equal(unknownsOf(s).some((u) => u.key === "u:c7"), false, "older than the snapshot's cursor");
+  applyEvents(s, [unk(74, "c5", { at: "2026-10-26T23:59:00-04:00" })]);
+  applyEvents(s, [{ seq: 75, type: "unknown_done", key: "u:c5", outcome: "left", at: "2026-10-27T00:01:00-04:00" }]);
+  assert.equal(unknownsOf(s).find((u) => u.key === "u:c5").status, "left", "closed just after midnight: still closes it");
+  applyEvents(s, [unk(73, "c6", { at: "2026-10-25T13:00:00Z" })]);
+  assert.equal(unknownsOf(s).some((u) => u.key === "u:c6"), false, "yesterday's");
+  // The snapshot's own list of today's cards; a new day clears them.
+  const s2 = fromSnapshot({ ...snap(), unknowns: [{ key: "u:s1", name: "From Snap", at: "2026-10-26T12:00:00Z", status: "open" }] });
+  assert.equal(unknownsOf(s2, [], { open: true })[0].name, "From Snap");
+  rollDay(s2, Date.parse("2026-10-27T12:00:00Z"));
+  assert.equal(unknownsOf(s2).length, 0);
+});
+
+test("C8: the queue on top: a lobby tap not answered yet shows at once; a queued close / link / undo hides the card", () => {
+  const s = fromSnapshot(snap());
+  const tap = { clientId: "q1", kind: "unknown_arrival", name: "Jo Bloggs", company: "", note: "", station: "lobby", clientAt: "2026-10-26T13:05:00Z", queuedBy: { id: "v1", name: "Val" } };
+  assert.deepEqual(unknownsOf(s, [tap], { open: true }).map((u) => [u.key, u.pending, u.byName]), [["u:q1", true, "Val"]]);
+  assert.equal(unknownsOf(s, [tap, { clientId: "q2", kind: "undo", target: "q1" }]).length, 0);
+  applyEvents(s, [unk(80, "c1")]);
+  assert.equal(unknownsOf(s, [{ clientId: "q3", kind: "unknown_done", target: "u:c1", outcome: "left" }], { open: true }).length, 0);
+  const link = { clientId: "q4", kind: "unknown_link", target: "u:c1", guestKey: "gF", clientAt: "2026-10-26T13:06:00Z", station: "desk" };
+  assert.equal(unknownsOf(s, [link], { open: true }).length, 0);
+  assert.equal(statusOf(s, s.byKey.get("gF"), [link]).arrived.pending, true, "the found guest shows Arrived at once");
+  assert.equal(counters(s, "desk", { pending: [tap] }).unknown.open, 2);
 });

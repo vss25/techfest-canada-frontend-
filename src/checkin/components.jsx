@@ -3,29 +3,40 @@ import { badgeOf, chipsOf, GROUP_COLORS } from "./lib/passColors.js";
 import { boxLetter } from "./lib/search.js";
 import { answerConfirm, closeTray, dismissAllFailed, dismissBanner, dismissTap, dismissToast, openTray, retryTap, useDesk } from "./lib/desk.js";
 import { describeTap, trayActions } from "./lib/tapText.js";
+import { ISSUE_PASS, NO_DETAILS } from "./lib/special.js";
 import { timeText } from "./lib/timers.js";
 import { ALLERGY_KEYS, DIETARY_LABELS, DIETARY_ORDER, EXTRA_LABELS, EXTRA_ORDER } from "./lib/constants.js";
 
 /* Shared pieces of the TTFC Check-in screens. */
 
-/** The guest's colour band: the group's colour with its words ("Media · Connect Pass"). */
+/** The guest's colour band: the group's colour with its words ("Media · Connect Pass", "Speaker · No pass on file"). */
 export function PassBand({ guest, size = "m" }) {
   const b = badgeOf(guest);
   return (
-    <span className={`ci-pass ci-pass-${size}`} style={{ background: b.bg, color: b.text }} title={b.full}>
+    <span className={`ci-pass ci-pass-${size}${b.noPass ? " is-nopass" : ""}${b.neutral ? " is-neutral" : ""}`} style={b.neutral ? undefined : { background: b.bg, color: b.text }} title={b.full}>
       <span className="ci-pass-label">{b.label}</span>
       {b.sub && <span className="ci-pass-sub">{b.sub}</span>}
     </span>
   );
 }
 
-/** Yes / no marks (Exhibitor, Media, VIP, Speaker) and Pending. */
+/** ISSUE PASS (on the list, no pass on file) or NO DETAILS FOUND: icon + words + its own outline / pattern. */
+export function SpecialBadge({ kind, size = "m" }) {
+  const k = kind === "unknown" ? NO_DETAILS : ISSUE_PASS;
+  return (
+    <span className={`ci-flag ci-flag-${kind === "unknown" ? "unknown" : "issue"} ci-flag-${size}`}>
+      <span className="ci-flag-icon" aria-hidden="true">{k.icon}</span>{k.badge}
+    </span>
+  );
+}
+
+/** Yes / no marks (Exhibitor, Media, VIP, Speaker), Pending, and ISSUE PASS first for a guest with no pass on file. */
 export function Chips({ guest }) {
   const chips = chipsOf(guest);
   if (!chips.length) return null;
   return (
     <span className="ci-chips">
-      {chips.map((c) => <span key={c.key} className={`ci-chip ci-chip-${c.key}`}>{c.label}</span>)}
+      {chips.map((c) => (c.key === "issue_pass" ? <SpecialBadge key={c.key} kind="issue" size="s" /> : <span key={c.key} className={`ci-chip ci-chip-${c.key}`}>{c.label}</span>))}
     </span>
   );
 }
@@ -85,8 +96,8 @@ export function SearchBox({ value, onChange, inputRef, placeholder = "Search a g
   );
 }
 
-/** Counters across the top: the big numbers, then one chip per colour group, then the yes / no marks. */
-export function Counters({ big = [], groups = [], marks = [] }) {
+/** Counters across the top: the big numbers, then one chip per colour group, ISSUE PASS / NO DETAILS FOUND, the yes / no marks. */
+export function Counters({ big = [], groups = [], marks = [], special = [] }) {
   return (
     <section className="ci-counters" aria-label="Counters">
       <div className="ci-counter-big">
@@ -97,7 +108,7 @@ export function Counters({ big = [], groups = [], marks = [] }) {
           </div>
         ))}
       </div>
-      {(groups.length > 0 || marks.length > 0) && (
+      {(groups.length > 0 || marks.length > 0 || special.length > 0) && (
         <div className="ci-counter-chips">
           {groups.map((g) => {
             const c = GROUP_COLORS[g.group];
@@ -107,6 +118,11 @@ export function Counters({ big = [], groups = [], marks = [] }) {
               </span>
             );
           })}
+          {special.map((x) => (
+            <span key={x.kind} className={`ci-schip ci-schip-${x.kind}`} title={`${x.label}: ${x.text}`}>
+              <span className="ci-flag-icon" aria-hidden="true">{x.kind === "unknown" ? NO_DETAILS.icon : ISSUE_PASS.icon}</span>{x.label} <b>{x.text}</b>
+            </span>
+          ))}
           {marks.map((m) => <span key={m.label} className="ci-mchip">{m.label} <b>{m.text}</b></span>)}
         </div>
       )}
@@ -175,7 +191,7 @@ export function ArrivalFlash() {
     return () => clearTimeout(t);
   }, [f?.seq]);
   if (!f?.seq || shown === f.seq) return null;
-  return <div key={f.seq} className="ci-flash" style={{ "--gbg": f.bg }} aria-hidden="true" />;
+  return <div key={f.seq} className={`ci-flash${f.unknown ? " is-unknown" : ""}`} style={f.bg ? { "--gbg": f.bg } : undefined} aria-hidden="true" />;
 }
 
 /** Toasts at the bottom ("Priya Sharma: Arrived · Undo"). */
@@ -206,11 +222,19 @@ export function Banners({ station, onOpen, max = 3 }) {
   return (
     <div className="ci-banners" role="alert" aria-live="assertive">
       {v.visible.map((x) => {
+        if (x.unknown) {
+          return (
+            <div key={x.key} className="ci-banner is-unknown">
+              <span className="ci-banner-text"><span className="ci-flag-icon" aria-hidden="true">{NO_DETAILS.icon}</span>{x.text}</span>
+              <button type="button" className="ci-banner-ok" onClick={() => dismissBanner(station, x.key)}>Got it</button>
+            </div>
+          );
+        }
         const band = badgeOf(x.guest);
         return (
-          <div key={x.key} className="ci-banner" style={{ "--gbg": band.bg }}>
+          <div key={x.key} className={`ci-banner${band.noPass ? " is-issue" : ""}`} style={band.neutral ? undefined : { "--gbg": band.bg }}>
             <button type="button" className="ci-banner-text" onClick={() => onOpen?.(x.guest)}>
-              <span className="ci-banner-bell" aria-hidden="true">🔔</span>{x.text}
+              <span className="ci-banner-bell" aria-hidden="true">{band.noPass ? ISSUE_PASS.icon : "🔔"}</span>{x.text}
             </button>
             <button type="button" className="ci-banner-ok" onClick={() => dismissBanner(station, x.key)}>Got it</button>
           </div>
@@ -254,7 +278,8 @@ export function Sheet({ title, onClose, children, wide = false }) {
   useLayoutEffect(() => { closeRef.current = onClose; });
   useEffect(() => {
     const prev = document.activeElement;
-    ref.current?.focus();
+    // Into the sheet once (a field of its own with autoFocus keeps it).
+    if (!ref.current?.contains(document.activeElement)) ref.current?.focus();
     const onKey = (e) => { if (e.key === "Escape") closeRef.current?.(); };
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("keydown", onKey); prev?.focus?.({ preventScroll: true }); };

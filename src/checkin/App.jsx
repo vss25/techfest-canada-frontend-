@@ -4,6 +4,8 @@ import { counters } from "./lib/state.js";
 import { applyTheme, audioReady, keepAwake, remember, THEME_KEY, unlockAudio } from "./lib/device.js";
 import { applyUpdate, isUpdateReady, onUpdate, setAppScreen } from "./lib/pwa.js";
 import { dayHeading } from "./lib/timers.js";
+import { stationView } from "./lib/stationTime.js";
+import { ISSUE_PASS, NO_DETAILS } from "./lib/special.js";
 import { ArrivalFlash, AttentionSheet, Banners, ConfirmDialog, ConnPill, Counters, Toasts } from "./components.jsx";
 import { useKeyboard, useLayout } from "./hooks.js";
 import Login from "./screens/Login.jsx";
@@ -80,7 +82,7 @@ export default function App() {
   if (screen === "locked") return <><LockScreen /><ConfirmDialog /><Toasts /></>;
 
   const Screen = SCREENS[d.station] || Lobby;
-  const st = s.stationStates?.[d.station];
+  const st = stationView(d.station, s.stationStates?.[d.station]);
   const waiting = d.queueItems.filter((x) => x.state !== "failed").length;
   return (
     <div className={`ci-app is-${layout.kind}${keys ? " is-keys" : ""}${kb ? " is-kb" : ""}`}>
@@ -141,6 +143,9 @@ function StationCounters({ station, item }) {
   let big;
   let groups;
   let mk;
+  // ISSUE PASS (on the list, no pass on file) and NO DETAILS FOUND: their own chips, never in a pass type's.
+  const special = [];
+  const ip = c.issuePass;
   if (station === "lobby" || station === "desk") {
     big = [
       { label: "Checked in today", n: t.checkedIn, of: t.total, tone: "good" },
@@ -150,6 +155,8 @@ function StationCounters({ station, item }) {
     ];
     groups = c.groups.map((g) => ({ group: g.group, text: pct(g.checkedIn, g.total) }));
     mk = marks("checkedIn");
+    if (ip.total) special.push({ kind: "issue", label: ISSUE_PASS.chip, text: station === "lobby" ? pct(ip.arrived, ip.total) : pct(ip.checkedIn, ip.total) });
+    if (c.unknown?.total) special.push({ kind: "unknown", label: NO_DETAILS.chip, text: c.unknown.open ? `${c.unknown.total} (${c.unknown.open} open)` : `${c.unknown.total}` });
   } else if (["breakfast", "lunch", "evening"].includes(station)) {
     big = item ? [
       { label: `Admitted · ${item.label}`, n: t.admitted, tone: "good" },
@@ -157,6 +164,7 @@ function StationCounters({ station, item }) {
       { label: "RSVP'd", n: t.rsvpd },
     ] : [{ label: "Admitted today", n: t.admitted }];
     groups = c.groups.filter((g) => g.entitled || g.admitted).map((g) => ({ group: g.group, text: pct(g.admitted, g.entitled) }));
+    if (ip.entitled || ip.admitted) special.push({ kind: "issue", label: ISSUE_PASS.chip, text: pct(ip.admitted, ip.entitled) });
     mk = ["vip", "media", "exhibitor"].filter((k) => c.marks[k].entitled && (k === "exhibitor" || c.marks[k].entitled !== (groupOf(k)?.entitled || 0)))
       .map((k) => ({ label: k === "exhibitor" ? "Exhibitor" : `${k === "vip" ? "VIP" : "Media"} (all)`, text: pct(c.marks[k].admitted, c.marks[k].entitled) }));
   } else if (station === "av") {
@@ -172,7 +180,8 @@ function StationCounters({ station, item }) {
     groups = c.groups.map((g) => ({ group: g.group, text: pct(g.done, g.total) }));
     mk = [];
   }
-  return <Counters big={big} groups={groups} marks={mk} />;
+  if (!["lobby", "desk", "breakfast", "lunch", "evening"].includes(station) && ip.total) special.push({ kind: "issue", label: ISSUE_PASS.chip, text: pct(ip.done, ip.total) });
+  return <Counters big={big} groups={groups} marks={mk} special={special} />;
 }
 
 function StartGate({ station }) {
@@ -190,7 +199,7 @@ function StartGate({ station }) {
         <p className="ci-muted">{dayHeading(d.state?.today)}</p>
         <h1>{station.label}</h1>
         <p className="ci-start-sub">{station.sub}</p>
-        <p className="ci-when-text">{d.state?.stationStates?.[station.key]?.text}</p>
+        <p className="ci-when-text">{stationView(station.key, d.state?.stationStates?.[station.key])?.text}</p>
         <button type="button" className="ci-btn ci-btn-primary ci-btn-xxl" onClick={start} autoFocus>Start the {station.key === "desk" ? "desk" : "station"}</button>
         <p className="ci-small ci-muted">{announces ? `This turns on the arrival chime (you'll hear it once now) and keeps the screen awake. Each arrival also flashes the screen. ${VOLUME_HINT}` : "This keeps the screen awake while you work."} On an iPad, also set Settings › Display & Brightness › Auto-Lock to Never.</p>
         <button type="button" className="ci-btn ci-btn-ghost" onClick={() => setStation("")}>Pick another station</button>
@@ -258,7 +267,8 @@ function Menu({ onClose, onPick }) {
 function Attendance({ rows }) {
   const days = [...new Set(rows.map((r) => r.day))].sort();
   if (!days.length) return null;
-  const n = (day, point) => rows.find((r) => r.day === day && r.point === point)?.rows || 0;
+  // Each person once a day (the server's `people`; `rows` from older servers).
+  const n = (day, point) => { const r = rows.find((x) => x.day === day && x.point === point); return r ? r.people ?? r.rows ?? 0 : 0; };
   const label = (day) => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" }).format(new Date(`${day}T12:00:00Z`));
   return (
     <div className="ci-small ci-menu-who">

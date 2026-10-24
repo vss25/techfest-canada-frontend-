@@ -1,10 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
-import { deskVersion, useDesk, pending } from "../lib/desk.js";
-import { checkedInToday, collectedBefore, deskStage, onTheWay, statusOf } from "../lib/state.js";
-import { badgeOf } from "../lib/passColors.js";
+import { closeUnknown, deskVersion, linkUnknown, useDesk, pending } from "../lib/desk.js";
+import { checkedInToday, collectedBefore, deskStage, onTheWay, statusOf, unknownsOf } from "../lib/state.js";
+import { badgeOf, noPassOf } from "../lib/passColors.js";
+import { ISSUE_PASS, NO_DETAILS, UNKNOWN_OUTCOMES } from "../lib/special.js";
+import { buildIndex, search } from "../lib/search.js";
 import { clockText, secondsSince, timeText, timerLevel, weekday } from "../lib/timers.js";
 import { act, undoFor } from "../act.js";
-import { BoxHint, Chips, Inclusions, PassBand, SearchBox } from "../components.jsx";
+import { BoxHint, Chips, Inclusions, PassBand, SearchBox, Sheet, SpecialBadge } from "../components.jsx";
 import { byLine } from "../lib/byLine.js";
 import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
@@ -14,6 +16,9 @@ import { useLayout, useNow, useUndoExpiry } from "../hooks.js";
    from the desk (name, company, pass colour, what to hand over, the badge box, the time since they arrived: amber
    after 60 s, red after 2 min). Tap Checked in when the pass is handed over. "Checked in": latest first (the latest
    80 shown, the count is everyone's). A search for people who came straight up. Day 2: "Has pass (collected Mon)".
+   ISSUE PASS (on the list, no pass on file): the card says so in big type ("Issue pass: name is on the list, no pass on
+   file"), with a dashed outline. NO DETAILS FOUND (the lobby couldn't find them): a hatched card with a question mark,
+   the name as typed, "check ID, send to help desk", and Sent to help desk / Pass issued / Left (staff: Found them).
    The lists are worked out when something changes, not every second: only each card's own timer ticks. */
 
 const SHOW_DONE = 80;
@@ -31,18 +36,26 @@ export default function Desk({ onOpen }) {
     if (st.checked_in) return;
     act({ point: "checked_in", guest: g, undoText: `${g.name}: checked in, pass handed over.`, onDone: done });
   }, [s]);
-  const { q, setQ, sel, results, inputRef, lookingUp, done } = useGuestSearch(s.guests, { onEnter: checkIn, version: s.version + p.length });
+  const { q, setQ, sel, results, inputRef, lookingUp, done, matchOf } = useGuestSearch(s.guests, { onEnter: checkIn, version: s.version + p.length });
   // Worked out again when anything on the desk changes (v: every live event, tap, queue change), not on the timers' ticks.
   const way = useMemo(() => onTheWay(s, pending()), [s, v]); // eslint-disable-line react-hooks/exhaustive-deps
+  // NO DETAILS FOUND arrivals still waiting, in the same list (newest first).
+  const unknown = useMemo(() => unknownsOf(s, pending(), { open: true }), [s, v]); // eslint-disable-line react-hooks/exhaustive-deps
+  const wayAll = useMemo(() => [...way.map((x) => ({ type: "guest", at: x.st.arrived.at, ...x })), ...unknown.map((u) => ({ type: "unknown", at: u.at, u }))]
+    .sort((a, b) => Date.parse(b.at || 0) - Date.parse(a.at || 0)), [way, unknown]);
+  const [finding, setFinding] = useState(null); // a NO DETAILS FOUND card staff are matching to a guest
+  const staff = !!d.session?.staff;
   const doneAll = useMemo(() => checkedInToday(s, pending(), Infinity), [s, v]); // eslint-disable-line react-hooks/exhaustive-deps
   const doneShown = doneAll.length > SHOW_DONE ? doneAll.slice(0, SHOW_DONE) : doneAll;
 
   const wayCol = (
     <section className="ci-col" aria-labelledby="ci-way-h">
-      <h2 className="ci-h2" id="ci-way-h">On the way up <span className="ci-count">{way.length}</span></h2>
-      {!way.length && <p className="ci-empty">Nobody on the way up. Arrivals from the lobby appear here at once, with a chime.</p>}
+      <h2 className="ci-h2" id="ci-way-h">On the way up <span className="ci-count">{wayAll.length}</span></h2>
+      {!wayAll.length && <p className="ci-empty">Nobody on the way up. Arrivals from the lobby appear here at once, with a chime.</p>}
       <ul className="ci-cards">
-        {way.map(({ g, st }) => <WayCard key={g.key} g={g} st={st} today={s.today} note={s.notes[g.key]} onOpen={onOpen} onCheckIn={checkIn} />)}
+        {wayAll.map((x) => (x.type === "unknown"
+          ? <UnknownCard key={x.u.key} u={x.u} staff={staff} onFind={() => setFinding(x.u)} />
+          : <WayCard key={x.g.key} g={x.g} st={x.st} today={s.today} note={s.notes[x.g.key]} onOpen={onOpen} onCheckIn={checkIn} />))}
       </ul>
     </section>
   );
@@ -76,8 +89,9 @@ export default function Desk({ onOpen }) {
               const stage = deskStage(st);
               return (
                 <GuestRow key={g.key} guest={g} selected={i === sel} onOpen={onOpen}
-                  status={stage === "checked_in" ? `Checked in ${byLine(st.checked_in)}` : stage === "on_the_way" ? <>On the way up · <Elapsed at={st.arrived.at} /></> : collectedBefore(g, s.today) ? `Has pass (collected ${weekday(g.passCollectedAt)})` : "Not arrived"}
-                  statusTone={stage === "checked_in" ? "good" : stage === "on_the_way" ? "info" : ""}
+                  match={matchOf(g)}
+                  status={stage === "checked_in" ? `Checked in ${byLine(st.checked_in)}` : stage === "on_the_way" ? <>On the way up · <Elapsed at={st.arrived.at} /></> : noPassOf(g) ? ISSUE_PASS.reading : collectedBefore(g, s.today) ? `Has pass (collected ${weekday(g.passCollectedAt)})` : "Not arrived"}
+                  statusTone={stage === "checked_in" ? "good" : stage === "on_the_way" ? "info" : noPassOf(g) ? "issue" : ""}
                   extra={<span className="ci-row-extra"><Inclusions guest={g} /><BoxHint guest={g} /></span>}
                   actions={stage === "checked_in" ? <span key="done" className="ci-done">✓</span>
                     : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>Checked in</button>} />
@@ -89,7 +103,7 @@ export default function Desk({ onOpen }) {
       {layout.deskTabs ? (
         <>
           <div className="ci-tabs" role="tablist">
-            <button type="button" role="tab" aria-selected={tab === "way"} className={tab === "way" ? "is-on" : ""} onClick={() => setTab("way")}>On the way up ({way.length})</button>
+            <button type="button" role="tab" aria-selected={tab === "way"} className={tab === "way" ? "is-on" : ""} onClick={() => setTab("way")}>On the way up ({wayAll.length})</button>
             <button type="button" role="tab" aria-selected={tab === "done"} className={tab === "done" ? "is-on" : ""} onClick={() => setTab("done")}>Checked in ({doneAll.length})</button>
           </div>
           {tab === "way" ? wayCol : doneCol}
@@ -97,7 +111,57 @@ export default function Desk({ onOpen }) {
       ) : (
         <div className="ci-two-col">{wayCol}{doneCol}</div>
       )}
+      {finding && <FindGuest u={finding} guests={s.guests} onClose={() => setFinding(null)} />}
     </div>
+  );
+}
+
+/** A NO DETAILS FOUND arrival: the name as typed, check their ID, then close it. Never looks like a pass. */
+function UnknownCard({ u, staff, onFind }) {
+  const now = useNow(1000);
+  const secs = secondsSince(u.at, now);
+  const level = timerLevel(secs);
+  return (
+    <li className={`ci-card is-unknown is-${level}`}>
+      <div className="ci-card-band"><SpecialBadge kind="unknown" size="l" /></div>
+      <p className="ci-card-big is-unknown"><span className="ci-flag-icon" aria-hidden="true">{NO_DETAILS.icon}</span>{NO_DETAILS.card}</p>
+      <div className="ci-card-main">
+        <span className="ci-card-name">{u.name}</span>
+        {u.company && <span className="ci-card-job">{u.company}</span>}
+      </div>
+      <div className="ci-card-facts">
+        <span className="ci-small ci-muted">Name as typed in the lobby</span>
+        <span className={`ci-timer is-${level}`} aria-label={`Arrived ${clockText(secs)} ago`}>⏱ {clockText(secs)}</span>
+      </div>
+      {u.note && <p className="ci-card-note">📝 {u.note}</p>}
+      <div className="ci-card-foot">
+        <span className="ci-small ci-muted">Arrived {timeText(u.at)}{u.byName ? ` · ${u.byName}` : ""}{u.pending ? " · pending" : ""}</span>
+        <div className="ci-unknown-actions">
+          {UNKNOWN_OUTCOMES.map((o) => <button key={o.outcome} type="button" className={`ci-btn ${o.outcome === "pass_issued" ? "ci-btn-good" : "ci-btn-ghost"}`} onClick={() => closeUnknown(u.key, o.outcome)}>{o.label}</button>)}
+          {staff && <button type="button" className="ci-btn ci-btn-primary" onClick={onFind}>Found them</button>}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+/** Staff: the NO DETAILS FOUND arrival is on the list after all. Pick the guest: they're marked Arrived, the card goes. */
+function FindGuest({ u, guests, onClose }) {
+  const [q, setQ] = useState(u.name || "");
+  const index = useMemo(() => buildIndex(guests), [guests]);
+  const results = useMemo(() => search(index, q, { limit: 12 }), [index, q]);
+  return (
+    <Sheet title="Found them on the list?" onClose={onClose}>
+      <p className="ci-small ci-muted">Typed in the lobby: <b>{u.name}</b>{u.company ? ` · ${u.company}` : ""}. Search the guest list and pick them: they're marked Arrived and this card goes.</p>
+      <input className="ci-input ci-input-wide" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, company…" aria-label="Search the guest list" autoFocus />
+      <ul className="ci-list ci-list-compact ci-find-list">
+        {results.map((g) => (
+          <GuestRow key={g.key} guest={g} match={{ q, kind: "" }}
+            actions={<button type="button" className="ci-btn ci-btn-primary" onClick={() => { linkUnknown(u.key, g.key); onClose(); }}>This is them</button>} />
+        ))}
+      </ul>
+      {q && !results.length && <p className="ci-empty">No guest matches “{q}”.</p>}
+    </Sheet>
   );
 }
 
@@ -113,9 +177,11 @@ function WayCard({ g, st, today, note, onOpen, onCheckIn }) {
   const secs = secondsSince(st.arrived.at, now);
   const level = timerLevel(secs);
   const had = collectedBefore(g, today);
+  const issue = noPassOf(g);
   return (
-    <li className={`ci-card is-${level}`} style={{ "--gbg": band.bg, "--gtx": band.text }}>
+    <li className={`ci-card is-${level}${issue ? " is-issue" : ""}`} style={band.neutral ? undefined : { "--gbg": band.bg, "--gtx": band.text }}>
       <div className="ci-card-band"><PassBand guest={g} size="l" /><Chips guest={g} /></div>
+      {issue && <p className="ci-card-big is-issue"><span className="ci-flag-icon" aria-hidden="true">{ISSUE_PASS.icon}</span>{ISSUE_PASS.card}</p>}
       <button type="button" className="ci-card-main" onClick={() => onOpen?.(g)}>
         <span className="ci-card-name">{g.name}</span>
         {(g.title || g.company) && <span className="ci-card-job">{[g.title, g.company].filter(Boolean).join(" · ")}</span>}

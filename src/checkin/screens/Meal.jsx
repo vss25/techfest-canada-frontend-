@@ -8,6 +8,7 @@ import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
 import { timeText } from "../lib/timers.js";
 import { useUndoExpiry } from "../hooks.js";
+import { noPassOf } from "../lib/passColors.js";
 
 /* CxO BREAKFAST · LUNCH · EVENING ENTRY (Awards Night on Day 1, the Gala on Day 2).
    Find the guest (or browse the list): green "Included today" or red "Not on their pass" for today's item (the pass's
@@ -86,7 +87,7 @@ export default function Meal({ onOpen }) {
     let actions;
     if (admitted) actions = undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span key="done" className="ci-done">✓</span>;
     else if (inc || !item) actions = <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => admit(g, done)}>Admitted</button>;
-    else if (staff) actions = <button key="incl" type="button" className="ci-btn ci-btn-warn ci-btn-cta" disabled={busy === g.key} onClick={() => includeAndAdmit(g)}>{busy === g.key ? "Switching on…" : `Include ${item.short} + admit`}</button>;
+    else if (staff && !noPassOf(g)) actions = <button key="incl" type="button" className="ci-btn ci-btn-warn ci-btn-cta" disabled={busy === g.key} onClick={() => includeAndAdmit(g)}>{busy === g.key ? "Switching on…" : `Include ${item.short} + admit`}</button>;
     else actions = flagged ? <span key="flagged" className="ci-row-status is-warn">Sent to staff</span>
       : <button key="flag" type="button" className="ci-btn ci-btn-warn ci-btn-cta" onClick={() => act({ point: flagPoint, guest: g, undoText: `${g.name}: sent to staff.`, onDone: done })}>Sent to staff</button>;
     return (

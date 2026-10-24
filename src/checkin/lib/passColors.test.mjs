@@ -27,7 +27,8 @@ test("every pass type the backend produces (services/checkinDesk.js DESK_TIERS) 
   badgeOf(g("galaxy"), { log: { warn: (m) => logged.push(m) } });
   assert.deepEqual([odd.group, odd.label], ["other", "Other: Galaxy"]);
   assert.equal(logged.length, 1);
-  assert.equal(badgeOf(g("")).label, "Other: Pass");
+  assert.equal(badgeOf(g("", {}, { passName: "Discover" })).label, "Discover");
+  assert.equal(badgeOf(g("")).label, "No pass on file", "no pass type and no pass name: on the list with no pass on file (C7)");
   // Clearly different colours, one per group.
   assert.equal(new Set(GROUPS.map((k) => GROUP_COLORS[k].bg)).size, GROUPS.length);
 });
@@ -55,7 +56,8 @@ test("yes / no chips: Exhibitor, Media, VIP, Speaker and Pending, never repeatin
 test("pass names from the tier when the server sent none", () => {
   assert.equal(passNameOf({ tier: "apex" }), "Apex Pass");
   assert.equal(passNameOf({ tier: "power", passName: "Power Pass" }), "Power Pass");
-  assert.equal(passNameOf({}), "Other: Pass");
+  assert.equal(passNameOf({}), "No pass on file");
+  assert.equal(passNameOf({ tier: "galaxy" }), "Other: Galaxy");
 });
 
 test("the words on every colour are readable at arm's length (contrast ≥ 4.5:1)", () => {

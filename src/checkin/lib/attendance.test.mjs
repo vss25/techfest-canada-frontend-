@@ -43,10 +43,14 @@ test("the table: Day 1 then Day 2; arrived, checked in, the three meals (the eve
   const row = (k) => v.rows.find((r) => r.key === k);
   assert.deepEqual(row("arrived").cells.map((c) => c.main), ["512", "0"]);
   assert.deepEqual(row("checkedIn").cells.map((c) => c.sub), ["498 passes collected to date", "410 passes collected to date"]);
+  assert.equal(attendanceView({ days: [{ ...ATT.days[1], passesCollectedToDate: 1 }] }).rows[1].cells[0].sub, "1 pass collected to date");
+  assert.deepEqual(row("cxo").cells.map((c) => c.label), ["", ""], "the breakfast row says its own name once");
   assert.deepEqual(row("dinner").cells.map((c) => c.label), ["Catalyst Awards Night", "Gala Dinner & Networking Reception"]);
   assert.equal(row("lunch").cells[0].main, "300 / 520");
   assert.equal(row("issuePass").cells[0].main, "3 arrived · 2 issued");
   assert.equal(row("issuePass").cells[0].sub, "of 9 people on the list with no pass; passes issued at the desk");
+  assert.equal(attendanceView({ days: [{ ...ATT.days[1], issuePass: { people: 9, arrived: 3, issued: 2, arrivedNoPass: 1 } }] }).rows[5].cells[0].sub,
+    "of 9 people on the list with no pass; passes issued at the desk; 1 of them still without a pass");
   assert.equal(row("noDetails").cells[0].main, "4");
   assert.equal(row("noDetails").cells[0].sub, "1 sent to the help desk · 2 pass issued · 1 left");
   assert.equal(v.empty, false);

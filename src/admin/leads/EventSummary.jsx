@@ -229,7 +229,7 @@ function AttendanceSection({ s }) {
         </tbody>
       </TableWrap>
       {v.byPass.length > 0 && (
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="mt-4 grid gap-4 2xl:grid-cols-2">
           {v.byPass.map((d) => (
             <div key={d.day}>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ttfc-dim">By pass type · {d.label}</p>

@@ -53,7 +53,7 @@ export default function Counts({ onClose }) {
   return (
     <Sheet title="Counts" onClose={onClose} wide>
       <p className="ci-small ci-muted">
-        Each person once per point per day (practice taps never count). Admitted / entitled, then RSVP'd, % of RSVP'd, no-shows and
+        Each person once per point per day (practice taps never count). Admitted / entitled, then RSVP’d, % of RSVP’d, no-shows and
         overrides. {at ? `As of ${timeText(at)}; updates as taps come in.` : "Loading…"}
       </p>
       {error && <p className="ci-error" role="alert">{error}</p>}

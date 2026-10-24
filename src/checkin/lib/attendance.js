@@ -85,15 +85,20 @@ export function attendanceView(att) {
   const cells = (fn) => days.map((d) => (d.data ? fn(d.data, d.key) : { main: "—", sub: "", empty: true }));
   const rows = [
     { key: "arrived", label: "Arrived (lobby)", cells: cells((d) => ({ main: num(d.arrived), sub: "" })) },
-    { key: "checkedIn", label: "Checked in / pass collected", cells: cells((d) => ({ main: num(d.checkedIn), sub: has(d.passesCollectedToDate) ? `${num(d.passesCollectedToDate)} passes collected to date` : "" })) },
+    { key: "checkedIn", label: "Checked in / pass collected", cells: cells((d) => ({ main: num(d.checkedIn), sub: has(d.passesCollectedToDate) ? `${plural(d.passesCollectedToDate, "pass", "passes")} collected to date` : "" })) },
     ...MEAL_KEYS.map((k) => ({
       key: k,
       label: k === "dinner" ? "Dinner" : MEAL_LABEL[k],
-      cells: cells((d, day) => mealCell(d.meals?.[k] ? { label: k === "dinner" ? d.meals[k].label || DINNER_LABEL[day] : "", ...d.meals[k] } : null, k === "dinner" ? day : "")),
+      // The evening's own name per day (Awards Night / Gala) over its numbers; the breakfast and lunch rows say theirs.
+      cells: cells((d, day) => mealCell(d.meals?.[k] ? { ...d.meals[k], label: k === "dinner" ? d.meals[k].label || DINNER_LABEL[day] : "" } : null, k === "dinner" ? day : "")),
     })),
     { key: "issuePass", label: "Issue pass (on the list, no pass)", cells: cells((d) => ({
       main: `${num(n(d.issuePass?.arrived))} arrived · ${num(n(d.issuePass?.issued))} issued`,
-      sub: has(d.issuePass?.people) ? `of ${plural(d.issuePass.people, "person", "people")} on the list with no pass; passes issued at the desk` : "passes issued at the desk",
+      sub: [
+        has(d.issuePass?.people) ? `of ${plural(d.issuePass.people, "person", "people")} on the list with no pass` : "",
+        "passes issued at the desk",
+        n(d.issuePass?.arrivedNoPass) > 0 ? `${num(d.issuePass.arrivedNoPass)} of them still without a pass` : "",
+      ].filter(Boolean).join("; "),
     })) },
     { key: "noDetails", label: "No details found", cells: cells((d) => {
       const x = d.noDetails || {};

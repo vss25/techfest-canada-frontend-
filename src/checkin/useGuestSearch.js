@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { buildIndex, search, ticketIdQuery } from "./lib/search.js";
+import { buildIndex, searchDetailed, ticketIdQuery } from "./lib/search.js";
 import { desk, lookupTicket } from "./lib/desk.js";
 import { revealSelected, useSearchKeys } from "./hooks.js";
 
@@ -25,7 +25,9 @@ export function useGuestSearch(guests, { rank = null, onEnter, limit = 40, versi
   const qRef = useRef(q);
   useLayoutEffect(() => { qRef.current = q; });
   const index = useMemo(() => buildIndex(guests), [guests]);
-  const local = useMemo(() => search(index, q, { limit, rank }), [index, q, rank, limit, version]); // eslint-disable-line react-hooks/exhaustive-deps
+  const detailed = useMemo(() => searchDetailed(index, q, { limit, rank }), [index, q, rank, limit, version]); // eslint-disable-line react-hooks/exhaustive-deps
+  const local = useMemo(() => detailed.map((r) => r.g), [detailed]);
+  const kinds = useMemo(() => new Map(detailed.map((r) => [r.g, r.kind])), [detailed]);
 
   // A ticket ID a volunteer typed: ask the server which guest it is.
   const tid = ticketIdQuery(q);
@@ -57,5 +59,7 @@ export function useGuestSearch(guests, { rank = null, onEnter, limit = 40, versi
     onNavigate: () => { navigated.current = true; },
     navigated: () => navigated.current,
   });
-  return { q, setQ, sel, setSel, results, inputRef, done, lookingUp: !!tid && !local.length && !desk.session?.staff && !(looked && looked.q === tid) };
+  /** What matched for a result ({ q, kind }: GuestRow marks the letters and says "Company match" / "Similar spelling"). */
+  const matchOf = (g) => ({ q, kind: kinds.get(g) || (found && g === found ? "ticket" : "") });
+  return { q, setQ, sel, setSel, results, inputRef, done, matchOf, lookingUp: !!tid && !local.length && !desk.session?.staff && !(looked && looked.q === tid) };
 }

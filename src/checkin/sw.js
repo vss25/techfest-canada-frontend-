@@ -19,6 +19,11 @@
      on another host, and every call carries a sign-in.
    • Updates wait for the page to say when (lib/pwa.js: never while a
      station is running).
+   • An install cut off half way (the iPad turned off, the app closed
+     during the download) can't clean up after itself: on activate and
+     whenever the app is opened, any desk cache that isn't the active
+     version's (or a waiting version's, installed whole) is removed,
+     never while another version is installing.
    Caches start with "ttfc-desk-": the attendee app's worker (/app/sw.js)
    only ever removes its own "ttfc-app-" caches, and this one only its own.
    Tested with the built file: node --test src/checkin/sw.test.mjs
@@ -56,15 +61,47 @@ self.addEventListener("install", (event) => {
         throw new Error(`TTFC Check-in: ${u} didn't download; keeping the current version`);
       }
     }
+    // Its cache removed meanwhile (a tidy that started before this install did): not installed; the next try starts clean.
+    if (!(await caches.has(SHELL))) throw new Error("TTFC Check-in: this version's files were removed during the install; keeping the current version");
     if (!self.registration.active) await self.skipWaiting();
   })());
 });
 
+/** The version a waiting worker runs, asked over a message ("" when it doesn't answer in time). */
+function versionOf(worker, ms = 3000) {
+  return new Promise((resolve) => {
+    let done = false;
+    const ch = new MessageChannel();
+    const finish = (v) => { if (done) return; done = true; clearTimeout(timer); try { ch.port1.close(); } catch { /* closed */ } resolve(v); };
+    const timer = setTimeout(() => finish(""), ms);
+    ch.port1.onmessage = (e) => finish(String((e.data && e.data.version) || ""));
+    try { worker.postMessage({ type: "VERSION" }, [ch.port2]); } catch { finish(""); }
+  });
+}
+
+/**
+ * Every desk cache but this version's (and a waiting version's, installed whole) goes: an older version's after an
+ * update, and what an install cut off half way left behind. Never while another version is installing (its cache
+ * isn't finished yet), and nothing when a waiting version doesn't say which it is.
+ */
+async function tidy() {
+  const reg = self.registration;
+  if (reg.installing) return;
+  const keep = new Set([SHELL]);
+  if (reg.waiting) {
+    const v = await versionOf(reg.waiting);
+    if (!v) return;
+    keep.add(`ttfc-desk-shell-${v}`);
+  }
+  if (reg.installing) return;
+  const names = await caches.keys();
+  await Promise.all(names.filter((n) => n.startsWith("ttfc-desk-shell-") && !keep.has(n)).map((n) => caches.delete(n)));
+}
+
 // The new version takes over: the older versions' caches go (each version only ever reads its own).
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    const names = await caches.keys();
-    await Promise.all(names.filter((n) => n.startsWith("ttfc-desk-shell-") && n !== SHELL).map((n) => caches.delete(n)));
+    await tidy().catch(() => {});
     await self.clients.claim();
   })());
 });
@@ -82,6 +119,8 @@ self.addEventListener("fetch", (event) => {
   if (req.mode === "navigate") {
     if (!url.pathname.startsWith(SCOPE.replace(/\/$/, ""))) return;
     event.respondWith(shell(req));
+    // The app opened: anything an install cut off half way left behind goes now, not at the next update.
+    event.waitUntil(tidy().catch(() => {}));
     return;
   }
   if (url.pathname.startsWith("/assets/") || url.pathname.startsWith(`${SCOPE}icons/`) || url.pathname === `${SCOPE}manifest.webmanifest`) {

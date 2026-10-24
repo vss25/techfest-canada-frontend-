@@ -39,22 +39,39 @@ function device() {
     async delete(n) { return store.delete(n); },
     async match(req) { for (const m of store.values()) { const e = m.get(keyOf(req)); if (e) return toRes(e); } return undefined; },
   };
-  const net = { files: new Map(), down: new Set(), offline: false, fetched: [] };
+  const net = { files: new Map(), down: new Set(), offline: false, fetched: [], gate: new Map() };
   const fetch = async (req) => {
     const path = keyOf(req);
     net.fetched.push(path);
+    if (net.gate.has(path)) await net.gate.get(path);
     if (net.offline || net.down.has(path)) throw new TypeError("Failed to fetch");
     const f = net.files.get(path);
     return f ? new Response(f, { status: 200, headers: { "Content-Type": path.endsWith(".js") ? "text/javascript" : "text/html" } }) : new Response("", { status: 404 });
   };
-  /** Load one version of the worker. → { install(), activate(), open(path), get(path) } */
+  /**
+   * Load one version of the worker. → { install(), activate(), open(path), get(path), registration }. `registration`:
+   * its registration as the worker sees it ({ active, waiting, installing }; a test sets waiting / installing).
+   */
   function worker(code) {
     const on = {};
-    const self = { addEventListener: (t, fn) => { on[t] = fn; }, registration: { active: null }, skipWaiting: async () => {}, clients: { claim: async () => {} }, location: { origin: ORIGIN } };
+    const registration = { active: null, waiting: null, installing: null };
+    const self = { addEventListener: (t, fn) => { on[t] = fn; }, registration, skipWaiting: async () => {}, clients: { claim: async () => {} }, location: { origin: ORIGIN } };
     class R extends Request { constructor(u, o) { super(new URL(typeof u === "string" ? u : u.url, ORIGIN), o); } }
-    vm.runInContext(code, vm.createContext({ self, caches, fetch, Request: R, Response, URL, setTimeout, clearTimeout, Promise, Error, TypeError, Set, Map, JSON, String }));
-    const run = async (type, extra = {}) => { let p; on[type]({ ...extra, waitUntil: (x) => { p = x; }, respondWith: (x) => { p = x; } }); return p; };
+    vm.runInContext(code, vm.createContext({ self, caches, fetch, Request: R, Response, URL, setTimeout, clearTimeout, Promise, Error, TypeError, Set, Map, JSON, String, MessageChannel }));
+    // The event's own promise (respondWith's answer for a fetch), once everything it waits for (waitUntil) is done.
+    const run = async (type, extra = {}) => {
+      let answer;
+      const waits = [];
+      on[type]({ ...extra, waitUntil: (x) => { waits.push(x); }, respondWith: (x) => { answer = x; } });
+      if (answer === undefined) return Promise.all(waits).then(() => undefined);
+      const res = await answer;
+      await Promise.all(waits);
+      return res;
+    };
     return {
+      registration,
+      /** Another worker (or the page) messaging this one, as on a ServiceWorker object. */
+      postMessage: (data, ports = []) => { on.message?.({ data, ports }); },
       install: () => run("install"),
       activate: () => run("activate"),
       open: async (path) => (await run("fetch", { request: { method: "GET", url: ORIGIN + path, mode: "navigate" } })).text(),
@@ -183,12 +200,75 @@ test("a change to the page alone installs beside the running version and swaps o
   assert.notEqual(v2, v1);
   const w2 = dev.worker(render(list, v2));
   await w2.install();
+  w1.registration.waiting = w2;
   assert.deepEqual(shellOf(dev).sort(), [`ttfc-desk-shell-${v1}`, `ttfc-desk-shell-${v2}`].sort(), "installed beside it");
   assert.equal(await w1.open(SCOPE), p1, "the running version is untouched while the new one installs");
+  assert.deepEqual(shellOf(dev).sort(), [`ttfc-desk-shell-${v1}`, `ttfc-desk-shell-${v2}`].sort(), "opening the app keeps the waiting version's cache");
   await w2.activate();
   assert.deepEqual(shellOf(dev), [`ttfc-desk-shell-${v2}`]);
   dev.net.offline = true;
   assert.equal(await w2.open(SCOPE), p2, "the new page");
+});
+
+test("an install cut off half way: opening the app removes what it left, never the active or a waiting version's, never while one installs", async () => {
+  const dev = device();
+  const ok = (v) => { dev.net.files.set(SCOPE, page(`/assets/desk-${v}.js`)); dev.net.files.set(`/assets/desk-${v}.js`, `/* ${v} */`); return dev.worker(render([SCOPE, `/assets/desk-${v}.js`], v)); };
+  const v1 = ok("v1");
+  await v1.install();
+  await v1.activate();
+  v1.registration.active = v1;
+  // v2's install was cut off (the iPad turned off mid-download): its cleanup never ran, a partial cache stays.
+  const partial = (v) => dev.store.set(`ttfc-desk-shell-${v}`, new Map([[SCOPE, { body: page(`/assets/desk-${v}.js`), status: 200, type: "text/html" }]]));
+  partial("v2");
+  assert.deepEqual(shellOf(dev).sort(), ["ttfc-desk-shell-v1", "ttfc-desk-shell-v2"]);
+  dev.net.files.set(SCOPE, page("/assets/desk-v1.js"));
+  assert.match(await v1.open(SCOPE), /desk-v1\.js/, "the app opens on its own version");
+  assert.deepEqual(shellOf(dev), ["ttfc-desk-shell-v1"], "the partial cache is gone on the next open, not at the next update");
+  assert.equal(dev.store.get("ttfc-desk-shell-v1").size, 2, "the active version's cache is whole");
+
+  // A version installed whole and waiting (a station is running): its cache stays; another cut-off try's goes.
+  const v3 = ok("v3");
+  await v3.install();
+  v1.registration.waiting = v3;
+  partial("v4");
+  await v1.open(SCOPE);
+  assert.deepEqual(shellOf(dev).sort(), ["ttfc-desk-shell-v1", "ttfc-desk-shell-v3"], "the waiting version's cache stays");
+  // A waiting version that can't say which it is: nothing goes.
+  partial("v5");
+  v1.registration.waiting = { postMessage() { throw new Error("gone"); } };
+  await v1.open(SCOPE);
+  assert.ok(dev.store.has("ttfc-desk-shell-v5"), "kept while unsure");
+  // Another version installing right now: nothing goes (its cache isn't finished).
+  v1.registration.waiting = v3;
+  v1.registration.installing = {};
+  await v1.open(SCOPE);
+  assert.ok(dev.store.has("ttfc-desk-shell-v5"), "kept while one installs");
+  v1.registration.installing = null;
+  await v1.open(SCOPE);
+  assert.deepEqual(shellOf(dev).sort(), ["ttfc-desk-shell-v1", "ttfc-desk-shell-v3"]);
+  // The waiting version takes over: on activate, everything but its own goes.
+  partial("v6");
+  v3.registration.active = v3;
+  await v3.activate();
+  assert.deepEqual(shellOf(dev), ["ttfc-desk-shell-v3"]);
+});
+
+test("an install whose cache is removed while it downloads (a tidy that began first) doesn't install; the next try does", async () => {
+  const dev = device();
+  dev.net.files.set(SCOPE, page("/assets/desk-v2.js"));
+  dev.net.files.set("/assets/desk-v2.js", "/* v2 */");
+  let release;
+  dev.net.gate.set("/assets/desk-v2.js", new Promise((r) => { release = r; }));
+  const w = dev.worker(render([SCOPE, "/assets/desk-v2.js"], "v2"));
+  const installing = w.install();
+  await new Promise((r) => setTimeout(r, 10));
+  await dev.store.delete("ttfc-desk-shell-v2");
+  release();
+  await assert.rejects(installing, /removed during the install/);
+  dev.net.gate.clear();
+  const again = dev.worker(render([SCOPE, "/assets/desk-v2.js"], "v2"));
+  await again.install();
+  assert.equal(dev.store.get("ttfc-desk-shell-v2").size, 2, "installed whole");
 });
 
 const BUILT = new URL(`dist${SCOPE}sw.js`, ROOT);

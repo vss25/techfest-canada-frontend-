@@ -10,7 +10,8 @@
      speaker  Speaker Pass, or the speaker type on another pass
                                   red        #D01F2F  "Speaker Pass" / "Speaker · Power Pass"
      connect  Connect Pass        green      #12B886
-     influence Influence Pass     blue       #2563EB
+     influence Influence Pass     pink       #F472B6  (Oct 23: not blue, so it can't be
+                                  mistaken for Media's dark blue; dark text)
      power    Power Pass (and "All Access") orange #F59F0B
      apex     Apex Pass           violet     #8B3FD9
      other    any other pass type the data still has (shown "Other: …",
@@ -31,7 +32,7 @@ export const GROUP_COLORS = Object.freeze({
   media: Object.freeze({ bg: "#0B3D91", text: "#FFFFFF", label: "Media" }),
   speaker: Object.freeze({ bg: "#D01F2F", text: "#FFFFFF", label: "Speaker" }),
   connect: Object.freeze({ bg: "#12B886", text: "#04261A", label: "Connect" }),
-  influence: Object.freeze({ bg: "#2563EB", text: "#FFFFFF", label: "Influence" }),
+  influence: Object.freeze({ bg: "#F472B6", text: "#3B0A24", label: "Influence" }),
   power: Object.freeze({ bg: "#F59F0B", text: "#2B1700", label: "Power" }),
   apex: Object.freeze({ bg: "#8B3FD9", text: "#FFFFFF", label: "Apex" }),
   other: Object.freeze({ bg: "#6B7280", text: "#FFFFFF", label: "Other" }),

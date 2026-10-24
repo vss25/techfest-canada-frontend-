@@ -7,7 +7,8 @@
    working; nothing offers to add it to the Home Screen any more.
    Used by StoreBadges (the badges): /app/install, the web app's
    Home card and desktop page, the website's homepage section,
-   footer, /swag and the "Get the TTFC app" prompts.
+   footer, /swag and the web app's "Get the TTFC app" sheet
+   (src/app/lib/storePrompt.js: one store, this device's own).
    Kept tiny: no imports. Pure: node --test src/lib/appStores.test.mjs.
 ========================================================= */
 

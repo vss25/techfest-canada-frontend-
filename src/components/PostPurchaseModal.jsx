@@ -3,10 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import StoreBadges from "./StoreBadges";
 import { storeNames } from "../lib/appStores";
 import { detectOS } from "../lib/pwaPlatform";
+import { isNativeVisit } from "../lib/nativeVisit";
 
 export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Delegate Pass", userName = "" }) {
   const [isDark, setIsDark] = useState(true);
   const [step, setStep] = useState(0); // 0 = confetti anim, 1 = main card
+  // Bought from the iPhone or Android app's link (?source=ios …, lib/nativeVisit.js): they have the app already.
+  const [fromStoreApp] = useState(() => isNativeVisit());
 
   useEffect(() => {
     setIsDark(document.body.classList.contains("dark-mode"));
@@ -195,11 +198,13 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
                   ))}
                 </div>
 
-                {/* Get the TTFC app (Oct 22 2026: live on the App Store and Google Play) */}
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} style={{ marginBottom: 24 }}>
-                  <div style={{ fontSize: "0.72rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", color: muted, marginBottom: 10 }}>Get the TTFC app</div>
-                  <StoreBadges where="post_purchase" size="sm" />
-                </motion.div>
+                {/* Get the TTFC app (Oct 22 2026: live on the App Store and Google Play); not for visitors from the store apps */}
+                {!fromStoreApp && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: "0.72rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", color: muted, marginBottom: 10 }}>Get the TTFC app</div>
+                    <StoreBadges where="post_purchase" size="sm" />
+                  </motion.div>
+                )}
 
                 {/* CTAs */}
                 <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>

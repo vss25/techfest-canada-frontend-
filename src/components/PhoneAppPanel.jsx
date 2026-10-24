@@ -8,9 +8,10 @@ import { phoneAppUrl } from "../lib/appStores";
    and Google Play badges, and a QR code to /app/install on the
    phone, which puts that phone's own store first (Oct 22 2026:
    the store apps, never the web app's Home Screen install).
-   Shown by the 5-second prompt (InstallAppPrompt), the menu's
-   "Get the TTFC app" card on a computer (Navbar) and the
-   homepage's "Get the TTFC app" section (GetAppSection).
+   Shown by the menu's "Get the TTFC app" card on a computer
+   (Navbar) and the homepage's "Get the TTFC app" section
+   (GetAppSection). The website's 5-second pop-up is gone (Oct 24
+   2026); the web app has its own (src/app/components/StorePrompt.jsx).
    `actions` = [{ label, onClick }] under the panel; Escape and
    the backdrop call onDismiss.
 ========================================================= */

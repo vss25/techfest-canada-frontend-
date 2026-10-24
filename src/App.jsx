@@ -50,18 +50,18 @@ const FactSheet = lazy(() => import("./pages/FactSheet"));
 import { FACT_SHEET_PATH, isFactSheetPath } from "./lib/factSheetRoute";
 import CookieConsent from "./components/CookieConsent";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
-import { isStandalone } from "./lib/pwaPlatform";
 
 // The staff panel is loaded only when someone opens it.
 const Admin = lazy(() => import("./pages/Admin"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
-// "Get the TTFC app" prompt: the App Store / Google Play badges on phones and tablets, plus a QR code to the
-// phone on computers. Not inside the installed web app; loaded on its own.
-const InstallAppPrompt = lazy(() => import("./components/InstallAppPrompt"));
-const SHOW_INSTALL_PROMPT = typeof window !== "undefined" && !isStandalone();
+/* No "Get the TTFC app" pop-up on the website any more (Oct 24 2026). The iPhone and Android apps open our pages in
+   the phone's browser, so it told people who already have the app to download it (the organiser: it "should only
+   be for people who are using web apps"). The web app has its own, with this device's store only
+   (src/app/components/StorePrompt.jsx). The footer's badges stay; the homepage section and the menu card too, except
+   for visitors who came from the store apps (?source=ios …, src/lib/nativeVisit.js, noted in main.jsx). */
 
 /* The jury portal (/awards/jury-admin) is a focused tool for the Catalyst Awards jury, and the unlisted fact sheet
-   a one-page document: no ticket bar, announcement, cookie banner or app prompt on them. The router matches paths
+   a one-page document: no ticket bar, announcement or cookie banner on them. The router matches paths
    ignoring case, except the fact sheet's: only its exact link opens it (any other spelling is an unknown page). */
 const isJuryPath = (p) => /^\/awards\/jury-admin(\/|$)/i.test(p);
 function OffJury({ children }) {
@@ -171,7 +171,6 @@ function App() {
       </Routes>
       <OffJury><TicketBar /></OffJury>
       <OffJury><CookieConsent /></OffJury>
-      {SHOW_INSTALL_PROMPT && <OffJury><Suspense fallback={null}><InstallAppPrompt /></Suspense></OffJury>}
     </BrowserRouter>
   );
 }

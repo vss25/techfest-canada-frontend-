@@ -256,9 +256,16 @@ p.ci-update { display: flex; align-items: center; padding: 8px 14px; line-height
 .ci-tabs button { flex: 1 0 auto; min-height: 48px; border-radius: 12px; border: 1px solid var(--line2); background: transparent; font-weight: 700; padding: 0 14px; }
 .ci-tabs .is-on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .ci-tabs-small button { flex: 0 0 auto; min-height: 42px; }
-/* 320 px phones: the pass desk's two tabs share the width instead of sticking out. */
+/* 320 px phones: the pass desk's and media desk's tabs share the width instead of sticking out (not the meal stations'
+   four tabs: they go two by two, below). */
 @media (max-width: 360px) {
-  .ci-tabs button { flex: 1 1 0; min-width: 0; padding: 0 8px; font-size: 14px; }
+  .ci-tabs:not(.ci-tabs-small) button { flex: 1 1 0; min-width: 0; padding: 0 8px; font-size: 14px; }
+}
+/* Phones up to 430 px (iPhone 390 / 430 px, 320 px): the meal stations' four tabs in two rows of two, every word on one
+   line and nothing scrolling sideways. */
+@media (max-width: 430px) {
+  .ci-tabs-small { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
+  .ci-tabs-small button { min-width: 0; padding: 0 8px; white-space: nowrap; }
 }
 
 .ci-two-col { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }

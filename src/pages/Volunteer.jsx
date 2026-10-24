@@ -20,7 +20,6 @@ function CheckIcon() {
 /* ───── data ───── */
 var BENEFITS = [
   "Staff Pass — full access to conference sessions and exhibition floor when not on shift",
-  "Official TTFC 2026 Staff Polo Shirt",
   "Conference Swag Bag",
   "Certificate of Appreciation",
   "Access to all Conference Sessions once your shift is complete",

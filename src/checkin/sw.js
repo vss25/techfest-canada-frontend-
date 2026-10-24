@@ -1,10 +1,11 @@
 /* =========================================================
-   TTFC Check-in service worker (<desk path>sw.js, scope = the desk
-   path). Built by vite.config.js (ttfcDeskPwa): the placeholders become
-   the files the app needs offline, a version hash and the scope.
+   TTFC Check-in service worker (/checkin/sw.js, scope = the desk path,
+   src/checkin/deskPath.js). Built by vite.config.js (ttfcDeskPwa): the
+   placeholders become the files the app needs offline, a version hash
+   and the scope.
    • A version installs whole or not at all: its page, every hashed
      JS/CSS file that page names, icons and manifest go into the
-     version's own cache (ttfc-desk-shell-<version>). If any page or
+     version's own cache (ttfc-checkin-shell-<version>). If any page or
      script doesn't download, the install fails, what it downloaded is
      removed (no partial cache piles up) and the working version stays
      as it was.
@@ -24,15 +25,21 @@
      whenever the app is opened, any desk cache that isn't the active
      version's (or a waiting version's, installed whole) is removed,
      never while another version is installing.
-   Caches start with "ttfc-desk-": the attendee app's worker (/app/sw.js)
-   only ever removes its own "ttfc-app-" caches, and this one only its own.
+   Caches start with "ttfc-checkin-shell-": the attendee app's worker
+   (/app/sw.js) only ever removes its own "ttfc-app-" caches, and this one
+   only its own. Not "ttfc-desk-shell-" (until Oct 24, at the app's
+   earlier address /checkin-<token>/): that worker removed every
+   "ttfc-desk-shell-" cache but its own, and one still installed on a
+   device (until src/checkin/retiredSw.js replaces it) must never remove
+   this one's.
    Tested with the built file: node --test src/checkin/sw.test.mjs
 ========================================================= */
 
 const PRECACHE = self.__DESK_PRECACHE__;
 const VERSION = self.__DESK_VERSION__;
 const SCOPE = self.__DESK_SCOPE__;
-const SHELL = `ttfc-desk-shell-${VERSION}`;
+const PREFIX = "ttfc-checkin-shell-";
+const SHELL = `${PREFIX}${VERSION}`;
 const isScript = (u) => /^\/assets\//.test(u) && /\.(js|css)$/.test(u);
 /** The /assets/ files a page names (scripts, styles, preloads). */
 const assetsIn = (html) => [...String(html).matchAll(/(?:src|href)="(\/assets\/[^"?#]+)"/g)].map((m) => m[1]);
@@ -91,11 +98,11 @@ async function tidy() {
   if (reg.waiting) {
     const v = await versionOf(reg.waiting);
     if (!v) return;
-    keep.add(`ttfc-desk-shell-${v}`);
+    keep.add(`${PREFIX}${v}`);
   }
   if (reg.installing) return;
   const names = await caches.keys();
-  await Promise.all(names.filter((n) => n.startsWith("ttfc-desk-shell-") && !keep.has(n)).map((n) => caches.delete(n)));
+  await Promise.all(names.filter((n) => n.startsWith(PREFIX) && !keep.has(n)).map((n) => caches.delete(n)));
 }
 
 // The new version takes over: the older versions' caches go (each version only ever reads its own).

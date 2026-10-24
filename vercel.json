@@ -59,29 +59,60 @@
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {
-      "source": "/checkin-j0s8e5p4akvh/(.*)",
+      "source": "/checkin/(.*)",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
         { "key": "Referrer-Policy", "value": "no-referrer" }
       ]
     },
     {
-      "source": "/checkin-j0s8e5p4akvh/sw.js",
+      "source": "/checkin/sw.js",
       "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
     },
     {
-      "source": "/checkin-j0s8e5p4akvh/manifest.webmanifest",
+      "source": "/checkin/manifest.webmanifest",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache" },
         { "key": "Content-Type", "value": "application/manifest+json" }
       ]
+    },
+    {
+      "source": "/:variant([Cc][Hh][Ee][Cc][Kk]-?[Ii][Nn]/?)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/checkin-j0s8e5p4akvh",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/checkin-j0s8e5p4akvh/(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/checkin-j0s8e5p4akvh/sw.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
     }
   ],
   "redirects": [
     {
+      "source": "/checkin",
+      "destination": "/checkin/",
+      "permanent": true
+    },
+    {
+      "source": "/:variant((?!checkin/$)[Cc][Hh][Ee][Cc][Kk]-?[Ii][Nn]/?)",
+      "destination": "/checkin/",
+      "permanent": true
+    },
+    {
       "source": "/checkin-j0s8e5p4akvh",
-      "destination": "/checkin-j0s8e5p4akvh/",
-      "permanent": false
+      "destination": "/checkin/",
+      "permanent": true
+    },
+    {
+      "source": "/checkin-j0s8e5p4akvh/:rest((?!sw\\.js$).*)",
+      "destination": "/checkin/",
+      "permanent": true
     },
     {
       "source": "/first-timers",
@@ -103,8 +134,8 @@
       "destination": "/app/index.html"
     },
     {
-      "source": "/checkin-j0s8e5p4akvh/(.*)",
-      "destination": "/checkin-j0s8e5p4akvh/index.html"
+      "source": "/checkin/(.*)",
+      "destination": "/checkin/index.html"
     },
     {
       "source": "/(.*)",

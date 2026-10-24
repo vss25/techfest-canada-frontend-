@@ -4,7 +4,7 @@ import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { DESK_NAME, DESK_PATH } from './src/checkin/deskPath.js'
+import { DESK_NAME, DESK_PATH, RETIRED_DESK_PATHS } from './src/checkin/deskPath.js'
 import { deskSwVersion } from './src/checkin/swVersion.js'
 
 /* =========================================================
@@ -12,10 +12,12 @@ import { deskSwVersion } from './src/checkin/swVersion.js'
    • index.html      → the marketing website (unchanged)
    • app/index.html  → the TTFC attendee app (PWA) at /app/
    • desk/index.html → TTFC Check-in, the guest check-in desk app, served
-                       ONLY at its unlisted path (src/checkin/deskPath.js
-                       DESK_PATH, /checkin-<token>/): ttfcDeskPwa below
-                       moves the page there, writes its manifest, icons and
-                       service worker next to it; /desk/ itself is never
+                       ONLY at its (unlisted) path /checkin/
+                       (src/checkin/deskPath.js DESK_PATH): ttfcDeskPwa
+                       below moves the page there, writes its manifest,
+                       icons and service worker next to it, and a small
+                       worker at each earlier address (RETIRED_DESK_PATHS)
+                       that sends devices there; /desk/ itself is never
                        published
    The app has its own HTML so only /app advertises the
    manifest, Apple home-screen tags and theme colour, and the
@@ -108,11 +110,13 @@ function ttfcAppPwa() {
 }
 
 /**
- * TTFC Check-in: its own installable app at DESK_PATH (own name, icons, scope and service worker, so it installs on
- * its own next to the attendee app). The page is built from desk/index.html and published at DESK_PATH/index.html
- * (the token is only in src/checkin/deskPath.js and vercel.json). Next to it: manifest.webmanifest, icons/*.png (from
- * src/checkin/icons) and sw.js (src/checkin/sw.js with the files the app needs offline, from the desk entry's
- * chunk graph). Dev / preview: the same paths are served by the middleware below.
+ * TTFC Check-in: its own installable app at DESK_PATH, /checkin/ (own name, icons, scope and service worker, so it
+ * installs on its own next to the attendee app). The page is built from desk/index.html and published at
+ * DESK_PATH/index.html. Next to it: manifest.webmanifest, icons/*.png (from src/checkin/icons) and sw.js
+ * (src/checkin/sw.js with the files the app needs offline, from the desk entry's chunk graph). At each earlier
+ * address (RETIRED_DESK_PATHS, e.g. /checkin-<token>/): only sw.js, src/checkin/retiredSw.js, which replaces the
+ * worker a device installed there and sends that address to DESK_PATH (vercel.json redirects the rest). Dev /
+ * preview: the same paths (and vercel.json's redirects to DESK_PATH) are served by the middleware below.
  */
 function ttfcDeskPwa() {
   const base = DESK_PATH
@@ -146,6 +150,12 @@ function ttfcDeskPwa() {
     .replace('self.__DESK_PRECACHE__', JSON.stringify(files))
     .replace('self.__DESK_VERSION__', JSON.stringify(version))
     .replace('self.__DESK_SCOPE__', JSON.stringify(base))
+  const retiredTemplate = () => readFileSync(new URL('./src/checkin/retiredSw.js', import.meta.url), 'utf8')
+  const retired = () => retiredTemplate().replace('self.__DESK_TARGET__', JSON.stringify(base))
+  // vercel.json's redirects to DESK_PATH: /checkin, /check-in, any capitalisation, with or without the slash (not
+  // /checkin/ itself), and everything under an earlier address but its sw.js.
+  const typed = (path) => /^\/check-?in\/?$/i.test(path) && path !== base
+  const retiredOf = (path) => RETIRED_DESK_PATHS.find((p) => path === p.slice(0, -1) || path.startsWith(p))
   const send = (res, type, body, cache = 'no-cache') => {
     res.setHeader('Content-Type', type)
     res.setHeader('Cache-Control', cache)
@@ -157,7 +167,9 @@ function ttfcDeskPwa() {
     const url = req.url || ''
     const path = url.split('?')[0]
     const query = url.includes('?') ? url.slice(url.indexOf('?')) : ''
-    if (path === base.slice(0, -1)) { res.statusCode = 301; res.setHeader('Location', base + query); res.end(); return }
+    const old = retiredOf(path)
+    if (old && path === `${old}sw.js`) return send(res, 'text/javascript', retired())
+    if (typed(path) || old) { res.statusCode = 308; res.setHeader('Location', base + query); res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive'); res.end(); return }
     if (/^\/desk(\/|$)/.test(path)) { res.statusCode = 404; res.end('Not found'); return }
     if (!path.startsWith(base)) return next()
     const rest = path.slice(base.length)
@@ -201,6 +213,7 @@ function ttfcDeskPwa() {
       // the manifest, the icons (src/checkin/swVersion.js).
       const version = deskSwVersion({ files: list, page: html.source, template: template(), manifest: manifest(), icons: ICONS.map(icon) })
       this.emitFile({ type: 'asset', fileName: `${dir}sw.js`, source: render(list, version) })
+      for (const old of RETIRED_DESK_PATHS) this.emitFile({ type: 'asset', fileName: `${old.slice(1)}sw.js`, source: retired() })
     },
   }
 }

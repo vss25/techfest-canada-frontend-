@@ -11,11 +11,11 @@ const DESK_NAME = "TTFC Check-in";
 /* =========================================================
    Admin › Event day › Check-in: the "Check-in desk app" card and the
    desk's settings (Oct 23 2026). Staff only (this panel).
-   • The app's unlisted link and a QR code to open it on each iPad or
-     phone, and how to install it (optional: a browser tab works the
-     same) and how volunteers get a login. The link comes from the
-     server at runtime (GET /api/checkin/desk/info, staff only, password
-     sign-in), so its token is in no public website file.
+   • The app's link (/checkin/: unlisted, the public website never
+     links to it) and a QR code to open it on each iPad or phone, and
+     how to install it (optional: a browser tab works the same) and how
+     volunteers get a login. The link comes from the server at runtime
+     (GET /api/checkin/desk/info, staff only, password sign-in).
    • Desk settings: when each station is open, per day. The CxO
      Breakfast, Lunch and the evening entry follow the live agenda (the
      website's /agenda) with doors opening `before` minutes earlier and

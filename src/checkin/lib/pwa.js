@@ -1,6 +1,7 @@
 import { DESK_PATH } from "../deskPath.js";
 import { createUpdateController } from "./updatePolicy.js";
 import { RESUME_KEY } from "./device.js";
+import { retireOldWorkers } from "./retired.js";
 
 /* =========================================================
    TTFC Check-in: its own service worker (<DESK_PATH>sw.js, scope
@@ -16,6 +17,9 @@ import { RESUME_KEY } from "./device.js";
    tap to reload", and after that tap the station opens on its Start
    screen, so one more tap turns the chime back on. Applied by itself
    on the Start screen, it comes back on that Start screen too.
+   A device that had the app at an earlier address (/checkin-<token>/,
+   until Oct 24) gets that address's worker replaced as well
+   (lib/retired.js), so its old icon or bookmark opens this address.
 ========================================================= */
 
 const listeners = new Set();
@@ -62,5 +66,6 @@ export function registerDeskWorker() {
     r.update().catch(() => {});
     setInterval(() => { if (document.visibilityState === "visible") r.update().catch(() => {}); }, 10 * 60 * 1000);
   }).catch(() => { /* private mode: works online */ });
+  retireOldWorkers();
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg?.update().catch(() => {}); });
 }

@@ -51,7 +51,7 @@ test("calm screens only: Home and the main tabs, never sign-in, forms, chats, li
   for (const p of ["/app/login", "/app/stay-updated", "/app/profile/edit", "/app/profile/availability", "/app/profile/pass",
     "/app/chat/u1", "/app/group/g1", "/app/discussion/d1", "/app/session/s1", "/app/session/s1/live", "/app/install",
     "/app/legal/privacy", "/app/staff/sos", "/app/post/p1", "/app/points",
-    "/checkin-j0s8e5p4akvh/", "/checkin-j0s8e5p4akvh/app/", "/", "/stay-updated", "/tickets/checkout", "/rsvp", "/application", "", undefined]) {
+    "/checkin/", "/checkin/app/", "/checkin", "/", "/stay-updated", "/tickets/checkout", "/rsvp", "/application", "", undefined]) {
     assert.equal(calmScreen(p), false, String(p));
   }
 });
@@ -80,7 +80,7 @@ test("when it may open, and every reason it doesn't", () => {
   assert.equal(promptBlocker({ ...OK, mode: undefined }), "signed-out");
   assert.equal(promptBlocker({ ...OK, pathname: "/app/stay-updated" }), "screen");
   assert.equal(promptBlocker({ ...OK, pathname: "/app/login" }), "screen");
-  assert.equal(promptBlocker({ ...OK, pathname: "/checkin-j0s8e5p4akvh/" }), "screen");
+  assert.equal(promptBlocker({ ...OK, pathname: "/checkin/" }), "screen");
   assert.equal(promptBlocker(), "switch-off");
   assert.equal(SNOOZE_MS, 7 * 24 * 3600 * 1000);
 });

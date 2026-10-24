@@ -2,7 +2,7 @@
    TTFC Check-in: the service worker's version (build time only:
    vite.config.js ttfcDeskPwa and src/checkin/sw.test.mjs; never in the
    app's own JS).
-   The version names the worker's cache (ttfc-desk-shell-<version>) and
+   The version names the worker's cache (ttfc-checkin-shell-<version>) and
    is written into sw.js, so it must change whenever anything an
    installed device gets from the worker changes:
    • the files it precaches (hashed JS/CSS names),

@@ -15,7 +15,7 @@
    screen (Home, the Schedule, Network, Chats, the Profile tab),
    never on sign-in, forms (Stay updated, Edit profile…), a chat,
    live polls, install / legal pages or the check-in desk app
-   (/checkin-…), and never while a sheet is open or someone is
+   (/checkin/), and never while a sheet is open or someone is
    typing (components/StorePrompt.jsx checks those two).
    Staff switch: App text & switches › Feature switches ›
    "Prompt web app users to get the store app" (flag.pwaPrompt;
@@ -48,7 +48,7 @@ const CALM = [/^\/$/, /^\/schedule$/, /^\/network(\/[^/]+)?$/, /^\/chats(\/[^/]+
 
 /**
  * A calm screen for the sheet. `pathname` is the page's full path (location.pathname): only /app/… counts, so the
- * website, the check-in desk app (/checkin-…) and anything else never do.
+ * website, the check-in desk app (/checkin/) and anything else never do.
  */
 export function calmScreen(pathname) {
   const p = String(pathname ?? "");

@@ -1,17 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { countsVersion, fetchCounts, useDesk } from "../lib/desk.js";
 import { OVERALL_LABEL, attendanceView } from "../lib/attendance.js";
+import { createCountsRefresher } from "../lib/countsRefresh.js";
 import { timeText } from "../lib/timers.js";
 import { Sheet } from "../components.jsx";
 
 /* STAFF: Counts (contract C10: "the ability to count the check-ins for breakfast, lunch, dinner and over each day").
    The server's attendance by day (GET /api/checkin/desk/counts, staff only; the same numbers and words as Admin ›
    RSVPs & meals › Event summary): both days together (each person once), arrived, checked in, each meal's admitted /
-   entitled with RSVP'd, % of RSVP'd, no-shows and overrides, by pass type, ISSUE PASS and NO DETAILS FOUND. Read again shortly after each tap anywhere
-   (a live event), and every 30 s while open. Volunteers never see it (the menu has no entry; the server says no). */
+   entitled with RSVP'd, % of RSVP'd, no-shows and overrides, by pass type, ISSUE PASS and NO DETAILS FOUND. Read again
+   once a burst of taps anywhere settles (live events), every 30 s while open, and on the button, never more than once
+   every 3 s on this device; "Too many requests" keeps the last numbers with "updating…" and retries quietly
+   (lib/countsRefresh.js). Volunteers never see it (the menu has no entry; the server says no). */
 
 const EVERY_MS = 30 * 1000;
-const AFTER_EVENT_MS = 1500;
 
 export default function Counts({ onClose }) {
   const d = useDesk();
@@ -19,34 +21,29 @@ export default function Counts({ onClose }) {
   const [att, setAtt] = useState(null);
   const [at, setAt] = useState(null);
   const [error, setError] = useState("");
-  const busy = useRef(false);
-  const soon = useRef(null);
-  const read = useCallback(async () => {
-    if (busy.current) return;
-    busy.current = true;
-    try {
-      const r = await fetchCounts();
-      setAtt(r?.attendance || (Array.isArray(r?.days) ? r : null));
-      setAt(new Date().toISOString());
-      setError("");
-    } catch (err) {
-      setError(err.status === 404 ? "The server doesn't have the counts yet." : err.message || "Couldn't read the counts.");
-    } finally { busy.current = false; }
-  }, []);
+  const [updating, setUpdating] = useState(false);
+  const reader = useRef(null);
   useEffect(() => {
     if (!staff) return undefined;
-    read();
-    const t = setInterval(() => { if (document.visibilityState === "visible") read(); }, EVERY_MS);
-    return () => { clearInterval(t); clearTimeout(soon.current); };
-  }, [staff, read]);
-  // A tap anywhere (a live mark / undo / reset / NO DETAILS FOUND event): read again shortly, once for a burst of them.
+    const r = createCountsRefresher({
+      read: fetchCounts,
+      onData: (x) => { setAtt(x?.attendance || (Array.isArray(x?.days) ? x : null)); setAt(new Date().toISOString()); },
+      onError: (err) => setError(!err ? "" : err.status === 404 ? "The server doesn't have the counts yet." : err.message || "Couldn't read the counts."),
+      onBusy: setUpdating,
+    });
+    reader.current = r;
+    r.request();
+    const t = setInterval(() => { if (document.visibilityState === "visible") r.request(); }, EVERY_MS);
+    return () => { clearInterval(t); r.stop(); reader.current = null; };
+  }, [staff]);
+  // A tap anywhere (a live mark / undo / reset / NO DETAILS FOUND event): read again once they settle.
   const cv = countsVersion();
   const seenCv = useRef(cv);
   useEffect(() => {
-    if (!staff || cv === seenCv.current || soon.current) return;
+    if (!staff || cv === seenCv.current) return;
     seenCv.current = cv;
-    soon.current = setTimeout(() => { soon.current = null; read(); }, AFTER_EVENT_MS);
-  }, [cv, staff, read]);
+    reader.current?.event();
+  }, [cv, staff]);
   if (!staff) return null;
   const v = attendanceView(att);
   const todayKey = d.state?.today?.eventDay || "";
@@ -55,6 +52,7 @@ export default function Counts({ onClose }) {
       <p className="ci-small ci-muted">
         Each person once per point per day (practice taps never count). Admitted / entitled, then RSVP’d, % of RSVP’d, no-shows and
         overrides. {at ? `As of ${timeText(at)}; updates as taps come in.` : "Loading…"}
+        {updating && <span className="ci-counts-updating" role="status"> Updating…</span>}
       </p>
       {error && <p className="ci-error" role="alert">{error}</p>}
       {v.overall && <p className="ci-counts-overall"><b>{OVERALL_LABEL}:</b> {v.overall.text}</p>}
@@ -92,7 +90,7 @@ export default function Counts({ onClose }) {
           </div>
         </div>
       ))}
-      <p className="ci-center"><button type="button" className="ci-btn ci-btn-ghost" onClick={read}>Read the counts again</button></p>
+      <p className="ci-center"><button type="button" className="ci-btn ci-btn-ghost" onClick={() => reader.current?.request()}>Read the counts again</button></p>
     </Sheet>
   );
 }

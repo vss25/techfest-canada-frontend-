@@ -2,20 +2,29 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { PUBLIC_API } from "../hooks/useSiteSettings";
-import { INTERESTS, checkForm, joinWaitlist } from "../lib/stayUpdated";
+import { INTERESTS, OPTIONAL, checkForm, fillEmpty, firstProblem, joinWaitlist, prefillFrom } from "../lib/stayUpdated";
 
 /* =========================================================
    The TTFC 2027 waitlist form (Oct 23 2026), one copy for the
    website: /stay-updated (src/pages/StayUpdated.jsx) and the
    "Stay updated for TTFC 2027" section at the bottom of
-   /programme (src/pages/Programme.jsx, Oct 24 2026). Email +
-   phone (both required), the three interest ticks, the consent
+   /programme (src/pages/Programme.jsx, Oct 24 2026). Name and
+   company (Oct 24 2026), email and phone: only the email is
+   required (the organiser, Oct 24 2026: "Please only keep email
+   mandatory in the stay updated form."), the others say
+   "(optional)" and are checked only when filled in; the
+   three interest ticks, the consent
    line with the Privacy Policy link and the honeypot; it posts
    to POST {API}/stay-updated with `source` and the server's
    thank-you replaces it. Every word is a stay.* key (`copy` =
    stayFrom(useSiteSettings()), src/lib/stayUpdated.js), edited
    in Admin › Sales & emails › 2027 waitlist › Wording.
    The web app has its own screen (src/app/screens/StayUpdated.jsx).
+   Someone signed in on the website (its "token" in localStorage,
+   the same sign-in as the Navbar's) starts with their account's
+   name, organisation, email and phone (GET /api/auth/me,
+   prefillFrom in src/lib/stayUpdated.js); only empty fields are
+   filled and everything stays editable. Everyone else: empty.
 
    Its look is the "su-" classes below, coloured by the page's
    --su-* variables (--su-text, --su-mid, --su-dim, --su-line,
@@ -35,16 +44,19 @@ export const WAITLIST_FORM_CSS = `
   .su-fs { border: 0; margin: 0; padding: 0; min-width: 0; }
   .su-form { margin-top: 22px; }
   .su-bar { display: grid; gap: 16px 14px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start;
-    grid-template-areas: "email phone" "ticks ticks" "consent btn"; }
-  .su-bar.has-err { grid-template-areas: "email phone" "ticks ticks" "err err" "consent btn"; }
-  .su-bar > .su-field:nth-child(1) { grid-area: email; }
-  .su-bar > .su-field:nth-child(2) { grid-area: phone; }
+    grid-template-areas: "name company" "email phone" "ticks ticks" "consent btn"; }
+  .su-bar.has-err { grid-template-areas: "name company" "email phone" "ticks ticks" "err err" "consent btn"; }
+  .su-bar > .su-f-name { grid-area: name; }
+  .su-bar > .su-f-company { grid-area: company; }
+  .su-bar > .su-f-email { grid-area: email; }
+  .su-bar > .su-f-phone { grid-area: phone; }
   .su-bar > .su-ticks { grid-area: ticks; }
   .su-bar > .su-form-err { grid-area: err; }
   .su-bar > .su-consent { grid-area: consent; align-self: center; }
   .su-bar > .su-btn { grid-area: btn; align-self: center; justify-self: end; min-width: 240px; }
   .su-field { display: grid; gap: 6px; min-width: 0; }
   .su-label { font-size: 14px; font-weight: 700; color: var(--su-text); padding: 0; }
+  .su-opt { font-weight: 500; color: var(--su-dim); }
   .su-input { width: 100%; box-sizing: border-box; min-height: 52px; padding: 0 16px; border-radius: 14px; border: 1.5px solid var(--su-line);
     background: var(--su-input); color: var(--su-text); font-size: 16px; font-family: inherit; }
   .su-input::placeholder { color: var(--su-dim); }
@@ -66,8 +78,8 @@ export const WAITLIST_FORM_CSS = `
   .su-ghost { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 6px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--su-line);
     color: var(--su-text); font-weight: 600; text-decoration: none; }
   @media (max-width: 760px) {
-    .su-bar { grid-template-columns: 1fr; grid-template-areas: "email" "phone" "ticks" "consent" "btn"; }
-    .su-bar.has-err { grid-template-areas: "email" "phone" "ticks" "err" "consent" "btn"; }
+    .su-bar { grid-template-columns: 1fr; grid-template-areas: "name" "company" "email" "phone" "ticks" "consent" "btn"; }
+    .su-bar.has-err { grid-template-areas: "name" "company" "email" "phone" "ticks" "err" "consent" "btn"; }
     .su-bar > .su-btn { width: 100%; min-width: 0; justify-self: stretch; margin-top: 4px; }
     .su-tick { flex: 1 1 100%; }
   }
@@ -78,38 +90,55 @@ export const WAITLIST_FORM_CSS = `
 export default function WaitlistForm({ copy, source }) {
   const uid = useId();
   const id = (k) => `${uid}-${k}`;
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [values, setValues] = useState({ name: "", company: "", email: "", phone: "" });
   const [ticks, setTicks] = useState([]);
   const [hp, setHp] = useState("");
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState("");
-  const emailRef = useRef(null);
-  const phoneRef = useRef(null);
+  const refs = { name: useRef(null), company: useRef(null), email: useRef(null), phone: useRef(null) };
   const thanksRef = useRef(null);
 
   useEffect(() => { if (done) thanksRef.current?.focus(); }, [done]);
+
+  // Signed in on the website: start from the account (only the fields still empty).
+  useEffect(() => {
+    let live = true;
+    let token = "";
+    try { token = localStorage.getItem("token") || ""; } catch { token = ""; }
+    if (!token) return undefined;
+    import("../utils/api")
+      .then(({ fetchMe }) => fetchMe())
+      .then((user) => { if (live && user) setValues((v) => fillEmpty(v, prefillFrom(user))); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, []);
+
+  const set = (k) => (e) => {
+    const v = e.target.value;
+    setValues((x) => ({ ...x, [k]: v }));
+    if (errors[k]) setErrors((x) => ({ ...x, [k]: "" }));
+  };
 
   const toggle = (k) => setTicks((t) => (t.includes(k) ? t.filter((x) => x !== k) : [...t, k]));
 
   const submit = async (e) => {
     e.preventDefault();
     if (sending) return;
-    const found = checkForm({ email, phone });
+    const found = checkForm(values);
     setErrors(found);
     setFormError("");
-    if (found.email) { emailRef.current?.focus(); return; }
-    if (found.phone) { phoneRef.current?.focus(); return; }
+    const first = firstProblem(found);
+    if (first) { refs[first].current?.focus(); return; }
     setSending(true);
     try {
-      const r = await joinWaitlist(PUBLIC_API, { email, phone, interests: ticks, source, hp });
+      const r = await joinWaitlist(PUBLIC_API, { ...values, interests: ticks, source, hp });
       setDone(r.message || copy["stay.thanks"]);
     } catch (err) {
-      if (err.field === "email" || err.field === "phone") {
+      if (refs[err.field]) {
         setErrors({ [err.field]: err.message });
-        (err.field === "email" ? emailRef : phoneRef).current?.focus();
+        refs[err.field].current?.focus();
       } else {
         setFormError(err.message);
       }
@@ -133,8 +162,8 @@ export default function WaitlistForm({ copy, source }) {
   }
 
   const field = (k, label, input) => (
-    <div className="su-field">
-      <label htmlFor={id(k)} className="su-label">{label}</label>
+    <div className={`su-field su-f-${k}`}>
+      <label htmlFor={id(k)} className="su-label">{label}{OPTIONAL.includes(k) && <span className="su-opt"> (optional)</span>}</label>
       {input}
       {errors[k] && <p id={id(`${k}-err`)} className="su-err">{errors[k]}</p>}
     </div>
@@ -148,17 +177,29 @@ export default function WaitlistForm({ copy, source }) {
       <fieldset className="su-fs" disabled={sending}>
         <legend className="su-sr">{copy["stay.form_title"]}</legend>
         <div className={"su-bar" + (formError ? " has-err" : "")}>
+          {field("name", copy["stay.field_name"], (
+            <input id={id("name")} ref={refs.name} className="su-input" type="text" name="name" autoComplete="name" autoCapitalize="words"
+              spellCheck={false} maxLength={80} value={values.name} placeholder="Jane Doe"
+              aria-invalid={errors.name ? true : undefined} aria-describedby={errors.name ? id("name-err") : undefined}
+              onChange={set("name")} />
+          ))}
+          {field("company", copy["stay.field_company"], (
+            <input id={id("company")} ref={refs.company} className="su-input" type="text" name="organization" autoComplete="organization"
+              maxLength={120} value={values.company} placeholder="Acme Inc."
+              aria-invalid={errors.company ? true : undefined} aria-describedby={errors.company ? id("company-err") : undefined}
+              onChange={set("company")} />
+          ))}
           {field("email", copy["stay.field_email"], (
-            <input id={id("email")} ref={emailRef} className="su-input" type="email" name="email" inputMode="email" autoComplete="email"
-              autoCapitalize="none" spellCheck={false} required maxLength={254} value={email} placeholder="you@company.com"
+            <input id={id("email")} ref={refs.email} className="su-input" type="email" name="email" inputMode="email" autoComplete="email"
+              autoCapitalize="none" spellCheck={false} required maxLength={254} value={values.email} placeholder="you@company.com"
               aria-invalid={errors.email ? true : undefined} aria-describedby={errors.email ? id("email-err") : undefined}
-              onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors((x) => ({ ...x, email: "" })); }} />
+              onChange={set("email")} />
           ))}
           {field("phone", copy["stay.field_phone"], (
-            <input id={id("phone")} ref={phoneRef} className="su-input" type="tel" name="phone" inputMode="tel" autoComplete="tel"
-              required maxLength={40} value={phone} placeholder="+1 416 555 0100"
+            <input id={id("phone")} ref={refs.phone} className="su-input" type="tel" name="phone" inputMode="tel" autoComplete="tel"
+              maxLength={40} value={values.phone} placeholder="+1 416 555 0100"
               aria-invalid={errors.phone ? true : undefined} aria-describedby={errors.phone ? id("phone-err") : undefined}
-              onChange={(e) => { setPhone(e.target.value); if (errors.phone) setErrors((x) => ({ ...x, phone: "" })); }} />
+              onChange={set("phone")} />
           ))}
           <fieldset className="su-ticks">
             <legend className="su-label">{copy["stay.interests_label"]}</legend>

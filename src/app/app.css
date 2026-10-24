@@ -1825,6 +1825,7 @@ textarea.input--ios { min-height: 120px; }
 .wl-h2 { margin: 0; font-size: 19px; font-weight: 800; }
 .wl-ticks { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .wl-ticks legend { margin-bottom: 8px; padding: 0; }
+.wl-opt { font-weight: 400; color: var(--tx2); opacity: .8; }
 .wl-tick { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border-radius: var(--r-control); border: 1px solid var(--border); background: var(--elevated); font-weight: 600; cursor: pointer; }
 .wl-tick.is-on { border-color: var(--pur); background: var(--pur-tint); }
 .wl-tick input { width: 20px; height: 20px; margin: 0; accent-color: var(--pur); }

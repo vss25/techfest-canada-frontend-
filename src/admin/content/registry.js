@@ -288,13 +288,21 @@ export const REGISTRY = {
     scope: "stay", group: "stay-form", type: "textarea", rows: 2,
     label: "Form introduction", description: "The line under the form heading.",
   },
+  "stay.field_name": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Name field label", description: "The label above the name box (the first box; optional: the page adds “(optional)”).",
+  },
+  "stay.field_company": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Company field label", description: "The label above the company or organisation box (optional: the page adds “(optional)”).",
+  },
   "stay.field_email": {
     scope: "stay", group: "stay-form", type: "text",
-    label: "Email field label", description: "The label above the email box.",
+    label: "Email field label", description: "The label above the email box (the only required box).",
   },
   "stay.field_phone": {
     scope: "stay", group: "stay-form", type: "text",
-    label: "Phone field label", description: "The label above the phone box.",
+    label: "Phone field label", description: "The label above the phone box (optional: the page adds “(optional)”).",
   },
   "stay.interests_label": {
     scope: "stay", group: "stay-form", type: "text",

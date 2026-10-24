@@ -16,8 +16,8 @@ import { journeyFrom } from "../lib/stayJourney";
    an bar to add the email and join the waitlist to attend. Also
    tickmark on sponsorship, exhibitor or delegation interest."
    No invented facts: the hero ("TTFC 2027 · Toronto · November
-   2027"), the waitlist bar right under it (email + phone, both
-   required, three ticks, the consent line, an in-place thank-you
+   2027"), the waitlist bar right under it (name, company, email +
+   phone, all required, three ticks, the consent line, an in-place thank-you
    with the server's message), then the 2027 journey (the
    organiser, Oct 23 2026: "Put canada's map and show cities to
    show the journey"): a map of Canada with the stops in order and

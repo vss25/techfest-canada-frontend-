@@ -16,8 +16,12 @@ import JourneyEditor from "./JourneyEditor";
    Everyone who joined the TTFC 2027 waitlist on
    thetechfestival.com/stay-updated, the web app or the apps
    (GET /api/console/waitlist): counts per interest, filters by
-   interest (nothing ticked = attending), where from and a search,
-   newest first, 50 a page; the CSV for management (phone numbers).
+   interest (nothing ticked = attending), where from and a search
+   (name, company, email or phone), newest first, 50 a page, with
+   each person's name and company (Oct 24 2026; only the email is
+   required, so a name, company or phone left out is an empty cell;
+   a changed one shows the one before); the CSV for management
+   (phone numbers).
    Read only. The team is emailed at enquire@ for each sign-up and
    the person gets "You're on the TTFC 2027 waitlist" (from
    enquire@, at most once a day per address).
@@ -124,7 +128,7 @@ function SignUps() {
         <div className="relative flex-1 sm:max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
           <Input type="search" value={q} onChange={(e) => { setQ(e.target.value); update({ q: e.target.value.trim(), page: 0 }); }}
-            placeholder="Search email or phone" className="pl-9" aria-label="Search the waitlist" />
+            placeholder="Search name, company, email or phone" className="pl-9" aria-label="Search the waitlist" />
         </div>
         <Select value={source} onChange={(e) => update({ source: e.target.value, page: 0 })} aria-label="Where they signed up" className="sm:w-48">
           <option value="">Everywhere</option>
@@ -144,7 +148,7 @@ function SignUps() {
         <>
           <TableWrap>
             <thead>
-              <tr><th>Joined</th><th>Email</th><th>Phone</th><th>Interested in</th><th>From</th><th>Sign-ups</th><th>Emails</th></tr>
+              <tr><th>Joined</th><th>Name</th><th>Company</th><th>Email</th><th>Phone</th><th>Interested in</th><th>From</th><th>Sign-ups</th><th>Emails</th></tr>
             </thead>
             <tbody>
               {rows.map((r) => (
@@ -153,11 +157,19 @@ function SignUps() {
                     {when(r.createdAt)}
                     {r.count > 1 && <span className="block text-[11px] text-ttfc-dim">Last {when(r.lastSubmittedAt)}</span>}
                   </td>
+                  <td className="max-w-[200px]">
+                    {r.name && <span className="block truncate font-semibold text-ttfc-text" title={r.name}>{r.name}</span>}
+                    {r.earlierNames?.length > 0 && <span className="block truncate text-[11px] text-ttfc-dim" title={r.earlierNames.join(", ")}>was {r.earlierNames.join(", ")}</span>}
+                  </td>
+                  <td className="max-w-[220px]">
+                    {r.company && <span className="block truncate text-ttfc-muted" title={r.company}>{r.company}</span>}
+                    {r.earlierCompanies?.length > 0 && <span className="block truncate text-[11px] text-ttfc-dim" title={r.earlierCompanies.join(", ")}>was {r.earlierCompanies.join(", ")}</span>}
+                  </td>
                   <td className="max-w-[240px] truncate font-mono text-xs">
                     <a href={`mailto:${r.email}`} className="text-ttfc-muted hover:text-ttfc-pink hover:underline" title={r.email}>{r.email}</a>
                   </td>
                   <td className="whitespace-nowrap font-mono text-xs">
-                    {r.tel ? <a href={r.tel} className="text-ttfc-muted hover:text-ttfc-pink hover:underline">{r.phone}</a> : <span className="text-ttfc-muted">{r.phone || "—"}</span>}
+                    {r.tel ? <a href={r.tel} className="text-ttfc-muted hover:text-ttfc-pink hover:underline">{r.phone}</a> : r.phone && <span className="text-ttfc-muted">{r.phone}</span>}
                   </td>
                   <td>
                     {r.interests.length
@@ -194,7 +206,9 @@ function SignUps() {
 
 function Preview() {
   const [ticks, setTicks] = useState(["sponsorship", "exhibitor"]);
-  const { data, error, loading } = useApi(`/console/waitlist/email-preview?interests=${encodeURIComponent(ticks.join(","))}`);
+  const [name, setName] = useState("Priya Raman");
+  const dName = useDebounced(name.trim(), 300);
+  const { data, error, loading } = useApi(`/console/waitlist/email-preview?interests=${encodeURIComponent(ticks.join(","))}&name=${encodeURIComponent(dName)}`);
   const toggle = (k) => setTicks((t) => (t.includes(k) ? t.filter((x) => x !== k) : [...t, k]));
   return (
     <div className="space-y-3">
@@ -210,6 +224,11 @@ function Preview() {
         ))}
         {!ticks.length && <span className="text-xs text-ttfc-dim">Nothing ticked: the email says “Attending TTFC 2027”.</span>}
       </fieldset>
+      <label className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-xs font-semibold text-ttfc-muted">Their name</span>
+        <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} className="w-56" aria-describedby="wl-preview-name-hint" />
+        <span id="wl-preview-name-hint" className="text-xs text-ttfc-dim">They're greeted by first name (“Hi Priya,”); “Hello,” when they left the name empty.</span>
+      </label>
       <EmailPreview preview={data} loading={loading} error={error} title="Waitlist email preview" />
     </div>
   );

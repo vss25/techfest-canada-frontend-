@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import Home from "./pages/Home";
-import Programme from "./pages/Programme";
 import Speakers from "./pages/Speakers";
 import SpeakerProfile from "./pages/Speakerprofile";
 import Sponsors from "./pages/Sponsors";
@@ -42,6 +41,8 @@ const ShareLinkedin = lazy(() => import("./pages/ShareLinkedin"));
 const Swag = lazy(() => import("./pages/Swag"));
 // "Stay updated": the TTFC 2027 waitlist (Oct 23 2026).
 const StayUpdated = lazy(() => import("./pages/StayUpdated"));
+// "Programme": TTFC 2026 at a glance (Oct 24 2026): key times, the agenda, speakers, exhibitors, the 2027 waitlist.
+const Programme = lazy(() => import("./pages/Programme"));
 // Catalyst Awards jury portal: unlinked, noindex, light only (src/jury). Loaded only when someone opens it.
 const JuryPortal = lazy(() => import("./jury/JuryPortal"));
 // The TTFC 2026 fact sheet (Oct 23 2026): UNLISTED, only at its direct link /fact-sheet/<token> (src/lib/factSheetRoute.js).
@@ -107,7 +108,7 @@ function App() {
       <OffJury><AnnouncementBar /></OffJury>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/programme" element={<AgendaGate><Programme /></AgendaGate>} />
+        <Route path="/programme" element={<AgendaGate><Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Programme /></Suspense></AgendaGate>} />
         <Route path="/speakers" element={<Speakers />} />
         <Route path="/speakers/:slug" element={<SpeakerProfile />} />
         <Route path="/sponsors" element={<Sponsors />} />

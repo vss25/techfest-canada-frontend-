@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { DESK_NAME, DESK_PATH } from './src/checkin/deskPath.js'
+import { deskSwVersion } from './src/checkin/swVersion.js'
 
 /* =========================================================
    Three pages from one build:
@@ -140,7 +141,8 @@ function ttfcDeskPwa() {
     ],
   }, null, 2)
   const STATIC = ['manifest.webmanifest', ...ICONS.map((n) => `icons/${n}`)].map((f) => base + f)
-  const render = (files, version) => readFileSync(new URL('./src/checkin/sw.js', import.meta.url), 'utf8')
+  const template = () => readFileSync(new URL('./src/checkin/sw.js', import.meta.url), 'utf8')
+  const render = (files, version) => template()
     .replace('self.__DESK_PRECACHE__', JSON.stringify(files))
     .replace('self.__DESK_VERSION__', JSON.stringify(version))
     .replace('self.__DESK_SCOPE__', JSON.stringify(base))
@@ -195,7 +197,9 @@ function ttfcDeskPwa() {
       }
       if (entry) walk(entry.fileName)
       const list = [base, ...[...files].sort(), ...STATIC]
-      const version = createHash('sha256').update(list.join('\n')).digest('hex').slice(0, 12)
+      // A new version whenever anything a device gets from the worker changes: the files, the page, the worker itself,
+      // the manifest, the icons (src/checkin/swVersion.js).
+      const version = deskSwVersion({ files: list, page: html.source, template: template(), manifest: manifest(), icons: ICONS.map(icon) })
       this.emitFile({ type: 'asset', fileName: `${dir}sw.js`, source: render(list, version) })
     },
   }

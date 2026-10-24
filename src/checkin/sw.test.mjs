@@ -2,12 +2,15 @@
    fetch, events). A version installs whole (its page and every script that page names) or not at all, and the
    working version stays; opening the app serves the active version's own page and never writes a page fetched
    meanwhile over it, so a flaky load after a deploy can't leave a page whose scripts are missing; activate swaps the
-   caches. Run on src/checkin/sw.js as the build renders it, and on the built file in dist/ when there is one. */
+   caches. The version (the cache's name) changes with anything a device gets from the worker: the files, the page,
+   the worker's own code, the manifest, the icons. Run on src/checkin/sw.js as the build renders it, and on the built
+   file in dist/ when there is one. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import vm from "node:vm";
 import { DESK_PATH } from "./deskPath.js";
+import { deskSwVersion } from "./swVersion.js";
 
 const ORIGIN = "https://site.test";
 const ROOT = new URL("../../", import.meta.url);
@@ -121,7 +124,63 @@ test("before any version is installed, opening offline says so (with Try again)"
   assert.match(await w.open(SCOPE), /No connection[\s\S]*Try again/);
 });
 
+test("the version changes with the page alone, the worker's code alone, the manifest or an icon (never the same cache twice)", () => {
+  const base = { files: [SCOPE, "/assets/desk-a1.js"], page: page("/assets/desk-a1.js"), template: "/* sw */", manifest: "{}", icons: [new Uint8Array([1, 2, 3])] };
+  const v = deskSwVersion(base);
+  assert.match(v, /^[0-9a-f]{12}$/);
+  assert.equal(deskSwVersion({ ...base, icons: [new Uint8Array([1, 2, 3])] }), v, "the same build: the same version");
+  const changed = {
+    "the page only (desk/index.html)": { page: `${base.page}<meta name="x">` },
+    "the worker's code only (src/checkin/sw.js)": { template: "/* sw, fixed */" },
+    "the files": { files: [SCOPE, "/assets/desk-b2.js"] },
+    "the manifest": { manifest: '{"name":"x"}' },
+    "an icon (same name, new picture)": { icons: [new Uint8Array([1, 2, 4])] },
+  };
+  for (const [what, patch] of Object.entries(changed)) assert.notEqual(deskSwVersion({ ...base, ...patch }), v, what);
+});
+
+test("a change to the page alone installs beside the running version and swaps on activate (installed devices get it)", async () => {
+  const dev = device();
+  const list = [SCOPE, "/assets/desk-v1.js"];
+  dev.net.files.set("/assets/desk-v1.js", "/* v1 */");
+  const p1 = page("/assets/desk-v1.js");
+  dev.net.files.set(SCOPE, p1);
+  const v1 = deskSwVersion({ files: list, page: p1 });
+  const w1 = dev.worker(render(list, v1));
+  await w1.install();
+  await w1.activate();
+  // Only the page changes (same scripts): a new version, so a new worker and its own cache.
+  const p2 = `${p1}<!-- new page text -->`;
+  dev.net.files.set(SCOPE, p2);
+  const v2 = deskSwVersion({ files: list, page: p2 });
+  assert.notEqual(v2, v1);
+  const w2 = dev.worker(render(list, v2));
+  await w2.install();
+  assert.deepEqual(shellOf(dev).sort(), [`ttfc-desk-shell-${v1}`, `ttfc-desk-shell-${v2}`].sort(), "installed beside it");
+  assert.equal(await w1.open(SCOPE), p1, "the running version is untouched while the new one installs");
+  await w2.activate();
+  assert.deepEqual(shellOf(dev), [`ttfc-desk-shell-${v2}`]);
+  dev.net.offline = true;
+  assert.equal(await w2.open(SCOPE), p2, "the new page");
+});
+
 const BUILT = new URL(`dist${SCOPE}sw.js`, ROOT);
+test("the built worker's version covers its page, its own code, the manifest and the icons", { skip: !existsSync(BUILT) && "no dist/ (run vite build first)" }, () => {
+  const code = readFileSync(BUILT, "utf8");
+  const list = JSON.parse(code.match(/const PRECACHE = (\[[^\]]*\]);/)[1]);
+  const version = JSON.parse(code.match(/const VERSION = ("[^"]*");/)[1]);
+  const icons = ["icon-192.png", "icon-512.png", "maskable-512.png", "apple-touch-icon.png", "icon-96.png", "favicon-64.png"].map((n) => readFileSync(new URL(`dist${SCOPE}icons/${n}`, ROOT)));
+  const expected = deskSwVersion({
+    files: list,
+    page: readFileSync(new URL(`dist${SCOPE}index.html`, ROOT), "utf8"),
+    template: readFileSync(new URL("src/checkin/sw.js", ROOT), "utf8"),
+    manifest: readFileSync(new URL(`dist${SCOPE}manifest.webmanifest`, ROOT), "utf8"),
+    icons,
+  });
+  assert.equal(version, expected);
+});
+
+
 test("the built worker (dist/) installs its whole app, serves its own page, and keeps it when a load fails", { skip: !existsSync(BUILT) && "no dist/ (run vite build first)" }, async () => {
   const dev = device();
   const code = readFileSync(BUILT, "utf8");

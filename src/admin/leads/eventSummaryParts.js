@@ -3,8 +3,13 @@
    (GET /api/console/summary does all the counting; backend
    services/eventSummary.js). The "as of" time in Toronto, the
    percentages, each meal's dietary chips and the CSV of the
-   tables. Unit-tested: node --test src/admin/leads/eventSummaryParts.test.mjs
+   tables (attendance by day from the check-in desk too: its words
+   are shared with the desk app's staff Counts screen,
+   src/checkin/lib/attendance.js). Unit-tested:
+   node --test src/admin/leads/eventSummaryParts.test.mjs
 ========================================================= */
+
+import { attendanceCsvRows } from "../../checkin/lib/attendance.js";
 
 export const EVENT_TZ = "America/Toronto";
 
@@ -41,7 +46,7 @@ const cell = (v) => {
 const line = (cells) => cells.map(cell).join(",");
 const pctCell = (n) => (typeof n === "number" && Number.isFinite(n) ? `${n}%` : "");
 
-/** The page's tables as one CSV (no names or emails): passes, the day split, meals with dietary columns, check-in. */
+/** The page's tables as one CSV (no names or emails): passes, the day split, meals with dietary columns, check-in, attendance by day. */
 export function summaryCsv(s) {
   if (!s) return "";
   const out = [];
@@ -79,6 +84,10 @@ export function summaryCsv(s) {
   out.push(line(["Pass type", "People", "Checked in", "First scan Day 1", "First scan Day 2", "Another date", "No time recorded", "Checked in, not RSVP'd"]));
   for (const r of c.byPass || []) out.push(line([r.label, r.people, r.checkedIn, r.day1, r.day2, r.otherDay, r.noTime, r.notRsvpd]));
   out.push(line(["Total", t.people, c.checkedIn, c.day1, c.day2, c.otherDay, c.noTime, c.notRsvpd]));
+  if (s.attendance) {
+    out.push("");
+    for (const r of attendanceCsvRows(s.attendance)) out.push(r.length ? line(r) : "");
+  }
   return `${out.join("\r\n")}\r\n`;
 }
 

@@ -18,6 +18,7 @@ import Av from "./screens/Av.jsx";
 import Exhibitor from "./screens/Exhibitor.jsx";
 import Media from "./screens/Media.jsx";
 import GuestSheet from "./screens/GuestSheet.jsx";
+import Counts from "./screens/Counts.jsx";
 
 /* TTFC Check-in: sign in → pick the station → Start (sound + keep the screen on) → the station. Header: the station
    (tap to switch), today and what's on ("Day 1 · CxO Breakfast · open until 9:25 AM" and where the times come from),
@@ -44,6 +45,7 @@ export default function App() {
   const closeSheet = useCallback(() => setOpen(null), []);
   const [picking, setPicking] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [counts, setCounts] = useState(false);
   const [update, setUpdate] = useState(isUpdateReady());
   useEffect(() => onUpdate(setUpdate), []);
   useEffect(() => { document.documentElement.dataset.layout = layout.kind; }, [layout.kind]);
@@ -121,7 +123,7 @@ export default function App() {
           <span className="ci-when-text">{st?.text || dayHeading(s.today)}</span>
           {st?.detail && <span className="ci-when-detail">{st.detail}</span>}
         </div>
-        {menu && <Menu onClose={() => setMenu(false)} onPick={() => { setMenu(false); setPicking(true); }} />}
+        {menu && <Menu onClose={() => setMenu(false)} onPick={() => { setMenu(false); setPicking(true); }} onCounts={() => { setMenu(false); setCounts(true); }} />}
         {ANNOUNCES.has(d.station) && <Banners station={d.station} onOpen={setOpen} max={kb || layout.kind === "phone" ? 1 : layout.short || window.innerHeight < 950 ? 2 : 3} />}
       </header>
       {!d.persistOk && <p className="ci-update is-bad" role="alert">⚠ Taps can't be saved on this device (its storage is full or blocked). Keep the app open until they're sent; still trying to save them.</p>}
@@ -135,6 +137,7 @@ export default function App() {
       {layout.kind === "laptop" && <p className="ci-keys">Type to search · ↑ ↓ to pick · Enter = {{ lobby: "Arrived", desk: "Checked in", breakfast: "Admitted", lunch: "Admitted", evening: "Admitted", media: "Checked in", av: "AV checked", exhibitor: "Checked in" }[d.station]} · Esc clears</p>}
       {open && <GuestSheet guest={open} onClose={closeSheet} />}
       {d.trayOpen && <AttentionSheet />}
+      {counts && d.session.staff && <Counts onClose={() => setCounts(false)} />}
       {ANNOUNCES.has(d.station) && <ArrivalFlash />}
       <ConfirmDialog />
       <Toasts />
@@ -261,7 +264,7 @@ function LockScreen() {
   );
 }
 
-function Menu({ onClose, onPick }) {
+function Menu({ onClose, onPick, onCounts }) {
   const d = useDesk();
   const [theme, setTheme] = useState(remember.get(THEME_KEY, "dark"));
   const pick = (t) => { remember.set(THEME_KEY, t); setTheme(t); applyTheme(t); };
@@ -270,6 +273,7 @@ function Menu({ onClose, onPick }) {
     <div className="ci-menu" role="menu" onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}>
       <p className="ci-menu-who"><b>{d.session.user?.name}</b><br /><span className="ci-muted">{d.session.staff ? "Staff" : "Volunteer"}</span></p>
       <button type="button" role="menuitem" onClick={onPick}>Switch station</button>
+      {d.session.staff && <button type="button" role="menuitem" onClick={onCounts}>Counts (staff): today and each day</button>}
       {failed > 0 && <button type="button" role="menuitem" className="is-bad" onClick={() => { onClose(); openTray(); }}>Needs attention ({failed})</button>}
       <button type="button" role="menuitem" onClick={() => { load({ quiet: false, refresh: true }); onClose(); }}>Reload the guest list</button>
       <button type="button" role="menuitem" onClick={soundOn}>Test the chime</button>
@@ -280,23 +284,7 @@ function Menu({ onClose, onPick }) {
       {d.session.staff && <a role="menuitem" href="/admin/check-in" target="_blank" rel="noreferrer">Desk settings (Admin)</a>}
       <button type="button" role="menuitem" className="is-bad" disabled={d.signingOut} onClick={() => { onClose(); requestSignOut(); }}>{d.signingOut ? "Sending taps…" : "Sign out"}</button>
       <button type="button" role="menuitem" onClick={onClose}>Close</button>
-      {d.session.staff && <Attendance rows={d.state?.attendance || []} />}
       <p className="ci-small ci-muted">{desk.state?.agendaRead ? "Times from the live agenda." : "Agenda not readable: times as of Oct 23."}</p>
-    </div>
-  );
-}
-
-/** Staff: attendance per day so far (passes marked arrived / checked in each day; from the last list load). */
-function Attendance({ rows }) {
-  const days = [...new Set(rows.map((r) => r.day))].sort();
-  if (!days.length) return null;
-  // Each person once a day (the server's `people`; `rows` from older servers).
-  const n = (day, point) => { const r = rows.find((x) => x.day === day && x.point === point); return r ? r.people ?? r.rows ?? 0 : 0; };
-  const label = (day) => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" }).format(new Date(`${day}T12:00:00Z`));
-  return (
-    <div className="ci-small ci-menu-who">
-      <b>Attendance by day</b>
-      {days.map((day) => <div key={day}>{label(day)}: {n(day, "arrived")} arrived · {n(day, "checked_in")} checked in</div>)}
     </div>
   );
 }

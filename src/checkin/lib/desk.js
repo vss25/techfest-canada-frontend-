@@ -850,6 +850,8 @@ export async function setPersonFlag(g, flag, value) {
 }
 
 export const fetchHistory = (key) => api(`/checkin/desk/history/${encodeURIComponent(key)}`);
+/** Staff: attendance by day (contract C10, the Counts screen). */
+export const fetchCounts = () => api("/checkin/desk/counts", { timeoutMs: 15000 });
 export const fetchTeam = () => api("/checkin/desk/team");
 export const lookupTicket = (ticketId) => api("/checkin/desk/lookup", { method: "POST", body: { ticketId } });
 

@@ -9,7 +9,7 @@ import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, ErrorState, LoadingState, PageHeader, SectionTitle, StatTile, TableWrap } from "../ui";
 import { personPath } from "../people/peopleMeta";
 import { csvFileName, dietChips, pctText, summaryCsv, torontoTime } from "./eventSummaryParts";
-import { attendanceView } from "../../checkin/lib/attendance.js";
+import { OVERALL_LABEL, attendanceView } from "../../checkin/lib/attendance.js";
 
 /* Admin › RSVPs & meals › Event summary (Oct 23 2026). The organiser: "Create an admin panel summary of
    registration, breakfast included, lunch, dinner, etc. pass types, day 1 and day 2". Read only: one call,
@@ -204,8 +204,17 @@ function AttendanceSection({ s }) {
     return <p className="text-sm text-ttfc-muted">Attendance by day isn’t available from the server yet. It appears here once the check-in desk counts reach this page.</p>;
   }
   const v = attendanceView(s.attendance);
+  const o = v.overall;
   return (
     <>
+      {o && (
+        // Both days together, each person once (the server's overall): someone who came on both days counts once here.
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label={`${OVERALL_LABEL}: ${o.text}`}>
+          <StatTile label="Arrived, Day 1 or Day 2" value={num(o.arrived ?? undefined)} icon={Users} tone="purple" hint="each person once" />
+          <StatTile label="Checked in, Day 1 or Day 2" value={num(o.checkedIn ?? undefined)} icon={UserCheck} tone="good" hint="each person once" />
+          <StatTile label="Came on both days" value={num(o.bothDays ?? undefined)} icon={CalendarCheck} tone="pink" hint="arrived on Day 1 and on Day 2" />
+        </div>
+      )}
       <TableWrap className={COMPACT}>
         <thead>
           <tr>
@@ -254,7 +263,8 @@ function AttendanceSection({ s }) {
         </div>
       )}
       <p className="mt-3 text-sm leading-relaxed text-ttfc-muted">
-        From the check-in desk app: each person once per point per day, practice taps before the event never counted.
+        From the check-in desk app: each person once per point per day{o ? " (and once across both days in the tiles above)" : ""},
+        practice taps before the event never counted.
         “Admitted / entitled”: admitted at the door out of everyone whose pass includes it; no-shows are people who RSVP’d
         and weren’t admitted; overrides were admitted outside the hours with “Admit anyway” (counted in the admitted
         number too). By pass type, each person is in one colour group, as on the desk (VIP, then Media, then Speaker, then

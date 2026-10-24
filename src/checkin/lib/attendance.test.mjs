@@ -2,7 +2,7 @@
    Counts screen show it, and the Event summary CSV's lines. The server counts; this only words it. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { attendanceCsvRows, attendanceDays, attendanceView, mealCell, passGroupLabel, pctOfRsvpd } from "./attendance.js";
+import { attendanceCsvRows, attendanceDays, attendanceView, mealCell, overallView, passGroupLabel, pctOfRsvpd } from "./attendance.js";
 
 const meal = (o) => ({ admitted: 0, entitled: 0, rsvpd: 0, admittedOfRsvpd: 0, noShows: 0, overrides: 0, notRsvpdAdmitted: 0, ...o });
 const ATT = {
@@ -95,4 +95,31 @@ test("the CSV lines: one row per measure with a column per day, then the by-pass
   assert.deepEqual(find("Issue pass: people on the list with no pass"), ["Issue pass: people on the list with no pass", 9, ""]);
   // No names or emails anywhere.
   assert.ok(!JSON.stringify(rows).includes("@"));
+});
+
+test("both days together (the server's overall: each person once) on both pages, and in the CSV with the meals' and the days' extra counts", () => {
+  const att = {
+    ...ATT,
+    overall: { arrived: 530, checkedIn: 505, bothDays: 120 },
+    days: ATT.days.map((d) => (d.day === "day1"
+      ? { ...d, unmatched: 2, meals: { ...d.meals, cxo: { ...d.meals.cxo, notEntitledAdmitted: 4 }, lunch: { ...d.meals.lunch, notEntitledAdmitted: 0 } } }
+      : { ...d, unmatched: 0 })),
+  };
+  const v = attendanceView(att);
+  assert.deepEqual(v.overall, { arrived: 530, checkedIn: 505, bothDays: 120, text: "530 people arrived · 505 checked in · 120 came on both days" });
+  assert.equal(overallView({ overall: { arrived: 1, checkedIn: 1, bothDays: 0 } }).text, "1 person arrived · 1 checked in · 0 came on both days");
+  assert.equal(attendanceView(ATT).overall, null, "a server that doesn't send it: nothing shown");
+  assert.equal(overallView({ overall: {} }), null);
+  const rows = attendanceCsvRows(att);
+  const find = (label) => rows.find((r) => r[0] === label);
+  assert.deepEqual(find("CxO Breakfast: admitted though their pass doesn't include it"), ["CxO Breakfast: admitted though their pass doesn't include it", 4, ""], "Day 2's server row has no such field: blank");
+  assert.deepEqual(find("Networking Luncheon: admitted though their pass doesn't include it"), ["Networking Luncheon: admitted though their pass doesn't include it", 0, ""]);
+  assert.deepEqual(find("Marks of passes or people no longer on the list (counted under Other)"), ["Marks of passes or people no longer on the list (counted under Other)", 2, 0]);
+  const at = rows.findIndex((r) => r[0] === "Both days, each person once (Day 1 and Day 2 together)");
+  assert.ok(at > 0);
+  assert.deepEqual(rows.slice(at + 1, at + 5), [["Measure", "People"], ["Arrived (lobby) on either day", 530], ["Checked in on either day", 505], ["Arrived on both days", 120]]);
+  // An older server: no such section, and the new per-day lines are blank.
+  const old = attendanceCsvRows(ATT);
+  assert.ok(!old.some((r) => String(r[0]).startsWith("Both days")));
+  assert.deepEqual(old.find((r) => r[0] === "Marks of passes or people no longer on the list (counted under Other)"), ["Marks of passes or people no longer on the list (counted under Other)", "", ""]);
 });

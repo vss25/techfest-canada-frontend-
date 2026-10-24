@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { countsVersion, fetchCounts, useDesk } from "../lib/desk.js";
-import { attendanceView } from "../lib/attendance.js";
+import { OVERALL_LABEL, attendanceView } from "../lib/attendance.js";
 import { timeText } from "../lib/timers.js";
 import { Sheet } from "../components.jsx";
 
 /* STAFF: Counts (contract C10: "the ability to count the check-ins for breakfast, lunch, dinner and over each day").
    The server's attendance by day (GET /api/checkin/desk/counts, staff only; the same numbers and words as Admin ›
-   RSVPs & meals › Event summary): arrived, checked in, each meal's admitted / entitled with RSVP'd, % of RSVP'd,
-   no-shows and overrides, by pass type, ISSUE PASS and NO DETAILS FOUND. Read again shortly after each tap anywhere
+   RSVPs & meals › Event summary): both days together (each person once), arrived, checked in, each meal's admitted /
+   entitled with RSVP'd, % of RSVP'd, no-shows and overrides, by pass type, ISSUE PASS and NO DETAILS FOUND. Read again shortly after each tap anywhere
    (a live event), and every 30 s while open. Volunteers never see it (the menu has no entry; the server says no). */
 
 const EVERY_MS = 30 * 1000;
@@ -57,6 +57,7 @@ export default function Counts({ onClose }) {
         overrides. {at ? `As of ${timeText(at)}; updates as taps come in.` : "Loading…"}
       </p>
       {error && <p className="ci-error" role="alert">{error}</p>}
+      {v.overall && <p className="ci-counts-overall"><b>{OVERALL_LABEL}:</b> {v.overall.text}</p>}
       <div className="ci-counts-wrap">
         <table className="ci-counts">
           <thead>

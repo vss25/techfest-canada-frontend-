@@ -107,6 +107,16 @@ test("CSV: attendance by day (the check-in desk's counts, C10) when the server s
   assert.ok(rows.includes("No details found: recorded,4,"));
   assert.ok(rows.includes("Day 1 · Mon Oct 26,Power Pass,,100,99,20,90,0"));
   assert.ok(!summaryCsv(s).includes("@"));
+  // Both days together (each person once), the meals' not-included admissions and marks of deleted passes.
+  s.attendance.overall = { arrived: 530, checkedIn: 505, bothDays: 120 };
+  s.attendance.days[0].unmatched = 2;
+  s.attendance.days[0].meals.cxo.notEntitledAdmitted = 4;
+  const rows2 = summaryCsv(s).trimEnd().split("\r\n");
+  assert.ok(rows2.includes("Arrived (lobby) on either day,530"));
+  assert.ok(rows2.includes("Checked in on either day,505"));
+  assert.ok(rows2.includes("Arrived on both days,120"));
+  assert.ok(rows2.includes("CxO Breakfast: admitted though their pass doesn't include it,4,"));
+  assert.ok(rows2.includes("Marks of passes or people no longer on the list (counted under Other),2,"));
 });
 
 test("file name from the build time in Toronto", () => {

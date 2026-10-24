@@ -14,8 +14,13 @@
                   noShows, overrides, notRsvpdAdmitted },
          byPass: { <colour group>: { arrived, checkedIn, cxo, lunch, dinner } },
          issuePass: { arrived, issued },
-         noDetails: { recorded, sentToHelp, passIssued, left } }],
+         noDetails: { recorded, sentToHelp, passIssued, left },
+         unmatched (marks of passes or people no longer on the list) }],
+       overall: { arrived, checkedIn, bothDays } (each person once
+         across both days),
        builtAt }
+   (each meal also has notEntitledAdmitted: admitted although their
+   pass doesn't include it)
    This file only turns that into what both pages show (the same words
    and numbers) and the Event summary's CSV lines. Nothing is counted
    here. Pure; node --test src/checkin/lib/attendance.test.mjs
@@ -75,8 +80,25 @@ export function passGroupLabel(k) {
 }
 
 /**
+ * Both days together, each person once (the server's `overall`): { arrived, checkedIn, bothDays, text } ("512 people
+ * arrived · 498 checked in · 120 came on both days"), or null from a server that doesn't send it.
+ */
+export function overallView(att) {
+  const o = att?.overall;
+  if (!o || typeof o !== "object" || ![o.arrived, o.checkedIn, o.bothDays].some(has)) return null;
+  const parts = [
+    has(o.arrived) ? `${plural(o.arrived, "person", "people")} arrived` : "",
+    has(o.checkedIn) ? `${num(o.checkedIn)} checked in` : "",
+    has(o.bothDays) ? `${num(o.bothDays)} came on both days` : "",
+  ].filter(Boolean);
+  return { arrived: has(o.arrived) ? o.arrived : null, checkedIn: has(o.checkedIn) ? o.checkedIn : null, bothDays: has(o.bothDays) ? o.bothDays : null, text: parts.join(" · ") };
+}
+export const OVERALL_LABEL = "Both days, each person once";
+
+/**
  * The page's model: { builtAt, days: [{ key, date, label, data }], rows: [{ key, label, cells: [{ main, sub, label }]
- * (one per day) }], byPass: [{ day, label, rows: [{ key, label, people, arrived, checkedIn, cxo, lunch, dinner }] }], empty }.
+ * (one per day) }], byPass: [{ day, label, rows: [{ key, label, people, arrived, checkedIn, cxo, lunch, dinner }] }],
+ * overall (overallView), empty }.
  * Rows: Arrived (lobby), Checked in / pass collected, CxO Breakfast, Networking Luncheon, Dinner (the evening's own
  * name per day), Issue pass, No details found.
  */
@@ -123,7 +145,7 @@ export function attendanceView(att) {
         .filter((r) => r.people !== 0 || r.arrived || r.checkedIn || r.cxo || r.lunch || r.dinner),
     };
   });
-  return { builtAt: att?.builtAt || null, days, rows, byPass, empty: !days.some((d) => d.data) };
+  return { builtAt: att?.builtAt || null, days, rows, byPass, overall: overallView(att), empty: !days.some((d) => d.data) };
 }
 
 /** The Event summary CSV's lines for attendance (arrays of cells; the page's CSV writer quotes them). */
@@ -134,6 +156,8 @@ export function attendanceCsvRows(att) {
   out.push(["Attendance by day (the check-in desk: each person once per point per day; practice marks not counted)"]);
   out.push(["Measure", ...v.days.map((d) => `${d.label}${d.date ? ` (${d.date})` : ""}`)]);
   const per = (fn) => v.days.map((d) => (d.data ? fn(d.data, d.key) : ""));
+  // Fields a server may not send yet: blank, never a made-up 0.
+  const opt = (x) => (has(x) ? x : "");
   out.push(["Arrived (lobby)", ...per((d) => n(d.arrived))]);
   out.push(["Checked in / pass collected", ...per((d) => n(d.checkedIn))]);
   out.push(["Passes collected to date", ...per((d) => n(d.passesCollectedToDate))]);
@@ -148,6 +172,7 @@ export function attendanceCsvRows(att) {
     out.push([`${name}: no-shows (RSVP'd, not admitted)`, ...per((d) => n(m(d).noShows))]);
     out.push([`${name}: overrides (Admit anyway)`, ...per((d) => n(m(d).overrides))]);
     out.push([`${name}: admitted without an RSVP`, ...per((d) => n(m(d).notRsvpdAdmitted))]);
+    out.push([`${name}: admitted though their pass doesn't include it`, ...per((d) => opt(m(d).notEntitledAdmitted))]);
   }
   out.push(["Issue pass: people on the list with no pass", ...per((d) => (has(d.issuePass?.people) ? d.issuePass.people : ""))]);
   out.push(["Issue pass: arrived", ...per((d) => n(d.issuePass?.arrived))]);
@@ -158,6 +183,15 @@ export function attendanceCsvRows(att) {
   out.push(["No details found: left", ...per((d) => n(d.noDetails?.left))]);
   out.push(["No details found: found on the list", ...per((d) => n(d.noDetails?.linked))]);
   out.push(["No details found: still open", ...per((d) => n(d.noDetails?.open))]);
+  out.push(["Marks of passes or people no longer on the list (counted under Other)", ...per((d) => opt(d.unmatched))]);
+  if (v.overall) {
+    out.push([]);
+    out.push([`${OVERALL_LABEL} (Day 1 and Day 2 together)`]);
+    out.push(["Measure", "People"]);
+    out.push(["Arrived (lobby) on either day", opt(v.overall.arrived)]);
+    out.push(["Checked in on either day", opt(v.overall.checkedIn)]);
+    out.push(["Arrived on both days", opt(v.overall.bothDays)]);
+  }
   if (v.byPass.length) {
     out.push([]);
     out.push(["Attendance by pass type (each person once, in their colour group)"]);

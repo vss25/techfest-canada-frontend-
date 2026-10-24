@@ -18,7 +18,7 @@ export const SCOPES = {
   website: {
     groups: [
       { id: "announce", title: "Announcement bar", hint: "A slim coloured bar across the top of every page of the website." },
-      { id: "selling", title: "Selling", hint: "Ticket sales, pass upgrades and the website's install-the-app prompt. Ticket sales and upgrades are management only." },
+      { id: "selling", title: "Selling", hint: "Ticket sales and pass upgrades (management only)." },
       { id: "forms", title: "Forms (nominations, volunteers)" },
       { id: "agenda", title: "Agenda" },
       { id: "home", title: "Homepage" },
@@ -32,7 +32,7 @@ export const SCOPES = {
       { id: "feed", title: "Feed & network" },
       { id: "tickets", title: "Tickets & help" },
       { id: "privacy", title: "Privacy & community" },
-      { id: "flags", title: "Feature switches", hint: "Turn parts of the app on or off for everyone. Pass upgrades and the website's install-the-app prompt are under Website switches › Selling." },
+      { id: "flags", title: "Feature switches", hint: "Turn parts of the app on or off for everyone. Pass upgrades are under Website switches › Selling." },
     ],
   },
   /* "Stay updated" (Oct 23 2026): the TTFC 2027 waitlist page (website /stay-updated, the web app's
@@ -92,16 +92,11 @@ export const REGISTRY = {
     label: "Message while sales are paused",
     description: "Shown on the Tickets and Checkout pages when ticket sales are off.",
   },
-  // Pass upgrades and the install prompt moved here from App text & switches (Oct 19 2026): the same stored keys.
+  // Pass upgrades moved here from App text & switches (Oct 19 2026): the same stored key.
   "flag.upgrades": {
     scope: "website", group: "selling", type: "switch", management: true,
     label: "Pass upgrades",
     description: "Off: no upgrade offers anywhere (website, web app and apps), and the server refuses upgrade checkouts.",
-  },
-  "flag.pwaPrompt": {
-    scope: "website", group: "selling", type: "switch",
-    label: "\"Get the TTFC app\" prompt on the website",
-    description: "Shows visitors to thetechfestival.com a \"Get the TTFC app\" pop-up with the App Store and Google Play badges (a QR code to the phone on a computer). The homepage, footer and menu show the badges either way.",
   },
   "site.nominations_open": {
     scope: "website", group: "forms", type: "switch",
@@ -243,6 +238,13 @@ export const REGISTRY = {
   "flag.qa": {
     scope: "app", group: "flags", type: "switch",
     label: "Audience Q&A", description: "Turn off to hide session Q&A in the app and stop new questions.",
+  },
+  // The store prompt (Oct 24 2026): was the website's "Get the TTFC app" pop-up (Website switches › Selling); the
+  // website has none now, the web app has this one (src/app/lib/storePrompt.js). The same stored key and value.
+  "flag.pwaPrompt": {
+    scope: "app", group: "flags", type: "switch",
+    label: "Prompt web app users to get the store app",
+    description: "People using the web app (thetechfestival.com/app) on a phone or tablet see \"Get the TTFC app\" once per visit, after a few seconds on Home or another main screen: the App Store on an iPhone or iPad, Google Play on Android. \"Not now\" hides it for a week. Never on the website, never in the iPhone or Android app, and never for people who opened a page from those apps.",
   },
 
   /* ---------------- Stay updated: the TTFC 2027 waitlist ---------------- */

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Bell, BarChart3, House as HomeIcon, Building2, CalendarClock, CalendarDays, ChevronRight, Circle, Eye, ImagePlus, ListChecks, Megaphone, MessageSquareQuote, Moon, Smartphone, Sun, X, UserRoundPen } from "lucide-react";
+import { Bell, BarChart3, House as HomeIcon, Building2, CalendarDays, ChevronRight, Circle, Eye, ImagePlus, ListChecks, Megaphone, MessageSquareQuote, Moon, Smartphone, Sun, X, UserRoundPen } from "lucide-react";
 import { useStore, local } from "../lib/store";
 import { auth, can, firstName, isSignedIn, signOut } from "../lib/auth";
 import { cms, featuredSpeakers, heroSession, pollsOn, qaOn, roomOf, speakerById, timeRange } from "../lib/cms";
@@ -26,7 +26,7 @@ import FeedCta from "../components/FeedCta";
 import { useFeedCtas } from "../lib/useFeedCtas";
 import { FeaturedRow, OrgGrid, PartnerSheet } from "../components/Orgs";
 import BrandMark from "../components/BrandMark";
-import { stayFrom } from "../../lib/stayUpdated";
+import { StayHomeCard } from "../components/StaySignup";
 
 /* =========================================================
    Home, merged with the feed (iOS FeedView / HomeTabView):
@@ -42,7 +42,9 @@ import { stayFrom } from "../../lib/stayUpdated";
    in the middle of the top row (a tap pops it and scrolls to the
    top) and the divider under the hero is in the logo's colours
    (Oct 20 2026). First under the header: "The TTFC app is here"
-   with the App Store and Google Play badges (Oct 22 2026).
+   with the App Store and Google Play badges (Oct 22 2026). Above
+   the feed: "Stay updated for TTFC 2027", the 2027 waitlist
+   sign-up (Oct 24 2026, components/StaySignup.jsx).
 ========================================================= */
 
 function Countdown({ now, target }) {
@@ -434,15 +436,9 @@ export default function Home() {
             </span>
           </Link>
           <OrgsPreview />
-          {/* The TTFC 2027 waitlist (Oct 23 2026): /stay-updated, in the waitlist page's own (editable) words. */}
-          <Link to="/stay-updated" className="card wl-card pressable">
-            <span className="lead-icon" aria-hidden="true"><CalendarClock /></span>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <b>{stayFrom(ct.values)["stay.hero_title"]}</b>
-              <span className="tiny muted">{stayFrom(ct.values)["stay.button"]}</span>
-            </span>
-            <ChevronRight aria-hidden="true" style={{ width: 16, height: 16, flex: "none", color: "var(--tx2)" }} />
-          </Link>
+          {/* The TTFC 2027 waitlist (Oct 23 2026; a sign-up card since Oct 24): "Stay updated for TTFC 2027", its
+              button opens /stay-updated at the form, in the waitlist page's own (editable) words. */}
+          <StayHomeCard />
         </div>
 
         <div ref={sentinel} aria-hidden="true" style={{ height: 1 }} />

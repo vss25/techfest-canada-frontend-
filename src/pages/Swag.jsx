@@ -6,6 +6,7 @@ import StoreBadges from "../components/StoreBadges";
 import useSiteSettings, { PUBLIC_API } from "../hooks/useSiteSettings";
 import { SWAG_ALT, SWAG_PHOTO, fetchSwag, swagFrom, swagHowTo } from "../lib/swag";
 import { detectOS } from "../lib/pwaPlatform";
+import { isNativeVisit } from "../lib/nativeVisit";
 
 /* Who isn't involved, named for this device: an iPhone never sees Google named (App Store guideline 2.3.10). */
 const NOT_SPONSORS = {
@@ -27,7 +28,9 @@ const NOT_SPONSORS = {
    It's an advert for the app (the organiser, Oct 22 2026): the hero
    says "Download the TTFC app to win" and, as loud as the button,
    "Only people using the TTFC app can win" (the server's `pitch`);
-   winners are told at the end of Day 1.
+   winners are told at the end of Day 1. Opened from the iPhone or
+   Android app (?source=ios …, lib/nativeVisit.js), the "Get the app"
+   badges are left out: they have it (Oct 24 2026).
 ========================================================= */
 
 const HOW_ICONS = [Smartphone, UserRoundPlus, Trophy];
@@ -37,6 +40,7 @@ export default function Swag() {
   const [api, setApi] = useState(null);
   const s = api || swagFrom(settings);
   const [dark, setDark] = useState(false);
+  const [fromStoreApp] = useState(() => isNativeVisit());
 
   useEffect(() => {
     let alive = true;
@@ -93,10 +97,14 @@ export default function Swag() {
                 A TTFC backpack, bottle, mug, notebook, phone stand, umbrella and more. Download the app, sign in and earn points: the top {s.kits} on the leaderboard each win one.
               </p>
               {note && <p style={{ margin: "12px 0 0", fontSize: 15, fontWeight: 600, color: c.accent }}>{note}</p>}
-              <p style={{ margin: "22px 0 10px", display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 800, color: c.text }}>
-                <Smartphone size={18} aria-hidden="true" style={{ color: c.accent }} /> Get the app
-              </p>
-              <StoreBadges where="swag" align="start" />
+              {!fromStoreApp && (
+                <>
+                  <p style={{ margin: "22px 0 10px", display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 800, color: c.text }}>
+                    <Smartphone size={18} aria-hidden="true" style={{ color: c.accent }} /> Get the app
+                  </p>
+                  <StoreBadges where="swag" align="start" />
+                </>
+              )}
               <a href="#rules" style={{ display: "inline-flex", alignItems: "center", minHeight: 44, marginTop: 14, padding: "0 20px", borderRadius: 999, border: `1px solid ${c.line}`, color: c.text, fontSize: 15, fontWeight: 600, textDecoration: "none" }}>
                 Read the rules
               </a>

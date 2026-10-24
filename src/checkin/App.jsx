@@ -100,7 +100,7 @@ export default function App() {
       </>
     );
   }
-  if (screen === "start") return <StartGate station={stationInfo} />;
+  if (screen === "start") return <StartGate station={stationInfo} update={update} waiting={d.queueItems.filter((x) => x.state !== "failed").length} />;
   if (screen === "locked") return <><LockScreen /><ConfirmDialog /><Toasts /></>;
 
   const Screen = SCREENS[d.station] || Lobby;
@@ -212,7 +212,9 @@ function StationCounters({ station, item }) {
   return <Counters big={big} groups={groups} marks={mk} special={special} />;
 }
 
-function StartGate({ station }) {
+/** The Start screen of a station just picked here. A new version waiting (it waits here once a station has run in this
+    tab: lib/updatePolicy.js) shows "Update ready" on it, as on the station. */
+function StartGate({ station, update = false, waiting = 0 }) {
   const d = useDesk();
   const announces = ANNOUNCES.has(station.key);
   const start = () => {
@@ -224,6 +226,7 @@ function StartGate({ station }) {
   return (
     <main className="ci-start">
       <div className="ci-start-card">
+        {update && <UpdateBar station={station.key} waiting={waiting} />}
         <p className="ci-muted">{dayHeading(d.state?.today)}</p>
         <h1>{station.label}</h1>
         <p className="ci-start-sub">{station.sub}</p>

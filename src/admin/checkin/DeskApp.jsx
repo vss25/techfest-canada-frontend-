@@ -4,14 +4,18 @@ import { Copy, ExternalLink, MonitorSmartphone, Save, TimerReset } from "lucide-
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Badge, Button, Card, Input, LoadingState, SectionTitle, Switch } from "../ui";
-import { DESK_NAME, DESK_PATH } from "../../checkin/deskPath";
+import { deskUrl, isDeskPath } from "./deskLink";
+
+const DESK_NAME = "TTFC Check-in";
 
 /* =========================================================
    Admin › Event day › Check-in: the "Check-in desk app" card and the
    desk's settings (Oct 23 2026). Staff only (this panel).
    • The app's unlisted link and a QR code to open it on each iPad or
      phone, and how to install it (optional: a browser tab works the
-     same) and how volunteers get a login.
+     same) and how volunteers get a login. The link comes from the
+     server at runtime (GET /api/checkin/desk/info, staff only, password
+     sign-in), so its token is in no public website file.
    • Desk settings: when each station is open, per day. The CxO
      Breakfast, Lunch and the evening entry follow the live agenda (the
      website's /agenda) with doors opening `before` minutes earlier and
@@ -27,7 +31,16 @@ const SOURCE = { agenda: "From the agenda", fallback: "Agenda not read: Oct 23 t
 
 export function DeskAppCard() {
   const toast = useToast();
-  const url = typeof window !== "undefined" ? `${window.location.origin}${DESK_PATH}` : DESK_PATH;
+  const [path, setPath] = useState("");
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let gone = false;
+    api.get("/checkin/desk/info")
+      .then((r) => { if (gone) return; if (isDeskPath(r?.path)) setPath(r.path); else setError("The server didn't send the desk link."); })
+      .catch((e) => { if (!gone) setError(e.message || "Couldn't load the desk link."); });
+    return () => { gone = true; };
+  }, []);
+  const url = deskUrl(typeof window !== "undefined" ? window.location.origin : "", path);
   const copy = async () => {
     try { await navigator.clipboard.writeText(url); toast.success("Link copied"); } catch { toast.error("Couldn't copy: select the link and copy it"); }
   };
@@ -41,11 +54,17 @@ export function DeskAppCard() {
             the evening entry, the media desk, AV and exhibitors. Staff and volunteers sign in with their email and password.
             The link is unlisted (not on the website, not in search engines): only share it with the team. The sign-in is what protects it.
           </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <code className="max-w-full break-all rounded-lg bg-ttfc-contrast/5 px-2.5 py-1.5 text-sm" data-testid="desk-link">{url}</code>
-            <Button size="sm" icon={Copy} onClick={copy}>Copy link</Button>
-            <a className="inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-ttfc-text hover:bg-ttfc-contrast/5" href={DESK_PATH} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" aria-hidden="true" /> Open</a>
-          </div>
+          {path ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <code className="max-w-full break-all rounded-lg bg-ttfc-contrast/5 px-2.5 py-1.5 text-sm" data-testid="desk-link">{url}</code>
+              <Button size="sm" icon={Copy} onClick={copy}>Copy link</Button>
+              <a className="inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-ttfc-text hover:bg-ttfc-contrast/5" href={path} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" aria-hidden="true" /> Open</a>
+            </div>
+          ) : error ? (
+            <p className="mt-3 text-sm text-red-300">Desk link: {error} Ask TTFC tech for it.</p>
+          ) : (
+            <div className="mt-3"><LoadingState label="Loading the desk link…" /></div>
+          )}
           <ol className="mt-4 list-decimal space-y-1.5 pl-5 text-sm text-ttfc-muted">
             <li>On each iPad or phone, scan the QR code with the camera (or type the link) and open it in Safari or Chrome. It works straight away in the browser.</li>
             <li>Optional, to have it on the Home Screen: on iPad / iPhone (iOS 26) tap Share → View More → Add to Home Screen → Add; on Android Chrome or a laptop with Chrome / Edge: ⋮ → Install app.</li>
@@ -54,8 +73,12 @@ export function DeskAppCard() {
           </ol>
         </div>
         <div className="flex flex-col items-center gap-2">
-          <div className="rounded-2xl bg-white p-3"><QRCodeSVG value={url} size={176} level="M" /></div>
-          <span className="text-xs text-ttfc-dim">Scan to open on a device</span>
+          {url ? (
+            <>
+              <div className="rounded-2xl bg-white p-3"><QRCodeSVG value={url} size={176} level="M" /></div>
+              <span className="text-xs text-ttfc-dim">Scan to open on a device</span>
+            </>
+          ) : null}
         </div>
       </div>
     </Card>

@@ -1,10 +1,12 @@
 /* node --test src/checkin/lib/deskPath.test.mjs: TTFC Check-in's unlisted address. One random token (deskPath.js); the
    build publishes the app only there (never at /desk/); vercel.json sends noindex for it, rewrites its own paths to
-   its page and keeps the deploy rule; nothing on the public website imports or links it; the manifest the build writes
-   is a standalone app scoped to it with its own icons. */
+   its page and keeps the deploy rule; nothing outside the desk app imports or names it (the Admin card fetches the
+   link at runtime: GET /api/checkin/desk/info, contract C5); after a build (dist/), no file the public website or the
+   attendee app loads holds the token; the manifest the build writes is a standalone app scoped to it with its own
+   icons. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { DESK_NAME, DESK_PATH, DESK_TOKEN } from "../deskPath.js";
 
 const ROOT = new URL("../../../", import.meta.url);
@@ -49,7 +51,7 @@ test("the build publishes it only at the token path, as its own installable app"
   for (const f of ["icon-192.png", "icon-512.png", "maskable-512.png", "apple-touch-icon.png", "icon-96.png"]) assert.ok(statSync(new URL(`src/checkin/icons/${f}`, ROOT)).size > 1000, f);
 });
 
-test("the public website never imports or links the app (only the admin panel's card does)", () => {
+test("nothing outside the desk app imports or names it; the Admin card asks the server for the link", () => {
   const files = [];
   const walk = (dir) => {
     for (const name of readdirSync(new URL(dir, ROOT))) {
@@ -60,13 +62,14 @@ test("the public website never imports or links the app (only the admin panel's 
   };
   walk("src/");
   walk("public/");
-  const allowed = new Set(["src/checkin/", "src/admin/checkin/DeskApp.jsx"]);
   for (const f of files) {
-    if ([...allowed].some((a) => f.startsWith(a))) continue;
+    if (f.startsWith("src/checkin/")) continue;
     const text = read(f);
     assert.ok(!text.includes(DESK_TOKEN), `${f} names the token`);
-    assert.ok(!/checkin\/deskPath/.test(text) || f === "src/admin/checkin/DeskApp.jsx", `${f} imports the desk path`);
+    assert.ok(!/checkin\/deskPath/.test(text), `${f} imports the desk path`);
   }
+  const card = read("src/admin/checkin/DeskApp.jsx");
+  assert.match(card, /api\.get\("\/checkin\/desk\/info"\)/, "the link comes from the server at runtime");
   // The website's own router has no route for it (it's its own page).
   assert.ok(!read("src/App.jsx").includes("checkin-"));
   assert.ok(!read("index.html").includes("checkin"));
@@ -78,4 +81,29 @@ test("no desktop block: the app never uses the attendee app's 'made for your pho
     const text = read(`src/checkin/${f}`);
     assert.ok(!/desktopGate|DesktopGate|isMobileDevice/.test(text), f);
   }
+});
+
+/** The files a page loads, following every chunk a loaded file names (static imports, Vite's preload map). */
+function reachable(dist, page) {
+  const seen = new Set();
+  const todo = [...readFileSync(new URL(page, dist), "utf8").matchAll(/(?:src|href)="\/(assets\/[^"]+)"/g)].map((m) => m[1]);
+  while (todo.length) {
+    const f = todo.pop();
+    if (seen.has(f) || !existsSync(new URL(f, dist))) continue;
+    seen.add(f);
+    if (!f.endsWith(".js")) continue;
+    for (const m of readFileSync(new URL(f, dist), "utf8").matchAll(/(?:\.\/|assets\/)([\w.-]+\.(?:js|css))/g)) todo.push(`assets/${m[1]}`);
+  }
+  return seen;
+}
+
+test("after a build: no file the public website or the attendee app loads holds the token (only the desk app's own)", { skip: !existsSync(new URL("dist/index.html", ROOT)) && "no dist/ (run vite build first)" }, () => {
+  const dist = new URL("dist/", ROOT);
+  const publicFiles = new Set([...reachable(dist, "index.html"), ...(existsSync(new URL("app/index.html", dist)) ? reachable(dist, "app/index.html") : [])]);
+  assert.ok(publicFiles.size > 5, "the website's chunks were found");
+  for (const f of publicFiles) assert.ok(!readFileSync(new URL(f, dist), "utf8").includes(DESK_TOKEN), `${f} holds the desk token`);
+  // The desk app itself does (sanity check of the walk).
+  const desk = reachable(dist, `checkin-${DESK_TOKEN}/index.html`);
+  assert.ok([...desk].some((f) => readFileSync(new URL(f, dist), "utf8").includes(DESK_TOKEN)));
+  assert.ok([...desk].every((f) => !publicFiles.has(f) || !readFileSync(new URL(f, dist), "utf8").includes(DESK_TOKEN)));
 });

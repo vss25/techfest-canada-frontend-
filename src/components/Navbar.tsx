@@ -17,7 +17,9 @@ const PARTNERS_DROPDOWN = [
   { label: "Exhibit", path: "/exhibit" },
 ];
 
+// "Programme" (Oct 24 2026): /programme, the programme at a glance; shown while the agenda is on, like AGENDA.
 const MORE_DROPDOWN = [
+  { label: "Programme", path: "/programme" },
   { label: "Venue", path: "/venue" },
   { label: "Volunteer", path: "/volunteer" },
   { label: "Organizers", path: "/organizers" },
@@ -112,22 +114,23 @@ export default function Navbar() {
     { label: "AWARDS", path: "/awards" },
     { label: "MORE", hasDropdown: true, dropKey: "more" },
   ].filter((item) => showAgenda || (item.path !== "/agenda" && item.path !== "/programme"));
+  const moreItems = MORE_DROPDOWN.filter((d) => showAgenda || d.path !== "/programme");
 
   const isActive = (item) => {
     if (item.dropKey === "partners") return PARTNERS_DROPDOWN.some(d => d.path === location.pathname);
-    if (item.dropKey === "more") return MORE_DROPDOWN.some(d => d.path === location.pathname);
+    if (item.dropKey === "more") return moreItems.some(d => d.path === location.pathname);
     return location.pathname === item.path;
   };
 
   const getDropConfig = (dropKey) => {
     if (dropKey === "partners") return { open: partnersOpen, setOpen: setPartnersOpen, items: PARTNERS_DROPDOWN };
-    if (dropKey === "more") return { open: moreOpen, setOpen: setMoreOpen, items: MORE_DROPDOWN };
+    if (dropKey === "more") return { open: moreOpen, setOpen: setMoreOpen, items: moreItems };
     return { open: false, setOpen: () => {}, items: [] };
   };
 
   const mobileGroups = [
     { title: "Partners", items: PARTNERS_DROPDOWN },
-    { title: "More", items: MORE_DROPDOWN },
+    { title: "More", items: moreItems },
   ];
 
   const renderDropdown = (items, open, setOpen) => (

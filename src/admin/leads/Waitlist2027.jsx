@@ -34,7 +34,8 @@ const INTERESTS = [
   { key: "exhibitor", label: "Exhibitor", icon: Store, tone: "orange" },
   { key: "delegation", label: "Delegation", icon: UsersRound, tone: "pink" },
 ];
-const SOURCES = [["website", "Website"], ["webapp", "Web app"], ["ios", "iOS app"], ["android", "Android app"]];
+// "programme": the form at the bottom of the website's /programme page (Oct 24 2026).
+const SOURCES = [["website", "Website"], ["webapp", "Web app"], ["ios", "iOS app"], ["android", "Android app"], ["programme", "Website programme page"]];
 const SOURCE_LABEL = Object.fromEntries(SOURCES);
 const BADGE_TONE = { sponsorship: "purple", exhibitor: "orange", delegation: "pink" };
 

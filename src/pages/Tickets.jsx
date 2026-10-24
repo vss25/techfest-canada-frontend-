@@ -7,6 +7,7 @@ import useSiteSettings from "../hooks/useSiteSettings";
 import { TicketSalesNotice } from "../components/SiteNotices";
 import { promoFromUrl } from "../lib/promoOffer";
 import { PRICE_RISE, wasPrice } from "../lib/priceRise";
+import { PASS_FEATURES, PASS_FEATURE_MAP } from "../data/passFeatures";
 
 function CheckIcon() {
   return (
@@ -402,14 +403,9 @@ export default function Tickets() {
     navigate(`/tickets/checkout?tier=${tier}${promo ? `&promo=${encodeURIComponent(promo)}` : ""}`);
   };
 
-  const allFeatures = ["2x Day Conference Access","Expo Floor Access","Networking Breaks","2x Luncheons","1x Gala Dinner & Networking Reception","1x Awards Night","2x CxO Breakfasts","Preferential Seating","2x Pre-Matched Business Meetings","Private Scotch & Cocktail Lounge (19+)"];
-  const passFeatureMap = {
-    //          conf   expo   break  lunch  gala   awards cxo    seating meetings lounge
-    connect:   [true,  true,  true,  false, false, false, false, false,  false,   false],
-    influence: [true,  true,  true,  true,  false, false, false, false,  false,   false],
-    power:     [true,  true,  true,  true,  true,  true,  false, false,  false,   false],
-    apex:      [true,  true,  true,  true,  true,  true,  true,  true,   true,    true ],
-  };
+  // "Compare passes": shared with /programme's key times (src/data/passFeatures.js).
+  const allFeatures = PASS_FEATURES;
+  const passFeatureMap = PASS_FEATURE_MAP;
 
   const bg = dark ? "#06020f" : "#ffffff";
   const textMain = dark ? "#ffffff" : "#0d0520";

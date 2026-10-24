@@ -211,6 +211,21 @@ export function Toasts() {
   );
 }
 
+/**
+ * A banner's words: who (the icon, the name, "is on the way up"), then the facts (pass type, box letter; when and where
+ * they speak). One line on wider screens; on a phone two: the name, then the facts, which always show in full.
+ */
+function BannerWords({ x, icon }) {
+  const p = x.parts;
+  if (!p) return <>{icon}{x.text}</>;
+  return (
+    <>
+      <span className="ci-banner-who">{icon}<span className="ci-banner-name">{p.name}</span>{p.lead && <span className="ci-banner-lead">{p.lead}</span>}</span>
+      {p.facts.length > 0 && <span className="ci-banner-facts">{p.facts.map((f, i) => <span key={i} className="ci-banner-fact">{f}</span>)}</span>}
+    </>
+  );
+}
+
 /** A station's arrival banners (newest on top, three at once). */
 export function Banners({ station, onOpen, max = 3 }) {
   const d = useDesk();
@@ -225,7 +240,7 @@ export function Banners({ station, onOpen, max = 3 }) {
         if (x.unknown) {
           return (
             <div key={x.key} className="ci-banner is-unknown">
-              <span className="ci-banner-text"><span className="ci-flag-icon" aria-hidden="true">{NO_DETAILS.icon}</span>{x.text}</span>
+              <span className="ci-banner-text" title={x.text}><BannerWords x={x} icon={<span className="ci-flag-icon" aria-hidden="true">{NO_DETAILS.icon}</span>} /></span>
               <button type="button" className="ci-banner-ok" onClick={() => dismissBanner(station, x.key)}>Got it</button>
             </div>
           );
@@ -233,8 +248,8 @@ export function Banners({ station, onOpen, max = 3 }) {
         const band = badgeOf(x.guest);
         return (
           <div key={x.key} className={`ci-banner${band.noPass ? " is-issue" : ""}`} style={band.neutral ? undefined : { "--gbg": band.bg }}>
-            <button type="button" className="ci-banner-text" onClick={() => onOpen?.(x.guest)}>
-              <span className="ci-banner-bell" aria-hidden="true">{band.noPass ? ISSUE_PASS.icon : "🔔"}</span>{x.text}
+            <button type="button" className="ci-banner-text" onClick={() => onOpen?.(x.guest)} aria-label={x.text}>
+              <BannerWords x={x} icon={<span className="ci-banner-bell" aria-hidden="true">{band.noPass ? ISSUE_PASS.icon : "🔔"}</span>} />
             </button>
             <button type="button" className="ci-banner-ok" onClick={() => dismissBanner(station, x.key)}>Got it</button>
           </div>

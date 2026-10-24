@@ -83,9 +83,11 @@ export default function GuestSheet({ guest, onClose }) {
           <ul className="ci-switches">
             {EXTRA_ORDER.map((k) => {
               const v = view[k] || { override: null, auto: false, included: !!g.extras?.[k] };
+              // Two or more passes: the switch is on the pass that decides it (the server's extrasView ticketId).
+              const on = (g.passExtras || []).length > 1 ? (g.passExtras.find((x) => x.ticketId === v.ticketId)?.passName || "") : "";
               return (
                 <li key={k}>
-                  <span>{EXTRA_LABELS[k]} <b className={v.included ? "ci-good" : "ci-bad"}>{v.included ? "Yes" : "No"}</b></span>
+                  <span>{EXTRA_LABELS[k]} <b className={v.included ? "ci-good" : "ci-bad"}>{v.included ? "Yes" : "No"}</b>{on && <span className="ci-small ci-muted"> · on their {on}</span>}</span>
                   <span className="ci-seg" role="group" aria-label={EXTRA_LABELS[k]}>
                     {[["auto", null, `Auto (${v.auto ? "Yes" : "No"})`], ["yes", true, "Yes"], ["no", false, "No"]].map(([id, val, lab]) => (
                       <button key={id} type="button" className={(v.override ?? null) === val ? "is-on" : ""} disabled={!!busy}

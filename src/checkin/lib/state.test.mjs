@@ -4,7 +4,7 @@
    to the total), Media / VIP / Exhibitor as yes / no counts, and the meal station's admitted / entitled / RSVP'd. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applyEvents, boothStatus, checkedInToday, collectedBefore, counters, deskStage, fromSnapshot, heldInclusions, markedToday, onTheWay, rollDay, statusOf, unknownCounts, unknownsOf } from "./state.js";
+import { applyEvents, boothStatus, checkedInToday, collectedBefore, counters, deskStage, fromSnapshot, heldInclusions, markedToday, onTheWay, rollDay, statusOf, toSnapshot, unknownCounts, unknownsOf } from "./state.js";
 
 const DAY = "2026-10-26";
 const guest = (key, name, tier, marks = {}, extra = {}) => ({
@@ -323,4 +323,60 @@ test("C8: the queue on top: a lobby tap not answered yet shows at once; a queued
   assert.equal(unknownsOf(s, [link], { open: true }).length, 0);
   assert.equal(statusOf(s, s.byKey.get("gF"), [link]).arrived.pending, true, "the found guest shows Arrived at once");
   assert.equal(counters(s, "desk", { pending: [tap] }).unknown.open, 2);
+});
+
+test("S4: the state written back as a snapshot reads back the same: what events changed since the load included", () => {
+  const s = fromSnapshot(snap(), { clientNow: Date.parse("2026-10-26T13:00:00Z") });
+  applyEvents(s, [
+    { seq: 11, kind: "mark", point: "checked_in", key: "gA", marks: [mark("gA", "checked_in", 11, "2026-10-26T13:01:00Z")], pass: { key: "gA", collected: true, collectedAt: "2026-10-26T13:01:00Z" } },
+    { seq: 12, kind: "note", key: "gE", note: "Booth power strip", at: "2026-10-26T13:02:00Z", by: { name: "Sam" } },
+    { seq: 13, kind: "inclusions", key: "gG", extras: { cxo: true, lunch: false, gala: false, awards: false } },
+    { seq: 14, kind: "unknown_arrival", clientId: "z1", key: "u:z1", name: "Walk In", at: "2026-10-26T13:03:00Z", day: DAY, byName: "Val" },
+  ], { live: true, now: Date.parse("2026-10-26T13:03:00Z") });
+  s.cursor = 14;
+  const back = fromSnapshot(JSON.parse(JSON.stringify(toSnapshot(s))), { clientNow: Date.now() });
+  assert.equal(back.cursor, 14);
+  assert.equal(back.byKey.get("gA").passCollectedAt, "2026-10-26T13:01:00Z");
+  assert.ok(statusOf(back, back.byKey.get("gA")).checked_in);
+  assert.equal(back.notes.gE.text, "Booth power strip");
+  assert.equal(back.byKey.get("gG").extras.cxo, true);
+  assert.deepEqual(unknownsOf(back).map((u) => [u.key, u.status]), [["u:z1", "open"]]);
+  assert.equal(back.byKey.get("gD").name, "Rae Speaker", "a guest under two keys");
+  assert.equal(back.byKey.get("gD2"), back.byKey.get("gD"));
+  // The same events again (a reconnect from that cursor, or from before it) change nothing.
+  const before = JSON.stringify(toSnapshot(back));
+  applyEvents(back, [{ seq: 12, kind: "note", key: "gE", note: "Booth power strip", at: "2026-10-26T13:02:00Z", by: { name: "Sam" } }], { live: false });
+  assert.equal(JSON.stringify(toSnapshot(back)), before);
+});
+
+test("S6: a guest / inclusions event's row goes in place (a new main pass moves the key); newer pass / inclusions stay", () => {
+  const s = fromSnapshot(snap(), { clientNow: Date.now() });
+  s.notes.gF = { text: "VIP desk", by: "Sam", at: "x" };
+  // Collected at seq 12; the row of a guest event numbered 11 (an earlier change, delivered late) keeps the newer state.
+  applyEvents(s, [{ seq: 12, kind: "mark", point: "checked_in", key: "gF", marks: [mark("gF", "checked_in", 12, "2026-10-26T13:05:00Z")], pass: { key: "gF", collected: true, collectedAt: "2026-10-26T13:05:00Z" } }]);
+  const r1 = applyEvents(s, [{ seq: 11, kind: "guest", key: "gF", guest: { ...guest("gF", "Gus Guest-Smith", "connect"), passCollected: false, passCollectedAt: null } }]);
+  assert.equal(r1.refresh, false, "a row: no reload");
+  assert.equal(s.byKey.get("gF").name, "Gus Guest-Smith");
+  assert.equal(s.byKey.get("gF").passCollectedAt, "2026-10-26T13:05:00Z", "the newer pass collected stays");
+  // Given a Power Pass that becomes the main one: the row's key is new, the old key is in its keys; one guest, same place.
+  const idx = s.guests.findIndex((g) => g.key === "gF");
+  const r2 = applyEvents(s, [{ seq: 13, kind: "guest", key: "gF9", guest: guest("gF9", "Gus Guest-Smith", "power", {}, { keys: ["gF9", "gF"] }) }]);
+  assert.equal(r2.refresh, false);
+  assert.equal(s.guests.filter((g) => g.name === "Gus Guest-Smith").length, 1);
+  assert.equal(s.guests.findIndex((g) => g.key === "gF9"), idx, "in its place");
+  assert.equal(s.byKey.get("gF").key, "gF9");
+  assert.ok(statusOf(s, s.byKey.get("gF9")).checked_in, "marks under the old key still count");
+  assert.equal(s.notes.gF9?.text, "VIP desk", "the desk note moves with them");
+  // A brand-new guest (none of its keys known): added, and the list is read again (an ISSUE PASS row it replaces goes).
+  const r3 = applyEvents(s, [{ seq: 14, kind: "guest", key: "gN", guest: guest("gN", "New Person", "connect") }]);
+  assert.equal(r3.refresh, true);
+  assert.ok(s.byKey.get("gN"));
+  // Inclusions with the guest's row: guest-level extras; one older than a change made here never undoes it.
+  heldInclusions(s, "gA", 20);
+  applyEvents(s, [{ seq: 19, kind: "inclusions", key: "gA", extras: { cxo: true }, guest: { ...guest("gA", "Priya Sharma", "power"), extras: { cxo: true, lunch: false, gala: false, awards: false } } }]);
+  assert.equal(s.byKey.get("gA").extras.lunch, true, "held: the older event's inclusions don't apply");
+  applyEvents(s, [{ seq: 21, kind: "inclusions", key: "gA", extras: { cxo: true }, guest: { ...guest("gA", "Priya Sharma", "power"), extras: { cxo: true, lunch: false, gala: false, awards: false } } }]);
+  assert.deepEqual(s.byKey.get("gA").extras, { cxo: true, lunch: false, gala: false, awards: false });
+  // A guest event without a row (an older server): reload, as before.
+  assert.equal(applyEvents(s, [{ seq: 22, kind: "guest", key: "gB" }]).refresh, true);
 });

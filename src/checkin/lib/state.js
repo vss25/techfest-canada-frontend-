@@ -109,6 +109,43 @@ function setGuests(s, guests) {
   for (const g of guests) for (const k of g.keys?.length ? g.keys : [g.key]) s.byKey.set(k, g);
 }
 
+const keysOf = (g) => (g?.keys?.length ? g.keys : g?.key ? [g.key] : []);
+
+/**
+ * A guest's row as the server sent it with a guest / inclusions event (ev.guest: the row after a staff change, cut to
+ * what this sign-in may see), put in place of the row(s) it replaces (any guest holding one of its keys: a new main
+ * pass moves the key). Fields a newer event already changed (pass collected, inclusions) keep the newer value.
+ * → { added } (true: none of its keys was on this device: a new guest).
+ */
+function putGuest(s, row, seq) {
+  const keys = keysOf(row);
+  const old = [...new Set(keys.map((k) => s.byKey.get(k)).filter(Boolean))];
+  const g = { ...row };
+  const main = old.find((x) => x.key === row.key) || old[0] || null;
+  if (main) {
+    for (const [field, k] of [["pass", `pass|${main.key}`], ["inc", `inc|${main.key}`]]) {
+      if (!((s.lastSeq.get(k) || 0) > seq)) continue;
+      if (field === "pass") { g.passCollected = main.passCollected; g.passCollectedAt = main.passCollectedAt; }
+      else { g.extras = main.extras; if (main.extrasView) g.extrasView = main.extrasView; }
+    }
+    // A new main pass (a new key): the newer-than records and the desk note move with the guest.
+    if (main.key !== g.key) {
+      for (const p of ["pass", "inc", "note", "guest"]) {
+        const from = s.lastSeq.get(`${p}|${main.key}`);
+        if (from && !((s.lastSeq.get(`${p}|${g.key}`) || 0) > from)) s.lastSeq.set(`${p}|${g.key}`, from);
+      }
+      if (s.notes[main.key] && !s.notes[g.key]) s.notes[g.key] = s.notes[main.key];
+    }
+  }
+  const gone = new Set(old);
+  const list = s.guests.filter((x) => !gone.has(x));
+  // In the old row's place (screens keep their order), else at the end.
+  const at = main ? s.guests.indexOf(main) - s.guests.slice(0, s.guests.indexOf(main)).filter((x) => gone.has(x)).length : -1;
+  if (at >= 0) list.splice(at, 0, g); else list.push(g);
+  setGuests(s, list);
+  return { added: !main };
+}
+
 /** Is this event newer than the last one applied to `k` (a guest's pass, note or inclusions)? Then it's the last one. */
 function newer(s, k, seq) {
   const have = s.lastSeq.has(k) ? s.lastSeq.get(k) : s.baseCursor || 0;
@@ -117,8 +154,13 @@ function newer(s, k, seq) {
   return true;
 }
 
-/** Staff just changed a guest's inclusions here: events already out there (older) don't undo it. */
-export function heldInclusions(s, key) { if (s && key) s.lastSeq.set(`inc|${key}`, Math.max(s.maxSeq || 0, s.lastSeq.get(`inc|${key}`) || 0)); }
+/**
+ * Staff just changed a guest's inclusions here: events older than the change (up to `upTo`, the newest event seen when
+ * it was asked for; default: the newest seen now) don't undo it. Newer ones (the change's own event) apply.
+ */
+export function heldInclusions(s, key, upTo = s?.maxSeq) {
+  if (s && key) s.lastSeq.set(`inc|${key}`, Math.max(Number(upTo) || 0, s.lastSeq.get(`inc|${key}`) || 0));
+}
 
 /** Keep a mark if it's for today and newer than the one held. */
 function putMark(s, m) {
@@ -163,7 +205,18 @@ export function applyEvents(s, events = [], { live = true, now = Date.now() } = 
         changed = true;
       }
     }
-    if (ev.kind === "inclusions") {
+    // Staff changed a guest (Admin › People, the desk app's switches): the row the event carries goes in place (the
+    // guest's inclusions are any counting pass's, worked out on the server); without one, the list is loaded again.
+    if ((ev.kind === "guest" || ev.kind === "inclusions") && ev.guest && typeof ev.guest === "object" && ev.guest.key) {
+      if (newer(s, `guest|${ev.guest.key}`, ev.seq)) {
+        const { added } = putGuest(s, ev.guest, ev.seq);
+        if (ev.kind === "inclusions") s.lastSeq.set(`inc|${ev.guest.key}`, Math.max(ev.seq, s.lastSeq.get(`inc|${ev.guest.key}`) || 0));
+        // A new guest (a pass just given): the list is read again too, so a row it replaces under another key (ISSUE
+        // PASS: on the list with no pass, now with one) goes.
+        if (added) refresh = true;
+        changed = true;
+      }
+    } else if (ev.kind === "inclusions") {
       const g = s.byKey.get(ev.key);
       if (g && g.key === ev.key && ev.extras) {
         if (newer(s, `inc|${g.key}`, ev.seq)) {
@@ -172,7 +225,7 @@ export function applyEvents(s, events = [], { live = true, now = Date.now() } = 
           changed = true;
         }
       } else if (g) refresh = true;
-    }
+    } else if (ev.kind === "guest") refresh = true;
     const evKind = ev.kind || ev.type;
     if (evKind === "unknown_arrival" || evKind === "unknown_done" || evKind === "unknown_link" || (evKind === "undo" && isUnknownKey(ev.key || ev.target || ""))) {
       const key = isUnknownKey(ev.key) ? ev.key : isUnknownKey(ev.target) ? ev.target : ev.clientId && evKind === "unknown_arrival" ? unknownKey(ev.clientId) : "";
@@ -193,7 +246,6 @@ export function applyEvents(s, events = [], { live = true, now = Date.now() } = 
         changed = true;
       }
     }
-    if (ev.kind === "guest") refresh = true;
     if (ev.kind === "query" && ev.query) {
       const have = s.queries.get(ev.query.id);
       if (!have || (have.rev || 0) < (ev.query.rev || 0)) { s.queries.set(ev.query.id, ev.query); changed = true; }
@@ -210,6 +262,19 @@ export function applyEvents(s, events = [], { live = true, now = Date.now() } = 
   }
   if (changed) s.version += 1;
   return { changed, refresh, arrivals };
+}
+
+/**
+ * The device's state as a snapshot again (fromSnapshot reads it back): what live events changed since the last list
+ * load included (a pass collected, marks, notes, inclusions, queries, NO DETAILS FOUND cards) and the cursor they reach.
+ * lib/desk.js keeps it on the device (without staff-only fields), so a reopen offline has it.
+ */
+export function toSnapshot(s) {
+  return {
+    user: s.me, staff: s.staff, today: s.today, cursor: s.cursor, stations: s.stations, windows: s.windows, stationStates: s.stationStates,
+    agendaRead: s.agendaRead, guests: s.guests, booths: s.booths, marks: [...s.marks.values()], notes: { ...s.notes },
+    queries: [...s.queries.values()], unknowns: [...(s.unknowns?.values() || [])].filter((u) => u.status !== "undone"),
+  };
 }
 
 /* ---------- Today, on the device ---------- */

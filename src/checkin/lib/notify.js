@@ -25,16 +25,26 @@ export function notifyStations(guest) {
   return ["desk", ...(m.speaker ? ["av"] : []), ...(m.exhibitor ? ["exhibitor"] : []), ...(m.media ? ["media"] : [])];
 }
 
-/** The banner's words at a station. */
-export function bannerText(guest, station, { eventDay = null, now = Date.now() } = {}) {
+/**
+ * The banner's words at a station, in parts: { name, lead, facts }. A phone shows them on two lines (the name, then
+ * the facts: pass type and box letter at the desk), so the facts are never cut off; wider screens on one.
+ */
+export function bannerParts(guest, station, { eventDay = null, now = Date.now() } = {}) {
   const b = badgeOf(guest);
+  const name = guest.name;
   if (station === "av") {
     const n = nextSession(guest.sessions || [], { eventDay, now });
-    return n ? `${guest.name} arrived · speaks ${clock12(n.session.start)}, ${n.session.room} (${untilText(n.minutesUntil)})` : `${guest.name} arrived · no session today`;
+    return { name, lead: "arrived", facts: [n ? `speaks ${clock12(n.session.start)}, ${n.session.room} (${untilText(n.minutesUntil)})` : "no session today"] };
   }
-  if (station === "exhibitor") return `${guest.name} arrived · ${guest.company || "Exhibitor"}${guest.booth ? ` · Booth ${String(guest.booth).toUpperCase()}` : ""}`;
-  if (station === "media") return `${guest.name} arrived · ${b.full}${guest.company ? ` · ${guest.company}` : ""}`;
-  return `${guest.name} is on the way up · ${b.full} · Box ${boxLetter(guest)}`;
+  if (station === "exhibitor") return { name, lead: "arrived", facts: [guest.company || "Exhibitor", ...(guest.booth ? [`Booth ${String(guest.booth).toUpperCase()}`] : [])] };
+  if (station === "media") return { name, lead: "arrived", facts: [b.full, ...(guest.company ? [guest.company] : [])] };
+  return { name, lead: "is on the way up", facts: [b.full, `Box ${boxLetter(guest)}`] };
+}
+
+/** The banner's words at a station, as one line ("Priya Sharma is on the way up · Power Pass · Box S"). */
+export function bannerText(guest, station, opts = {}) {
+  const p = bannerParts(guest, station, opts);
+  return [`${p.name}${p.lead ? ` ${p.lead}` : ""}`, ...p.facts].join(" · ");
 }
 
 export const MAX_VISIBLE = 3;

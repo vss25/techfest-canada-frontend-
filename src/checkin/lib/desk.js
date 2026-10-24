@@ -4,9 +4,9 @@ import { createClock } from "./clock.js";
 import { createLive } from "./live.js";
 import { browserStorage, createQueue } from "./queue.js";
 import { createTabs } from "./tabs.js";
-import { applyEvents, fromSnapshot, heldInclusions, rollDay, statusOf, unknownsOf } from "./state.js";
+import { applyEvents, fromSnapshot, heldInclusions, rollDay, statusOf, toSnapshot, unknownsOf } from "./state.js";
 import { stationStates as localStationStates } from "./stationTime.js";
-import { bannerText, createBanners, notifyStations } from "./notify.js";
+import { bannerParts, bannerText, createBanners, notifyStations } from "./notify.js";
 import { badgeOf, noPassOf } from "./passColors.js";
 import { describeTap, signOutText } from "./tapText.js";
 import { NO_DETAILS, unknownArrivalAction, unknownDoneAction, unknownKey, unknownLinkAction } from "./special.js";
@@ -291,28 +291,72 @@ let flashSeq = 0;
 const ANNOUNCE = ["desk", "av", "exhibitor", "media"];
 const DONE_POINT = { desk: "checked_in", av: "av", exhibitor: "exhibitor", media: "media" };
 
+/**
+ * An arrival is announced (banner, chime, flash) this long after it came in, and only if it still stands then: an undo
+ * or reset arriving meanwhile, in the same batch of events or a later one (the server sends each event on its own),
+ * or the guest already checked in there, cancels it. A lobby slip undone at once never rings the desk.
+ */
+export const ANNOUNCE_HOLD_MS = 1500;
+/** Arrivals waiting to be announced: key (guest or "u:" card) → { ...arrival, due }. */
+const held = new Map();
+let holdTimer = null;
+/** +1 whenever an event changes what the attendance counts say (the staff Counts screen reads them again). */
+let countsSeq = 0;
+export const countsVersion = () => countsSeq;
+const COUNTED = new Set(["mark", "undo", "reset", "unknown_arrival", "unknown_done", "unknown_link"]);
+
 function handleEvents(events, { live = true } = {}) {
   const s = desk.state;
   if (!s || !events?.length) return;
   recent = [...recent, ...events].slice(-300);
   const r = applyEvents(s, events, { live, now: serverNow() });
+  // Still standing once the whole batch is applied (each guest once); announced after the hold, if still standing then.
+  const due = Date.now() + ANNOUNCE_HOLD_MS;
   for (const a of standingArrivals(s, r.arrivals, queue.pending())) {
+    const key = a.unknown ? a.unknown.key : a.guest.key;
+    if (!held.has(key)) held.set(key, { ...a, due });
+  }
+  if (held.size) scheduleAnnounce();
+  if (events.some((e) => COUNTED.has(e?.kind || e?.type))) countsSeq += 1;
+  tidyBanners();
+  if (r.refresh) { clearTimeout(refreshTimer); refreshTimer = setTimeout(() => load({ quiet: true }), 1500); }
+  // Kept on the device too (a reopen offline, Day 2's "Has pass", has what the events changed since the last load).
+  if (r.changed) persistSoon();
+  emit();
+}
+
+function scheduleAnnounce() {
+  if (holdTimer || !held.size) return;
+  const next = Math.min(...[...held.values()].map((x) => x.due));
+  holdTimer = setTimeout(() => { holdTimer = null; announceDue(); }, Math.max(0, next - Date.now()));
+}
+
+/** The held arrivals whose time has come, if they still stand now: the banners, and at this station the chime + flash. */
+function announceDue() {
+  const s = desk.state;
+  if (!s) { held.clear(); return; }
+  const now = Date.now();
+  const due = [];
+  for (const [k, a] of held) if (a.due <= now) { due.push(a); held.delete(k); }
+  for (const a of standingArrivals(s, due, queue.pending())) {
     if (a.unknown) {
       // Only the pass desk hears about a NO DETAILS FOUND arrival.
-      desk.banners.desk.add({ key: a.unknown.key, unknown: a.unknown, guest: null, at: a.at, by: a.by, text: `${NO_DETAILS.badge}: ${a.unknown.name}${a.unknown.company ? ` (${a.unknown.company})` : ""} · check ID, send to help desk` });
+      desk.banners.desk.add({ key: a.unknown.key, unknown: a.unknown, guest: null, at: a.at, by: a.by, text: unknownBannerText(a.unknown), parts: unknownBannerParts(a.unknown) });
       if (desk.station === "desk") { chime(); desk.flash = { seq: ++flashSeq, bg: "", unknown: true }; }
       continue;
     }
     for (const st of a.stations) {
-      desk.banners[st].add({ key: a.guest.key, guest: a.guest, at: a.at, by: a.by, text: bannerText(a.guest, st, { eventDay: s.today?.eventDay, now: serverNow() }) });
+      const o = { eventDay: s.today?.eventDay, now: serverNow() };
+      desk.banners[st].add({ key: a.guest.key, guest: a.guest, at: a.at, by: a.by, text: bannerText(a.guest, st, o), parts: bannerParts(a.guest, st, o) });
       // The chime plays whenever sound is on (chime() does nothing until a tap unlocked it); the screen flashes too.
       if (st === desk.station) { chime(); desk.flash = { seq: ++flashSeq, bg: badgeOf(a.guest).bg }; }
     }
   }
-  tidyBanners();
-  if (r.refresh) { clearTimeout(refreshTimer); refreshTimer = setTimeout(() => load({ quiet: true }), 1500); }
-  emit();
+  scheduleAnnounce();
+  if (due.length) { tidyBanners(); emit(); }
 }
+const unknownBannerParts = (u) => ({ name: `${NO_DETAILS.badge}: ${u.name}`, lead: "", facts: [...(u.company ? [u.company] : []), "check ID, send to help desk"] });
+const unknownBannerText = (u) => `${NO_DETAILS.badge}: ${u.name}${u.company ? ` (${u.company})` : ""} · check ID, send to help desk`;
 
 /**
  * A batch's arrivals still standing once the WHOLE batch is applied (each guest once), with the stations still to tell
@@ -366,7 +410,7 @@ export function dismissBanner(station, key) { desk.banners[station]?.clear(key);
  * Never kept on the device: staff-only fields (a shared iPad's cache must not hold every guest's email and ticket IDs),
  * at any depth (the staff's inclusion switches name the ticket too, so they go; the guest's inclusions stay).
  */
-const STAFF_ONLY_FIELDS = new Set(["email", "ticketId", "ticketIds", "personId", "phone", "extrasView"]);
+const STAFF_ONLY_FIELDS = new Set(["email", "ticketId", "ticketIds", "personId", "phone", "extrasView", "passExtras"]);
 const scrub = (v) => {
   if (Array.isArray(v)) return v.map(scrub);
   if (!v || typeof v !== "object") return v;
@@ -379,6 +423,31 @@ export function cacheableSnapshot(snap) {
 }
 function cacheSnapshot(snap) {
   try { remember.set(SNAPSHOT_KEY, JSON.stringify({ userId: desk.session?.user?.id, snap: cacheableSnapshot(snap) })); } catch { /* too big or blocked: fine */ }
+}
+
+/**
+ * What live events change (a pass collected, marks, notes, inclusions, NO DETAILS FOUND cards) is written into the
+ * device's copy too, a few seconds later (and at once when the app is hidden or closed): opened offline later (Day 2
+ * at the doors), the device has every check-in it heard about, not just those before its last full list load. Never
+ * while today was worked out on the device (its list isn't today's yet), and never while taps can't be saved (they come
+ * first: the copy is what gets dropped to make room).
+ */
+export const PERSIST_MS = 3000;
+let persistTimer = null;
+let persistDirty = false;
+function persistSoon() {
+  persistDirty = true;
+  if (persistTimer) return;
+  const g = sessionGen;
+  persistTimer = setTimeout(() => { persistTimer = null; persistNow(g); }, PERSIST_MS);
+}
+function persistNow(g = sessionGen) {
+  clearTimeout(persistTimer);
+  persistTimer = null;
+  const s = desk.state;
+  if (!persistDirty || !s || g !== sessionGen || !desk.session?.token || s.dayFromDevice || desk.dayStale || !desk.persistOk) return;
+  persistDirty = false;
+  cacheSnapshot(toSnapshot(s));
 }
 function cachedSnapshot() {
   try {
@@ -443,13 +512,18 @@ async function doLoad({ quiet = false, refresh = false } = {}, g = sessionGen) {
     const who = identityOf(desk.session);
     if (who && snap.user?.id && String(snap.user.id) !== who.id) throw new ApiError("That guest list was for another sign-in. Reload the guest list, or sign out and in again.", 0);
     const fresh = fromSnapshot(snap, { clientNow: Date.now() });
-    applyEvents(fresh, recent.filter((e) => e.seq > fresh.cursor), { live: false, now: serverNow() });
+    const caught = applyEvents(fresh, recent.filter((e) => e.seq > fresh.cursor), { live: false, now: serverNow() });
     desk.state = fresh;
     desk.loadError = "";
     desk.dayStale = false;
     lastServerStates = Date.now();
     if (desk.session.staff !== !!snap.staff || desk.session.user?.name !== snap.user?.name) setSession({ ...desk.session, staff: !!snap.staff, user: snap.user });
+    // The server's list as it came; events newer than it (already on this device) follow into the copy shortly.
+    clearTimeout(persistTimer);
+    persistTimer = null;
+    persistDirty = false;
     cacheSnapshot(snap);
+    if (caught.changed) persistSoon();
     tidyBanners();
   } catch (err) {
     if (!current()) return;
@@ -604,6 +678,12 @@ function endSession(reason = "") {
   desk.endedReason = reason;
   desk.myTaps.clear();
   recent = [];
+  held.clear();
+  clearTimeout(holdTimer);
+  holdTimer = null;
+  clearTimeout(persistTimer);
+  persistTimer = null;
+  persistDirty = false;
   sessionStore.remove(STARTED_HERE_KEY);
   for (const b of Object.values(desk.banners)) b.keep(() => false);
   setCount(0);
@@ -675,8 +755,8 @@ export async function unlock(password) {
 if (typeof window !== "undefined") {
   const used = () => { if (!desk.locked) { lastUse = Date.now(); saveUse(); } };
   for (const t of ["pointerdown", "keydown"]) window.addEventListener(t, used, { capture: true, passive: true });
-  window.addEventListener("pagehide", () => saveUse(true));
-  if (typeof document !== "undefined") document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveUse(true); });
+  window.addEventListener("pagehide", () => { saveUse(true); persistNow(); });
+  if (typeof document !== "undefined") document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") { saveUse(true); persistNow(); } });
   setInterval(checkIdle, 30 * 1000);
 }
 
@@ -720,29 +800,52 @@ export function boot() {
 
 /* ---------- Staff: through Admin › People's own routes (audited there) ---------- */
 
-/** Switch a pass extra (cxo | lunch | gala | awards) Yes / No / automatic (null) for the guest's main pass. */
+/** The server's guest / inclusions event for a staff change made here, waited for this long before the list is read again. */
+export const GUEST_EVENT_WAIT_MS = 4000;
+/** Read the list again unless an event brought the guest's row (ev.guest) since `seen` (an older server sends none). */
+function reloadUnlessRow(key, seen) {
+  const g0 = sessionGen;
+  setTimeout(() => {
+    if (g0 !== sessionGen || !desk.state) return;
+    const g = desk.state.byKey.get(key);
+    if ((desk.state.lastSeq.get(`guest|${g?.key || key}`) || 0) <= seen) load({ quiet: true });
+  }, GUEST_EVENT_WAIT_MS);
+}
+
+/**
+ * Switch a pass extra (cxo | lunch | gala | awards) Yes / No / automatic (null) on the pass that decides it for this
+ * guest (the server's extrasView: their main pass, or another of their passes that includes it). A guest's inclusions
+ * are any counting pass's, so what they are now comes from the server's inclusions event (its guest-level extras and
+ * row, applied as it arrives: lib/state.js), never from the one pass the PATCH answers with. Until then only what's
+ * certain is shown: switched on = included.
+ */
 export async function setInclusion(g, extra, value) {
   if (!desk.session?.staff) throw new ApiError("Only staff can change inclusions.", 403);
   if (noPassOf(g)) throw new ApiError("No pass on file: issue a pass first (at the pass desk, or Admin › People).", 400);
-  if (!g.personId || !g.ticketId) throw new ApiError("The guest list is still loading from the server. Try again in a moment.", 0);
-  const r = await api(`/console/people/${encodeURIComponent(g.personId)}/passes/${encodeURIComponent(g.ticketId)}`, { method: "PATCH", body: { extras: { [extra]: value } } });
-  const t = (r.person?.passes || []).find((p) => p.ticketId === g.ticketId);
-  if (t?.extras) {
-    g.extras = Object.fromEntries(Object.entries(t.extras).map(([k, v]) => [k, !!v.included]));
-    g.extrasView = t.extras;
-  } else if (value !== null) g.extras = { ...g.extras, [extra]: value };
-  // Older inclusions events still on their way don't undo this.
-  heldInclusions(desk.state, g.key);
+  const ticketId = g.extrasView?.[extra]?.ticketId || g.ticketId;
+  if (!g.personId || !ticketId) throw new ApiError("The guest list is still loading from the server. Try again in a moment.", 0);
+  const seen = desk.state?.lastSeq.get(`guest|${g.key}`) || 0;
+  const before = desk.state?.maxSeq || 0;
+  const r = await api(`/console/people/${encodeURIComponent(g.personId)}/passes/${encodeURIComponent(ticketId)}`, { method: "PATCH", body: { extras: { [extra]: value } } });
+  const cur = desk.state?.byKey.get(g.key) || g;
+  if (value === true) cur.extras = { ...cur.extras, [extra]: true };
+  if (cur.extrasView?.[extra]) cur.extrasView = { ...cur.extrasView, [extra]: { ...cur.extrasView[extra], override: value, ...(value === true ? { included: true } : {}) } };
+  // Inclusions events from before the change (still on their way) don't undo this; the change's own event does the rest.
+  heldInclusions(desk.state, cur.key, before);
+  if (desk.state) desk.state.version += 1;
+  reloadUnlessRow(cur.key, seen);
+  persistSoon();
   emit();
   return r;
 }
 
-/** Media / VIP / Exhibitor Yes or No (PATCH /api/console/people/:id, audited there); the list reloads. */
+/** Media / VIP / Exhibitor Yes or No (PATCH /api/console/people/:id, audited there): the server's guest event brings the row. */
 export async function setPersonFlag(g, flag, value) {
   if (!desk.session?.staff) throw new ApiError("Only staff can change this.", 403);
   if (!g.personId) throw new ApiError("The guest list is still loading from the server. Try again in a moment.", 0);
+  const seen = desk.state?.lastSeq.get(`guest|${g.key}`) || 0;
   const r = await api(`/console/people/${encodeURIComponent(g.personId)}`, { method: "PATCH", body: { [flag]: !!value } });
-  await load({ quiet: true, refresh: true });
+  reloadUnlessRow(g.key, seen);
   return r;
 }
 

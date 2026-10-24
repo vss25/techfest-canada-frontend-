@@ -2,7 +2,7 @@
    queue (newest on top, three at once, nothing dropped). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { MAX_VISIBLE, bannerText, createBanners, notifyStations } from "./notify.js";
+import { MAX_VISIBLE, bannerParts, bannerText, createBanners, notifyStations } from "./notify.js";
 
 const g = (marks = {}, extra = {}) => ({ key: "g1", name: "Priya Sharma", lastName: "Sharma", tier: "power", passName: "Power Pass", company: "Northwind",
   marks: { vip: false, media: false, speaker: false, exhibitor: false, ...marks }, ...extra });
@@ -25,6 +25,18 @@ test("the banners say who, what pass and which box; AV says when and where they 
   assert.equal(bannerText(g({ speaker: true }), "av", { eventDay: "day1", now }), "Priya Sharma arrived · no session today");
   assert.equal(bannerText(g({ exhibitor: true }, { booth: "a12" }), "exhibitor"), "Priya Sharma arrived · Northwind · Booth A12");
   assert.equal(bannerText(g({ media: true }), "media"), "Priya Sharma arrived · Media · Power Pass · Northwind");
+});
+
+test("a phone's two lines: the name, then the facts (pass type and box letter at the desk) that must never be cut", () => {
+  const v = g({}, { name: "Victoria Gold", lastName: "Gold", tier: "connect", passName: "Connect Pass" });
+  assert.deepEqual(bannerParts(v, "desk"), { name: "Victoria Gold", lead: "is on the way up", facts: ["Connect Pass", "Box G"] });
+  assert.deepEqual(bannerParts(g({ media: true }), "desk").facts, ["Media · Power Pass", "Box S"]);
+  assert.deepEqual(bannerParts(g({ exhibitor: true }, { booth: "a12" }), "exhibitor"), { name: "Priya Sharma", lead: "arrived", facts: ["Northwind", "Booth A12"] });
+  // The one-line text is the same words.
+  for (const st of ["desk", "media", "exhibitor", "av"]) {
+    const p = bannerParts(v, st);
+    assert.equal(bannerText(v, st), [`${p.name} ${p.lead}`, ...p.facts].join(" · "), st);
+  }
 });
 
 test("the queue: newest first, three visible, +N more, cleared when checked in or Got it", () => {

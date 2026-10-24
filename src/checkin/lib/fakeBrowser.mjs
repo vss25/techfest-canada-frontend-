@@ -50,3 +50,21 @@ export function later() {
 }
 /** The bearer token a fake request was sent with. */
 export const tokenOf = (opts) => String(opts?.headers?.Authorization || "").replace(/^Bearer /, "");
+
+/**
+ * A live stream (GET /checkin/desk/stream) the test feeds frame by frame, each written on its own like the server does.
+ * → { response(), frame(event, data), close() }: hand response() to the route; frames go to the latest response.
+ */
+export function liveStream() {
+  let ctl = null;
+  const enc = new TextEncoder();
+  return {
+    response() {
+      const body = new ReadableStream({ start(c) { ctl = c; } });
+      return new Response(body, { status: 200, headers: { "Content-Type": "text/event-stream" } });
+    },
+    frame(event, data) { ctl?.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)); },
+    close() { try { ctl?.close(); } catch { /* closed */ } ctl = null; },
+    get open() { return !!ctl; },
+  };
+}

@@ -33,6 +33,7 @@ export const SCOPES = {
       { id: "tickets", title: "Tickets & help" },
       { id: "privacy", title: "Privacy & community" },
       { id: "flags", title: "Feature switches", hint: "Turn parts of the app on or off for everyone. Pass upgrades are under Website switches › Selling." },
+      { id: "updates", title: "App updates", hint: "People on an older iPhone or Android app see “A new version of TTFC is available · Update” (they can close it for a day). Change “Newest version” only once that version is live in the App Store or on Google Play. Management only." },
     ],
   },
   /* "Stay updated" (Oct 23 2026): the TTFC 2027 waitlist page (website /stay-updated, the web app's
@@ -245,6 +246,37 @@ export const REGISTRY = {
     scope: "app", group: "flags", type: "switch",
     label: "Prompt web app users to get the store app",
     description: "People using the web app (thetechfestival.com/app) on a phone or tablet see \"Get the TTFC app\" once per visit, after a few seconds on Home or another main screen: the App Store on an iPhone or iPad, Google Play on Android. \"Not now\" hides it for a week. Never on the website, never in the iPhone or Android app, and never for people who opened a page from those apps.",
+  },
+  // "Update the app" (Oct 24 2026, backend services/appVersion.js): numbers and dots only, checked by the server.
+  "app.ios_latest": {
+    scope: "app", group: "updates", type: "text", management: true,
+    label: "Newest iPhone app version",
+    description: "The version in the App Store now, e.g. 1.0.3. iPhone apps older than this show the update banner. Empty: no banner.",
+    placeholder: "1.0.3",
+  },
+  "app.android_latest": {
+    scope: "app", group: "updates", type: "text", management: true,
+    label: "Newest Android app version",
+    description: "The version on Google Play now, e.g. 1.0.6. Android apps older than this show the update banner. Empty: no banner.",
+    placeholder: "1.0.6",
+  },
+  "app.ios_minimum": {
+    scope: "app", group: "updates", type: "text", management: true, emptyHides: true,
+    label: "Oldest iPhone version allowed",
+    description: "Leave empty (the normal case). If set, iPhone apps older than this can't be used until they update: only an Update button shows.",
+    placeholder: "Empty: nobody is blocked",
+  },
+  "app.android_minimum": {
+    scope: "app", group: "updates", type: "text", management: true, emptyHides: true,
+    label: "Oldest Android version allowed",
+    description: "Leave empty (the normal case). If set, Android apps older than this can't be used until they update: only an Update button shows.",
+    placeholder: "Empty: nobody is blocked",
+  },
+  "app.update_message": {
+    scope: "app", group: "updates", type: "text", management: true, emptyHides: true,
+    label: "Extra line on the update banner",
+    description: "Optional, under “A new version of TTFC is available”, e.g. what's new. Empty: just the title.",
+    placeholder: "e.g. Tap profile photos to open profiles",
   },
 
   /* ---------------- Stay updated: the TTFC 2027 waitlist ---------------- */

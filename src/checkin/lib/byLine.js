@@ -1,6 +1,6 @@
 import { timeText } from "./timers.js";
 
-const WHERE = { lobby: "Lobby", desk: "Pass desk", scanner: "QR scan", breakfast: "Breakfast", lunch: "Lunch", evening: "Evening", media: "Media desk", av: "AV", exhibitor: "Exhibitor desk", admin: "Admin" };
+const WHERE = { lobby: "Lobby", desk: "Floor 1", scanner: "QR scan", breakfast: "Breakfast", lunch: "Lunch", evening: "Evening", media: "Media desk", av: "AV", exhibitor: "Exhibitor desk", admin: "Admin" };
 
 /** "10:42 AM by Sam (Lobby)" (· pending, · override, · practice on a day that isn't an event day). */
 export function byLine(m) {

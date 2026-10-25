@@ -3,8 +3,8 @@ import { useDesk, pending } from "../lib/desk.js";
 import { statusOf } from "../lib/state.js";
 import { clock12, nextSession, untilText } from "../lib/timers.js";
 import { act, undoFor } from "../act.js";
-import { SearchBox } from "../components.jsx";
-import { byLine } from "../lib/byLine.js";
+import { SearchBox, StateChip } from "../components.jsx";
+import { cta, stateChip } from "../lib/vocab.js";
 import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
 import { useNow, useUndoExpiry } from "../hooks.js";
@@ -25,7 +25,7 @@ export default function Av({ onOpen }) {
   const check = useCallback((g, done) => {
     const st = statusOf(s, g, pending());
     if (st.av) return;
-    act({ point: "av", guest: g, note: (notes[g.key] || "").trim().slice(0, 80), undoText: `${g.name}: AV checked.`, onDone: done });
+    act({ point: "av", guest: g, note: (notes[g.key] || "").trim().slice(0, 80), undoText: `${g.name}: AV checked.`, undoLabel: cta("av").undo, onDone: done });
   }, [s, notes]);
   const { q, setQ, sel, results, inputRef, done } = useGuestSearch(speakers, { onEnter: check, version: s.version + p.length });
   useUndoExpiry();
@@ -47,16 +47,17 @@ export default function Av({ onOpen }) {
       <span className="ci-row-extra">
         {next ? <span className={`ci-session${due ? " is-due" : ""}`}>{due ? "⚡ " : ""}{clock12(next.session.start)} · {next.session.room} · {next.session.title} <b>({untilText(next.minutesUntil)})</b></span>
           : <span className="ci-muted">{(g.sessions || []).some((x) => x.day === eventDay) ? "Done speaking today" : "No session today"}</span>}
-        <span className={`ci-rsvp ${st.arrived ? "is-yes" : ""}`}>{st.arrived ? `Arrived ${byLine(st.arrived)}` : "Not arrived yet"}</span>
+        {st.arrived ? <StateChip {...stateChip("arrived", st.arrived, { by: true })} size="s" /> : <span className="ci-rsvp">Not arrived yet</span>}
       </span>
     );
     return (
       <GuestRow key={g.key} guest={g} selected={i === sel && !!q} onOpen={onOpen} extra={extra}
-        status={st.av ? `AV checked ${byLine(st.av)}${st.av.note ? ` · “${st.av.note}”` : ""}` : due ? "Due soon" : ""} statusTone={st.av ? "good" : due ? "warn" : ""}
-        actions={st.av ? (undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span key="done" className="ci-done">✓</span>) : (
+        state={st.av ? { ...stateChip("av", st.av, { by: true }), text: `${stateChip("av", st.av, { by: true }).text}${st.av.note ? ` · “${st.av.note}”` : ""}` } : null}
+        status={due ? "Due soon" : ""} statusTone={due ? "warn" : ""}
+        actions={st.av ? (undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>{cta("av").undo}</button> : null) : (
           <span key="act" className="ci-av-act">
             <input className="ci-input ci-input-s" placeholder="Note (optional)" maxLength={80} value={notes[g.key] || ""} onChange={(e) => setNotes({ ...notes, [g.key]: e.target.value })} aria-label={`AV note for ${g.name}`} />
-            <button type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => check(g, done)}>AV checked</button>
+            <button type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => check(g, done)}>{cta("av").label}</button>
           </span>
         )} />
     );

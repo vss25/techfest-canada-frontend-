@@ -3,8 +3,8 @@ import { useDesk, pending, tap, fetchTeam, toast } from "../lib/desk.js";
 import { statusOf } from "../lib/state.js";
 import { timeText } from "../lib/timers.js";
 import { act, undoFor } from "../act.js";
-import { SearchBox } from "../components.jsx";
-import { byLine } from "../lib/byLine.js";
+import { SearchBox, StateChip } from "../components.jsx";
+import { cta, stateChip } from "../lib/vocab.js";
 import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
 import { useUndoExpiry } from "../hooks.js";
@@ -23,7 +23,7 @@ export default function Media({ onOpen, layout }) {
   const media = useMemo(() => s.guests.filter((g) => g.marks?.media), [s.guests]);
   const checkIn = useCallback((g, done) => {
     if (statusOf(s, g, pending()).media) return;
-    act({ point: "media", guest: g, undoText: `${g.name}: checked in at the media desk.`, onDone: done });
+    act({ point: "media", guest: g, undoText: `${g.name}: checked in at the media desk.`, undoLabel: cta("media").undo, onDone: done });
   }, [s]);
   const { q, setQ, sel, results, inputRef, done } = useGuestSearch(media, { onEnter: checkIn, version: s.version + p.length });
   useUndoExpiry();
@@ -45,10 +45,10 @@ export default function Media({ onOpen, layout }) {
           const undo = undoFor(g, "media");
           return (
             <GuestRow key={g.key} guest={g} selected={i === sel && !!q} onOpen={onOpen}
-              extra={<span className="ci-row-extra"><span className={`ci-rsvp ${st.arrived ? "is-yes" : ""}`}>{st.arrived ? `Arrived ${byLine(st.arrived)}` : "Not arrived yet"}</span></span>}
-              status={st.media ? `Checked in ${byLine(st.media)}` : ""} statusTone={st.media ? "good" : ""}
-              actions={st.media ? (undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span key="done" className="ci-done">✓</span>)
-                : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>Checked in</button>} />
+              extra={<span className="ci-row-extra">{st.arrived ? <StateChip {...stateChip("arrived", st.arrived, { by: true })} size="s" /> : <span className="ci-rsvp">Not arrived yet</span>}</span>}
+              state={stateChip("media", st.media, { by: true })}
+              actions={st.media ? (undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>{cta("media").undo}</button> : null)
+                : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>{cta("media").label}</button>} />
           );
         })}
       </ul>

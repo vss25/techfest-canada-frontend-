@@ -4,7 +4,7 @@ import { Copy, ExternalLink, MonitorSmartphone, Save, TimerReset } from "lucide-
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Badge, Button, Card, Input, LoadingState, SectionTitle, Switch } from "../ui";
-import { deskUrl, isDeskPath } from "./deskLink";
+import { STATION_LINKS, deskUrl, isDeskPath, stationUrl } from "./deskLink";
 
 const DESK_NAME = "TTFC Check-in";
 
@@ -12,7 +12,8 @@ const DESK_NAME = "TTFC Check-in";
    Admin › Event day › Check-in: the "Check-in desk app" card and the
    desk's settings (Oct 23 2026). Staff only (this panel).
    • The app's link (/checkin/: unlisted, the public website never
-     links to it) and a QR code to open it on each iPad or phone, and
+     links to it), each station's own link (/checkin/lobby, …/floor-1,
+     Oct 24 2026) and a QR code to open it on each iPad or phone, and
      how to install it (optional: a browser tab works the same) and how
      volunteers get a login. The link comes from the server at runtime
      (GET /api/checkin/desk/info, staff only, password sign-in).
@@ -40,7 +41,8 @@ export function DeskAppCard() {
       .catch((e) => { if (!gone) setError(e.message || "Couldn't load the desk link."); });
     return () => { gone = true; };
   }, []);
-  const url = deskUrl(typeof window !== "undefined" ? window.location.origin : "", path);
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const url = deskUrl(origin, path);
   const copy = async () => {
     try { await navigator.clipboard.writeText(url); toast.success("Link copied"); } catch { toast.error("Couldn't copy: select the link and copy it"); }
   };
@@ -50,8 +52,8 @@ export function DeskAppCard() {
         <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-2 text-base font-semibold"><MonitorSmartphone className="h-4 w-4 text-ttfc-pink" aria-hidden="true" /> Check-in desk app ({DESK_NAME})</h2>
           <p className="mt-1 text-sm text-ttfc-muted">
-            For the lobby (Arrived), the floor 1 pass desk (Checked in, with a live notification and chime for each arrival), the CxO Breakfast, Lunch,
-            the evening entry, the media desk, AV and exhibitors. Staff and volunteers sign in with their email and password.
+            For the lobby (Mark arrived), the Floor 1 pass desk (Check in &amp; give pass, with a live notification, the guest&apos;s inclusions and a chime for each arrival), the CxO Breakfast, Lunch,
+            the evening entry (On the list / Not on the list), the media desk, AV and exhibitors. Staff and volunteers sign in with their email and password.
             The link is unlisted (not on the website, not in search engines): only share it with the team. The sign-in is what protects it.
           </p>
           {path ? (
@@ -65,10 +67,24 @@ export function DeskAppCard() {
           ) : (
             <div className="mt-3"><LoadingState label="Loading the desk link…" /></div>
           )}
+          {path && (
+            <div className="mt-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ttfc-dim">Each station&apos;s own link (a device stays on it after a reload)</p>
+              <ul className="mt-1.5 flex flex-wrap gap-1.5" data-testid="station-links">
+                {STATION_LINKS.map((x) => (
+                  <li key={x.key}>
+                    <a className="inline-flex h-8 items-center rounded-lg bg-ttfc-contrast/5 px-2.5 text-xs font-semibold text-ttfc-text hover:bg-ttfc-contrast/10" href={`${path}${x.slug}`} target="_blank" rel="noreferrer" title={stationUrl(origin, path, x.slug)}>
+                      {x.label} <span className="ml-1 font-normal text-ttfc-dim">/{x.slug}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <ol className="mt-4 list-decimal space-y-1.5 pl-5 text-sm text-ttfc-muted">
             <li>On each iPad or phone, scan the QR code with the camera (or type the link) and open it in Safari or Chrome. It works straight away in the browser.</li>
             <li>Optional, to have it on the Home Screen: on iPad / iPhone (iOS 26) tap Share → View More → Add to Home Screen → Add; on Android Chrome or a laptop with Chrome / Edge: ⋮ → Install app.</li>
-            <li>Sign in, pick the station (it's remembered on that device) and tap <b>Start</b>: that turns on the chime and keeps the screen awake. On iPads also set Settings › Display &amp; Brightness › Auto-Lock › Never, and keep them plugged in.</li>
+            <li>Sign in, pick the station on the home page (or open the station&apos;s own link above, e.g. …/checkin/lobby: the device stays on it after a reload) and tap <b>Start</b>: that turns on the chime and keeps the screen awake. On iPads also set Settings › Display &amp; Brightness › Auto-Lock › Never, and keep them plugged in.</li>
             <li>Volunteers need a login: management adds them in <a className="underline" href="/admin/staff">More › Staff accounts</a> (role Volunteer, with a password; add the same email again with a new password to reset it). Staff use their own panel password.</li>
           </ol>
         </div>

@@ -99,6 +99,36 @@ test("vercel.json: /checkin and every typed variant redirect to /checkin/ (308),
   assert.equal(at("/first-timers").location, "/briefings");
 });
 
+test("vercel.json: every station's own address serves the desk's page (deep links, typed and after a reload), noindex", () => {
+  for (const slug of ["lobby", "floor-1", "cxo-breakfast", "lunch", "evening", "media", "av-station", "exhibitor-desk"]) {
+    for (const url of [`${DESK_PATH}${slug}`, `${DESK_PATH}${slug}/`, `${DESK_PATH}${slug}?x=1`]) {
+      const r = at(url);
+      assert.deepEqual([r.status, r.file, r.headers["x-robots-tag"], r.headers["referrer-policy"]], [200, `${DESK_PATH}index.html`, NOINDEX, "no-referrer"], url);
+    }
+  }
+  // A station's address typed with capitals or "check-in": to /checkin/<the same>, which the app puts right.
+  for (const [url, to] of [["/CheckIn/lobby", "/checkin/lobby"], ["/CHECKIN/Floor-1", "/checkin/Floor-1"], ["/check-in/lunch", "/checkin/lunch"], ["/Check-In/av-station/", "/checkin/av-station/"], ["/checkIn/media?x=1", "/checkin/media?x=1"]]) {
+    const r = at(url);
+    assert.deepEqual([r.status, r.location, r.headers["x-robots-tag"]], [308, to, NOINDEX], url);
+  }
+  for (const url of ["/checkins/lobby", "/admin/checkin/lobby", "/checkin-abc/lobby", "/xcheckin/lobby"]) assert.ok(![307, 308].includes(at(url).status) || at(url).location !== `/checkin/lobby`, url);
+  // The old token address still goes to the home (the app's own page; the station is picked there).
+  for (const old of RETIRED_DESK_PATHS) assert.equal(at(`${old}lobby`).location, DESK_PATH);
+});
+
+test("vercel.json: /get-app (the lobby's app QR code) is its own small page, never the website's SPA", () => {
+  const files = new Set([...FILES, "/get-app/index.html"]);
+  for (const url of ["/get-app", "/get-app/", "/get-app?from=lobby-qr"]) {
+    const r = route(VERCEL, url, (p) => files.has(p));
+    assert.deepEqual([r.status, r.file], [200, "/get-app/index.html"], url);
+  }
+  const cfg = read("vite.config.js");
+  assert.match(cfg, /getApp: fileURLToPath\(new URL\('\.\/get-app\/index\.html'/);
+  const page = read("get-app/index.html");
+  assert.match(page, /<script type="module" src="\/src\/getApp\/main\.js"><\/script>/);
+  assert.doesNotMatch(page, /apps\.apple\.com|play\.google\.com/, "the store links come from src/lib/appStores.js only");
+});
+
 test("vercel.json: the earlier address redirects to /checkin/ (308), except its sw.js: the replacement worker", () => {
   for (const old of RETIRED_DESK_PATHS) {
     for (const url of [old.slice(0, -1), old, `${old}?source=pwa`, `${old}index.html`, `${old}manifest.webmanifest`, `${old}icons/icon-192.png`, `${old}a/b`, `${old}sw.jsx`]) {
@@ -127,8 +157,10 @@ test("the build publishes it only at /checkin/, as its own installable app", () 
   for (const k of ["display: 'standalone'", "scope: base", "start_url: `${base}?source=pwa`", "purpose: 'maskable'", "id: base"]) assert.ok(cfg.includes(k), k);
   const html = read("desk/index.html");
   assert.match(html, /<meta name="robots" content="noindex, nofollow, noarchive" \/>/);
-  assert.match(html, /<link rel="manifest" href="manifest.webmanifest" \/>/);
-  assert.match(html, /<link rel="apple-touch-icon" sizes="180x180" href="icons\/apple-touch-icon.png" \/>/);
+  // Linked from the root: the page is served at every station's address too (/checkin/lobby…).
+  assert.match(html, /<link rel="manifest" href="\/checkin\/manifest.webmanifest" \/>/);
+  assert.match(html, /<link rel="apple-touch-icon" sizes="180x180" href="\/checkin\/icons\/apple-touch-icon.png" \/>/);
+  assert.doesNotMatch(html, /(?:href|src)="(?!\/|https?:)/, "no relative link (it would break at /checkin/lobby/…)");
   assert.match(html, /apple-mobile-web-app-title" content="TTFC Check-in"/);
   for (const f of ["icon-192.png", "icon-512.png", "maskable-512.png", "apple-touch-icon.png", "icon-96.png"]) assert.ok(statSync(new URL(`src/checkin/icons/${f}`, ROOT)).size > 1000, f);
 });
@@ -213,7 +245,7 @@ test("after a build: the desk app at /checkin/ (page, manifest, worker, icons), 
   const dir = DESK_PATH.slice(1);
   const html = readFileSync(new URL(`${dir}index.html`, DIST), "utf8");
   assert.match(html, /<meta name="robots" content="noindex, nofollow, noarchive"/);
-  assert.match(html, /<link rel="manifest" href="manifest.webmanifest"/);
+  assert.match(html, /<link rel="manifest" href="\/checkin\/manifest.webmanifest"/);
   const mf = JSON.parse(readFileSync(new URL(`${dir}manifest.webmanifest`, DIST), "utf8"));
   assert.deepEqual([mf.id, mf.start_url, mf.scope, mf.name, mf.display], [DESK_PATH, `${DESK_PATH}?source=pwa`, DESK_PATH, DESK_NAME, "standalone"]);
   for (const i of mf.icons) {

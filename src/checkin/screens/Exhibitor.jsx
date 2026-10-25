@@ -2,7 +2,8 @@ import { useCallback, useMemo } from "react";
 import { useDesk, pending } from "../lib/desk.js";
 import { boothStatus, statusOf } from "../lib/state.js";
 import { act, undoFor } from "../act.js";
-import { SearchBox } from "../components.jsx";
+import { SearchBox, StateChip } from "../components.jsx";
+import { cta, stateChip } from "../lib/vocab.js";
 import { byLine } from "../lib/byLine.js";
 import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
@@ -20,7 +21,7 @@ export default function Exhibitor({ onOpen }) {
   const exhibitors = useMemo(() => s.guests.filter((g) => g.marks?.exhibitor), [s.guests]);
   const checkIn = useCallback((g, done) => {
     if (statusOf(s, g, pending()).exhibitor) return;
-    act({ point: "exhibitor", guest: g, undoText: `${g.name}: checked in at the exhibitor desk.`, onDone: done });
+    act({ point: "exhibitor", guest: g, undoText: `${g.name}: checked in at the exhibitor desk.`, undoLabel: cta("exhibitor").undo, onDone: done });
   }, [s]);
   const { q, setQ, sel, results, inputRef, done } = useGuestSearch(exhibitors, { onEnter: checkIn, version: s.version + p.length });
   useUndoExpiry();
@@ -33,10 +34,10 @@ export default function Exhibitor({ onOpen }) {
     const undo = undoFor(g, "exhibitor");
     return (
       <GuestRow key={g.key} guest={g} selected={q && results[sel]?.key === g.key} onOpen={onOpen}
-        extra={<span className="ci-row-extra"><span className={`ci-rsvp ${st.arrived ? "is-yes" : ""}`}>{st.arrived ? `Arrived ${byLine(st.arrived)}` : "Not arrived yet"}</span></span>}
-        status={st.exhibitor ? `Checked in ${byLine(st.exhibitor)}` : ""} statusTone={st.exhibitor ? "good" : ""}
-        actions={st.exhibitor ? (undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>Undo</button> : <span key="done" className="ci-done">✓</span>)
-          : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>Checked in</button>} />
+        extra={<span className="ci-row-extra">{st.arrived ? <StateChip {...stateChip("arrived", st.arrived, { by: true })} size="s" /> : <span className="ci-rsvp">Not arrived yet</span>}</span>}
+        state={stateChip("exhibitor", st.exhibitor, { by: true })}
+        actions={st.exhibitor ? (undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>{cta("exhibitor").undo}</button> : null)
+          : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>{cta("exhibitor").label}</button>} />
     );
   };
 

@@ -155,6 +155,8 @@ function ttfcDeskPwa() {
   // vercel.json's redirects to DESK_PATH: /checkin, /check-in, any capitalisation, with or without the slash (not
   // /checkin/ itself), and everything under an earlier address but its sw.js.
   const typed = (path) => /^\/check-?in\/?$/i.test(path) && path !== base
+  // …and a station's address typed the same way (/CheckIn/Lobby, /check-in/floor-1 → /checkin/<the rest>).
+  const typedStation = (path) => (/^\/check-?in\/./i.test(path) && !path.startsWith(base) ? base + path.replace(/^\/check-?in\//i, '') : '')
   const retiredOf = (path) => RETIRED_DESK_PATHS.find((p) => path === p.slice(0, -1) || path.startsWith(p))
   const send = (res, type, body, cache = 'no-cache') => {
     res.setHeader('Content-Type', type)
@@ -170,6 +172,9 @@ function ttfcDeskPwa() {
     const old = retiredOf(path)
     if (old && path === `${old}sw.js`) return send(res, 'text/javascript', retired())
     if (typed(path) || old) { res.statusCode = 308; res.setHeader('Location', base + query); res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive'); res.end(); return }
+    if (typedStation(path)) { res.statusCode = 308; res.setHeader('Location', typedStation(path) + query); res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive'); res.end(); return }
+    // /get-app (the lobby's app QR code, src/lib/getApp.js), as vercel.json rewrites it.
+    if (path === '/get-app' || path === '/get-app/') { req.url = '/get-app/index.html' + query; return next() }
     if (/^\/desk(\/|$)/.test(path)) { res.statusCode = 404; res.end('Not found'); return }
     if (!path.startsWith(base)) return next()
     const rest = path.slice(base.length)
@@ -230,6 +235,8 @@ export default defineConfig({
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
         app: fileURLToPath(new URL('./app/index.html', import.meta.url)),
         desk: fileURLToPath(new URL('./desk/index.html', import.meta.url)),
+        // /get-app: the check-in desk's lobby QR code (src/lib/getApp.js): on to the phone's own store.
+        getApp: fileURLToPath(new URL('./get-app/index.html', import.meta.url)),
       },
     },
   },

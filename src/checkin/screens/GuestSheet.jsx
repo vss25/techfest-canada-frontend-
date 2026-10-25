@@ -5,7 +5,7 @@ import { noPassOf } from "../lib/passColors.js";
 import { ISSUE_PASS } from "../lib/special.js";
 import { companyOf } from "../lib/search.js";
 import { timeText, weekday, clock12 } from "../lib/timers.js";
-import { BoxHint, Chips, Dietary, Inclusions, PassBand, Sheet } from "../components.jsx";
+import { BoxHint, Chips, Dietary, InclusionSummary, PassBand, Sheet, StateChip } from "../components.jsx";
 import { byLine } from "../lib/byLine.js";
 import { EXTRA_LABELS, EXTRA_ORDER } from "../lib/constants.js";
 import { resetMark } from "../act.js";
@@ -54,7 +54,7 @@ export default function GuestSheet({ guest, onClose }) {
       {note?.text && <p className="ci-card-note">📝 {note.text} <span className="ci-muted">({note.by})</span></p>}
 
       <h3 className="ci-h3">Includes</h3>
-      <Inclusions guest={g} />
+      <InclusionSummary guest={g} size="m" label={false} />
       {g.rsvp?.rsvpd ? <p className="ci-small">RSVP'd: {g.rsvp.days.map((x) => (x === "day1" ? "Day 1" : "Day 2")).join(" and ") || "no days"}{g.rsvp.options.length ? ` · ${g.rsvp.options.length} meals / events` : ""}</p> : <p className="ci-small ci-muted">No RSVP</p>}
       <Dietary guest={g} big />
       {(g.sessions || []).length > 0 && (
@@ -69,7 +69,7 @@ export default function GuestSheet({ guest, onClose }) {
         {POINTS.filter(([k]) => st[k] || ["arrived", "checked_in"].includes(k)).map(([k, label]) => (
           <li key={k}>
             <span>{label}</span>
-            <span className={st[k] ? "ci-good" : "ci-muted"}>{st[k] ? byLine(st[k]) : "—"}{st[k]?.note ? ` · “${st[k].note}”` : ""}</span>
+            {st[k] ? <StateChip tone={k === "arrived" ? "arrived" : k.startsWith("flag_") ? "already" : "done"} text={`${byLine(st[k])}${st[k].note ? ` · “${st[k].note}”` : ""}`} size="s" /> : <span className="ci-muted">—</span>}
             {staff && st[k] && !st[k].pending && <button type="button" className="ci-btn ci-btn-ghost ci-btn-s" onClick={() => resetMark(g, k, label)}>Reset</button>}
           </li>
         ))}

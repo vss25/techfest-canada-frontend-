@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { signIn } from "../lib/desk.js";
-import { DESK_NAME } from "../deskPath.js";
+import { DESK_NAME, DESK_PATH } from "../deskPath.js";
 
 /* Sign-in: TTFC staff and volunteer accounts only (POST /api/auth/login with staffOnly, then the desk checks the
    check-in right). Volunteers' logins are made by management in Admin › More › Staff accounts. */
@@ -19,7 +19,7 @@ export default function Login({ again = false, notice = "" }) {
   return (
     <main className="ci-login">
       <form className="ci-login-card" onSubmit={submit} noValidate>
-        <img src="icons/icon-192.png" alt="" width="72" height="72" className="ci-login-icon" />
+        <img src={`${DESK_PATH}icons/icon-192.png`} alt="" width="72" height="72" className="ci-login-icon" />
         <h1>{DESK_NAME}</h1>
         {notice && <p className="ci-error" role="alert">{notice}</p>}
         <p className="ci-muted">{again ? "Your sign-in has ended. Sign in again: taps saved on this device are kept and sent after (still recorded as made by whoever made them)." : "For TTFC staff and volunteers. Sign in with the email and password you were given."}</p>

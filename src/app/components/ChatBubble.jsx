@@ -4,6 +4,7 @@ import { Check, CheckCheck, Clock, Reply } from "lucide-react";
 import { listTime } from "../lib/time";
 import { READ_BLUE, RECEIPT_LABEL } from "../lib/receipts";
 import { givenName } from "../lib/ui";
+import { photoLabel } from "../lib/avatar.js";
 import { whoIsTyping } from "../lib/typing";
 import { startTypingPoll } from "../lib/typingPoll";
 import { Avatar, Popover } from "./ui";
@@ -57,7 +58,7 @@ export function ChatBubble({ text, mine, author, avatarUrl, authorTo, timestamp,
   return (
     <div className={mine ? "cb-row cb-row--mine" : "cb-row"}>
       {!mine && author && (authorTo
-        ? <Link to={authorTo} state={peek} className="cb-avatar-link" aria-label={`${author}'s profile`} tabIndex={-1}><Avatar name={author} src={avatarUrl} size={28} /></Link>
+        ? <Link to={authorTo} state={peek} className="cb-avatar-link author-photo pressable" aria-label={photoLabel(author)}><Avatar name={author} src={avatarUrl} size={28} /></Link>
         : <Avatar name={author} src={avatarUrl} size={28} />)}
       <div className="cb-col">
         {!mine && author && (authorTo ? <Link to={authorTo} state={peek} className="cb-author cb-author--link">{author}</Link> : <span className="cb-author">{author}</span>)}

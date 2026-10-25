@@ -30,6 +30,16 @@ export function connectPayload({ name, title, org, linkedIn, email, userId }) {
   return [...fields, check(fields)].join("|");
 }
 
+/**
+ * The one code you show (Oct 24 2026, the organiser: "make sure there is one and only code"): your pass's entry QR
+ * whenever you have a pass, so the door and the people you meet scan the same thing; the older networking QR only when
+ * you have no pass at all (`connect`: that code). → { kind: "pass" | "connect", value }
+ */
+export function shownCode({ ticketId = "", connect = "" } = {}) {
+  const id = String(ticketId || "").trim();
+  return id ? { kind: "pass", value: passPayload(id) } : { kind: "connect", value: connect };
+}
+
 export const sessionLivePayload = (id) => `ttfc://session/${id}/live`;
 
 const unesc = (s) => { try { return decodeURIComponent(s); } catch { return s; } };

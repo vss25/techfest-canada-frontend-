@@ -4,7 +4,7 @@ import { ArrowUp } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, can, isSignedIn } from "../lib/auth";
 import { addComment, fetchComments, social } from "../lib/social";
-import { authorPath, avatarFor } from "../lib/avatar.js";
+import { authorPath, avatarFor, photoLabel } from "../lib/avatar.js";
 import { fileURL } from "../lib/config";
 import { listTime } from "../lib/time";
 import { cms } from "../lib/cms";
@@ -77,7 +77,7 @@ export default function Comments({ post, onClose }) {
           const peek = { peek: { name: c.authorName, avatarUrl: avatarFor(c, s.people) } };
           return (
           <div key={c.id} className="comment">
-            {to ? <Link to={to} state={peek} className="comment-avatar-link" onClick={onClose} tabIndex={-1} aria-label={`${c.authorName}'s profile`}>{photo}</Link> : photo}
+            {to ? <Link to={to} state={peek} className="comment-avatar-link author-photo pressable" onClick={onClose} aria-label={photoLabel(c.authorName)}>{photo}</Link> : photo}
             <div style={{ minWidth: 0, flex: 1 }}>
               <div className="comment-bubble">
                 <div className="row" style={{ gap: 6 }}>

@@ -6,28 +6,33 @@ import { useStore } from "../lib/store";
 import { auth, bestTicket, cleanTicketId, isSignedIn, loadAccount } from "../lib/auth";
 import { post } from "../lib/api";
 import { LINKS } from "../lib/config";
-import { connectPayload, passPayload } from "../lib/qr";
+import { connectPayload, passPayload, shownCode } from "../lib/qr";
 import { showAlert } from "../lib/ui";
 import { canShareContact, cardOf, myCard, queueQrShare, refreshCard, requestAddDetail } from "../lib/myCard";
 import { defaultIds, keepKnown, PASS_DOOR_NOTE, PASS_SHARE_NOTE, PASS_SHARE_PATH, PASS_SHARE_WHERE, qrContactFields, SHARE_OFF_ERROR } from "../lib/contactCard";
-import { Button, Segmented, TopBar } from "../components/ui";
+import { Button, TopBar } from "../components/ui";
 import { ShareChecklist } from "../components/ShareSheet";
 import AppleWalletButton from "../components/AppleWallet";
+import PassInclusions from "../components/PassInclusions";
 import { passInclusions } from "../lib/inclusions";
 
 /* =========================================================
-   My pass: the door QR ("TECHFEST:<ticketId>", the same code
-   the apps and the website wallet show), what the pass includes
-   (iOS TicketDetailView "What's included": the server's
-   tickets[].inclusions, else the pass's list, lib/inclusions.js)
-   and the connect QR other attendees scan to connect in person.
-   Scanning the door QR connects too (Oct 24 2026) and gives what
-   the connect QR's checklist ticks, which both codes say.
+   My pass (/profile/pass) and My QR (/profile/pass?tab=connect).
+   One and only code (Oct 24 2026, the organiser: "make sure there
+   is one and only code"): both show your entry QR
+   ("TECHFEST:<ticketId>", the same code as the pass email, PDF,
+   Apple Wallet and the apps). Staff scan it to check you in; the
+   people you meet scan it to connect and get what My QR's "What
+   they get" ticks. My pass also lists what the pass includes (one
+   line under the name that opens it by day, PassInclusions; the full list below: the
+   server's tickets[].inclusions, else the pass's list,
+   lib/inclusions.js). Only someone with no pass at all gets the
+   older networking QR on My QR (lib/qr.js shownCode).
 ========================================================= */
 
 export default function Pass() {
   const a = useStore(auth);
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const tab = params.get("tab") === "connect" ? "connect" : "pass";
   const ticket = bestTicket(a.user);
   const me = a.me || {};
@@ -35,17 +40,15 @@ export default function Pass() {
 
   return (
     <div className="page">
-      <TopBar title={tab === "pass" ? "My pass" : "Connect QR"} />
+      <TopBar title={tab === "pass" ? "My pass" : "My QR"} />
       <main id="main" className="pad mt-16 stack-lg">
-        <Segmented label="Code" value={tab} onChange={(v) => setParams(v === "connect" ? { tab: "connect" } : {}, { replace: true })}
-          options={[{ value: "pass", label: "My pass" }, { value: "connect", label: "Connect QR" }]} />
-        {tab === "pass" ? <PassCode ticket={ticket} name={name} /> : <ConnectCode me={me} name={name} />}
+        {tab === "pass" ? <PassCode ticket={ticket} name={name} tickets={a.user?.tickets} /> : <MyCode me={me} name={name} ticket={ticket} />}
       </main>
     </div>
   );
 }
 
-function PassCode({ ticket, name }) {
+function PassCode({ ticket, name, tickets }) {
   const [lastName, setLastName] = useState("");
   const [id, setId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -90,6 +93,8 @@ function PassCode({ ticket, name }) {
       <section className="ticket" aria-label="Your pass">
         <span className="ticket-tier">{ticket.tierName}</span>
         <h2>{name}</h2>
+        {/* What the pass includes (Oct 24 2026): one line that opens the day-by-day list. */}
+        <PassInclusions tickets={tickets} />
         <span className="ticket-date">TTFC 2026 · Oct 26–27</span>
         <span className="ticket-linked"><BadgeCheck aria-hidden="true" />LINKED · {ticket.ticketId.toUpperCase()}</span>
         <div className="pass-qr" role="img" aria-label={`Pass QR code for ${ticket.ticketId}`}>
@@ -136,13 +141,15 @@ function Included({ ticket }) {
 }
 
 /**
- * The connect QR (spec section 9). "What they get" is a checklist of my contact card
- * (PUT /social/contact-card/qr-share): the server hands the ticked details to whoever
- * scans it. The QR format never changes (lib/qr.js); signed-in accounts leave its email
- * empty and carry the LinkedIn only when ticked. Demo mode (nothing to deliver them) puts
- * no user id in it and carries the first ticked email and LinkedIn instead.
+ * My QR: your one code (lib/qr.js shownCode): the entry QR of your pass, which the door scans to check you in and the
+ * people you meet scan to connect. "What they get" is a checklist of my contact card (PUT /social/contact-card/qr-share):
+ * the server hands the ticked details to whoever scans it (a pass scan or, from older screenshots, a networking QR).
+ * The pass code is never shared as text (its ID signs you in with your last name).
+ * No pass at all (rare, e.g. a staff account): the older networking QR (spec section 9; its format never changes):
+ * signed-in accounts leave its email empty and carry the LinkedIn only when ticked; demo mode (nothing to deliver them)
+ * puts no user id in it and carries the first ticked email and LinkedIn instead.
  */
-function ConnectCode({ me, name }) {
+function MyCode({ me, name, ticket }) {
   const a = useStore(auth);
   const st = useStore(myCard);
   const navigate = useNavigate();
@@ -154,25 +161,30 @@ function ConnectCode({ me, name }) {
   const ticked = canShare ? keepKnown(Array.isArray(card.qrShare) ? card.qrShare : defaultIds(items), items) : [];
   useEffect(() => { if (signedIn) refreshCard(); }, [signedIn]);
 
-  const payload = connectPayload({
-    name, title: me.jobTitle || "", org: me.organization || "",
-    ...qrContactFields(items, ticked, { local: demo }),
-    userId: demo ? "" : me.id || "",
+  const code = shownCode({
+    ticketId: ticket?.ticketId,
+    connect: connectPayload({
+      name, title: me.jobTitle || "", org: me.organization || "",
+      ...qrContactFields(items, ticked, { local: demo }),
+      userId: demo ? "" : me.id || "",
+    }),
   });
+  const isPass = code.kind === "pass";
   const share = async () => {
     try {
-      if (navigator.share) await navigator.share({ text: payload });
-      else { await navigator.clipboard.writeText(payload); showAlert("Copied", "Your connect code is on your clipboard."); }
+      if (navigator.share) await navigator.share({ text: code.value });
+      else { await navigator.clipboard.writeText(code.value); showAlert("Copied", "Your code is on your clipboard."); }
     } catch { /* cancelled */ }
   };
   return (
     <div className="stack" style={{ alignItems: "center", textAlign: "center" }}>
       <div>
-        <div className="eyebrow">My connect QR</div>
+        <div className="eyebrow">Your TTFC code</div>
         <h2 style={{ margin: "4px 0 0", fontSize: 21 }}>{name}</h2>
         {me.jobTitle && <div className="muted">{[me.jobTitle, me.organization].filter(Boolean).join(" · ")}</div>}
+        <p className="small" style={{ margin: "8px 0 0" }}>{isPass ? "Show it at the door and to people you meet." : "Show it to people you meet."}</p>
       </div>
-      <div className="pass-qr" role="img" aria-label="Your connect QR code"><QRCodeSVG value={payload} size={240} level="M" marginSize={0} /></div>
+      <div className="pass-qr" role="img" aria-label={isPass ? `Your TTFC code, pass ${ticket.ticketId}` : "Your TTFC code"}><QRCodeSVG value={code.value} size={240} level="M" marginSize={0} /></div>
       <section className="stack-sm" style={{ width: "100%", textAlign: "left" }} aria-labelledby="qr-get-h">
         {canShare && items.length > 0 ? (
           <ShareChecklist items={items} ticked={ticked} onChange={queueQrShare} fixed="Name, title and company" heading={<h3 id="qr-get-h" className="eyebrow">What they get</h3>} />
@@ -190,8 +202,13 @@ function ConnectCode({ me, name }) {
         )}
       </section>
       {signedIn && canShare && <p className="pass-share-note" style={{ textAlign: "left", width: "100%" }}>{PASS_SHARE_NOTE}</p>}
-      <p className="muted small" style={{ margin: 0 }}>Show this when you meet someone. When they scan it, you're connected in person and they get what's ticked here. You can change it later from their profile.</p>
-      <Button block icon={Share2} onClick={share}>Share as text</Button>
+      <p className="muted small" style={{ margin: 0 }}>
+        {isPass
+          ? "Staff scan it to check you in. When someone you meet scans it, you're connected and they get what's ticked here."
+          : "When someone you meet scans it, you're connected in person and they get what's ticked here. You can change it later from their profile."}
+      </p>
+      {/* The pass code stays off the clipboard: its ID signs you in with your last name. */}
+      {!isPass && <Button block icon={Share2} onClick={share}>Share as text</Button>}
     </div>
   );
 }

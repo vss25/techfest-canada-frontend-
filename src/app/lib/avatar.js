@@ -36,3 +36,19 @@ export function authorPath(item, { meId = "", blocked = [], people = true } = {}
   if (speaker) return `/speakers/${encodeURIComponent(speaker)}`;
   return people ? `/people/${encodeURIComponent(id)}` : null;
 }
+
+/**
+ * A feed post's author (Oct 24 2026, the organiser: "The profile photos on the feed page in the app isn't
+ * clickable"): the photo opens exactly what the name does, as authorPath, except the organisers' announcements
+ * ("The Tech Festival Canada"), a system account with no profile, which stay plain (as on iOS and Android).
+ */
+export function postAuthorPath(post, opts = {}) {
+  if (!post || post.kind === "announcement") return null;
+  return authorPath(post, opts);
+}
+
+/** Screen readers, for the photo: "View Alex Morgan's profile" (the name beside it reads "Alex Morgan"). */
+export function photoLabel(name) {
+  const n = String(name || "").trim();
+  return n ? `View ${n}'s profile` : "View profile";
+}

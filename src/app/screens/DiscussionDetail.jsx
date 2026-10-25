@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ArrowUp, Bell, CircleX, Loader2, MessagesSquare, Reply } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, can, isSignedIn } from "../lib/auth";
 import { followDiscussion, refreshDiscussions, refreshReplies, replyToDiscussion, social } from "../lib/social";
-import { authorPath, avatarFor } from "../lib/avatar.js";
+import { authorPath, avatarFor, photoLabel } from "../lib/avatar.js";
 import { FEATURES, fileURL } from "../lib/config";
 import { listTime } from "../lib/time";
 import { safetyItems } from "../lib/safety";
@@ -46,6 +46,8 @@ export default function DiscussionDetail() {
   const kidsOf = (r) => replies.filter((x) => x.parentId === r.id && x.id !== r.id);
   const allowed = signedIn && can("comment", a);
 
+  const questionTo = authorPath(d, { meId: a.me?.id, blocked: s.blocked, people: FEATURES.network });
+  const questionPeek = { peek: { name: d.authorName, avatarUrl: avatarFor(d, s.people) } };
   const startReply = (r) => { setReplyTo(r); setTimeout(() => input.current?.focus(), 30); };
   const thread = (r, depth) => {
     const kids = kidsOf(r);
@@ -87,9 +89,14 @@ export default function DiscussionDetail() {
       <main id="main" className="column stack" style={{ padding: 16, gap: 14, flex: 1 }}>
         <article className="q-card">
           <div className="row" style={{ gap: 10 }}>
-            <Avatar name={d.authorName} src={fileURL(avatarFor(d, s.people))} size={36} />
+            {/* Who asked: their photo and name open their profile (or speaker page, or yours), as on iOS and Android. */}
+            {questionTo
+              ? <Link to={questionTo} state={questionPeek} className="author-photo pressable" aria-label={photoLabel(d.authorName)}><Avatar name={d.authorName} src={fileURL(avatarFor(d, s.people))} size={36} /></Link>
+              : <Avatar name={d.authorName} src={fileURL(avatarFor(d, s.people))} size={36} />}
             <span style={{ flex: 1, minWidth: 0 }}>
-              <b style={{ display: "block", fontSize: 13, fontWeight: 600 }}>{d.authorName}</b>
+              <b style={{ display: "block", fontSize: 13, fontWeight: 600 }}>
+                {questionTo ? <Link to={questionTo} state={questionPeek} className="comment-author-link">{d.authorName}</Link> : d.authorName}
+              </b>
               <time className="muted" style={{ fontSize: 11 }}>{listTime(d.createdAt)}</time>
             </span>
             {!d.mine && signedIn && <MoreMenu label="More options" buttonClassName="dots-btn pressable" items={safetyItems({ type: "discussion", id: d.id })} />}

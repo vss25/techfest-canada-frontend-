@@ -72,11 +72,23 @@ export const checkinBody = (action) => (action?.type === "confirmConnect"
   : { ticketId: String(action?.ticketId || "").trim() });
 
 export const NETWORKING_QR_DEFAULT = "This is a networking code. Ask them to open their pass QR (Profile › My QR).";
+export const BAD_QR_DEFAULT = "That QR code isn't valid. Ask for the entry pass QR.";
+export const NO_PASS_DEFAULT = "There's no TTFC pass on their account. Send them to the registration desk.";
+
+/** The server's refusals for a scanned networking QR (404, status "invalid", backend main 6b68b1d): code → title, fallback, tone. */
+const REFUSALS = {
+  networking_qr: { title: "Networking QR", fallback: NETWORKING_QR_DEFAULT, tone: "warning" },
+  bad_qr: { title: "Not a valid code", fallback: BAD_QR_DEFAULT, tone: "error" },
+  no_pass: { title: "No pass found", fallback: NO_PASS_DEFAULT, tone: "error" },
+};
 const PRACTICE_DEFAULT = "Not an event day: nothing was checked in.";
 
 /**
  * POST /checkin/scan's answer → { title, message, tone: "success" | "warning" | "neutral" | "error" } (iOS EntryScan.display).
  * `status`: the HTTP status (0 = no answer); `data`: its body; `scanned`: what was scanned, for "No TTFC pass matches …".
+ * A networking QR (backend main 6b68b1d): its refusals carry `code` (networking_qr, bad_qr, no_pass) with the server's
+ * words; its success, practice and already-checked-in answers are the usual ones plus scanned, passCount and, for
+ * someone with several passes, a `note`, added to a success after a blank line.
  */
 export function checkinDisplay(status, data, scanned, { tierName = (t) => `${t.charAt(0).toUpperCase()}${t.slice(1)} Pass` } = {}) {
   const st = Number(status) || 0;
@@ -84,7 +96,8 @@ export function checkinDisplay(status, data, scanned, { tierName = (t) => `${t.c
   const a = data && typeof data === "object" ? data : {};
   const clean = (v) => String(v ?? "").trim();
   const words = clean(a.message) || clean(a.error);
-  if (clean(a.code) === "networking_qr") return { title: "Networking QR", message: words || NETWORKING_QR_DEFAULT, tone: "warning" };
+  const refusal = REFUSALS[clean(a.code)];
+  if (refusal) return { title: refusal.title, message: words || refusal.fallback, tone: refusal.tone };
   if (st === 401 || st === 403) return { title: "Staff only", message: "Sign in with a staff or volunteer account to check people in.", tone: "error" };
   const who = clean(a.name) || "Attendee";
   const pass = clean(a.passName) || (clean(a.ticketType) ? tierName(clean(a.ticketType)) : "Pass");
@@ -93,7 +106,7 @@ export function checkinDisplay(status, data, scanned, { tierName = (t) => `${t.c
   if (s === "practice") return { title: "Practice scan", message: `${who} · ${pass}\n\n${words || PRACTICE_DEFAULT}`, tone: "neutral" };
   if (st === 404 || s === "invalid") return { title: "Not a valid pass", message: `No TTFC pass matches ${id}. Send the attendee to the registration desk.`, tone: "error" };
   if (st >= 200 && st < 300) {
-    if (s === "success") return { title: "Checked in ✓", message: `${who} · ${pass} · ${id}`, tone: "success" };
+    if (s === "success") return { title: "Checked in ✓", message: `${who} · ${pass} · ${id}${clean(a.note) ? `\n\n${clean(a.note)}` : ""}`, tone: "success" };
     if (s === "already_checked_in") return { title: "Already checked in", message: `${who} · ${pass}${clean(a.time) ? ` · ${clean(a.time)}` : ""}`, tone: "warning" };
   }
   return { title: "Check-in failed", message: words || "Try again.", tone: "error" };

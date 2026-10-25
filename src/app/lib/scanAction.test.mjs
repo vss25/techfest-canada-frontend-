@@ -2,7 +2,7 @@
 // Run: node --test src/app/lib/scanAction.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { checkinBody, checkinDisplay, checkinQuestion, NETWORKING_QR_DEFAULT, passOutcome, scanAction, staffScanner } from "./scanAction.js";
+import { BAD_QR_DEFAULT, checkinBody, checkinDisplay, checkinQuestion, NETWORKING_QR_DEFAULT, NO_PASS_DEFAULT, passOutcome, scanAction, staffScanner } from "./scanAction.js";
 import { connectPayload, passPayload, sessionLivePayload, shownCode } from "./qr.js";
 
 test("an entry QR connects (every form), whoever scans it", () => {
@@ -129,4 +129,28 @@ test("the check-in answer, including a networking QR the server won't take", () 
   assert.equal(checkinDisplay(403, {}, "x").title, "Staff only");
   assert.equal(checkinDisplay(0, null, "x").title, "Check-in failed");
   assert.equal(checkinDisplay(500, { error: "Boom" }, "x").message, "Boom");
+});
+
+test("a networking QR at check-in: the server's refusals and its answers (backend main 6b68b1d)", () => {
+  const refuse = (code, message) => checkinDisplay(404, { status: "invalid", code, message, error: message }, "Ada Lovelace's networking QR");
+  assert.deepEqual(refuse("networking_qr", "Staff scanned a networking QR. Ask for the entry pass QR."),
+    { title: "Networking QR", message: "Staff scanned a networking QR. Ask for the entry pass QR.", tone: "warning" });
+  assert.deepEqual(refuse("networking_qr", ""), { title: "Networking QR", message: NETWORKING_QR_DEFAULT, tone: "warning" });
+  assert.deepEqual(refuse("bad_qr", "That QR code isn't valid."), { title: "Not a valid code", message: "That QR code isn't valid.", tone: "error" });
+  assert.deepEqual(refuse("bad_qr", ""), { title: "Not a valid code", message: BAD_QR_DEFAULT, tone: "error" });
+  assert.deepEqual(refuse("no_pass", "Ada has no TTFC pass."), { title: "No pass found", message: "Ada has no TTFC pass.", tone: "error" });
+  assert.deepEqual(refuse("no_pass", ""), { title: "No pass found", message: NO_PASS_DEFAULT, tone: "error" });
+  // A 404 without one of those codes is still "Not a valid pass".
+  assert.equal(checkinDisplay(404, { status: "invalid", error: "Ticket not found" }, "a1b2c3d4e5f6").title, "Not a valid pass");
+
+  // Success: the usual line, then the server's note for several passes after a blank line.
+  const ok = { status: "success", scanned: "networking_qr", passCount: 2, name: "Ada Lovelace", passName: "Power Pass", ticketId: "a1b2c3d4e5f6",
+    note: "Ada has 2 passes: checked in on Power Pass." };
+  assert.deepEqual(checkinDisplay(200, ok, "x"),
+    { title: "Checked in ✓", message: "Ada Lovelace · Power Pass · a1b2c3d4e5f6\n\nAda has 2 passes: checked in on Power Pass.", tone: "success" });
+  assert.equal(checkinDisplay(200, { ...ok, note: "", passCount: 1 }, "x").message, "Ada Lovelace · Power Pass · a1b2c3d4e5f6");
+  // Practice and already checked in: the usual answers.
+  assert.equal(checkinDisplay(200, { ...ok, status: "practice", message: "Not an event day: nothing was checked in." }, "x").title, "Practice scan");
+  assert.deepEqual(checkinDisplay(200, { ...ok, status: "already_checked_in", time: "9:02 AM" }, "x"),
+    { title: "Already checked in", message: "Ada Lovelace · Power Pass · 9:02 AM", tone: "warning" });
 });

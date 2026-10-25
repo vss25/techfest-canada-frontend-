@@ -793,6 +793,27 @@ a { color: var(--pur-alt); }
    without moving anything (the extra area is an overlay, not layout). Press: .pressable. */
 .author-photo { position: relative; display: inline-flex; flex: none; border-radius: var(--r-avatar); text-decoration: none; color: inherit; -webkit-tap-highlight-color: transparent; }
 .author-photo::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
+/* What your pass includes, per day (Oct 24 2026, components/PassInclusions.jsx): small calm chips in your pass colour
+   under the pill on Profile and under the pass name on My pass. They fade in once; nothing moves under Reduce Motion. */
+.incl { display: flex; justify-content: center; margin-top: 10px; }
+.incl-days { display: inline-flex; flex-direction: column; gap: 6px; max-width: 100%; }
+.incl-day { display: flex; align-items: flex-start; gap: 8px; }
+.incl-day-label { flex: none; width: 48px; line-height: 24px; text-align: right; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--tx2); }
+.incl-chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; text-align: left; }
+.incl-chip {
+  display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: 999px; white-space: nowrap;
+  font-size: 12px; font-weight: 600; color: var(--tx);
+  background: color-mix(in srgb, var(--incl, var(--pur)) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--incl, var(--pur)) 40%, transparent);
+}
+.incl-chip svg { width: 12px; height: 12px; flex: none; color: color-mix(in srgb, var(--incl, var(--pur)) 65%, var(--tx)); }
+.incl--card .incl-day-label { color: rgba(255, 255, 255, 0.8); }
+.incl--card .incl-chip { color: #fff; background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.3); }
+.incl--card .incl-chip svg { color: #fff; }
+@media (prefers-reduced-motion: no-preference) {
+  .incl-chip { animation: incl-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+  @keyframes incl-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+}
 .cb { padding: 9px 13px; font-size: 14.5px; line-height: 1.38; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 18px 18px 18px 6px; background: var(--surface); border: 1px solid var(--border); color: var(--tx); -webkit-touch-callout: none; }
 .cb--mine { background: var(--pur); color: #fff; border-color: transparent; border-radius: 18px 18px 6px 18px; }
 .cb--held { opacity: 0.55; }

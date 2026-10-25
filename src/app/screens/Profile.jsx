@@ -20,6 +20,7 @@ import ContactCard from "../components/ContactCard";
 import { GetPassCard } from "../components/PassesSheet";
 import { profileTagView } from "../lib/profileTag";
 import { ProfileGlow, ProfileTagPill } from "../components/ProfileTag";
+import PassInclusions from "../components/PassInclusions";
 import BrandMark from "../components/BrandMark";
 import { AttendingRow } from "../components/LinkedInCta";
 import { AvailabilityRows } from "../components/Availability";
@@ -30,7 +31,7 @@ const BadgeScanner = lazy(() => import("../components/BadgeScanner"));
 /* =========================================================
    Profile (iOS ProfileView): points (top left) and the gear
    (top right), your tile and name, the pass strip (pass,
-   connect QR, Scan) with Add to Apple Wallet under it on Apple
+   My QR, Scan) with Add to Apple Wallet under it on Apple
    devices, the contact card, availability, connections, Awards,
    and Interests last. Notifications, theme, About and sign out
    are in Settings (the gear). Guests get the sign-in card.
@@ -178,6 +179,8 @@ export default function Profile() {
   const user = a.user;
 
   useEffect(() => { if (signedIn) refreshPoints(); }, [signedIn]);
+  // Fresh /auth/me each time Profile opens: what the pass includes (and its colour) as staff set them now.
+  useEffect(() => { if (signedIn) loadAccount(); }, [signedIn]);
 
   if (!signedIn) {
     return (
@@ -239,6 +242,8 @@ export default function Profile() {
             {me?.jobTitle && <div className="profile-title">{me.jobTitle}</div>}
             {org && <div className="profile-org">{org}</div>}
             {tag && <ProfileTagPill tag={tag} />}
+            {/* What the pass includes, per day (Oct 24 2026): chips in the pass colour, only what's included. */}
+            <PassInclusions tickets={user?.tickets} tag={tag} />
             {me?.tagline && <div className="profile-tagline">“{me.tagline}”</div>}
           </div>
           <Link to="/profile/edit" className="edit-link"><Pencil aria-hidden="true" />Edit profile</Link>
@@ -248,7 +253,7 @@ export default function Profile() {
         {isTeam(user) && (
           <div className="note" role="note">
             <b>{user.role === "volunteer" ? "Volunteer account" : "Staff account"}</b>
-            <div className="small">Door check-in is in the TTFC app for now.</div>
+            <div className="small">Scan someone's TTFC code to check them in: you're asked before anything is recorded.</div>
           </div>
         )}
         {/* Staff tools (Oct 22 2026): the SOS inbox. The demo shows it too, with made-up requests. */}
@@ -265,8 +270,8 @@ export default function Profile() {
                 {!ticket && <span className="pass-strip-sub">Link your pass</span>}
               </span>
             </Link>
-            <Link to="/profile/pass?tab=connect" className="pass-strip-btn pressable" aria-label="My connect QR"><span><QrCode aria-hidden="true" /></span>My QR</Link>
-            <button type="button" className="pass-strip-btn pressable" onClick={() => setScan(true)} aria-label="Scan a connect QR or pass"><span><ScanLine aria-hidden="true" /></span>Scan</button>
+            <Link to="/profile/pass?tab=connect" className="pass-strip-btn pressable" aria-label="My QR code"><span><QrCode aria-hidden="true" /></span>My QR</Link>
+            <button type="button" className="pass-strip-btn pressable" onClick={() => setScan(true)} aria-label="Scan someone's TTFC code"><span><ScanLine aria-hidden="true" /></span>Scan</button>
           </div>
           {ticket && <AppleWalletButton ticketId={ticket.ticketId} />}
         </div>

@@ -301,7 +301,7 @@ export function ToastHost() {
           ) : confirm?.choose ? (
             <div className="stack-sm">
               {confirm.options.map((o, i) => (
-                <Button key={o.label} block className={o.destructive ? "btn-danger" : ""} onClick={() => close(o.value ?? o.label)} autoFocus={i === 0}>{o.label}</Button>
+                <Button key={o.label} block variant={o.primary ? "primary" : undefined} size={o.primary ? "lg" : undefined} className={o.destructive ? "btn-danger" : ""} onClick={() => close(o.value ?? o.label)} autoFocus={i === 0}>{o.label}</Button>
               ))}
             </div>
           ) : (

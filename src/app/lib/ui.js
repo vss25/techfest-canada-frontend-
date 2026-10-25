@@ -32,7 +32,8 @@ export function dismissToast(id) {
   toasts.set((s) => ({ ...s, items: s.items.filter((t) => t.id !== id) }));
 }
 
-/** iOS confirmationDialog with several buttons: chooseDialog({ title, message, options: [{ label, value, destructive }] }) → Promise<value | null> */
+/** iOS confirmationDialog with several buttons: chooseDialog({ title, message, options: [{ label, value, destructive, primary }] })
+    → Promise<value | null>. `primary`: the filled default button (the first option has focus). */
 export function chooseDialog(opts) {
   return new Promise((resolve) => toasts.set((s) => ({ ...s, confirm: { ...opts, choose: true, resolve } })));
 }

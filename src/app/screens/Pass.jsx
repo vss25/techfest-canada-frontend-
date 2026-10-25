@@ -15,7 +15,6 @@ import { ShareChecklist } from "../components/ShareSheet";
 import AppleWalletButton from "../components/AppleWallet";
 import PassInclusions from "../components/PassInclusions";
 import { passInclusions } from "../lib/inclusions";
-import { profileTagView } from "../lib/profileTag";
 
 /* =========================================================
    My pass (/profile/pass) and My QR (/profile/pass?tab=connect).
@@ -24,8 +23,8 @@ import { profileTagView } from "../lib/profileTag";
    ("TECHFEST:<ticketId>", the same code as the pass email, PDF,
    Apple Wallet and the apps). Staff scan it to check you in; the
    people you meet scan it to connect and get what My QR's "What
-   they get" ticks. My pass also lists what the pass includes (per
-   day under the name, PassInclusions; the full list below: the
+   they get" ticks. My pass also lists what the pass includes (one
+   line under the name that opens it by day, PassInclusions; the full list below: the
    server's tickets[].inclusions, else the pass's list,
    lib/inclusions.js). Only someone with no pass at all gets the
    older networking QR on My QR (lib/qr.js shownCode).
@@ -43,13 +42,13 @@ export default function Pass() {
     <div className="page">
       <TopBar title={tab === "pass" ? "My pass" : "My QR"} />
       <main id="main" className="pad mt-16 stack-lg">
-        {tab === "pass" ? <PassCode ticket={ticket} name={name} tickets={a.user?.tickets} tag={profileTagView(a.user?.profileTag)} /> : <MyCode me={me} name={name} ticket={ticket} />}
+        {tab === "pass" ? <PassCode ticket={ticket} name={name} tickets={a.user?.tickets} /> : <MyCode me={me} name={name} ticket={ticket} />}
       </main>
     </div>
   );
 }
 
-function PassCode({ ticket, name, tickets, tag }) {
+function PassCode({ ticket, name, tickets }) {
   const [lastName, setLastName] = useState("");
   const [id, setId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -94,8 +93,8 @@ function PassCode({ ticket, name, tickets, tag }) {
       <section className="ticket" aria-label="Your pass">
         <span className="ticket-tier">{ticket.tierName}</span>
         <h2>{name}</h2>
-        {/* What the pass includes, per day (Oct 24 2026). */}
-        <PassInclusions tickets={tickets} tag={tag} />
+        {/* What the pass includes (Oct 24 2026): one line that opens the day-by-day list. */}
+        <PassInclusions tickets={tickets} />
         <span className="ticket-date">TTFC 2026 · Oct 26–27</span>
         <span className="ticket-linked"><BadgeCheck aria-hidden="true" />LINKED · {ticket.ticketId.toUpperCase()}</span>
         <div className="pass-qr" role="img" aria-label={`Pass QR code for ${ticket.ticketId}`}>

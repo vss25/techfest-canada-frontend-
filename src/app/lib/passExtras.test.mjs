@@ -1,8 +1,8 @@
-// What your pass includes, per day (Oct 24 2026): the server's extras, else its wording; same cases as iOS and Android.
+// What your pass includes (Oct 24 2026): the server's extras, else its wording; the line, its words and the day-by-day list.
 // Run: node --test src/app/lib/passExtras.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { inclusionDays, personExtras, ticketExtras } from "./passExtras.js";
+import { FALLBACK_TIMES, includedItems, inclusionAria, inclusionCaption, inclusionSchedule, personExtras, ticketExtras } from "./passExtras.js";
 
 const ALL = { cxo: true, lunch: true, gala: true, awards: true };
 const NONE = { cxo: false, lunch: false, gala: false, awards: false };
@@ -33,17 +33,51 @@ test("booths never count; all real passes add up", () => {
   assert.deepEqual(personExtras(), NONE);
 });
 
-test("per day: breakfast, lunch, then the evening; empty days and nothing at all left out", () => {
-  const all = inclusionDays(ALL);
-  assert.deepEqual(all.map((d) => [d.label, d.items.map((i) => i.label)]), [
-    ["Mon 26", ["CxO Breakfast", "Lunch", "Catalyst Awards"]],
-    ["Tue 27", ["CxO Breakfast", "Lunch", "Gala Dinner"]],
+test("the line: icons in order, the caption, the spoken version", () => {
+  assert.deepEqual(includedItems(ALL).map((i) => i.key), ["cxo", "lunch", "awards", "gala"]);
+  assert.equal(inclusionCaption(ALL), "Breakfast · Lunch · Awards · Gala");
+  assert.equal(inclusionAria(ALL),
+    "Your pass includes: CxO Breakfast, both days; Networking Luncheon, both days; Catalyst Awards Night, Monday 26 October; Gala Dinner, Tuesday 27 October");
+  assert.equal(inclusionCaption({ cxo: true }), "Breakfast");
+  assert.equal(inclusionAria({ cxo: true }), "Your pass includes: CxO Breakfast, both days");
+  assert.deepEqual(includedItems({ gala: true, lunch: true }).map((i) => i.short), ["Lunch", "Gala"]);
+  assert.equal(inclusionCaption(NONE), "");
+  assert.equal(inclusionAria(NONE), "");
+  assert.deepEqual(includedItems(), []);
+});
+
+test("the list: per day, the agenda's time and room, else the published times", () => {
+  const agenda = [
+    { day: 1, title: "CxO Breakfast", startTime: "8:00 AM", start: 2, room: "Pier 5" },
+    { day: 1, title: "Networking Lunch", startTime: "12:40 PM", start: 5, room: "" },
+    { day: 1, title: "Catalyst Awards Evening", startTime: "5:45 PM", start: 9, room: "Harbour Ballroom" },
+    { day: 2, title: "Keynote", startTime: "9:00 AM", start: 3 },
+    { day: 2, title: "Gala Dinner and Networking Reception", startTime: "6:00 PM", start: 9, room: "Harbour Ballroom" },
+    // Meals take the day's first match: a later lunch-titled session doesn't replace it.
+    { day: 1, title: "Lunch & Learn", startTime: "1:30 PM", start: 7, room: "Pier 4" },
+    // Evenings take the day's last match: an earlier awards-titled session doesn't win.
+    { day: 1, title: "Awards nominees photo call", startTime: "10:00 AM", start: 4, room: "Pier 2" },
+  ];
+  assert.deepEqual(inclusionSchedule(ALL, agenda), [
+    { day: 1, label: "Monday 26 October", items: [
+      { key: "cxo", name: "CxO Breakfast", time: "8:00 AM", room: "Pier 5" },
+      { key: "lunch", name: "Networking Luncheon", time: "12:40 PM", room: "" },
+      { key: "awards", name: "Catalyst Awards Night", time: "5:45 PM", room: "Harbour Ballroom" },
+    ] },
+    { day: 2, label: "Tuesday 27 October", items: [
+      { key: "cxo", name: "CxO Breakfast", time: "7:55 AM", room: "" },
+      { key: "lunch", name: "Networking Luncheon", time: "12:00 PM", room: "" },
+      { key: "gala", name: "Gala Dinner & Networking Reception", time: "6:00 PM", room: "Harbour Ballroom" },
+    ] },
   ]);
-  assert.equal(all[0].aria, "Included on Monday 26 October: CxO Breakfast, Lunch, Catalyst Awards");
-  assert.equal(all[1].aria, "Included on Tuesday 27 October: CxO Breakfast, Lunch, Gala Dinner");
-  assert.deepEqual(inclusionDays({ cxo: true }).map((d) => [d.label, d.items.map((i) => i.label)]), [["Mon 26", ["CxO Breakfast"]], ["Tue 27", ["CxO Breakfast"]]]);
-  assert.deepEqual(inclusionDays({ awards: true }).map((d) => d.label), ["Mon 26"]);
-  assert.deepEqual(inclusionDays({ gala: true }).map((d) => d.label), ["Tue 27"]);
-  assert.deepEqual(inclusionDays(NONE), []);
-  assert.deepEqual(inclusionDays(), []);
+  // No agenda: the published times.
+  const plain = inclusionSchedule(ALL);
+  assert.deepEqual(plain.map((d) => d.items.map((i) => i.time)), [["7:55 AM", "12:35 PM", "5:30 PM"], ["7:55 AM", "12:00 PM", "5:30 PM"]]);
+  assert.equal(FALLBACK_TIMES[2].gala, "5:30 PM");
+  // Breakfast only: both days; Awards only: Day 1; Gala only: Day 2; nothing: no sections.
+  assert.deepEqual(inclusionSchedule({ cxo: true }).map((d) => [d.label, d.items.map((i) => i.name)]),
+    [["Monday 26 October", ["CxO Breakfast"]], ["Tuesday 27 October", ["CxO Breakfast"]]]);
+  assert.deepEqual(inclusionSchedule({ awards: true }).map((d) => d.day), [1]);
+  assert.deepEqual(inclusionSchedule({ gala: true }).map((d) => d.day), [2]);
+  assert.deepEqual(inclusionSchedule(NONE, agenda), []);
 });

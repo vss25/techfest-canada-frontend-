@@ -242,8 +242,8 @@ export default function Profile() {
             {me?.jobTitle && <div className="profile-title">{me.jobTitle}</div>}
             {org && <div className="profile-org">{org}</div>}
             {tag && <ProfileTagPill tag={tag} />}
-            {/* What the pass includes, per day (Oct 24 2026): chips in the pass colour, only what's included. */}
-            <PassInclusions tickets={user?.tickets} tag={tag} />
+            {/* What the pass includes (Oct 24 2026): one line that opens the day-by-day list. */}
+            <PassInclusions tickets={user?.tickets} />
             {me?.tagline && <div className="profile-tagline">“{me.tagline}”</div>}
           </div>
           <Link to="/profile/edit" className="edit-link"><Pencil aria-hidden="true" />Edit profile</Link>

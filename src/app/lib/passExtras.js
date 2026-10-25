@@ -1,8 +1,10 @@
 /* =========================================================
-   What your pass includes, per day (Oct 24 2026, the organiser:
-   "Anyone who has a breakfast, lunch, dinner included … indicate
-   breakfast is present on the app too", "for both days"): small
-   chips under the pass colour on your own Profile and on My pass.
+   What your pass includes (Oct 24 2026, the organiser: "Anyone who
+   has a breakfast, lunch, dinner included … indicate breakfast is
+   present on the app too", "for both days"; then "this is too
+   clunky"): one quiet line under the pass colour on your own
+   Profile and on My pass (icons, "Breakfast · Lunch · Awards ·
+   Gala", a chevron), which opens the day-by-day list with times.
    • The server decides: GET /auth/me tickets[].extras
      { cxo, lunch, gala, awards } (true / false; staff's switch on
      the pass, else the pass and person rules, backend
@@ -13,8 +15,9 @@
    • Booths never count; all your real passes add up.
    • The days: the CxO Breakfast and lunch both days, the Catalyst
      Awards on Day 1's evening, the Gala Dinner on Day 2's.
-   Same rules and words as iOS (Services/PassInclusions.swift) and
-   Android (data/PassExtras.kt). Pure; node --test.
+   • Times and rooms: the agenda's session that day (the Schedule's
+     CMS sessions) by title, else the published times.
+   Same rules and words as iOS and Android. Pure; node --test.
 ========================================================= */
 
 export const EXTRA_KEYS = Object.freeze(["cxo", "lunch", "gala", "awards"]);
@@ -46,27 +49,55 @@ export function personExtras(tickets = []) {
   return out;
 }
 
-const ITEMS = {
-  cxo: { key: "cxo", label: "CxO Breakfast" },
-  lunch: { key: "lunch", label: "Lunch" },
-  awards: { key: "awards", label: "Catalyst Awards" },
-  gala: { key: "gala", label: "Gala Dinner" },
-};
+/* ---------- The line and the list ---------- */
 
-const DAYS = [
-  { key: "day1", label: "Mon 26", spoken: "Monday 26 October", order: ["cxo", "lunch", "awards"] },
-  { key: "day2", label: "Tue 27", spoken: "Tuesday 27 October", order: ["cxo", "lunch", "gala"] },
+/** In the line's order: short word (the caption), full name (the list), the days it's on, the spoken days; the agenda
+    session it takes that day: the meals the first matching one, the evenings the last (`last`). */
+const ITEMS = [
+  { key: "cxo", short: "Breakfast", name: "CxO Breakfast", days: [1, 2], spoken: "both days", match: /cxo breakfast/i, last: false },
+  { key: "lunch", short: "Lunch", name: "Networking Luncheon", days: [1, 2], spoken: "both days", match: /lunch|luncheon/i, last: false },
+  { key: "awards", short: "Awards", name: "Catalyst Awards Night", days: [1], spoken: "Monday 26 October", match: /award/i, last: true },
+  { key: "gala", short: "Gala", name: "Gala Dinner & Networking Reception", speak: "Gala Dinner", days: [2], spoken: "Tuesday 27 October", match: /gala/i, last: true },
 ];
 
+/** The published start times, when the agenda has no matching session. */
+export const FALLBACK_TIMES = Object.freeze({
+  1: { cxo: "7:55 AM", lunch: "12:35 PM", awards: "5:30 PM" },
+  2: { cxo: "7:55 AM", lunch: "12:00 PM", gala: "5:30 PM" },
+});
+
+const DAY_NAMES = { 1: "Monday 26 October", 2: "Tuesday 27 October" };
+
+/** { cxo, lunch, gala, awards } → the included ones, in the line's order (Breakfast, Lunch, Awards, Gala): [{ key, short, name, days }]. */
+export function includedItems(extras = {}) {
+  return ITEMS.filter((it) => extras?.[it.key] === true).map(({ key, short, name, days }) => ({ key, short, name, days }));
+}
+
+/** The line's caption: "Breakfast · Lunch · Awards · Gala" (included ones only; "" for none). */
+export const inclusionCaption = (extras = {}) => includedItems(extras).map((i) => i.short).join(" · ");
+
+/** The line, for screen readers: "Your pass includes: CxO Breakfast, both days; …; Gala Dinner, Tuesday 27 October" ("" for none). */
+export function inclusionAria(extras = {}) {
+  const parts = ITEMS.filter((it) => extras?.[it.key] === true).map((it) => `${it.speak || it.name}, ${it.spoken}`);
+  return parts.length ? `Your pass includes: ${parts.join("; ")}` : "";
+}
+
 /**
- * { cxo, lunch, gala, awards } → the rows to show, in the order the day runs:
- *   [{ key, label: "Mon 26", aria: "Included on Monday 26 October: CxO Breakfast, Lunch, Catalyst Awards",
- *      items: [{ key, label }] }]
- * A day with nothing is left out; nothing at all → [].
+ * The list the line opens: one section per day that has something, each item with its time (and room) from the
+ * agenda when a session that day matches its title (the meals: the first one that day; the evenings: the last), else
+ * the published time.
+ * `sessions`: [{ day: 1 | 2, title, startTime: "7:55 AM", start?: ms, room?: "" }].
+ * → [{ day, label: "Monday 26 October", items: [{ key, name, time, room }] }]
  */
-export function inclusionDays(extras = {}) {
-  return DAYS.map((d) => {
-    const items = d.order.filter((k) => extras?.[k] === true).map((k) => ITEMS[k]);
-    return { key: d.key, label: d.label, aria: `Included on ${d.spoken}: ${items.map((i) => i.label).join(", ")}`, items };
+export function inclusionSchedule(extras = {}, sessions = []) {
+  const list = Array.isArray(sessions) ? sessions : [];
+  return [1, 2].map((day) => {
+    const items = ITEMS.filter((it) => extras?.[it.key] === true && it.days.includes(day)).map((it) => {
+      const hits = list.filter((s) => Number(s?.day) === day && it.match.test(String(s?.title || "")) && String(s?.startTime || "").trim());
+      hits.sort((a, b) => (Number(a.start) || 0) - (Number(b.start) || 0));
+      const s = it.last ? hits[hits.length - 1] : hits[0];
+      return { key: it.key, name: it.name, time: s ? String(s.startTime).trim() : FALLBACK_TIMES[day][it.key], room: s ? String(s.room || "").trim() : "" };
+    });
+    return { day, label: DAY_NAMES[day], items };
   }).filter((d) => d.items.length > 0);
 }

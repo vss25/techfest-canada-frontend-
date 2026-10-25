@@ -4,6 +4,8 @@ import { createStore, local } from "./store";
 import { mergeFeed } from "./feedMerge.js";
 import { addRead, applyActivity, createSeenGate, mergeNotifications, seenBody, unsyncedReads } from "./readState.js";
 import { markActive } from "./engage";
+import { createBookmarkSync } from "./bookmarkSync.js";
+import { loadLeaderboard, points, refreshPoints } from "./points";
 
 /* =========================================================
    The signed-in layer (the web SyncService): people, connections,
@@ -520,11 +522,24 @@ export async function loadMediaConfig() {
 
 // ---------- Session bookmarks ----------
 
+/* Oct 25 2026 ("When I unsave a session my points stay"): the server used to flip whatever it had, so when this page
+   and the server disagreed an "unsave" tap could save. Each request now carries the state the person sees
+   ({ saved }) and the server sets exactly that; one request per session at a time, the latest tap wins
+   (lib/bookmarkSync.js). The list changes at once and the server's answer has the last word. */
+const bookmarkSync = createBookmarkSync((sessionId, saved) =>
+  post(`social/sessions/${encodeURIComponent(sessionId)}/register`, { saved }));
+
+/** `mine` with `sessionId` saved or not. */
+const withSaved = (mine, sessionId, saved) => (saved ? [...new Set([...mine, sessionId])] : mine.filter((x) => x !== sessionId));
+
 export async function refreshRegistrations() {
   if (!signedIn()) return;
   try {
     const r = await get("social/sessions/registrations");
-    set({ registrations: { mine: r.mine || [], counts: r.counts || {} } });
+    // A session with a save / unsave still on its way keeps what the person tapped.
+    const mine = (r.mine || []).filter((id) => bookmarkSync.wanted(id) === undefined);
+    for (const id of social.get().registrations.mine) if (bookmarkSync.wanted(id) === true) mine.push(id);
+    set({ registrations: { mine, counts: r.counts || {} } });
   } catch { /* keep */ }
 }
 
@@ -532,7 +547,8 @@ export function bookmarks(s = social.get()) {
   return signedIn() ? s.registrations.mine : s.guestBookmarks;
 }
 
-/** Save / unsave a session. Signed in: the server mirrors it; guests: this device. */
+/** Save / unsave a session. Signed in: the server keeps it (and the points it earns); guests: this device.
+    → whether it's saved now. */
 export async function toggleBookmark(sessionId) {
   const s = social.get();
   if (!signedIn()) {
@@ -542,18 +558,31 @@ export async function toggleBookmark(sessionId) {
     return next.includes(sessionId);
   }
   const was = s.registrations.mine.includes(sessionId);
-  const optimistic = was ? s.registrations.mine.filter((x) => x !== sessionId) : [...s.registrations.mine, sessionId];
-  set({ registrations: { ...s.registrations, mine: optimistic } });
+  // The first tap of a burst settles it (once, with the answer to the last state wanted); later taps only change
+  // what's wanted.
+  const first = bookmarkSync.wanted(sessionId) === undefined;
+  set({ registrations: { ...s.registrations, mine: withSaved(s.registrations.mine, sessionId, !was) } });
   try {
-    const r = await post(`social/sessions/${encodeURIComponent(sessionId)}/register`, {});
-    const cur = social.get().registrations;
-    const mine = r.registered ? [...new Set([...cur.mine, sessionId])] : cur.mine.filter((x) => x !== sessionId);
-    set({ registrations: { mine, counts: { ...cur.counts, [sessionId]: r.count } } });
-    return r.registered;
+    const r = await bookmarkSync.want(sessionId, !was);
+    const saved = !!r?.registered;
+    if (first && signedIn()) {
+      const cur = social.get().registrations;
+      const counts = typeof r?.count === "number" ? { ...cur.counts, [sessionId]: r.count } : cur.counts;
+      set({ registrations: { mine: withSaved(cur.mine, sessionId, saved), counts } });
+      // Saving earns points and unsaving takes them away: the Home pill, Profile and the leaderboard catch up.
+      refreshPoints(true);
+      if (points.get().board) loadLeaderboard();
+    }
+    return saved;
   } catch (e) {
-    set({ registrations: s.registrations });
-    fail(e);
-    return was;
+    if (first && signedIn()) {
+      // Back to how it was before the burst, then the server's own list (another device may have changed it).
+      const cur = social.get().registrations;
+      set({ registrations: { ...cur, mine: withSaved(cur.mine, sessionId, was) } });
+      fail(e);
+      refreshRegistrations();
+    }
+    return bookmarks().includes(sessionId);
   }
 }
 

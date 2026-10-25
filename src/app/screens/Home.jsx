@@ -71,6 +71,15 @@ function SessionHero({ pick, now, c, flags }) {
   const names = speakers.length <= 2 ? speakers.map((s) => s.name).join(" & ") : `${speakers.slice(0, 2).map((s) => s.name).join(", ")} +${speakers.length - 2}`;
   const p = parts(session.start - now);
   const polls = FEATURES.live && pollsOn(session, flags), qa = FEATURES.live && qaOn(session, flags);
+  // The schedule button sits at the end of the speakers row, or of the title row when there are no speakers
+  // (Oct 25 2026): on a row of its own it left an empty band whenever there was no "Next session in" line.
+  const scheduleBtn = <Link to="/schedule" className="icon-btn icon-btn--round" aria-label="Open the schedule"><CalendarDays aria-hidden="true" /></Link>;
+  const title = (
+    <Link to={`/session/${encodeURIComponent(session.id)}`} className="card-link pressable" style={speakers.length ? undefined : { flex: 1, minWidth: 0, width: "auto" }}>
+      <h2 className="hero-session-title">{session.title}</h2>
+      <span className="small muted">{timeRange(session)}</span>
+    </Link>
+  );
   return (
     <div className="stack" style={{ gap: 16 }}>
       {isOn ? (
@@ -86,14 +95,13 @@ function SessionHero({ pick, now, c, flags }) {
           </div>
         </div>
       )}
-      <Link to={`/session/${encodeURIComponent(session.id)}`} className="card-link pressable">
-        <h2 className="hero-session-title">{session.title}</h2>
-        <span className="small muted">{timeRange(session)}</span>
-      </Link>
+      {speakers.length > 0 ? title : <div className="row-top">{title}{scheduleBtn}</div>}
       {speakers.length > 0 && (
         <div className="row">
-          <span className="avatar-stack">{speakers.slice(0, 3).map((s) => <Avatar key={s.id} name={s.name} src={s.photo} size={28} ring round />)}</span>
-          <span className="small bold clamp-2">{names}</span>
+          <span className="avatar-stack" style={{ flex: "none" }}>{speakers.slice(0, 3).map((s) => <Avatar key={s.id} name={s.name} src={s.photo} size={28} ring round />)}</span>
+          {/* Long names wrap to two lines beside the button. */}
+          <span className="small bold clamp-2" style={{ flex: 1, minWidth: 0 }}>{names}</span>
+          {scheduleBtn}
         </div>
       )}
       {(polls || qa) && (
@@ -102,15 +110,13 @@ function SessionHero({ pick, now, c, flags }) {
           {qa && <Link to={`/session/${encodeURIComponent(session.id)}/live?qa=1`} className="live-pill live-pill--qa pressable"><MessageSquareQuote aria-hidden="true" />Submit a question</Link>}
         </div>
       )}
-      <div className="row">
-        {next && (
+      {next && (
+        <div className="row">
           <Link to={`/session/${encodeURIComponent(next.id)}`} className="small muted" style={{ textDecoration: "none" }}>
             Next session in <b className="figure" style={{ color: "var(--tx)" }}>{shortCountdown(next.start - now)}</b>
           </Link>
-        )}
-        <span className="spacer" />
-        <Link to="/schedule" className="icon-btn icon-btn--round" aria-label="Open the schedule"><CalendarDays aria-hidden="true" /></Link>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -160,25 +166,34 @@ function doorsLine(left) {
   return `${twoDigits(p.d)}d ${twoDigits(p.h)}h ${twoDigits(p.m)}m to the doors`;
 }
 
-/** The bar above the tab bar on Home (the iOS mini-bar), always there; it rides above the docked composer. */
+/** Home back to the top: smooth, instant with Reduce Motion (like the TTFC mark, components/BrandMark.jsx). */
+function scrollHomeToTop() {
+  let still = false;
+  try { still = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { /* no matchMedia: animate */ }
+  window.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
+}
+
+/** The bar above the tab bar on Home (the iOS mini-bar), always there; it rides above the docked composer. A tap on
+    the session on now / next opens it; on the countdown or the thank you it scrolls Home back to the top (Oct 25
+    2026; it used to open the schedule, which the hero's calendar button already does). */
 function StatusBar({ pick, now, raised }) {
   if (!pick) return null;
   const cls = "mini-bar now-bar status-bar pressable" + (raised ? " is-raised" : "");
   const chevron = <ChevronRight aria-hidden="true" style={{ width: 16, height: 16, color: "var(--tx2)", flex: "none" }} />;
   if (pick.kind === "countdown") {
     return (
-      <Link to="/schedule" className={cls} aria-label={`${doorsLine(pick.left)}. Opens the schedule`}>
+      <button type="button" className={cls} onClick={scrollHomeToTop} aria-label={`${doorsLine(pick.left)}. Scrolls back to the top`}>
         <span className="now-bar-text"><span className="figure ellipsis status-doors">{doorsLine(pick.left)}</span></span>
         {chevron}
-      </Link>
+      </button>
     );
   }
   if (pick.kind === "after") {
     return (
-      <Link to="/schedule" className={cls} aria-label="Thank you for being at TTFC 2026. Opens the schedule">
+      <button type="button" className={cls} onClick={scrollHomeToTop} aria-label="Thank you for being at TTFC 2026. Scrolls back to the top">
         <span className="now-bar-text"><span className="ellipsis">Thank you for being at TTFC 2026</span></span>
         {chevron}
-      </Link>
+      </button>
     );
   }
   const s = pick.session;

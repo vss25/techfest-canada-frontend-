@@ -676,6 +676,9 @@ a { color: var(--pur-alt); }
    height, --home-dock-h) and settles above the tab bar once the composer moves to the top. */
 .status-bar { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .status-bar.is-raised { transform: translateY(calc(-1 * var(--home-dock-h, 53px))); }
+/* On the countdown and the thank you it's a button (a tap scrolls Home to the top, Oct 25 2026). A button keeps its
+   content's width between left and right, so it's given the width the link form gets. */
+button.mini-bar { width: calc(100% - 24px); }
 .status-doors { font-weight: 700; font-variant-numeric: tabular-nums; }
 .page--home-bars { padding-bottom: calc(var(--tab-space) + 76px); }
 .page--home-bars-2 { padding-bottom: calc(var(--tab-space) + 132px); }
@@ -1580,6 +1583,7 @@ textarea.input--ios { min-height: 120px; }
   .shell { padding-left: 96px; }
   .toast-wrap { bottom: 20px; }
   .mini-bar { bottom: 20px; left: 108px; }
+  button.mini-bar { width: calc(100% - 120px); }
   .pinned-bar { left: 96px; }
   .home-dock { left: 96px; bottom: 0; padding-bottom: var(--safe-bottom); }
   .page--home-bars { padding-bottom: 100px; }

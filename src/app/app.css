@@ -789,6 +789,10 @@ a { color: var(--pur-alt); }
 .cb-author--link { color: var(--tx2); }
 .cb-author--link:hover, .comment-author-link:hover { text-decoration: underline; text-underline-offset: 2px; }
 .cb-avatar-link, .comment-avatar-link { display: inline-flex; flex: none; border-radius: 50%; }
+/* An author's photo that opens their profile (Oct 24 2026): a 44px tap area centred on the photo, whatever its size,
+   without moving anything (the extra area is an overlay, not layout). Press: .pressable. */
+.author-photo { position: relative; display: inline-flex; flex: none; border-radius: var(--r-avatar); text-decoration: none; color: inherit; -webkit-tap-highlight-color: transparent; }
+.author-photo::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
 .cb { padding: 9px 13px; font-size: 14.5px; line-height: 1.38; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 18px 18px 18px 6px; background: var(--surface); border: 1px solid var(--border); color: var(--tx); -webkit-touch-callout: none; }
 .cb--mine { background: var(--pur); color: #fff; border-color: transparent; border-radius: 18px 18px 6px 18px; }
 .cb--held { opacity: 0.55; }

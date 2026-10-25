@@ -34,3 +34,20 @@ test("names and photos open the right profile (Oct 22 2026)", async () => {
   assert.equal(authorPath({ authorName: "No id" }), null);
   assert.equal(authorPath({ authorId: "u1" }, { people: false }), null);
 });
+
+test("a post's photo opens what its name does; announcements stay plain (Oct 24 2026)", async () => {
+  const { postAuthorPath, photoLabel } = await import("./avatar.js");
+  assert.equal(postAuthorPath({ authorId: "u1", kind: "member" }, { meId: "u9" }), "/people/u1");
+  assert.equal(postAuthorPath({ authorId: "u9", kind: "member" }, { meId: "u9" }), "/profile");
+  assert.equal(postAuthorPath({ authorId: "admin1", kind: "announcement" }, { meId: "u9" }), null);
+  assert.equal(postAuthorPath({ authorId: "u9", kind: "announcement" }, { meId: "u9" }), null);
+  assert.equal(postAuthorPath({ authorId: "u3", kind: "member" }, { blocked: ["u3"] }), null);
+  assert.equal(postAuthorPath({ authorName: "No id" }), null);
+  assert.equal(postAuthorPath(null), null);
+  // Guests (no meId): someone with an id still opens; the directory off: nowhere.
+  assert.equal(postAuthorPath({ authorId: "u1" }), "/people/u1");
+  assert.equal(postAuthorPath({ authorId: "u1" }, { people: false }), null);
+  assert.equal(photoLabel("Alex Morgan"), "View Alex Morgan's profile");
+  assert.equal(photoLabel("  Jane Doe \n"), "View Jane Doe's profile");
+  assert.equal(photoLabel(""), "View profile");
+});

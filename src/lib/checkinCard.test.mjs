@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  PASS_BADGE, PRACTICE_TEXT, avatarSrc, badgeOf, bandSub, cardFrom, checkinTime, initialsOf, mealsOf, outcomeOf, passNameOf,
+  PASS_BADGE, PRACTICE_TEXT, avatarSrc, badgeOf, bandSub, cardFrom, checkinTime, initialsOf, isAppQr, mealsOf, outcomeOf, passNameOf,
 } from "./checkinCard.js";
 
 const VIP = { key: "vip", label: "VIP", bg: "#F5C400", text: "#3D2E00" };
@@ -113,4 +113,24 @@ test("practice scan (not an event day, Oct 24 2026): the person's card, nothing 
   assert.equal(PRACTICE_TEXT, "Practice scan — not an event day, nothing was checked in");
   // An unknown ticket is still "not found" on any day.
   assert.equal(cardFrom({ status: 404, body: { status: "invalid", message: "Ticket not found" } }).outcome, "not_found");
+});
+
+test("networking QR (Oct 24 2026): their pass's card with the server's note; refusals in the server's words, never the code as a ticket", () => {
+  const QR = "TTFC2026|C|Baldeep Singh Pahwa|Founder|The Tech Festival Canada|||6ac1ad136c1df1b328fd29a6|facbf7";
+  assert.equal(isAppQr(QR), true);
+  assert.equal(isAppQr("TECHFEST:abc"), false);
+  const NOTE = "Networking QR: they hold 2 passes, so their Speaker Pass (the one their People profile shows first) was used.";
+  const ok = cardFrom({ status: 200, ticketId: QR, body: { status: "success", ticketId: "a9fde65e55eb", name: "Baldeep Singh Pahwa", passName: "Speaker Pass", scanned: "networking_qr", passCount: 2, note: NOTE } });
+  assert.deepEqual([ok.outcome, ok.ticketId, ok.name, ok.note], ["checked_in", "a9fde65e55eb", "Baldeep Singh Pahwa", NOTE]);
+  assert.equal("note" in cardFrom({ status: 200, body: { status: "success", ticketId: "abc" } }), false);
+  const MSG = "That's their networking QR. Ask for the entry pass QR (app › Pass, or the email/PDF).";
+  const old = cardFrom({ status: 404, ticketId: QR, body: { status: "invalid", code: "networking_qr", message: MSG, error: MSG } });
+  assert.deepEqual([old.outcome, old.ticketId, old.message, old.name, old.badge], ["networking_qr", "", MSG, "", null]);
+  assert.equal(cardFrom({ status: 404, ticketId: QR, body: { status: "invalid", code: "bad_qr", message: "x" } }).outcome, "bad_qr");
+  assert.equal(cardFrom({ status: 404, ticketId: QR, body: { status: "invalid", code: "no_pass", message: "y" } }).outcome, "no_pass");
+  // A server from before this change answers "Ticket not found": still their networking QR, not "No TTFC ticket has this ID".
+  const before = cardFrom({ status: 404, ticketId: QR, body: { status: "invalid", message: "Ticket not found" } });
+  assert.deepEqual([before.outcome, before.ticketId], ["networking_qr", ""]);
+  // A ticket ID that isn't one is still "not found", with the ID shown.
+  assert.deepEqual([outcomeOf(404, { status: "invalid" }, "zzz"), cardFrom({ status: 404, ticketId: "zzz", body: { status: "invalid" } }).ticketId], ["not_found", "zzz"]);
 });

@@ -40,7 +40,9 @@ import {
    Yes or No), and for management the pass itself (Connect,
    Influence, Power, Apex or the internal Speaker Pass, no charge)
    and the ticket value of a
-   pass paid outside Stripe. The RSVP (RsvpEditor, add-only on an
+   pass paid outside Stripe, and (Oct 24 2026) "Undo check-in" on a
+   checked-in pass (POST …/passes/:ticketId/checkin-reset, after an
+   inline confirm). The RSVP (RsvpEditor, add-only on an
    attendee's own), the company logo (LogoPicker), and Delete
    person (management: GET …/delete-plan, then DELETE with their
    full name). Their app contact card is read-only. Holding a
@@ -454,7 +456,40 @@ function ManualValue({ p, t, onSaved }) {
   );
 }
 
+/* Undo a door check-in (management, Oct 24 2026: passes collected by test scans before the event would scan amber
+   "Already checked in" on the day). POST …/passes/:ticketId/checkin-reset, after an inline confirm: the pass is
+   not collected any more (the check-in desk too), their next scan checks them in, and it's logged. */
+function UndoCheckIn({ p, t, onSaved }) {
+  const toast = useToast();
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const undo = async () => {
+    setBusy(true); setError("");
+    try {
+      await api.post(`/console/people/${encodeURIComponent(p.id)}/passes/${encodeURIComponent(t.ticketId)}/checkin-reset`);
+      toast.success(`${t.ticketId.toUpperCase()}: check-in undone. Their next scan checks them in.`);
+      setAsking(false);
+      onSaved();
+    } catch (err) { setError(err.message); } finally { setBusy(false); }
+  };
+  if (!asking) return <Button size="sm" variant="ghost" onClick={() => setAsking(true)}>Undo check-in</Button>;
+  return (
+    <div role="group" aria-label={`Undo the check-in of ${t.ticketId.toUpperCase()}`} className="w-full rounded-xl border border-amber-300/40 bg-amber-400/5 p-3 text-xs">
+      <p className="text-ttfc-text">
+        Undo the door check-in{t.checkedInAt ? ` from ${when(t.checkedInAt)}` : ""}? The pass shows as not collected (the check-in desk too) and their next scan checks them in. It's logged.
+      </p>
+      {error && <p role="alert" className="mt-2 text-red-200">{error}</p>}
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Button size="sm" variant="dangerOutline" loading={busy} onClick={undo}>Undo check-in</Button>
+        <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setAsking(false); setError(""); }}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
+
 function PassesCard({ p, onSaved }) {
+  const { isManagement } = useAdmin();
   const e = p.edit || {};
   return (
     <Card>
@@ -471,7 +506,7 @@ function PassesCard({ p, onSaved }) {
               {t.tier === "speaker" && <span title="Never sold or listed on the website: Power Pass privileges, both CxO Breakfasts and the VIP Lounge"><Badge tone="purple" icon={Mic2}>Internal</Badge></span>}
               {t.exhibitorPass && <Badge tone="purple" icon={Store}>Exhibitor's pass</Badge>}
               {t.hidden && <Badge>Hidden by staff</Badge>}
-              {t.checkedIn && <Badge tone="good">Checked in</Badge>}
+              {t.checkedIn && <span title={t.checkedInAt ? `Checked in ${when(t.checkedInAt)}` : undefined}><Badge tone="good">Checked in</Badge></span>}
               {t.booth && <Badge tone="purple">Booth {t.booth}</Badge>}
               <span className="font-mono text-xs text-ttfc-muted">{t.ticketId.toUpperCase()}</span>
               {/* The coupon code it was bought with ("Code: SPRING20 · 20% off"), "No code", or "Given by staff" (Oct 20 2026). */}
@@ -487,6 +522,7 @@ function PassesCard({ p, onSaved }) {
                 <Badge tone={VALUE_BAND_TONE[t.valueBand]}>{VALUE_BAND_LABELS[t.valueBand]}</Badge>
                 {VALUE_SOURCE[t.valueSource] && <span className={t.valueSource === "manual" ? "font-semibold text-amber-200" : "text-ttfc-dim"}>{VALUE_SOURCE[t.valueSource]}</span>}
               </span>
+              {isManagement && t.checkedIn && <UndoCheckIn key={`undo-${t.checkedInAt || ""}`} p={p} t={t} onSaved={onSaved} />}
               {e.canEditValue && !t.hasStripe && !t.hidden && <ManualValue p={p} t={t} onSaved={onSaved} />}
               {e.canEditPass && !t.hidden && <PassTypeChange key={t.tier} p={p} t={t} onSaved={onSaved} />}
               {!t.hidden && <ExtrasSwitches personId={p.id} t={t} canEdit={!!(e.canEditExtras ?? e.canEditCxo)} onSaved={onSaved} />}

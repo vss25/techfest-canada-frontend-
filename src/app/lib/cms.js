@@ -2,6 +2,7 @@ import { SANITY_QUERY_URL, TOPIC_COMPANIES } from "./config";
 import { clock12, parseClock, torontoDate, EVENT_START, EVENT_END } from "./time";
 import { createStore, local } from "./store";
 import { isSponsor, bySponsorOrder } from "../../data/sponsors";
+import { sanitySized, TILE } from "./imageCdn";
 
 /* =========================================================
    Agenda, speakers and partners, live from the website's CMS
@@ -211,7 +212,7 @@ function mapPartners(raw) {
     return {
       id: name + (p.category || ""), cmsId: p._id || "", name, displayName: display, category: p.category || "other",
       categoryLabel: CATEGORY_LABEL[p.category] || "Supporters", website: p.website || "",
-      logo: p.logo ? `${p.logo}?h=160&fit=max&fm=png` : "", scale: Math.min(2.5, Math.max(0.3, (Number(p.logoScale) || 100) / 100)), topics,
+      logo: p.logo ? sanitySized(p.logo, TILE.w, TILE.h) : "", scale: Math.min(2.5, Math.max(0.3, (Number(p.logoScale) || 100) / 100)), topics,
       order: typeof p.order === "number" ? p.order : null,
       description: typeof p.description === "string" ? p.description.trim() : "",
       isSponsor: !!p._id && isSponsor({ _id: p._id, matrixGroup: p.matrixGroup }),

@@ -10,7 +10,7 @@ import { markActivitySeen, refreshActivity, refreshFeed, social, bookmarks } fro
 import { notificationItems, unreadCount } from "../lib/notifications";
 import { countdownTarget, EVENT_END, parts, shortCountdown, showsSessionHero, twoDigits } from "../lib/time";
 import { fileURL, FEATURES } from "../lib/config";
-import { safeHref, useNow } from "../lib/ui";
+import { safeHref, useMinuteNow, useNow } from "../lib/ui";
 import { Avatar, Button, IconButton, Spinner } from "../components/ui";
 import { PeopleFill, TrophyFill } from "../components/Glyphs";
 import { points, refreshPoints } from "../lib/points";
@@ -47,7 +47,9 @@ import { StayHomeCard } from "../components/StaySignup";
    sign-up (Oct 24 2026, components/StaySignup.jsx).
 ========================================================= */
 
-function Countdown({ now, target }) {
+/** Ticks every second on its own, so only the figures redraw (not the whole of Home). */
+function Countdown({ target }) {
+  const now = useNow(1000);
   const left = target - now;
   if (left <= 0) {
     return <p className="hero-session-title">{now > EVENT_END.getTime() ? "Thanks for joining TTFC 2026" : "The festival is live"}</p>;
@@ -65,12 +67,38 @@ function Countdown({ now, target }) {
   );
 }
 
-function SessionHero({ pick, now, c, flags }) {
+/** "Next session starts in" figures: their own one-second clock (Oct 24 2026: Home redrew every second). */
+function HeroCountdown({ start }) {
+  const p = parts(start - useNow(1000));
+  return (
+    <div className="countdown" role="timer">
+      {p.d > 0 && <div className="unit"><b>{twoDigits(p.d)}</b><span>days</span></div>}
+      <div className="unit"><b>{twoDigits(p.h)}</b><span>hrs</span></div>
+      <div className="unit"><b>{twoDigits(p.m)}</b><span>min</span></div>
+      <div className="unit"><b>{twoDigits(p.s)}</b><span>sec</span></div>
+    </div>
+  );
+}
+
+/** "Next session in 12:04", ticking on its own. */
+function NextIn({ start }) {
+  return <b className="figure" style={{ color: "var(--tx)" }}>{shortCountdown(start - useNow(1000))}</b>;
+}
+
+function SessionHero({ pick, c, flags }) {
   const { session, isOn, next } = pick;
   const speakers = session.speakerIds.map((id) => speakerById(id, c)).filter(Boolean);
   const names = speakers.length <= 2 ? speakers.map((s) => s.name).join(" & ") : `${speakers.slice(0, 2).map((s) => s.name).join(", ")} +${speakers.length - 2}`;
-  const p = parts(session.start - now);
   const polls = FEATURES.live && pollsOn(session, flags), qa = FEATURES.live && qaOn(session, flags);
+  // The schedule button sits at the end of the speakers row, or of the title row when there are no speakers
+  // (Oct 25 2026): on a row of its own it left an empty band whenever there was no "Next session in" line.
+  const scheduleBtn = <Link to="/schedule" className="icon-btn icon-btn--round" aria-label="Open the schedule"><CalendarDays aria-hidden="true" /></Link>;
+  const title = (
+    <Link to={`/session/${encodeURIComponent(session.id)}`} className="card-link pressable" style={speakers.length ? undefined : { flex: 1, minWidth: 0, width: "auto" }}>
+      <h2 className="hero-session-title">{session.title}</h2>
+      <span className="small muted">{timeRange(session)}</span>
+    </Link>
+  );
   return (
     <div className="stack" style={{ gap: 16 }}>
       {isOn ? (
@@ -78,22 +106,16 @@ function SessionHero({ pick, now, c, flags }) {
       ) : (
         <div className="stack-sm">
           <span className="eyebrow" style={{ color: "var(--tx2)" }}>Next session starts in</span>
-          <div className="countdown" role="timer">
-            {p.d > 0 && <div className="unit"><b>{twoDigits(p.d)}</b><span>days</span></div>}
-            <div className="unit"><b>{twoDigits(p.h)}</b><span>hrs</span></div>
-            <div className="unit"><b>{twoDigits(p.m)}</b><span>min</span></div>
-            <div className="unit"><b>{twoDigits(p.s)}</b><span>sec</span></div>
-          </div>
+          <HeroCountdown start={session.start} />
         </div>
       )}
-      <Link to={`/session/${encodeURIComponent(session.id)}`} className="card-link pressable">
-        <h2 className="hero-session-title">{session.title}</h2>
-        <span className="small muted">{timeRange(session)}</span>
-      </Link>
+      {speakers.length > 0 ? title : <div className="row-top">{title}{scheduleBtn}</div>}
       {speakers.length > 0 && (
         <div className="row">
-          <span className="avatar-stack">{speakers.slice(0, 3).map((s) => <Avatar key={s.id} name={s.name} src={s.photo} size={28} ring round />)}</span>
-          <span className="small bold clamp-2">{names}</span>
+          <span className="avatar-stack" style={{ flex: "none" }}>{speakers.slice(0, 3).map((s) => <Avatar key={s.id} name={s.name} src={s.photo} size={28} ring round />)}</span>
+          {/* Long names wrap to two lines beside the button. */}
+          <span className="small bold clamp-2" style={{ flex: 1, minWidth: 0 }}>{names}</span>
+          {scheduleBtn}
         </div>
       )}
       {(polls || qa) && (
@@ -102,15 +124,13 @@ function SessionHero({ pick, now, c, flags }) {
           {qa && <Link to={`/session/${encodeURIComponent(session.id)}/live?qa=1`} className="live-pill live-pill--qa pressable"><MessageSquareQuote aria-hidden="true" />Submit a question</Link>}
         </div>
       )}
-      <div className="row">
-        {next && (
+      {next && (
+        <div className="row">
           <Link to={`/session/${encodeURIComponent(next.id)}`} className="small muted" style={{ textDecoration: "none" }}>
-            Next session in <b className="figure" style={{ color: "var(--tx)" }}>{shortCountdown(next.start - now)}</b>
+            Next session in <NextIn start={next.start} />
           </Link>
-        )}
-        <span className="spacer" />
-        <Link to="/schedule" className="icon-btn icon-btn--round" aria-label="Open the schedule"><CalendarDays aria-hidden="true" /></Link>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -160,25 +180,34 @@ function doorsLine(left) {
   return `${twoDigits(p.d)}d ${twoDigits(p.h)}h ${twoDigits(p.m)}m to the doors`;
 }
 
-/** The bar above the tab bar on Home (the iOS mini-bar), always there; it rides above the docked composer. */
+/** Home back to the top: smooth, instant with Reduce Motion (like the TTFC mark, components/BrandMark.jsx). */
+function scrollHomeToTop() {
+  let still = false;
+  try { still = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { /* no matchMedia: animate */ }
+  window.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
+}
+
+/** The bar above the tab bar on Home (the iOS mini-bar), always there; it rides above the docked composer. A tap on
+    the session on now / next opens it; on the countdown or the thank you it scrolls Home back to the top (Oct 25
+    2026; it used to open the schedule, which the hero's calendar button already does). */
 function StatusBar({ pick, now, raised }) {
   if (!pick) return null;
   const cls = "mini-bar now-bar status-bar pressable" + (raised ? " is-raised" : "");
   const chevron = <ChevronRight aria-hidden="true" style={{ width: 16, height: 16, color: "var(--tx2)", flex: "none" }} />;
   if (pick.kind === "countdown") {
     return (
-      <Link to="/schedule" className={cls} aria-label={`${doorsLine(pick.left)}. Opens the schedule`}>
+      <button type="button" className={cls} onClick={scrollHomeToTop} aria-label={`${doorsLine(pick.left)}. Scrolls back to the top`}>
         <span className="now-bar-text"><span className="figure ellipsis status-doors">{doorsLine(pick.left)}</span></span>
         {chevron}
-      </Link>
+      </button>
     );
   }
   if (pick.kind === "after") {
     return (
-      <Link to="/schedule" className={cls} aria-label="Thank you for being at TTFC 2026. Opens the schedule">
+      <button type="button" className={cls} onClick={scrollHomeToTop} aria-label="Thank you for being at TTFC 2026. Scrolls back to the top">
         <span className="now-bar-text"><span className="ellipsis">Thank you for being at TTFC 2026</span></span>
         {chevron}
-      </Link>
+      </button>
     );
   }
   const s = pick.session;
@@ -282,7 +311,9 @@ export default function Home() {
   const s = useStore(social);
   const c = useStore(cms);
   const ct = useStore(content);
-  const now = useNow(1000);
+  // Which session is on, the status bar and the bell change by the minute; the countdown figures tick every second
+  // inside Countdown / SessionHero (Oct 24 2026: the whole page, every post included, redrew every second).
+  const now = useMinuteNow();
   const navigate = useNavigate();
   // Points › "Write a post" lands here with { compose: true }: the composer opens (when posting is on).
   const location = useLocation();
@@ -421,7 +452,7 @@ export default function Home() {
 
         <section className="pad hero stack" aria-label="Festival">
           {greeting ? <h1>Welcome back, {greeting}.</h1> : <h1 className="lockup">MEET · BUILD · SCALE</h1>}
-          {pick ? <SessionHero pick={pick} now={now} c={c} flags={flags} /> : <Countdown now={now} target={countdownTarget().getTime()} />}
+          {pick ? <SessionHero pick={pick} c={c} flags={flags} /> : <Countdown target={countdownTarget().getTime()} />}
           <hr className="rule" style={{ marginTop: 6 }} />
         </section>
 

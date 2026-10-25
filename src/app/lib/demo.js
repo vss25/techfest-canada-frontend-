@@ -968,12 +968,17 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
 
   // Sessions
   if (is("GET", "social/sessions/registrations")) return done({ mine: s.registrations, counts: s.counts });
+  // { saved: true | false } sets exactly that, and the same state again changes nothing (Oct 25 2026, like the
+  // backend); no `saved` (older clients) flips it.
   if ((m = is("POST", "social/sessions/:id/register"))) {
-    const on = !s.registrations.includes(m.id);
-    s.registrations = on ? [...s.registrations, m.id] : s.registrations.filter((x) => x !== m.id);
-    s.counts[m.id] = Math.max(0, (s.counts[m.id] || 0) + (on ? 1 : -1));
-    syncSessionMember(s, m.id, on);
-    return done({ registered: on, count: s.counts[m.id] });
+    const had = s.registrations.includes(m.id);
+    const on = typeof body?.saved === "boolean" ? body.saved : !had;
+    if (on !== had) {
+      s.registrations = on ? [...s.registrations, m.id] : s.registrations.filter((x) => x !== m.id);
+      s.counts[m.id] = Math.max(0, (s.counts[m.id] || 0) + (on ? 1 : -1));
+      syncSessionMember(s, m.id, on);
+    }
+    return done({ registered: on, count: s.counts[m.id] || 0 });
   }
   if ((m = is("GET", "social/sessions/:id/questions"))) {
     if (!s.questions[m.id]) {

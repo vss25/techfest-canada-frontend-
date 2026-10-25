@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { memo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BadgeCheck, Flag, Hand, Heart, Link2, MessageCircle, MoreHorizontal, Send, Trash2, ArrowUpRight, Megaphone } from "lucide-react";
 import { useStore } from "../lib/store";
@@ -7,6 +7,7 @@ import { auth, can, isSignedIn } from "../lib/auth";
 import { deletePost, social, toggleLike } from "../lib/social";
 import { blockFlow, reportFlow } from "../lib/safety";
 import { fileURL, FEATURES } from "../lib/config";
+import { PHOTO, sized } from "../lib/imageCdn";
 import { mentionPath, splitMentions } from "../lib/mentions";
 import { publicBadge } from "../lib/people";
 import { postTime } from "../lib/time";
@@ -45,7 +46,8 @@ function MediaCarousel({ media, onDoubleTap }) {
         {media.map((m, i) => (
           m.type === "video"
             ? <video key={i} src={fileURL(m.url)} poster={m.posterUrl ? fileURL(m.posterUrl) : undefined} controls playsInline preload="metadata" style={{ aspectRatio: String(aspect) }} />
-            : <img key={i} src={fileURL(m.url)} alt="" loading="lazy" decoding="async" style={{ aspectRatio: String(aspect) }} />
+            // Cloudinary sends it no wider than a phone screen (web uploads can be full camera size).
+            : <img key={i} src={sized(fileURL(m.url), PHOTO.w, PHOTO.h)} alt="" loading="lazy" decoding="async" style={{ aspectRatio: String(aspect) }} />
         ))}
       </div>
       {media.length > 1 && (
@@ -58,7 +60,10 @@ function MediaCarousel({ media, onDoubleTap }) {
   );
 }
 
-export default function PostCard({ post, startWithComments = false }) {
+/** Memoised (Oct 24 2026): Home re-renders on its own clock and as the bars pin; a post redraws when it or a store it reads changes. */
+export default memo(PostCard);
+
+function PostCard({ post, startWithComments = false }) {
   const a = useStore(auth);
   const s = useStore(social);
   const c = useStore(cms);

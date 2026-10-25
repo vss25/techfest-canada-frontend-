@@ -78,6 +78,22 @@ export function usePolling(fn, ms, deps = []) {
   }, [ms, ...deps]);
 }
 
+/** The app clock (lib/time `now`), refreshed on every minute boundary: for screens whose content changes by
+    the minute (which session is on, "in 5 min"), so a per-second countdown doesn't redraw all of them. */
+export function useMinuteNow() {
+  const [t, setT] = useState(() => clockNow().getTime());
+  useEffect(() => {
+    let id = 0;
+    const next = () => {
+      const n = clockNow().getTime();
+      id = setTimeout(() => { setT(clockNow().getTime()); next(); }, 60000 - (n % 60000) + 5);
+    };
+    next();
+    return () => clearTimeout(id);
+  }, []);
+  return t;
+}
+
 /** The app clock (lib/time `now`), refreshed every `ms`. */
 export function useNow(ms = 1000) {
   const [t, setT] = useState(() => clockNow().getTime());

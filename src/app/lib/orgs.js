@@ -5,6 +5,7 @@ import { auth } from "./auth";
 import { categoryLabelOf, cms, sponsorsShown } from "./cms";
 import { fileURL } from "./config";
 import { companyKey } from "./orgKey";
+import { sized, TILE } from "./imageCdn";
 
 /* =========================================================
    Attending organisations (Oct 21 2026): one deduplicated list
@@ -55,12 +56,11 @@ export function refreshOrganisations({ force = false } = {}) {
   return inflight;
 }
 
-/** A logo ready for a tile: Sanity images as a small PNG (as the CMS partners always were), server paths absolute. */
+/** A logo ready for a tile: sized by Sanity's / Cloudinary's pipelines (lib/imageCdn.js), server paths absolute. */
 function logoURL(raw) {
   const u = String(raw || "").trim();
   if (!u) return "";
-  if (/^https:\/\/cdn\.sanity\.io\/images\//.test(u) && !u.includes("?")) return `${u}?h=160&fit=max&fm=png`;
-  return fileURL(u);
+  return sized(fileURL(u), TILE.w, TILE.h);
 }
 
 /** Logo size: a factor (1 = normal) or the CMS's percentage (100). */

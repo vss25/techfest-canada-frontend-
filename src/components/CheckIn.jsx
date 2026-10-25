@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { AlertTriangle, CheckCircle2, Info, Loader2, XCircle } from "lucide-react";
 import { ADMIN_API, adminFetch } from "../admin/api";
-import { PRACTICE_TEXT, avatarSrc, cardFrom, checkinTime, initialsOf } from "../lib/checkinCard";
+import { PRACTICE_TEXT, avatarSrc, cardFrom, checkinTime, initialsOf, isAppQr } from "../lib/checkinCard";
 
 /* Door check-in (Admin › Event day › Check-in). Every scan (camera or a typed ticket ID) goes to
    POST /api/checkin/scan and its answer replaces the card at once: the pass's colour band (VIP gold, Media dark
@@ -11,7 +11,9 @@ import { PRACTICE_TEXT, avatarSrc, cardFrom, checkinTime, initialsOf } from "../
    (initials on the band's colour while it loads or when there's none), name, title · company, the pass, the meals
    it includes and whether they were checked in now or before (amber). On a day that isn't Day 1 / Day 2 the server
    checks nothing in (Oct 24 2026): the same card with a neutral "Practice scan" banner, and whether their pass was
-   collected before. Helpers in src/lib/checkinCard.js. */
+   collected before. Someone's networking QR (the apps' "My QR", Oct 24 2026) checks in their pass the same way (with
+   a line saying which pass when they hold several); when it can't, the server's words ("That's their networking QR.
+   Ask for the entry pass QR…"), never the code's text as a ticket. Helpers in src/lib/checkinCard.js. */
 
 const ORIGIN = ADMIN_API.replace(/\/api\/?$/, "");
 
@@ -82,7 +84,7 @@ export default function CheckIn() {
           {checking ? (
             <div className="ci-placeholder" role="status">
               <Loader2 className="ci-spin" aria-hidden="true" />
-              <span>Checking ticket <code>{checking}</code>…</span>
+              <span>{isAppQr(checking) ? "Checking their networking QR…" : <>Checking ticket <code>{checking}</code>…</>}</span>
             </div>
           ) : card ? (
             <ResultCard key={card.scan} card={card} />
@@ -119,9 +121,15 @@ export default function CheckIn() {
 
 const PROBLEM = {
   not_found: { title: "Not found", text: "No TTFC ticket has this ID. Check the ID, or send them to the registration desk." },
+  // Someone's networking QR (the apps' "My QR"): the server's message is shown when it sends one.
+  networking_qr: { title: "Networking QR", text: "That's their networking QR. Ask for the entry pass QR (app › Pass, or the email/PDF)." },
+  bad_qr: { title: "Invalid QR code", text: "That QR code isn't valid. Ask for the entry pass QR (app › Pass, or the email/PDF)." },
+  no_pass: { title: "No pass", text: "That's their networking QR, and there's no TTFC pass on their account. Send them to the registration desk." },
   invalid: { title: "Invalid", text: "That isn't a ticket ID." },
   error: { title: "Couldn't check in", text: "Nothing was checked in. Try again." },
 };
+
+const QR_PROBLEMS = new Set(["networking_qr", "bad_qr", "no_pass"]);
 
 function ResultCard({ card }) {
   if (card.outcome !== "checked_in" && card.outcome !== "already" && card.outcome !== "practice") {
@@ -132,7 +140,7 @@ function ResultCard({ card }) {
           <XCircle aria-hidden="true" />
           <span>{p.title}</span>
         </div>
-        <p className="ci-problem-text">{card.outcome === "error" && card.message ? card.message : p.text}</p>
+        <p className="ci-problem-text">{(card.outcome === "error" || QR_PROBLEMS.has(card.outcome)) && card.message ? card.message : p.text}</p>
         {card.ticketId && <p className="ci-ticket">Ticket <code>{card.ticketId}</code></p>}
       </article>
     );
@@ -159,6 +167,7 @@ function ResultCard({ card }) {
           {practice && card.collectedBefore && (
             <span className="ci-state-sub">Their pass was already collected{time ? ` (${time})` : ""}</span>
           )}
+          {card.note && <span className="ci-state-sub">{card.note}</span>}
         </span>
       </div>
 

@@ -38,7 +38,8 @@ export default function Lobby({ onOpen, layout }) {
   useUndoExpiry();
   // Recent arrivals: guests and NO DETAILS FOUND arrivals together, newest first.
   const recent = useMemo(() => {
-    const guests = markedToday(s, "arrived", pending(), 12).map((x) => ({ type: "guest", at: x.m.at, ...x }));
+    // The Drinks station's coupons mark people arrived too (Oct 27 2026): not the lobby's arrivals, so not listed here.
+    const guests = markedToday(s, "arrived", pending(), 60).filter((x) => x.m.station !== "drinks").slice(0, 12).map((x) => ({ type: "guest", at: x.m.at, ...x }));
     const unknown = unknownsOf(s, pending()).map((u) => ({ type: "unknown", at: u.at, u }));
     return [...guests, ...unknown].sort((a, b) => Date.parse(b.at || 0) - Date.parse(a.at || 0)).slice(0, 12);
   }, [s, v]); // eslint-disable-line react-hooks/exhaustive-deps

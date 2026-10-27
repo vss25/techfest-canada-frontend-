@@ -38,13 +38,28 @@ import { isUnknownKey, unknownKey } from "./special.js";
    add up to the total; Media, VIP and Exhibitor also counted as yes /
    no marks (overlapping the groups). NO DETAILS FOUND arrivals are
    their own count (never in the totals).
+
+   Drink coupons (Oct 27 2026): point "drinks", once per person per day,
+   the number on the mark (`count`); the tap marks them arrived too (the
+   server does the same), but someone handed coupons at the Drinks
+   station isn't "on the way up" to the pass desk (wayArrival).
    Pure; node --test src/checkin/lib/state.test.mjs
 ========================================================= */
 
 /** What each station's big button records. */
 export const STATION_POINT = Object.freeze({
-  lobby: "arrived", desk: "checked_in", breakfast: "cxo", lunch: "lunch", evening: "evening", media: "media", av: "av", exhibitor: "exhibitor",
+  lobby: "arrived", desk: "checked_in", breakfast: "cxo", lunch: "lunch", evening: "evening", media: "media", av: "av", exhibitor: "exhibitor", drinks: "drinks",
 });
+/** Drink coupons per person when the server hasn't said (its desk setting drinks.perPerson; the organiser: "default is 2"). */
+export const DRINKS_DEFAULT = Object.freeze({ perPerson: 2, min: 1, max: 5 });
+/** The server's drink coupons setting ({ perPerson, min, max }), else the default. */
+export function drinksSetting(snapDrinks) {
+  const d = snapDrinks && typeof snapDrinks === "object" ? snapDrinks : {};
+  const min = Number.isInteger(d.min) && d.min >= 1 ? d.min : DRINKS_DEFAULT.min;
+  const max = Number.isInteger(d.max) && d.max >= min ? d.max : DRINKS_DEFAULT.max;
+  const per = Number.isInteger(d.perPerson) && d.perPerson >= min && d.perPerson <= max ? d.perPerson : Math.min(max, Math.max(min, DRINKS_DEFAULT.perPerson));
+  return { perPerson: per, min, max };
+}
 export const MEAL_STATIONS = Object.freeze(["breakfast", "lunch", "evening"]);
 export const FLAG_POINT = Object.freeze({ breakfast: "flag_cxo", lunch: "flag_lunch", evening: "flag_evening" });
 /** Arrivals still on the way up are announced after a reconnect if they're this recent. */
@@ -75,6 +90,7 @@ export function fromSnapshot(snap, { clientNow = Date.now(), prev = null } = {})
     booths: snap.booths || [],
     boothByKey: new Map(),
     attendance: snap.attendance || [],
+    drinks: drinksSetting(snap.drinks),
     seen: prev?.seen || new Set(),
     version: (prev?.version || 0) + 1,
     // The snapshot holds everything up to its cursor: older pass / note / inclusions events never undo it.
@@ -272,7 +288,7 @@ export function applyEvents(s, events = [], { live = true, now = Date.now() } = 
 export function toSnapshot(s) {
   return {
     user: s.me, staff: s.staff, today: s.today, cursor: s.cursor, stations: s.stations, windows: s.windows, stationStates: s.stationStates,
-    agendaRead: s.agendaRead, guests: s.guests, booths: s.booths, marks: [...s.marks.values()], notes: { ...s.notes },
+    agendaRead: s.agendaRead, drinks: s.drinks, guests: s.guests, booths: s.booths, marks: [...s.marks.values()], notes: { ...s.notes },
     queries: [...s.queries.values()], unknowns: [...(s.unknowns?.values() || [])].filter((u) => u.status !== "undone"),
   };
 }
@@ -326,8 +342,14 @@ export function statusOf(s, g, pending = [], me = s.me) {
       if (q.undone.has(p.clientId)) continue;
       const by = p.queuedBy?.name ? { id: p.queuedBy.id, name: p.queuedBy.name } : me ? { id: me.id, name: me.name } : null;
       const virt = { at: p.clientAt, by, station: p.station, override: p.override ? "outside_window" : "", note: p.note || "", ref: p.clientId, pending: true, practice: !!today && !s.today?.eventDay };
+      if (p.point === "drinks") {
+        // Drink coupons: how many; staff's "Issue again" adds to the ones already issued.
+        const n = Number(p.count) || s.drinks?.perPerson || DRINKS_DEFAULT.perPerson;
+        if (p.again && out.drinks) { out.drinks = { ...out.drinks, count: (Number(out.drinks.count) || 0) + n, override: "issued_again", ref: p.clientId, by, pending: true }; continue; }
+        virt.count = n;
+      }
       if (!out[p.point]) out[p.point] = virt;
-      if (p.point === "checked_in" && !out.arrived) out.arrived = virt;
+      if ((p.point === "checked_in" || p.point === "drinks") && !out.arrived) out.arrived = virt;
     }
   }
   return out;
@@ -363,7 +385,7 @@ function prepPending(pending, today) {
 }
 const dayFmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", year: "numeric", month: "2-digit", day: "2-digit" });
 const torontoDay = (at) => { const t = ms(at); return Number.isFinite(t) ? dayFmt.format(new Date(t)) : ""; };
-const POINTS = ["arrived", "checked_in", "cxo", "lunch", "evening", "media", "av", "exhibitor", "flag_cxo", "flag_lunch", "flag_evening"];
+const POINTS = ["arrived", "checked_in", "cxo", "lunch", "evening", "media", "av", "exhibitor", "flag_cxo", "flag_lunch", "flag_evening", "drinks"];
 
 /** A booth's "set up" mark today (queue on top). */
 export function boothStatus(s, booth, pending = [], me = s.me) {
@@ -383,6 +405,20 @@ export function deskStage(st) {
   return "not_arrived";
 }
 
+/** Today's arrival as the pass desk sees it: the lobby's (or any other station's), never one the Drinks station's
+    coupons made (they collected their pass before: they aren't coming up to the desk). → the mark, or null. */
+export const wayArrival = (st) => (st?.arrived && st.arrived.station !== "drinks" ? st.arrived : null);
+/** deskStage for the pass desk: coupons handed out at the Drinks station aren't "on the way up". */
+export function passDeskStage(st) {
+  if (st.checked_in) return "checked_in";
+  if (wayArrival(st)) return "on_the_way";
+  return "not_arrived";
+}
+/** Does the pass desk offer this guest drink coupons with the pass (the organiser: "for first time checkins")? Their
+    pass wasn't collected on an earlier day (collected today, by this check-in or the door, still counts) and today's
+    coupons aren't issued yet. Everyone else gets theirs at the Drinks station. */
+export const deskDrinksDue = (g, st, today) => !st?.drinks && !collectedBefore(g, today);
+
 /** "Has pass (collected Mon)": collected on an earlier day than today. */
 export function collectedBefore(g, today) {
   if (!g?.passCollected) return false;
@@ -399,7 +435,8 @@ const emptyLine = () => ({ total: 0, collected: 0, checkedIn: 0, arrived: 0, onT
  * The counters for a station: totals, per colour group (each person once), and the yes / no marks.
  *   lobby / desk: holders, passes collected (ever), checked in today, arrived today, on the way up now
  *   meal stations: entitled to today's item, RSVP'd for it, admitted (item: { key, extra })
- *   media: media guests, checked in at the media desk; av: speakers with a session today, AV checked; exhibitor: exhibitors
+ *   media: media guests, checked in at the media desk; av: speakers with a session today, AV checked; exhibitor: exhibitors;
+ *   drinks: everyone, done = has today's coupons (`coupons`: how many in all)
  * → { totals, groups: [{ group, ...line }] (only non-empty), marks: { vip, media, exhibitor }, booths? }
  */
 export function counters(s, station, { pending = [], item = null } = {}) {
@@ -409,6 +446,7 @@ export function counters(s, station, { pending = [], item = null } = {}) {
   const issuePass = emptyLine();
   const meal = MEAL_STATIONS.includes(station);
   const eventDay = s.today?.eventDay || null;
+  let coupons = 0;
   for (const g of s.guests) {
     if (station === "media" && !g.marks?.media) continue;
     if (station === "exhibitor" && !g.marks?.exhibitor) continue;
@@ -419,12 +457,13 @@ export function counters(s, station, { pending = [], item = null } = {}) {
       collected: g.passCollected ? 1 : 0,
       checkedIn: st.checked_in ? 1 : 0,
       arrived: st.arrived ? 1 : 0,
-      onTheWay: st.arrived && !st.checked_in ? 1 : 0,
+      onTheWay: wayArrival(st) && !st.checked_in ? 1 : 0,
       entitled: meal && item ? (g.extras?.[item.extra] ? 1 : 0) : 0,
       rsvpd: meal && item ? (g.rsvp?.options?.includes(item.key) ? 1 : 0) : 0,
       admitted: meal ? (st[STATION_POINT[station]] ? 1 : 0) : 0,
       done: !meal && station !== "lobby" && station !== "desk" ? (st[STATION_POINT[station]] ? 1 : 0) : 0,
     };
+    if (station === "drinks" && st.drinks) coupons += Number(st.drinks.count) || 1;
     const add = (into) => { for (const k of Object.keys(line)) into[k] += line[k]; };
     add(totals);
     // On the list with no pass on file: their own line, never a pass type's.
@@ -440,6 +479,8 @@ export function counters(s, station, { pending = [], item = null } = {}) {
     out.booths = { total: s.booths.length, setUp: s.booths.filter((b) => boothStatus(s, b, pending)).length };
   }
   if (station === "media") out.queriesOpen = [...s.queries.values()].filter((q) => q.status !== "done").length;
+  // Drinks: the coupons handed out today (people with them: totals.done).
+  if (station === "drinks") out.coupons = coupons;
   return out;
 }
 
@@ -485,12 +526,12 @@ export function unknownCounts(s, pending = []) {
   return { total: all.length, open: all.filter((u) => u.status === "open").length };
 }
 
-/** Guests on the way up (arrived today, not checked in), newest arrival first. */
+/** Guests on the way up (arrived today, not checked in; not the Drinks station's coupons), newest arrival first. */
 export function onTheWay(s, pending = []) {
   const out = [];
   for (const g of s.guests) {
     const st = statusOf(s, g, pending);
-    if (st.arrived && !st.checked_in) out.push({ g, st });
+    if (wayArrival(st) && !st.checked_in) out.push({ g, st });
   }
   return latestFirst(out, (x) => x.st.arrived.at);
 }

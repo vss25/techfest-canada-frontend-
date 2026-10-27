@@ -4,12 +4,13 @@ import assert from "node:assert/strict";
 import { DAY_STATIONS, MORE_STATIONS, STATION_SLUGS, routeOf, stationFromPath, stationPath } from "./routes.js";
 import { STATION_KEYS } from "./stationTime.js";
 
-test("the address map: the home, the five day stations, the three under More", () => {
+test("the address map: the home, the six day stations (Drinks since Oct 27 2026), the three under More", () => {
   assert.equal(stationPath(""), "/checkin/");
   assert.deepEqual(Object.fromEntries(STATION_KEYS.map((k) => [k, stationPath(k)])), {
     lobby: "/checkin/lobby", desk: "/checkin/floor-1", breakfast: "/checkin/cxo-breakfast", lunch: "/checkin/lunch", evening: "/checkin/evening",
-    media: "/checkin/media", av: "/checkin/av-station", exhibitor: "/checkin/exhibitor-desk",
+    media: "/checkin/media", av: "/checkin/av-station", exhibitor: "/checkin/exhibitor-desk", drinks: "/checkin/drinks",
   });
+  assert.deepEqual(DAY_STATIONS, ["lobby", "desk", "drinks", "breakfast", "lunch", "evening"]);
   assert.deepEqual([...DAY_STATIONS, ...MORE_STATIONS].sort(), [...STATION_KEYS].sort(), "every station is on the home");
   for (const k of STATION_KEYS) assert.deepEqual(routeOf(stationPath(k)), { station: k, canonical: null }, k);
   assert.deepEqual(routeOf("/checkin/"), { station: "", canonical: null });
@@ -27,6 +28,7 @@ test("typed variants are forgiven and put right; anything else is the home", () 
   };
   for (const [p, [station, canonical]] of Object.entries(cases)) assert.deepEqual(routeOf(p), { station, canonical }, p);
   assert.equal(stationFromPath("/somewhere/else"), "");
-  assert.equal(new Set(Object.values(STATION_SLUGS)).size, 8, "eight distinct addresses");
+  assert.equal(new Set(Object.values(STATION_SLUGS)).size, 9, "nine distinct addresses");
+  for (const p of ["/checkin/drinks", "/checkin/Drinks/", "/checkin/drink-coupons", "/checkin/coupons", "/checkin/bar"]) assert.equal(routeOf(p).station, "drinks", p);
   for (const slug of Object.values(STATION_SLUGS)) assert.match(slug, /^[a-z0-9-]+$/);
 });

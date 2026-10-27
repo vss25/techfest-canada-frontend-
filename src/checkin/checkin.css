@@ -614,3 +614,25 @@ a.ci-station-tile, span.ci-station-tile { color: var(--text); text-decoration: n
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Drink coupons (Oct 27 2026): the Drinks station and the pass desk's first-time check-in ---------- */
+/* Outlined in the accent (never the green of Checked in or a pass colour), with the 🥤: it can't be mistaken for the
+   check-in button next to it. */
+.ci-btn-drinks { background: var(--panel2); color: var(--text); border: 2px solid var(--accent); }
+.ci-btn-drinks:disabled { border-color: var(--line2); }
+.ci-drinks-done { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 15px; font-weight: 700; color: var(--muted); }
+.ci-card-foot .ci-drinks-done { flex: 1 1 auto; }
+.ci-card-foot .ci-btn-drinks.ci-btn-xl { flex: 1 1 220px; }
+.ci-stepper { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line2); border-radius: 14px; padding: 4px; background: var(--panel); }
+.ci-stepper-btn { min-width: 44px; min-height: 44px; border-radius: 10px; border: 0; background: var(--panel2); color: var(--text); font-size: 24px; font-weight: 800; line-height: 1; }
+.ci-stepper-btn:disabled { opacity: 0.4; }
+.ci-stepper-n { min-width: 32px; text-align: center; font-size: 22px; font-weight: 800; }
+.ci-drinks-again { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ci-row-below { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ci-row-below:empty { display: none; }
+@media (max-width: 639px) {
+  .ci-row-actions .ci-stepper { flex: none; }
+  .ci-row-actions .ci-btn-drinks { flex: 1 1 60%; }
+  .ci-drinks-again { width: 100%; }
+  .ci-drinks-again .ci-btn { flex: 1 1 auto; }
+}

@@ -13,6 +13,8 @@
      /checkin/media            Media desk        (home: More)
      /checkin/av-station       AV station        (home: More)
      /checkin/exhibitor-desk   Exhibitor desk    (home: More)
+     /checkin/drinks           Drinks: drink coupons (Oct 27 2026; home: each
+                               day, after Floor 1)
    The address is the truth: a device opened (or reloaded) on a station's
    address runs that station; the browser's back / forward move between
    them; the day is always today (Toronto), never in the address.
@@ -36,6 +38,7 @@ export const STATION_SLUGS = Object.freeze({
   media: "media",
   av: "av-station",
   exhibitor: "exhibitor-desk",
+  drinks: "drinks",
 });
 const BY_SLUG = Object.fromEntries(Object.entries(STATION_SLUGS).map(([k, v]) => [v, k]));
 
@@ -49,6 +52,7 @@ const ALIASES = Object.freeze({
   "media-desk": "media", press: "media",
   av: "av", "av-desk": "av", avstation: "av",
   exhibitor: "exhibitor", exhibitors: "exhibitor", exhibitordesk: "exhibitor", "exhibitor-desks": "exhibitor",
+  drink: "drinks", "drink-coupons": "drinks", "drink-coupon": "drinks", coupons: "drinks", "drinks-station": "drinks", bar: "drinks",
 });
 
 /** The address of a station ("" or an unknown key: the home). */
@@ -80,5 +84,5 @@ export function routeOf(pathname = "") {
 export const stationFromPath = (pathname) => routeOf(pathname).station;
 
 /** The stations the home shows for each day, in order, and the ones under "More" (open all day, both days). */
-export const DAY_STATIONS = Object.freeze(["lobby", "desk", "breakfast", "lunch", "evening"]);
+export const DAY_STATIONS = Object.freeze(["lobby", "desk", "drinks", "breakfast", "lunch", "evening"]);
 export const MORE_STATIONS = Object.freeze(["media", "av", "exhibitor"]);

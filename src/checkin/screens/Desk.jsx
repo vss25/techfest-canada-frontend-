@@ -1,13 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { closeUnknown, deskVersion, linkUnknown, useDesk, pending } from "../lib/desk.js";
-import { checkedInToday, collectedBefore, deskStage, onTheWay, statusOf, unknownsOf } from "../lib/state.js";
+import { checkedInToday, collectedBefore, deskDrinksDue, onTheWay, passDeskStage, statusOf, unknownsOf } from "../lib/state.js";
 import { badgeOf, noPassOf } from "../lib/passColors.js";
 import { ISSUE_PASS, NO_DETAILS, UNKNOWN_OUTCOMES } from "../lib/special.js";
 import { buildIndex, search } from "../lib/search.js";
 import { clockText, secondsSince, timeText, timerLevel, weekday } from "../lib/timers.js";
-import { act, undoFor } from "../act.js";
+import { act, issueDrinks, undoFor } from "../act.js";
 import { BoxHint, Chips, InclusionSummary, PassBand, SearchBox, Sheet, SpecialBadge, StateChip } from "../components.jsx";
-import { cta, onTheWayText, stateChip } from "../lib/vocab.js";
+import { cta, drinksDoneText, issueDrinksLabel, onTheWayText, stateChip } from "../lib/vocab.js";
 import GuestRow from "./GuestRow.jsx";
 import { useGuestSearch } from "../useGuestSearch.js";
 import { useLayout, useNow, useUndoExpiry } from "../hooks.js";
@@ -20,7 +20,12 @@ import { useLayout, useNow, useUndoExpiry } from "../hooks.js";
    ISSUE PASS (on the list, no pass on file): the card says so in big type ("Issue pass: name is on the list, no pass on
    file"), with a dashed outline. NO DETAILS FOUND (the lobby couldn't find them): a hatched card with a question mark,
    the name as typed, "check ID, send to help desk", and Sent to help desk / Pass issued / Left (staff: Found them).
-   The lists are worked out when something changes, not every second: only each card's own timer ticks. */
+   The lists are worked out when something changes, not every second: only each card's own timer ticks.
+   Drink coupons (Oct 27 2026, the organiser: "for first time checkins, this option should exist in the checkin section
+   for floor 1"): a first-time check-in (their pass not collected on an earlier day) gets "Issue 2 drink coupons" FIRST,
+   then "Check in & give pass"; independent, either order (the checked-in list keeps the coupons button). Once issued:
+   a quiet "Drink coupons ✓ (2) 10:42 AM" with Undo (this device's tap, as other marks). People who collected their
+   pass before get theirs at the Drinks station; coupons handed out there never put anyone "on the way up". */
 
 const SHOW_DONE = 80;
 
@@ -70,7 +75,8 @@ export default function Desk({ onOpen }) {
           const undo = undoFor(g, "checked_in");
           return (
             <GuestRow key={g.key} guest={g} onOpen={onOpen} state={stateChip("checked_in", st.checked_in, { noPass: noPassOf(g), by: true })}
-              actions={undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>{cta("desk").undo}</button> : null} />
+              actions={undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>{cta("desk").undo}</button> : null}
+              below={<DeskDrinks g={g} st={st} today={s.today} size="s" />} />
           );
         })}
       </ul>
@@ -88,7 +94,7 @@ export default function Desk({ onOpen }) {
           <ul className="ci-list">
             {results.map((g, i) => {
               const st = statusOf(s, g, p);
-              const stage = deskStage(st);
+              const stage = passDeskStage(st);
               const issue = noPassOf(g);
               const undo = stage === "checked_in" ? undoFor(g, "checked_in") : null;
               // Checked in already (not this device's tap a moment ago): amber "Already checked in", so a second pass
@@ -101,8 +107,11 @@ export default function Desk({ onOpen }) {
                   status={stage === "on_the_way" ? <OnTheWay at={st.arrived.at} /> : issue ? ISSUE_PASS.reading : collectedBefore(g, s.today) ? `Has pass (collected ${weekday(g.passCollectedAt)})` : "Not arrived"}
                   statusTone={issue && stage !== "on_the_way" ? "issue" : ""}
                   extra={<span className="ci-row-extra"><InclusionSummary guest={g} size="s" /><BoxHint guest={g} /></span>}
-                  actions={stage === "checked_in" ? (undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>{cta("desk").undo}</button> : null)
-                    : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>{cta("desk", { noPass: issue }).label}</button>} />
+                  actions={<>
+                    <DeskDrinks g={g} st={st} today={s.today} />
+                    {stage === "checked_in" ? (undo ? <button key="undo" type="button" className="ci-btn ci-btn-ghost" onClick={undo}>{cta("desk").undo}</button> : null)
+                      : <button key="act" type="button" className="ci-btn ci-btn-good ci-btn-cta" onClick={() => checkIn(g, done)}>{cta("desk", { noPass: issue }).label}</button>}
+                  </>} />
               );
             })}
           </ul>
@@ -207,8 +216,36 @@ function WayCard({ g, st, today, note, onOpen, onCheckIn }) {
       {g.pending && <p className="ci-card-note is-warn">Pending pass: not sent to them yet. Check with staff.</p>}
       <div className="ci-card-foot">
         <StateChip {...stateChip("arrived", st.arrived, { by: true })} size="s" />
+        <DeskDrinks g={g} st={st} today={today} size="xl" />
         <button type="button" className="ci-btn ci-btn-good ci-btn-xl" onClick={() => onCheckIn(g)}>{cta("desk", { noPass: issue }).label}</button>
       </div>
     </li>
+  );
+}
+
+/**
+ * Drink coupons at the pass desk: "Issue 2 drink coupons" for a first-time check-in (deskDrinksDue: their pass not
+ * collected on an earlier day, today's not issued), shown before "Check in & give pass"; once issued, "Drink coupons ✓
+ * (2) 10:42 AM" with Undo while it's this device's own tap. Nothing for someone who collected their pass before
+ * (the Drinks station has theirs).
+ */
+function DeskDrinks({ g, st, today, size = "cta" }) {
+  const d = useDesk();
+  if (st.drinks) {
+    const undo = undoFor(g, "drinks");
+    return (
+      <span className="ci-drinks-done" role="status">
+        <span aria-hidden="true">🥤</span> {drinksDoneText(st.drinks)}
+        {undo && <button type="button" className="ci-linkbtn" onClick={undo}>Undo coupons</button>}
+      </span>
+    );
+  }
+  // Only once the server has the Drinks station (a website deployed before its server never offers it).
+  if (!deskDrinksDue(g, st, today) || !(d.state?.stations || []).some((x) => x.key === "drinks")) return null;
+  const n = d.state?.drinks?.perPerson || 2;
+  return (
+    <button type="button" className={`ci-btn ci-btn-drinks ci-btn-${size}`} onClick={() => issueDrinks(g, { count: n })}>
+      <span aria-hidden="true">🥤</span> {issueDrinksLabel(n)}
+    </button>
   );
 }

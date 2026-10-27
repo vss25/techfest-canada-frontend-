@@ -1,8 +1,9 @@
 /* =========================================================
    TTFC Check-in: what the home (/checkin/) shows (Oct 24 2026)
    ---------------------------------------------------------
-   Two days, each with the five main stations (lib/routes.js
-   DAY_STATIONS: Lobby, Floor 1, CxO Breakfast, Lunch, Evening entry)
+   Two days, each with the main stations (lib/routes.js DAY_STATIONS:
+   Lobby, Floor 1, Drinks (Oct 27 2026), CxO Breakfast, Lunch, Evening
+   entry)
    and their times as the server sends them (the snapshot's `windows`:
    the live agenda ± the doors' buffers, staff's own hours, else the
    Oct 23 agenda; services/checkinDeskTime.js): "Open all day" for the
@@ -30,9 +31,9 @@ export const HOME_DAYS = Object.freeze([
 const LABELS = Object.freeze({
   lobby: ["Lobby", "Arrivals"], desk: ["Floor 1", "Pass desk"], breakfast: ["CxO Breakfast", "Breakfast entry"], lunch: ["Lunch", "Networking Luncheon"],
   evening: ["Evening entry", "Awards Night (Day 1) · Gala (Day 2)"], media: ["Media desk", "Media check-in and queries"], av: ["AV station", "Speakers' slides and mics"],
-  exhibitor: ["Exhibitor desk", "Exhibitors and booths"],
+  exhibitor: ["Exhibitor desk", "Exhibitors and booths"], drinks: ["Drinks", "Drink coupons"],
 });
-const ALL_DAY = new Set(["lobby", "desk", "media", "av", "exhibitor"]);
+const ALL_DAY = new Set(["lobby", "desk", "media", "av", "exhibitor", "drinks"]);
 
 const infoOf = (s, key) => {
   const i = (s?.stations || []).find((x) => x.key === key);

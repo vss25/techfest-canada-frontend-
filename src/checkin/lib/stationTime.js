@@ -19,9 +19,10 @@ const DAY_BY_DATE = Object.fromEntries(DAYS.map((d) => [d.date, d.key]));
 const DATE_BY_DAY = Object.fromEntries(DAYS.map((d) => [d.key, d.date]));
 export const DAY_LABELS = Object.freeze({ day1: "Day 1", day2: "Day 2" });
 const DAY_SHORT = Object.freeze({ day1: "Mon Oct 26", day2: "Tue Oct 27" });
-export const STATION_KEYS = Object.freeze(["lobby", "desk", "breakfast", "lunch", "evening", "media", "av", "exhibitor"]);
+export const STATION_KEYS = Object.freeze(["lobby", "desk", "breakfast", "lunch", "evening", "media", "av", "exhibitor", "drinks"]);
 const STATION_LABELS = Object.freeze({
   lobby: "Lobby", desk: "Pass desk", breakfast: "CxO Breakfast", lunch: "Lunch", evening: "Evening entry", media: "Media desk", av: "AV station", exhibitor: "Exhibitor desk",
+  drinks: "Drinks",
 });
 /** What a meal / evening station admits to on each event day (the backend's MEAL_ITEMS). */
 export const MEAL_ITEMS = Object.freeze({
@@ -74,11 +75,11 @@ export const mealItem = (station, eventDay) => (eventDay && MEAL_ITEMS[station]?
  * day". "Admit anyway" stays for the CxO Breakfast, the Lunch and the evening (Awards Night / Gala) only. The same as
  * the backend's services/checkinDeskTime.js ALL_DAY_STATIONS / WINDOWED_STATIONS.
  */
-export const ALL_DAY_STATIONS = Object.freeze(["lobby", "desk", "media", "av", "exhibitor"]);
+export const ALL_DAY_STATIONS = Object.freeze(["lobby", "desk", "media", "av", "exhibitor", "drinks"]);
 export const ASKING_STATIONS = Object.freeze(["breakfast", "lunch", "evening"]);
 const ALL_DAY_TEXT = Object.freeze({
   lobby: "Arrivals open all day", desk: "Pass desk open all day", media: "Media desk open all day", av: "AV station open all day",
-  exhibitor: "Exhibitor desk open all day",
+  exhibitor: "Exhibitor desk open all day", drinks: "Drink coupons all day",
 });
 
 const SOURCE_WORD = { agenda: "agenda", fallback: "agenda as of Oct 23", staff: "set by staff", default: "default hours" };

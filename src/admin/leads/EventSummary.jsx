@@ -247,6 +247,7 @@ function AttendanceSection({ s }) {
                   <tr>
                     <th><Short full="Pass type" short="Pass" /></th>{d.rows.some((r) => r.people !== null) && <th className={R}>People</th>}<th className={R}><Short full="Arrived" short="Arr." /></th><th className={R}><Short full="Checked in" short="In" /></th>
                     <th className={R}>CxO</th><th className={R}>Lunch</th><th className={R}>Dinner</th>
+                    {v.drinks && <th className={R} title="Drink coupons: people (coupons)"><Short full="Drinks (coupons)" short="Drinks" /></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -254,6 +255,7 @@ function AttendanceSection({ s }) {
                     <tr key={r.key}>
                       <td>{r.label}</td>{d.rows.some((x) => x.people !== null) && <td className={R}>{num(r.people ?? undefined)}</td>}<td className={R}>{num(r.arrived)}</td><td className={R}>{num(r.checkedIn)}</td>
                       <td className={R}>{num(r.cxo)}</td><td className={R}>{num(r.lunch)}</td><td className={R}>{num(r.dinner)}</td>
+                      {v.drinks && <td className={R}>{num(r.drinks)}{r.coupons ? ` (${num(r.coupons)})` : ""}</td>}
                     </tr>
                   ))}
                 </tbody>
@@ -268,7 +270,7 @@ function AttendanceSection({ s }) {
         “Admitted / entitled”: admitted at the door out of everyone whose pass includes it; no-shows are people who RSVP’d
         and weren’t admitted; overrides were admitted outside the hours with “Admit anyway” (counted in the admitted
         number too). By pass type, each person is in one colour group, as on the desk (VIP, then Media, then Speaker, then
-        the pass type).{v.builtAt ? ` Counted ${torontoTime(v.builtAt)} Toronto time.` : ""}
+        the pass type).{v.drinks ? " Drink coupons: people handed coupons that day (once each, at the Drinks station or the pass desk) and how many coupons; the tap also counts them as arrived." : ""}{v.builtAt ? ` Counted ${torontoTime(v.builtAt)} Toronto time.` : ""}
       </p>
     </>
   );

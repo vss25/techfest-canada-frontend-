@@ -19,6 +19,7 @@ import Meal from "./screens/Meal.jsx";
 import Av from "./screens/Av.jsx";
 import Exhibitor from "./screens/Exhibitor.jsx";
 import Media from "./screens/Media.jsx";
+import Drinks from "./screens/Drinks.jsx";
 import GuestSheet from "./screens/GuestSheet.jsx";
 import Counts from "./screens/Counts.jsx";
 
@@ -28,7 +29,7 @@ import Counts from "./screens/Counts.jsx";
    waiting to be sent, refused taps (Needs attention). Counters across the top. Works the same in a browser tab and
    installed; the browser's back / forward move between the home and the stations. */
 
-const SCREENS = { lobby: Lobby, desk: Desk, breakfast: Meal, lunch: Meal, evening: Meal, av: Av, exhibitor: Exhibitor, media: Media };
+const SCREENS = { lobby: Lobby, desk: Desk, breakfast: Meal, lunch: Meal, evening: Meal, av: Av, exhibitor: Exhibitor, media: Media, drinks: Drinks };
 const ANNOUNCES = new Set(["desk", "av", "exhibitor", "media"]);
 const pct = (n, of) => (of ? `${n}/${of}` : `${n}`);
 const VOLUME_HINT = "If you can't hear the chime, check the iPad volume (and that this device's sound isn't muted).";
@@ -148,7 +149,7 @@ export default function App() {
       {s.today?.date && !s.today.eventDay && <p className="ci-update" role="status">Not an event day: taps are practice marks only (they don't check anyone in, and can be undone).</p>}
       <StationCounters station={d.station} item={st?.item || null} />
       <main className="ci-main"><Screen onOpen={setOpen} layout={layout} /></main>
-      {layout.kind === "laptop" && <p className="ci-keys">Type to search · ↑ ↓ to pick · Enter = {cta(d.station, { item: st?.item || null }).label} · Esc clears</p>}
+      {layout.kind === "laptop" && <p className="ci-keys">Type to search · ↑ ↓ to pick · Enter = {cta(d.station, { item: st?.item || null, count: s.drinks?.perPerson || 2 }).label} · Esc clears</p>}
       {open && <GuestSheet guest={open} onClose={closeSheet} />}
       {d.trayOpen && <AttentionSheet />}
       {counts && d.session.staff && <Counts onClose={() => setCounts(false)} />}
@@ -209,6 +210,15 @@ function StationCounters({ station, item }) {
       .map((k) => ({ label: k === "exhibitor" ? "Exhibitor" : `${k === "vip" ? "VIP" : "Media"} (all)`, text: pct(c.marks[k].admitted, c.marks[k].entitled) }));
   } else if (station === "av") {
     big = [{ label: "AV checked", n: t.done, of: t.total, tone: "good" }, { label: "Speakers arrived", n: t.arrived, of: t.total }];
+    groups = c.groups.map((g) => ({ group: g.group, text: pct(g.done, g.total) }));
+    mk = [];
+  } else if (station === "drinks") {
+    // Drink coupons today (each person once) and how many coupons; arrived today includes the coupons' arrivals.
+    big = [
+      { label: "Drink coupons issued", n: c.coupons || 0, tone: "good" },
+      { label: "People with coupons", n: t.done, of: t.total },
+      { label: "Arrived today", n: t.arrived, tone: "info" },
+    ];
     groups = c.groups.map((g) => ({ group: g.group, text: pct(g.done, g.total) }));
     mk = [];
   } else if (station === "exhibitor") {

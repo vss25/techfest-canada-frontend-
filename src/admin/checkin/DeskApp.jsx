@@ -22,8 +22,11 @@ const DESK_NAME = "TTFC Check-in";
      website's /agenda) with doors opening `before` minutes earlier and
      closing `after` minutes later; staff change those minutes, or set
      any station's hours by hand, or close it for a day, and switch the
-     optional evening entry station off. Saved with PUT
-     /api/checkin/desk/settings (audited checkin_desk_settings).
+     optional evening entry station off, and how many drink coupons a
+     person gets (Oct 27 2026: drinks.perPerson, 1–5, default 2; the
+     Drinks station's stepper starts there, the pass desk issues that
+     many). Saved with PUT /api/checkin/desk/settings (audited
+     checkin_desk_settings).
 ========================================================= */
 
 const DAYS = [["day1", "Day 1 · Mon Oct 26"], ["day2", "Day 2 · Tue Oct 27"]];
@@ -53,7 +56,7 @@ export function DeskAppCard() {
           <h2 className="flex items-center gap-2 text-base font-semibold"><MonitorSmartphone className="h-4 w-4 text-ttfc-pink" aria-hidden="true" /> Check-in desk app ({DESK_NAME})</h2>
           <p className="mt-1 text-sm text-ttfc-muted">
             For the lobby (Mark arrived), the Floor 1 pass desk (Check in &amp; give pass, with a live notification, the guest&apos;s inclusions and a chime for each arrival), the CxO Breakfast, Lunch,
-            the evening entry (On the list / Not on the list), the media desk, AV and exhibitors. Staff and volunteers sign in with their email and password.
+            the evening entry (On the list / Not on the list), the media desk, AV, exhibitors and Drinks (drink coupons: a soft check-in for people who collected their pass before). Staff and volunteers sign in with their email and password.
             The link is unlisted (not on the website, not in search engines): only share it with the team. The sign-in is what protects it.
           </p>
           {path ? (
@@ -135,6 +138,15 @@ export function DeskSettings() {
         <Switch checked={draft.stations?.evening !== false} onChange={(v) => set((n) => { n.stations = { ...(n.stations || {}), evening: v }; })}
           label="Evening entry station (Awards Night on Day 1, Gala on Day 2)" description="Optional: switch it off to remove it from every device's station list." />
       </div>
+      {data.drinks && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <label htmlFor="desk-drinks-per" className="font-semibold">Drink coupons per person</label>
+          <Input id="desk-drinks-per" className="!w-20 !px-2 !py-1" type="number" min={data.drinks.min || 1} max={data.drinks.max || 5} step={1}
+            value={draft.drinks?.perPerson ?? data.drinks.perPerson}
+            onChange={(e) => set((n) => { n.drinks = { perPerson: e.target.value === "" ? "" : Number(e.target.value) }; })} />
+          <span className="text-xs text-ttfc-dim">{data.drinks.min || 1}–{data.drinks.max || 5}, default {data.defaults?.drinks?.perPerson ?? 2}. The Drinks station starts at this number (− / + per person); the pass desk issues this many with a first-time check-in.</span>
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] text-sm">
           <thead><tr className="text-left text-xs uppercase tracking-wide text-ttfc-dim"><th className="py-2 pr-3">Station</th>{DAYS.map(([k, l]) => <th key={k} className="py-2 pr-3">{l}</th>)}</tr></thead>
@@ -150,14 +162,14 @@ export function DeskSettings() {
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Button variant="primary" icon={Save} loading={saving} disabled={!dirty} onClick={save}>Save settings</Button>
-        <Button icon={TimerReset} disabled={saving} onClick={() => setDraft({ windows: {}, buffers: {}, stations: draft.stations || {} })}>Back to the agenda and defaults</Button>
+        <Button icon={TimerReset} disabled={saving} onClick={() => setDraft({ windows: {}, buffers: {}, stations: draft.stations || {}, ...(draft.drinks ? { drinks: draft.drinks } : {}) })}>Back to the agenda and defaults</Button>
         {data.settings?.updatedBy && <span className="text-xs text-ttfc-dim">Last saved by {data.settings.updatedBy}</span>}
       </div>
     </Card>
   );
 }
 
-const strip = (s) => ({ windows: s?.windows || {}, buffers: s?.buffers || {}, stations: s?.stations || {} });
+const strip = (s) => ({ windows: s?.windows || {}, buffers: s?.buffers || {}, stations: s?.stations || {}, ...(s?.drinks ? { drinks: s.drinks } : {}) });
 
 function DayCell({ st, day, data, draft, set }) {
   const resolved = data.windows?.[st]?.[day];

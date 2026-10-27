@@ -13,8 +13,9 @@ function Marked({ text, q }) {
    (`match`: { q, kind }) the matched letters are bold and a company or spelling-tolerant match says so. A guest on the
    list with no pass on file (ISSUE PASS) has a dashed outline. `state`: what has happened ({ tone, text }, lib/vocab.js
    stateChip), shown as a state chip (its own colour, icon and words); `status`: a plain line otherwise. `tone`: the
-   row as a whole (a meal station's "stop": not on the list). */
-export default function GuestRow({ guest, status, statusTone = "", state = null, actions, selected = false, onOpen, extra = null, id, match = null, tone = "" }) {
+   row as a whole (a meal station's "stop": not on the list). `below`: a line under it all, the row's full width (the
+   pass desk's drink coupons in its narrow Checked in list, Oct 27 2026). */
+export default function GuestRow({ guest, status, statusTone = "", state = null, actions, selected = false, onOpen, extra = null, id, match = null, tone = "", below = null }) {
   const band = badgeOf(guest);
   const company = companyOf(guest);
   const job = [guest.title, company].filter(Boolean).join(" · ");
@@ -33,6 +34,7 @@ export default function GuestRow({ guest, status, statusTone = "", state = null,
         {state ? <StateChip tone={state.tone} text={state.text} /> : status && <span className={`ci-row-status${statusTone ? ` is-${statusTone}` : ""}`}>{status}</span>}
         <div className="ci-row-actions">{actions}</div>
       </div>
+      {below && <div className="ci-row-below">{below}</div>}
     </li>
   );
 }

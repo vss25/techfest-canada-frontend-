@@ -2,7 +2,7 @@
 // Run: node --test src/lib/appStores.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
-import { APP_STORE_URL, PLAY_STORE_URL, phoneAppUrl, storeNames, storePlan } from "./appStores.js";
+import { APP_STORE_URL, PLAY_STORE_URL, browserFallback, phoneAppUrl, storeNames, storePlan } from "./appStores.js";
 
 test("both store apps are live", () => {
   assert.equal(APP_STORE_URL, "https://apps.apple.com/ca/app/the-tech-festival-canada/id6820764803");
@@ -43,4 +43,16 @@ test("the desktop QR code opens the Get the TTFC app page on the phone", () => {
   assert.equal(phoneAppUrl("/app/"), "https://www.thetechfestival.com/app/install?source=desktop-qr");
   assert.equal(phoneAppUrl("/tickets"), "https://www.thetechfestival.com/app/install?source=desktop-qr");
   assert.equal(phoneAppUrl("/app/session/x"), "https://www.thetechfestival.com/app/session/x?source=desktop-qr");
+});
+
+test("browserFallback: phones on the website get the web app line; computers, /app and in-app visits don't", () => {
+  assert.deepEqual(browserFallback({ phone: true, pathname: "/" }),
+    { text: "App not in your country's store?", linkText: "Use TTFC in your browser", href: "/app/?from=store-badges" });
+  assert.ok(browserFallback({ phone: true, pathname: "/swag" }));
+  assert.ok(browserFallback({ phone: true, pathname: "/application" }));
+  assert.equal(browserFallback({ phone: false, pathname: "/" }), null);
+  assert.equal(browserFallback({ phone: true, pathname: "/app" }), null);
+  assert.equal(browserFallback({ phone: true, pathname: "/app/install" }), null);
+  assert.equal(browserFallback({ phone: true, pathname: "/", native: true }), null);
+  assert.equal(browserFallback(), null);
 });

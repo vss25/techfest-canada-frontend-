@@ -1,4 +1,5 @@
-import { storePlan } from "../lib/appStores";
+import { browserFallback, storePlan } from "../lib/appStores";
+import { isNativeVisit } from "../lib/nativeVisit";
 import { detectOS, isMobileDevice } from "../lib/pwaPlatform";
 import { track } from "../lib/pwaEvents";
 
@@ -22,6 +23,10 @@ import { track } from "../lib/pwaEvents";
    Used by /app/install, the web app's Home card, sign-in screen and
    desktop page, and the website's homepage, footer, /swag, prompts
    and post-purchase card. Inline styles, so it looks the same on both.
+   On a phone on the website a line follows the badges: "App not in
+   your country's store? Use TTFC in your browser" → /app (Oct 27
+   2026: the stores don't list TTFC in every country, not yet in the
+   EU; lib/appStores.js browserFallback has the rule).
    Props: where (for the click stat), os (default: this device),
    size "lg" | "md" | "sm", align "center" | "start", style.
 ========================================================= */
@@ -57,6 +62,7 @@ export default function StoreBadges({ where, os, size = "md", align = "center", 
   const plan = storePlan(os || detectOS());
   if (!plan.stores.length) return null;
   const newTab = !isMobileDevice();
+  const web = browserFallback({ phone: isMobileDevice(), pathname: typeof location !== "undefined" ? location.pathname : "", native: isNativeVisit() });
   return (
     <div className="store-badges" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: align === "start" ? "flex-start" : "center", gap: 10, ...style }}>
       {plan.stores.map((s) => {
@@ -80,6 +86,13 @@ export default function StoreBadges({ where, os, size = "md", align = "center", 
           </a>
         );
       })}
+      {web && (
+        <p style={{ flexBasis: "100%", margin: "2px 0 0", fontSize: 13.5, lineHeight: 1.4, textAlign: align === "start" ? "left" : "center", color: "inherit", opacity: 0.85 }}>
+          {web.text}{" "}
+          <a href={web.href} onClick={() => track("pwa_store_click", { store: "web", where, primary: false })}
+            style={{ color: "inherit", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 2 }}>{web.linkText}</a>
+        </p>
+      )}
     </div>
   );
 }

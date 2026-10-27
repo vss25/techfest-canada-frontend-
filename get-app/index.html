@@ -17,6 +17,9 @@
     <main>
       <h1 style="font-size: 24px">Get the TTFC app</h1>
       <p>Opening the store…</p>
+      <!-- Oct 27 2026: the stores don't list TTFC in every country (not yet in the EU). Coming back from a store
+           that hasn't got it, this line is still here (src/getApp/main.js leaves this page in the history). -->
+      <p style="font-size: 16px">App not in your country's store?<br /><a href="/app/?from=get-app">Use TTFC in your browser</a></p>
       <noscript><p><a href="/app/install?from=qr">Get the TTFC app</a></p></noscript>
     </main>
     <script type="module" src="/src/getApp/main.js"></script>

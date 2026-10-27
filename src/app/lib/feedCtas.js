@@ -10,8 +10,9 @@
      - where they go: never first; after the 3rd post (or at the end
        when there are fewer), then one every 6 posts; each card once.
    Same rules as iOS FeedCallToActions and Android FeedCtas.
-   Batch 7 (Oct 22 2026): "Win the TTFC swag kit" joins the rotation
-   while the giveaway is on and points still count (swagOpen).
+   Batch 7 (Oct 22 2026): the leaderboard card joins the rotation
+   (swagOpen; since Oct 27 2026 "Top networkers of TTFC 2026",
+   appreciation not a prize, while the celebration is still to come).
 ========================================================= */
 
 export const CTA_KEYS = ["attending", "linkedin", "topics", "availability", "sessions", "reachout", "scan", "poll", "swag"];
@@ -27,7 +28,7 @@ export const DISMISS_MS = 3 * 24 * 60 * 60 * 1000;
  *   attendingPosted (GET app/attending-link), linkedinUrl, topics: [], availabilitySlots: [] (social/me),
  *   saved: n, requestsSent: n (this device's numbers, used too),
  *   festivalDay: bool (Oct 26–27 in Toronto), liveSession: { id, title } | null (a saved session that's live),
- *   swagOpen: bool (the swag kit giveaway is on and before its cutoff, lib/swag.js),
+ *   swagOpen: bool (the top networkers are still to be celebrated, src/lib/swag.js networkersView().before),
  *   dismissed: { key: untilMs }, now }
  */
 export function eligibleCtas(st) {

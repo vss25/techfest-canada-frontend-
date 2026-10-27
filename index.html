@@ -183,6 +183,24 @@
       })();
     </script>
 
+    <!-- "Rate the app" (/rate, Oct 27 2026; src/lib/rate.js): an iPhone / iPad goes straight to the App Store's
+         review page and an Android phone to Google Play, before the site loads (?store=ios|android picks one).
+         Anything else loads the page, which shows both store badges. -->
+    <script>
+      (function () {
+        try {
+          var p = location.pathname.replace(/\/+$/, "").toLowerCase();
+          if (p !== "/rate") return;
+          var s = (new URLSearchParams(location.search).get("store") || "").toLowerCase();
+          var ua = navigator.userAgent || "";
+          var ios = s === "ios" || (!s && (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)));
+          var android = s === "android" || (!s && /Android/i.test(ua));
+          if (ios) location.replace("https://apps.apple.com/app/id6820764803?action=write-review");
+          else if (android) location.replace("https://play.google.com/store/apps/details?id=com.atlaslinkmarkets.ttfc");
+        } catch (e) { /* the page does it itself */ }
+      })();
+    </script>
+
     <!-- Staff panel (/admin, /admin-login): its light / dark choice (System, Light or Dark,
          saved in this browser by src/admin/theme.js) is applied before the first paint,
          so the panel never flashes the other theme. Nothing happens on other pages. -->

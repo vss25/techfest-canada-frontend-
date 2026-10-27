@@ -9,7 +9,7 @@ import {
 import { DEFAULT_JOURNEY_JSON } from "./stayJourney.js";
 
 test("the defaults: the organiser's facts (the journey, Toronto in November 2027, no attendee count; the backend's words)", () => {
-  assert.equal(STAY_KEYS.length, 27);
+  assert.equal(STAY_KEYS.length, 28); // + stay.interest_delegate (Oct 27 2026)
   // Name and company (Oct 24 2026): their labels are staff-edited like the rest.
   assert.equal(STAY_DEFAULTS["stay.field_name"], "Your name");
   assert.equal(STAY_DEFAULTS["stay.field_company"], "Company or organisation");
@@ -127,7 +127,7 @@ test("joinWaitlist: posts the form (consent, honeypot, known ticks in order) and
   assert.equal(calls[0].url, "https://api.example.test/api/stay-updated");
   assert.equal(calls[0].opts.method, "POST");
   assert.deepEqual(JSON.parse(calls[0].opts.body), { name: "Jane Doe", company: "Acme", email: "jane@acme.example", phone: "4165550100", interests: ["sponsorship", "delegation"], source: "ios", consent: true, _hp: "" });
-  assert.deepEqual(INTERESTS, ["sponsorship", "exhibitor", "delegation"]);
+  assert.deepEqual(INTERESTS, ["delegate", "exhibitor", "sponsorship", "delegation"]);
   // Just the email: the rest goes as "".
   await joinWaitlist("https://api.example.test/api", { email: "solo@acme.example", source: "website" }, { fetchImpl });
   assert.deepEqual(JSON.parse(calls[1].opts.body), { name: "", company: "", email: "solo@acme.example", phone: "", interests: [], source: "website", consent: true, _hp: "" });
@@ -144,4 +144,33 @@ test("joinWaitlist: the server's words for a refusal (with the field); plain wor
   await assert.rejects(joinWaitlist("https://x.test/api", {}, { fetchImpl: answer(503, { error: "maintenance", message: "Back soon." }) }), (e) => e.message === "Back soon.");
   // A 200 without a message still thanks them.
   assert.deepEqual(await joinWaitlist("https://x.test/api", {}, { fetchImpl: answer(200, { ok: true }) }), { message: STAY_DEFAULTS["stay.thanks"] });
+});
+
+test("delegate (Oct 27 2026): first in the ticks; an older server's 400 about interests is retried once without it", async () => {
+  assert.equal(STAY_DEFAULTS["stay.interest_delegate"], "Attending as a delegate");
+  assert.equal(STAY_DEFAULTS["stay.interests_label"], "I'm interested in (optional)");
+  assert.ok(STAY_KEYS.includes("stay.interest_delegate"));
+  const bodies = [];
+  const oldServer = async (url, opts) => {
+    const b = JSON.parse(opts.body);
+    bodies.push(b.interests);
+    return b.interests.includes("delegate")
+      ? new Response(JSON.stringify({ ok: false, field: "interests", error: "Unknown interest: delegate" }), { status: 400 })
+      : new Response(JSON.stringify({ ok: true, message: "Thanks." }), { status: 200 });
+  };
+  assert.deepEqual(await joinWaitlist("https://x.test/api", { email: "a@b.example", interests: ["sponsorship", "delegate"] }, { fetchImpl: oldServer }), { message: "Thanks." });
+  assert.deepEqual(bodies, [["delegate", "sponsorship"], ["sponsorship"]]);
+  // Only delegate ticked: the retry sends no interests (they want to attend).
+  bodies.length = 0;
+  await joinWaitlist("https://x.test/api", { email: "a@b.example", interests: ["delegate"] }, { fetchImpl: oldServer });
+  assert.deepEqual(bodies, [["delegate"], []]);
+  // Without delegate, a 400 about interests isn't retried (one call, the server's words).
+  bodies.length = 0;
+  await assert.rejects(joinWaitlist("https://x.test/api", { email: "a@b.example", interests: ["sponsorship"] }, { fetchImpl: async (u, o) => { bodies.push(JSON.parse(o.body).interests); return new Response(JSON.stringify({ ok: false, field: "interests", error: "No." }), { status: 400 }); } }),
+    (e) => e.message === "No.");
+  assert.equal(bodies.length, 1);
+  // A new server takes delegate the first time.
+  bodies.length = 0;
+  await joinWaitlist("https://x.test/api", { email: "a@b.example", interests: ["delegate"] }, { fetchImpl: async (u, o) => { bodies.push(JSON.parse(o.body).interests); return new Response(JSON.stringify({ ok: true }), { status: 200 }); } });
+  assert.deepEqual(bodies, [["delegate"]]);
 });

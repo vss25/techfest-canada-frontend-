@@ -1,6 +1,6 @@
 /* =========================================================
    The top three as a podium (Oct 26 2026): the Points
-   leaderboard and the swag kit winners card. Pure (node --test
+   leaderboard and the top networkers card. Pure (node --test
    src/app/lib/podium.test.mjs).
      - podiumSplit(): the first three (by rank) for the podium and
        the rest for the list, which stays as it was;
@@ -24,7 +24,7 @@ export function fromBoard(e) {
   return { id: String(u.id ?? ""), name: String(u.name || ""), organization: String(u.organization || ""), avatarUrl: u.avatarUrl || "", points: Number(e?.points) || 0, rank: Number(e?.rank) || 0, level: e?.level?.name || "" };
 }
 
-/** A swag winner ({ rank, name, organization, avatarUrl, points, userId }) in the podium's shape. */
+/** One of the top networkers ({ rank, name, organization, avatarUrl, points, userId }) in the podium's shape. */
 export function fromWinner(w) {
   return { id: String(w?.userId ?? ""), name: String(w?.name || ""), organization: String(w?.organization || ""), avatarUrl: w?.avatarUrl || "", points: Number(w?.points) || 0, rank: Number(w?.rank) || 0, level: "" };
 }

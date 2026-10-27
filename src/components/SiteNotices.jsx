@@ -13,7 +13,7 @@ const isStaffPath = (p) => p === "/admin" || p.startsWith("/admin/") || p === "/
 // Focused one-task pages (e.g. the emailed "complete your profile" link, the unlinked RSVP page) skip site-wide announcements.
 // The router matches paths ignoring case and a trailing slash (/RSVP, /rsvp/), so compare the same way.
 // The attendee survey (Oct 26 2026) is one of them.
-const FOCUSED = new Set(["/complete-profile", "/rsvp", "/attending", "/survey"]);
+const FOCUSED = new Set(["/complete-profile", "/rsvp", "/attending", "/survey", "/rate"]);
 const isFocusedPath = (p) => FOCUSED.has(p.replace(/\/+$/, "").toLowerCase());
 
 function useBodyDark() {

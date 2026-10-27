@@ -1,16 +1,17 @@
 import { useNavigate } from "react-router-dom";
-import { BarChart3, CalendarClock, CalendarPlus, Gift, Hash, Linkedin, ScanLine, Send, UserRoundPlus, X } from "lucide-react";
+import { BarChart3, CalendarClock, CalendarPlus, Handshake, Hash, Linkedin, ScanLine, Send, UserRoundPlus, X } from "lucide-react";
 import { openAttending } from "../lib/engage";
-import { SWAG_ALT, SWAG_PITCH_SHORT, SWAG_THUMB, swagShort } from "../../lib/swag.js";
 
 /* =========================================================
    One "Earn points" card in the feed (lib/feedCtas.js decides which
    and where; lib/useFeedCtas.js gives them to Home): a small eyebrow,
    the title, one line on why, one button, and "Not now" (✕) that
    hides the card for 3 days. Points come from the server's rules.
-   "Win the TTFC swag kit" (batch 7): the photo, "Only app users can
-   win", the top N and the cutoff, winners at the end of Day 1, "See
-   how to win" → the Leaderboard tab.
+   The leaderboard card (batch 7; since Oct 27 2026 appreciation, not
+   a prize, src/lib/swag.js): "Top networkers of TTFC 2026", "Start
+   conversations and meet people. At 5:00 PM … we'll celebrate the
+   top 3 networkers.", "See the leaderboard" → the Leaderboard tab.
+   No photo.
 ========================================================= */
 
 const CARDS = {
@@ -30,7 +31,7 @@ const CARDS = {
     why: "Connect in a tap, then message them later.", button: "Scan a badge", to: "/network", state: { scan: true } },
   poll: { icon: BarChart3, rule: "live.vote", fallback: 5, title: "Vote in a live poll",
     why: "", button: "Vote now" },
-  swag: { icon: Gift, eyebrow: "Giveaway", title: "Win the TTFC swag kit", why: "", button: "See how to win", to: "/points" },
+  swag: { icon: Handshake, eyebrow: "Leaderboard", title: "Top networkers of TTFC 2026", why: "", button: "See the leaderboard", to: "/points" },
 };
 
 export default function FeedCta({ ctaKey, rules, liveSession, swag, onDismiss }) {
@@ -41,7 +42,7 @@ export default function FeedCta({ ctaKey, rules, liveSession, swag, onDismiss })
   const pts = card.rule ? (rules.find((r) => r.key === card.rule)?.points ?? card.fallback) : null;
   const points = pts ? `+${pts}${card.each ? " each" : ""}` : null;
   const why = ctaKey === "poll" && liveSession ? `${liveSession.title} is on now. Vote and see the room's answer.`
-    : ctaKey === "swag" && swag ? `${SWAG_PITCH_SHORT}, and you're in. Earn points: the top ${swag.kits} on the leaderboard at ${swag.cutoffShort || swagShort(swag.cutoff)} each win a backpack, bottle, mug and more. Winners are told at the end of Day 1.`
+    : ctaKey === "swag" && swag ? swag.line
       : card.why;
   const title = ctaKey === "swag" && swag?.title ? swag.title : card.title;
   const go = () => {
@@ -51,8 +52,7 @@ export default function FeedCta({ ctaKey, rules, liveSession, swag, onDismiss })
   };
   const titleId = `cta-${ctaKey}`;
   return (
-    <section className={ctaKey === "swag" ? "feed-cta feed-cta--swag" : "feed-cta"} aria-labelledby={titleId}>
-      {ctaKey === "swag" && <img className="feed-cta-photo" src={SWAG_THUMB} alt={SWAG_ALT} width="600" height="508" loading="lazy" decoding="async" />}
+    <section className="feed-cta" aria-labelledby={titleId}>
       <div className="row" style={{ alignItems: "flex-start", gap: 12 }}>
         <span className="feed-cta-ico" aria-hidden="true"><Icon /></span>
         <div style={{ flex: 1, minWidth: 0 }}>

@@ -31,9 +31,11 @@ export const SITE_DEFAULTS = {
   /* Pass upgrades (App text & switches › Pass upgrades). Off unless staff turn it on: the site then
      shows no upgrade offers (Oct 19 2026, the organiser: "don't offer upgrades at all"). */
   "flag.upgrades": false,
-  /* The swag kit giveaway (Admin › Website & app › Swag kit giveaway), for the /swag page: read through
-     src/lib/swag.js swagFrom(), which has the defaults for empty values. */
+  /* The leaderboard's top networkers (Admin › Website & app › Top networkers; appreciation, not a prize, since Oct 27
+     2026), for the /swag page ("How the leaderboard works"): read through src/lib/swag.js swagFrom(), which has the
+     defaults for empty values. swag.enabled is only the old apps' prize banner (off). */
   "swag.enabled": false,
+  "swag.celebrate": true,
   "swag.kits": "",
   "swag.cutoff": "",
   "swag.announce": "",

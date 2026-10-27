@@ -1,16 +1,13 @@
 import { useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ChevronRight, Gift } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { TopBar } from "../components/ui";
 import StoreBadges from "../../components/StoreBadges";
 import { useStore } from "../lib/store";
 import { pwa } from "../lib/pwa";
 import { getAppPage } from "../lib/installPage";
-import { refreshSwag, useSwag } from "../lib/swagState";
-import { now } from "../lib/time";
 import { track } from "../../lib/pwaEvents";
-import { SWAG_PAGE, SWAG_THUMB } from "../../lib/swag.js";
 
 /* =========================================================
    /app/install: "Get the TTFC app" (Oct 22 2026, the organiser:
@@ -22,8 +19,8 @@ import { SWAG_PAGE, SWAG_THUMB } from "../../lib/swag.js";
        app's browser);
      - on a computer, both badges and a QR code to this page on the
        phone;
-     - while the swag giveaway is open, "Download the app to win the
-       TTFC swag kit";
+     - (the swag kit advert was taken off on Oct 27 2026: the
+       leaderboard is appreciation, not a prize);
      - "Already using TTFC in your browser? You can keep using it
        here" (the web app keeps working at /app).
    No Home Screen steps or videos any more. Opened from the emails
@@ -38,7 +35,6 @@ export default function Install() {
   const [params] = useSearchParams();
   const page = getAppPage({ os: p.os, standalone: p.standalone });
   const opened = useRef(false);
-  const swag = useSwag(now().getTime());
 
   // The launch screen goes as soon as this page is up (it's often the first page someone opens, from an email).
   useEffect(() => {
@@ -53,7 +49,6 @@ export default function Install() {
     if (opened.current) return;
     opened.current = true;
     track("pwa_guide_open", { from: params.get("from") || params.get("utm_campaign") || "app", flow: "stores", device: page.phone ? p.os : "computer" });
-    refreshSwag();
   }, [params, page.phone, p.os]);
 
   return (
@@ -79,17 +74,6 @@ export default function Install() {
             </div>
           )}
         </section>
-
-        {swag.stage === "open" && (
-          <a className="install-swag pressable" href={SWAG_PAGE} target="_blank" rel="noopener">
-            <img src={SWAG_THUMB} alt="" width="600" height="508" decoding="async" />
-            <span>
-              <b>Download the app to win the TTFC swag kit</b>
-              <span><strong>{swag.pitch}.</strong> The top {swag.kits} on the leaderboard at {swag.cutoffShort} win; winners are told at the end of Day 1.</span>
-            </span>
-            <Gift aria-hidden="true" />
-          </a>
-        )}
 
         {page.keep.link ? (
           <Link to="/" className="install-keep pressable" onClick={() => track("pwa_guide_step", { step: "keep-web-app", flow: "stores" })}>

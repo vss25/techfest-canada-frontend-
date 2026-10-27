@@ -1,6 +1,6 @@
 /* =========================================================
-   A small confetti burst on a canvas (Oct 26 2026), for the swag
-   kit winners card (components/SwagWinners.jsx). No library: one
+   A small confetti burst on a canvas (Oct 26 2026), for the top
+   networkers card (components/SwagWinners.jsx). No library: one
    fixed full-screen canvas that ignores taps and screen readers,
    a few seconds of paper in the brand colours falling with a
    little drag, then it removes itself. Nothing at all with

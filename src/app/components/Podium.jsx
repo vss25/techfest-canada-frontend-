@@ -4,7 +4,7 @@ import { Avatar } from "./ui";
 
 /* =========================================================
    The top three as a podium (Oct 26 2026): Points › Leaderboard
-   and the swag kit winners card (Points and the feed). 2nd on
+   and the top networkers card (Points and the feed). 2nd on
    the left, 1st in the middle (a bigger photo), 3rd on the right;
    gold, silver and bronze rings and medals, the points under each
    name, then the steps. The list keeps rank order for screen

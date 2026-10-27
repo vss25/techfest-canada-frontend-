@@ -1,7 +1,10 @@
 import { api } from "../api";
 
 /* =========================================================
-   The admin side of the swag kit giveaway (batch 7, Oct 22 2026), every server call in one place:
+   The admin side of the leaderboard's top networkers (batch 7 as the swag kit giveaway; appreciation, not a prize,
+   since Oct 27 2026: Admin › Website & app › Top networkers), every server call in one place. The settings now also
+   have swag.celebrate (the celebration at the announce time; the announce depends on it, not on swag.enabled, which
+   is only the old apps' prize banner):
      - the settings (Admin › Website & app › Swag kit giveaway): the app content keys swag.enabled, swag.kits,
        swag.cutoff, swag.announce, swag.title, swag.rules, read with GET /console/app-content and saved one by
        one with PUT /console/app-content/:key { value } (as App text & switches does);

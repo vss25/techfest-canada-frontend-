@@ -6,11 +6,13 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
    your phone" page (DesktopGate), except /app/install, the install
    page (batch 7), which works on a computer too: it opens on
    "On a computer?" with the QR code to the page on the phone (the
-   emails' "Get the app" buttons are often clicked on a computer).
+   emails' "Get the app" buttons are often clicked on a computer),
+   and /app/rate ("Rate the app", Oct 27 2026: both store badges).
 ========================================================= */
 
 const DesktopGate = lazy(() => import("./DesktopGate"));
 const Install = lazy(() => import("./Install"));
+const Rate = lazy(() => import("./Rate"));
 
 export default function DesktopPages() {
   useEffect(() => {
@@ -22,6 +24,7 @@ export default function DesktopPages() {
       <Suspense fallback={null}>
         <Routes>
           <Route path="/install" element={<Install />} />
+          <Route path="/rate" element={<Rate />} />
           <Route path="*" element={<DesktopGate />} />
         </Routes>
       </Suspense>

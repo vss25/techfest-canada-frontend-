@@ -50,7 +50,8 @@ export const STAY_DEFAULTS = Object.freeze({
   "stay.field_company": "Company or organisation",
   "stay.field_email": "Email",
   "stay.field_phone": "Phone",
-  "stay.interests_label": "I'm also interested in (optional)",
+  "stay.interests_label": "I'm interested in (optional)",
+  "stay.interest_delegate": "Attending as a delegate",
   "stay.interest_sponsorship": "Sponsorship",
   "stay.interest_exhibitor": "Exhibiting",
   "stay.interest_delegation": "Bringing a delegation",
@@ -66,8 +67,11 @@ export const STAY_DEFAULTS = Object.freeze({
 });
 export const STAY_KEYS = Object.freeze(Object.keys(STAY_DEFAULTS));
 
-/** The tick boxes, in this order (stored values; their labels are stay.interest_*). */
-export const INTERESTS = Object.freeze(["sponsorship", "exhibitor", "delegation"]);
+/** The tick boxes, in this order (stored values; their labels are stay.interest_*). "delegate" (attending as a delegate)
+    since Oct 27 2026, first. */
+export const INTERESTS = Object.freeze(["delegate", "exhibitor", "sponsorship", "delegation"]);
+/** Added Oct 27 2026: a server without it yet refuses it, so the form retries once without it (joinWaitlist). */
+export const NEW_INTERESTS = Object.freeze(["delegate"]);
 
 /** The page's wording: saved values (GET /api/app/content) over the defaults; empty = the default. */
 export function stayFrom(values) {
@@ -183,25 +187,35 @@ export function sourceFrom(search, fallback = "website") {
   return ["ios", "android", "webapp", "website"].includes(s) ? s : fallback;
 }
 
+/** A refusal of the interests themselves (an older server that doesn't know "delegate" yet). */
+const interestsRefused = (status, data) => status === 400 && (data?.field === "interests" || /interest/i.test(String(data?.error || data?.message || "")));
+
 /**
  * Sends the form. → { message } on success; throws an Error with `field` ("name" | "company" | "email" | "phone" | …) and a message in
- * plain words otherwise. `fetchImpl` for tests.
+ * plain words otherwise. A 400 about the interests while "delegate" is ticked is tried once more without it, so a
+ * sign-up never fails while the server is catching up (Oct 27 2026). `fetchImpl` for tests.
  */
 export async function joinWaitlist(api, { name, company, email, phone, interests = [], source = "website", hp = "" }, { fetchImpl = globalThis.fetch } = {}) {
-  let res;
-  try {
-    res = await fetchImpl(`${String(api).replace(/\/+$/, "")}/stay-updated`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        name: tidy(name), company: tidy(company), email: String(email ?? "").trim(), phone: String(phone ?? "").trim(),
-        interests: INTERESTS.filter((k) => interests.includes(k)), source, consent: true, _hp: hp,
-      }),
-    });
-  } catch {
-    throw Object.assign(new Error(ERRORS.network), { field: "" });
+  const send = async (picked) => {
+    try {
+      const res = await fetchImpl(`${String(api).replace(/\/+$/, "")}/stay-updated`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          name: tidy(name), company: tidy(company), email: String(email ?? "").trim(), phone: String(phone ?? "").trim(),
+          interests: picked, source, consent: true, _hp: hp,
+        }),
+      });
+      return { res, data: await res.json().catch(() => ({})) };
+    } catch {
+      throw Object.assign(new Error(ERRORS.network), { field: "" });
+    }
+  };
+  const picked = INTERESTS.filter((k) => interests.includes(k));
+  let { res, data } = await send(picked);
+  if (interestsRefused(res.status, data) && picked.some((k) => NEW_INTERESTS.includes(k))) {
+    ({ res, data } = await send(picked.filter((k) => !NEW_INTERESTS.includes(k))));
   }
-  const data = await res.json().catch(() => ({}));
   if (res.ok && data?.ok) return { message: String(data.message || "").trim() || STAY_DEFAULTS["stay.thanks"] };
   const msg = data?.error === "maintenance" ? data.message : data?.error || data?.message;
   throw Object.assign(new Error(typeof msg === "string" && msg ? msg : ERRORS.failed), { field: data?.field || "", status: res.status });

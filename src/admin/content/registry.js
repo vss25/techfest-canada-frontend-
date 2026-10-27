@@ -54,11 +54,11 @@ export const SCOPES = {
       { id: "journey-text", title: "Heading and introduction", hint: "Above the map on thetechfestival.com/stay-updated and in the web app. No dates, venues or numbers until they're announced." },
     ],
   },
-  /* Edited on their own page, Website & app › Swag kit giveaway (admin/app/SwagKit.jsx: times in Toronto, a preview
-     and the winners), so they aren't on App text & switches. */
+  /* Edited on their own page, Website & app › Top networkers (admin/app/SwagKit.jsx: times in Toronto, a preview and
+     the top networkers), so they aren't on App text & switches. Appreciation, not a prize, since Oct 27 2026. */
   swag: {
     groups: [
-      { id: "swag", title: "Swag kit giveaway", hint: "The top people on the app leaderboard at the cutoff each win a TTFC swag kit. Management only." },
+      { id: "swag", title: "Top networkers", hint: "The leaderboard's thank-you for starting conversations and meeting people: the top networkers are celebrated in the apps at the announce time. Management only." },
     ],
   },
 };
@@ -338,7 +338,11 @@ export const REGISTRY = {
   },
   "stay.interests_label": {
     scope: "stay", group: "stay-form", type: "text",
-    label: "Tick boxes heading", description: "Above the three tick boxes. Nothing ticked means they want to attend.",
+    label: "Tick boxes heading", description: "Above the four tick boxes. Nothing ticked is counted as attending.",
+  },
+  "stay.interest_delegate": {
+    scope: "stay", group: "stay-form", type: "text",
+    label: "Tick box: attending as a delegate", description: "The first tick box (Oct 27 2026). Also how the email to the person names it.",
   },
   "stay.interest_sponsorship": {
     scope: "stay", group: "stay-form", type: "text",
@@ -389,30 +393,34 @@ export const REGISTRY = {
     label: "Button", description: "Opens thetechfestival.com/stay-updated.",
   },
 
-  /* ---------------- Swag kit giveaway (batch 7) ---------------- */
+  /* ---------------- Top networkers (batch 7 as the swag kit giveaway; appreciation since Oct 27 2026) ---------------- */
+  "swag.celebrate": {
+    scope: "swag", group: "swag", type: "switch", management: true,
+    label: "Celebrate the top networkers at the announce time", description: "On (the default): the apps say when the top networkers will be celebrated, then show them on the leaderboard and in the feed.",
+  },
   "swag.enabled": {
     scope: "swag", group: "swag", type: "switch", management: true,
-    label: "Giveaway on", description: "Shows the swag kit banner on the app leaderboard, the card in the feed and the rules on /swag. Off by default.",
+    label: "Old apps' prize banner (keep OFF)", description: "Only older versions of the apps read this: on, they show the old prize banner. Keep it off.",
   },
   "swag.kits": {
     scope: "swag", group: "swag", type: "text", management: true,
-    label: "Number of kits", description: "The top this many people on the leaderboard win (1–50).",
+    label: "How many top networkers", description: "How many people at the top of the leaderboard are celebrated (1–50).",
   },
   "swag.cutoff": {
     scope: "swag", group: "swag", type: "text", management: true,
-    label: "Points count until", description: "When the leaderboard is taken for the winners (Toronto time).",
+    label: "Points count until", description: "When the leaderboard is taken for the top networkers (Toronto time).",
   },
   "swag.announce": {
     scope: "swag", group: "swag", type: "text", management: true,
-    label: "Winners told at", description: "The end of Day 1: when the apps say the winners are out (Toronto time). Winners are told when management clicks Announce winners.",
+    label: "Celebrate at", description: "When the apps show the top networkers (Toronto time). Each gets a thank-you when management clicks Celebrate the top networkers.",
   },
   "swag.title": {
     scope: "swag", group: "swag", type: "text", management: true,
-    label: "Giveaway title", description: "In the apps' banner and feed card, on /swag and in the email.",
+    label: "Title", description: "On the apps' leaderboard banner and on /swag.",
   },
   "swag.rules": {
     scope: "swag", group: "swag", type: "textarea", rows: 6, management: true,
-    label: "Giveaway rules", description: "On /swag. {kits}, {cutoff} and {announce} are filled in.",
+    label: "Appreciation text", description: "On /swag (How the leaderboard works). {kits}, {cutoff} and {announce} are filled in.",
   },
 };
 

@@ -22,6 +22,7 @@ export const STATION_LINKS = Object.freeze([
   { key: "media", label: "Media desk", slug: "media" },
   { key: "av", label: "AV station", slug: "av-station" },
   { key: "exhibitor", label: "Exhibitor desk", slug: "exhibitor-desk" },
+  { key: "drinks", label: "Drinks", slug: "drinks" },
 ].map((x) => Object.freeze(x)));
 
 /** A station's full link ("" until the server has said the desk's path). */

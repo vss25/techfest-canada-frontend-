@@ -4,7 +4,7 @@ import { createClock } from "./clock.js";
 import { createLive } from "./live.js";
 import { browserStorage, createQueue } from "./queue.js";
 import { createTabs } from "./tabs.js";
-import { applyEvents, fromSnapshot, heldInclusions, rollDay, statusOf, toSnapshot, unknownsOf } from "./state.js";
+import { applyEvents, drinksSetting, fromSnapshot, heldInclusions, rollDay, statusOf, toSnapshot, unknownsOf, wayArrival } from "./state.js";
 import { stationStates as localStationStates } from "./stationTime.js";
 import { bannerParts, bannerText, createBanners, notifyStations } from "./notify.js";
 import { badgeOf, noPassOf } from "./passColors.js";
@@ -254,6 +254,8 @@ const signedInAs = () => { const u = identityOf(desk.session); return u ? { queu
  */
 export function tap(action, { undoText = "", undoLabel = "Undo" } = {}) {
   const item = queue.add({ station: desk.station, ...action, ...signedInAs() });
+  // Drink coupons issued again: its Undo is the one the row offers now (the earlier tap's is no longer its own row).
+  if (action.kind === "mark" && action.point === "drinks") for (const [id, t] of desk.myTaps) if (t.key === action.key && t.point === "drinks") desk.myTaps.delete(id);
   if (action.kind === "mark") desk.myTaps.set(item.clientId, { at: Date.now(), key: action.key, point: action.point });
   if (action.kind === "unknown_arrival") desk.myTaps.set(item.clientId, { at: Date.now(), key: unknownKey(item.clientId), point: "unknown" });
   if (undoText) {
@@ -426,7 +428,7 @@ function tidyBanners() {
       return !!x.arrived && !x[DONE_POINT[st]];
     });
   }
-  setCount(desk.station === "desk" ? s.guests.filter((g) => { const x = statusOf(s, g, p); return x.arrived && !x.checked_in; }).length + openUnknown.size : desk.banners[desk.station]?.size() || 0, stationLabel());
+  setCount(desk.station === "desk" ? s.guests.filter((g) => { const x = statusOf(s, g, p); return wayArrival(x) && !x.checked_in; }).length + openUnknown.size : desk.banners[desk.station]?.size() || 0, stationLabel());
 }
 /** The station's name for the tab title and the history entry ("Lobby · TTFC Check-in"). */
 const stationLabel = () => (desk.station ? desk.state?.stations?.find((x) => x.key === desk.station)?.label || "" : "");
@@ -486,7 +488,7 @@ function cachedSnapshot() {
 
 const stationKeys = (s) => { const k = (s?.stations || []).map((x) => x.key).filter(Boolean); return k.length ? k : undefined; };
 /** What the header shows about today and the stations (an emit only when it changed). */
-const clockSig = (s) => JSON.stringify([s?.today?.date, s?.today?.eventDay, s?.agendaRead, (s?.stations || []).map((x) => `${x.key}${x.enabled}`),
+const clockSig = (s) => JSON.stringify([s?.today?.date, s?.today?.eventDay, s?.agendaRead, s?.drinks?.perPerson, (s?.stations || []).map((x) => `${x.key}${x.enabled}`),
   Object.entries(s?.stationStates || {}).map(([k, v]) => `${k}|${v?.code}|${v?.text}|${v?.detail || ""}|${v?.open}`)]);
 let lastServerStates = 0;
 
@@ -582,6 +584,8 @@ async function tickClock() {
     s.stations = c.stations;
     s.windows = c.windows;
     s.agendaRead = !!c.agendaRead;
+    // Drink coupons per person (staff may change it during the day): a server from before them says nothing.
+    if (c.drinks) s.drinks = drinksSetting(c.drinks);
     lastServerStates = Date.now();
     if (rolled) { desk.dayStale = true; tidyBanners(); }
     if (desk.dayStale) await load({ quiet: true });

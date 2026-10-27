@@ -2,6 +2,7 @@ import { askConfirm, desk, myRecentTap, pending, tap, undoTap } from "./lib/desk
 import { statusOf } from "./lib/state.js";
 import { tapRule } from "./lib/stationTime.js";
 import { EXTRA_LABELS } from "./lib/constants.js";
+import { couponsText } from "./lib/vocab.js";
 
 /* The stations' big buttons, with the time rule (lib/stationTime.js tapRule): the lobby (Arrived), the pass desk
    (Checked in) and the media, AV and exhibitor desks never ask and never record an override, all day on an event day
@@ -10,7 +11,7 @@ import { EXTRA_LABELS } from "./lib/constants.js";
 
 const LABEL = {
   lobby: "The lobby", desk: "The pass desk", breakfast: "The CxO Breakfast", lunch: "Lunch", evening: "The evening entry",
-  media: "The media desk", av: "The AV station", exhibitor: "The exhibitor desk",
+  media: "The media desk", av: "The AV station", exhibitor: "The exhibitor desk", drinks: "Drinks",
 };
 const YES = { breakfast: "Admit anyway", lunch: "Admit anyway", evening: "Admit anyway" };
 
@@ -19,11 +20,14 @@ const YES = { breakfast: "Admit anyway", lunch: "Admit anyway", evening: "Admit 
  * clears). `undoLabel`: the toast's button ("Undo arrived", lib/vocab.js). `notIncluded`: staff's "Admit anyway
  * (override)" at a meal door for a guest who isn't on the list (contract C11, recorded as an override).
  */
-export function act({ point, key, guest = null, note, undoText, undoLabel = "Undo", notIncluded = false, onDone = null }) {
+export function act({ point, key, guest = null, note, undoText, undoLabel = "Undo", notIncluded = false, count = 0, again = false, onDone = null }) {
   const station = desk.station;
   const st = desk.state?.stationStates?.[station];
   const go = (override) => {
-    tap({ kind: "mark", point, key: key || guest?.key, override: !!override, ...(notIncluded ? { notIncluded: true } : {}), ...(note ? { note } : {}) }, { undoText, undoLabel });
+    tap({
+      kind: "mark", point, key: key || guest?.key, override: !!override, ...(notIncluded ? { notIncluded: true } : {}), ...(note ? { note } : {}),
+      ...(count ? { count } : {}), ...(again ? { again: true } : {}),
+    }, { undoText, undoLabel });
     try { onDone?.(); } catch { /* the screen's problem */ }
   };
   const rule = tapRule(station, st);
@@ -39,6 +43,19 @@ export function act({ point, key, guest = null, note, undoText, undoLabel = "Und
     return;
   }
   go(false);
+}
+
+/**
+ * Drink coupons (Oct 27 2026) for a guest: `count` of them (the Drinks station's stepper; the pass desk: the desk
+ * setting), once per person per day; `again`: staff's "Issue again" (adds `count` more, logged as an override). The
+ * tap marks them arrived for the day too (the server). Never asks about the time (open all day).
+ */
+export function issueDrinks(guest, { count, again = false, onDone = null } = {}) {
+  const n = Number(count) || desk.state?.drinks?.perPerson || 2;
+  act({
+    point: "drinks", guest, count: n, again, onDone, undoLabel: "Undo coupons",
+    undoText: again ? `${guest.name}: ${couponsText(n)} more (logged).` : `${guest.name}: ${couponsText(n)} issued.`,
+  });
 }
 
 /** This device's tap on the guest at the point, still undoable → an Undo handler, else null. */

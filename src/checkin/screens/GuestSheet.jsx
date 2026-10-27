@@ -18,6 +18,7 @@ import { resetMark } from "../act.js";
 const POINTS = [
   ["arrived", "Arrived (lobby)"], ["checked_in", "Checked in (pass desk)"], ["cxo", "CxO Breakfast"], ["lunch", "Lunch"], ["evening", "Evening entry"],
   ["media", "Media desk"], ["av", "AV checked"], ["exhibitor", "Exhibitor desk"], ["flag_cxo", "Sent to staff (breakfast)"], ["flag_lunch", "Sent to staff (lunch)"], ["flag_evening", "Sent to staff (evening)"],
+  ["drinks", "Drink coupons"],
 ];
 
 export default function GuestSheet({ guest, onClose }) {
@@ -68,7 +69,7 @@ export default function GuestSheet({ guest, onClose }) {
       <ul className="ci-today">
         {POINTS.filter(([k]) => st[k] || ["arrived", "checked_in"].includes(k)).map(([k, label]) => (
           <li key={k}>
-            <span>{label}</span>
+            <span>{k === "drinks" && st[k] ? `${label} (${Number(st[k].count) || 1})` : label}</span>
             {st[k] ? <StateChip tone={k === "arrived" ? "arrived" : k.startsWith("flag_") ? "already" : "done"} text={`${byLine(st[k])}${st[k].note ? ` · “${st[k].note}”` : ""}`} size="s" /> : <span className="ci-muted">—</span>}
             {staff && st[k] && !st[k].pending && <button type="button" className="ci-btn ci-btn-ghost ci-btn-s" onClick={() => resetMark(g, k, label)}>Reset</button>}
           </li>

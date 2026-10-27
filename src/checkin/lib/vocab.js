@@ -14,6 +14,9 @@
      on list    (meal search, before a tap) "On the list"                       done    (green, ✓)
      not on it                              "Not on the list" (a STOP sign)     stop    (red, octagon)
      sent       "Send to staff"             "Sent to staff · 12:33 PM"          already
+     drinks     "Issue 2 drink coupons"     "Drink coupons ✓ (2) 10:42 AM"      done    (Oct 27 2026)
+     again      (a second tap / a search)   "Already issued today · 10:42 AM ·  already
+                                             by Sam · 2 coupons"
    Undo says what it undoes: "Undo arrived", "Undo check-in", "Undo
    admit". The state colours are their own (lib/vocab.test.mjs checks
    contrast and that none is a pass colour): a state lives on the chip or
@@ -63,8 +66,26 @@ export function mealName(item) {
   return item.label || "";
 }
 
+/** "1 drink coupon", "2 drink coupons". */
+export const couponsText = (n) => `${n} drink coupon${n === 1 ? "" : "s"}`;
+/** "Issue 2 drink coupons" (the Drinks station's button, the pass desk's for a first-time check-in). */
+export const issueDrinksLabel = (n) => `Issue ${couponsText(n)}`;
+/** The quiet line once they have today's: "Drink coupons ✓ (2) 10:42 AM" (· pending / · practice). */
+export function drinksDoneText(m) {
+  if (!m) return "";
+  const n = Number(m.count) || 1;
+  return `Drink coupons ✓ (${n})${m.at ? ` ${at(m)}` : ""}${m.pending ? " · pending" : ""}${m.practice ? " · practice" : ""}`;
+}
+/** Issued already, to someone about to issue again: "Already issued today · 10:42 AM · by Sam · 2 coupons". */
+export function drinksAgainText(m) {
+  if (!m) return "";
+  const n = Number(m.count) || 1;
+  return dot("Already issued today", at(m), m.by?.name ? `by ${m.by.name}` : "", `${n} coupon${n === 1 ? "" : "s"}`) + (m.override === "issued_again" ? " · issued again" : "")
+    + (m.pending ? " · pending" : "") + (m.practice ? " · practice" : "");
+}
+
 /** Each station's main button, the undo next to it and what the laptop's Enter does. `item`: a meal station's today. */
-export function cta(station, { item = null, noPass = false } = {}) {
+export function cta(station, { item = null, noPass = false, count = 2 } = {}) {
   switch (station) {
     case "lobby": return { label: "Mark arrived", undo: "Undo arrived" };
     case "desk": return noPass ? { label: "Issue pass & check in", undo: "Undo check-in" } : { label: "Check in & give pass", undo: "Undo check-in" };
@@ -74,6 +95,7 @@ export function cta(station, { item = null, noPass = false } = {}) {
     case "media": return { label: "Check in at media desk", undo: "Undo check-in" };
     case "av": return { label: "Mark AV checked", undo: "Undo AV check" };
     case "exhibitor": return { label: "Check in exhibitor", undo: "Undo check-in" };
+    case "drinks": return { label: issueDrinksLabel(count), undo: "Undo coupons" };
     default: return { label: "Record", undo: "Undo" };
   }
 }
@@ -99,6 +121,7 @@ export function stateChip(kind, m, { item = null, noPass = false, again = false,
     case "media": return { tone: "done", text: tail(again ? "Already checked in" : "Checked in · media desk") };
     case "av": return { tone: "done", text: tail(again ? "Already AV checked" : "AV checked") };
     case "exhibitor": return { tone: "done", text: tail(again ? "Already checked in" : "Checked in · exhibitor desk") };
+    case "drinks": return again ? { tone: "already", text: drinksAgainText(m) } : { tone: "done", text: tail(`Drink coupons (${Number(m.count) || 1})`) + (m.override === "issued_again" ? " · issued again" : "") };
     default: return null;
   }
 }

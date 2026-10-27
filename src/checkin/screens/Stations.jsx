@@ -13,7 +13,7 @@ import { homeDays, moreTiles } from "../lib/home.js";
    open, for practice. "More" (bottom right): Media desk, AV station, Exhibitor desk. Every tile is a link to the
    station's own address (lib/routes.js), so a laptop can open one in a new tab. */
 
-const ICONS = { lobby: "🚪", desk: "🎫", breakfast: "☕", lunch: "🍽", evening: "🌙", media: "🎙", av: "🎚", exhibitor: "🏷" };
+const ICONS = { lobby: "🚪", desk: "🎫", breakfast: "☕", lunch: "🍽", evening: "🌙", media: "🎙", av: "🎚", exhibitor: "🏷", drinks: "🥤" };
 
 /** A plain click opens the station here (its address, then its Start screen); ⌘ / Ctrl / middle click: a new tab. */
 const pick = (key) => (e) => {

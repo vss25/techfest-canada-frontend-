@@ -15,6 +15,9 @@
          byPass: { <colour group>: { arrived, checkedIn, cxo, lunch, dinner } },
          issuePass: { arrived, issued },
          noDetails: { recorded, sentToHelp, passIssued, left },
+         drinks: { people, coupons, issuedAgain, byPass: { <group>:
+           { people, coupons } }, noPass: { people, coupons } } (Oct 27
+           2026: drink coupons; a server from before them sends none),
          unmatched (marks of passes or people no longer on the list) }],
        overall: { arrived, checkedIn, bothDays } (each person once
          across both days),
@@ -95,12 +98,27 @@ export function overallView(att) {
 }
 export const OVERALL_LABEL = "Both days, each person once";
 
+/** Does the server count drink coupons (Oct 27 2026)? Any day with a `drinks` object. */
+export const hasDrinks = (att) => Array.isArray(att?.days) && att.days.some((d) => d?.drinks && typeof d.drinks === "object");
+
+/** A day's drink coupons as shown: main "7 people · 13 coupons", then issued again and no pass on file. */
+export function drinksCell(dr) {
+  if (!dr) return { main: "—", sub: "", empty: true };
+  const sub = [
+    n(dr.issuedAgain) > 0 ? `${num(dr.issuedAgain)} issued again by staff` : "",
+    n(dr.noPass?.people) > 0 ? `${plural(dr.noPass.people, "person", "people")} with a pass issued at the desk` : "",
+    "each person once a day; also counted as arrived",
+  ].filter(Boolean).join(" · ");
+  return { main: `${plural(n(dr.people), "person", "people")} · ${plural(n(dr.coupons), "coupon")}`, sub };
+}
+
 /**
  * The page's model: { builtAt, days: [{ key, date, label, data }], rows: [{ key, label, cells: [{ main, sub, label }]
  * (one per day) }], byPass: [{ day, label, rows: [{ key, label, people, arrived, checkedIn, cxo, lunch, dinner }] }],
  * overall (overallView), empty }.
  * Rows: Arrived (lobby), Checked in / pass collected, CxO Breakfast, Networking Luncheon, Dinner (the evening's own
- * name per day), Issue pass, No details found.
+ * name per day), Issue pass, No details found, Drink coupons (when the server counts them: then each byPass row also
+ * has `drinks` (people) and `coupons`, and `drinks` is true).
  */
 export function attendanceView(att) {
   const days = attendanceDays(att);
@@ -131,6 +149,8 @@ export function attendanceView(att) {
       return { main: num(n(x.recorded)), sub };
     }) },
   ];
+  const drinks = hasDrinks(att);
+  if (drinks) rows.push({ key: "drinks", label: "Drink coupons", cells: cells((d) => drinksCell(d.drinks)) });
   const byPass = days.filter((d) => d.data?.byPass && Object.keys(d.data.byPass).length).map((d) => {
     const keys = Object.keys(d.data.byPass);
     const order = [...GROUPS.filter((k) => keys.includes(k)), ...keys.filter((k) => !GROUPS.includes(k)).sort()];
@@ -139,13 +159,16 @@ export function attendanceView(att) {
       rows: order
         .map((k) => {
           const r = d.data.byPass[k] || {};
-          return { key: k, label: r.label || passGroupLabel(k), people: has(r.people) ? r.people : null, arrived: n(r.arrived), checkedIn: n(r.checkedIn), cxo: n(r.cxo), lunch: n(r.lunch), dinner: n(r.dinner) };
+          const row = { key: k, label: r.label || passGroupLabel(k), people: has(r.people) ? r.people : null, arrived: n(r.arrived), checkedIn: n(r.checkedIn), cxo: n(r.cxo), lunch: n(r.lunch), dinner: n(r.dinner) };
+          // Drink coupons by colour group (the same groups): people, and how many coupons.
+          if (drinks) { const x = d.data.drinks?.byPass?.[k] || {}; row.drinks = n(x.people); row.coupons = n(x.coupons); }
+          return row;
         })
         // A group nobody is in (the server lists every one): left out.
-        .filter((r) => r.people !== 0 || r.arrived || r.checkedIn || r.cxo || r.lunch || r.dinner),
+        .filter((r) => r.people !== 0 || r.arrived || r.checkedIn || r.cxo || r.lunch || r.dinner || r.drinks),
     };
   });
-  return { builtAt: att?.builtAt || null, days, rows, byPass, overall: overallView(att), empty: !days.some((d) => d.data) };
+  return { builtAt: att?.builtAt || null, days, rows, byPass, drinks, overall: overallView(att), empty: !days.some((d) => d.data) };
 }
 
 /** The Event summary CSV's lines for attendance (arrays of cells; the page's CSV writer quotes them). */
@@ -183,6 +206,12 @@ export function attendanceCsvRows(att) {
   out.push(["No details found: left", ...per((d) => n(d.noDetails?.left))]);
   out.push(["No details found: found on the list", ...per((d) => n(d.noDetails?.linked))]);
   out.push(["No details found: still open", ...per((d) => n(d.noDetails?.open))]);
+  if (v.drinks) {
+    out.push(["Drink coupons: people (each once a day; also counted as arrived)", ...per((d) => n(d.drinks?.people))]);
+    out.push(["Drink coupons: coupons issued", ...per((d) => n(d.drinks?.coupons))]);
+    out.push(["Drink coupons: issued again by staff", ...per((d) => n(d.drinks?.issuedAgain))]);
+    out.push(["Drink coupons: people with a pass issued at the desk (no pass on file)", ...per((d) => n(d.drinks?.noPass?.people))]);
+  }
   out.push(["Marks of passes or people no longer on the list (counted under Other)", ...per((d) => opt(d.unmatched))]);
   if (v.overall) {
     out.push([]);
@@ -195,8 +224,8 @@ export function attendanceCsvRows(att) {
   if (v.byPass.length) {
     out.push([]);
     out.push(["Attendance by pass type (each person once, in their colour group)"]);
-    out.push(["Day", "Pass type", "People", "Arrived", "Checked in", "CxO Breakfast", "Lunch", "Dinner"]);
-    for (const d of v.byPass) for (const r of d.rows) out.push([d.label, r.label, r.people ?? "", r.arrived, r.checkedIn, r.cxo, r.lunch, r.dinner]);
+    out.push(["Day", "Pass type", "People", "Arrived", "Checked in", "CxO Breakfast", "Lunch", "Dinner", ...(v.drinks ? ["Drink coupons: people", "Drink coupons"] : [])]);
+    for (const d of v.byPass) for (const r of d.rows) out.push([d.label, r.label, r.people ?? "", r.arrived, r.checkedIn, r.cxo, r.lunch, r.dinner, ...(v.drinks ? [r.drinks, r.coupons] : [])]);
   }
   return out;
 }

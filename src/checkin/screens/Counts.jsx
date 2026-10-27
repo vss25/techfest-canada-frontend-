@@ -8,7 +8,8 @@ import { Sheet } from "../components.jsx";
 /* STAFF: Counts (contract C10: "the ability to count the check-ins for breakfast, lunch, dinner and over each day").
    The server's attendance by day (GET /api/checkin/desk/counts, staff only; the same numbers and words as Admin ›
    RSVPs & meals › Event summary): both days together (each person once), arrived, checked in, each meal's admitted /
-   entitled with RSVP'd, % of RSVP'd, no-shows and overrides, by pass type, ISSUE PASS and NO DETAILS FOUND. Read again
+   entitled with RSVP'd, % of RSVP'd, no-shows and overrides, by pass type, ISSUE PASS and NO DETAILS FOUND, drink
+   coupons (Oct 27 2026: people and coupons per day, and by pass type). Read again
    once a burst of taps anywhere settles (live events), every 30 s while open, and on the button, never more than once
    every 3 s on this device; "Too many requests" keeps the last numbers with "updating…" and retries quietly
    (lib/countsRefresh.js). Volunteers never see it (the menu has no entry; the server says no). */
@@ -82,9 +83,9 @@ export default function Counts({ onClose }) {
           <h3 className="ci-h3">By pass type · {x.label}</h3>
           <div className="ci-counts-wrap">
             <table className="ci-counts ci-counts-pass">
-              <thead><tr><th scope="col">Pass type</th>{x.rows.some((r) => r.people !== null) && <th scope="col">People</th>}<th scope="col">Arrived</th><th scope="col">Checked in</th><th scope="col">CxO</th><th scope="col">Lunch</th><th scope="col">Dinner</th></tr></thead>
+              <thead><tr><th scope="col">Pass type</th>{x.rows.some((r) => r.people !== null) && <th scope="col">People</th>}<th scope="col">Arrived</th><th scope="col">Checked in</th><th scope="col">CxO</th><th scope="col">Lunch</th><th scope="col">Dinner</th>{v.drinks && <th scope="col">Drinks <span className="ci-counts-sub">people (coupons)</span></th>}</tr></thead>
               <tbody>
-                {x.rows.map((r) => <tr key={r.key}><th scope="row">{r.label}</th>{x.rows.some((y) => y.people !== null) && <td>{r.people ?? "—"}</td>}<td>{r.arrived}</td><td>{r.checkedIn}</td><td>{r.cxo}</td><td>{r.lunch}</td><td>{r.dinner}</td></tr>)}
+                {x.rows.map((r) => <tr key={r.key}><th scope="row">{r.label}</th>{x.rows.some((y) => y.people !== null) && <td>{r.people ?? "—"}</td>}<td>{r.arrived}</td><td>{r.checkedIn}</td><td>{r.cxo}</td><td>{r.lunch}</td><td>{r.dinner}</td>{v.drinks && <td>{r.drinks}{r.coupons ? ` (${r.coupons})` : ""}</td>}</tr>)}
               </tbody>
             </table>
           </div>

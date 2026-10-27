@@ -4,7 +4,7 @@ import {
   ArrowDown, ArrowUp, BellRing, CalendarClock, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Copy, Download, Eye, Info, Lock, Mail, MessageSquareText,
   Link2, Pencil, Plus, RefreshCw, RotateCcw, Save, Send, Trash2, UserRoundX, Users, X,
 } from "lucide-react";
-import { useApi } from "../hooks";
+import { useApi, useDebounced } from "../hooks";
 import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
 import { useAdminTheme } from "../theme";
@@ -20,7 +20,8 @@ import { swagShort } from "../../lib/swag";
 import {
   CAN_CONTROL, HAS_NA, HAS_OPTIONS, HAS_SCALE, LIMITS, PREVIEW_KEY, QUESTION_TYPES, SURVEY_DEFAULTS, SURVEY_PAGE, TYPE_LABELS, adminPhase, answerText,
   averageOf, blankQuestion, changeType, checkConfig, configToForm, formToConfig, groupSections, moveItem, normalizeQuestion, renameSection,
-  linkRowFrom, linksCsv, linksText, parseEmails, sectionNames, surveyWhen,
+  NOTIFY_LIMITS, PEOPLE_STATUSES, alreadyAnswered, linkRowFrom, linksCsv, linksText, notifyPlanText, parseEmails, peopleRowFrom, progressText,
+  sectionNames, surveyWhen, torontoShort,
 } from "../../lib/survey";
 import { parseToronto } from "../../lib/swag";
 import { AUDIENCES, surveyApi } from "./surveyApi";
@@ -31,8 +32,14 @@ import { AUDIENCES, surveyApi } from "./surveyApi";
    "nothing is sent until they review the survey". Management edits
    and sends, staff read (the server enforces it too).
      - Status: on / opens at / open / closed, responses (from the app
-       and from the link), and "Automatic app notification at opening:
-       Off" (the default) or On, with when it was sent.
+       and from the link), and the automatic app notification (on by
+       default since Oct 26: waves of N every M minutes from a delay
+       after opening, with its progress).
+     - Invitations (Oct 26 2026, the organiser wants to see who
+       answered so nobody is sent it twice): everyone who checked in,
+       filtered (All · Not answered · Answered · Emailed · Not
+       emailed), searched, with when each was emailed, notified in the
+       app and answered (Toronto time), 50 a page, Export CSV.
      - Responses: per-question averages (stars, 0–10 with the NPS,
        counts for the picks; N/A counted apart, never in an average),
        the answers 50 a page, Export CSV.
@@ -63,7 +70,7 @@ import { AUDIENCES, surveyApi } from "./surveyApi";
    /survey?preview=1 with the draft. Server calls: ./surveyApi.js.
 ========================================================= */
 
-const TABS = ["responses", "questions", "settings", "send"];
+const TABS = ["responses", "people", "questions", "settings", "send"];
 const PHASE = {
   off: { label: "Off", tone: "neutral" },
   before: { label: "Not open yet", tone: "purple" },
@@ -156,7 +163,7 @@ export default function Survey() {
       <PageHeader
         eyebrow="Website & app"
         title="Attendee survey"
-        description="By invitation only: each attendee who checked in gets their own link (in the TTFC app, by email, or one you copy for them below), which fills in who they are. Nothing is sent to anyone until management clicks “Send the app notification now” or “Email the survey”; the automatic notification at opening stays off unless you turn it on."
+        description="By invitation only: each attendee who checked in gets their own link (in the TTFC app, by email, or one you copy for them), which fills in who they are. Nothing goes out before the survey opens. With the automatic app notification on, people on the app are told in small waves from the opening time; the email goes only when management clicks “Email the survey”. Invitations shows who has answered, so nobody gets it twice."
         actions={(
           <>
             <Button icon={Eye} onClick={openPreview} disabled={!form} title="Opens /survey with your unsaved changes; nothing is sent">Preview</Button>
@@ -183,24 +190,26 @@ export default function Survey() {
               hint={`${num(counts.app ?? 0)} from the app · ${num(counts.link ?? 0)} from the link`} />
             <StatTile label="Opens" value={Number.isFinite(opens) ? swagShort(opens) : "—"} icon={CalendarClock} tone="orange"
               hint={Number.isFinite(closes) ? `Closes ${swagShort(closes)} · Toronto time` : "Toronto time"} />
-            <StatTile label="Automatic app notification at opening" value={notifiedAt ? "Sent" : config?.autoNotify ? "On" : "Off"} icon={BellRing} tone={config?.autoNotify ? "good" : "neutral"}
-              hint={notifiedAt ? `Sent ${when(notifiedAt)}` : config?.autoNotify ? "Sent once, when the survey opens" : "Nothing is sent until you click Send"} />
+            <StatTile label="Automatic app notification" value={main.data?.notifyProgress?.done ? "Done" : config?.autoNotify ? "On" : "Off"} icon={BellRing} tone={config?.autoNotify ? "good" : "neutral"}
+              hint={progressText(main.data?.notifyProgress) || (config?.autoNotify ? notifyPlanText(config).replace(/^On — /, "") : notifiedAt ? `Last sent by hand ${when(notifiedAt)}` : "Nothing is sent until you click Send")} />
           </div>
 
           <Tabs label="Attendee survey" value={tab} onChange={setTab} tabs={[
             { key: "responses", label: "Responses", count: num(counts.responses ?? 0) },
+            { key: "people", label: "Invitations" },
             { key: "questions", label: "Questions", count: form?.questions?.length ?? 0 },
             { key: "settings", label: "Settings" },
             { key: "send", label: "Share & send" },
           ]} />
 
           {tab === "responses" && <Responses data={main.data} configQuestions={config?.questions} />}
+          {tab === "people" && <Invitations />}
           {tab === "questions" && form && (
             <QuestionEditor questions={form.questions} onChange={(questions) => update({ questions })} readOnly={readOnly} problems={problems} dark={dark} />
           )}
-          {tab === "settings" && form && <SettingsForm form={form} update={update} readOnly={readOnly} problems={problems} notifiedAt={notifiedAt} />}
+          {tab === "settings" && form && <SettingsForm form={form} update={update} readOnly={readOnly} problems={problems} notifiedAt={notifiedAt} progress={main.data?.notifyProgress} />}
           {tab === "send" && (
-            <SendPanel config={config} phase={phase} dirty={dirty} isManagement={isManagement} onPreview={openPreview}
+            <SendPanel config={config} progress={main.data?.notifyProgress} phase={phase} dirty={dirty} isManagement={isManagement} onPreview={openPreview}
               onSent={main.reload} blocker={sendBlocker({ isManagement, phase, config, dirty })} />
           )}
 
@@ -706,7 +715,7 @@ function QuestionForm({ q, number, onChange, sections, readOnly, dark, controls 
 
 /* ================= Settings ================= */
 
-function SettingsForm({ form, update, readOnly, problems, notifiedAt }) {
+function SettingsForm({ form, update, readOnly, problems, notifiedAt, progress }) {
   const err = (where) => problems.filter((p) => p.where === where).map((p) => p.message).join(" ") || undefined;
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)]">
@@ -753,11 +762,25 @@ function SettingsForm({ form, update, readOnly, problems, notifiedAt }) {
           </div>
           <div className="rounded-2xl border border-ttfc-line p-4">
             <Switch checked={form.autoNotify} onChange={(v) => update({ autoNotify: v })} disabled={readOnly}
-              label={`Automatic app notification at opening: ${form.autoNotify ? "On" : "Off"}`}
+              label={`Automatic app notification: ${notifyPlanText(form)}`}
               description={form.autoNotify
-                ? "On: everyone on the app who hasn't answered gets this notification once, when the survey opens."
+                ? "People on the app who checked in and haven't answered get this notification once each, in small waves, so the server and the team aren't flooded."
                 : "Off: nothing is sent automatically. Send it yourself with “Send the app notification now” (Share & send)."} />
-            {notifiedAt && <p className="mt-2"><Badge tone="good" icon={BellRing}>Sent {when(notifiedAt)}</Badge></p>}
+            {form.autoNotify && (
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <Field label="Start" hint="Minutes after the survey opens" error={err("notifyStartDelayMin")}>
+                  {(id) => <Input id={id} type="number" inputMode="numeric" min={NOTIFY_LIMITS.delay.min} max={NOTIFY_LIMITS.delay.max} value={form.notifyStartDelayMin} onChange={(e) => update({ notifyStartDelayMin: e.target.value })} disabled={readOnly} />}
+                </Field>
+                <Field label="People per wave" hint={`${NOTIFY_LIMITS.batch.min}–${NOTIFY_LIMITS.batch.max}`} error={err("notifyBatchSize")}>
+                  {(id) => <Input id={id} type="number" inputMode="numeric" min={NOTIFY_LIMITS.batch.min} max={NOTIFY_LIMITS.batch.max} value={form.notifyBatchSize} onChange={(e) => update({ notifyBatchSize: e.target.value })} disabled={readOnly} />}
+                </Field>
+                <Field label="Every" hint="Minutes between waves" error={err("notifyIntervalMin")}>
+                  {(id) => <Input id={id} type="number" inputMode="numeric" min={NOTIFY_LIMITS.interval.min} max={NOTIFY_LIMITS.interval.max} value={form.notifyIntervalMin} onChange={(e) => update({ notifyIntervalMin: e.target.value })} disabled={readOnly} />}
+                </Field>
+              </div>
+            )}
+            {progressText(progress) && <p className="mt-3"><Badge tone={progress?.done ? "good" : "purple"} icon={BellRing}>{progressText(progress)}</Badge></p>}
+            {notifiedAt && <p className="mt-2 text-xs text-ttfc-muted">Last sent by hand {when(notifiedAt)}.</p>}
           </div>
         </div>
       </Card>
@@ -799,7 +822,7 @@ function ConfirmSend({ title, description, confirmLabel, icon, onConfirm, onClos
   );
 }
 
-function SendPanel({ config, dirty, isManagement, onPreview, onSent, blocker }) {
+function SendPanel({ config, progress, dirty, isManagement, onPreview, onSent, blocker }) {
   const toast = useToast();
   const [asking, setAsking] = useState("");
   const [audience, setAudience] = useState("day1");
@@ -829,14 +852,15 @@ function SendPanel({ config, dirty, isManagement, onPreview, onSent, blocker }) 
       <ListLinks isManagement={isManagement} />
 
       <Card>
-        <SectionTitle hint="An in-app notification and a push to everyone signed in to the TTFC app who hasn't answered. Sent only when you click.">Send the app notification now</SectionTitle>
+        <SectionTitle hint="An in-app notification and a push, now, to everyone on the TTFC app who checked in and hasn't answered (people already notified by the automatic waves aren't told twice by the server).">Send the app notification now</SectionTitle>
         <div className="rounded-2xl border border-ttfc-line bg-ttfc-panel2/60 p-3">
           <p className="text-sm font-semibold">{notifyTitle}</p>
           <p className="text-sm text-ttfc-muted">{notifyBody}</p>
         </div>
         <p className="mt-3 text-xs text-ttfc-dim">
-          Automatic app notification at opening: <b className="text-ttfc-text">{config?.autoNotify ? "On" : "Off"}</b> (Settings).
-          {config?.notifiedAt ? ` Last sent ${when(config.notifiedAt)}.` : " Not sent yet."}
+          Automatic app notification: <b className="text-ttfc-text">{notifyPlanText(config)}</b> (Settings).
+          {progressText(progress) ? ` ${progressText(progress)}.` : ""}
+          {config?.notifiedAt ? ` Last sent by hand ${when(config.notifiedAt)}.` : ""}
         </p>
         {lastNotify && <Banner tone="good" icon={BellRing} className="mt-3" title={`Sent to ${num(n(lastNotify.sent))} ${n(lastNotify.sent) === 1 ? "person" : "people"}`}>{when(lastNotify.at)}</Banner>}
         <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-ttfc-line pt-4">
@@ -867,6 +891,9 @@ function SendPanel({ config, dirty, isManagement, onPreview, onSent, blocker }) 
                 <p className="mt-1 text-sm text-ttfc-muted">
                   For example {sample.join(", ")}{count > sample.length ? ` and ${num(count - sample.length)} more` : ""}.
                 </p>
+              )}
+              {alreadyAnswered(e) !== null && (
+                <p className="mt-2"><Badge tone="good" icon={CheckCircle2}>Already answered: {num(alreadyAnswered(e))} (won't be emailed)</Badge></p>
               )}
               {email.refreshing && <p className="mt-1 text-xs text-ttfc-dim">Updating…</p>}
             </>
@@ -923,6 +950,17 @@ function SendPanel({ config, dirty, isManagement, onPreview, onSent, blocker }) 
 
 /* ================= Personal links ================= */
 
+/** "✓ Answered on …", "Emailed on …", "App notified on …" (Toronto time), so nobody is sent it twice. */
+function TrackBadges({ row }) {
+  return (
+    <>
+      {Number.isFinite(row.answeredAt) && <Badge tone="good">✓ Answered on {torontoShort(row.answeredAt)}</Badge>}
+      {Number.isFinite(row.emailedAt) && <Badge tone="purple" icon={Mail}>Emailed on {torontoShort(row.emailedAt)}</Badge>}
+      {Number.isFinite(row.appNotifiedAt) && <Badge icon={BellRing}>App notified on {torontoShort(row.appNotifiedAt)}</Badge>}
+    </>
+  );
+}
+
 /** "Not checked in — the survey will refuse them" (the organiser: "you can't survey if you haven't attended or checked in"). */
 function CheckInBadge({ row }) {
   if (row.checkedIn === false) return <Badge tone="bad" icon={UserRoundX}>Not checked in — the survey will refuse them</Badge>;
@@ -965,6 +1003,7 @@ function PersonalLink({ isManagement }) {
                 <b className="text-sm">{row.name || "No name"}</b>
                 <span className="font-mono text-xs text-ttfc-muted">{row.email}</span>
                 <CheckInBadge row={row} />
+                <TrackBadges row={row} />
               </div>
               {row.warning && row.checkedIn !== false && <p className="mt-1 text-xs text-amber-200">{row.warning}</p>}
               {row.error && <p className="mt-1 text-xs text-red-300">{row.error}</p>}
@@ -1032,13 +1071,14 @@ function ListLinks({ isManagement }) {
                 </div>
               </div>
               <TableWrap>
-                <thead><tr><th>Name</th><th>Email</th><th>Checked in</th><th>Personal link</th><th className="w-20"><span className="sr-only">Copy</span></th></tr></thead>
+                <thead><tr><th>Name</th><th>Email</th><th>Checked in</th><th>Survey</th><th>Personal link</th><th className="w-20"><span className="sr-only">Copy</span></th></tr></thead>
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.email} className="align-top">
                       <td className="max-w-[200px] truncate font-semibold">{r.name || <span className="font-normal text-ttfc-dim">—</span>}</td>
                       <td className="max-w-[220px] truncate font-mono text-xs text-ttfc-muted">{r.email}</td>
                       <td>{r.checkedIn === null ? <span className="text-xs text-ttfc-dim">—</span> : <CheckInBadge row={r} />}</td>
+                      <td><span className="flex flex-wrap gap-1"><TrackBadges row={r} />{!Number.isFinite(r.answeredAt) && !Number.isFinite(r.emailedAt) && !Number.isFinite(r.appNotifiedAt) && <span className="text-xs text-ttfc-dim">—</span>}</span></td>
                       <td className="max-w-[320px]">
                         {r.url ? <span className="block truncate font-mono text-xs" title={r.url}>{r.url}</span> : <span className="text-xs text-red-300">{r.error || "No link"}</span>}
                         {r.warning && r.checkedIn !== false && <span className="block text-[11px] text-amber-200">{r.warning}</span>}
@@ -1053,5 +1093,112 @@ function ListLinks({ isManagement }) {
         </>
       )}
     </Card>
+  );
+}
+
+/* ================= Invitations: who answered, who was told ================= */
+
+const SOURCE_SHORT = { app: "App", link: "Link", email: "Email", ios: "iPhone app", android: "Android app", webapp: "Web app" };
+
+function Invitations() {
+  const toast = useToast();
+  const [status, setStatus] = useState("all");
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(0);
+  const [exporting, setExporting] = useState(false);
+  const dq = useDebounced(q.trim(), 300);
+  const res = useApi(surveyApi.peoplePath({ status, q: dq, page }));
+  const counts = res.data?.counts || {};
+  const rows = (res.data?.rows || []).map(peopleRowFrom);
+  const total = res.data?.total ?? 0;
+  const size = res.data?.size || 50;
+  const pages = Math.max(1, Math.ceil(total / size));
+  const tile = (label, v, icon, tone, hint) => <StatTile label={label} value={res.data ? num(v ?? 0) : "…"} icon={icon} tone={tone} hint={hint} />;
+  const exportCsv = async () => {
+    setExporting(true);
+    try { await surveyApi.peopleExport({ status, q: dq }); } catch (e) { toast.error(e); } finally { setExporting(false); }
+  };
+  const time = (ms) => (Number.isFinite(ms) ? <span className="whitespace-nowrap text-xs">{torontoShort(ms)}</span> : <span className="text-xs text-ttfc-dim">—</span>);
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+        {tile("Checked in", counts.checkedIn, Users, "purple", "Can answer")}
+        {tile("Answered", counts.answered, CheckCircle2, "good")}
+        {tile("Not answered", counts.notAnswered, ClipboardList, "orange")}
+        {tile("Emailed", counts.emailed, Mail, "pink")}
+        {tile("App notified", counts.appNotified, BellRing, "purple")}
+        {tile("On the app", counts.onApp, MessageSquareText, "neutral")}
+      </div>
+
+      <div className="flex flex-wrap gap-1" role="group" aria-label="Show">
+        {PEOPLE_STATUSES.map((x) => {
+          const n = x.count(counts);
+          return (
+            <button key={x.key} type="button" aria-pressed={status === x.key} onClick={() => { setStatus(x.key); setPage(0); }}
+              className={cx("inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold transition", status === x.key ? "bg-ttfc-contrast/10 text-ttfc-text" : "text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text", focusRing)}>
+              {x.label}{Number.isFinite(n) && <span className="rounded-full bg-ttfc-contrast/5 px-1.5 text-[11px] tabular-nums">{num(n)}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Input type="search" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search name, email or company" aria-label="Search the invitations" className="sm:max-w-sm" />
+        <p className="text-sm text-ttfc-muted sm:ml-auto" aria-live="polite">
+          {res.loading ? "Loading…" : `${num(total)} ${total === 1 ? "person" : "people"}`}{res.refreshing && !res.loading ? " · updating…" : ""} · times in Toronto
+        </p>
+        <Button icon={RefreshCw} onClick={res.reload}>Refresh</Button>
+        <Button icon={Download} loading={exporting} disabled={!total} onClick={exportCsv} title="Everyone matching this filter and search">Export CSV</Button>
+      </div>
+
+      {res.loading ? <LoadingState label="Loading who's been invited…" /> : res.error && !res.data ? (
+        <ErrorState error={res.error} onRetry={res.reload} title={res.error?.status === 404 ? "Not available yet: the server needs the latest backend update" : "Couldn't load the invitations"} />
+      ) : !rows.length ? (
+        <EmptyState icon={Users} title={dq || status !== "all" ? "Nobody matches" : "Nobody checked in yet"} body={dq || status !== "all" ? "Try another filter or search." : "People appear here once they've checked in."} />
+      ) : (
+        <>
+          <TableWrap>
+            <thead>
+              <tr><th>Name</th><th>Company</th><th>On app</th><th>Checked in</th><th>Emailed</th><th>App notified</th><th>Answered</th></tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const answered = Number.isFinite(r.answeredAt);
+                return (
+                  <tr key={r.email || r.name} className={cx("align-top", answered && "bg-emerald-400/[0.06]")}>
+                    <td className="max-w-[240px]">
+                      <span className="block truncate font-semibold text-ttfc-text" title={r.name}>{r.name || <span className="font-normal text-ttfc-dim">No name</span>}</span>
+                      {r.email && <span className="block truncate font-mono text-[11px] text-ttfc-dim">{r.email}</span>}
+                    </td>
+                    <td className="max-w-[200px] truncate text-ttfc-muted">{r.company || "—"}</td>
+                    <td>{r.onApp ? <Badge tone="purple">On app</Badge> : <span className="text-xs text-ttfc-dim">No</span>}</td>
+                    <td className="whitespace-nowrap text-xs">{r.days.length ? r.days.map((d) => `D${d}`).join(" · ") : <span className="text-ttfc-dim">—</span>}</td>
+                    <td>{time(r.emailedAt)}</td>
+                    <td>{time(r.appNotifiedAt)}</td>
+                    <td>
+                      {answered ? (
+                        <>
+                          <Badge tone="good">✓ Answered</Badge>
+                          <span className="mt-1 block whitespace-nowrap text-xs text-ttfc-muted">{torontoShort(r.answeredAt)}{r.source ? ` · ${SOURCE_SHORT[r.source] || r.source}` : ""}</span>
+                          {Number.isFinite(r.updatedAt) && r.updatedAt > r.answeredAt + 60000 && <span className="block whitespace-nowrap text-[11px] text-ttfc-dim">Updated {torontoShort(r.updatedAt)}</span>}
+                        </>
+                      ) : <span className="text-xs text-ttfc-dim">Not yet</span>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </TableWrap>
+          {pages > 1 && (
+            <div className="flex items-center justify-between gap-3">
+              <Button icon={ChevronLeft} disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Previous</Button>
+              <span className="text-sm text-ttfc-muted">Page {page + 1} of {pages}</span>
+              <Button disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)}>Next <ChevronRight className="h-4 w-4" aria-hidden="true" /></Button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }

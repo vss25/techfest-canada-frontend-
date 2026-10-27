@@ -21,6 +21,12 @@
    checked in"): a link for someone who didn't gets { eligible: false, message, questions: [] }, POST 403
    { code: "not_checked_in" }. Staff hand out personal links from the admin page (GET /api/console/survey/link,
    POST /api/console/survey/links).
+   Tracking (Oct 26 2026, the organiser wants to see who answered so nobody is sent it twice, and paced app
+   notifications after 4 PM; backend claude/survey-tracking): GET /api/console/survey/people?status=&q=&page= →
+   { total, page, size, counts, rows: [{ name, email, company, onApp, checkedInDays, emailedAt, appNotifiedAt,
+   answeredAt, updatedAt, source }] }; the config's autoNotify (on by default) sends the app notification in waves:
+   notifyBatchSize people every notifyIntervalMin minutes from notifyStartDelayMin minutes after opening;
+   GET /api/console/survey's notifyProgress { sent, remaining, nextAt, done }.
    An answer is: rating 1–5, nps 0–10 (integers), choice one of the options, multi a list of options, text / longtext
    a string, consent true; "na" (N/A) too for a rating, nps or choice with `allowNA`. Every question can be skipped
    unless it's `required`; the name and email are asked of everyone (prefilled from `respondent`).
@@ -419,6 +425,9 @@ export function configToForm(config) {
     notifyTitle: String(c.notifyTitle ?? ""),
     notifyBody: String(c.notifyBody ?? ""),
     autoNotify: c.autoNotify === true,
+    notifyStartDelayMin: String(intIn(c.notifyStartDelayMin, NOTIFY_LIMITS.delay)),
+    notifyBatchSize: String(intIn(c.notifyBatchSize, NOTIFY_LIMITS.batch)),
+    notifyIntervalMin: String(intIn(c.notifyIntervalMin, NOTIFY_LIMITS.interval)),
     questions: keysForShowIf((Array.isArray(c.questions) ? c.questions : []).map((q, i) => ({ ...normalizeQuestion(q, i), key: `k${i}-${str(q?.id, "q")}` }))),
   };
 }
@@ -481,6 +490,9 @@ export function formToConfig(form) {
     notifyTitle: clip(tidy(f.notifyTitle), LIMITS.notifyTitle),
     notifyBody: clip(tidy(f.notifyBody), LIMITS.notifyBody),
     autoNotify: !!f.autoNotify,
+    notifyStartDelayMin: intIn(f.notifyStartDelayMin, NOTIFY_LIMITS.delay),
+    notifyBatchSize: intIn(f.notifyBatchSize, NOTIFY_LIMITS.batch),
+    notifyIntervalMin: intIn(f.notifyIntervalMin, NOTIFY_LIMITS.interval),
     questions,
   };
 }
@@ -494,6 +506,11 @@ export function checkConfig(form) {
   if (!Number.isFinite(opens)) out.push({ where: "opensAt", message: "Pick when the survey opens." });
   if (!Number.isFinite(closes)) out.push({ where: "closesAt", message: "Pick when the survey closes." });
   if (Number.isFinite(opens) && Number.isFinite(closes) && closes <= opens) out.push({ where: "closesAt", message: "The survey must close after it opens." });
+  for (const [key, lim, words] of [["notifyStartDelayMin", NOTIFY_LIMITS.delay, "The start delay"], ["notifyBatchSize", NOTIFY_LIMITS.batch, "The wave size"], ["notifyIntervalMin", NOTIFY_LIMITS.interval, "The time between waves"]]) {
+    const raw = String(f[key] ?? "").trim();
+    const n = Number(raw);
+    if (raw && (!Number.isInteger(n) || n < lim.min || n > lim.max)) out.push({ where: key, message: `${words} must be a whole number from ${lim.min} to ${lim.max}.` });
+  }
   const qs = f.questions || [];
   if (!qs.length) out.push({ where: "questions", message: "Add at least one question." });
   if (qs.length > LIMITS.questions) out.push({ where: "questions", message: `Keep it to ${LIMITS.questions} questions.` });
@@ -633,6 +650,9 @@ export function linkRowFrom(r) {
     checkedIn: typeof x.checkedIn === "boolean" ? x.checkedIn : null,
     warning: str(x.warning, ""),
     error: str(x.error, ""),
+    answeredAt: parseToronto(x.answeredAt),
+    emailedAt: parseToronto(x.emailedAt),
+    appNotifiedAt: parseToronto(x.appNotifiedAt),
   };
 }
 
@@ -642,12 +662,110 @@ const csvCell = (v) => {
   return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
 };
 
-/** The links as a CSV (Name, Email, Checked in, Personal link, Problem), CRLF lines; spreadsheet formulas neutralised. */
+/** The links as a CSV (Name, Email, Checked in, Answered, Emailed, Personal link, Problem), CRLF lines; formulas neutralised. */
 export function linksCsv(rows) {
-  const lines = [["Name", "Email", "Checked in", "Personal link", "Problem"]];
-  for (const r of rows || []) lines.push([r.name, r.email, r.checkedIn === true ? "Yes" : r.checkedIn === false ? "No" : "", r.url, r.error || r.warning]);
+  const lines = [["Name", "Email", "Checked in", "Answered (Toronto)", "Emailed (Toronto)", "Personal link", "Problem"]];
+  for (const r of rows || []) {
+    lines.push([r.name, r.email, r.checkedIn === true ? "Yes" : r.checkedIn === false ? "No" : "", torontoShort(r.answeredAt), torontoShort(r.emailedAt), r.url, r.error || r.warning]);
+  }
   return `${lines.map((l) => l.map(csvCell).join(",")).join("\r\n")}\r\n`;
 }
 
 /** "Copy all": one line per person with a link, "Name <email>\tlink" (pastes into a sheet as two columns). */
 export const linksText = (rows) => (rows || []).filter((r) => r.url).map((r) => `${r.name ? `${r.name} <${r.email}>` : r.email}\t${r.url}`).join("\n");
+
+/* ---------------- tracking: who answered, who was told (admin) ---------------- */
+
+/** The automatic app notification's waves: minutes after opening, people per wave, minutes between waves. */
+export const NOTIFY_LIMITS = Object.freeze({
+  delay: Object.freeze({ min: 0, max: 240, def: 15 }),
+  batch: Object.freeze({ min: 1, max: 500, def: 30 }),
+  interval: Object.freeze({ min: 1, max: 120, def: 5 }),
+});
+
+/** A whole number within the limits, else the default. */
+export function intIn(v, lim) {
+  const n = Number(typeof v === "string" ? v.trim() : v);
+  if (v === "" || v === null || v === undefined || !Number.isFinite(n)) return lim.def;
+  return Math.min(lim.max, Math.max(lim.min, Math.round(n)));
+}
+
+const TZ = "America/Toronto";
+const msOf = (v) => (v instanceof Date ? v.getTime() : typeof v === "number" ? v : parseToronto(v));
+
+/** "Oct 27, 4:35 PM" (Toronto), or "" for no time. */
+export function torontoShort(v) {
+  const ms = msOf(v);
+  if (!Number.isFinite(ms)) return "";
+  return new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(ms));
+}
+
+/** "4:35 PM" (Toronto), or "". */
+export function torontoClock(v) {
+  const ms = msOf(v);
+  if (!Number.isFinite(ms)) return "";
+  return new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", minute: "2-digit" }).format(new Date(ms));
+}
+
+/** "On — waves of 30 every 5 min from 4:15 PM on Tuesday, October 27" | "Off" (from the admin form or the saved config). */
+export function notifyPlanText(c) {
+  if (!c?.autoNotify) return "Off";
+  const delay = intIn(c.notifyStartDelayMin, NOTIFY_LIMITS.delay);
+  const batch = intIn(c.notifyBatchSize, NOTIFY_LIMITS.batch);
+  const every = intIn(c.notifyIntervalMin, NOTIFY_LIMITS.interval);
+  const opens = parseToronto(c.opensAt);
+  const from = Number.isFinite(opens) ? ` from ${surveyWhen(opens + delay * 60000)}` : "";
+  return `On — waves of ${batch} every ${every} min${from}`;
+}
+
+/** notifyProgress → "Sent 120 · 180 left · next wave 4:35 PM" | "All sent: 300 people" | "" (nothing yet). */
+export function progressText(p) {
+  if (!p || typeof p !== "object") return "";
+  const sent = Math.max(0, Math.round(Number(p.sent) || 0));
+  const left = Math.max(0, Math.round(Number(p.remaining) || 0));
+  if (p.done) return sent ? `All sent: ${sent.toLocaleString("en-US")} ${sent === 1 ? "person" : "people"}` : "Done: nobody left to notify";
+  if (!sent && !left) return "";
+  const next = torontoClock(p.nextAt);
+  return [`Sent ${sent.toLocaleString("en-US")}`, `${left.toLocaleString("en-US")} left`, next ? `next wave ${next}` : ""].filter(Boolean).join(" · ");
+}
+
+/** checkedInDays as the server may send it ([1, 2], ["day1"], { day1: true }, "D1,D2") → [1, 2] (sorted, unique). */
+export function daysFrom(v) {
+  const out = new Set();
+  const add = (x) => { const m = String(x).match(/([12])\s*$/); if (m) out.add(Number(m[1])); };
+  if (Array.isArray(v)) v.forEach(add);
+  else if (v && typeof v === "object") Object.entries(v).forEach(([k, on]) => { if (on) add(k); });
+  else if (typeof v === "string") v.split(/[\s,;/]+/).filter(Boolean).forEach(add);
+  else if (typeof v === "number") add(v);
+  return [...out].sort();
+}
+
+/** One row of GET /api/console/survey/people, tidied (times as ms or NaN). */
+export function peopleRowFrom(r) {
+  const x = r && typeof r === "object" ? r : {};
+  return {
+    name: tidy(x.name), email: String(x.email ?? "").trim(), company: tidy(x.company ?? x.organization),
+    onApp: x.onApp === true, days: daysFrom(x.checkedInDays),
+    emailedAt: parseToronto(x.emailedAt), appNotifiedAt: parseToronto(x.appNotifiedAt),
+    answeredAt: parseToronto(x.answeredAt), updatedAt: parseToronto(x.updatedAt), source: str(x.source, ""),
+  };
+}
+
+/** The status filters of the people table, with the count each shows (from the server's counts). */
+export const PEOPLE_STATUSES = Object.freeze([
+  { key: "all", label: "All", count: (c) => c.checkedIn },
+  { key: "not_answered", label: "Not answered", count: (c) => c.notAnswered },
+  { key: "answered", label: "Answered", count: (c) => c.answered },
+  { key: "emailed", label: "Emailed", count: (c) => c.emailed },
+  { key: "not_emailed", label: "Not emailed", count: (c) => (Number.isFinite(c.checkedIn) && Number.isFinite(c.emailed) ? Math.max(0, c.checkedIn - c.emailed) : undefined) },
+]);
+
+/** The "already answered" number in an email preview, whatever the server calls it; null when it doesn't say. */
+export function alreadyAnswered(preview) {
+  const p = preview || {};
+  for (const v of [p.alreadyAnswered, p.answered, p.counts?.answered, p.counts?.alreadyAnswered, p.skippedAnswered]) {
+    const n = Number(v);
+    if (v !== undefined && v !== null && v !== "" && Number.isFinite(n)) return Math.max(0, Math.round(n));
+  }
+  return null;
+}

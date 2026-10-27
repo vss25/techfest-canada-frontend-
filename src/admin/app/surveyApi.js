@@ -15,7 +15,14 @@ import { ADMIN_API, api, getToken } from "../api";
      POST /console/survey/email { audience, confirm: "SEND" } → { sent, skipped } | 403 { code: "closed" } before it opens
      GET  /console/survey/link?email= → { name, email, url, checkedIn, warning? }   (one person's personal link, management)
      POST /console/survey/links { emails } → [{ email, name, url, checkedIn, warning? } | { email, error }]
-   The organiser (Oct 26 2026): nothing is sent until they have reviewed the survey; autoNotify is off by default. The
+     GET  /console/survey/people?status=all|answered|not_answered|emailed|not_emailed&q=&page= (0-based) → { total, page,
+          size, counts: { checkedIn, answered, notAnswered, emailed, appNotified, onApp }, rows: [{ name, email, company,
+          onApp, checkedInDays, emailedAt, appNotifiedAt, answeredAt, updatedAt, source }] }; …/people/export → CSV
+   Tracking (backend claude/survey-tracking): who answered, who was emailed or notified, so nobody is sent it twice;
+   autoNotify is on by default and sends the app notification in waves (notifyStartDelayMin after opening,
+   notifyBatchSize people every notifyIntervalMin minutes; GET /console/survey notifyProgress { sent, remaining,
+   nextAt, done }).
+   The organiser (Oct 26 2026): nothing is sent until they have reviewed the survey. The
    survey is by invitation only ("sent out to attendees one on one") and only for people who checked in: there's no
    public link, staff share each person's own.
 ========================================================= */
@@ -33,6 +40,19 @@ export const surveyApi = {
   notify: () => api.post("/console/survey/notify", { confirm: "SEND" }),
   link: (email) => api.get(`/console/survey/link?email=${encodeURIComponent(email)}`),
   links: (emails) => api.post("/console/survey/links", { emails }),
+  peoplePath: ({ status = "all", q = "", page = 0 } = {}) => `/console/survey/people?${new URLSearchParams({ status, ...(q ? { q } : {}), page: String(Math.max(0, page | 0)) })}`,
+  /** Everyone matching the filters as a CSV download. */
+  async peopleExport({ status = "all", q = "" } = {}) {
+    const qs = new URLSearchParams({ status, ...(q ? { q } : {}) });
+    const res = await fetch(`${ADMIN_API}/console/survey/people/export?${qs}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || `Export failed (${res.status})`);
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ttfc-survey-invitations-${status}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
   emailPath: (audience) => `/console/survey/email?audience=${encodeURIComponent(audience)}`,
   email: (audience) => api.post("/console/survey/email", { audience, confirm: "SEND" }),
   /** The CSV as a download (the server's file name, else ttfc-survey-<date>.csv). */

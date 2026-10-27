@@ -147,9 +147,37 @@ export function swagFrom(values, now = Date.now()) {
 const labels = (s) => ({ cutoffLabel: swagWhen(s.cutoff), cutoffShort: swagShort(s.cutoff), announceLabel: swagWhen(s.announce) });
 
 /**
+ * The winners GET /api/app/swag sends once they're announced (Oct 26 2026): [{ rank, name, organization, avatarUrl,
+ * points, userId }], in rank order, without nameless or repeated people. Anything else → [].
+ */
+export function swagWinnersFrom(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  const out = [];
+  list.forEach((w, i) => {
+    if (!w || typeof w !== "object") return;
+    const name = str(w.name, "");
+    const userId = str(String(w.userId ?? w.id ?? w.user?.id ?? ""), "");
+    if (!name || (userId && seen.has(userId))) return;
+    if (userId) seen.add(userId);
+    const rank = Math.round(Number(w.rank));
+    out.push({
+      rank: Number.isFinite(rank) && rank > 0 ? rank : i + 1,
+      name,
+      organization: str(w.organization ?? w.organisation ?? w.company, ""),
+      avatarUrl: str(w.avatarUrl ?? w.user?.avatarUrl, ""),
+      points: Number.isFinite(Number(w.points)) ? Math.round(Number(w.points)) : 0,
+      userId,
+    });
+  });
+  return out.sort((a, b) => a.rank - b.rank);
+}
+
+/**
  * GET /api/app/swag → the same shape as swagFrom(): { enabled, kits, cutoff, announce, title, rules, stage, cutoffLabel,
- * cutoffShort, announceLabel, announced }. stage: "off" when it's switched off, else the server's phase
- * (open | closed | announced). null when the answer isn't usable.
+ * cutoffShort, announceLabel, announced, winners, announcedAt }. stage: "off" when it's switched off, else the server's
+ * phase (open | closed | announced). `winners` (once announced) see swagWinnersFrom(); `announcedAt` (ms) is when they
+ * were told (`announcedAt`, or `announced.at`), else the announce time. null when the answer isn't usable.
  */
 export function swagFromApi(r) {
   if (!r || typeof r !== "object" || typeof r.enabled !== "boolean") return null;
@@ -172,6 +200,8 @@ export function swagFromApi(r) {
     rules: str(r.rules, fillSwagText(SWAG_DEFAULT_RULES, s)),
     stage: r.enabled ? phase : "off",
     announced: !!r.announced,
+    winners: phase === "announced" ? swagWinnersFrom(r.winners) : [],
+    announcedAt: (() => { const t = parseToronto(r.announcedAt ?? r.announced?.at); return Number.isFinite(t) ? t : s.announce; })(),
     pitch: str(r.pitch, SWAG_PITCH).replace(/\.$/, ""),
     appOnly: r.appOnly !== false,
   };

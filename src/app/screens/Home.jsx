@@ -27,6 +27,14 @@ import { useFeedCtas } from "../lib/useFeedCtas";
 import { FeaturedRow, OrgGrid, PartnerSheet } from "../components/Orgs";
 import BrandMark from "../components/BrandMark";
 import { StayHomeCard } from "../components/StaySignup";
+import SwagWinners from "../components/SwagWinners";
+import { SurveyFeedCard, SurveySheet } from "../components/SurveyPrompt";
+import PeopleToMeet from "../components/PeopleToMeet";
+import { useSwag } from "../lib/swagState";
+import { refreshSurveyPrompt, snoozeSurvey, useSurveyPrompt } from "../lib/surveyState";
+import { browserStorage, winnersHiddenIn } from "../lib/celebrate";
+import { peopleToMeet, pinnedCards, surveyInFeed, winnersPinned, withPeopleToMeet } from "../lib/feedPlan";
+import { useDirectory, useRecommendations } from "../lib/useRecommendations";
 
 /* =========================================================
    Home, merged with the feed (iOS FeedView / HomeTabView):
@@ -45,6 +53,16 @@ import { StayHomeCard } from "../components/StaySignup";
    with the App Store and Google Play badges (Oct 22 2026). Above
    the feed: "Stay updated for TTFC 2027", the 2027 waitlist
    sign-up (Oct 24 2026, components/StaySignup.jsx).
+   Oct 26 2026 (the organiser: "Show the survey in the feed …,
+   winners of the networking in the feed, and people-to-meet
+   recommendations to book time in the feed"; lib/feedPlan.js): the
+   swag kit winners pinned first for 24 h after they're announced
+   (components/SwagWinners.jsx), then the survey card while the
+   server offers it (components/SurveyPrompt.jsx, "Not now" for a
+   day, and a one-time sheet from the opening), then the posts with
+   "People to meet" after the 2nd and the 12th post
+   (components/PeopleToMeet.jsx) and the Earn points cards as
+   before. Signed-in people only.
 ========================================================= */
 
 /** Ticks every second on its own, so only the figures redraw (not the whole of Home). */
@@ -334,6 +352,14 @@ export default function Home() {
   const pts = useStore(points);
 
   useEffect(() => { if (signedIn) { refreshFeed(); refreshPoints(); } }, [signedIn]);
+  // The survey card: asked on open and when they come back (after answering it in the browser, it goes).
+  useEffect(() => {
+    if (!signedIn) return undefined;
+    refreshSurveyPrompt({ force: true });
+    const onVisible = () => { if (document.visibilityState === "visible") refreshSurveyPrompt({ force: true }); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [signedIn]);
   // You've seen the feed's activity by opening Home (iOS ActivityService.markSeen("feed")).
   useEffect(() => { if (signedIn) refreshActivity().then(() => markActivitySeen("feed")); }, [signedIn]);
 
@@ -385,6 +411,17 @@ export default function Home() {
   const posts = s.feed.filter((p) => !s.blocked.includes(p.authorId));
   // "Earn points" cards in the feed: never first, a shuffle that stays put for the day (lib/feedCtas.js).
   const feed = useFeedCtas(posts, now);
+  // The top of the feed (lib/feedPlan.js): the swag kit winners (24 h), then the survey; People to meet in the posts.
+  const swag = useSwag(now);
+  const [winnersOff, setWinnersOff] = useState(false);
+  const winners = swag.stage === "announced" ? swag.winners || [] : [];
+  const showWinners = signedIn && winnersPinned({ stage: swag.stage, winners, announcedAt: swag.announcedAt, now, hidden: winnersOff || winnersHiddenIn(browserStorage(), winners) });
+  const survey = useSurveyPrompt();
+  const showSurvey = signedIn && surveyInFeed({ data: survey.prompt, snoozedUntil: survey.snoozedUntil, now });
+  const pinnedTop = pinnedCards({ winners: showWinners, survey: showSurvey });
+  const directory = useDirectory();
+  const toMeet = peopleToMeet(useRecommendations(signedIn ? directory : []));
+  const feedItems = withPeopleToMeet(feed.items, signedIn && toMeet.length > 0);
   const greeting = me?.name ? firstName(me.name) : "";
 
   const linkedin = !!(me?.linkedinUrl || a.user?.linkedinUrl);
@@ -481,17 +518,33 @@ export default function Home() {
               <p className="muted" style={{ margin: 0 }}>You're browsing as a guest. Have a pass? Sign in to see the feed, post, comment and connect.</p>
               <Button variant="primary" onClick={() => signOut()}>Sign in</Button>
             </div>
-          ) : !s.feedLoaded ? <Spinner label="Loading the feed" /> : posts.length === 0 ? (
-            <div className="feed-empty">
-              <MessageSquareQuote aria-hidden="true" />
-              <p>{s.feedError ? "Couldn't load the feed. Pull down or come back in a moment." : text(ct, "feed.empty", "Be the first to post. Everyone at TTFC will see it.")}</p>
-            </div>
           ) : (
-            <div className="column stack-sm">
-              {feed.items.map((x) => (x.type === "post"
-                ? <PostCard key={x.post.id} post={x.post} />
-                : <FeedCta key={`cta-${x.key}`} ctaKey={x.key} rules={feed.rules} liveSession={feed.liveSession} swag={feed.swag} onDismiss={feed.dismiss} />))}
-            </div>
+            <>
+              {pinnedTop.length > 0 && (
+                <div className="column stack-sm">
+                  {pinnedTop.map((k) => (k === "winners"
+                    ? <SwagWinners key="winners" winners={winners} feed onHidden={() => setWinnersOff(true)} />
+                    : <SurveyFeedCard key="survey" prompt={survey.prompt} onSnooze={() => snoozeSurvey()} />))}
+                </div>
+              )}
+              {!s.feedLoaded ? <Spinner label="Loading the feed" /> : posts.length === 0 ? (
+                <>
+                  <div className="feed-empty">
+                    <MessageSquareQuote aria-hidden="true" />
+                    <p>{s.feedError ? "Couldn't load the feed. Pull down or come back in a moment." : text(ct, "feed.empty", "Be the first to post. Everyone at TTFC will see it.")}</p>
+                  </div>
+                  {toMeet.length > 0 && <div className="column"><PeopleToMeet recs={toMeet} now={now} id="end" /></div>}
+                </>
+              ) : (
+                <div className="column stack-sm">
+                  {feedItems.map((x) => (x.type === "post"
+                    ? <PostCard key={x.post.id} post={x.post} />
+                    : x.type === "people"
+                      ? <PeopleToMeet key={x.key} id={x.key} recs={toMeet} now={now} />
+                      : <FeedCta key={`cta-${x.key}`} ctaKey={x.key} rules={feed.rules} liveSession={feed.liveSession} swag={feed.swag} onDismiss={feed.dismiss} />))}
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>
@@ -503,6 +556,8 @@ export default function Home() {
       )}
       <StatusBar pick={status} now={now} raised={docked} />
       {composer && canPost && <Composer onClose={() => setComposer(false)} />}
+      {/* Once, from the survey's opening time: a gentle sheet (components/SurveyPrompt.jsx). */}
+      {signedIn && !composer && <SurveySheet now={now} />}
       <Coachmark id="home" title="Your TTFC home" message="What's on, then the feed. Scroll down for posts; discussions and groups are in Chats." icon={HomeIcon} />
     </div>
   );

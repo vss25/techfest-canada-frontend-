@@ -58,6 +58,7 @@ const KEYWORDS = {
   "app/pwa": ["web app", "installs", "install prompt", "home screen"],
   "app/invite": ["app invite", "invite email", "download the app", "web app email", "email everyone", "add to home screen", "app email", "open the ttfc app", "swag email", "win the swag kit email", "campaign"],
   "app/swag": ["swag", "swag kit", "giveaway", "prize", "win", "winners", "announce winners", "leaderboard prize", "backpack"],
+  "app/survey": ["survey", "feedback", "questionnaire", "questions", "nps", "rating", "responses", "answers", "csv", "email the survey", "survey email", "send the app notification", "post-event"],
   "app/digest": ["what you missed", "digest", "summary email", "missed activity", "5 pm email", "activity email", "unsubscribe"],
   "app/rights": ["permissions", "rights matrix", "who can message", "connection requests", "posting", "share contact"],
   "app/broadcast": ["push", "notification", "notify", "announce", "send to everyone", "personal notification"],

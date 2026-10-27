@@ -41,6 +41,8 @@ const ShareLinkedin = lazy(() => import("./pages/ShareLinkedin"));
 const Swag = lazy(() => import("./pages/Swag"));
 // "Stay updated": the TTFC 2027 waitlist (Oct 23 2026).
 const StayUpdated = lazy(() => import("./pages/StayUpdated"));
+// The TTFC 2026 attendee survey (Oct 26 2026): the link the apps and the survey email open (?t=<personal token>). noindex.
+const Survey = lazy(() => import("./pages/Survey"));
 // "Programme": TTFC 2026 at a glance (Oct 24 2026): key times, the agenda, speakers, exhibitors, the 2027 waitlist.
 const Programme = lazy(() => import("./pages/Programme"));
 // Catalyst Awards jury portal: unlinked, noindex, light only (src/jury). Loaded only when someone opens it.
@@ -168,6 +170,7 @@ function App() {
         <Route path="/share/linkedin" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><ShareLinkedin /></Suspense>} />
         <Route path="/swag" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Swag /></Suspense>} />
         <Route path="/stay-updated" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><StayUpdated /></Suspense>} />
+        <Route path="/survey" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Survey /></Suspense>} />
         <Route path={FACT_SHEET_PATH} caseSensitive element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><FactSheet /></Suspense>} />
       </Routes>
       <OffJury><TicketBar /></OffJury>

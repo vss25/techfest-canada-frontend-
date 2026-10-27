@@ -7,6 +7,21 @@
     <meta name="description" content="The Tech Festival Canada 2026 attendee app: schedule, speakers, live polls, Q&amp;A and chat. Oct 26–27, Westin Harbour Castle, Toronto." />
     <meta name="robots" content="noindex" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <!-- /app/rate ("Rate the app", Oct 27 2026; src/lib/rate.js): phones go straight to their store's review page
+         before the app loads (?store=ios|android picks one); anything else gets the screen with both badges. -->
+    <script>
+      (function () {
+        try {
+          if (location.pathname.replace(/\/+$/, "").toLowerCase() !== "/app/rate") return;
+          var s = (new URLSearchParams(location.search).get("store") || "").toLowerCase();
+          var ua = navigator.userAgent || "";
+          var ios = s === "ios" || (!s && (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)));
+          var android = s === "android" || (!s && /Android/i.test(ua));
+          if (ios) location.replace("https://apps.apple.com/app/id6820764803?action=write-review");
+          else if (android) location.replace("https://play.google.com/store/apps/details?id=com.atlaslinkmarkets.ttfc");
+        } catch (e) { /* the screen does it itself */ }
+      })();
+    </script>
 
     <!-- Installable app: only /app advertises these (the marketing pages don't). -->
     <link rel="manifest" href="/app/manifest.webmanifest" />

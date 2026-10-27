@@ -305,9 +305,56 @@ test("personal links: pasted emails, the server's rows, the CSV and Copy all", a
   assert.equal(rows[1].url, ""); // only https links are shown
   assert.equal(rows[2].checkedIn, null);
   const csv = linksCsv(rows);
-  assert.equal(csv.split("\r\n")[0], "Name,Email,Checked in,Personal link,Problem");
-  assert.equal(csv.split("\r\n")[1], "Priya Raman,priya@dhl.com,Yes,https://www.thetechfestival.com/survey?t=abc,");
-  assert.equal(csv.split("\r\n")[2], "'=HYPERLINK(1),'=cmd@evil.com,No,,Not checked in");
-  assert.equal(csv.split("\r\n")[3], ",nobody@x.co,,,No pass with this email");
+  assert.equal(csv.split("\r\n")[0], "Name,Email,Checked in,Answered (Toronto),Emailed (Toronto),Personal link,Problem");
+  assert.equal(csv.split("\r\n")[1], "Priya Raman,priya@dhl.com,Yes,,,https://www.thetechfestival.com/survey?t=abc,");
+  assert.equal(csv.split("\r\n")[2], "'=HYPERLINK(1),'=cmd@evil.com,No,,,,Not checked in");
+  assert.equal(csv.split("\r\n")[3], ",nobody@x.co,,,,,No pass with this email");
+  const answered = linkRowFrom({ email: "a@b.co", url: "https://x.thetechfestival.com/s", answeredAt: "2026-10-27T16:40:00-04:00", emailedAt: "2026-10-27T16:05:00-04:00" });
+  assert.equal(linksCsv([answered]).split("\r\n")[1], ",a@b.co,,\"Oct 27, 4:40 PM\",\"Oct 27, 4:05 PM\",https://x.thetechfestival.com/s,");
   assert.equal(linksText(rows), "Priya Raman <priya@dhl.com>\thttps://www.thetechfestival.com/survey?t=abc");
+});
+
+test("tracking: the wave plan, the progress line, Toronto times, the people rows", async () => {
+  const { NOTIFY_LIMITS, PEOPLE_STATUSES, alreadyAnswered, daysFrom, intIn, notifyPlanText, peopleRowFrom, progressText, torontoClock, torontoShort } = await import("./survey.js");
+  const opensAt = "2026-10-27T16:00:00-04:00";
+  assert.equal(notifyPlanText({ autoNotify: true, opensAt }), "On — waves of 30 every 5 min from 4:15 PM on Tuesday, October 27");
+  assert.equal(notifyPlanText({ autoNotify: true, opensAt, notifyStartDelayMin: "0", notifyBatchSize: "50", notifyIntervalMin: 10 }), "On — waves of 50 every 10 min from 4:00 PM on Tuesday, October 27");
+  assert.equal(notifyPlanText({ autoNotify: false, opensAt }), "Off");
+  assert.equal(notifyPlanText({ autoNotify: true }), "On — waves of 30 every 5 min");
+  assert.equal(intIn("9999", NOTIFY_LIMITS.batch), 500);
+  assert.equal(intIn("", NOTIFY_LIMITS.delay), 15);
+  assert.equal(intIn("abc", NOTIFY_LIMITS.interval), 5);
+  assert.equal(progressText({ sent: 120, remaining: 180, nextAt: "2026-10-27T16:35:00-04:00", done: false }), "Sent 120 · 180 left · next wave 4:35 PM");
+  assert.equal(progressText({ sent: 1300, remaining: 0, done: true }), "All sent: 1,300 people");
+  assert.equal(progressText({ sent: 0, remaining: 0, done: false }), "");
+  assert.equal(progressText(null), "");
+  assert.equal(torontoShort("2026-10-27T20:35:00Z"), "Oct 27, 4:35 PM");
+  assert.equal(torontoClock(Date.parse("2026-10-27T16:05:00-04:00")), "4:05 PM");
+  assert.equal(torontoShort(null), "");
+  assert.deepEqual(daysFrom([2, 1, 1]), [1, 2]);
+  assert.deepEqual(daysFrom(["day2"]), [2]);
+  assert.deepEqual(daysFrom({ day1: true, day2: false }), [1]);
+  assert.deepEqual(daysFrom("D1, D2"), [1, 2]);
+  assert.deepEqual(daysFrom(null), []);
+  const row = peopleRowFrom({ name: " Priya  Raman ", email: "p@dhl.com", company: "DHL", onApp: true, checkedInDays: [1], answeredAt: "2026-10-27T16:40:00-04:00", emailedAt: null, source: "app" });
+  assert.equal(row.name, "Priya Raman");
+  assert.deepEqual(row.days, [1]);
+  assert.equal(row.answeredAt, Date.parse("2026-10-27T16:40:00-04:00"));
+  assert.ok(Number.isNaN(row.emailedAt));
+  const counts = { checkedIn: 600, answered: 120, notAnswered: 480, emailed: 400 };
+  assert.deepEqual(PEOPLE_STATUSES.map((x) => [x.key, x.count(counts)]), [["all", 600], ["not_answered", 480], ["answered", 120], ["emailed", 400], ["not_emailed", 200]]);
+  assert.equal(PEOPLE_STATUSES[4].count({ checkedIn: 3 }), undefined);
+  assert.equal(alreadyAnswered({ count: 400, alreadyAnswered: 12 }), 12);
+  assert.equal(alreadyAnswered({ counts: { answered: "7" } }), 7);
+  assert.equal(alreadyAnswered({ count: 400 }), null);
+});
+
+test("admin: the wave settings round-trip and are checked", () => {
+  const form = configToForm({ autoNotify: true, notifyStartDelayMin: 20, notifyBatchSize: 40, notifyIntervalMin: 3, opensAt: "2026-10-27T16:00:00-04:00", closesAt: "2026-11-03T23:59:00-05:00", questions: [{ id: "a", type: "text", label: "A" }] });
+  assert.deepEqual([form.notifyStartDelayMin, form.notifyBatchSize, form.notifyIntervalMin], ["20", "40", "3"]);
+  const out = formToConfig(form);
+  assert.deepEqual([out.autoNotify, out.notifyStartDelayMin, out.notifyBatchSize, out.notifyIntervalMin], [true, 20, 40, 3]);
+  assert.deepEqual([configToForm({}).notifyStartDelayMin, configToForm({}).notifyBatchSize, configToForm({}).notifyIntervalMin], ["15", "30", "5"]);
+  const bad = checkConfig({ ...form, notifyBatchSize: "0", notifyIntervalMin: "2.5" }).map((p) => p.where);
+  assert.deepEqual(bad, ["notifyBatchSize", "notifyIntervalMin"]);
 });

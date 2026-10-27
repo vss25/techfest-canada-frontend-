@@ -1,5 +1,5 @@
 /* =========================================================
-   Confetti once (Oct 26 2026): the swag kit winners card bursts
+   Confetti once (Oct 26 2026): the top networkers card bursts
    the first time someone sees it on this device, on Points or in
    the feed (one memory for both), and again (bigger) the first
    time a winner sees it. Remembered in localStorage per

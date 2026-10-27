@@ -357,19 +357,18 @@ export default function AppInvite() {
         </Banner>
       )}
 
+      {/* Oct 27 2026: the leaderboard is appreciation, not a prize. The old swag block follows the old apps' prize
+          banner (swag.enabled), which stays off; if it's on, this email would still advertise a prize. */}
       {swagOn === true && (
-        <Banner tone="info" icon={Gift} className="mb-6" title="The swag kit giveaway is on: this email advertises it"
-          action={<Link to="/admin/app/swag" className="text-sm font-semibold text-ttfc-pink hover:underline">Swag kit giveaway</Link>}>
-          Everyone gets the swag block: the photo, “Download the app to win the TTFC swag kit”, “Only people using the TTFC app can win”
-          and that winners are told at the end of Day 1. People who got the email before the giveaway can get this version once
-          (“Already got this version” in the list).
+        <Banner tone="danger" icon={Gift} className="mb-6" title="The old prize banner is on: this email still advertises a prize"
+          action={<Link to="/admin/app/swag" className="text-sm font-semibold text-ttfc-pink hover:underline">Top networkers</Link>}>
+          The leaderboard is appreciation, not a prize. Turn “Old apps' prize banner” off in Top networkers before sending this email.
         </Banner>
       )}
       {swagOn === false && (
         <p className="mb-6 text-sm text-ttfc-muted">
           <Gift className="mr-1.5 inline h-4 w-4 align-[-3px] text-ttfc-dim" aria-hidden="true" />
-          The swag kit block isn't in the email while the giveaway is off. Turn it on in{" "}
-          <Link to="/admin/app/swag" className="font-semibold text-ttfc-pink hover:underline">Swag kit giveaway</Link>.
+          The old prize block isn't in the email (the old apps' prize banner is off, as it should be).
         </p>
       )}
 

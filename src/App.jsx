@@ -37,10 +37,12 @@ const Rsvp = lazy(() => import("./pages/Rsvp"));
 const Attending = lazy(() => import("./pages/Attending"));
 // Unlinked page the TTFC app opens (Oct 22 2026): a session's discussion or a poll as a LinkedIn post (noindex, not in any menu).
 const ShareLinkedin = lazy(() => import("./pages/ShareLinkedin"));
-// "Win the TTFC swag kit" rules page (Oct 22 2026): linked from the swag email, the apps and the install page.
+// "How the leaderboard works" (Oct 22 2026; appreciation, not a prize, since Oct 27): opened from the apps' leaderboard.
 const Swag = lazy(() => import("./pages/Swag"));
 // "Stay updated": the TTFC 2027 waitlist (Oct 23 2026).
 const StayUpdated = lazy(() => import("./pages/StayUpdated"));
+// "Rate the app" (Oct 27 2026): a notification's link; phones go straight to their store's review page. noindex.
+const Rate = lazy(() => import("./pages/Rate"));
 // The TTFC 2026 attendee survey (Oct 26 2026): the link the apps and the survey email open (?t=<personal token>). noindex.
 const Survey = lazy(() => import("./pages/Survey"));
 // "Programme": TTFC 2026 at a glance (Oct 24 2026): key times, the agenda, speakers, exhibitors, the 2027 waitlist.
@@ -170,6 +172,7 @@ function App() {
         <Route path="/share/linkedin" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><ShareLinkedin /></Suspense>} />
         <Route path="/swag" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Swag /></Suspense>} />
         <Route path="/stay-updated" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><StayUpdated /></Suspense>} />
+        <Route path="/rate" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Rate /></Suspense>} />
         <Route path="/survey" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Survey /></Suspense>} />
         <Route path={FACT_SHEET_PATH} caseSensitive element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><FactSheet /></Suspense>} />
       </Routes>

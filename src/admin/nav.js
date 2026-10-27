@@ -77,7 +77,8 @@ export const NAV = [
       { to: "content/settings", label: "Website switches", icon: Settings2 },
       { to: "app/text", label: "App text & switches", icon: ToggleRight },
       { to: "app/invite", label: "App invite email", icon: MailPlus },
-      { to: "app/swag", label: "Swag kit giveaway", icon: Gift },
+      // The leaderboard's top networkers (appreciation, not a prize, Oct 27 2026; the address is the old one).
+      { to: "app/swag", label: "Top networkers", icon: Gift },
       // The attendee survey (Oct 26 2026): its questions, settings, answers, and the app notification and email.
       { to: "app/survey", label: "Attendee survey", icon: MessageSquareText },
       { to: "app/digest", label: "“What you missed” emails", icon: MailOpen },

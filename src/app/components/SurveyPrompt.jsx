@@ -11,7 +11,7 @@ import { Sheet } from "./ui";
    /survey with this person's own link, and "Not now" (a day);
    and once, from the opening time, a gentle sheet on Home. Both
    go once they've answered (the server stops saying `show`).
-   The survey opens in the browser, like the swag kit's rules.
+   The survey opens in the browser, like "How the leaderboard works".
 ========================================================= */
 
 export function SurveyFeedCard({ prompt, onSnooze }) {

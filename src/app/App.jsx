@@ -54,6 +54,7 @@ const Points = lazy(() => import("./screens/Points"));
 const Awards = lazy(() => import("./screens/Awards"));
 const AwardApplications = lazy(() => import("./screens/AwardApplications"));
 const StayUpdated = lazy(() => import("./screens/StayUpdated"));
+const Rate = lazy(() => import("./screens/Rate"));
 
 /** Pages that fill the screen with their own composer: no tab bar. */
 const NO_TABS = [/^\/chat\//, /^\/group\//, /^\/discussion\//, /^\/session\/[^/]+\/live/, /^\/install/, /^\/login/];
@@ -130,8 +131,8 @@ function Shell() {
   const mc = useStore(myCard);
   const { pathname } = useLocation();
   const signedOut = mode === "out";
-  // The TTFC 2027 waitlist is for everyone, signed out too (Oct 23 2026).
-  const publicPage = /^\/(install|legal|login|stay-updated)/.test(pathname);
+  // The TTFC 2027 waitlist is for everyone, signed out too (Oct 23 2026); so is "Rate the app" (Oct 27 2026).
+  const publicPage = /^\/(install|legal|login|stay-updated|rate)/.test(pathname);
 
   if (signedOut && !publicPage) {
     return (
@@ -179,6 +180,7 @@ function Shell() {
           <Route path="/awards/applications" element={<AwardApplications />} />
           <Route path="/install" element={<Install />} />
           <Route path="/stay-updated" element={<StayUpdated />} />
+          <Route path="/rate" element={<Rate />} />
           <Route path="/legal/:doc" element={<Legal />} />
           <Route path="/login" element={signedOut ? <Login /> : <Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -13,7 +13,7 @@ import { Avatar, Segmented, Spinner, Switch, TopBar } from "../components/ui";
 import SwagBanner from "../components/SwagBanner";
 import SwagWinners from "../components/SwagWinners";
 import Podium from "../components/Podium";
-import { refreshSwag, useSwag } from "../lib/swagState";
+import { refreshSwag, useNetworkers } from "../lib/swagState";
 import { fromBoard, podiumSplit } from "../lib/podium";
 
 /* =========================================================
@@ -28,14 +28,17 @@ import { fromBoard, podiumSplit } from "../lib/podium";
      earn (with its progress) folded under "All ways to earn
      points".
    The order and rules are in lib/pointsPlan.js (pure, tested).
-   Batch 7: the swag kit banner at the top of the Leaderboard tab
-   while the giveaway is on (components/SwagBanner.jsx).
+   Batch 7: a banner at the top of the Leaderboard tab
+   (components/SwagBanner.jsx); since Oct 27 2026 the leaderboard is
+   appreciation, not a prize: "Top networkers of TTFC 2026" until
+   the announce time.
    Oct 26 2026: the top three stand on a podium (2–1–3, bigger
    photos, gold / silver / bronze, components/Podium.jsx); the list
-   from the 4th on is as before. Once the swag kit winners are
-   announced (GET /api/app/swag sends them), "TTFC swag kit winners"
-   replaces the banner (components/SwagWinners.jsx), with confetti
-   the first time on this device; Reduce Motion: no confetti.
+   from the 4th on is as before. Once the top networkers are
+   announced (GET /api/app/swag sends them), "TTFC 2026 top
+   networkers" replaces the banner (components/SwagWinners.jsx),
+   with confetti the first time on this device; Reduce Motion: no
+   confetti.
 ========================================================= */
 
 const TABS = [{ value: "board", label: "Leaderboard" }, { value: "activity", label: "Your activity" }];
@@ -76,8 +79,7 @@ export default function Points() {
 function BoardTab({ me, board, savingPrefs, onToggle }) {
   const a = useStore(auth);
   const myId = a.me?.id || a.user?._id || "";
-  const swag = useSwag(now().getTime());
-  const winners = swag.stage === "announced" ? swag.winners || [] : [];
+  const winners = useNetworkers(now().getTime()).winners;
   const entries = board?.entries || [];
   const { podium } = podiumSplit(entries);
   const rest = entries.slice(podium.length);

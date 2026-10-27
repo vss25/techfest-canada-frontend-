@@ -6,20 +6,24 @@ import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
 import { Banner, Button, Card, ConfirmDialog, Field, PageHeader, SectionTitle, Tabs, Textarea } from "../ui";
 import PersonalNotify from "./PersonalNotify";
+import ScheduledBroadcasts, { ScheduledLocked } from "./ScheduledBroadcasts";
 
 const MODES = [
   { key: "person", label: "Send to a person" },
   { key: "everyone", label: "Announcement to everyone" },
+  // Scheduled updates (Oct 27 2026, management only): ./ScheduledBroadcasts.jsx.
+  { key: "scheduled", label: "Scheduled" },
 ];
 
 export default function Broadcast() {
   const { isManagement } = useAdmin();
   const [params, setParams] = useSearchParams();
   const prefillIds = (params.get("to") || "").split(",").filter(Boolean);
-  const mode = params.get("mode") === "everyone" && !prefillIds.length ? "everyone" : "person";
+  const asked = params.get("mode");
+  const mode = !prefillIds.length && (asked === "everyone" || asked === "scheduled") ? asked : "person";
   const setMode = (m) => {
     const p = new URLSearchParams(params);
-    if (m === "everyone") { p.set("mode", "everyone"); p.delete("to"); } else p.delete("mode");
+    if (m === "everyone" || m === "scheduled") { p.set("mode", m); p.delete("to"); } else p.delete("mode");
     setParams(p, { replace: true });
   };
 
@@ -29,12 +33,14 @@ export default function Broadcast() {
         eyebrow="Event day"
         title="Send an app update"
         description={isManagement
-          ? "Send a private notification to one person or a few, or post an official update everyone sees."
+          ? "Send a private notification to one person or a few, post an official update everyone sees, or schedule one for later."
           : "Send a private notification to one person or a few. Updates to everyone are sent by management."}
       />
       <Tabs tabs={MODES} value={mode} onChange={setMode} label="Who to send to" />
       <div role="tabpanel">
-        {mode === "person" ? <PersonalNotify key={prefillIds.join(",")} prefillIds={prefillIds} /> : <EveryoneAnnouncement canSend={isManagement} />}
+        {mode === "person" ? <PersonalNotify key={prefillIds.join(",")} prefillIds={prefillIds} />
+          : mode === "scheduled" ? (isManagement ? <ScheduledBroadcasts /> : <ScheduledLocked />)
+            : <EveryoneAnnouncement canSend={isManagement} />}
       </div>
     </>
   );

@@ -1,10 +1,11 @@
 import { createStore, useStore } from "./store";
 import { get } from "./api";
 import { content } from "./content";
-import { swagFrom, swagFromApi } from "../../lib/swag.js";
+import { networkersView, swagFrom, swagFromApi } from "../../lib/swag.js";
 
 /* =========================================================
-   The swag kit giveaway in the web app (batch 7): the public
+   The leaderboard's top networkers in the web app (batch 7; since
+   Oct 27 2026 appreciation, not a prize: src/lib/swag.js): the public
    GET /api/app/swag (no auth; the server works out the phase, the
    date words and the filled-in rules), cached for a minute. Until it
    answers, the same is worked out from the app content settings
@@ -25,16 +26,22 @@ export async function refreshSwag({ force = false } = {}) {
 
 const ORDER = ["open", "closed", "announced"];
 
-/** The giveaway now: src/lib/swag.js's shape (stage off | open | closed | announced). `now` in ms. */
+const later = (a, b) => (ORDER.indexOf(b) > ORDER.indexOf(a) ? b : a);
+
+/** The settings now: src/lib/swag.js's shape; phase (and the old banner's stage) move on with the clock. `now` in ms. */
 export function swagNow(data, values, now) {
   const s = (data && swagFromApi(data)) || swagFrom(values, now);
-  if (s.stage === "off") return s;
   const byClock = now >= s.announce ? "announced" : now >= s.cutoff ? "closed" : "open";
-  return ORDER.indexOf(byClock) > ORDER.indexOf(s.stage) ? { ...s, stage: byClock } : s;
+  return { ...s, phase: later(s.phase || "open", byClock), stage: s.stage === "off" ? "off" : later(s.stage, byClock) };
 }
 
 export function useSwag(now) {
   const st = useStore(swagState);
   const ct = useStore(content);
   return swagNow(st.data, ct.values, Number(now));
+}
+
+/** What to show for the top networkers now (src/lib/swag.js networkersView): before / announced / the top networkers. */
+export function useNetworkers(now) {
+  return networkersView(useSwag(now), Number(now));
 }

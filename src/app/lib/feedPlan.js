@@ -6,7 +6,7 @@ import { AVAIL_DAYS, dayRanges, rangeLabel } from "./availability.js";
    the networking in the feed, and people-to-meet recommendations
    to book time in the feed"). Pure (node --test
    src/app/lib/feedPlan.test.mjs).
-     1. The swag kit winners, pinned first for 24 h after they were
+     1. The top networkers, pinned first for 24 h after they were
         announced (until hidden on this device).
      2. The survey card while GET /api/app/survey says show (its
         "Not now" hides it for a day).

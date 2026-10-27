@@ -8,7 +8,7 @@ import { now as clockNow } from "./time";
 import { companyKey } from "./orgKey";
 import { sessionGetsChat, SESSION_CHAT_LEAD_MS } from "./sessionChat";
 import { SOS_DEFAULTS } from "./sos";
-import { SWAG_DEFAULTS, SWAG_PHOTO, SWAG_URL, swagFrom } from "../../lib/swag.js";
+import { SWAG_DEFAULTS, SWAG_URL, swagFrom } from "../../lib/swag.js";
 
 /* =========================================================
    Demo backend (/app?demo=1). Answers the same routes, with the
@@ -61,7 +61,8 @@ const DEMO_AVAILABILITY = {
   "p-fatima": { availabilitySlots: ["d2-08", "d2-10"], availabilitySpots: {}, meetingSpot: "Registration desk" },
 };
 
-/* The swag kit winners in the demo (GET /api/app/swag once announced, Oct 26 2026): the demo leaderboard's top three. */
+/* The top networkers in the demo (GET /api/app/swag once announced, Oct 26 2026; appreciation since Oct 27): the demo
+   leaderboard's top three. */
 const DEMO_WINNERS = [
   { rank: 1, name: "Daniel Okafor", organization: "Lakeshore Insurance", avatarUrl: "", points: 640, userId: "p-daniel" },
   { rank: 2, name: "Dr. Maya Singh", organization: "Aurora Financial", avatarUrl: "", points: 410, userId: "p-maya" },
@@ -733,23 +734,23 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
   if (is("GET", "app/content")) {
     return {
       "flag.polls": true, "flag.qa": true, "flag.allow_posts": true, "flag.allow_groups": true, "feed.empty": "Be the first to post. Everyone at TTFC will see it.",
-      // The swag kit giveaway, on in the demo (lib/swag.js has the defaults for the rest).
-      "swag.enabled": true, "swag.kits": 3,
+      // The leaderboard's top networkers (appreciation, not a prize, Oct 27 2026): the old prize banner off, the
+      // celebration on (src/lib/swag.js has the defaults for the rest).
+      "swag.enabled": false, "swag.celebrate": true, "swag.kits": 3,
     };
   }
-  // The giveaway as the server works it out (backend GET /api/app/swag), from the same demo settings.
+  // The top networkers as the server works them out (backend GET /api/app/swag), from the same demo settings.
   if (is("GET", "app/swag")) {
     const t = clockNow().getTime();
-    const g = swagFrom({ "swag.enabled": true, "swag.kits": 3 }, t);
-    const announcedNow = g.stage === "announced";
-    // Demo only: the feed pins the winners for 24 h after they're announced, so the demo keeps the announcement recent.
+    const g = swagFrom({ "swag.enabled": false, "swag.celebrate": true, "swag.kits": 3 }, t);
+    const announcedNow = g.phase === "announced";
+    // Demo only: the feed pins the top networkers for 24 h after they're announced, so the demo keeps it recent.
     const announcedAt = announcedNow ? new Date(Math.max(g.announce, t - 30 * 60000)).toISOString() : null;
     return {
       ...(announcedNow ? { winners: DEMO_WINNERS, announcedAt } : {}),
-      enabled: g.enabled, title: g.title, kits: g.kits, cutoff: SWAG_DEFAULTS["swag.cutoff"], announce: SWAG_DEFAULTS["swag.announce"],
-      cutoffLabel: g.cutoffLabel, cutoffShort: g.cutoffShort, announceLabel: g.announceLabel, rules: g.rules, appOnly: true, pitch: g.pitch,
-      phase: g.stage === "off" ? "open" : g.stage, announced: announcedNow, rulesUrl: SWAG_URL, photoUrl: `https://www.thetechfestival.com${SWAG_PHOTO}`,
-      installUrl: "https://www.thetechfestival.com/app/install",
+      enabled: false, celebrate: true, mode: "appreciation", title: g.title, kits: g.kits, cutoff: SWAG_DEFAULTS["swag.cutoff"], announce: SWAG_DEFAULTS["swag.announce"],
+      cutoffLabel: g.cutoffLabel, cutoffShort: g.cutoffShort, announceLabel: g.announceLabel, rules: g.rules,
+      phase: g.phase, announced: announcedNow, rulesUrl: SWAG_URL, installUrl: "https://www.thetechfestival.com/app/install",
     };
   }
   // The survey (GET /api/app/survey, Oct 26 2026): offered all the time in the demo; /survey?t=demo is a sample

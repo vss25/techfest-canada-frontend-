@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, ArrowRight, CheckCircle2, ClipboardList, Clock, Eye, Lock, Mail, Pencil, RefreshCw, UserRoundX } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, ClipboardList, Clock, Eye, Lock, Mail, Pencil, RefreshCw, Star, UserRoundX } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import SurveyQuestion, { SURVEY_QUESTION_CSS } from "../components/SurveyQuestion";
 import { surveyVars } from "../lib/surveyTheme";
+import { RATE_PROMPT, rateLinks, showRatePrompt } from "../lib/rate";
+import { detectOS } from "../lib/pwaPlatform";
+import { isNativeVisit, nativeAppSource } from "../lib/nativeVisit";
 import { PUBLIC_API } from "../hooks/useSiteSettings";
 import {
   DEMO_SURVEY, DETAIL_FIELDS, DRAFT_KEY, INVITATION_TEXT, NOT_ELIGIBLE_TEXT, PREVIEW_KEY, PREVIEW_MAX_AGE, REQUIRED_DETAILS, SURVEY_ERRORS,
@@ -40,6 +43,10 @@ import {
    (sessionStorage) until they're sent. Mobile first: most people
    open it from the app on a phone. noindex; no ticket bar or
    announcement (components/TicketBar.jsx, SiteNotices.jsx).
+   Thank you (Oct 27 2026): people who came from the app (?from=
+   ttfc-app, ?source=…) or are on a phone also get a neutral "Enjoying
+   the TTFC app? Rate it" with their store (both on a computer), via
+   /rate (src/lib/rate.js); never a request for a particular rating.
    ?preview=1 (Admin › Attendee survey › Preview): the admin's draft,
    unsaved changes included (localStorage, src/lib/survey.js
    PREVIEW_KEY), or else the saved survey; it's always open and never
@@ -143,6 +150,9 @@ const PAGE_CSS = `
   .sv-state h1, .sv-state h2 { margin: 4px 0 0; font-size: clamp(22px, 5vw, 30px); font-weight: 800; line-height: 1.2; outline: none; }
   .sv-state p { margin: 0; max-width: 520px; font-size: 17px; line-height: 1.6; color: var(--sv-mid); white-space: pre-line; }
   .sv-state-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
+  .sv-rate { margin-top: 14px; display: grid; justify-items: center; gap: 10px; padding: 18px 16px; border-radius: 18px; border: 1px dashed var(--sv-line); text-align: center; }
+  .sv-rate-q { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.4; }
+  .sv-rate-q svg { display: inline-block; width: 18px; height: 18px; margin-right: 6px; vertical-align: -3px; color: var(--sv-star); }
   .sv-skel { margin-top: 18px; display: grid; gap: 12px; }
   .sv-skel i { display: block; height: 18px; border-radius: 8px; background: var(--sv-chip); }
   .sv-preview { display: flex; gap: 10px; align-items: center; margin: 0 0 16px; padding: 10px 14px; border-radius: 14px; background: #f5a623; color: #1a0f00; font-size: 14px; font-weight: 700; }
@@ -154,6 +164,13 @@ export default function Survey() {
   const dark = useDarkMode();
   const uid = useId();
   const [link] = useState(readLink);
+  // "Rate it" on the thank-you: from the app, or on a phone (worked out once, before anything tidies the address).
+  const [rate] = useState(() => {
+    let fromApp = false;
+    try { fromApp = !!nativeAppSource(window.location.search) || isNativeVisit(); } catch { fromApp = false; }
+    const os = detectOS();
+    return showRatePrompt({ os, fromApp }) ? rateLinks(os) : [];
+  });
   const [load, setLoad] = useState({ status: "loading", survey: null, error: "", at: 0 });
   const [answers, setAnswers] = useState({});
   const [details, setDetails] = useState(EMPTY_DETAILS);
@@ -364,6 +381,14 @@ export default function Survey() {
             <Link to="/" className="sv-ghost">Back to the homepage <ArrowRight size={16} aria-hidden="true" /></Link>
           </div>
         </div>
+        {rate.length > 0 && (
+          <div className="sv-rate">
+            <p className="sv-rate-q"><Star aria-hidden="true" />{RATE_PROMPT}</p>
+            <div className="sv-state-actions" style={{ marginTop: 0 }}>
+              {rate.map((r) => <a key={r.store} href={r.href} className="sv-ghost">{r.label}</a>)}
+            </div>
+          </div>
+        )}
       </>
     );
   } else {

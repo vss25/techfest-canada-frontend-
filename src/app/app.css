@@ -699,14 +699,14 @@ button.mini-bar { width: calc(100% - 24px); }
 .feed-cta-x { flex: none; width: 32px; height: 32px; margin: -4px -6px 0 0; border: 0; border-radius: 50%; background: none; color: var(--tx2); display: grid; place-items: center; }
 .feed-cta-x svg { width: 18px; height: 18px; }
 .feed-cta-btn { align-self: stretch; }
-/* "Win the TTFC swag kit" (batch 7): the photo on top of the feed card; the banner on Points › Leaderboard. */
+/* The leaderboard banner on Points › Leaderboard (batch 7; appreciation, not a prize, since Oct 27 2026). */
 .swag-banner { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px; border-radius: var(--r-control); background: var(--surface); border: 1px solid var(--border); color: var(--tx); text-decoration: none; }
-.swag-banner-photo { flex: none; width: 64px; height: 54px; object-fit: cover; border-radius: 10px; background: #e9e7ee; }
+.swag-banner-ico { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(245, 166, 35, 0.16); color: var(--gold); }
+.swag-banner-ico svg { width: 22px; height: 22px; }
 .swag-banner-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .swag-banner-text b { font-size: 14.5px; font-weight: 700; line-height: 1.25; }
 .swag-banner-text span { font-size: 12.5px; color: var(--tx2); line-height: 1.3; }
 .swag-banner-chev { flex: none; width: 18px; height: 18px; color: var(--tx2); }
-.feed-cta-photo { display: block; width: 100%; height: auto; aspect-ratio: 600 / 508; max-height: 260px; object-fit: cover; border-radius: 14px; background: #e9e7ee; }
 .mini-bar {
   position: fixed; left: 12px; right: 12px; bottom: calc(var(--tab-space) + 8px); z-index: 24;
   max-width: 616px; margin: 0 auto; display: flex; align-items: center; gap: 10px; padding: 10px 14px;
@@ -1539,13 +1539,6 @@ textarea.input--ios { min-height: 120px; }
 .install-computer { display: flex; flex-direction: column; gap: 12px; align-items: stretch; padding: 18px; border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--border); }
 .install-computer h2 { margin: 0; font-size: 22px; font-weight: 800; }
 .install-computer-btns { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-.install-swag { display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 10px; border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--border); color: var(--tx); text-decoration: none; }
-.install-swag img { flex: none; width: 72px; height: 61px; object-fit: cover; border-radius: 12px; background: #e9e7ee; }
-.install-swag > span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.install-swag b { font-size: 16px; }
-.install-swag > span > span { font-size: 14px; line-height: 1.4; color: var(--tx2); }
-.install-swag > svg { flex: none; width: 22px; height: 22px; color: var(--pur-alt); }
-.install-swag strong { color: var(--tx); font-weight: 700; }
 .install .mock svg { height: min(320px, 42dvh); }
 /* Oct 22 2026: the page is the App Store / Google Play badges (StoreBadges), a QR code on a computer, and a link
    back to the web app. The step, video and troubleshooting styles above are no longer used. */
@@ -1897,7 +1890,7 @@ textarea.input--ios { min-height: 120px; }
 .store-prompt-badge { margin: 8px 0 2px; }
 .store-prompt-later { font-size: 16px; color: var(--tx2); }
 
-/* The top three as a podium (components/Podium.jsx, Oct 26 2026): Points › Leaderboard and the swag kit winners.
+/* The top three as a podium (components/Podium.jsx, Oct 26 2026): Points › Leaderboard and the top networkers card.
    2nd · 1st · 3rd; gold, silver and bronze rings, medals and steps. Nothing moves. */
 .podium { list-style: none; margin: 0; padding: 6px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 8px; }
 .podium-spot { grid-row: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; text-align: center; }
@@ -1928,7 +1921,7 @@ textarea.input--ios { min-height: 120px; }
 .podium--compact .podium-spot--low .podium-step { height: 20px; }
 .board-podium { padding: 4px 0 6px; }
 
-/* "TTFC swag kit winners" (components/SwagWinners.jsx, Oct 26 2026): on Points and pinned first in the feed. */
+/* The top networkers card (components/SwagWinners.jsx, Oct 26 2026; appreciation since Oct 27): on Points and pinned first in the feed. */
 .winners-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--r-card); border: 1.5px solid rgba(245, 166, 35, 0.55);
   background: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(245, 166, 35, 0.16) 0%, transparent 70%), var(--surface); }
 .winners-card--feed { border-radius: 0; border-left: 0; border-right: 0; padding: 14px 16px 16px; }

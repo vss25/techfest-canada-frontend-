@@ -1,35 +1,31 @@
-import { Link } from "react-router-dom";
-import { Bell, ChevronRight } from "lucide-react";
+import { ChevronRight, Handshake } from "lucide-react";
 import { now } from "../lib/time";
-import { useSwag } from "../lib/swagState";
-import { SWAG_PAGE, SWAG_THUMB, swagBannerLine } from "../../lib/swag.js";
+import { useNetworkers } from "../lib/swagState";
+import { SWAG_PAGE } from "../../lib/swag.js";
 
 /* =========================================================
-   The swag kit banner at the top of Points › Leaderboard (batch 7,
-   Oct 22 2026): the photo, "Win the TTFC swag kit", "Only app users
-   can win · Top 3 at Oct 26, 4 PM", opening the rules (the website's /swag page, in the
-   browser). After the announcement time: "Winners announced — check
-   your notifications", opening Notifications. Nothing while the
-   giveaway is off (Admin › Website & app › Swag kit giveaway).
+   The leaderboard banner at the top of Points › Leaderboard (batch
+   7; since Oct 27 2026 appreciation, not a prize, src/lib/swag.js):
+   while the celebration is still to come, the title ("Top
+   networkers of TTFC 2026") and "Start conversations and meet
+   people. At 5:00 PM on Tuesday, October 27 we'll celebrate the top
+   3 networkers.", opening "How the leaderboard works" (the website's
+   /swag page, in the browser). Once they're announced the top
+   networkers card takes its place (components/SwagWinners.jsx);
+   nothing while Admin › Top networkers › Celebrate is off.
 ========================================================= */
 
 export default function SwagBanner() {
-  const s = useSwag(now().getTime());
-  if (s.stage === "off") return null;
-  const line = swagBannerLine(s);
-  const inner = (
-    <>
-      <img className="swag-banner-photo" src={SWAG_THUMB} alt="" width="600" height="508" decoding="async" />
+  const v = useNetworkers(now().getTime());
+  if (!v.before) return null;
+  return (
+    <a href={SWAG_PAGE} target="_blank" rel="noopener" className="swag-banner pressable" aria-label={`${v.title}. ${v.line} Opens how the leaderboard works`}>
+      <span className="swag-banner-ico" aria-hidden="true"><Handshake /></span>
       <span className="swag-banner-text">
-        <b>{s.title}</b>
-        <span>{line}</span>
+        <b>{v.title}</b>
+        <span>{v.line}</span>
       </span>
-      {s.stage === "announced" ? <Bell className="swag-banner-chev" aria-hidden="true" /> : <ChevronRight className="swag-banner-chev" aria-hidden="true" />}
-    </>
+      <ChevronRight className="swag-banner-chev" aria-hidden="true" />
+    </a>
   );
-  return s.stage === "announced"
-    ? <Link to="/notifications" className="swag-banner pressable" aria-label={`${s.title}. ${line}`}>{inner}</Link>
-    : (
-      <a href={SWAG_PAGE} target="_blank" rel="noopener" className="swag-banner pressable" aria-label={`${s.title}. ${line}. Opens the rules`}>{inner}</a>
-    );
 }

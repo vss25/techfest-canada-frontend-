@@ -30,7 +30,7 @@ import { StayHomeCard } from "../components/StaySignup";
 import SwagWinners from "../components/SwagWinners";
 import { SurveyFeedCard, SurveySheet } from "../components/SurveyPrompt";
 import PeopleToMeet from "../components/PeopleToMeet";
-import { useSwag } from "../lib/swagState";
+import { useNetworkers } from "../lib/swagState";
 import { refreshSurveyPrompt, snoozeSurvey, useSurveyPrompt } from "../lib/surveyState";
 import { browserStorage, winnersHiddenIn } from "../lib/celebrate";
 import { peopleToMeet, pinnedCards, surveyInFeed, winnersPinned, withPeopleToMeet } from "../lib/feedPlan";
@@ -56,8 +56,9 @@ import { useDirectory, useRecommendations } from "../lib/useRecommendations";
    Oct 26 2026 (the organiser: "Show the survey in the feed …,
    winners of the networking in the feed, and people-to-meet
    recommendations to book time in the feed"; lib/feedPlan.js): the
-   swag kit winners pinned first for 24 h after they're announced
-   (components/SwagWinners.jsx), then the survey card while the
+   top networkers (appreciation, not a prize, since Oct 27) pinned
+   first for 24 h after they're announced, "Our top networkers are
+   in" (components/SwagWinners.jsx), then the survey card while the
    server offers it (components/SurveyPrompt.jsx, "Not now" for a
    day, and a one-time sheet from the opening), then the posts with
    "People to meet" after the 2nd and the 12th post
@@ -411,11 +412,11 @@ export default function Home() {
   const posts = s.feed.filter((p) => !s.blocked.includes(p.authorId));
   // "Earn points" cards in the feed: never first, a shuffle that stays put for the day (lib/feedCtas.js).
   const feed = useFeedCtas(posts, now);
-  // The top of the feed (lib/feedPlan.js): the swag kit winners (24 h), then the survey; People to meet in the posts.
-  const swag = useSwag(now);
+  // The top of the feed (lib/feedPlan.js): the top networkers (24 h), then the survey; People to meet in the posts.
+  const networkers = useNetworkers(now);
   const [winnersOff, setWinnersOff] = useState(false);
-  const winners = swag.stage === "announced" ? swag.winners || [] : [];
-  const showWinners = signedIn && winnersPinned({ stage: swag.stage, winners, announcedAt: swag.announcedAt, now, hidden: winnersOff || winnersHiddenIn(browserStorage(), winners) });
+  const winners = networkers.winners;
+  const showWinners = signedIn && winnersPinned({ stage: winners.length ? "announced" : "", winners, announcedAt: networkers.announcedAt, now, hidden: winnersOff || winnersHiddenIn(browserStorage(), winners) });
   const survey = useSurveyPrompt();
   const showSurvey = signedIn && surveyInFeed({ data: survey.prompt, snoozedUntil: survey.snoozedUntil, now });
   const pinnedTop = pinnedCards({ winners: showWinners, survey: showSurvey });

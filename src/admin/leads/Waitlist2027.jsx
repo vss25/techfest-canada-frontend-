@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Download, ExternalLink, Handshake, Info, ListPlus, Search, Store, Users, UsersRound } from "lucide-react";
+import { BadgeCheck, ChevronLeft, ChevronRight, Download, ExternalLink, Handshake, Info, ListPlus, Search, Store, Users, UsersRound } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { ADMIN_API, getToken } from "../api";
 import { useAdmin } from "../adminContext";
@@ -33,15 +33,17 @@ import JourneyEditor from "./JourneyEditor";
 ========================================================= */
 
 const PAGE = 50;
+// "delegate" (attending as a delegate) since Oct 27 2026, first, as on the form (src/lib/stayUpdated.js INTERESTS).
 const INTERESTS = [
-  { key: "sponsorship", label: "Sponsorship", icon: Handshake, tone: "purple" },
+  { key: "delegate", label: "Delegate", icon: BadgeCheck, tone: "good" },
   { key: "exhibitor", label: "Exhibitor", icon: Store, tone: "orange" },
+  { key: "sponsorship", label: "Sponsorship", icon: Handshake, tone: "purple" },
   { key: "delegation", label: "Delegation", icon: UsersRound, tone: "pink" },
 ];
 // "programme": the form at the bottom of the website's /programme page (Oct 24 2026).
 const SOURCES = [["website", "Website"], ["webapp", "Web app"], ["ios", "iOS app"], ["android", "Android app"], ["programme", "Website programme page"]];
 const SOURCE_LABEL = Object.fromEntries(SOURCES);
-const BADGE_TONE = { sponsorship: "purple", exhibitor: "orange", delegation: "pink" };
+const BADGE_TONE = { delegate: "good", sponsorship: "purple", exhibitor: "orange", delegation: "pink" };
 
 const TEAM = { sent: ["good", "Sent"], failed: ["bad", "Failed"], sending: ["purple", "Sending…"] };
 const PERSON = {
@@ -107,7 +109,7 @@ function SignUps() {
 
   return (
     <>
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatTile label="On the waitlist" value={data ? (counts.total ?? 0).toLocaleString() : "…"} icon={ListPlus} tone="pink" />
         {INTERESTS.map((i) => <StatTile key={i.key} label={i.label} value={data ? (counts[i.key] ?? 0).toLocaleString() : "…"} icon={i.icon} tone={i.tone} />)}
         <StatTile label="Attending only" value={data ? (counts.attending ?? 0).toLocaleString() : "…"} icon={Users} tone="neutral" hint="Nothing ticked" />
@@ -173,7 +175,7 @@ function SignUps() {
                   </td>
                   <td>
                     {r.interests.length
-                      ? <span className="flex flex-wrap gap-1">{r.interests.map((k, i) => <Badge key={k} tone={BADGE_TONE[k]}>{r.interestLabels[i]}</Badge>)}</span>
+                      ? <span className="flex flex-wrap gap-1">{r.interests.map((k, i) => <Badge key={k} tone={BADGE_TONE[k] || "neutral"}>{r.interestLabels?.[i] || INTERESTS.find((x) => x.key === k)?.label || k}</Badge>)}</span>
                       : <span className="text-xs text-ttfc-muted">Attending</span>}
                   </td>
                   <td className="whitespace-nowrap text-xs text-ttfc-muted">

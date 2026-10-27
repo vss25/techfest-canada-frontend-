@@ -3,7 +3,7 @@ import {
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
-import { ClipboardList, Gavel, Gift, LifeBuoy, ListChecks, ListPlus, Network, Trophy } from "lucide-react";
+import { ClipboardList, Gavel, Gift, LifeBuoy, ListChecks, ListPlus, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
    Sidebar structure (the admin review, Oct 19 2026): five sections
@@ -78,6 +78,8 @@ export const NAV = [
       { to: "app/text", label: "App text & switches", icon: ToggleRight },
       { to: "app/invite", label: "App invite email", icon: MailPlus },
       { to: "app/swag", label: "Swag kit giveaway", icon: Gift },
+      // The attendee survey (Oct 26 2026): its questions, settings, answers, and the app notification and email.
+      { to: "app/survey", label: "Attendee survey", icon: MessageSquareText },
       { to: "app/digest", label: "“What you missed” emails", icon: MailOpen },
       { to: "app/unsubscribes", label: "Unsubscribed emails", icon: MailX },
     ],

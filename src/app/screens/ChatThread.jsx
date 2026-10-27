@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { ArrowUp, CircleEllipsis, Flag, Hand, IdCard } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth } from "../lib/auth";
@@ -21,6 +21,9 @@ import { receiptOf } from "../lib/receipts";
    screen (which also moves the ticks on your messages:
    sent, delivered, read). You don't need an accepted
    connection unless staff switched their messages off.
+   Opened with { state: { draft } } (Home's "People to meet" › Book
+   time, Oct 26 2026): the composer starts with that message, for
+   them to change or send; nothing is sent by itself.
 ========================================================= */
 
 export default function ChatThread() {
@@ -29,7 +32,8 @@ export default function ChatThread() {
   const a = useStore(auth);
   const s = useStore(social);
   const [peer, setPeer] = useState(() => s.people.find((p) => p.id === id) || s.threads.find((t) => t.user?.id === id)?.user || null);
-  const [draft, setDraft] = useState("");
+  const location = useLocation();
+  const [draft, setDraft] = useState(() => (typeof location.state?.draft === "string" ? location.state.draft.slice(0, 2000) : ""));
   const [sending, setSending] = useState(false);
   const bottom = useRef(null);
   const messages = s.messages[id];

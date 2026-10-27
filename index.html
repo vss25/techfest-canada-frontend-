@@ -164,6 +164,25 @@
       })();
     </script>
 
+    <!-- The attendee survey's personal links (/survey?t=<token>, from the apps and the survey
+         email, Oct 26 2026): move the token out of the address bar before any analytics script
+         reads the page URL. Kept for this tab; src/pages/Survey.jsx passes it to the server. -->
+    <script>
+      (function () {
+        try {
+          if (location.pathname.replace(/\/+$/, "").toLowerCase() !== "/survey") return;
+          var q = new URLSearchParams(location.search);
+          var t = q.get("t");
+          if (t === null) return;
+          window.__ttfcSurveyToken = t;
+          try { sessionStorage.setItem("ttfc.surveyToken", t); } catch (e) { /* memory only */ }
+          q.delete("t");
+          var qs = q.toString();
+          history.replaceState(history.state, "", location.pathname + (qs ? "?" + qs : "") + location.hash);
+        } catch (e) { /* Survey.jsx reads and clears the address bar itself */ }
+      })();
+    </script>
+
     <!-- Staff panel (/admin, /admin-login): its light / dark choice (System, Light or Dark,
          saved in this browser by src/admin/theme.js) is applied before the first paint,
          so the panel never flashes the other theme. Nothing happens on other pages. -->

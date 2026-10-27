@@ -3,11 +3,11 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Building2, Check, Cpu, QrCode, ScanLine, Sparkles, Users, X, Heart, IdCard, Bookmark, ListFilter, Eye } from "lucide-react";
 import { useStore } from "../lib/store";
 import { auth, isSignedIn } from "../lib/auth";
-import { cms, nameKey, sessionById, speakerById, speakerByName } from "../lib/cms";
 import { content, text } from "../lib/content";
-import { bookmarks, canMessage, canRequest, refreshConnections, refreshPeople, refreshThreads, social } from "../lib/social";
+import { refreshConnections, refreshPeople, refreshThreads, social } from "../lib/social";
 import { APPLIED_SECTORS, TECH_PILLARS } from "../lib/config";
-import { recoSignals, recommend, topicPoints } from "../lib/people";
+import { recoSignals, topicPoints } from "../lib/people";
+import { useDirectory, useRecommendations } from "../lib/useRecommendations";
 import { givenName } from "../lib/ui";
 import { DoneButton, IconButton, Popover, Segmented, Sheet, Spinner, TopBar } from "../components/ui";
 import { FilterSelect, SearchField } from "../components/Filters";
@@ -40,37 +40,6 @@ const SECTIONS = [
   { id: "staff", label: "Staff" },
 ];
 const GUEST_SECTIONS = ["connected", "speakers"];
-
-/** People with speaker details filled in from the CMS where the account doesn't have them. */
-function useDirectory() {
-  const s = useStore(social);
-  const c = useStore(cms);
-  return useMemo(() => s.people.map((p) => {
-    const sp = speakerByName(p.name, c);
-    if (!sp) return p;
-    return {
-      ...p,
-      jobTitle: p.jobTitle || sp.title, organization: p.organization || sp.company,
-      avatarUrl: p.avatarUrl || sp.photo, kind: p.kind || "speaker",
-    };
-  }), [s.people, c]);
-}
-
-/** Recommendations for every card ("Recommended" under the name) and the Recommended section. */
-function useRecommendations(people) {
-  const s = useStore(social);
-  const a = useStore(auth);
-  const c = useStore(cms);
-  return useMemo(() => {
-    const me = a.me || {};
-    const saved = bookmarks(s).map((id) => sessionById(id, c)).filter(Boolean);
-    const keys = new Map();
-    for (const x of saved) for (const id of x.speakerIds) { const sp = speakerById(id, c); if (sp) keys.set(nameKey(sp.name), x.title); }
-    const connected = new Set([...s.connections.accepted, ...s.connections.outgoing, ...s.connections.incoming].map((x) => x.user?.id));
-    return recommend(people, { id: me.id, topics: me.topics || [], jobTitle: me.jobTitle || "", organization: me.organization || "", tagline: me.tagline || "", savedSessions: saved, savedSpeakerKeys: keys },
-      { connectedIds: connected, canContact: (p) => canMessage(p, s) || canRequest(p, s), isBlocked: (id) => s.blocked.includes(id) });
-  }, [people, s, a.me, c]);
-}
 
 /** "Why Maya": the reasons, in a popover by the dashed "Recommended". */
 function useWhy() {

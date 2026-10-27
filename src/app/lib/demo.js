@@ -55,7 +55,18 @@ const DEMO_AVAILABILITY = {
     availabilitySlots: ["d2-12", "d2-14", "d2-16", "d2-18"], meetingSpot: "",
     availabilitySpots: { "d2-12": "Harbour Ballroom foyer", "d2-14": "Harbour Ballroom foyer", "d2-16": "Expo floor", "d2-18": "Expo floor" },
   },
+  // Home's "People to meet" (Oct 26 2026): a few more with a free time, so "Book time" shows on both days.
+  "p-daniel": { availabilitySlots: ["d1-14", "d2-10", "d2-12"], availabilitySpots: {}, meetingSpot: "Coffee bar" },
+  "p-grace": { availabilitySlots: ["d1-16", "d2-14", "d2-16"], availabilitySpots: { "d2-16": "Pier 4 & 5 foyer" }, meetingSpot: "Hotel lobby" },
+  "p-fatima": { availabilitySlots: ["d2-08", "d2-10"], availabilitySpots: {}, meetingSpot: "Registration desk" },
 };
+
+/* The swag kit winners in the demo (GET /api/app/swag once announced, Oct 26 2026): the demo leaderboard's top three. */
+const DEMO_WINNERS = [
+  { rank: 1, name: "Daniel Okafor", organization: "Lakeshore Insurance", avatarUrl: "", points: 640, userId: "p-daniel" },
+  { rank: 2, name: "Dr. Maya Singh", organization: "Aurora Financial", avatarUrl: "", points: 410, userId: "p-maya" },
+  { rank: 3, name: "Priya Raman", organization: "DHL", avatarUrl: "", points: 255, userId: "p-priya" },
+];
 
 /* Your messages' ticks (lib/receipts.js): read (Hannah), delivered (Priya), sent (Daniel hasn't opened
    the app since), held for review (Sofia). Times in the future show once they've passed. */
@@ -728,12 +739,25 @@ export async function demoBackend(path, { method = "GET", body = {} } = {}) {
   }
   // The giveaway as the server works it out (backend GET /api/app/swag), from the same demo settings.
   if (is("GET", "app/swag")) {
-    const g = swagFrom({ "swag.enabled": true, "swag.kits": 3 }, clockNow().getTime());
+    const t = clockNow().getTime();
+    const g = swagFrom({ "swag.enabled": true, "swag.kits": 3 }, t);
+    const announcedNow = g.stage === "announced";
+    // Demo only: the feed pins the winners for 24 h after they're announced, so the demo keeps the announcement recent.
+    const announcedAt = announcedNow ? new Date(Math.max(g.announce, t - 30 * 60000)).toISOString() : null;
     return {
+      ...(announcedNow ? { winners: DEMO_WINNERS, announcedAt } : {}),
       enabled: g.enabled, title: g.title, kits: g.kits, cutoff: SWAG_DEFAULTS["swag.cutoff"], announce: SWAG_DEFAULTS["swag.announce"],
       cutoffLabel: g.cutoffLabel, cutoffShort: g.cutoffShort, announceLabel: g.announceLabel, rules: g.rules, appOnly: true, pitch: g.pitch,
-      phase: g.stage === "off" ? "open" : g.stage, announced: false, rulesUrl: SWAG_URL, photoUrl: `https://www.thetechfestival.com${SWAG_PHOTO}`,
+      phase: g.stage === "off" ? "open" : g.stage, announced: announcedNow, rulesUrl: SWAG_URL, photoUrl: `https://www.thetechfestival.com${SWAG_PHOTO}`,
       installUrl: "https://www.thetechfestival.com/app/install",
+    };
+  }
+  // The survey (GET /api/app/survey, Oct 26 2026): offered all the time in the demo; /survey?t=demo is a sample
+  // survey that never sends anything (src/lib/survey.js DEMO_SURVEY).
+  if (is("GET", "app/survey")) {
+    return {
+      show: true, opensAt: "2026-10-27T16:00:00-04:00", title: "How was TTFC 2026?",
+      body: "Two minutes of your time helps us plan TTFC 2027. Skip anything you like.", cta: "Take the survey", url: "/survey?t=demo",
     };
   }
   if (is("GET", "status")) return { live: true, message: "" };

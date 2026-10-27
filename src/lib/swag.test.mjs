@@ -73,3 +73,23 @@ test("the server's answer (GET /api/app/swag)", () => {
   assert.equal(swagFromApi(null), null);
   assert.equal(swagFromApi({ error: "x" }), null);
 });
+
+test("winners (Oct 26 2026): only once announced, in rank order, tidied", async () => {
+  const { swagWinnersFrom } = await import("./swag.js");
+  const base = { enabled: true, kits: 3, cutoff: "2026-10-26T16:00:00-04:00", announce: "2026-10-26T17:00:00-04:00", phase: "announced", announced: true };
+  const winners = [
+    { rank: 2, name: " Maya Singh ", organization: "Aurora", avatarUrl: "/f/m.jpg", points: "410", userId: "u2" },
+    { rank: 1, name: "Daniel Okafor", organization: "Lakeshore", points: 640, userId: "u1" },
+    { rank: 3, name: "", points: 1, userId: "u3" },
+    { rank: 4, name: "Again", points: 2, userId: "u1" },
+    null,
+  ];
+  const s = swagFromApi({ ...base, winners });
+  assert.deepEqual(s.winners.map((w) => [w.rank, w.name, w.points, w.userId]), [[1, "Daniel Okafor", 640, "u1"], [2, "Maya Singh", 410, "u2"]]);
+  assert.equal(s.winners[1].avatarUrl, "/f/m.jpg");
+  assert.equal(s.announcedAt, Date.parse("2026-10-26T17:00:00-04:00"));
+  assert.equal(swagFromApi({ ...base, winners, announcedAt: "2026-10-26T17:12:00-04:00" }).announcedAt, Date.parse("2026-10-26T17:12:00-04:00"));
+  assert.equal(swagFromApi({ ...base, winners, announced: { at: "2026-10-26T17:20:00-04:00" } }).announcedAt, Date.parse("2026-10-26T17:20:00-04:00"));
+  assert.deepEqual(swagFromApi({ ...base, phase: "closed", winners }).winners, []);
+  assert.deepEqual(swagWinnersFrom("x"), []);
+});

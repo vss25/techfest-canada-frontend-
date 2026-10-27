@@ -11,7 +11,10 @@ import { loadAttending, openAttending } from "../lib/engage";
 import { now, torontoDate } from "../lib/time";
 import { Avatar, Segmented, Spinner, Switch, TopBar } from "../components/ui";
 import SwagBanner from "../components/SwagBanner";
-import { refreshSwag } from "../lib/swagState";
+import SwagWinners from "../components/SwagWinners";
+import Podium from "../components/Podium";
+import { refreshSwag, useSwag } from "../lib/swagState";
+import { fromBoard, podiumSplit } from "../lib/podium";
 
 /* =========================================================
    Points (iOS PointsView, Android ui/points/PointsScreen.kt).
@@ -27,7 +30,12 @@ import { refreshSwag } from "../lib/swagState";
    The order and rules are in lib/pointsPlan.js (pure, tested).
    Batch 7: the swag kit banner at the top of the Leaderboard tab
    while the giveaway is on (components/SwagBanner.jsx).
-   Nothing here animates (Reduce Motion needs nothing extra).
+   Oct 26 2026: the top three stand on a podium (2–1–3, bigger
+   photos, gold / silver / bronze, components/Podium.jsx); the list
+   from the 4th on is as before. Once the swag kit winners are
+   announced (GET /api/app/swag sends them), "TTFC swag kit winners"
+   replaces the banner (components/SwagWinners.jsx), with confetti
+   the first time on this device; Reduce Motion: no confetti.
 ========================================================= */
 
 const TABS = [{ value: "board", label: "Leaderboard" }, { value: "activity", label: "Your activity" }];
@@ -68,9 +76,14 @@ export default function Points() {
 function BoardTab({ me, board, savingPrefs, onToggle }) {
   const a = useStore(auth);
   const myId = a.me?.id || a.user?._id || "";
+  const swag = useSwag(now().getTime());
+  const winners = swag.stage === "announced" ? swag.winners || [] : [];
+  const entries = board?.entries || [];
+  const { podium } = podiumSplit(entries);
+  const rest = entries.slice(podium.length);
   return (
     <div role="tabpanel" aria-label="Leaderboard" className="stack">
-      <SwagBanner />
+      {winners.length ? <SwagWinners winners={winners} /> : <SwagBanner />}
       <div className="points-me" role="group" aria-label={`${me.rank ? `Your rank: ${me.rank}` : "Not ranked yet"}. ${me.level?.name || ""}. ${me.total} points`}>
         <b className="points-me-rank figure" aria-hidden="true">{me.rank ? `#${me.rank}` : "–"}</b>
         <span style={{ flex: 1, minWidth: 0 }} aria-hidden="true">
@@ -85,9 +98,11 @@ function BoardTab({ me, board, savingPrefs, onToggle }) {
       <div className="points-switch">
         <Switch label="Show me on the leaderboard" checked={!me.hideFromLeaderboard} onChange={onToggle} disabled={savingPrefs} />
       </div>
-      {board?.entries?.length ? (
-        <ol className="board-list">
-          {board.entries.map((e) => {
+      {entries.length ? (
+        <>
+        <div className="board-podium"><Podium people={podium.map(fromBoard)} myId={myId} label="Top 3 on the leaderboard" /></div>
+        {rest.length > 0 && <ol className="board-list" start={4} aria-label="The leaderboard from 4th">
+          {rest.map((e) => {
             const mine = !!myId && e.user.id === myId;
             return (
               <li key={e.user.id} className={mine ? "board-row is-me" : "board-row"}>
@@ -101,7 +116,8 @@ function BoardTab({ me, board, savingPrefs, onToggle }) {
               </li>
             );
           })}
-        </ol>
+        </ol>}
+        </>
       ) : <p className="small muted" style={{ margin: 0 }}>Be the first on the board: save a session or make a connection.</p>}
     </div>
   );

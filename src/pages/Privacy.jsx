@@ -174,14 +174,16 @@ var SECTIONS_APP = [
       "Profile details you choose to add: title, organisation, country, LinkedIn URL, job level and function, topics, goals, tagline, profile photo, meeting availability and, if you choose, salutation and gender. If you answered these on the ticket checkout, the app pre-fills them so you are not asked twice",
       "Contact details you choose to add (for example a phone number, extra email or social handles) and which of them you share: with each person you connect with, and with anyone who scans the QR code on your pass (in your email, PDF ticket, Apple Wallet or the app). You choose what is shared in the app's sharing settings. Only the people you share them with can see them",
       "Connecting by scanning a pass: if you scan another attendee's pass QR code in the app, you are connected with them, they are notified that you connected, and each of you receives the contact details the other has chosen to share. At the event entrance, TTFC staff and volunteers scan passes to check people in",
-      "Content you create: posts, comments, discussions, direct and group messages, session questions, poll votes and connection requests",
+      "Content you create: posts, comments, discussions, direct and group messages, session questions, poll votes, connection requests and the people you tag (@mention) in posts and comments, who are notified and whose name links to their profile",
       "Usage: screens you open, what you tap and search for, and the topics you look at, linked to your account (you can turn this off in Settings → Privacy & data)",
       "Device: app version, an anonymous device identifier and, if you allow notifications, a push token used to deliver notifications",
       "The camera is used only to scan ticket and connection QR codes; images are not stored or sent",
       "Help & SOS: if you send a request, your name, the contact details on your account, the category, where you are at the venue and your message go to TTFC staff only, so they can reach you. Help & SOS is not an emergency service: in an emergency, call 911",
       "Notifications: messages, replies, mentions, connection requests and announcements, and optional \"What you missed\" emails. Choose which you get in Settings → Notifications, or turn notifications off in your phone's settings",
       "Read receipts: in direct and group messages, the sender can see when you have read their message",
-      "Points and the leaderboard: your points come from what you do in the app, including sessions or polls you choose to share on LinkedIn. If \"Show me on the leaderboard\" is on, other attendees see your name, photo and points there, and swag kit winners may be announced in the app",
+      "Points and the leaderboard: your points come from what you do in the app, including sessions or polls you choose to share on LinkedIn. If \"Show me on the leaderboard\" is on, other attendees see your name, photo and points there, and the swag kit winners' names, photos, organisations and points are shown in the app's feed and on the leaderboard",
+      "People to meet: the app suggests attendees you may want to meet, worked out from your profile and theirs (topics, titles, organisations, shared availability) and what you look at in the app. Suggestions only help you network; you can ignore them, and booking time with someone just sends them your request",
+      "Feedback survey: after the event the app and our website invite attendees to an optional feedback survey. Your answers and the name, email, title and organisation you give go to the TTFC team to improve future events. Every question except your name and email can be skipped or answered \"N/A\". Only if you tick the consent box may we quote your \"In your words\" answers, with your name, title and organisation, when promoting future TTFC events to delegates, exhibitors and sponsors. You can ask us to remove your answers at legal@thetechfestival.com",
       "Sharing: when you share to LinkedIn or another app, we only record that you shared (for points). What you post there is covered by that service's own privacy policy",
       "Your organisation: the organisation on your profile can appear in the app's list of attending organisations, with a logo we may find from its website or from your work email's domain (never the full address)",
     ],
@@ -408,7 +410,7 @@ export default function Privacy() {
         <PolicyBlock
           title="Privacy Policy"
           subtitle="The Tech Festival Canada"
-          effective="October 24, 2026"
+          effective="October 27, 2026"
           intro="This website thetechfestival.com is organized by AtlasLink Markets Inc. We are responsible for the personal information handled through this site and related event services. This Privacy Policy explains how we collect, use, disclose, store, and protect personal information when you visit thetechfestival.com or interact with The Tech Festival Canada event services. We aim to comply with applicable Canadian privacy laws, including the Personal Information Protection and Electronic Documents Act and relevant provincial private sector privacy laws where they apply."
           sections={SECTIONS_PRIVACY}
           dark={dark}
@@ -449,7 +451,7 @@ export default function Privacy() {
           <PolicyBlock
             title="The TTFC App"
             subtitle="Privacy and Terms for the mobile app"
-            effective="October 24, 2026"
+            effective="October 27, 2026"
             intro="These sections apply to the TTFC mobile app in addition to the Privacy Policy and Terms of Use above. The full app versions are also shown inside the app (Settings → Privacy & data)."
             sections={SECTIONS_APP}
             dark={dark}

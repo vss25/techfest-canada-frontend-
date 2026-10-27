@@ -1896,3 +1896,79 @@ textarea.input--ios { min-height: 120px; }
 .store-prompt p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--tx2); }
 .store-prompt-badge { margin: 8px 0 2px; }
 .store-prompt-later { font-size: 16px; color: var(--tx2); }
+
+/* The top three as a podium (components/Podium.jsx, Oct 26 2026): Points › Leaderboard and the swag kit winners.
+   2nd · 1st · 3rd; gold, silver and bronze rings, medals and steps. Nothing moves. */
+.podium { list-style: none; margin: 0; padding: 6px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 8px; }
+.podium-spot { grid-row: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; text-align: center; }
+.podium-spot--gold { --medal: linear-gradient(135deg, #ffe39a 0%, #f5b81f 48%, #c98a0b 100%); --medal-solid: #f5b81f; }
+.podium-spot--silver { --medal: linear-gradient(135deg, #f6f8fb 0%, #c3cad4 50%, #8e98a6 100%); --medal-solid: #a9b2be; }
+.podium-spot--bronze { --medal: linear-gradient(135deg, #f5c9a2 0%, #cd7f3f 50%, #8f5021 100%); --medal-solid: #cd7f3f; }
+.podium-photo { position: relative; display: inline-flex; margin-bottom: 8px; }
+.podium-ring { display: inline-flex; padding: 3px; border-radius: 50%; background: var(--medal); box-shadow: 0 6px 18px color-mix(in srgb, var(--medal-solid) 38%, transparent); }
+.podium-ring .avatar { box-shadow: 0 0 0 2px var(--surface); background: linear-gradient(var(--pur-tint), var(--pur-tint)), var(--surface); }
+.podium-medal { position: absolute; right: -3px; bottom: -5px; width: 27px; height: 27px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--medal); color: #2b1a00; font-size: 13px; font-weight: 800; box-shadow: 0 0 0 2px var(--surface); font-variant-numeric: tabular-nums; }
+.podium-spot--tall .podium-medal { width: 31px; height: 31px; font-size: 15px; }
+.podium-name { max-width: 100%; font-size: 13.5px; line-height: 1.25; }
+.podium-spot--tall .podium-name { font-size: 14.5px; }
+.podium-you { font-weight: 500; color: var(--tx2); }
+.podium-spot.is-me .podium-name { color: var(--pur-alt); }
+.podium-org { max-width: 100%; font-size: 11.5px; color: var(--tx2); }
+.podium-points { margin-top: 2px; font-size: 15px; color: var(--pur-alt); }
+.podium-points span { font-size: 11.5px; font-weight: 600; color: var(--tx2); }
+.podium-step { align-self: stretch; margin-top: 8px; display: grid; place-items: center; border-radius: 12px 12px 4px 4px; font-size: 18px; font-weight: 800;
+  color: color-mix(in srgb, var(--medal-solid) 75%, var(--tx)); border: 1px solid color-mix(in srgb, var(--medal-solid) 40%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--medal-solid) 30%, transparent), color-mix(in srgb, var(--medal-solid) 6%, transparent)); }
+.podium-spot--tall .podium-step { height: 62px; }
+.podium-spot--mid .podium-step { height: 42px; }
+.podium-spot--low .podium-step { height: 28px; }
+.podium--compact .podium-spot--tall .podium-step { height: 46px; }
+.podium--compact .podium-spot--mid .podium-step { height: 30px; }
+.podium--compact .podium-spot--low .podium-step { height: 20px; }
+.board-podium { padding: 4px 0 6px; }
+
+/* "TTFC swag kit winners" (components/SwagWinners.jsx, Oct 26 2026): on Points and pinned first in the feed. */
+.winners-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--r-card); border: 1.5px solid rgba(245, 166, 35, 0.55);
+  background: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(245, 166, 35, 0.16) 0%, transparent 70%), var(--surface); }
+.winners-card--feed { border-radius: 0; border-left: 0; border-right: 0; padding: 14px 16px 16px; }
+@media (min-width: 660px) { .winners-card--feed { border-radius: var(--r-card); border: 1.5px solid rgba(245, 166, 35, 0.55); } }
+.winners-head { display: flex; align-items: center; gap: 10px; }
+.winners-ico { flex: none; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: rgba(245, 166, 35, 0.18); color: var(--gold); }
+.winners-ico svg { width: 20px; height: 20px; }
+.winners-title { flex: 1; min-width: 0; margin: 0; font-size: 17px; font-weight: 800; line-height: 1.25; }
+.winners-sub { margin: -4px 0 0; font-size: 13.5px; line-height: 1.4; color: var(--tx2); }
+.winners-won { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 10px 12px; border-radius: var(--r-control); background: linear-gradient(135deg, #7a3fd1 0%, #d9468f 100%); color: #fff; font-size: 14px; line-height: 1.4; }
+.winners-won svg { flex: none; width: 20px; height: 20px; }
+.winners-rest { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.winners-card .feed-cta-btn svg { order: 2; }
+
+/* The survey (components/SurveyPrompt.jsx, Oct 26 2026): the feed card and the one-time sheet. */
+.feed-cta--survey { border-color: color-mix(in srgb, var(--pur) 45%, var(--border)); }
+.survey-sheet { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 20px 4px; text-align: center; }
+.survey-sheet-ico { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: var(--pur-tint); color: var(--pur-alt); }
+.survey-sheet-ico svg { width: 28px; height: 28px; }
+.survey-sheet h2 { margin: 4px 0 0; font-size: 22px; font-weight: 800; line-height: 1.25; }
+.survey-sheet p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--tx2); }
+.survey-sheet .btn { margin-top: 8px; justify-content: center; }
+.survey-sheet-later { font-size: 16px; color: var(--tx2); }
+
+/* "People to meet" in the feed (components/PeopleToMeet.jsx, Oct 26 2026): a row that scrolls sideways. */
+.ptm { padding: 14px 0 16px; background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+@media (min-width: 660px) { .ptm { border: 1px solid var(--border); border-radius: var(--r-card); } }
+.ptm-head { padding: 0 16px; }
+.ptm-head h3 { gap: 8px; margin: 0; font-size: 15px; font-weight: 700; }
+.ptm-head h3 svg { width: 18px; height: 18px; color: var(--pur-alt); }
+.ptm-list { list-style: none; margin: 10px 0 0; padding: 2px 16px 4px; display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 16px;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: none; }
+.ptm-list::-webkit-scrollbar { display: none; }
+.ptm-tile { flex: 0 0 196px; scroll-snap-align: start; display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 16px; background: var(--elevated); border: 1px solid var(--border); min-width: 0; }
+.ptm-who { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; color: inherit; text-decoration: none; border-radius: 12px; }
+.ptm-name { font-size: 14.5px; line-height: 1.25; }
+.ptm-work { font-size: 12.5px; line-height: 1.35; color: var(--tx2); }
+.ptm-why, .ptm-slot { display: flex; gap: 5px; align-items: flex-start; font-size: 12px; line-height: 1.35; }
+.ptm-why { color: var(--tx2); }
+.ptm-slot { color: var(--tx); font-weight: 600; }
+.ptm-why svg, .ptm-slot svg { flex: none; width: 13px; height: 13px; margin-top: 1px; color: var(--pur-alt); }
+.ptm-btn { align-self: stretch; margin-top: 4px; }
+.ptm-btn svg { width: 16px; height: 16px; }

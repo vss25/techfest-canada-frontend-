@@ -7,7 +7,8 @@
      GET   /console/broadcasts/scheduled → { items, quietHours: { from: "22:00", to: "08:00", tz: "America/Toronto" } }
      item: { id, sendAt, title, body, linkUrl, feedPost, banner, notify, audience: "app" | "checkedIn", status:
              scheduled | sending | sent | cancelled | failed | missed, sentAt, recipients, postId, error, createdByName,
-             updatedByName, createdAt, updatedAt, estimate }
+             updatedByName, createdAt, updatedAt, estimate }   audience "outdated" too: app users on an older version
+             than Admin › App updates › newest (Oct 27 2026)
      POST  /console/broadcasts/scheduled → 201 item | 400 { error, field }
      PATCH /console/broadcasts/scheduled/:id → item | 409 unless still scheduled
      POST  /console/broadcasts/scheduled/:id/cancel, …/:id/send-now
@@ -32,6 +33,22 @@ export const QUICK_LINKS = Object.freeze([
 export const AUDIENCES = Object.freeze([
   { key: "app", label: "Everyone on the app" },
   { key: "checkedIn", label: "Checked-in only" },
+  { key: "outdated", label: "People on an older app version", hint: "Use after a new version is live and App updates › newest is set" },
+]);
+const AUDIENCE_KEYS = AUDIENCES.map((a) => a.key);
+export const audienceOf = (v) => (AUDIENCE_KEYS.includes(v) ? v : "app");
+
+/** Ready-made updates the form can start from. */
+export const TEMPLATES = Object.freeze([
+  {
+    key: "update-app", label: "Update the app",
+    fill: Object.freeze({
+      title: "Update the TTFC app",
+      body: "A new version of the TTFC app is out. Update now to see today's top networkers, people to meet and more.",
+      linkUrl: "https://www.thetechfestival.com/app/install",
+      notify: true, feedPost: false, banner: false, audience: "outdated",
+    }),
+  },
 ]);
 export const STATUS = Object.freeze({
   scheduled: { label: "Scheduled", tone: "purple" },
@@ -110,7 +127,7 @@ export function draftFrom(item) {
   return {
     id: String(item?.id ?? ""), sendAt: torontoLocalInput(parseToronto(item?.sendAt)), title: String(item?.title ?? ""), body: String(item?.body ?? ""),
     linkUrl: String(item?.linkUrl ?? ""), feedPost: item?.feedPost !== false, banner: item?.banner === true, notify: item?.notify !== false,
-    audience: item?.audience === "checkedIn" ? "checkedIn" : "app",
+    audience: audienceOf(item?.audience),
   };
 }
 
@@ -134,7 +151,7 @@ export function checkDraft(d, now = Date.now(), quiet = DEFAULT_QUIET) {
 export function bodyFrom(d) {
   return {
     sendAt: torontoIso(d.sendAt), title: d.title.trim(), body: d.body.trim(), linkUrl: String(d.linkUrl ?? "").trim(),
-    feedPost: !!d.feedPost, banner: !!d.banner, notify: !!d.notify, audience: d.audience === "checkedIn" ? "checkedIn" : "app",
+    feedPost: !!d.feedPost, banner: !!d.banner, notify: !!d.notify, audience: audienceOf(d.audience),
   };
 }
 

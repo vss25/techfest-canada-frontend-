@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  DEFAULT_QUIET, QUICK_LINKS, blankDraft, bodyFrom, checkDraft, clock12, draftFrom, inQuietHours, linkOk, quietFrom, quietLabel, reachText, sortItems,
+  AUDIENCES, DEFAULT_QUIET, QUICK_LINKS, TEMPLATES, audienceOf, blankDraft, bodyFrom, checkDraft, clock12, draftFrom, inQuietHours, linkOk, quietFrom, quietLabel, reachText, sortItems,
   whenET,
 } from "./scheduled.js";
 
@@ -70,4 +70,24 @@ test("the list: still to send first (soonest first), then the rest (newest first
   assert.equal(reachText(items[3]), "About 1 person");
   assert.equal(reachText(items[2]), "");
   assert.deepEqual(sortItems(null), []);
+});
+
+test("people on an older app version, and the Update the app template", () => {
+  assert.deepEqual(AUDIENCES.map((a) => a.key), ["app", "checkedIn", "outdated"]);
+  assert.equal(AUDIENCES[2].label, "People on an older app version");
+  assert.equal(AUDIENCES[2].hint, "Use after a new version is live and App updates › newest is set");
+  assert.equal(audienceOf("outdated"), "outdated");
+  assert.equal(audienceOf("everyone"), "app");
+  const t = TEMPLATES.find((x) => x.key === "update-app");
+  assert.equal(t.label, "Update the app");
+  assert.deepEqual({ ...t.fill }, {
+    title: "Update the TTFC app",
+    body: "A new version of the TTFC app is out. Update now to see today's top networkers, people to meet and more.",
+    linkUrl: "https://www.thetechfestival.com/app/install", notify: true, feedPost: false, banner: false, audience: "outdated",
+  });
+  const NOW = Date.parse("2026-10-27T15:00:00-04:00");
+  const d = { ...blankDraft(NOW), ...t.fill };
+  assert.deepEqual(checkDraft(d, NOW), {});
+  assert.equal(bodyFrom(d).audience, "outdated");
+  assert.equal(draftFrom({ audience: "outdated" }).audience, "outdated");
 });

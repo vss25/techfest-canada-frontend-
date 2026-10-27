@@ -5,8 +5,8 @@ import { useApi } from "../hooks";
 import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, EmptyState, ErrorState, Field, Input, LoadingState, SectionTitle, Textarea, focusRing } from "../ui";
 import {
-  AUDIENCES, LIMITS, QUICK_LINKS, SCHEDULED_PATH, STATUS, blankDraft, bodyFrom, checkDraft, draftFrom, inQuietHours, quietFrom, quietLabel, reachText,
-  sortItems, whenET,
+  AUDIENCES, LIMITS, QUICK_LINKS, SCHEDULED_PATH, STATUS, TEMPLATES, blankDraft, bodyFrom, checkDraft, draftFrom, inQuietHours, quietFrom, quietLabel,
+  reachText, sortItems, whenET,
 } from "./scheduled";
 import { parseToronto } from "../../lib/swag";
 
@@ -16,8 +16,10 @@ import { parseToronto } from "../../lib/swag";
    "Tue Oct 27, 7:00 PM ET"), a title, the message (with a count), a
    link (quick picks: the 2027 page, Rate the app, the Feed, none),
    and where it goes: a post in the feed, the Home banner and / or a
-   notification to app users (everyone on the app, or checked-in
-   people only). Previews of the phone notification and the feed post.
+   notification to app users (everyone on the app, checked-in people
+   only, or people on an older app version). A ready-made "Update the
+   app" fills the form. Previews of the phone notification and the
+   feed post.
    Notifications aren't sent in the quiet hours (the server's, 10 PM
    to 8 AM): the form refuses those times. The list: status chips,
    who it reached (or about how many it will), Edit, Cancel and Send
@@ -146,6 +148,15 @@ export default function ScheduledBroadcasts() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card as="form" onSubmit={save} className="space-y-5" noValidate>
           <SectionTitle hint="Saved for later; nothing is sent until the time you pick.">{d.id ? "Edit the scheduled update" : "Schedule an update"}</SectionTitle>
+          <div className="-mt-2 flex flex-wrap items-center gap-2" role="group" aria-label="Start from">
+            <span className="text-xs text-ttfc-dim">Start from:</span>
+            {TEMPLATES.map((t) => (
+              <button key={t.key} type="button" onClick={() => set({ ...t.fill })}
+                className={cx("rounded-lg border border-ttfc-line px-2.5 py-1 text-xs font-semibold text-ttfc-muted transition hover:border-ttfc-purple/60 hover:text-ttfc-text", focusRing)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
           <Field label="When (Toronto time)" error={errors.sendAt} hint={Number.isFinite(at) ? whenET(at) : "Pick a date and time"}>
             {(id) => <Input id={id} type="datetime-local" value={d.sendAt} onChange={(e) => set({ sendAt: e.target.value })} aria-invalid={errors.sendAt ? true : undefined} />}
           </Field>
@@ -179,11 +190,14 @@ export default function ScheduledBroadcasts() {
             {d.notify && (
               <div className="ml-7 flex flex-wrap gap-2" role="radiogroup" aria-label="Who is notified">
                 {AUDIENCES.map((a) => (
-                  <label key={a.key} className={cx("inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-1.5 text-sm", d.audience === a.key ? "border-ttfc-purple bg-ttfc-purple/15" : "border-ttfc-line text-ttfc-muted")}>
+                  <label key={a.key} className={cx("inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-1.5 text-sm", d.audience === a.key ? "border-ttfc-purple bg-ttfc-purple/15" : "border-ttfc-line text-ttfc-muted")} title={a.hint || undefined}>
                     <input type="radio" name="sched-audience" value={a.key} checked={d.audience === a.key} onChange={() => set({ audience: a.key })} className="accent-ttfc-pink" />{a.label}
                   </label>
                 ))}
               </div>
+            )}
+            {d.notify && AUDIENCES.find((a) => a.key === d.audience)?.hint && (
+              <p className="ml-7 text-xs text-ttfc-muted">{AUDIENCES.find((a) => a.key === d.audience).hint}.</p>
             )}
             {errors.channels && <p role="alert" className="text-xs text-red-300">{errors.channels}</p>}
           </fieldset>
@@ -218,7 +232,7 @@ export default function ScheduledBroadcasts() {
                         <Badge tone={st.tone}>{st.label}</Badge>
                         {it.feedPost && <Badge icon={Newspaper}>Feed</Badge>}
                         {it.banner && <Badge icon={Home}>Banner</Badge>}
-                        {it.notify && <Badge icon={BellRing}>{it.audience === "checkedIn" ? "Checked-in" : "Everyone on the app"}</Badge>}
+                        {it.notify && <Badge icon={BellRing}>{it.audience === "checkedIn" ? "Checked-in" : it.audience === "outdated" ? "Older app version" : "Everyone on the app"}</Badge>}
                       </p>
                       <p className="mt-1 truncate text-sm font-semibold">{it.title}</p>
                       <p className="line-clamp-2 text-sm text-ttfc-muted">{it.body}</p>

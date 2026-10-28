@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { API } from "../utils/api";
@@ -8,6 +8,7 @@ import { TicketSalesNotice } from "../components/SiteNotices";
 import { promoFromUrl } from "../lib/promoOffer";
 import { PRICE_RISE, wasPrice } from "../lib/priceRise";
 import { PASS_FEATURES, PASS_FEATURE_MAP } from "../data/passFeatures";
+import { EARLY_BIRD_PATH, eventOver } from "../lib/eventOver";
 
 function CheckIcon() {
   return (
@@ -378,6 +379,8 @@ export default function Tickets() {
   const getTier = (tier) => inventory.find((i) => i.tier === tier) || null;
   const site = useSiteSettings();
   const salesClosed = site["site.ticket_sales_open"] === false;
+  // TTFC 2026 is over and sales are off: "See you soon" instead of the 2026 passes (src/lib/eventOver.js).
+  const seeYouSoon = salesClosed && eventOver();
   // The "Why upgrade" pitch only while staff have pass upgrades on (App text & switches; off by default).
   const upgradesOn = site["flag.upgrades"] === true;
 
@@ -470,6 +473,15 @@ export default function Tickets() {
         <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0, background: dark?"radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.10) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(245,166,35,0.06) 0%, transparent 70%)":"radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.05) 0%, transparent 70%)" }} />
         <div style={{ position:"relative", zIndex:1, paddingBottom:"1px" }}>
 
+          {seeYouSoon ? (
+          <div style={{ textAlign:"center", padding:"clamp(120px, 16vw, 170px) 24px clamp(90px, 12vw, 140px)", maxWidth:720, margin:"0 auto" }}>
+            <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.68rem", letterSpacing:"1.6px", textTransform:"uppercase", color: dark?"#f5a623":"#d98a14", marginBottom:18 }}>TTFC 2027 · Toronto · November 2027</div>
+            <h1 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"clamp(2.2rem, 6vw, 3.6rem)", letterSpacing:"-1px", lineHeight:1.12, marginBottom:22, color:textMain }}>See You <span style={{ backgroundImage:"linear-gradient(135deg, #7a3fd1, #f5a623)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", color:"transparent" }}>Soon</span></h1>
+            <p style={{ fontSize:"1.05rem", color:textMuted, lineHeight:1.75, maxWidth:560, margin:"0 auto" }}>{site["site.ticket_sales_message"]}</p>
+            <Link to={EARLY_BIRD_PATH} style={{ display:"inline-block", marginTop:34, padding:"16px 32px", borderRadius:12, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"#ffffff", fontFamily:"'Orbitron', sans-serif", fontSize:"0.75rem", fontWeight:800, letterSpacing:"1.4px", textTransform:"uppercase", textDecoration:"none", boxShadow:"0 8px 24px rgba(122,63,209,0.35)" }}>Get Early Bird Alerts</Link>
+            <p style={{ fontSize:"0.85rem", color:textMuted, marginTop:16 }}>Join the TTFC 2027 list and we'll tell you the moment early bird prices go live.</p>
+          </div>
+          ) : (<>
           <div style={{ textAlign:"center", padding:"100px 24px 60px", maxWidth:780, margin:"0 auto" }}>
             <h1 style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:900, fontSize:"clamp(2rem, 5vw, 3.2rem)", letterSpacing:"-1px", lineHeight:1.15, marginBottom:20, color:textMain }}>Choose Your Pass</h1>
             <p style={{ fontSize:"1rem", color:textMuted, lineHeight:1.75, textAlign:"justify", hyphens:"auto" }}>Whether you are coming to learn, connect, explore partnerships, or experience the event at the highest level, The Tech Festival Canada offers a pass designed for every kind of delegate.</p>
@@ -530,8 +542,9 @@ export default function Tickets() {
               </div>
             </div>
           </div>
+          </>)}
 
-          {upgradesOn && (
+          {upgradesOn && !seeYouSoon && (
             <div style={{ maxWidth:760, margin:"0 auto 120px", padding:"0 24px", textAlign:"center" }}>
               <div style={{ backdropFilter:"blur(18px)", WebkitBackdropFilter:"blur(18px)", background: dark?"linear-gradient(135deg, rgba(122,63,209,0.12) 0%, rgba(245,166,35,0.06) 100%)":"linear-gradient(135deg, rgba(122,63,209,0.07) 0%, rgba(245,166,35,0.04) 100%)", border: dark?"1px solid rgba(122,63,209,0.25)":"1px solid rgba(122,63,209,0.14)", borderRadius:24, padding:"48px 40px" }}>
                 <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#f5a623":"#d98a14", marginBottom:14 }}>Why Upgrade Your Pass</div>

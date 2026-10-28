@@ -1,4 +1,6 @@
 import { CheckCircle2, ChevronRight, ExternalLink, Info, Ticket } from "lucide-react";
+import { Link } from "react-router-dom";
+import { eventOver } from "../../lib/eventOver";
 import { useStore } from "../lib/store";
 import { auth, signOut } from "../lib/auth";
 import { content, flag, text } from "../lib/content";
@@ -47,10 +49,21 @@ export default function PassesSheet() {
   // Passes on sale first, sold out after (the website's order otherwise).
   const ordered = [...passes.filter((p) => !p.soldOut), ...passes.filter((p) => p.soldOut)];
   const loading = inv.items === null;
+  // TTFC 2026 is over and sales are off: "See you soon" and the 2027 list instead of the 2026 passes.
+  const seeYouSoon = !salesOpen && eventOver();
 
   return (
     <Sheet open onClose={closePasses} title="Passes" full actions={{ right: <DoneButton onClick={closePasses} /> }}>
       <div className="sheet-scroll passes">
+        {seeYouSoon ? (
+          <header className="passes-head">
+            <p className="eyebrow">TTFC 2027 · Toronto · November 2027</p>
+            <h3>See you soon.</h3>
+            <p className="muted">{pausedNote}</p>
+            <Link className="btn btn-primary btn-lg btn-block" to="/stay-updated" onClick={closePasses}>Get early bird alerts</Link>
+            <p className="muted">Join the TTFC 2027 list and we'll tell you the moment early bird prices go live.</p>
+          </header>
+        ) : (<>
         <header className="passes-head">
           <p className="eyebrow">Choose your pass</p>
           <h3>A pass for every kind of delegate.</h3>
@@ -85,8 +98,10 @@ export default function PassesSheet() {
           </section>
         ))}
 
+        </>)}
+
         <div className="passes-foot">
-          <p><Info aria-hidden="true" />All prices are in CAD, plus 13% HST. Checkout is on thetechfestival.com, handled securely by Stripe.</p>
+          {!seeYouSoon && <p><Info aria-hidden="true" />All prices are in CAD, plus 13% HST. Checkout is on thetechfestival.com, handled securely by Stripe.</p>}
           <p>Already have a pass? <button type="button" className="link-btn" onClick={() => { closePasses(); signOut(); }}>Sign in</button></p>
         </div>
       </div>

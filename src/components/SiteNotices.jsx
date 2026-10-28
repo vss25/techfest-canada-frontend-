@@ -6,6 +6,7 @@ import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
 import { withOrdinals } from "../lib/ordinals";
 import { announcementText } from "../lib/priceRise";
 import { isAppDownloadLink, isNativeVisit } from "../lib/nativeVisit";
+import { eventOver } from "../lib/eventOver";
 
 /* Public-site pieces driven by Site settings → Website options in the admin panel. */
 
@@ -110,15 +111,16 @@ export function ClosedNotice({ title, body, dark, cta }) {
   );
 }
 
-/** Banner shown on Tickets / Checkout while ticket sales are paused. */
+/** Banner shown on Tickets / Checkout while ticket sales are paused (after TTFC 2026, "See you soon."). */
 export function TicketSalesNotice({ message, dark, style }) {
+  const over = eventOver();
   return (
     <div
       role="status"
       style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 18px", borderRadius: 14, border: "1px solid " + (dark ? "rgba(245,166,35,0.45)" : "rgba(217,138,20,0.45)"), background: dark ? "rgba(245,166,35,0.10)" : "rgba(245,166,35,0.10)", color: dark ? "#ffd8a0" : "#7a4a00", fontSize: "0.9rem", lineHeight: 1.6, textAlign: "left", ...style }}
     >
-      <span aria-hidden="true" style={{ fontSize: "1.1rem", lineHeight: 1.3 }}>⏸</span>
-      <span><strong style={{ fontWeight: 800 }}>Ticket sales are paused.</strong> {message}</span>
+      {!over && <span aria-hidden="true" style={{ fontSize: "1.1rem", lineHeight: 1.3 }}>⏸</span>}
+      <span><strong style={{ fontWeight: 800 }}>{over ? "See you soon." : "Ticket sales are paused."}</strong> {message}</span>
     </div>
   );
 }

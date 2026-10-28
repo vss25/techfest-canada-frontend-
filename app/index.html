@@ -9,6 +9,30 @@
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <!-- /app/rate ("Rate the app", Oct 27 2026; src/lib/rate.js): phones go straight to their store's review page
          before the app loads (?store=ios|android picks one); anything else gets the screen with both badges. -->
+    <!-- After a new deploy, a page that was already open (or that the browser restores) still asks for the
+         previous build's files. They're gone, and the site answers with this page instead, so nothing loads (a
+         white screen; Oct 27 2026, after the Tickets update). Reload once to get the new build. -->
+    <script>
+      (function () {
+        var KEY = "ttfc.staleReload";
+        function reloadOnce() {
+          try {
+            var last = Number(sessionStorage.getItem(KEY) || 0);
+            if (Date.now() - last < 30000) return;   // at most once every 30 s: never a reload loop
+            sessionStorage.setItem(KEY, String(Date.now()));
+          } catch (e) { return; }                      // storage blocked: no reload (it couldn't stop a loop)
+          location.reload();
+        }
+        // A page's code that loads later (lazy pages): Vite's own event.
+        window.addEventListener("vite:preloadError", function (e) { e.preventDefault(); reloadOnce(); });
+        // The build's own files (the main script, its imports, the stylesheet).
+        window.addEventListener("error", function (e) {
+          var t = e.target;
+          var url = t && (t.tagName === "SCRIPT" ? t.src : t.tagName === "LINK" ? t.href : "");
+          if (url && url.indexOf("/assets/") !== -1) reloadOnce();
+        }, true);
+      })();
+    </script>
     <script>
       (function () {
         try {

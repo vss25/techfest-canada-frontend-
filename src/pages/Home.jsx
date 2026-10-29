@@ -174,29 +174,29 @@ function SeeYouIn2027() {
       variants={itemBlur}
       role="status"
       style={{
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: "22px 26px 24px", borderRadius: 22,
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "16px 22px 18px", borderRadius: 18,
         background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.20)", backdropFilter: "blur(18px)",
         WebkitBackdropFilter: "blur(18px)", boxShadow: "0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)",
-        color: "#ffffff", width: "100%", maxWidth: 520,
+        color: "#ffffff", width: "100%", maxWidth: 430,
       }}
     >
-      <span style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.72rem", letterSpacing: "1.8px", textTransform: "uppercase", color: "#f5a623" }}>
+      <span style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.64rem", letterSpacing: "1.6px", textTransform: "uppercase", color: "#f5a623" }}>
         TTFC 2026 has ended
       </span>
-      <p style={{ margin: 0, fontSize: "1rem", lineHeight: 1.65, color: "rgba(255,255,255,0.86)" }}>
+      <p style={{ margin: 0, fontSize: "0.9rem", lineHeight: 1.55, color: "rgba(255,255,255,0.86)" }}>
         Thank you for being part of it! See you in 2027. See what&rsquo;s coming and register your interest.
       </p>
       <Link
         to={STAY_UPDATED_PATH}
         style={{
-          display: "inline-flex", alignItems: "center", gap: 10, marginTop: 4, padding: "13px 26px", borderRadius: 999,
+          display: "inline-flex", alignItems: "center", gap: 8, marginTop: 2, padding: "10px 20px", borderRadius: 999,
           background: "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "#ffffff", textDecoration: "none",
-          fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.82rem", letterSpacing: "1.2px", textTransform: "uppercase",
+          fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.7rem", letterSpacing: "1.1px", textTransform: "uppercase",
           boxShadow: "0 8px 24px rgba(122,63,209,0.4)", maxWidth: "100%",
         }}
       >
         Stay updated for 2027
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
           <path d="M9 6l6 6-6 6" />
         </svg>
       </Link>
@@ -295,6 +295,7 @@ export default function Home() {
   var textMain = dark ? "#ffffff"                : "#0d0520";
   var textMid  = dark ? "rgba(255,255,255,0.75)" : "rgba(13,5,32,0.78)";
   var accent   = dark ? "#b99eff"                : "#7a3fd1";
+  var over     = eventOver();   // TTFC 2026 is over: the "See you in 2027" note in the hero
 
   return (
     <div style={{ background: bg, minHeight: "100vh", color: textMain, overflowX: "hidden", width: "100%", position: "relative" }}>
@@ -324,19 +325,19 @@ export default function Home() {
       <Navbar />
 
       {/* HERO UPPER — always dark regardless of theme */}
-      <section style={{ position: "relative", overflow: "hidden", background: "#06020f", minHeight: "76vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      <section style={{ position: "relative", overflow: "hidden", background: "#06020f", minHeight: "76vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(100px, 15vh, 150px) 0 clamp(70px, 10vh, 110px)" }}>
         <HeroBackground />
         <motion.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ position: "relative", zIndex: 5, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "0 6%", maxWidth: 660, width: "100%" }}
         >
-          <motion.div variants={itemBlur} style={{ marginBottom: "1.8rem" }}>
+          <motion.div variants={itemBlur} style={{ marginBottom: over ? "1.4rem" : "1.8rem", width: "100%", display: "flex", justifyContent: "center" }}>
             <img
               src="/Tech_Festival_Canada_Logo_Dark_Transparent.png"
               alt="The Tech Festival Canada"
-              style={{ width: "100%", maxWidth: 620, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 50px rgba(155,135,245,0.22))" }}
+              style={{ width: "100%", maxWidth: over ? 460 : 620, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 50px rgba(155,135,245,0.22))" }}
             />
           </motion.div>
-          {eventOver() ? <SeeYouIn2027 /> : <RegisterWidget />}
+          {over ? <SeeYouIn2027 /> : <RegisterWidget />}
         </motion.div>
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, zIndex: 4, background: "linear-gradient(to bottom, transparent, " + bg + ")", pointerEvents: "none" }} />
       </section>

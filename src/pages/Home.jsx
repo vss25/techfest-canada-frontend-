@@ -13,6 +13,8 @@ import SpeakerMarquee from "../components/SpeakerMarquee";
 import GetAppSection from "../components/GetAppSection";
 import useSiteSettings from "../hooks/useSiteSettings";
 import { HERO_POSTER, heroStillOnly, siteFileUrl } from "../lib/siteFiles";
+import { Link } from "react-router-dom";
+import { STAY_UPDATED_PATH, eventOver } from "../lib/eventOver";
 
 var containerVariants = {
   hidden: {},
@@ -163,6 +165,45 @@ function HeroBackground() {
 
 /* Sleek rounded pill widget — sits directly beneath the logo, over the video.
    Venue is folded into the pill itself, right of a divider. */
+/* TTFC 2026 is over (Oct 29 2026, the organiser: "On the hero of the home page, put a note similar to the one on the
+   app: TTFC is now over, stay updated for 2027"): after the last session (src/lib/eventOver.js) the hero shows this
+   note in place of "Register Now", in the app's words (its Home banner, home.announcement). */
+function SeeYouIn2027() {
+  return (
+    <motion.div
+      variants={itemBlur}
+      role="status"
+      style={{
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: "22px 26px 24px", borderRadius: 22,
+        background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.20)", backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)", boxShadow: "0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)",
+        color: "#ffffff", width: "100%", maxWidth: 520,
+      }}
+    >
+      <span style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.72rem", letterSpacing: "1.8px", textTransform: "uppercase", color: "#f5a623" }}>
+        TTFC 2026 has ended
+      </span>
+      <p style={{ margin: 0, fontSize: "1rem", lineHeight: 1.65, color: "rgba(255,255,255,0.86)" }}>
+        Thank you for being part of it! See you in 2027. See what&rsquo;s coming and register your interest.
+      </p>
+      <Link
+        to={STAY_UPDATED_PATH}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 10, marginTop: 4, padding: "13px 26px", borderRadius: 999,
+          background: "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "#ffffff", textDecoration: "none",
+          fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.82rem", letterSpacing: "1.2px", textTransform: "uppercase",
+          boxShadow: "0 8px 24px rgba(122,63,209,0.4)", maxWidth: "100%",
+        }}
+      >
+        Stay updated for 2027
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </Link>
+    </motion.div>
+  );
+}
+
 function RegisterWidget() {
   return (
     <motion.a
@@ -295,7 +336,7 @@ export default function Home() {
               style={{ width: "100%", maxWidth: 620, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 50px rgba(155,135,245,0.22))" }}
             />
           </motion.div>
-          <RegisterWidget />
+          {eventOver() ? <SeeYouIn2027 /> : <RegisterWidget />}
         </motion.div>
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, zIndex: 4, background: "linear-gradient(to bottom, transparent, " + bg + ")", pointerEvents: "none" }} />
       </section>

@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { STAY_UPDATED_PATH, eventOver } from "../lib/eventOver";
 
 export default function TicketBar() {
   const location = useLocation();
@@ -10,15 +11,19 @@ export default function TicketBar() {
     return null;
   }
 
+  // After TTFC 2026 (src/lib/eventOver.js): "Stay updated for 2027" to the 2027 page instead of passes for 2026.
+  const over = eventOver();
+  if (over && path === STAY_UPDATED_PATH) return null;
+
   return (
     <div className="ticket-bar">
       <div className="ticket-bar-inner" style={{ width: "100%", display: "flex" }}>
         <Link 
-          to="/tickets" 
+          to={over ? STAY_UPDATED_PATH : "/tickets"} 
           className="ticket-btn" 
           style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}
         >
-          Get Your Pass →
+          {over ? "Stay Updated for 2027 →" : "Get Your Pass →"}
         </Link>
       </div>
     </div>

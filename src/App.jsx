@@ -37,6 +37,8 @@ const Rsvp = lazy(() => import("./pages/Rsvp"));
 const Attending = lazy(() => import("./pages/Attending"));
 // Unlinked page the TTFC app opens (Oct 22 2026): a session's discussion or a poll as a LinkedIn post (noindex, not in any menu).
 const ShareLinkedin = lazy(() => import("./pages/ShareLinkedin"));
+// A Catalyst Awards winner: the certificate (PDF / JPG) and Share on LinkedIn; /awards shows it in an iframe.
+const AwardWinner = lazy(() => import("./pages/AwardWinner"));
 // "How the leaderboard works" (Oct 22 2026; appreciation, not a prize, since Oct 27): opened from the apps' leaderboard.
 const Swag = lazy(() => import("./pages/Swag"));
 // "Stay updated": the TTFC 2027 waitlist (Oct 23 2026).
@@ -69,9 +71,11 @@ const AdminLogin = lazy(() => import("./pages/AdminLogin"));
    a one-page document: no ticket bar, announcement or cookie banner on them. The router matches paths
    ignoring case, except the fact sheet's: only its exact link opens it (any other spelling is an unknown page). */
 const isJuryPath = (p) => /^\/awards\/jury-admin(\/|$)/i.test(p);
+// A Catalyst Awards winner inside the /awards page's dialog (?embed=1): just the winner, none of the site's bars.
+const isEmbeddedWinner = (p, q) => /^\/awards\/winners\//i.test(p) && new URLSearchParams(q).get("embed") === "1";
 function OffJury({ children }) {
-  const { pathname } = useLocation();
-  return isJuryPath(pathname) || isFactSheetPath(pathname) ? null : children;
+  const { pathname, search } = useLocation();
+  return isJuryPath(pathname) || isFactSheetPath(pathname) || isEmbeddedWinner(pathname, search) ? null : children;
 }
 
 /* The staff panel's light / dark choice (src/admin/theme.js; index.html applies it before the
@@ -157,6 +161,7 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/awards" element={<Awards />} />
         <Route path="/awards/nominations" element={<Awards />} />
+        <Route path="/awards/winners/:id" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><AwardWinner /></Suspense>} />
         <Route path="/awards/jury-admin/*" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#f6f4fa" }} aria-busy="true" />}><JuryPortal /></Suspense>} />
         {/* KYC form hidden (13 Oct 2026); the page is kept in src/pages/KycForm.jsx */}
         <Route path="/kyc" element={<Navigate to="/" replace />} />

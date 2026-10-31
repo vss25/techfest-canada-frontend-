@@ -48,6 +48,7 @@ import JuryJurors from "../admin/awards/JuryJurors";
 import JuryAllocation from "../admin/awards/JuryAllocation";
 import JuryRubric from "../admin/awards/JuryRubric";
 import JuryResults from "../admin/awards/JuryResults";
+import AwardWinners from "../admin/awards/AwardWinners";
 import AttendingCampaign from "../admin/marketing/AttendingCampaign";
 import AppInvite from "../admin/app/AppInvite";
 import SosHelp from "../admin/app/SosHelp";
@@ -268,6 +269,7 @@ function AdminPanel() {
             <Route path="awards/allocation" element={<JuryAllocation />} />
             <Route path="awards/rubric" element={<JuryRubric />} />
             <Route path="awards/results" element={<ManagementOnly><JuryResults /></ManagementOnly>} />
+            <Route path="awards/winners" element={<AwardWinners />} />
 
             <Route path="marketing/attending" element={<AttendingCampaign />} />
             <Route path="app/invite" element={<AppInvite />} />

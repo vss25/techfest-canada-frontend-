@@ -15,6 +15,12 @@ import { createStore, local } from "./store";
      nomineeLocation, nomineeWebsite, submittedAt }] }. Never
      categories, status, contact details or who nominated them. Staff can switch the list off ("Show award
      applications in the app"): `enabled: false` hides it.
+   • GET /api/awards/winners (public, Oct 31 2026: "Results are
+     out"): { live, awardsNight, winners: [{ id, award, company,
+     presentedTo, showCompany, presentedOn, special, … }] } in the
+     website's order. Not live, empty or failing = no winners shown.
+     A winner opens the website's /awards/winners/<id>?embed=1 (the
+     certificate as PDF / JPG, Share on LinkedIn) in a sheet.
 ========================================================= */
 
 const KEY = "ttfc.app.awards";
@@ -27,7 +33,20 @@ export const awards = createStore({
   listStatus: 0,
   listCode: "", // "no_pass": signed in without a pass
   at: 0,
+  winners: [], // the Catalyst Awards winners, while the website shows them
+  awardsNight: "2026-10-26",
 });
+
+/** The winners (GET /api/awards/winners); none when they aren't live or it fails. */
+export async function refreshAwardWinners() {
+  try {
+    const r = await get("awards/winners", { auth: false });
+    const list = r?.live && Array.isArray(r.winners) ? r.winners.filter((w) => w && /^[a-f0-9]{24}$/i.test(String(w.id || ""))) : [];
+    awards.set({ winners: list, awardsNight: typeof r?.awardsNight === "string" ? r.awardsNight : "2026-10-26" });
+  } catch {
+    awards.set({ winners: [] });
+  }
+}
 
 const n = (v) => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Math.round(Number(v)) : null);
 

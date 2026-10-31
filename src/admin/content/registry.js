@@ -110,6 +110,12 @@ export const REGISTRY = {
     label: "Show award applications in the app",
     description: "Pass holders see who applied for the Catalyst Awards in the apps and the web app: the nominee's name, title, organisation, location and website, and who applied. Never the categories, contact details or the jury's notes. Off: the Applications entry is hidden; the number of award categories still shows.",
   },
+  // Oct 31 2026 (backend services/awardWinners.js): "Results are out" on the Awards page, the winners' pages, the apps.
+  "site.award_winners": {
+    scope: "website", group: "forms", type: "switch",
+    label: "Show the Catalyst Awards winners",
+    description: "The winners (nominations marked Winner) on the Awards page, each winner's page with the certificate (PDF / JPG) and Share on LinkedIn, and in the apps. What each one shows: Catalyst Awards › Winners. Off: nothing about winners shows anywhere.",
+  },
   "site.volunteer_open": {
     scope: "website", group: "forms", type: "switch",
     label: "Volunteer applications open",

@@ -7,6 +7,8 @@ export default function TicketBar() {
   // No "Get your pass" bar where people already have one (their emailed profile link).
   // The router matches paths ignoring case and a trailing slash (/RSVP, /rsvp/ open the RSVP page), so compare the same way.
   const path = location.pathname.replace(/\/+$/, "").toLowerCase() || "/";
+  // A Catalyst Awards winner's page (/awards/winners/<id>) is a focused page like /share/linkedin: no bar.
+  if (path.startsWith("/awards/winners/")) return null;
   if (path === "/tickets" || path === "/complete-profile" || path === "/app-login" || path === "/rsvp" || path === "/attending" || path === "/share/linkedin" || path === "/survey" || path === "/rate") {
     return null;
   }

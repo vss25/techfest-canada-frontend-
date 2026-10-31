@@ -1965,3 +1965,6 @@ textarea.input--ios { min-height: 120px; }
 .ptm-why svg, .ptm-slot svg { flex: none; width: 13px; height: 13px; margin-top: 1px; color: var(--pur-alt); }
 .ptm-btn { align-self: stretch; margin-top: 4px; }
 .ptm-btn svg { width: 16px; height: 16px; }
+
+/* Catalyst Awards winners (Oct 31 2026): the website's winner page in a full sheet. */
+.winner-frame { flex: 1; width: 100%; min-height: 0; border: 0; background: #06020f; border-radius: 0 0 16px 16px; }

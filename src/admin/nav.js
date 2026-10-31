@@ -3,7 +3,7 @@ import {
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
-import { ClipboardList, Gavel, Gift, LifeBuoy, ListChecks, ListPlus, MessageSquareText, Network, Trophy } from "lucide-react";
+import { ClipboardList, Gavel, Gift, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
    Sidebar structure (the admin review, Oct 19 2026): five sections
@@ -64,6 +64,8 @@ export const NAV = [
       { to: "awards/allocation", label: "Allocation", icon: Network },
       { to: "awards/rubric", label: "Scoring rubric", icon: ListChecks },
       { to: "awards/results", label: "Jury results", icon: Trophy, management: true },
+      // Oct 31 2026: what the website's "Results are out" and each winner's certificate show.
+      { to: "awards/winners", label: "Winners", icon: Medal },
     ],
   },
   {

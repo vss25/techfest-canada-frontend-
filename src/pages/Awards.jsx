@@ -7,6 +7,9 @@ import NewsletterBar from "../components/NewsletterBar";
 import NominationForm from "../components/NominationForm";
 import useSiteSettings from "../hooks/useSiteSettings";
 import { ClosedNotice } from "../components/SiteNotices";
+import AwardWinnersSection from "../components/AwardWinnersSection";
+import { loadWinners } from "../lib/awardWinners";
+import { STAY_UPDATED_PATH, eventOver } from "../lib/eventOver";
 
 /* ═══════════════════════════════════════════════════════
    KEY DATES — edit the ISO dates (YYYY-MM-DD, Toronto time);
@@ -25,8 +28,9 @@ var FESTIVAL_END_DATE     = "2026-10-27";
 var NOMINATIONS_END_LABEL = formatDay(NOMINATIONS_END_DATE, true); // "15 Oct 2026"
 var NOMINATIONS_END_SHORT = formatDay(NOMINATIONS_END_DATE, false); // "15 Oct" (hero pill)
 
-/* Shown when Admin › Site settings › "Award nominations open" is off. */
+/* Shown when Admin › Site settings › "Award nominations open" is off (once the winners are out, the second). */
 var CLOSED_BODY = "Thank you for your interest. Winners will be announced at the Catalyst Awards Night on " + formatDay(AWARDS_NIGHT_DATE, false) + " in Toronto.";
+var CLOSED_BODY_RESULTS = "Thank you to everyone who took part. The winners were announced at the Catalyst Awards Gala Night on " + formatDay(AWARDS_NIGHT_DATE, false) + " in Toronto: see them at the top of this page.";
 
 /* ═══════════════════════════════════════════════════════
    DATE HELPERS (plain YYYY-MM-DD strings, no timezone drift)
@@ -199,6 +203,16 @@ export default function Awards() {
   var s1 = useState(false); var dark = s1[0]; var setDark = s1[1];
   var s2 = useState(null); var expandedRow = s2[0]; var setExpandedRow = s2[1];
   var s3 = useState("Artificial Intelligence"); var activePillar = s3[0]; var setActivePillar = s3[1];
+  /* The winners (Oct 31 2026): GET /api/awards/winners; null until it answers, then shown while live with winners. */
+  var s4 = useState(null); var results = s4[0]; var setResults = s4[1];
+  var over = eventOver();
+
+  useEffect(function () {
+    var live = true;
+    loadWinners().then(function (r) { if (live) setResults(r); }, function () { if (live) setResults({ live: false, winners: [] }); });
+    return function () { live = false; };
+  }, []);
+  var winners = results && results.live && results.winners && results.winners.length ? results.winners : null;
 
   useEffect(function () {
     var update = function () { setDark(document.body.classList.contains("dark-mode")); };
@@ -279,7 +293,7 @@ export default function Awards() {
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.8 }}
           style={{ position: "relative", zIndex: 20, textAlign: "center", paddingTop: "clamp(90px, 12vh, 130px)", paddingLeft: 16, paddingRight: 16 }}>
           <span className="aw-hero-pill" style={{ display: "inline-block", background: "rgba(245,166,35,0.12)", border: "1px solid rgba(245,166,35,0.35)", color: "#f5a623", fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", padding: "10px 24px", borderRadius: 999 }}>
-            {nominationsOpen ? "Nominations close " + NOMINATIONS_END_SHORT : "Nominations are now closed"}
+            {winners ? "Results are out" : nominationsOpen ? "Nominations close " + NOMINATIONS_END_SHORT : "Nominations are now closed"}
           </span>
         </motion.div>
 
@@ -293,11 +307,11 @@ export default function Awards() {
               <h1 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(2.5rem, 7vw, 6.5rem)", fontWeight: 900, lineHeight: 0.9, letterSpacing: "-2px", margin: 0, color: "#f5a623" }}>MOMENT.</h1>
             </div>
             <p style={{ fontFamily: "'Montserrat',sans-serif", fontSize: "clamp(0.95rem, 1.3vw, 1.1rem)", color: textMid, lineHeight: 1.75, maxWidth: 420, marginTop: 28 }}>
-              The hard work is done. Now let Canada know about it.
+              {winners ? "The results are out. Meet the winners of the Catalyst Awards 2026." : "The hard work is done. Now let Canada know about it."}
             </p>
-            <motion.a href="#awards-list" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            <motion.a href={winners ? "#winners" : "#awards-list"} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               style={{ display: "inline-flex", alignItems: "center", gap: 10, marginTop: 24, padding: "15px 34px", borderRadius: 14, background: "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "#fff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.78rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}>
-              Explore Awards
+              {winners ? "See the winners" : "Explore Awards"}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
             </motion.a>
           </motion.div>
@@ -318,6 +332,11 @@ export default function Awards() {
         </motion.div>
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 120, zIndex: 15, background: "linear-gradient(to bottom, transparent, " + bg + ")", pointerEvents: "none" }} />
       </section>
+
+      {winners && (
+        <AwardWinnersSection winners={winners} awardsNight={results.awardsNight || AWARDS_NIGHT_DATE} dark={dark} textMain={textMain} textMid={textMid}
+          accent={accent} cardBg={cardBg} cardBdr={cardBdr} sectionBg={sectionBg} />
+      )}
 
       <TrophyScroll bg={bg} dark={dark} textMain={textMain} textSoft={textSoft} accent={accent} />
 
@@ -483,7 +502,7 @@ export default function Awards() {
       ) : (
         <section id="nominations" style={{ padding: "clamp(3rem, 6vw, 5rem) 5%", background: dark ? "#0a0618" : "#f4f0ff", borderTop: "1px solid " + cardBdr, scrollMarginTop: 80 }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            <ClosedNotice dark={dark} title="Nominations are now closed" body={CLOSED_BODY} />
+            <ClosedNotice dark={dark} title="Nominations are now closed" body={winners ? CLOSED_BODY_RESULTS : CLOSED_BODY} />
           </div>
         </section>
       )}
@@ -492,19 +511,21 @@ export default function Awards() {
       <section style={{ padding: "clamp(4rem,8vw,7rem) 5%", background: sectionBg, borderTop: "1px solid " + cardBdr }}>
         <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
           <ScrollReveal>
-            <p style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.58rem", fontWeight: 800, letterSpacing: "3px", textTransform: "uppercase", color: textSoft, marginBottom: 16 }}>{nominationsOpen ? "Free to nominate" : "Catalyst Awards Night"}</p>
+            <p style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.58rem", fontWeight: 800, letterSpacing: "3px", textTransform: "uppercase", color: textSoft, marginBottom: 16 }}>{nominationsOpen ? "Free to nominate" : over ? "Catalyst Awards 2027" : "Catalyst Awards Night"}</p>
             <h2 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(1.8rem,4.5vw,3.2rem)", fontWeight: 900, color: textMain, lineHeight: 1.08, marginBottom: 18 }}>
               {nominationsOpen
                 ? <>Ready to be <span style={{ color: "#f5a623" }}>recognised?</span></>
-                : <>Join us on <span style={{ color: "#f5a623" }}>Awards Night</span></>}
+                : over
+                  ? <>See you in <span style={{ color: "#f5a623" }}>2027</span></>
+                  : <>Join us on <span style={{ color: "#f5a623" }}>Awards Night</span></>}
             </h2>
             <p style={{ fontFamily: "'Montserrat',sans-serif", fontSize: "1.05rem", color: textMid, lineHeight: 1.8, maxWidth: 480, margin: "0 auto 32px" }}>
-              {nominationsOpen ? "Nominations are free. Self-nominations and third-party nominations welcome." : "See the winners announced live on Day 1 of The Tech Festival Canada."}
+              {nominationsOpen ? "Nominations are free. Self-nominations and third-party nominations welcome." : over ? "Stay updated for TTFC 2027 and hear first when the next Catalyst Awards open for nominations." : "See the winners announced live on Day 1 of The Tech Festival Canada."}
             </p>
             <div className="aw-hero-ctas" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-              <motion.a href="/tickets" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              <motion.a href={over ? STAY_UPDATED_PATH : "/tickets"} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "15px 34px", borderRadius: 14, background: "linear-gradient(135deg,#7a3fd1,#f5a623)", color: "#fff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}
-              >Get Your Pass</motion.a>
+              >{over ? "Stay Updated for 2027" : "Get Your Pass"}</motion.a>
               <motion.a href="/sponsor#compare-packages" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "15px 34px", borderRadius: 14, border: "1.5px solid " + cardBdr, color: textMain, textDecoration: "none", background: "transparent", fontFamily: "'Orbitron',sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}
               >Partner With Us</motion.a>

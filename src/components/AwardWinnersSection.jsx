@@ -50,12 +50,18 @@ export default function AwardWinnersSection({ winners, awardsNight, dark, textMa
   );
 }
 
+/* Each card is a link to the winner's own page (Oct 31 2026, SEO: crawlers follow links, not buttons, so the 13
+   pages had no way in). A plain click still opens the dialog; Ctrl / Cmd / Shift / Alt-click and the middle
+   button open the page in a new tab or window, as any link does. */
+const plainClick = (e) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+
 function WinnerGrid({ list, onOpen }) {
   return (
     <ul className="aw-winners-grid">
       {list.map((w, i) => (
         <motion.li key={w.id} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-30px" }} transition={{ duration: 0.45, delay: (i % 3) * 0.06 }}>
-          <button type="button" className="aw-winner-card" onClick={() => onOpen(w)} aria-haspopup="dialog">
+          <a href={`/awards/winners/${w.id}`} className="aw-winner-card" aria-haspopup="dialog"
+            onClick={(e) => { if (!plainClick(e)) return; e.preventDefault(); onOpen(w); }}>
             <span className="aw-winner-tags">
               {w.special ? <span className="aw-winner-tag aw-winner-tag-special">Special recognition</span> : <>
                 {w.pillar && <span className="aw-winner-tag">{w.pillar}</span>}
@@ -65,7 +71,7 @@ function WinnerGrid({ list, onOpen }) {
             <span className="aw-winner-company">{w.company}</span>
             {w.showCompany && <span className="aw-winner-person">{w.presentedTo}</span>}
             <span className="aw-winner-more">View award <ChevronRight size={15} aria-hidden="true" /></span>
-          </button>
+          </a>
         </motion.li>
       ))}
     </ul>
@@ -131,7 +137,7 @@ const css = ({ dark, textMain, textMid, accent, cardBg, cardBdr }) => `
 .aw-winners-sub { font-family: 'Orbitron', sans-serif; font-size: 0.62rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: ${dark ? "#f5a623" : "#8a4f00"}; margin: clamp(2.2rem, 4vw, 3rem) 0 14px; }
 .aw-winners-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .aw-winners-grid > li { display: flex; min-width: 0; }
-.aw-winner-card { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 20px 20px 16px; border-radius: 18px; cursor: pointer; font: inherit;
+.aw-winner-card { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 20px 20px 16px; border-radius: 18px; cursor: pointer; font: inherit; text-decoration: none;
   background: ${cardBg}; border: 1px solid ${cardBdr}; color: ${textMain}; transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease;
   box-shadow: ${dark ? "0 4px 24px rgba(0,0,0,0.25)" : "0 4px 20px rgba(122,63,209,0.05)"}; }
 .aw-winner-card:hover { border-color: #f5a623; transform: translateY(-2px); box-shadow: ${dark ? "0 12px 34px rgba(0,0,0,0.4)" : "0 12px 30px rgba(122,63,209,0.12)"}; }

@@ -333,10 +333,12 @@ export default function Navbar() {
       <nav ref={navRef} className="tfc-navbar-wrap" style={{ background: bg, borderBottom: "1px solid " + border }}>
         <div className="tfc-nav-container">
 
-          {/* LEFT: LOGO */}
+          {/* LEFT: LOGO. width/height are each file's own size (Oct 31 2026): the CSS sets the height, and these give the
+              width before the file arrives, so the menu beside it doesn't shift sideways. */}
           <div className="tfc-nav-left">
             <Link to="/" style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-              <img className="tfc-nav-logo" src={dark ? "/Tech_Festival_Canada_Logo_Dark_Transparent.png" : "/Tech_Festival_Canada_Logo_Light_Transparent.webp"} alt="The Tech Festival Canada" />
+              <img className="tfc-nav-logo" src={dark ? "/Tech_Festival_Canada_Logo_Dark_Transparent.png" : "/Tech_Festival_Canada_Logo_Light_Transparent.webp"} alt="The Tech Festival Canada"
+                width={dark ? 1500 : 1080} height={dark ? 938 : 675} />
             </Link>
           </div>
 

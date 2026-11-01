@@ -5,6 +5,25 @@ import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
 import StoreBadges from "./StoreBadges";
 import { WAITLIST_FORM_URL, goToWaitlistForm } from "../lib/stayUpdated";
 
+/* "Explore" (Oct 31 2026, SEO): the site's main public pages as plain links on every page. The menu's dropdowns and
+   the phone menu only exist after a tap, so search engines found no link to most of these pages. Agenda and
+   Programme follow the agenda switch, as in the menu. */
+const EXPLORE = [
+  { label: "Speakers", to: "/speakers" },
+  { label: "Agenda", to: "/agenda", agenda: true },
+  { label: "Programme", to: "/programme", agenda: true },
+  { label: "Catalyst Awards", to: "/awards" },
+  { label: "Partners", to: "/partners2026" },
+  { label: "Sponsor", to: "/sponsor" },
+  { label: "Exhibit", to: "/exhibit" },
+  { label: "Venue", to: "/venue" },
+  { label: "Organizers", to: "/organizers" },
+  { label: "Media", to: "/media" },
+  { label: "Volunteer", to: "/volunteer" },
+  { label: "Contact", to: "/contact" },
+  { label: "Stay updated for 2027", to: "/stay-updated" },
+];
+
 // Used when the matching Site settings field is empty.
 const DEFAULT_SOCIAL = {
   linkedin: "https://www.linkedin.com/company/thetechfestival/posts/?feedView=all",
@@ -61,6 +80,22 @@ export default function Footer() {
             onMouseEnter={function (e) { e.currentTarget.style.opacity = "0.75"; }}
             onMouseLeave={function (e) { e.currentTarget.style.opacity = "1"; }}
           >Stay updated for 2027<span aria-hidden="true" style={{ color: lCol }}>→</span></Link>
+        </div>
+
+        {/* Explore: the main pages (EXPLORE above), a wrapping row of small links. A <div role="navigation">, not a
+            <nav>: styles.css gives every <nav> the old sticky 80px bar look. */}
+        <div role="navigation" aria-label="Explore" className="tfc-foot-explore" style={{ width: "100%", maxWidth: 720, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <style>{`
+            .tfc-foot-explore a { display: inline-block; padding: 5px 2px; font-size: 0.82rem; font-weight: 600; text-decoration: none; color: ${dark ? "rgba(255,255,255,0.78)" : "rgba(13,5,32,0.72)"}; transition: color 0.2s ease; }
+            .tfc-foot-explore a:hover { color: ${lCol}; }
+            .tfc-foot-explore a:focus-visible { outline: 2px solid ${lCol}; outline-offset: 2px; border-radius: 4px; }
+          `}</style>
+          <span aria-hidden="true" style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "1.4px", textTransform: "uppercase", color: lCol }}>Explore</span>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexWrap: "wrap", justifyContent: "center", columnGap: 18, rowGap: 0 }}>
+            {EXPLORE.filter(function (l) { return showAgenda || !l.agenda; }).map(function (l) {
+              return <li key={l.to}><Link to={l.to}>{l.label}</Link></li>;
+            })}
+          </ul>
         </div>
 
         {/* Social icons */}

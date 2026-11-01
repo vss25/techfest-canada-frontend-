@@ -63,11 +63,11 @@ const FIXED_SERVICES = [
   { title: "Sustainability & CleanTech", description: "Pioneering a Greener, Smarter Future through technology-led climate action.", iconName: "leaf", position: "right" },
 ]
 
-const FALLBACK_STATS = [
-  { value: 150, suffix: "+", label: "Builds Completed", iconName: "award" },
-  { value: 12, suffix: "", label: "Event Years", iconName: "calendar" },
-  { value: 98, suffix: "%", label: "Success Rate", iconName: "trending" },
-]
+/* The stats come only from the CMS (Oct 31 2026; About content › stats, live: 100% First-Time-in-Canada Sessions,
+   1000+ Attendees across 2 days, 1000 Minutes of High-Impact Content, 5 Signature Experiences). With none, or when
+   it can't be reached, the row isn't shown. The fallback was a template's numbers ("150+ Builds Completed", "12
+   Event Years", "98% Success Rate"), not TTFC's. */
+const FALLBACK_STATS = []
 
 function injectMinutesStat(stats) {
   if (!stats || stats.length === 0) return FALLBACK_STATS
@@ -128,11 +128,9 @@ export default function AboutUs({ onWriteToUs }) {
     visible: { y: 0, opacity: 1, transition: { duration: 0.6, ease: [0.215, 0.61, 0.355, 1] } },
   }
 
-  if (loading) return (
-    <div style={{ padding: "6rem 0", textAlign: "center", background: bg, color: textMuted, fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.15em", fontSize: "0.75rem" }}>
-      INITIALIZING ECOSYSTEM...
-    </div>
-  )
+  /* While the CMS text loads (Oct 31 2026): an empty block in the section's colour, keeping a screen's height of the
+     space the section will take, instead of an "INITIALIZING ECOSYSTEM..." line (filler a crawler could index). */
+  if (loading) return <div aria-busy="true" style={{ minHeight: "100vh", background: bg }} />
   if (!data) return null
 
   return (
@@ -241,12 +239,14 @@ export default function AboutUs({ onWriteToUs }) {
           </div>
         </div>
 
-        {/* ── Stats ── */}
+        {/* ── Stats (only the CMS's; none = no row) ── */}
+        {data.stats?.length > 0 && (
         <div ref={statsRef} className="about-stats-grid" style={{ marginTop: "8rem", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "2rem" }}>
-          {data.stats?.map(function (stat, index) {
+          {data.stats.map(function (stat, index) {
             return <StatBox key={index} {...stat} index={index} delay={index * 0.1} dark={dark} textMain={textMain} textMuted={textMuted} cardBg={cardBg} cardBdr={cardBdr} />
           })}
         </div>
+        )}
 
         {/* ── Bottom CTA ── */}
         <motion.div

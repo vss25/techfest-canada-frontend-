@@ -20,7 +20,7 @@ const PARTNERS_DROPDOWN = [
 ];
 
 // "Programme" (Oct 24 2026): /programme, the programme at a glance; shown while the agenda is on, like AGENDA.
-// "Brochure" (Nov 1 2026): moved here from the button beside TICKETS, which is now "2027".
+// "Brochure" (Nov 1 2026): moved here from the button beside TICKETS, which is now "2027" (so no 2027 entry in this list).
 const MORE_DROPDOWN = [
   { label: "Programme", path: "/programme" },
   { label: "Venue", path: "/venue" },
@@ -28,7 +28,6 @@ const MORE_DROPDOWN = [
   { label: "Organizers", path: "/organizers" },
   { label: "Media", path: "/media" },
   { label: "Brochure", path: "/brochures" },
-  { label: "Stay updated for 2027", path: "/stay-updated" },
 ];
 
 

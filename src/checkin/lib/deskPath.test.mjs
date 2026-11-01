@@ -28,7 +28,7 @@ function deployFiles() {
     for (const f of readdirSync(DIST, { recursive: true })) if (statSync(new URL(f, DIST)).isFile()) out.add(`/${f.split("\\").join("/")}`);
     return out;
   }
-  return new Set(["/index.html", "/app/index.html", "/app/sw.js", "/app/manifest.webmanifest", "/assets/index-a1.js",
+  return new Set(["/index.html", "/spa.html", "/app/index.html", "/app/sw.js", "/app/manifest.webmanifest", "/assets/index-a1.js",
     `${DESK_PATH}index.html`, `${DESK_PATH}sw.js`, `${DESK_PATH}manifest.webmanifest`, `${DESK_PATH}icons/icon-192.png`, `${DESK_PATH}icons/apple-touch-icon.png`,
     ...RETIRED_DESK_PATHS.map((p) => `${p}sw.js`)]);
 }
@@ -94,9 +94,10 @@ test("vercel.json: /checkin and every typed variant redirect to /checkin/ (308),
     const r = at(url);
     assert.ok(r.status !== 308 && r.status !== 307, `${url} is redirected (${r.rule})`);
   }
-  // The website's own routes are untouched.
-  assert.deepEqual([at("/").file, at("/rsvp").file, at("/app/").file, at("/app/schedule").file], ["/index.html", "/index.html", "/app/index.html", "/app/index.html"]);
-  assert.equal(at("/first-timers").location, "/briefings");
+  // The website's own routes are untouched (since Oct 31 2026 the home page is its own file and other addresses get
+  // the plain site, spa.html: src/seo/prerender.mjs).
+  assert.deepEqual([at("/").file, at("/rsvp").file, at("/app/").file, at("/app/schedule").file], ["/index.html", "/spa.html", "/app/index.html", "/app/index.html"]);
+  assert.equal(at("/first-timers").location, "/");
 });
 
 test("vercel.json: every station's own address serves the desk's page (deep links, typed and after a reload), noindex", () => {
@@ -208,11 +209,12 @@ test("unlisted: no public website or attendee app file links to it (no <a>, <Lin
   // The website's router has no route for it (it's its own page), the website's page doesn't mention it.
   assert.ok(!/path=["'{`]*\/check-?in/i.test(read("src/App.jsx")));
   assert.ok(!/check-?in/i.test(read("index.html")));
-  // No sitemap or robots.txt names it (there are none today; if one is added, it mustn't).
+  // No sitemap or robots.txt names it. robots.txt is public/robots.txt; the sitemap is written by the build from the
+  // website's own pages (src/seo/routes.js; checked after a build below).
   for (const f of readdirSync(new URL("public/", ROOT))) {
     if (/^(robots\.txt|sitemap.*\.xml)$/i.test(f)) assert.ok(!/check-?in/i.test(read(`public/${f}`)), `public/${f} names the check-in desk`);
   }
-  assert.ok(!/sitemap/i.test(read("vite.config.js")), "no sitemap is generated");
+  for (const f of ["src/seo/routes.js", "src/seo/prerender.mjs"]) assert.ok(!/check-?in/i.test(read(f)), `${f} names the check-in desk`);
   // The Admin card reads the link from the server at runtime.
   assert.match(read("src/admin/checkin/DeskApp.jsx"), /api\.get\("\/checkin\/desk\/info"\)/);
   // The earlier address's token is only in deskPath.js (and vercel.json's redirects).
@@ -275,6 +277,7 @@ test("after a build: the desk app at /checkin/ (page, manifest, worker, icons), 
 
 test("after a build: no file the public website or the attendee app loads links to the desk", { skip: !BUILT && "no dist/ (run vite build first)" }, () => {
   assert.ok(!/check-?in/i.test(readFileSync(new URL("index.html", DIST), "utf8")));
+  for (const f of ["spa.html", "sitemap.xml", "robots.txt"]) assert.ok(!/check-?in/i.test(readFileSync(new URL(f, DIST), "utf8")), f);
   assert.ok(!/check-?in/i.test(readFileSync(new URL("app/index.html", DIST), "utf8")));
   const publicFiles = new Set([...reachable("index.html"), ...reachable("app/index.html")]);
   assert.ok(publicFiles.size > 5, "the website's chunks were found");

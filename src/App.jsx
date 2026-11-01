@@ -57,6 +57,9 @@ const FactSheet = lazy(() => import("./pages/FactSheet"));
 import { FACT_SHEET_PATH, isFactSheetPath } from "./lib/factSheetRoute";
 import CookieConsent from "./components/CookieConsent";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
+// Search engines (Oct 31 2026): each address's title, canonical… (src/seo/routes.js), and a page for unknown addresses.
+import RouteSeo from "./seo/RouteSeo";
+import NotFound from "./pages/NotFound";
 
 // The staff panel is loaded only when someone opens it.
 const Admin = lazy(() => import("./pages/Admin"));
@@ -113,6 +116,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <RouteSeo />
       <OffJury><AnnouncementBar /></OffJury>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -180,6 +184,8 @@ function App() {
         <Route path="/rate" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Rate /></Suspense>} />
         <Route path="/survey" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Survey /></Suspense>} />
         <Route path={FACT_SHEET_PATH} caseSensitive element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><FactSheet /></Suspense>} />
+        {/* Any other address: "Page not found", noindex (src/pages/NotFound.jsx). */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <OffJury><TicketBar /></OffJury>
       <OffJury><CookieConsent /></OffJury>

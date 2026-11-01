@@ -131,7 +131,7 @@ export default function FactSheet() {
         <header className="fs-masthead">
           <Link to="/" className="fs-logo" aria-label="The Tech Festival Canada home page">
             <img className="fs-logo-light" src="/Tech_Festival_Canada_Logo_Light_Transparent.webp" alt="" width="1080" height="675" />
-            <img className="fs-logo-dark" src="/Tech_Festival_Canada_Logo_Dark_Transparent.png" alt="" width="1500" height="938" />
+            <img className="fs-logo-dark" src="/Tech_Festival_Canada_Logo_Dark_Transparent.webp" alt="" width="1500" height="938" />
           </Link>
           <div className="fs-actions">
             <button type="button" className="fs-icon-btn" onClick={toggleTheme} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Light mode" : "Dark mode"}>

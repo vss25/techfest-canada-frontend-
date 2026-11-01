@@ -39,6 +39,8 @@
 //    confirmation.
 // ─────────────────────────────────────────────────────────────────
 
+import { speakerSlug } from "../seo/slug.js";
+
 export const DAYS = {
   1: { label: "Day 1", date: "Oct 26", longDate: "Monday, October 26, 2026" },
   2: { label: "Day 2", date: "Oct 27", longDate: "Tuesday, October 27, 2026" },
@@ -472,11 +474,9 @@ export function nameKeys(raw) {
   return Array.from(keys);
 }
 
+/** A speaker's /speakers/<slug> (and ?speaker=<slug>): the site's one rule, trimmed (src/seo/slug.js, Oct 31 2026). */
 export function slugifyName(name) {
-  return String(name || "")
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
+  return speakerSlug(name);
 }
 
 /** Build { key -> sanitySpeakerDoc } from a Sanity speaker list. */

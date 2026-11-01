@@ -89,7 +89,9 @@ const BOOTH_TIERS = [
 const money = (n) =>
   "$" + Number(n).toLocaleString("en-CA", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
-function BoothGallery({ images, isDark, border, cardBg }) {
+/* `label` (Oct 31 2026, alt text): the booth's name and size, e.g. "Single Booth (10 ft x 10 ft)"; the photos are
+   design mock-ups of that booth, and the alt says so instead of "Booth view 1". */
+function BoothGallery({ images, label, isDark, border, cardBg }) {
   const [active, setActive] = useState(0);
   const intervalRef = useRef(null);
 
@@ -119,7 +121,7 @@ function BoothGallery({ images, isDark, border, cardBg }) {
         {images.map(function (src, i) {
           return i === active ? (
             <motion.img
-              key={src} src={src} alt={"Booth view " + (i + 1)}
+              key={src} src={src} alt={label + " design mock-up, view " + (i + 1) + " of " + images.length}
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.7 }}
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 2 }}
@@ -260,11 +262,8 @@ export default function Exhibit() {
         overflow: "hidden", background: isDark ? "#06020f" : "#f4f0ff",
         paddingTop: "clamp(120px, 15vw, 160px)", paddingBottom: "20px"
       }}>
-        <img src="/exhibit-hero-bg.png" alt="" style={{
-          position: "absolute", inset: 0, width: "100%", height: "100%",
-          objectFit: "cover", objectPosition: "center",
-          opacity: isDark ? 0.18 : 0.12, pointerEvents: "none", zIndex: 0,
-        }} />
+        {/* No /exhibit-hero-bg.png <img> here any more (Oct 31 2026): the file was never in public/, so every visit
+            requested a broken image (the site answers it with the page's HTML). The aurora below is the background. */}
         <div style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 1 }}>
           <div className={isDark ? "aurora-layer aurora-layer--dark" : "aurora-layer aurora-layer--light"} />
         </div>
@@ -353,7 +352,7 @@ export default function Exhibit() {
             overflow: "hidden", minHeight: 300,
           }}>
             <img
-              src="/Tech_Festival_Canada_Logo_Dark_Transparent.png"
+              src="/Tech_Festival_Canada_Logo_Dark_Transparent.webp"
               alt="The Tech Festival Canada"
               style={{ width: "65%", maxWidth: 300, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 40px rgba(122,63,209,0.25))" }}
             />
@@ -428,7 +427,7 @@ function BoothRow({ tier, isDark, textMain, textMuted, border, cardBg, index, on
           initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true, margin: "-50px" }} transition={{ type: "spring", bounce: 0.2, duration: 1.2 }}
         >
-          <BoothGallery images={tier.images} isDark={isDark} border={border} cardBg={cardBg} />
+          <BoothGallery images={tier.images} label={tier.title + " (" + tier.specs + ")"} isDark={isDark} border={border} cardBg={cardBg} />
         </motion.div>
 
         <motion.div

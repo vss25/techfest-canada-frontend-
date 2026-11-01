@@ -40,21 +40,34 @@ export default function SpeakerMarquee({ dark, title }) {
   const fade = dark ? "#0c0816" : "#ffffff";
 
   const items = [...sponsors, ...sponsors];
+  var displayTitle = title || "Our team includes alumni from";
+  var titleStyle = {
+    textAlign: "center",
+    marginBottom: 20,
+    fontFamily: "'Orbitron',sans-serif",
+    fontSize: "0.72rem",
+    fontWeight: 900,
+    letterSpacing: "2.5px",
+    textTransform: "uppercase",
+    color: dark ? "rgba(200,185,255,0.75)" : "rgba(13,5,32,0.65)",
+  };
 
+  /* While the logos load (Oct 31 2026, layout shift): the same box as the loaded marquee, its title and an empty
+     72px row (64px logo cards + the track's 4px padding above and below; 171px in all on the live home page),
+     so the page below doesn't jump down when they arrive. It was a short "Loading sponsors…" line. */
   if (loading) {
     return (
       <section
+        aria-busy="true"
         style={{
           background: bg,
           borderTop: "1px solid " + border,
           borderBottom: "1px solid " + border,
           padding: "32px 0 28px",
-          textAlign: "center",
         }}
       >
-        <p style={{ opacity: 0.5, fontFamily: "'Orbitron',sans-serif", fontSize: "0.6rem" }}>
-          Loading sponsors…
-        </p>
+        <div style={titleStyle}>{displayTitle}</div>
+        <div style={{ height: 72 }} />
       </section>
     );
   }
@@ -62,8 +75,6 @@ export default function SpeakerMarquee({ dark, title }) {
   if (error || sponsors.length === 0) {
     return null;
   }
-
-  var displayTitle = title || "Our team includes alumni from";
 
   return (
     <section
@@ -126,20 +137,7 @@ export default function SpeakerMarquee({ dark, title }) {
         .marquee-item img[data-name="VMware"]     { height: calc(48px * var(--logo-scale, 1)); }
       `}</style>
 
-      <div
-        style={{
-          textAlign: "center",
-          marginBottom: 20,
-          fontFamily: "'Orbitron',sans-serif",
-          fontSize: "0.72rem",
-          fontWeight: 900,
-          letterSpacing: "2.5px",
-          textTransform: "uppercase",
-          color: dark ? "rgba(200,185,255,0.75)" : "rgba(13,5,32,0.65)",
-        }}
-      >
-        {displayTitle}
-      </div>
+      <div style={titleStyle}>{displayTitle}</div>
 
       <div style={{ position: "relative" }}>
         <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 120, background: `linear-gradient(to right, ${fade}, transparent)`, zIndex: 2, pointerEvents: "none" }} />

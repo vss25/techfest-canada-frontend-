@@ -23,7 +23,11 @@ function siteRoutes() {
   }
   return routes;
 }
-const routeFor = (url) => matchRoutes(siteRoutes(), url)?.at(-1)?.route.path ?? null;
+/** The route an address opens; null for an unknown address (since Oct 31 2026 that's App.jsx's "*" route: "Page not found"). */
+const routeFor = (url) => {
+  const path = matchRoutes(siteRoutes(), url)?.at(-1)?.route.path ?? null;
+  return path === "*" ? null : path;
+};
 
 test("the token: 12 random lowercase letters and digits, in one path", () => {
   assert.match(FACT_SHEET_TOKEN, /^[a-z0-9]{12}$/);

@@ -1,10 +1,11 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import AboutUs from "../components/AboutUs";
-import { useEffect, useState, useRef } from "react";
-import InquiryModal from "../components/InquiryModal";
-import PostPurchaseModal from "../components/PostPurchaseModal";
-import OnboardingSurvey from "../components/OnboardingSurvey";
+import { lazy, Suspense, useEffect, useState, useRef } from "react";
+// Pop-ups that start closed are fetched the first time they open (Oct 31 2026): less code before the homepage shows.
+const InquiryModal = lazy(function () { return import("../components/InquiryModal"); });
+const PostPurchaseModal = lazy(function () { return import("../components/PostPurchaseModal"); });
+const OnboardingSurvey = lazy(function () { return import("../components/OnboardingSurvey"); });
 import { motion, useInView } from "framer-motion";
 import SponsorMarquee from "../components/SponsorMarquee";
 import NewsletterBar from "../components/NewsletterBar";
@@ -330,12 +331,19 @@ export default function Home() {
         <motion.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ position: "relative", zIndex: 5, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "0 6%", maxWidth: 660, width: "100%" }}
         >
+          {/* The page's one <h1> (Oct 31 2026, SEO): the logo, so its alt text is the heading and nothing changes on screen.
+              width/height are the PNG's own (1500 x 938): the browser keeps the logo's space before it loads, so the
+              pill below doesn't jump down. */}
           <motion.div variants={itemBlur} style={{ marginBottom: over ? "1.4rem" : "1.8rem", width: "100%", display: "flex", justifyContent: "center" }}>
-            <img
-              src="/Tech_Festival_Canada_Logo_Dark_Transparent.png"
-              alt="The Tech Festival Canada"
-              style={{ width: "100%", maxWidth: over ? 460 : 620, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 50px rgba(155,135,245,0.22))" }}
-            />
+            <h1 style={{ margin: 0, width: "100%", display: "flex", justifyContent: "center" }}>
+              <img
+                src="/Tech_Festival_Canada_Logo_Dark_Transparent.webp"
+                alt="The Tech Festival Canada"
+                width={1500}
+                height={938}
+                style={{ width: "100%", maxWidth: over ? 460 : 620, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 50px rgba(155,135,245,0.22))" }}
+              />
+            </h1>
           </motion.div>
           {over ? <SeeYouIn2027 /> : <RegisterWidget />}
         </motion.div>
@@ -376,9 +384,9 @@ export default function Home() {
       <NewsletterBar dark={dark} />
       <Footer />
 
-      <InquiryModal isOpen={inquiryOpen} onClose={function () { setInquiryOpen(false); }} />
-      <PostPurchaseModal isOpen={purchaseOpen} onClose={function () { setPurchaseOpen(false); }} ticketType={purchaseTicketType} />
-      <OnboardingSurvey isOpen={surveyOpen} onClose={function () { setSurveyOpen(false); window.location.reload(); }} userName={surveyName} />
+      {inquiryOpen && <Suspense fallback={null}><InquiryModal isOpen={inquiryOpen} onClose={function () { setInquiryOpen(false); }} /></Suspense>}
+      {purchaseOpen && <Suspense fallback={null}><PostPurchaseModal isOpen={purchaseOpen} onClose={function () { setPurchaseOpen(false); }} ticketType={purchaseTicketType} /></Suspense>}
+      {surveyOpen && <Suspense fallback={null}><OnboardingSurvey isOpen={surveyOpen} onClose={function () { setSurveyOpen(false); window.location.reload(); }} userName={surveyName} /></Suspense>}
     </div>
   );
 }

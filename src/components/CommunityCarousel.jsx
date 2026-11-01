@@ -168,6 +168,25 @@ function CommunityCard({ speaker, dark }) {
   );
 }
 
+/* A blank card shown while the speakers load (Oct 31 2026, layout shift): the carousel used to render nothing
+   until they arrived, then push the page down by about 690–800px. Same frame and square photo as a card; the
+   18rem below it stands for the text and LinkedIn button (the tallest card measured 571px at 1280px wide,
+   511px on a 375px phone; this skeleton is within about 15px of both). */
+function CardSkeleton({ dark }) {
+  return (
+    <div aria-hidden="true" style={{
+      borderRadius: "10px", overflow: "hidden",
+      background: dark ? "rgba(255,255,255,0.04)" : "#fff",
+      border: dark ? "1px solid rgba(255,255,255,0.11)" : "1px solid rgba(0,0,0,0.08)",
+      boxShadow: !dark ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
+    }}>
+      <div style={{ paddingTop: "100%", background: dark ? "#1a0a3e" : "#ede9ff" }} />
+      <div style={{ height: "18rem" }} />
+    </div>
+  );
+}
+var SKELETON_CARDS = [0, 1, 2, 3, 4];
+
 /* ─────────────────────────────────────────────
    2026 SPEAKERS carousel
 
@@ -225,7 +244,8 @@ export default function CommunityCarousel({ dark, limit = 14, showAllTo = "/spea
     el.scrollBy({ left: dir * step * pages, behavior: "smooth" });
   }
 
-  if (loading || people.length === 0) return null;
+  // While loading: the heading and blank cards (CardSkeleton); no speakers at all (or an error): nothing.
+  if (!loading && people.length === 0) return null;
 
   var text = dark ? "#ffffff" : "#0d0520";
   var accent = dark ? "#b99eff" : "#7a3fd1";
@@ -326,10 +346,12 @@ export default function CommunityCarousel({ dark, limit = 14, showAllTo = "/spea
       </div>
 
       <div style={{ position: "relative", maxWidth: 1260, margin: "0 auto" }}>
-        <div ref={railRef} className="community-rail">
-          {people.map(function (p) {
-            return <CommunityCard key={p._id} speaker={p} dark={dark} />;
-          })}
+        <div ref={railRef} className="community-rail" aria-busy={loading || undefined}>
+          {loading
+            ? SKELETON_CARDS.map(function (i) { return <CardSkeleton key={i} dark={dark} />; })
+            : people.map(function (p) {
+              return <CommunityCard key={p._id} speaker={p} dark={dark} />;
+            })}
         </div>
 
         <div style={{

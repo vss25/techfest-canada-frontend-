@@ -22,7 +22,7 @@ function SidebarContent({ onNavigate }) {
   return (
     <nav aria-label="Admin sections" className="adm-sidebar-nav">
       <Link to={isVolunteer ? "/admin/people" : "/admin"} onClick={onNavigate} className={cx("mb-6 flex items-center gap-3 rounded-xl px-2 py-1", focusRing)}>
-        <img src={theme === "light" ? "/Tech_Festival_Canada_Logo_Light_Transparent.webp" : "/Tech_Festival_Canada_Logo_Dark_Transparent.png"} alt="" className="h-12 w-auto" />
+        <img src={theme === "light" ? "/Tech_Festival_Canada_Logo_Light_Transparent.webp" : "/Tech_Festival_Canada_Logo_Dark_Transparent.webp"} alt="" className="h-12 w-auto" />
         <span className="leading-tight">
           <span className="font-display block text-[13px] font-bold text-ttfc-contrast">TTFC</span>
           <span className="block text-[11px] font-medium text-ttfc-muted">{isVolunteer ? "Volunteer view" : "Staff panel"}</span>

@@ -162,7 +162,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 1 — THE CONFERENCE ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={false} image="/ft-conference.jpg" imageAlt="Keynote presentation showing five tech pillars and applied sectors"
+        reverse={false} image="/ft-conference.jpg" imageSize={[1696, 2528]} imageAlt="Keynote presentation showing five tech pillars and applied sectors"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
         <h2 style={headingStyle(textMain)}>The <GradientSpan>Conference</GradientSpan></h2>
@@ -194,7 +194,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 2 — THE EXPO ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={true} hasBg={true} image="/ft-expo.jpg" imageAlt="The Tech Festival Canada expo and networking floor"
+        reverse={true} hasBg={true} image="/ft-expo.jpg" imageSize={[2752, 1536]} lazy imageAlt="The Tech Festival Canada expo and networking floor"
         cta={{ label: "Partner With Us", href: "/sponsor" }}
       >
         <h2 style={headingStyle(textMain)}>The <GradientSpan>Expo</GradientSpan></h2>
@@ -205,7 +205,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 3 — AWARDS NIGHT ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={false} image="/ft-awards.jpg" imageAlt="Canada Tech Titans Awards Night ceremony"
+        reverse={false} image="/ft-awards.jpg" imageSize={[2000, 1116]} lazy imageAlt="Canada Tech Titans Awards Night ceremony"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
         <h2 style={headingStyle(textMain)}>Awards <GradientSpan>Night</GradientSpan></h2>
@@ -216,7 +216,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 4 — CxO BREAKFAST ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={true} hasBg={true} image="/ft-breakfast.jpg" imageAlt="CxO Breakfast with senior leaders"
+        reverse={true} hasBg={true} image="/ft-breakfast.jpg" imageSize={[2000, 1116]} lazy imageAlt="CxO Breakfast with senior leaders"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
         <h2 style={headingStyle(textMain)}>CxO <GradientSpan>Breakfast</GradientSpan></h2>
@@ -227,7 +227,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 5 — GALA DINNER ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={false} image="/ft-gala.jpg" imageAlt="Gala Dinner and Networking Reception"
+        reverse={false} image="/ft-gala.jpg" imageSize={[2752, 1536]} lazy imageAlt="Gala Dinner and Networking Reception"
         cta={{ label: "Get Your Pass", href: "/tickets" }}
       >
         <h2 style={headingStyle(textMain)}>Gala Dinner and <GradientSpan>Networking Reception</GradientSpan></h2>
@@ -238,7 +238,7 @@ export default function FirstTimers() {
 
       {/* ═══════════ ROW 6 — CONSULTATION CLINIC ═══════════ */}
       <ContentRow isDark={isDark} textMain={textMain} textMuted={textMuted} border={border}
-        reverse={true} hasBg={true} image="/ft-clinic.jpg" imageAlt="Consultation Clinic at The Tech Festival Canada"
+        reverse={true} hasBg={true} image="/ft-clinic.jpg" imageSize={[2000, 1116]} lazy imageAlt="Consultation Clinic at The Tech Festival Canada"
         cta={{ label: "Partner With Us", href: "/sponsor" }}
       >
         <h2 style={headingStyle(textMain)}>Consultation <GradientSpan>Clinic</GradientSpan></h2>
@@ -266,8 +266,9 @@ export default function FirstTimers() {
             overflow: "hidden", minHeight: 300,
           }}>
             <img
-              src="/Tech_Festival_Canada_Logo_Dark_Transparent.png"
+              src="/Tech_Festival_Canada_Logo_Dark_Transparent.webp"
               alt="The Tech Festival Canada"
+              width={1500} height={938} loading="lazy" decoding="async"
               style={{
                 width: "65%", maxWidth: 300, height: "auto", objectFit: "contain",
                 filter: "drop-shadow(0 0 40px rgba(122,63,209,0.25))",
@@ -365,7 +366,9 @@ function ListBlock({ textMain, items }) {
    CONTENT ROW — alternating text + image
    ═══════════════════════════════════════════════════════ */
 
-function ContentRow({ isDark, textMain, textMuted, border, reverse, hasBg, image, imageAlt, cta, children }) {
+/* imageSize: the photo's own width and height, so its box is reserved before it arrives (nothing jumps); lazy: the
+   photos below the first load as they near the screen, not all ~4.9 MB at once (Oct 31 2026). */
+function ContentRow({ isDark, textMain, textMuted, border, reverse, hasBg, image, imageAlt, imageSize, lazy, cta, children }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const isPrimary = cta.label === "Get Your Pass";
@@ -412,7 +415,8 @@ function ContentRow({ isDark, textMain, textMuted, border, reverse, hasBg, image
             border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.12)"}`,
             minHeight: 400, position: "relative",
           }}>
-            <img src={image} alt={imageAlt}
+            <img src={image} alt={imageAlt} width={imageSize[0]} height={imageSize[1]}
+              loading={lazy ? "lazy" : undefined} decoding={lazy ? "async" : undefined}
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", minHeight: 400 }} />
             <div style={{
               position: "absolute", inset: 0,

@@ -2,10 +2,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DESK_NAME, DESK_PATH, RETIRED_DESK_PATHS } from './src/checkin/deskPath.js'
 import { deskSwVersion } from './src/checkin/swVersion.js'
+import { prerenderSite } from './src/seo/prerender.mjs'
 
 /* =========================================================
    Three pages from one build:
@@ -22,6 +24,8 @@ import { deskSwVersion } from './src/checkin/swVersion.js'
    The app has its own HTML so only /app advertises the
    manifest, Apple home-screen tags and theme colour, and the
    marketing pages never load its code.
+   After the build, ttfcPrerender gives each public page of the
+   website its own copy of index.html (Oct 31 2026, below).
 ========================================================= */
 
 const root = fileURLToPath(new URL('.', import.meta.url))
@@ -223,9 +227,38 @@ function ttfcDeskPwa() {
   }
 }
 
+/**
+ * Search engines and link previews (Oct 31 2026): once the build is written, each public page of the website gets its
+ * own copy of the built index.html, with its title, description, canonical, share tags, JSON-LD and a <noscript>
+ * outline (its H1, intro and links): the pages in src/seo/routes.js, every speaker (Sanity's public CDN) and every
+ * Catalyst Awards winner (the API), at <page>/index.html, plus sitemap.xml. index.html becomes the home page's;
+ * spa.html (the plain site) is what vercel.json serves for every other address. Static files only. If Sanity or the
+ * API doesn't answer in time, the fixed pages are still written and the build goes on (src/seo/prerender.mjs).
+ */
+function ttfcPrerender() {
+  return {
+    name: 'ttfc-prerender',
+    // vite preview: /awards, /speakers/<slug>… serve their own file, as on Vercel (else the usual fallback).
+    configurePreviewServer(server) {
+      const out = resolve(server.config.root, server.config.build.outDir)
+      server.middlewares.use((req, _res, next) => {
+        const [path, query] = (req.url || '').split('?')
+        if (/^(\/[a-z0-9-]+)+$/.test(path) && existsSync(join(out, path, 'index.html'))) req.url = `${path}/index.html${query ? `?${query}` : ''}`
+        next()
+      })
+    },
+    async writeBundle(options, bundle) {
+      const shell = bundle['index.html']
+      if (!shell) throw new Error('ttfc-prerender: the build has no index.html')
+      const r = await prerenderSite({ outDir: options.dir, shell: String(shell.source) })
+      console.log(`ttfc-prerender: ${r.pages} pages, ${r.speakers} speakers, ${r.winners} award winners; ${r.urls} addresses listed for search engines`)
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), ttfcAppPwa(), ttfcDeskPwa()],
+  plugins: [react(), ttfcAppPwa(), ttfcDeskPwa(), ttfcPrerender()],
   define: {
     __TTFC_APP_BUILD__: JSON.stringify(buildId()),
   },

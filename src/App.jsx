@@ -1,36 +1,39 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import Home from "./pages/Home";
-import Speakers from "./pages/Speakers";
-import SpeakerProfile from "./pages/Speakerprofile";
-import Sponsors from "./pages/Sponsors";
-import Tickets from "./pages/Tickets";
-import Checkout from "./pages/Checkout";
-import Resources from "./pages/Resources";
-import Privacy from "./pages/Privacy";
-import Contact from "./pages/Contact";
+/* Every other page is its own chunk, fetched when it opens (Oct 31 2026): the script every visit starts with went
+   from 941 kB to 414 kB. The <Suspense> around <Routes> covers them; moving between pages keeps the current one on
+   screen until the next has loaded (React Router navigates in a transition). AboutUs stays: the homepage shows it. */
+const Speakers = lazy(() => import("./pages/Speakers"));
+const SpeakerProfile = lazy(() => import("./pages/Speakerprofile"));
+const Sponsors = lazy(() => import("./pages/Sponsors"));
+const Tickets = lazy(() => import("./pages/Tickets"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Resources = lazy(() => import("./pages/Resources"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Contact = lazy(() => import("./pages/Contact"));
 import ProtectedRoute from "./components/ProtectedRoute";
 import AboutUs from "./components/AboutUs";
-import AuthSuccess from "./pages/AuthSuccess";
-import ResetPassword from "./pages/ResetPassword";
+const AuthSuccess = lazy(() => import("./pages/AuthSuccess"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 import TicketBar from "./components/TicketBar";
-import Agenda from "./pages/Agenda";
+const Agenda = lazy(() => import("./pages/Agenda"));
 import AdminRoute from "./components/AdminRoute";
-import Sponsor from "./pages/Sponsor";
-import Exhibit from "./pages/Exhibit";
-import IndiaPavilion from "./pages/IndiaPavilion";
-import PavilionPayment from "./pages/PavilionPayment";
-import Brochures from "./pages/Brochures";
-import Venue from "./pages/Venue";
+const Sponsor = lazy(() => import("./pages/Sponsor"));
+const Exhibit = lazy(() => import("./pages/Exhibit"));
+const IndiaPavilion = lazy(() => import("./pages/IndiaPavilion"));
+const PavilionPayment = lazy(() => import("./pages/PavilionPayment"));
+const Brochures = lazy(() => import("./pages/Brochures"));
+const Venue = lazy(() => import("./pages/Venue"));
 import ScrollToTop from "./components/ScrollToTop";
-import Awards from "./pages/Awards";
-import Volunteer from "./pages/Volunteer";
-import Partners2026 from "./pages/partners2026";
-import Organizers from "./pages/Organizers";
-import LinkedinLanding from "./pages/Linkedin";
-import Media from "./pages/Media";
-import CompleteProfile from "./pages/CompleteProfile";
-import AppLogin from "./pages/AppLogin";
+const Awards = lazy(() => import("./pages/Awards"));
+const Volunteer = lazy(() => import("./pages/Volunteer"));
+const Partners2026 = lazy(() => import("./pages/partners2026"));
+const Organizers = lazy(() => import("./pages/Organizers"));
+const LinkedinLanding = lazy(() => import("./pages/Linkedin"));
+const Media = lazy(() => import("./pages/Media"));
+const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
+const AppLogin = lazy(() => import("./pages/AppLogin"));
 // Unlinked RSVP page: reached only by typing thetechfestival.com/rsvp (noindex, not in any menu).
 const Rsvp = lazy(() => import("./pages/Rsvp"));
 // Unlinked "I'm attending" page: opened from the campaign email (noindex, not in any menu).
@@ -57,6 +60,10 @@ const FactSheet = lazy(() => import("./pages/FactSheet"));
 import { FACT_SHEET_PATH, isFactSheetPath } from "./lib/factSheetRoute";
 import CookieConsent from "./components/CookieConsent";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
+// Search engines (Oct 31 2026): each address's title, canonical… (src/seo/routes.js), and a page for unknown addresses.
+import RouteSeo from "./seo/RouteSeo";
+import RouteErrorBoundary from "./components/RouteErrorBoundary";
+import NotFound from "./pages/NotFound";
 
 // The staff panel is loaded only when someone opens it.
 const Admin = lazy(() => import("./pages/Admin"));
@@ -113,7 +120,10 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <RouteSeo />
       <OffJury><AnnouncementBar /></OffJury>
+      <RouteErrorBoundary>
+      <Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/programme" element={<AgendaGate><Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Programme /></Suspense></AgendaGate>} />
@@ -180,7 +190,11 @@ function App() {
         <Route path="/rate" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Rate /></Suspense>} />
         <Route path="/survey" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Survey /></Suspense>} />
         <Route path={FACT_SHEET_PATH} caseSensitive element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><FactSheet /></Suspense>} />
+        {/* Any other address: "Page not found", noindex (src/pages/NotFound.jsx). */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
+      </RouteErrorBoundary>
       <OffJury><TicketBar /></OffJury>
       <OffJury><CookieConsent /></OffJury>
     </BrowserRouter>

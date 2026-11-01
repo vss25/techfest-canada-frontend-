@@ -336,15 +336,15 @@ function PolicyBlock(props) {
  
   return (
     <div style={{ marginBottom: "5rem" }}>
-      {/* Title */}
-      <h1 style={{
+      {/* Title: an <h2> under the page's one <h1> (Oct 31 2026, SEO; each block had its own <h1>), same look */}
+      <h2 style={{
         fontFamily: "'Orbitron', sans-serif",
         fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)",
         fontWeight: 900,
         letterSpacing: "-0.5px",
         color: dark ? "#ffffff" : "#0d0520",
         marginBottom: 6,
-      }}>{title}</h1>
+      }}>{title}</h2>
  
       {subtitle && (
         <p style={{
@@ -405,6 +405,10 @@ export default function Privacy() {
           maxWidth: 860,
           margin: "0 auto",
         }}>
+
+        {/* The page's one <h1> (Oct 31 2026, SEO), for search engines and screen readers: the four blocks' titles
+            below are its <h2>s and their numbered sections <h3>s. Nothing changes on screen. */}
+        <h1 className="sr-only">Privacy Policy, Terms of Use and Cookie Policy of The Tech Festival Canada</h1>
  
         {/* ═══ PRIVACY POLICY ═══ */}
         <PolicyBlock

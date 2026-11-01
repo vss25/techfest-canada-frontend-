@@ -272,7 +272,7 @@ export default function Awards() {
           .aw-hero-grid { grid-template-columns: 1fr !important; text-align: center !important; gap: 1.5rem !important; padding: 32px 20px 0 !important; }
           .aw-hero-grid > div { align-items: center !important; text-align: center !important; }
           .aw-hero-grid h1 { font-size: clamp(2.2rem, 12vw, 3.5rem) !important; text-align: center !important; }
-          .aw-hero-line { flex-wrap: wrap !important; justify-content: center !important; row-gap: 0.1em !important; }
+          .aw-hero-line { flex-wrap: wrap !important; justify-content: center !important; row-gap: 0.1rem !important; }
           .aw-hero-grid p { margin-left: auto !important; margin-right: auto !important; }
           .aw-hero-trophy { width: min(80vw, 340px) !important; }
           .aw-hero-ctas { flex-direction: column !important; width: 100% !important; }
@@ -299,13 +299,17 @@ export default function Awards() {
 
         <div className="aw-hero-grid" style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", alignItems: "center", maxWidth: 1500, margin: "0 auto", padding: "0 clamp(20px, 4vw, 60px)", gap: "clamp(24px, 4vw, 48px)" }}>
           <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}>
+            {/* One <h1> for the page (Oct 31 2026, SEO; it was three): the same lines as spans, plus "Catalyst Awards 2026"
+                for search engines and screen readers only. The row's gap is in rem, the size it had as a <div> outside the
+                heading. The spaces before each line end keep the words apart in the page's text; they aren't drawn. */}
             <h1 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(2.5rem, 7vw, 6.5rem)", fontWeight: 900, lineHeight: 0.9, letterSpacing: "-2px", color: textMain, textTransform: "uppercase", margin: 0 }}>
-              YOU<br />HAVE<br />EARNED
+              <span className="sr-only">Catalyst Awards 2026: </span>
+              <span style={{ display: "block" }}>YOU <br />HAVE <br />EARNED </span>
+              <span className="aw-hero-line" style={{ display: "flex", alignItems: "baseline", gap: "0.25rem", marginTop: "clamp(8px, 1.5vw, 16px)" }}>
+                <span>THIS </span>
+                <span style={{ color: "#f5a623" }}>MOMENT.</span>
+              </span>
             </h1>
-            <div className="aw-hero-line" style={{ display: "flex", alignItems: "baseline", gap: "0.25em", marginTop: "clamp(8px, 1.5vw, 16px)" }}>
-              <h1 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(2.5rem, 7vw, 6.5rem)", fontWeight: 900, lineHeight: 0.9, letterSpacing: "-2px", color: textMain, textTransform: "uppercase", margin: 0 }}>THIS</h1>
-              <h1 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(2.5rem, 7vw, 6.5rem)", fontWeight: 900, lineHeight: 0.9, letterSpacing: "-2px", margin: 0, color: "#f5a623" }}>MOMENT.</h1>
-            </div>
             <p style={{ fontFamily: "'Montserrat',sans-serif", fontSize: "clamp(0.95rem, 1.3vw, 1.1rem)", color: textMid, lineHeight: 1.75, maxWidth: 420, marginTop: 28 }}>
               {winners ? "The results are out. Meet the winners of the Catalyst Awards 2026." : "The hard work is done. Now let Canada know about it."}
             </p>
@@ -318,7 +322,8 @@ export default function Awards() {
 
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3, duration: 1.2, ease: [0.22, 1, 0.36, 1] }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
             <motion.div animate={{ y: [0, -14, 0], rotate: [-3, -1, -3] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}>
-              <img className="aw-hero-trophy" src="/awards-trophy-single.webp" alt="The Catalyst Award" style={{ width: "clamp(300px, 42vw, 600px)", maxWidth: "100%", height: "auto",
+              {/* width/height: the image's own size (632 x 395), so its space is kept before it loads (here and below) */}
+              <img className="aw-hero-trophy" src="/awards-trophy-single.webp" alt="The Catalyst Award" width={632} height={395} style={{ width: "clamp(300px, 42vw, 600px)", maxWidth: "100%", height: "auto",
                 filter: dark ? "drop-shadow(0 24px 80px rgba(122,63,209,0.50)) drop-shadow(0 8px 28px rgba(245,166,35,0.20))" : "drop-shadow(0 24px 80px rgba(0,0,0,0.18))",
               }} />
             </motion.div>
@@ -574,7 +579,7 @@ function TrophyScroll({ bg, dark, textMain, textSoft, accent }) {
           boxShadow: dark ? "0 0 #0000004d, 0 9px 20px #0000004a, 0 37px 37px #00000042, 0 84px 50px #00000026" : "0 9px 20px rgba(122,63,209,0.08), 0 37px 37px rgba(122,63,209,0.06), 0 84px 50px rgba(122,63,209,0.03)",
           border: "1px solid " + (dark ? "rgba(155,135,245,0.12)" : "rgba(122,63,209,0.10)"),
         }}>
-          <img src="/awards-trophy-single.webp" alt="The Catalyst Award Trophy" style={{ width: "100%", height: "auto", display: "block" }} />
+          <img src="/awards-trophy-single.webp" alt="The Catalyst Award Trophy" width={632} height={395} style={{ width: "100%", height: "auto", display: "block" }} />
         </motion.div>
       </div>
     </div>
@@ -659,7 +664,7 @@ function StickyTrophy({ dark }) {
 
   return (
     <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-6deg)", zIndex: 1, pointerEvents: "none", width: "clamp(250px, 30vw, 420px)", opacity: opacity, transition: "opacity 0.3s ease" }}>
-      <img src="/awards-trophy-single.webp" alt="" style={{ width: "100%", height: "auto",
+      <img src="/awards-trophy-single.webp" alt="" width={632} height={395} style={{ width: "100%", height: "auto",
         filter: dark ? "drop-shadow(0 16px 48px rgba(122,63,209,0.30)) brightness(0.7)" : "drop-shadow(0 16px 48px rgba(0,0,0,0.08)) brightness(0.9)",
       }} />
     </div>

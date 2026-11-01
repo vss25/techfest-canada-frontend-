@@ -12,12 +12,14 @@ const IMAGES = [
   "/venue5.webp",
 ];
 
+/* `alt` (Oct 31 2026, SEO): the caption with the venue's name, for search and screen readers; the caption on the
+   photo stays `label`. The gallery below uses these by index (IMAGES[i] is GALLERY[i].src). */
 const GALLERY = [
-  { src: "/venue1.webp", fallback: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=85", label: "Aerial View" },
-  { src: "/venue2.jpg", fallback: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200&q=85", label: "Pool" },
-  { src: "/venue3.avif", fallback: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=85", label: "City View" },
-  { src: "/venue4.jpg", fallback: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=1200&q=85", label: "VIP Lounge" },
-  { src: "/venue5.webp", fallback: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1200&q=85", label: "Lobby" },
+  { src: "/venue1.webp", fallback: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=85", label: "Aerial View", alt: "The Westin Harbour Castle on the Toronto waterfront, seen from the water, with the CN Tower to its left" },
+  { src: "/venue2.jpg", fallback: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200&q=85", label: "Pool", alt: "The pool at The Westin Harbour Castle, Toronto" },
+  { src: "/venue3.avif", fallback: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=85", label: "City View", alt: "City view of the Toronto waterfront and the CN Tower" },
+  { src: "/venue4.jpg", fallback: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=1200&q=85", label: "VIP Lounge", alt: "VIP Lounge at The Westin Harbour Castle, Toronto" },
+  { src: "/venue5.webp", fallback: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1200&q=85", label: "Lobby", alt: "Lobby at The Westin Harbour Castle, Toronto" },
 ];
 
 // Fallback: if local images fail, swap to these
@@ -217,7 +219,7 @@ export default function Venue() {
               ].map(function (item) {
                 return (
                   <div key={item.label} style={{ gridColumn: item.col, gridRow: item.row, borderRadius: 20, overflow: "hidden", position: "relative" }}>
-                    <img src={IMAGES[item.src]} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.6s ease" }}
+                    <img src={IMAGES[item.src]} alt={GALLERY[item.src].alt} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.6s ease" }}
                       onMouseEnter={function (e) { e.currentTarget.style.transform = "scale(1.04)"; }}
                       onMouseLeave={function (e) { e.currentTarget.style.transform = "scale(1)"; }} onError={function(e) { var idx = IMAGES.indexOf(e.currentTarget.src.replace(window.location.origin,"")); if(idx >= 0) e.currentTarget.src = FALLBACK_IMAGES[idx]; }} />
                     <div style={{ position: "absolute", bottom: 16, left: 16, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(10px)", borderRadius: 8, padding: "7px 14px", fontFamily: "'Orbitron',sans-serif", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "1px", color: "#fff", textTransform: "uppercase" }}>{item.label}</div>
@@ -229,7 +231,7 @@ export default function Venue() {
           <div className="mobile-gallery-strip">
             <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 12 }}>
               {GALLERY.map(function (img, i) {
-                return <img key={i} src={img.src} alt={img.label} onError={function(e) { e.currentTarget.src = img.fallback; }} style={{ width: 280, height: 200, objectFit: "cover", borderRadius: 16, flexShrink: 0 }} />;
+                return <img key={i} src={img.src} alt={img.alt} onError={function(e) { e.currentTarget.src = img.fallback; }} style={{ width: 280, height: 200, objectFit: "cover", borderRadius: 16, flexShrink: 0 }} />;
               })}
             </div>
           </div>

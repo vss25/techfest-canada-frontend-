@@ -155,10 +155,6 @@ export default function Brochures() {
             transition={{ duration:0.7 }}
             style={{ textAlign:"center", marginBottom:"3.5rem" }}
           >
-            <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(122,63,209,0.10)", border:"1px solid rgba(122,63,209,0.25)", borderRadius:999, padding:"5px 18px", marginBottom:20, fontSize:"0.65rem", fontFamily:"'Orbitron',sans-serif", fontWeight:700, letterSpacing:"1.5px", textTransform:"uppercase", color:"#b99eff" }}>
-              <span style={{ width:5, height:5, borderRadius:"50%", background:"#f5a623", boxShadow:"0 0 6px #f5a623", display:"inline-block" }} />
-              TFC 2026 · TORONTO
-            </div>
             <h1 style={{ fontFamily:"'Orbitron',sans-serif", fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, letterSpacing:"-0.02em", lineHeight:1.1, marginBottom:"1rem", color:textMain }}>
               DOWNLOAD THE{" "}
               <span style={{ background:"linear-gradient(90deg,#7a3fd1,#f5a623)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>

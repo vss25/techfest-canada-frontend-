@@ -20,12 +20,14 @@ const PARTNERS_DROPDOWN = [
 ];
 
 // "Programme" (Oct 24 2026): /programme, the programme at a glance; shown while the agenda is on, like AGENDA.
+// "Brochure" (Nov 1 2026): moved here from the button beside TICKETS, which is now "2027".
 const MORE_DROPDOWN = [
   { label: "Programme", path: "/programme" },
   { label: "Venue", path: "/venue" },
   { label: "Volunteer", path: "/volunteer" },
   { label: "Organizers", path: "/organizers" },
   { label: "Media", path: "/media" },
+  { label: "Brochure", path: "/brochures" },
   { label: "Stay updated for 2027", path: "/stay-updated" },
 ];
 
@@ -88,9 +90,10 @@ export default function Navbar() {
     if (navRef.current) setNavHeight(navRef.current.getBoundingClientRect().bottom);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    document.body.classList.add("tfc-menu-open");
     const onKey = (e) => { if (e.key === "Escape") setMobileOpen(false); };
     window.addEventListener("keydown", onKey);
-    return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
+    return () => { document.body.style.overflow = prev; document.body.classList.remove("tfc-menu-open"); window.removeEventListener("keydown", onKey); };
   }, [mobileOpen]);
 
   const dark = theme === "dark";
@@ -292,6 +295,9 @@ export default function Navbar() {
           position: absolute;
         }
 
+        /* The phone menu has its own bottom row (2027 / Get tickets); the page's bottom bar would cover it. */
+        body.tfc-menu-open .ticket-bar { display: none !important; }
+
         .tfc-mobile-ticket { display: none !important; }
         .tfc-desktop-ticket { display: inline-flex !important; }
         .tfc-desktop-nav { display: flex; }
@@ -313,7 +319,7 @@ export default function Navbar() {
           .tfc-nav-logo { height: 68px !important; max-width: 220px !important; }
           .tfc-mobile-ticket { display: inline-flex !important; padding: 9px 16px !important; font-size: 0.6rem !important; }
           .tfc-desktop-ticket { display: none !important; }
-          .tfc-brochure-btn { display: none !important; }
+          .tfc-2027-btn { display: none !important; }
           .tfc-theme-toggle { width: 38px; height: 38px; }
         }
 
@@ -385,9 +391,10 @@ export default function Navbar() {
 
           {/* RIGHT: ACTIONS */}
           <div className="tfc-nav-right">
-            <Link to="/brochures" className="tfc-brochure-btn"
+            {/* "2027" (Nov 1 2026): where BROCHURE was (Brochure is under MORE now); the TTFC 2027 waitlist. */}
+            <Link to="/stay-updated" className="tfc-2027-btn" aria-label="Stay updated for TTFC 2027"
               style={{ padding: "0 18px", height: 38, borderRadius: 999, background: "transparent", border: "2px solid " + (isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.18)"), color: isDark ? "#fff" : "#0f0520", fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.62rem", letterSpacing: "0.8px", textDecoration: "none", display: "flex", alignItems: "center", textTransform: "uppercase" }}
-            >BROCHURE</Link>
+            >2027</Link>
 
             <Link to="/tickets" className="tfc-desktop-ticket btn-primary"
               style={{ alignItems: "center", gap: 8, padding: "9px 20px", borderRadius: 999, fontFamily: "'Orbitron', sans-serif", fontSize: "0.65rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none", transition: "all 0.2s ease" }}
@@ -407,7 +414,8 @@ export default function Navbar() {
         </div>
 
         {/* MOBILE MENU — full-height sheet: big rows, grouped tiles, tickets always in reach.
-            Portalled to <body>: the bar's backdrop-filter would otherwise trap position:fixed inside it. */}
+            Portalled to <body>: the bar's backdrop-filter would otherwise trap position:fixed inside it.
+            While it's open the phone's bottom bar (TicketBar) is hidden: it used to cover this sheet's own buttons (Nov 1 2026). */}
         {createPortal(<AnimatePresence>
           {mobileOpen && (
             <motion.div
@@ -474,9 +482,9 @@ export default function Navbar() {
               </motion.div>
 
               <div style={{ display: "flex", gap: 10, padding: "12px 20px calc(14px + env(safe-area-inset-bottom))", borderTop: "1px solid " + border, background: mobileBg }}>
-                <Link to="/brochures" onClick={() => setMobileOpen(false)}
+                <Link to="/stay-updated" onClick={() => setMobileOpen(false)} aria-label="Stay updated for TTFC 2027"
                   style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", height: 50, borderRadius: 14, fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none", border: "1.5px solid " + (isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.18)"), color: isDark ? "#fff" : "#0f0520" }}
-                >Brochure</Link>
+                >2027</Link>
                 <Link to="/tickets" onClick={() => setMobileOpen(false)} className="btn-primary"
                   style={{ flex: 1.4, display: "flex", alignItems: "center", justifyContent: "center", height: 50, borderRadius: 14, fontFamily: "'Orbitron', sans-serif", fontSize: "0.78rem", fontWeight: 900, letterSpacing: "1.2px", textTransform: "uppercase", textDecoration: "none" }}
                 >Get tickets</Link>

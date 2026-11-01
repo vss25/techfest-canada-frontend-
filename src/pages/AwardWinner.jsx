@@ -90,7 +90,7 @@ export default function AwardWinner() {
   const jpgRef = useRef(null);
   const embed = loc.embed;
 
-  /* The title, the page's dark look, and the trip back from LinkedIn out of the address bar. */
+  /* The page's dark look, and the trip back from LinkedIn out of the address bar (the title: useSeo below). */
   useEffect(() => {
     document.body.classList.add("att-open");
     if (loc.had) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);

@@ -296,8 +296,8 @@ export function clip(text, max) {
 /** A name's closing full stop off ("… R&D center." → "… R&D center"), not an abbreviation's ("Inc."). */
 const endDot = (s) => (/\b(?:inc|ltd|corp|co|llc|plc|jr|sr)\.$/i.test(s) ? s : s.replace(/\.$/, ""));
 
-/** The first of these that fits in `max`, else the last one clipped. */
-const firstFit = (max, ...options) => options.find((o) => o.length <= max) ?? clip(options.at(-1), max);
+/** The first of these that fits in `max`, else the last one clipped (no .at(): the browser runs this too, Safari 14). */
+const firstFit = (max, ...options) => options.find((o) => o.length <= max) ?? clip(options[options.length - 1], max);
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 /** "2026-10-26" → "26 October 2026" (as src/lib/awardWinners.js longDate). */
@@ -431,10 +431,15 @@ export function winnerMeta(w) {
  * The head for an address in the browser (<RouteSeo>), before a page adds its own:
  * a page → its record; an old address → where it goes; a speaker or winner → a placeholder with the right canonical;
  * a noindex page → noindex, no canonical (its title is the page's own); anything else → null (no canonical).
+ * loadedCanonical: the canonical of the HTML file the browser loaded (null for spa.html). On a speaker's or winner's
+ * own prerendered file the head is already theirs, so the placeholder sets only the canonical and robots: a slow or
+ * failed load (the Render API waking up while Google renders the page) then keeps the file's title, description,
+ * photo and JSON-LD instead of the generic ones.
  */
-export function seoForPath(pathname) {
+export function seoForPath(pathname, loadedCanonical = null) {
   const path = cleanPath(pathname);
   if (REDIRECTS[path]) return seoForPath(REDIRECTS[path]);
+  const placeholder = (seo) => (seo.canonical === loadedCanonical ? { canonical: seo.canonical, robots: seo.robots } : seo);
   const page = BY_PATH.get(path);
   if (page) {
     const m = pageMeta(page);
@@ -444,18 +449,18 @@ export function seoForPath(pathname) {
   const speaker = /^\/speakers\/([^/]+)$/.exec(path);
   if (speaker && normalizeSpeakerSlug(speaker[1])) {
     const list = pageMeta(BY_PATH.get("/speakers"));
-    return {
+    return placeholder({
       title: `TTFC 2026 Speaker | ${SITE_NAME}`, description: list.description,
       canonical: canonicalUrl(`/speakers/${normalizeSpeakerSlug(speaker[1])}`), robots: INDEX_ROBOTS, image: DEFAULT_IMAGE, jsonLd: null,
-    };
+    });
   }
   const winner = /^\/awards\/winners\/([^/]+)$/.exec(path);
   if (winner && isWinnerId(winner[1])) {
     const list = pageMeta(BY_PATH.get("/awards"));
-    return {
+    return placeholder({
       title: `Catalyst Awards 2026 Winner | ${SITE_NAME}`, description: list.description,
       canonical: canonicalUrl(path), robots: INDEX_ROBOTS, image: DEFAULT_IMAGE, jsonLd: null,
-    };
+    });
   }
   return null;
 }

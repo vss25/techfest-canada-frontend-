@@ -198,6 +198,25 @@ test("seoForPath (the browser's per-route head): pages, old addresses, speakers,
   assert.equal(clip("one two three four", 10), "one two…");
 });
 
+test("seoForPath: on a speaker's or winner's own prerendered file, their head stays while the data loads (no placeholder)", () => {
+  const laila = `${SITE}/speakers/laila-burns`;
+  const winner = `${SITE}/awards/winners/6ad000b5745957478367e34b`;
+  // Opened on its own file (the HTML's canonical is this address): only the canonical and robots, the rest is left as it is.
+  for (const [url, loaded] of [["/speakers/laila-burns", laila], ["/speakers/laila-burns-", laila], ["/awards/winners/6ad000b5745957478367e34b", winner]]) {
+    const s = seoForPath(url, loaded);
+    assert.deepEqual(s, { canonical: loaded, robots: INDEX_ROBOTS }, url);
+    for (const k of ["title", "description", "image", "jsonLd"]) assert.equal(k in s, false, `${url}: ${k} left to the file`);
+  }
+  // Reached in the browser from another page, or on spa.html: the placeholder.
+  for (const loaded of [null, `${SITE}/speakers`, `${SITE}/speakers/amy-flood`]) {
+    const s = seoForPath("/speakers/laila-burns", loaded);
+    assert.deepEqual([s.title, s.canonical, s.jsonLd], [`TTFC 2026 Speaker | The Tech Festival Canada`, laila, null], String(loaded));
+  }
+  assert.equal(seoForPath("/awards/winners/6ad000b5745957478367e34b", `${SITE}/awards`).title, "Catalyst Awards 2026 Winner | The Tech Festival Canada");
+  // Pages always get their full head (the same as their file's).
+  assert.equal(seoForPath("/awards", `${SITE}/awards`).title, PAGES.find((p) => p.path === "/awards").title);
+});
+
 test("unlisted pages stay unnamed: no fact sheet or check-in address in the SEO files", () => {
   for (const f of ["src/seo/routes.js", "src/seo/slug.js", "src/seo/prerender.mjs", "src/seo/RouteSeo.jsx", "public/robots.txt"]) {
     assert.doesNotMatch(read(f), /fact-?sheet\/|check-?in/i, f);

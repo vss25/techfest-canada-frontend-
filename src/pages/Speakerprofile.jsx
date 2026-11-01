@@ -162,6 +162,9 @@ export default function SpeakerProfile() {
   useEffect(function() {
     if (!params.slug) return;
     setLoading(true);
+    // Another speaker's address in the same page: not the last one's head (canonical) or "not found" meanwhile.
+    setSpeaker(null);
+    setError(null);
     client.fetch(SPEAKER_QUERY())
       .then(function(speakers) {
         // One slug rule (src/seo/slug.js); older links that end in "-" (names saved with a space) still open.

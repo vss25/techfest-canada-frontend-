@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import useSeo from "../hooks/useSeo";
 import { seoForPath } from "./routes";
@@ -10,14 +11,18 @@ import { seoForPath } from "./routes";
    page's own useSeo goes over it (the speaker and winner pages
    once loaded, /stay-updated's CMS wording, the not-found page).
    Unknown addresses get no canonical; noindex pages get noindex
-   and keep the title they set themselves.
+   and keep the title they set themselves. A speaker or winner
+   opened on their own prerendered file keeps that file's head
+   while their data loads (the canonical the HTML came with).
 ========================================================= */
 
 const NONE = { canonical: null, jsonLd: null };
 
 export default function RouteSeo() {
   const { pathname } = useLocation();
-  const seo = seoForPath(pathname) || NONE;
+  // Read once, before any useSeo has run: the canonical of the HTML file this visit started on (none in spa.html).
+  const [loadedCanonical] = useState(() => document.head.querySelector('link[rel="canonical"]')?.getAttribute("href") || null);
+  const seo = seoForPath(pathname, loadedCanonical) || NONE;
   useSeo(seo.title, seo.description, {
     level: 0, canonical: seo.canonical, robots: seo.robots, image: seo.image, jsonLd: seo.jsonLd,
   });

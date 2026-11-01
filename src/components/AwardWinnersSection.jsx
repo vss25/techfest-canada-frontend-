@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { ChevronRight, ExternalLink, Trophy, X } from "lucide-react";
-import { longDate } from "../lib/awardWinners";
+import { AWARD_CLOSE_MESSAGE, longDate } from "../lib/awardWinners";
 
 /* =========================================================
    "The results are out" on /awards (Oct 31 2026): every Catalyst
@@ -11,10 +12,15 @@ import { longDate } from "../lib/awardWinners";
    LinkedIn) in an iframe in a dialog. The list: GET /api/awards/winners
    (src/lib/awardWinners.js), shown only while it's live and has
    winners (Admin › Catalyst Awards › Winners).
+   The dialog is a real modal: rendered outside #root, with the page
+   behind it inert (Tab stays in the dialog and its iframe), and
+   Escape closes it from the iframe too (the winner's page posts
+   AWARD_CLOSE_MESSAGE to us).
 ========================================================= */
 
 export default function AwardWinnersSection({ winners, awardsNight, dark, textMain, textMid, accent, cardBg, cardBdr, sectionBg }) {
   const [open, setOpen] = useState(null); // the winner shown in the dialog
+  const close = useCallback(() => setOpen(null), []);
   const special = winners.filter((w) => w.special);
   const matrix = winners.filter((w) => !w.special);
 
@@ -39,7 +45,7 @@ export default function AwardWinnersSection({ winners, awardsNight, dark, textMa
           </>
         )}
       </div>
-      {open && <WinnerDialog winner={open} onClose={() => setOpen(null)} />}
+      {open && <WinnerDialog winner={open} onClose={close} />}
     </section>
   );
 }
@@ -68,23 +74,34 @@ function WinnerGrid({ list, onOpen }) {
 
 function WinnerDialog({ winner, onClose }) {
   const closeRef = useRef(null);
+  const frameRef = useRef(null);
   const src = `/awards/winners/${winner.id}?embed=1`;
 
+  /* Once per open: lock the page's scroll, make it inert, focus Close; Escape here or in the iframe closes. */
   useEffect(() => {
     const before = document.activeElement;
     const prevOverflow = document.body.style.overflow;
+    const root = document.getElementById("root");
     document.body.style.overflow = "hidden";
+    root?.setAttribute("inert", "");
     closeRef.current?.focus();
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    const shut = () => onClose();
+    const onKey = (e) => { if (e.key === "Escape") shut(); };
+    const onMessage = (e) => {
+      if (e.origin === window.location.origin && e.source === frameRef.current?.contentWindow && e.data?.type === AWARD_CLOSE_MESSAGE) shut();
+    };
     window.addEventListener("keydown", onKey);
+    window.addEventListener("message", onMessage);
     return () => {
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("message", onMessage);
+      root?.removeAttribute("inert");
       document.body.style.overflow = prevOverflow;
       if (before && typeof before.focus === "function") before.focus({ preventScroll: true });
     };
-  }, [onClose]);
+  }, [onClose]); // onClose is stable (useCallback), so this runs once per open
 
-  return (
+  return createPortal(
     <div className="aw-dialog-back" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="aw-dialog" role="dialog" aria-modal="true" aria-label={`${winner.award}: ${winner.presentedTo}`}>
         <div className="aw-dialog-bar">
@@ -96,21 +113,22 @@ function WinnerDialog({ winner, onClose }) {
             <X size={20} aria-hidden="true" />
           </button>
         </div>
-        <iframe className="aw-dialog-frame" src={src} title={`${winner.award}: certificate, details and sharing`} />
+        <iframe ref={frameRef} className="aw-dialog-frame" src={src} title={`${winner.award}: certificate, details and sharing`} />
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
 const css = ({ dark, textMain, textMid, accent, cardBg, cardBdr }) => `
 .aw-winners-inner { max-width: 1180px; margin: 0 auto; padding: clamp(3.5rem, 7vw, 6rem) 5%; }
 .aw-winners-head { text-align: center; max-width: 760px; margin: 0 auto clamp(2rem, 4vw, 3rem); }
-.aw-winners-pill { display: inline-flex; align-items: center; gap: 7px; background: rgba(245,166,35,0.12); border: 1px solid rgba(245,166,35,0.35); color: #f5a623;
+.aw-winners-pill { display: inline-flex; align-items: center; gap: 7px; background: rgba(245,166,35,0.12); border: 1px solid rgba(245,166,35,0.35); color: ${dark ? "#f5a623" : "#8a4f00"};
   font-family: 'Orbitron', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 18px; border-radius: 999px; }
 .aw-winners-head h2 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: clamp(1.7rem, 4vw, 2.8rem); line-height: 1.12; color: ${textMain}; margin: 18px 0 14px; text-wrap: balance; }
 .aw-winners-head h2 span { background: linear-gradient(135deg, #7a3fd1, #f5a623); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .aw-winners-head p { font-family: 'Montserrat', sans-serif; font-size: clamp(0.98rem, 1.5vw, 1.08rem); line-height: 1.75; color: ${textMid}; margin: 0; }
-.aw-winners-sub { font-family: 'Orbitron', sans-serif; font-size: 0.62rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #f5a623; margin: clamp(2.2rem, 4vw, 3rem) 0 14px; }
+.aw-winners-sub { font-family: 'Orbitron', sans-serif; font-size: 0.62rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: ${dark ? "#f5a623" : "#8a4f00"}; margin: clamp(2.2rem, 4vw, 3rem) 0 14px; }
 .aw-winners-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .aw-winners-grid > li { display: flex; min-width: 0; }
 .aw-winner-card { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 20px 20px 16px; border-radius: 18px; cursor: pointer; font: inherit;
@@ -121,7 +139,7 @@ const css = ({ dark, textMain, textMid, accent, cardBg, cardBdr }) => `
 .aw-winner-tags { display: flex; gap: 6px; flex-wrap: wrap; min-height: 22px; }
 .aw-winner-tag { font-family: 'Orbitron', sans-serif; font-size: 0.56rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 9px; border-radius: 6px;
   background: ${dark ? "rgba(185,158,255,0.10)" : "rgba(122,63,209,0.08)"}; color: ${dark ? "#b99eff" : "#7a3fd1"}; }
-.aw-winner-tag-special { background: rgba(245,166,35,0.12); color: ${dark ? "#f5a623" : "#a35f00"}; }
+.aw-winner-tag-special { background: rgba(245,166,35,0.12); color: ${dark ? "#f5a623" : "#8a4f00"}; }
 .aw-winner-award { font-family: 'Montserrat', sans-serif; font-size: 0.86rem; font-weight: 600; line-height: 1.5; color: ${textMid}; }
 .aw-winner-company { font-family: 'Orbitron', sans-serif; font-size: clamp(1rem, 1.6vw, 1.15rem); font-weight: 800; line-height: 1.3; color: ${textMain}; overflow-wrap: anywhere; }
 .aw-winner-person { font-family: 'Montserrat', sans-serif; font-size: 0.86rem; font-weight: 600; color: ${dark ? "#cdb8ff" : "#5b2fa6"}; margin-top: -4px; }

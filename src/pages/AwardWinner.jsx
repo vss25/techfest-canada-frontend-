@@ -8,7 +8,8 @@ import AuroraBackground from "../components/AuroraBackground";
 import { ATT_CSS } from "./attendingStyles";
 import { ENQUIRE, LINKEDIN_PAGE, copyText, copyTextNow, downloadBlob, isLinkedinPostUrl, linkedinShareUrl } from "../lib/attending";
 import {
-  EVENT, POST_MAX, VENUE, VOICES, fileBase, isWinnerId, loadWinner, longDate, postText, recipientLine, startAwardPost,
+  AWARD_CLOSE_MESSAGE, EVENT, POST_MAX, VENUE, VOICES, fileBase, isWinnerId, loadWinner, longDate, postText, recipientLine,
+  startAwardPost,
 } from "../lib/awardWinners";
 import { CERT_H, CERT_W, canvasBlob, drawCertificate, jpegToPdf } from "../lib/certificate";
 
@@ -40,6 +41,7 @@ const POST_ERRORS = {
   unavailable: "Posting straight to LinkedIn isn’t available right now. You can still copy the text and open LinkedIn.",
   expired: "That took a little too long. Press “Post to LinkedIn” again.",
   busy: "Too many tries. Wait a few minutes, then try again.",
+  withdrawn: "This award isn’t shown on the website at the moment, so nothing was posted.",
 };
 const postErrorText = (code) => POST_ERRORS[code] || "LinkedIn didn’t accept the post. Try again, or copy the text and open LinkedIn.";
 const DRAFT_KEY = "ttfc.award.post";
@@ -92,6 +94,17 @@ export default function AwardWinner() {
     if (loc.posted || loc.postError) window.scrollTo(0, 0); // back from LinkedIn: the news is at the top
     return () => document.body.classList.remove("att-open");
   }, [loc]);
+
+  /* In the /awards dialog or the web app's sheet, focus is in here: Escape asks the page around us to close. */
+  useEffect(() => {
+    if (!embed || window.parent === window) return undefined;
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      try { window.parent.postMessage({ type: AWARD_CLOSE_MESSAGE }, window.location.origin); } catch { /* not ours */ }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [embed]);
 
   useEffect(() => {
     if (!isWinnerId(id)) return undefined;

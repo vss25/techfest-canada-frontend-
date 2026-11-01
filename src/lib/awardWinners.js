@@ -5,8 +5,9 @@
           presentedTo, showCompany, presentedOn, citation, pillar, sector, special, individual, website }] }
      GET  {API}/awards/winners/:id  → { winner, event, venue, page } | 404
      POST {API}/awards/post { id, image, text } → { id }   (the certificate + the post, 30 minutes)
-     then the page goes to {API}/awards/linkedin/post?d=<id> (LinkedIn sign-in → Posts API with The Tech Festival
-     Canada's page tagged → back to /awards/winners/<id>#posted=1&post=<URL>, or #post_error=<code>)
+     then the page goes to {API}/awards/linkedin/post?d=<draft id>&w=<winner id> (LinkedIn sign-in → Posts API with
+     The Tech Festival Canada's page tagged → back to /awards/winners/<id>#posted=1&post=<URL>, or #post_error=<code>;
+     `w` brings them back to this winner even when the draft is gone)
    Who and what shows: Admin › Catalyst Awards › Winners; the switch: site.award_winners.
 ========================================================= */
 
@@ -45,7 +46,7 @@ export async function startAwardPost(id, image, text) {
   const r = await json(await fetch(`${API}/awards/post`, {
     method: "POST", headers: { "Content-Type": "application/json" }, credentials: "omit", body: JSON.stringify({ id, image, text }),
   }));
-  return { redirect: `${API}/awards/linkedin/post?d=${encodeURIComponent(r.id)}` };
+  return { redirect: `${API}/awards/linkedin/post?d=${encodeURIComponent(r.id)}&w=${encodeURIComponent(String(id).toLowerCase())}` };
 }
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -79,14 +80,20 @@ export function postText(w, voice = "winner") {
   return `${lead}\n\n${thanks}\n\n${HASHTAGS}`;
 }
 
-/** "TTFC-2026-Catalyst-Award-Riley-Example" (no extension). */
+// Letters NFKD doesn't split into a plain letter and an accent (Łukasz would lose its Ł).
+const PLAIN = { Ł: "L", ł: "l", Ø: "O", ø: "o", Đ: "D", đ: "d", Ħ: "H", ħ: "h", ß: "ss", Æ: "AE", æ: "ae", Œ: "OE", œ: "oe", Þ: "Th", þ: "th", ı: "i" };
+
+/** "TTFC-2026-Catalyst-Award-Riley-Example" (no extension), in plain letters: "Łukasz Żółkiewski" → "Lukasz-Zolkiewski". */
 export function fileBase(w) {
-  const name = String(w?.presentedTo || "Winner").normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+  const name = String(w?.presentedTo || "Winner").replace(/[ŁłØøĐđĦħßÆæŒœÞþı]/g, (c) => PLAIN[c]).normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
   return `TTFC-2026-Catalyst-Award-${name || "Winner"}`;
 }
 
 /** A short reference printed on the certificate: "TTFC26-CA-E398". */
 export const certificateRef = (w) => `TTFC26-CA-${String(w?.id || "").slice(-4).toUpperCase() || "0000"}`;
+
+/** What an embedded winner page (/awards/winners/<id>?embed=1) sends the page around it on Escape: close me. */
+export const AWARD_CLOSE_MESSAGE = "ttfc-award-close";
 
 /** The winner's page on the website (what the apps open, and what's shared). */
 export const winnerUrl = (id) => `https://www.thetechfestival.com/awards/winners/${String(id || "").toLowerCase()}`;

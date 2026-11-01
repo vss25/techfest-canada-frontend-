@@ -15,7 +15,7 @@ const IMAGES = [
 /* `alt` (Oct 31 2026, SEO): the caption with the venue's name, for search and screen readers; the caption on the
    photo stays `label`. The gallery below uses these by index (IMAGES[i] is GALLERY[i].src). */
 const GALLERY = [
-  { src: "/venue1.jpg", fallback: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=85", label: "Aerial View", alt: "The Westin Harbour Castle on the Toronto waterfront, with the CN Tower behind it" },
+  { src: "/venue1.jpg", fallback: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=85", label: "Aerial View", alt: "The Westin Harbour Castle on the Toronto waterfront, seen from the water, with the CN Tower to its left" },
   { src: "/venue2.jpg", fallback: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200&q=85", label: "Pool", alt: "The pool at The Westin Harbour Castle, Toronto" },
   { src: "/venue3.jpg", fallback: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=85", label: "City View", alt: "City view of the Toronto waterfront and the CN Tower" },
   { src: "/venue4.jpg", fallback: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=1200&q=85", label: "VIP Lounge", alt: "VIP Lounge at The Westin Harbour Castle, Toronto" },

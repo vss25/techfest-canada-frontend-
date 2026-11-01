@@ -940,7 +940,7 @@ export default function Rsvp() {
       <AuroraBackground />
 
       <div className="rsvp-brand">
-        <img src="/Tech_Festival_Canada_Logo_Dark_Transparent.png" alt="The Tech Festival Canada" width="288" height="180" />
+        <img src="/Tech_Festival_Canada_Logo_Dark_Transparent.webp" alt="The Tech Festival Canada" width="288" height="180" />
       </div>
 
       <main className="rsvp-card" aria-labelledby={titleId}>

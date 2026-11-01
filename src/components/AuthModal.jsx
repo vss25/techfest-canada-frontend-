@@ -5,6 +5,25 @@ import { maskEmail, cleanCode, requestEmailLink, verifyEmailCode } from "../util
 const API = "https://techfest-canada-backend.onrender.com/api/auth";
 const GOOGLE_CLIENT_ID = "676399067827-8rri9ibgjqonjfs5ov6laul096rj1m7o.apps.googleusercontent.com";
 
+/* Google Sign-In's script (about 100 kB) is only needed in this pop-up, so it's fetched the first time the pop-up
+   opens instead of on every page from index.html (Oct 31 2026). One request however often it opens; a failed
+   load is retried on the next open. */
+let googleScript = null;
+function loadGoogleSignIn() {
+  if (window.google?.accounts?.id) return Promise.resolve();
+  if (!googleScript) {
+    googleScript = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://accounts.google.com/gsi/client";
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => { googleScript = null; s.remove(); reject(new Error("Google Sign-In didn't load")); };
+      document.head.appendChild(s);
+    });
+  }
+  return googleScript;
+}
+
 function GoogleIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24">
@@ -68,12 +87,14 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
 
   useEffect(() => {
     if (!isOpen) return;
+    let open = true;
     const initGoogle = () => {
-      if (!window.google) return;
+      if (!open || !window.google || !googleBtnRef.current) return;
       window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleResponse });
       window.google.accounts.id.renderButton(googleBtnRef.current, { theme: "outline", size: "large", width: 1 });
     };
-    if (window.google) initGoogle();
+    loadGoogleSignIn().then(initGoogle, () => { /* offline or blocked: the other ways to sign in still work */ });
+    return () => { open = false; };
   }, [isOpen]);
 
   if (!isOpen) return null;

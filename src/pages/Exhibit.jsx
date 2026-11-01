@@ -353,7 +353,7 @@ export default function Exhibit() {
             overflow: "hidden", minHeight: 300,
           }}>
             <img
-              src="/Tech_Festival_Canada_Logo_Dark_Transparent.png"
+              src="/Tech_Festival_Canada_Logo_Dark_Transparent.webp"
               alt="The Tech Festival Canada"
               style={{ width: "65%", maxWidth: 300, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 40px rgba(122,63,209,0.25))" }}
             />

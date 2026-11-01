@@ -61,7 +61,7 @@ export default function AdminLogin() {
 
       <main className="relative w-full max-w-[420px]">
         <div className="mb-8 flex flex-col items-center text-center">
-          <img src={theme === "light" ? "/Tech_Festival_Canada_Logo_Light_Transparent.webp" : "/Tech_Festival_Canada_Logo_Dark_Transparent.png"} alt="The Tech Festival Canada" className="h-20 w-auto" />
+          <img src={theme === "light" ? "/Tech_Festival_Canada_Logo_Light_Transparent.webp" : "/Tech_Festival_Canada_Logo_Dark_Transparent.webp"} alt="The Tech Festival Canada" className="h-20 w-auto" />
           <p className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-ttfc-line bg-ttfc-contrast/5 px-3 py-1 text-xs font-semibold text-ttfc-muted">
             <Lock className="h-3 w-3" aria-hidden="true" /> Staff only
           </p>

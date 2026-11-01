@@ -7,15 +7,9 @@ import {
 } from "lucide-react"
 import { motion, useScroll, useTransform, useInView, useSpring, useMotionValueEvent } from "framer-motion"
 import { InteractiveGlobe } from "./ui/interactive-globe"
-import { createClient } from "@sanity/client"
 import imageUrlBuilder from "@sanity/image-url"
-
-const client = createClient({
-  projectId: "021qtoci",
-  dataset: "production",
-  useCdn: true,
-  apiVersion: "2023-05-03",
-})
+// The site's CMS reader (src/utils/sanity.js): the API CDN without @sanity/client's code (Oct 31 2026).
+import { client } from "../utils/sanity"
 
 const builder = imageUrlBuilder(client)
 function urlFor(source) {

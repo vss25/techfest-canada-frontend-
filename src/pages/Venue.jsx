@@ -5,19 +5,19 @@ import Footer from "../components/Footer";
 
 // Use local images if available, fallback to real Westin-style hotel photos
 const IMAGES = [
-  "/venue1.jpg",
+  "/venue1.webp",
   "/venue2.jpg",
-  "/venue3.jpg",
+  "/venue3.avif",
   "/venue4.jpg",
-  "/venue5.jpg",
+  "/venue5.webp",
 ];
 
 const GALLERY = [
-  { src: "/venue1.jpg", fallback: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=85", label: "Aerial View" },
+  { src: "/venue1.webp", fallback: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=85", label: "Aerial View" },
   { src: "/venue2.jpg", fallback: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200&q=85", label: "Pool" },
-  { src: "/venue3.jpg", fallback: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=85", label: "City View" },
+  { src: "/venue3.avif", fallback: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=85", label: "City View" },
   { src: "/venue4.jpg", fallback: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=1200&q=85", label: "VIP Lounge" },
-  { src: "/venue5.jpg", fallback: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1200&q=85", label: "Lobby" },
+  { src: "/venue5.webp", fallback: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1200&q=85", label: "Lobby" },
 ];
 
 // Fallback: if local images fail, swap to these

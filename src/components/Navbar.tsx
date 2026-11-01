@@ -2,7 +2,6 @@ import React, { lazy, Suspense, useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import AuthModal from "./AuthModal";
 import useSiteSettings from "../hooks/useSiteSettings";
 import { track } from "../lib/pwaEvents";
 import { detectOS, isMobileDevice } from "../lib/pwaPlatform";
@@ -11,6 +10,8 @@ import { isNativeVisit } from "../lib/nativeVisit";
 
 // "Get the TTFC app" on a computer: the store badges and a QR code to the phone. Loaded on first use.
 const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
+// The sign-in pop-up starts closed: its code, and Google Sign-In's, load only when it opens (Oct 31 2026).
+const AuthModal = lazy(() => import("./AuthModal"));
 
 const PARTNERS_DROPDOWN = [
   { label: "2026 Partners", path: "/partners2026" },
@@ -336,7 +337,7 @@ export default function Navbar() {
           {/* LEFT: LOGO */}
           <div className="tfc-nav-left">
             <Link to="/" style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-              <img className="tfc-nav-logo" src={dark ? "/Tech_Festival_Canada_Logo_Dark_Transparent.png" : "/Tech_Festival_Canada_Logo_Light_Transparent.webp"} alt="The Tech Festival Canada" />
+              <img className="tfc-nav-logo" src={dark ? "/Tech_Festival_Canada_Logo_Dark_Transparent.webp" : "/Tech_Festival_Canada_Logo_Light_Transparent.webp"} alt="The Tech Festival Canada" />
             </Link>
           </div>
 
@@ -483,7 +484,11 @@ export default function Navbar() {
         </AnimatePresence>, document.body)}
       </nav>
 
-      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+      {authOpen && (
+        <Suspense fallback={null}>
+          <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+        </Suspense>
+      )}
       {phoneQr && (
         <Suspense fallback={null}>
           <PhoneAppPanel where="drawer" onDismiss={() => setPhoneQr(false)} actions={[{ label: "Close", onClick: () => setPhoneQr(false) }]} />

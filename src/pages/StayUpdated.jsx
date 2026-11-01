@@ -88,7 +88,7 @@ export default function StayUpdated() {
             background: radial-gradient(ellipse 70% 55% at 50% 0%, rgba(122,63,209,${dark ? 0.35 : 0.16}) 0%, transparent 70%),
                         radial-gradient(ellipse 45% 35% at 85% 30%, rgba(245,166,35,${dark ? 0.16 : 0.12}) 0%, transparent 70%); }
           .su-skyline { position: absolute; left: 0; right: 0; bottom: 0; height: min(22vw, 190px); z-index: -1; pointer-events: none;
-            background: url(/toronto-skyline.png) center bottom / cover no-repeat; opacity: ${t.skyline};
+            background: url(/toronto-skyline.jpg) center bottom / cover no-repeat; opacity: ${t.skyline};
             ${dark ? "filter: invert(1) brightness(0.9);" : "mix-blend-mode: multiply;"}
             -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 55%, #000 75%, transparent 100%);
                     mask-image: linear-gradient(to bottom, transparent 0%, #000 55%, #000 75%, transparent 100%); }

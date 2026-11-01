@@ -318,7 +318,7 @@ export default function Awards() {
 
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3, duration: 1.2, ease: [0.22, 1, 0.36, 1] }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
             <motion.div animate={{ y: [0, -14, 0], rotate: [-3, -1, -3] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}>
-              <img className="aw-hero-trophy" src="/awards-trophy-single.png" alt="The Catalyst Award" style={{ width: "clamp(300px, 42vw, 600px)", maxWidth: "100%", height: "auto",
+              <img className="aw-hero-trophy" src="/awards-trophy-single.webp" alt="The Catalyst Award" style={{ width: "clamp(300px, 42vw, 600px)", maxWidth: "100%", height: "auto",
                 filter: dark ? "drop-shadow(0 24px 80px rgba(122,63,209,0.50)) drop-shadow(0 8px 28px rgba(245,166,35,0.20))" : "drop-shadow(0 24px 80px rgba(0,0,0,0.18))",
               }} />
             </motion.div>
@@ -574,7 +574,7 @@ function TrophyScroll({ bg, dark, textMain, textSoft, accent }) {
           boxShadow: dark ? "0 0 #0000004d, 0 9px 20px #0000004a, 0 37px 37px #00000042, 0 84px 50px #00000026" : "0 9px 20px rgba(122,63,209,0.08), 0 37px 37px rgba(122,63,209,0.06), 0 84px 50px rgba(122,63,209,0.03)",
           border: "1px solid " + (dark ? "rgba(155,135,245,0.12)" : "rgba(122,63,209,0.10)"),
         }}>
-          <img src="/awards-trophy-single.png" alt="The Catalyst Award Trophy" style={{ width: "100%", height: "auto", display: "block" }} />
+          <img src="/awards-trophy-single.webp" alt="The Catalyst Award Trophy" style={{ width: "100%", height: "auto", display: "block" }} />
         </motion.div>
       </div>
     </div>
@@ -659,7 +659,7 @@ function StickyTrophy({ dark }) {
 
   return (
     <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-6deg)", zIndex: 1, pointerEvents: "none", width: "clamp(250px, 30vw, 420px)", opacity: opacity, transition: "opacity 0.3s ease" }}>
-      <img src="/awards-trophy-single.png" alt="" style={{ width: "100%", height: "auto",
+      <img src="/awards-trophy-single.webp" alt="" style={{ width: "100%", height: "auto",
         filter: dark ? "drop-shadow(0 16px 48px rgba(122,63,209,0.30)) brightness(0.7)" : "drop-shadow(0 16px 48px rgba(0,0,0,0.08)) brightness(0.9)",
       }} />
     </div>

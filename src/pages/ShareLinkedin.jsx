@@ -136,7 +136,7 @@ export default function ShareLinkedin() {
       <AuroraBackground />
 
       <header className="att-brand">
-        <img src="/Tech_Festival_Canada_Logo_Dark_Transparent.png" alt="The Tech Festival Canada" width="240" height="150" />
+        <img src="/Tech_Festival_Canada_Logo_Dark_Transparent.webp" alt="The Tech Festival Canada" width="240" height="150" />
       </header>
 
       <div className="att-hero">

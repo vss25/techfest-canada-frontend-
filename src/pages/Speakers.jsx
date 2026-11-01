@@ -199,7 +199,7 @@ function SpeakerCard({ speaker, dark, i }) {
   var secondaryText = dark ? "rgba(255,255,255,0.75)" : "rgba(13,5,32,0.65)";
   var mutedText = dark ? "rgba(255,255,255,0.48)" : "rgba(13,5,32,0.42)";
 
-  var slug = speaker.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  var slug = slugifyName(speaker.name);
 
   return (
     <motion.div

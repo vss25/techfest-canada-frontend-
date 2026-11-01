@@ -5,6 +5,9 @@
      2. the first matching `redirect` answers (308 permanent, 307 otherwise; the query string is kept);
      3. a file of the deploy at that path is served;
      4. the first matching `rewrite` serves its destination (a file of the deploy, else 404).
+   A rule with `has` / `missing` conditions applies only when they hold. Only `host` is modelled (Oct 31 2026: the
+   noindex header for the techfest-canada-frontend.vercel.app copy of the site); any other kind (header, cookie,
+   query) counts as absent. The host is www.thetechfestival.com unless a test passes another.
    The lexer / parser / tokensToRegexp below follow path-to-regexp 6.x (the subset vercel.json can use). */
 
 const escape = (s) => s.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
@@ -135,21 +138,33 @@ export function match(source, pathname) {
   return params;
 }
 
+export const HOST = "www.thetechfestival.com";
+
+/** A has / missing item against the request (Vercel: a value is a regex for the whole value; no value = present). */
+function holds(c, req) {
+  if (c.type !== "host") return false;
+  return c.value === undefined ? true : new RegExp(`^(?:${c.value})$`).test(req.host);
+}
+/** The rule's `has` all hold and none of its `missing` do. */
+export const applies = (rule, req) => (rule.has || []).every((c) => holds(c, req)) && !(rule.missing || []).some((c) => holds(c, req));
+
 const fill = (dest, params) => dest.replace(/:([A-Za-z_][0-9A-Za-z_]*)\*?/g, (all, k) => (k in params ? (params[k] ?? "") : all));
 
 /**
- * How Vercel answers `url` (a path with an optional query) for a deploy whose files are `exists(path)`.
+ * How Vercel answers `url` (a path with an optional query) for a deploy whose files are `exists(path)`, at `host`.
  * → { status, location?, file?, headers: { lower-case name: value }, rule }
  */
-export function route(config, url, exists) {
+export function route(config, url, exists, { host = HOST } = {}) {
   const q = url.indexOf("?");
   const pathname = q === -1 ? url : url.slice(0, q);
   const search = q === -1 ? "" : url.slice(q);
+  const req = { host };
   const headers = {};
   for (const h of config.headers || []) {
-    if (match(h.source, pathname)) for (const { key, value } of h.headers) headers[key.toLowerCase()] = value;
+    if (applies(h, req) && match(h.source, pathname)) for (const { key, value } of h.headers) headers[key.toLowerCase()] = value;
   }
   for (const r of config.redirects || []) {
+    if (!applies(r, req)) continue;
     const p = match(r.source, pathname);
     if (!p) continue;
     const dest = fill(r.destination, p);
@@ -158,6 +173,7 @@ export function route(config, url, exists) {
   }
   if (!pathname.endsWith("/") && exists(pathname)) return { status: 200, file: pathname, headers, rule: "file" };
   for (const r of config.rewrites || []) {
+    if (!applies(r, req)) continue;
     const p = match(r.source, pathname);
     if (!p) continue;
     const file = fill(r.destination, p);

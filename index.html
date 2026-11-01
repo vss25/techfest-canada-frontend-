@@ -6,12 +6,15 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- SEO -->
+    <!-- SEO. This file is also the fallback for every address the build has no page for, so it has no canonical
+         (it used to point every page at the home page). The build writes each public page's own copy with its
+         title, description, canonical, share tags, JSON-LD and an outline for crawlers (src/seo/prerender.mjs, from
+         src/seo/routes.js; this one becomes the home page's), and <RouteSeo> keeps the head right in the browser.
+         Every absolute URL is https://www.thetechfestival.com (the bare domain redirects there). Oct 31 2026. -->
     <title>The Tech Festival Canada</title>
     <meta name="application-name" content="The Tech Festival Canada" />
     <meta name="apple-mobile-web-app-title" content="The Tech Festival Canada" />
     <meta name="description" content="Canada's first-of-its-kind, deal-making platform where innovators, buyers, and policymakers turn emerging tech into real partnerships, pilots, and contracts." />
-    <link rel="canonical" href="https://thetechfestival.com" />
 
     <!-- Open Graph (WhatsApp, LinkedIn, iMessage, Facebook) -->
     <meta property="og:title" content="The Tech Festival Canada" />
@@ -20,7 +23,7 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="The Tech Festival Canada, 26–27 October 2026, Westin Harbour Castle, Toronto" />
-    <meta property="og:url" content="https://thetechfestival.com" />
+    <meta property="og:url" content="https://www.thetechfestival.com/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="The Tech Festival Canada" />
 
@@ -29,9 +32,9 @@
     <meta name="twitter:title" content="The Tech Festival Canada" />
     <meta name="twitter:description" content="Canada's first-of-its-kind, deal-making platform where innovators, buyers, and policymakers turn emerging tech into real partnerships, pilots, and contracts." />
     <meta name="twitter:image" content="https://www.thetechfestival.com/og-image-2026.png" />
+    <meta name="twitter:image:alt" content="The Tech Festival Canada, 26–27 October 2026, Westin Harbour Castle, Toronto" />
     <meta name="twitter:site" content="@thetechfestival" />
 
-    <!-- Structured Data: Event -->
     <!-- After a new deploy, a page that was already open (or that the browser restores) still asks for the
          previous build's files. They're gone, and the site answers with this page instead, so nothing loads (a
          white screen; Oct 27 2026, after the Tickets update). Reload once to get the new build. -->
@@ -56,12 +59,15 @@
         }, true);
       })();
     </script>
-    <script type="application/ld+json">
+    <!-- Structured Data: Event. TTFC 2026 (EventScheduled is right for an event that took place as planned). No
+         offers: sales are closed. Only the home page keeps it: the build takes it off every other page. -->
+    <script type="application/ld+json" id="ld-event">
     {
       "@context": "https://schema.org",
       "@type": "Event",
       "name": "The Tech Festival Canada 2026",
       "description": "Canada's first-of-its-kind, deal-making platform where innovators, buyers, and policymakers turn emerging tech into real partnerships, pilots, and contracts.",
+      "url": "https://www.thetechfestival.com/",
       "startDate": "2026-10-26",
       "endDate": "2026-10-27",
       "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
@@ -80,47 +86,9 @@
       },
       "organizer": {
         "@type": "Organization",
-        "name": "AtlasLink Markets",
-        "url": "https://thetechfestival.com"
+        "name": "AtlasLink Markets Inc.",
+        "url": "https://www.atlaslinkmarkets.com/"
       },
-      "offers": [
-        {
-          "@type": "Offer",
-          "name": "Connect Pass",
-          "price": "749",
-          "priceCurrency": "CAD",
-          "priceValidUntil": "2026-10-21",
-          "url": "https://thetechfestival.com/tickets",
-          "availability": "https://schema.org/SoldOut"
-        },
-        {
-          "@type": "Offer",
-          "name": "Influence Pass",
-          "price": "849",
-          "priceCurrency": "CAD",
-          "priceValidUntil": "2026-10-21",
-          "url": "https://thetechfestival.com/tickets",
-          "availability": "https://schema.org/InStock"
-        },
-        {
-          "@type": "Offer",
-          "name": "Power Pass",
-          "price": "999",
-          "priceCurrency": "CAD",
-          "priceValidUntil": "2026-10-21",
-          "url": "https://thetechfestival.com/tickets",
-          "availability": "https://schema.org/InStock"
-        },
-        {
-          "@type": "Offer",
-          "name": "Apex Pass",
-          "price": "1499",
-          "priceCurrency": "CAD",
-          "priceValidUntil": "2026-10-21",
-          "url": "https://thetechfestival.com/tickets",
-          "availability": "https://schema.org/InStock"
-        }
-      ],
       "image": "https://www.thetechfestival.com/og-image-2026.png"
     }
     </script>
@@ -131,19 +99,30 @@
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "The Tech Festival Canada",
-      "alternateName": "The Tech Festival Canada",
-      "url": "https://thetechfestival.com"
+      "alternateName": "TTFC",
+      "url": "https://www.thetechfestival.com/"
     }
     </script>
 
-    <!-- Structured Data: Organization -->
+    <!-- Structured Data: Organization (sameAs: the footer's LinkedIn, X and Instagram; src/components/Footer.jsx) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "The Tech Festival Canada",
-      "url": "https://thetechfestival.com",
-      "logo": "https://thetechfestival.com/techfestdarkmode.webp"
+      "alternateName": "TTFC",
+      "url": "https://www.thetechfestival.com/",
+      "logo": "https://www.thetechfestival.com/techfestdarkmode.webp",
+      "sameAs": [
+        "https://www.linkedin.com/company/thetechfestival/",
+        "https://x.com/thetechfestival",
+        "https://www.instagram.com/thetechfestival"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "general enquiries",
+        "email": "enquire@thetechfestival.com"
+      }
     }
     </script>
 

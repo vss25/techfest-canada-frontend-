@@ -10,6 +10,12 @@ import {
   sessionsForSpeaker, roleInSession, nameKeys, slugifyName,
   DAYS, formatTime12, getDuration,
 } from "../data/agenda";
+import useSeo from "../hooks/useSeo";
+import Breadcrumbs from "../seo/Breadcrumbs";
+import { NOT_FOUND_ROBOTS, SITE_NAME, speakerMeta } from "../seo/routes";
+import { normalizeSpeakerSlug, speakerSlug } from "../seo/slug";
+
+var NOT_FOUND = "Speaker not found.";
 
 var SPEAKER_QUERY = function() {
   return '*[_type == "speaker"] { _id, name, title, company, bio, linkedin, image }';
@@ -156,14 +162,16 @@ export default function SpeakerProfile() {
   useEffect(function() {
     if (!params.slug) return;
     setLoading(true);
+    // Another speaker's address in the same page: not the last one's head (canonical) or "not found" meanwhile.
+    setSpeaker(null);
+    setError(null);
     client.fetch(SPEAKER_QUERY())
       .then(function(speakers) {
-        var speaker = speakers.find(function(s) {
-          var speakerSlug = s.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-          return speakerSlug === params.slug;
-        });
+        // One slug rule (src/seo/slug.js); older links that end in "-" (names saved with a space) still open.
+        var wanted = normalizeSpeakerSlug(params.slug);
+        var speaker = speakers.find(function(s) { return speakerSlug(s.name) === wanted; });
         if (speaker) { setSpeaker(speaker); }
-        else { setError("Speaker not found."); }
+        else { setError(NOT_FOUND); }
         setLoading(false);
       })
       .catch(function(err) {
@@ -178,6 +186,18 @@ export default function SpeakerProfile() {
   var mySessions = useMemo(function () {
     return speaker ? sessionsForSpeaker(speaker.name, agenda) : [];
   }, [speaker, agenda]);
+
+  /* The head once loaded (title, description, canonical on the clean slug, photo, Person + breadcrumb JSON-LD;
+     src/seo/routes.js speakerMeta, as the build wrote it); a slug that matches nobody: noindex. A failed load
+     changes nothing (it isn't a missing page). */
+  var seo = useMemo(function () { return speaker ? speakerMeta(speaker) : null; }, [speaker]);
+  var missing = !loading && error === NOT_FOUND;
+  useSeo(
+    seo ? seo.title : missing ? "Speaker not found | " + SITE_NAME : undefined,
+    seo ? seo.description : undefined,
+    seo ? { canonical: seo.canonical, robots: seo.robots, image: seo.image, jsonLd: seo.jsonLd }
+      : missing ? { canonical: null, robots: NOT_FOUND_ROBOTS, jsonLd: null } : {}
+  );
 
   var bg = dark ? "#06020f" : "#ffffff";
   var textMain = dark ? "#ffffff" : "#0d0520";
@@ -207,7 +227,7 @@ export default function SpeakerProfile() {
       <div style={{ background: bg, minHeight: "100vh", color: textMain }}>
         <Navbar />
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 20 }}>
-          <p style={{ fontSize: "1.2rem", color: textMid }}>{error || "Speaker not found."}</p>
+          <p style={{ fontSize: "1.2rem", color: textMid }}>{error || NOT_FOUND}</p>
           <Link to="/speakers" style={{ color: accent, fontFamily: "'Orbitron',sans-serif", fontSize: "0.8rem", fontWeight: 700 }}>← Back to Speakers</Link>
         </div>
         <Footer />
@@ -254,15 +274,16 @@ export default function SpeakerProfile() {
       {/* Hero area with gradient */}
       <div style={{ position: "relative", paddingTop: "clamp(100px, 14vw, 140px)", paddingBottom: "3rem", background: dark ? "radial-gradient(ellipse 70% 50% at 30% 0%, rgba(122,63,209,0.12) 0%, transparent 70%)" : "radial-gradient(ellipse 70% 50% at 30% 0%, rgba(122,63,209,0.06) 0%, transparent 70%)" }}>
 
-        {/* Back button */}
+        {/* Back button, and the trail: Home › Speakers › Name */}
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 5% 2rem" }}>
-          <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+          <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 20px" }}>
             <Link to="/speakers" style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", color: accent, fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", padding: "8px 18px", borderRadius: 999, border: "1.5px solid " + cardBdr, transition: "all 0.2s ease" }}
               onMouseEnter={function(e) { e.currentTarget.style.background = accent + "18"; }}
               onMouseLeave={function(e) { e.currentTarget.style.background = "transparent"; }}
             >
               <ArrowLeft size={14} /> All Speakers
             </Link>
+            <Breadcrumbs crumbs={seo && seo.crumbs} style={{ fontSize: "0.78rem", color: textSoft, minWidth: 0 }} linkStyle={{ color: textMid }} currentStyle={{ color: textMid, fontWeight: 600 }} />
           </motion.div>
         </div>
 

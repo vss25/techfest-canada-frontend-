@@ -4,6 +4,11 @@
   },
   "headers": [
     {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "techfest-canada-frontend.vercel.app" }],
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+    },
+    {
       "source": "/(.*)\\.(png|jpg|jpeg|webp|avif|svg|ico)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }]
     },
@@ -56,6 +61,10 @@
     },
     {
       "source": "/awards/jury-admin/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/:private((?:admin|admin-login|auth-success|reset-password|app-login|complete-profile|survey|rate|linkedin|swag|share|tickets/checkout|exhibit/india-pavilion/pay|awards/jury-admin)(?:/.*)?)",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     },
     {
@@ -128,16 +137,53 @@
       "permanent": true
     },
     {
-      "source": "/first-timers",
-      "destination": "/briefings",
+      "source": "/:legacy((?:first-timers|briefings|dashboard|kyc)/?)",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/:legacy(on-demand/?)",
+      "destination": "/resources",
+      "permanent": true
+    },
+    {
+      "source": "/awards/:legacy(nominations/?)",
+      "destination": "/awards",
+      "permanent": true
+    },
+    {
+      "source": "/speakers/-:slug([^/]+)",
+      "destination": "/speakers/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/speakers/:slug([^/]*[^/-])-",
+      "destination": "/speakers/:slug",
       "permanent": true
     }
   ],
   "rewrites": [
-    {
-      "source": "/awards/nominations",
-      "destination": "/awards"
-    },
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/stay-updated", "destination": "/stay-updated/index.html" },
+    { "source": "/awards", "destination": "/awards/index.html" },
+    { "source": "/speakers", "destination": "/speakers/index.html" },
+    { "source": "/agenda", "destination": "/agenda/index.html" },
+    { "source": "/programme", "destination": "/programme/index.html" },
+    { "source": "/venue", "destination": "/venue/index.html" },
+    { "source": "/contact", "destination": "/contact/index.html" },
+    { "source": "/sponsor", "destination": "/sponsor/index.html" },
+    { "source": "/partners2026", "destination": "/partners2026/index.html" },
+    { "source": "/sponsors", "destination": "/sponsors/index.html" },
+    { "source": "/exhibit", "destination": "/exhibit/index.html" },
+    { "source": "/exhibit/india-pavilion", "destination": "/exhibit/india-pavilion/index.html" },
+    { "source": "/organizers", "destination": "/organizers/index.html" },
+    { "source": "/media", "destination": "/media/index.html" },
+    { "source": "/volunteer", "destination": "/volunteer/index.html" },
+    { "source": "/brochures", "destination": "/brochures/index.html" },
+    { "source": "/resources", "destination": "/resources/index.html" },
+    { "source": "/tickets", "destination": "/tickets/index.html" },
+    { "source": "/privacy", "destination": "/privacy/index.html" },
+    { "source": "/about", "destination": "/about/index.html" },
     {
       "source": "/app",
       "destination": "/app/index.html"
@@ -160,7 +206,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/spa.html"
     }
   ]
 }

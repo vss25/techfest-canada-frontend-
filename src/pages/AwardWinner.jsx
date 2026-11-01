@@ -12,6 +12,9 @@ import {
   startAwardPost,
 } from "../lib/awardWinners";
 import { CERT_H, CERT_W, canvasBlob, drawCertificate, jpegToPdf } from "../lib/certificate";
+import useSeo from "../hooks/useSeo";
+import Breadcrumbs from "../seo/Breadcrumbs";
+import { NOT_FOUND_ROBOTS, SITE_NAME, winnerMeta } from "../seo/routes";
 
 /* =========================================================
    /awards/winners/:id: one Catalyst Awards winner (Oct 31 2026).
@@ -73,6 +76,7 @@ export default function AwardWinner() {
   const [loc] = useState(readLocation);
   const [winner, setWinner] = useState(null);
   const [loadError, setLoadError] = useState(isWinnerId(id) ? "" : "We couldn’t find that award.");
+  const [missing, setMissing] = useState(!isWinnerId(id));   // no such award (not just a failed load): noindex
   const [preview, setPreview] = useState("");   // object URL of the certificate JPG
   const [busy, setBusy] = useState("");          // "pdf" | "jpg" while saving
   const kept = useMemo(() => savedDraft(id), [id]);
@@ -86,7 +90,7 @@ export default function AwardWinner() {
   const jpgRef = useRef(null);
   const embed = loc.embed;
 
-  /* The title, the page's dark look, and the trip back from LinkedIn out of the address bar. */
+  /* The page's dark look, and the trip back from LinkedIn out of the address bar (the title: useSeo below). */
   useEffect(() => {
     document.body.classList.add("att-open");
     if (loc.had) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
@@ -114,12 +118,26 @@ export default function AwardWinner() {
         if (!live) return;
         setWinner(r.winner);
         setText((cur) => cur || postText(r.winner, kept?.voice === "congrats" ? "congrats" : "winner"));
-        document.title = `${r.winner.presentedTo} · Catalyst Awards 2026 winner | The Tech Festival Canada`;
       },
-      (e) => { if (live) setLoadError(e?.status === 404 ? "We couldn’t find that award. It may have moved: see all the winners on the Catalyst Awards page." : "We couldn’t load this award. Try again in a moment."); },
+      (e) => {
+        if (!live) return;
+        setMissing(e?.status === 404);
+        setLoadError(e?.status === 404 ? "We couldn’t find that award. It may have moved: see all the winners on the Catalyst Awards page." : "We couldn’t load this award. Try again in a moment.");
+      },
     );
     return () => { live = false; };
   }, [id, kept]);
+
+  /* The head once loaded (Oct 31 2026; src/seo/routes.js winnerMeta, as the build wrote it): the winner's title and
+     description, the canonical without ?embed=1, the breadcrumb JSON-LD; back to the route's when leaving. An award
+     that isn't there: noindex. A failed load changes nothing. */
+  const seo = useMemo(() => (winner ? winnerMeta({ ...winner, id: winner.id || id }) : null), [winner, id]);
+  useSeo(
+    seo ? seo.title : missing ? `Award not found | ${SITE_NAME}` : undefined,
+    seo?.description,
+    seo ? { canonical: seo.canonical, robots: seo.robots, image: seo.image, jsonLd: seo.jsonLd }
+      : missing ? { canonical: null, robots: NOT_FOUND_ROBOTS, jsonLd: null } : {},
+  );
 
   /* The certificate: drawn once, kept as a JPG (the preview, the download and the LinkedIn image). */
   useEffect(() => {
@@ -218,6 +236,7 @@ export default function AwardWinner() {
         <section className="att-card aw-win-narrow aw-win-loading" aria-busy="true"><Loader2 size={22} className="att-spin" aria-hidden="true" /> Loading the award…</section>
       ) : (
         <>
+          {!embed && <Breadcrumbs className="aw-win-crumbs" crumbs={seo.crumbs} linkStyle={{ color: "rgba(255,255,255,0.82)" }} />}
           <div className="att-hero aw-win-hero">
             <p className="att-eyebrow"><Trophy size={13} aria-hidden="true" /> Catalyst Awards 2026 · Winner</p>
             <h1 className="att-title aw-win-title">{winner.presentedTo}</h1>
@@ -320,6 +339,8 @@ const CSS = `
 .aw-win-brand { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .aw-win-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.8); font-size: 14px; font-weight: 600; text-decoration: none; }
 .aw-win-back:hover { color: #fff; }
+.aw-win-crumbs { position: relative; z-index: 1; max-width: 720px; margin: 4px 0 14px; font-size: 13px; color: rgba(255,255,255,0.6); }
+.aw-win-crumbs ol { justify-content: center; }
 .aw-win-narrow { max-width: 560px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
 .aw-win-loading { flex-direction: row; align-items: center; gap: 10px; color: rgba(255,255,255,0.85); }
 .aw-win-hero { margin-bottom: 22px; }

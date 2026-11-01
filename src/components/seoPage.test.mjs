@@ -2,7 +2,7 @@
    Home, /awards and /privacy; every <img> on the public pages has an alt, and every local file it names is in public/
    (a missing one, like the old /exhibit-hero-bg.png, is answered with the SPA's HTML); the winner cards are real links
    to the winners' pages; the footer's Explore links go to routed pages, not redirects; the logos and trophies carry
-   their files' own width/height; the announcement bar's "last seen" cache; no template stats or filler on About. */
+   their files' own width/height; no template stats or filler on About. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -16,11 +16,15 @@ const imgTags = (rel) => [...code(rel).matchAll(/<(?:motion\.)?img\b[\s\S]*?\/>/
 const PUBLIC_UI = ["src/pages", "src/components"].flatMap((d) =>
   readdirSync(new URL(`${d}/`, ROOT)).filter((n) => /\.(jsx|tsx)$/.test(n)).map((n) => `${d}/${n}`));
 
-/** A PNG's width and height (its IHDR). The light logo is a PNG too, despite its .webp name. */
-function pngSize(rel) {
+/** An image's width and height from its header: PNG (IHDR) or WebP (VP8L lossless, VP8X, VP8). */
+function imageSize(rel) {
   const b = readFileSync(new URL(rel, ROOT));
-  assert.equal(b.toString("latin1", 1, 4), "PNG", `${rel} is a PNG`);
-  return [b.readUInt32BE(16), b.readUInt32BE(20)];
+  if (b.toString("latin1", 1, 4) === "PNG") return [b.readUInt32BE(16), b.readUInt32BE(20)];
+  assert.equal(b.toString("latin1", 0, 4) + b.toString("latin1", 8, 12), "RIFFWEBP", `${rel} is a PNG or a WebP`);
+  const chunk = b.toString("latin1", 12, 16);
+  if (chunk === "VP8L") { const v = b.readUInt32LE(21); return [(v & 0x3fff) + 1, ((v >> 14) & 0x3fff) + 1]; }
+  if (chunk === "VP8X") return [b.readUIntLE(24, 3) + 1, b.readUIntLE(27, 3) + 1];
+  return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff]; // VP8 (lossy)
 }
 
 test("one <h1> on Home, /awards and /privacy", () => {
@@ -77,53 +81,21 @@ test("the footer's Explore links go to pages App.jsx routes (not redirects), the
 });
 
 test("the logos and trophies carry their files' own width and height (their space is kept while they load)", () => {
-  const [dw, dh] = pngSize("public/Tech_Festival_Canada_Logo_Dark_Transparent.png");
-  const [lw, lh] = pngSize("public/Tech_Festival_Canada_Logo_Light_Transparent.webp");
-  const [tw, th] = pngSize("public/awards-trophy-single.png");
+  const [dw, dh] = imageSize("public/Tech_Festival_Canada_Logo_Dark_Transparent.webp");
+  const [lw, lh] = imageSize("public/Tech_Festival_Canada_Logo_Light_Transparent.webp");
+  const [tw, th] = imageSize("public/awards-trophy-single.webp");
   const sized = (tag, w, h) => new RegExp(`\\bwidth=\\{${w}\\}\\s+height=\\{${h}\\}`).test(tag);
 
-  const homeLogo = imgTags("src/pages/Home.jsx").filter((t) => t.includes('src="/Tech_Festival_Canada_Logo_Dark_Transparent.png"'));
+  const homeLogo = imgTags("src/pages/Home.jsx").filter((t) => t.includes('src="/Tech_Festival_Canada_Logo_Dark_Transparent.webp"'));
   assert.equal(homeLogo.length, 1);
   assert.ok(sized(homeLogo[0], dw, dh), homeLogo[0]);
 
-  const trophies = imgTags("src/pages/Awards.jsx").filter((t) => t.includes('src="/awards-trophy-single.png"'));
+  const trophies = imgTags("src/pages/Awards.jsx").filter((t) => t.includes('src="/awards-trophy-single.webp"'));
   assert.equal(trophies.length, 3);
   for (const t of trophies) assert.ok(sized(t, tw, th), t);
 
-  // The menu's logo: the dark PNG or the light file, each with its own size.
+  // The menu's logo: the dark or the light file, each with its own size.
   assert.match(code("src/components/Navbar.tsx"), new RegExp(`width=\\{dark \\? ${dw} : ${lw}\\} height=\\{dark \\? ${dh} : ${lh}\\}`));
-});
-
-test("the announcement bar's last-seen cache: a week at most, and blocked or broken storage is ignored", () => {
-  const block = read("src/components/SiteNotices.jsx").match(/const LAST_KEY[\s\S]*?\nfunction saveLast\([\s\S]*?\n\}\n/)[0];
-  const make = (storage, clock) => new Function("localStorage", "Date", `${block}; return { readLast, saveLast, LAST_KEY };`)(storage, clock);
-  const store = new Map();
-  const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) };
-  let now = Date.UTC(2026, 9, 31, 12);
-  const { readLast, saveLast, LAST_KEY } = make(storage, { now: () => now });
-
-  assert.equal(readLast(), null, "nothing seen yet");
-  saveLast("Meet the Catalyst Awards winners", "https://www.thetechfestival.com/awards");
-  assert.deepEqual(readLast(), { text: "Meet the Catalyst Awards winners", link: "https://www.thetechfestival.com/awards" });
-  now += 7 * 24 * 60 * 60 * 1000 - 1;
-  assert.ok(readLast(), "still there just under a week later");
-  now += 1;
-  assert.equal(readLast(), null, "a week old: not shown");
-
-  saveLast("Something", "");
-  saveLast("", "");
-  assert.equal(store.has(LAST_KEY), false, "cleared when staff clear the announcement");
-
-  store.set(LAST_KEY, "{not json");
-  assert.equal(readLast(), null);
-  store.set(LAST_KEY, JSON.stringify({ text: 42, at: now }));
-  assert.equal(readLast(), null);
-
-  const blocked = { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); }, removeItem() { throw new Error("blocked"); } };
-  const b = make(blocked, { now: () => now });
-  assert.equal(b.readLast(), null);
-  assert.doesNotThrow(() => b.saveLast("x", ""));
-  assert.doesNotThrow(() => b.saveLast("", ""));
 });
 
 test("About: no template stats and no filler text while it loads", () => {

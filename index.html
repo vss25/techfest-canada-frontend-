@@ -44,13 +44,15 @@
         function reloadOnce() {
           try {
             var last = Number(sessionStorage.getItem(KEY) || 0);
-            if (Date.now() - last < 30000) return;   // at most once every 30 s: never a reload loop
+            if (Date.now() - last < 30000) return false; // at most once every 30 s: never a reload loop
             sessionStorage.setItem(KEY, String(Date.now()));
-          } catch (e) { return; }                      // storage blocked: no reload (it couldn't stop a loop)
+          } catch (e) { return false; }                // storage blocked: no reload (it couldn't stop a loop)
           location.reload();
+          return true;
         }
-        // A page's code that loads later (lazy pages): Vite's own event.
-        window.addEventListener("vite:preloadError", function (e) { e.preventDefault(); reloadOnce(); });
+        // A page's code that loads later (lazy pages): Vite's own event. When we don't reload, the error goes on to
+        // the page's error boundary (src/components/RouteErrorBoundary.jsx), which offers "Reload".
+        window.addEventListener("vite:preloadError", function (e) { if (reloadOnce()) e.preventDefault(); });
         // The build's own files (the main script, its imports, the stylesheet).
         window.addEventListener("error", function (e) {
           var t = e.target;

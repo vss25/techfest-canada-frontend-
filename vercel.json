@@ -111,6 +111,11 @@
     }
   ],
   "redirects": [
+    { "source": "/awards-trophy-single.png", "destination": "/awards-trophy-single.webp", "permanent": true },
+    { "source": "/venue1.jpg", "destination": "/venue1.webp", "permanent": true },
+    { "source": "/venue3.jpg", "destination": "/venue3.avif", "permanent": true },
+    { "source": "/venue5.jpg", "destination": "/venue5.webp", "permanent": true },
+    { "source": "/toronto-skyline.png", "destination": "/toronto-skyline.jpg", "permanent": true },
     {
       "source": "/checkin",
       "destination": "/checkin/",

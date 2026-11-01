@@ -145,3 +145,18 @@ test("/resources: each photo's width and height are its real size; all but the f
     assert.equal(Boolean(lazy), i > 0, src);
   });
 });
+
+test("vercel.json: the old addresses of renamed or converted images go straight to the new file (308)", () => {
+  const vercel = JSON.parse(read("vercel.json"));
+  const moved = {
+    "/awards-trophy-single.png": "/awards-trophy-single.webp", "/venue1.jpg": "/venue1.webp", "/venue3.jpg": "/venue3.avif",
+    "/venue5.jpg": "/venue5.webp", "/toronto-skyline.png": "/toronto-skyline.jpg",
+  };
+  const inPublic = new Set(readdirSync(new URL("../../public/", import.meta.url)));
+  for (const [from, to] of Object.entries(moved)) {
+    const r = route(vercel, from, (p) => inPublic.has(p.slice(1)));
+    assert.deepEqual([r.status, r.location], [308, to], from);
+    assert.ok(inPublic.has(to.slice(1)), `${to} is in public/`);
+    assert.ok(!inPublic.has(from.slice(1)), `${from} is gone from public/`);
+  }
+});

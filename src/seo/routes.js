@@ -34,6 +34,11 @@ export const TITLE_MAX = 60;
 export const DESCRIPTION_MAX = 160;
 
 /** The site's share card (index.html's og:image), the 2026 one until the owner has a 2027 card. */
+/** The plain site's title, description and share image: for noindex and unknown addresses, so a visit that began on a
+    speaker's or winner's own file never carries their name, bio or photo onto a private or missing page (Oct 31 2026
+    review). A page that sets its own title (useSeo or document.title) still goes over it. Filled in below PAGES. */
+export const GENERIC_HEAD = {};
+
 export const DEFAULT_IMAGE = Object.freeze({
   url: `${SITE}/og-image-2026.png`,
   width: 1200,
@@ -218,6 +223,8 @@ export const PAGES = [
     links: [["/", "Home"], ["/agenda", "The agenda"]],
   },
 ];
+Object.assign(GENERIC_HEAD, { title: SITE_NAME, description: PAGES[0].description, image: DEFAULT_IMAGE });
+Object.freeze(GENERIC_HEAD);
 
 /** The links every crawler outline ends with (the menus only mount their links after a click). */
 export const SITE_LINKS = [
@@ -445,7 +452,7 @@ export function seoForPath(pathname, loadedCanonical = null) {
     const m = pageMeta(page);
     return { title: m.title, description: m.description, canonical: m.canonical, robots: m.robots, image: m.image, jsonLd: m.jsonLd };
   }
-  if (isNoindexPath(path)) return { canonical: null, robots: NOINDEX_ROBOTS, jsonLd: null };
+  if (isNoindexPath(path)) return { ...GENERIC_HEAD, canonical: null, robots: NOINDEX_ROBOTS, jsonLd: null };
   const speaker = /^\/speakers\/([^/]+)$/.exec(path);
   if (speaker && normalizeSpeakerSlug(speaker[1])) {
     const list = pageMeta(BY_PATH.get("/speakers"));

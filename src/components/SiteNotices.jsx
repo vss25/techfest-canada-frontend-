@@ -31,26 +31,6 @@ function useBodyDark() {
 const DISMISS_KEY = "ttfc_announcement_dismissed";
 const readDismissed = () => { try { return localStorage.getItem(DISMISS_KEY) || ""; } catch { return ""; } };
 
-/* The last announcement this browser saw (Oct 31 2026, layout shift). The settings arrive from the backend after the
-   page has painted, and the bar then pushed the whole page down. Until they arrive, the bar shows the last text and
-   link seen here (up to a week old), so a returning visitor's page doesn't move; once they arrive, they win. A first
-   visit, or blocked storage, is as before. */
-const LAST_KEY = "ttfc_announcement_last";
-const LAST_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
-function readLast() {
-  try {
-    const v = JSON.parse(localStorage.getItem(LAST_KEY) || "null");
-    if (!v || typeof v.text !== "string" || !(Date.now() - Number(v.at) < LAST_MAX_AGE)) return null;
-    return { text: v.text, link: typeof v.link === "string" ? v.link : "" };
-  } catch { return null; }
-}
-function saveLast(text, link) {
-  try {
-    if (text) localStorage.setItem(LAST_KEY, JSON.stringify({ text, link, at: Date.now() }));
-    else localStorage.removeItem(LAST_KEY);
-  } catch { /* storage blocked: the bar waits for the settings, as before */ }
-}
-
 /** Slim bar above the navbar on every public page. Dismissal is remembered per message. An announcement that
     links to the App Store, Google Play or /app/install isn't shown to visitors who came from the iPhone or Android
     app (lib/nativeVisit.js, Oct 24 2026): they have it. */
@@ -59,20 +39,12 @@ export function AnnouncementBar() {
   const { pathname } = useLocation();
   const [dismissed, setDismissed] = useState(readDismissed);
   const [fromStoreApp] = useState(() => isNativeVisit());
-  const [last] = useState(readLast);
   const ref = useRef(null);
-  const loaded = s.loaded;
-  const liveText = s["site.announcement"];
-  const liveLink = s["site.announcement_link"];
-  const rawText = loaded ? liveText : last?.text || "";
-  const rawLink = loaded ? liveLink : last?.link || "";
   // A "prices go up" notice reads as gone up once the Oct 23 2026 rise has happened (lib/priceRise.js).
-  const text = announcementText(rawText);
-  const link = safeUrl(rawLink);
-  const appNudge = fromStoreApp && isAppDownloadLink(rawLink);
+  const text = announcementText(s["site.announcement"]);
+  const link = safeUrl(s["site.announcement_link"]);
+  const appNudge = fromStoreApp && isAppDownloadLink(s["site.announcement_link"]);
   const show = !!text && dismissed !== text && !isStaffPath(pathname) && !isFocusedPath(pathname) && !appNudge;
-
-  useEffect(() => { if (loaded) saveLast(liveText, liveLink); }, [loaded, liveText, liveLink]);
 
   useLayoutEffect(() => {
     const body = document.body;

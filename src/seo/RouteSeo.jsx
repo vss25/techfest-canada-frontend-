@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import useSeo from "../hooks/useSeo";
-import { seoForPath } from "./routes";
+import { GENERIC_HEAD, seoForPath } from "./routes";
 
 /* =========================================================
    <RouteSeo/> (Oct 31 2026), once inside the router (App.jsx): on
@@ -10,13 +10,14 @@ import { seoForPath } from "./routes";
    the same the build wrote into that address's own HTML file. A
    page's own useSeo goes over it (the speaker and winner pages
    once loaded, /stay-updated's CMS wording, the not-found page).
-   Unknown addresses get no canonical; noindex pages get noindex
-   and keep the title they set themselves. A speaker or winner
+   Unknown addresses get no canonical; noindex pages get noindex.
+   Both get the plain site's title, description and image (a page's
+   own title still wins). A speaker or winner
    opened on their own prerendered file keeps that file's head
    while their data loads (the canonical the HTML came with).
 ========================================================= */
 
-const NONE = { canonical: null, jsonLd: null };
+const NONE = { ...GENERIC_HEAD, canonical: null, jsonLd: null };
 
 export default function RouteSeo() {
   const { pathname } = useLocation();

@@ -192,7 +192,9 @@ test("seoForPath (the browser's per-route head): pages, old addresses, speakers,
   assert.equal(seoForPath("/awards/winners/nope"), null);
   for (const url of ["/admin/people", "/survey", "/rsvp", "/tickets/checkout"]) {
     const s = seoForPath(url);
-    assert.deepEqual([s.canonical, s.robots, s.title], [null, NOINDEX_ROBOTS, undefined], url);
+    assert.deepEqual([s.canonical, s.robots, s.title], [null, NOINDEX_ROBOTS, "The Tech Festival Canada"], url);
+    assert.equal(s.image.url, "https://www.thetechfestival.com/og-image-2026.png", url);
+    assert.ok(s.description && !/speaker|winner/i.test(s.title), url);
   }
   assert.equal(seoForPath("/no-such-page"), null);
   assert.equal(clip("one two three four", 10), "one two…");

@@ -62,6 +62,7 @@ import CookieConsent from "./components/CookieConsent";
 import { AnnouncementBar, AgendaGate } from "./components/SiteNotices";
 // Search engines (Oct 31 2026): each address's title, canonical… (src/seo/routes.js), and a page for unknown addresses.
 import RouteSeo from "./seo/RouteSeo";
+import RouteErrorBoundary from "./components/RouteErrorBoundary";
 import NotFound from "./pages/NotFound";
 
 // The staff panel is loaded only when someone opens it.
@@ -121,6 +122,7 @@ function App() {
       <ScrollToTop />
       <RouteSeo />
       <OffJury><AnnouncementBar /></OffJury>
+      <RouteErrorBoundary>
       <Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -192,6 +194,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       </Suspense>
+      </RouteErrorBoundary>
       <OffJury><TicketBar /></OffJury>
       <OffJury><CookieConsent /></OffJury>
     </BrowserRouter>

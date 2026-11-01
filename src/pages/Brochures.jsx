@@ -145,7 +145,8 @@ export default function Brochures() {
         @media (max-width:640px) { .form-grid { grid-template-columns:1fr !important; } }
       `}</style>
 
-      <main style={{ flex:1, padding:"5rem 1.5rem 4rem" }}>
+      {/* The top padding keeps the heading clear of the fixed menu bar (it used to sit under a "TFC 2026" pill, removed Nov 1 2026). */}
+      <main style={{ flex:1, padding:"calc(5rem + 45px) 1.5rem 4rem" }}>
         <div style={{ maxWidth:860, margin:"0 auto" }}>
 
           {/* ── HERO HEADING ── */}

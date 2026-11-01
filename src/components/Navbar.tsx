@@ -90,9 +90,10 @@ export default function Navbar() {
     if (navRef.current) setNavHeight(navRef.current.getBoundingClientRect().bottom);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    document.body.classList.add("tfc-menu-open");
     const onKey = (e) => { if (e.key === "Escape") setMobileOpen(false); };
     window.addEventListener("keydown", onKey);
-    return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); };
+    return () => { document.body.style.overflow = prev; document.body.classList.remove("tfc-menu-open"); window.removeEventListener("keydown", onKey); };
   }, [mobileOpen]);
 
   const dark = theme === "dark";
@@ -294,6 +295,9 @@ export default function Navbar() {
           position: absolute;
         }
 
+        /* The phone menu has its own bottom row (2027 / Get tickets); the page's bottom bar would cover it. */
+        body.tfc-menu-open .ticket-bar { display: none !important; }
+
         .tfc-mobile-ticket { display: none !important; }
         .tfc-desktop-ticket { display: inline-flex !important; }
         .tfc-desktop-nav { display: flex; }
@@ -411,13 +415,13 @@ export default function Navbar() {
 
         {/* MOBILE MENU — full-height sheet: big rows, grouped tiles, tickets always in reach.
             Portalled to <body>: the bar's backdrop-filter would otherwise trap position:fixed inside it.
-            Above the phone's bottom bar (TicketBar, z-index 9999), which used to cover this sheet's own buttons (Nov 1 2026). */}
+            While it's open the phone's bottom bar (TicketBar) is hidden: it used to cover this sheet's own buttons (Nov 1 2026). */}
         {createPortal(<AnimatePresence>
           {mobileOpen && (
             <motion.div
               data-lenis-prevent
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-              style={{ position: "fixed", top: navHeight, left: 0, right: 0, bottom: 0, zIndex: 10000, display: "flex", flexDirection: "column", background: mobileBg, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderTop: "1px solid " + border }}
+              style={{ position: "fixed", top: navHeight, left: 0, right: 0, bottom: 0, zIndex: 9998, display: "flex", flexDirection: "column", background: mobileBg, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderTop: "1px solid " + border }}
             >
               <motion.div
                 initial="hidden" animate="show"

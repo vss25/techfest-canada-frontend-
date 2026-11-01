@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BadgeCheck, ChevronRight, ClipboardList, ExternalLink, LogIn, Medal, Star, Trophy } from "lucide-react";
 import { useStore } from "../lib/store";
@@ -22,6 +22,9 @@ import { Button, Sheet, TopBar } from "../components/ui";
    Share on LinkedIn, TTFC's page tagged). Hidden until they're live.
 ========================================================= */
 
+// What the embedded winner page posts on Escape (src/lib/awardWinners.js AWARD_CLOSE_MESSAGE; not imported, so the
+// web app doesn't pull in the website's form helpers).
+const AWARD_CLOSE_MESSAGE = "ttfc-award-close";
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const longDate = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || "")); return m ? `${+m[3]} ${MONTHS[+m[2] - 1]} ${m[1]}` : ""; };
 
@@ -36,6 +39,16 @@ export default function Awards() {
   const signedIn = isSignedIn(a);
   const [openWinner, setOpenWinner] = useState(null);
   useEffect(() => { refreshAwardsSummary({ force: true }); refreshAwardWinners(); }, []);
+  const frameRef = useRef(null);
+  // Escape inside the winner's page (the iframe has focus) closes the sheet too.
+  useEffect(() => {
+    if (!openWinner) return undefined;
+    const onMessage = (e) => {
+      if (e.origin === window.location.origin && e.source === frameRef.current?.contentWindow && e.data?.type === AWARD_CLOSE_MESSAGE) setOpenWinner(null);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [openWinner]);
   const categoryWinners = winners.filter((w) => !w.special);
   const specialWinners = winners.filter((w) => w.special);
 
@@ -121,7 +134,7 @@ export default function Awards() {
       {openWinner && (
         <Sheet open full onClose={() => setOpenWinner(null)} title={openWinner.company}
           actions={{ left: <a className="link-btn" href={`/awards/winners/${openWinner.id}`} target="_blank" rel="noopener noreferrer" aria-label="Open in the browser"><ExternalLink aria-hidden="true" style={{ width: 18, height: 18 }} /></a> }}>
-          <iframe className="winner-frame" src={`/awards/winners/${openWinner.id}?embed=1`} title={`${openWinner.award}: certificate, details and sharing`} />
+          <iframe ref={frameRef} className="winner-frame" src={`/awards/winners/${openWinner.id}?embed=1`} title={`${openWinner.award}: certificate, details and sharing`} />
         </Sheet>
       )}
     </div>

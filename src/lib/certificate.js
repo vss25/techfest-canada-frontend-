@@ -31,11 +31,38 @@ function loadLogo() {
   return logoPromise;
 }
 
-async function loadFonts() {
+/* Orbitron ships Latin-1 only (@fontsource/orbitron's one subset); a name with any other letter (Ł, ş, ő, ă, ḥ…)
+   is drawn in Montserrat, which has Latin Extended, Vietnamese and Cyrillic, so it never mixes two fonts. */
+const ORBITRON_SAFE = /^[\u0020-\u00FF\u0131\u0152\u0153\u02BB\u02BC\u02C6\u02DA\u02DC\u2000-\u206F\u20AC\u2122]*$/;
+const nameFontFor = (name) => (ORBITRON_SAFE.test(String(name || ""))
+  ? (s) => `900 ${s}px Orbitron, sans-serif`
+  : (s) => `700 ${s}px Montserrat, sans-serif`);
+
+/** Loads every face the text needs: with the text given, the browser fetches each unicode-range subset it uses. */
+async function loadFonts(w) {
   if (typeof document === "undefined" || !document.fonts?.load) return;
+  const all = [w.award, w.presentedTo, w.company, w.citation, EVENT, VENUE, longDate(w.presentedOn), "PRESENTED TO · 2026 “”…"].join(" ");
   await Promise.all([
-    "900 92px Orbitron", "800 30px Orbitron", "700 56px Montserrat", "600 40px Montserrat", "500 30px Montserrat",
-  ].map((f) => document.fonts.load(f).catch(() => null)));
+    ["900 92px Orbitron", "WINNER THE CATALYST AWARDS"], ["800 30px Orbitron", "THE CATALYST AWARDS"],
+    [nameFontFor(w.presentedTo)(92), w.presentedTo],
+    ["700 56px Montserrat", all], ["600 40px Montserrat", all], ["500 30px Montserrat", all],
+  ].map(([f, text]) => document.fonts.load(f, text || "A").catch(() => null)));
+}
+
+/** The citation in what's left of the middle: the biggest size from 30px down to 22px that fits whole, in up to 4 lines. */
+function citationFit(ctx, text, room) {
+  const linesFor = (lh) => Math.max(1, Math.min(4, Math.floor((room - 30) / lh)));
+  for (const size of [30, 28, 26, 24, 22]) {
+    const lh = Math.round(size * 1.42);
+    ctx.font = `500 ${size}px Montserrat, sans-serif`;
+    const lines = wrap(ctx, text, 1360);
+    if (lines.length <= linesFor(lh) && lines.every((l) => ctx.measureText(l).width <= 1360)) return { size, lh, lines };
+  }
+  const lh = Math.round(22 * 1.42);
+  const { lines } = fit(ctx, text, (sz) => `500 ${sz}px Montserrat, sans-serif`, [22], 1360, linesFor(lh));
+  const last = lines.length - 1;
+  if (lines[last]?.endsWith("…") && !lines[last].endsWith("”")) lines[last] += "”"; // keep the closing quote
+  return { size: 22, lh, lines };
 }
 
 /** Text with letter spacing, drawn a character at a time (canvas letterSpacing isn't everywhere yet). */
@@ -95,7 +122,7 @@ function hexagon(ctx, cx, cy, r) {
 
 /** Draws the certificate for a winner (the public winner object) on the canvas, at 2000 × 1414. */
 export async function drawCertificate(canvas, w) {
-  await loadFonts();
+  await loadFonts(w);
   const logo = await loadLogo();
   canvas.width = CERT_W;
   canvas.height = CERT_H;
@@ -167,9 +194,8 @@ export async function drawCertificate(canvas, w) {
 
   // The middle, measured first so the block sits centred between the top and the facts row.
   const titleFit = fit(ctx, w.award, (s) => `700 ${s}px Montserrat, sans-serif`, [58, 54, 50, 46, 42], 1480, 3);
-  const nameFit = fit(ctx, w.presentedTo, (s) => `900 ${s}px Orbitron, sans-serif`, [96, 88, 80, 72, 64, 56, 50], 1560, 2);
-  ctx.font = "500 30px Montserrat, sans-serif";
-  const citeLines = w.citation ? fit(ctx, `“${w.citation}”`, (s) => `500 ${s}px Montserrat, sans-serif`, [30, 28, 26], 1360, 2).lines : [];
+  const nameFont = nameFontFor(w.presentedTo);
+  const nameFit = fit(ctx, w.presentedTo, nameFont, [96, 88, 80, 72, 64, 56, 50], 1560, 2);
   const titleLH = titleFit.size * 1.24, nameLH = nameFit.size * 1.12;
   const parts = [
     46,                                   // WINNER
@@ -178,9 +204,11 @@ export async function drawCertificate(canvas, w) {
     70,                                   // PRESENTED TO
     nameFit.lines.length * nameLH,
     w.showCompany ? 62 : 0,
-    citeLines.length ? 30 + citeLines.length * 40 : 0,
   ];
   const top = 330, bottom = 1100;
+  // The citation gets whatever room is left, so even a long one (the admin allows 400 characters) reads in full.
+  const cite = w.citation ? citationFit(ctx, `“${w.citation}”`, bottom - top - 40 - parts.reduce((a, b) => a + b, 0)) : null;
+  if (cite) parts.push(30 + cite.size + (cite.lines.length - 1) * cite.lh);
   let y = top + Math.max(0, (bottom - top - parts.reduce((a, b) => a + b, 0)) / 2) + 40;
 
   g = ctx.createLinearGradient(cx - 200, 0, cx + 200, 0);
@@ -207,7 +235,7 @@ export async function drawCertificate(canvas, w) {
   y += 20 + nameFit.size * 0.95;
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = `900 ${nameFit.size}px Orbitron, sans-serif`;
+  ctx.font = nameFont(nameFit.size);
   nameFit.lines.forEach((l, i) => ctx.fillText(l, cx, y + i * nameLH));
   y += (nameFit.lines.length - 1) * nameLH;
 
@@ -217,11 +245,11 @@ export async function drawCertificate(canvas, w) {
     ctx.font = "600 40px Montserrat, sans-serif";
     ctx.fillText(fit(ctx, w.company, (s) => `600 ${s}px Montserrat, sans-serif`, [40, 36, 32], 1500, 1).lines[0], cx, y);
   }
-  if (citeLines.length) {
-    y += 64;
+  if (cite) {
+    y += 30 + cite.size;
     ctx.fillStyle = "rgba(255,255,255,0.78)";
-    ctx.font = "500 28px Montserrat, sans-serif";
-    citeLines.forEach((l, i) => ctx.fillText(l, cx, y + i * 40));
+    ctx.font = `500 ${cite.size}px Montserrat, sans-serif`;
+    cite.lines.forEach((l, i) => ctx.fillText(l, cx, y + i * cite.lh));
   }
 
   // The facts: when, where, at what.

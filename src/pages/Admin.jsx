@@ -12,6 +12,7 @@ import { adminFetch, signOut, PASSWORD_REQUIRED } from "../admin/api";
 import { Button, ErrorState, ManagementOnly, Spinner } from "../admin/ui";
 
 import Overview from "../admin/sections/Overview";
+import Events from "../admin/events/Events";
 import Legacy from "../admin/sections/Legacy";
 import Speakers from "../admin/cms/Speakers";
 import AgendaAdmin from "../admin/cms/Agenda";
@@ -220,6 +221,7 @@ function AdminPanel() {
           ) : (
           <Routes>
             <Route index element={<Overview />} />
+            <Route path="events" element={<Events />} />
 
             <Route path="people" element={<PeopleDirectory />} />
             <Route path="people/:id" element={<PersonProfile />} />

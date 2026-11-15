@@ -575,8 +575,8 @@ function AgendaPage({ ev }) {
           </div>
         )}
         {loading ? <p aria-busy="true" style={{ opacity: 0.7 }}>Loading the agenda…</p>
-          : shown.length === 0 ? <p style={{ opacity: 0.75 }}>The agenda for this event will be published here.</p>
-          : shown.filter((s) => !showTabs || (s.day || 1) === activeDay).map((s) => <SessionRow key={s._id} s={s} />)}
+          : sessions.length === 0 ? <p style={{ opacity: 0.75 }}>The agenda for this event will be published here.</p>
+          : sessions.filter((s) => !showTabs || (s.day || 1) === activeDay).map((s) => <SessionRow key={s._id} s={s} />)}
       </div>
       <EventFaqs ev={ev} />
     </PageShell>
@@ -600,7 +600,7 @@ function SpeakersPage({ ev }) {
           </div>
         )}
         {loading ? <p aria-busy="true" style={{ opacity: 0.7 }}>Loading speakers…</p>
-          : shown.length === 0 ? <p style={{ opacity: 0.75 }}>Speakers for this event will be announced here.</p>
+          : speakers.length === 0 ? <p style={{ opacity: 0.75 }}>Speakers for this event will be announced here.</p>
           : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16, marginTop: 12 }}>
               {shown.map((sp) => <SpeakerCard key={sp._id} speaker={sp} to={fallback ? undefined : speakerPathIn(eventPath(ev), sp)} />)}

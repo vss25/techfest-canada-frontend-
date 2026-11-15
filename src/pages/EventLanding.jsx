@@ -575,8 +575,8 @@ function AgendaPage({ ev }) {
           </div>
         )}
         {loading ? <p aria-busy="true" style={{ opacity: 0.7 }}>Loading the agenda…</p>
-          : sessions.length === 0 ? <p style={{ opacity: 0.75 }}>Sessions, speakers and stages will be published here as the agenda is confirmed.</p>
-          : sessions.filter((s) => !showTabs || (s.day || 1) === activeDay).map((s) => <SessionRow key={s._id} s={s} />)}
+          : shown.length === 0 ? <p style={{ opacity: 0.75 }}>Sessions, speakers and stages will be published here as the agenda is confirmed.</p>
+          : shown.filter((s) => !showTabs || (s.day || 1) === activeDay).map((s) => <SessionRow key={s._id} s={s} />)}
       </div>
       <EventFaqs ev={ev} />
     </PageShell>
@@ -600,7 +600,7 @@ function SpeakersPage({ ev }) {
           </div>
         )}
         {loading ? <p aria-busy="true" style={{ opacity: 0.7 }}>Loading speakers…</p>
-          : speakers.length === 0 ? <p style={{ opacity: 0.75 }}>The speaker lineup will be announced here — expect the people deploying this technology, not just describing it.</p>
+          : shown.length === 0 ? <p style={{ opacity: 0.75 }}>The speaker lineup will be announced here — expect the people deploying this technology, not just describing it.</p>
           : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16, marginTop: 12 }}>
               {shown.map((sp) => <SpeakerCard key={sp._id} speaker={sp} to={fallback ? undefined : speakerPathIn(eventPath(ev), sp)} />)}

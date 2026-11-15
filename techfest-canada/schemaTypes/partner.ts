@@ -108,5 +108,12 @@ export default defineType({
       description: "Off = not in the iOS, Android or web app. Empty counts as on.",
       initialValue: true,
     }),
+    defineField({
+      name: "events",
+      title: "Events",
+      type: "array",
+      description: "Which event(s) this partner belongs to. Empty = every event (today's behaviour); set it to scope the partner to specific events.",
+      of: [{ type: "reference", to: [{ type: "event" }] }],
+    }),
   ],
 });

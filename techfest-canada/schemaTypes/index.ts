@@ -5,5 +5,6 @@ import homeSponsor from './homeSponsor'
 import speaker from './speaker'
 import partner from './partner'
 import session from './session'
+import event from './event'
 
-export const schemaTypes = [siteSettings, sponsors, sponsorMarquee, homeSponsor, speaker, partner, session]
+export const schemaTypes = [siteSettings, sponsors, sponsorMarquee, homeSponsor, speaker, partner, session, event]

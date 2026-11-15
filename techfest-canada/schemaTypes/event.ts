@@ -110,6 +110,14 @@ export default defineType({
             type: "string",
             description: "Optional short line shown with the event's status, e.g. “Tickets on sale soon” or “Sold out”.",
         }),
+        defineField({
+            name: "pricingAnnounced",
+            title: "Pricing Announced",
+            type: "boolean",
+            description:
+                "While off, the site shows “Pricing to be announced” for this event's tickets, exhibitor and sponsor packages. Turn it on only when staff announce the pricing.",
+            initialValue: false,
+        }),
     ],
 
     // Preview in Studio list — name + city

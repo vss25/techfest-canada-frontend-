@@ -134,7 +134,7 @@ const CITY_INTROS = {
                 {city.name}
               </h1>
               <p style={{ margin: "16px 0 0", opacity: 0.88, maxWidth: 620, lineHeight: 1.65, fontSize: "clamp(1rem, 1.8vw, 1.15rem)" }}>
-                The Tech Festival Canada in {city.name}. Pick an event — agendas, speakers and tickets live on each event&rsquo;s own pages.
+                {intro}
               </p>
             </Reveal>
           </div>
@@ -145,7 +145,7 @@ const CITY_INTROS = {
             <p aria-busy="true" style={{ opacity: 0.7 }}>Loading events…</p>
           ) : mine.length === 0 ? (
             <AnnouncedSoon source={`city:${city.slug}`} title={`${city.name} — announced soon`}
-              message={`The next TTFC event in ${city.name} hasn't been announced yet. Leave your email and we'll keep you updated.`} />
+              message={`The next TTFC event in ${city.name} hasn't been announced yet — when it is, it lands on this page first. Leave your email and we'll keep you updated.`} />
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 18 }}>
               {sorted.map((ev, i) => (

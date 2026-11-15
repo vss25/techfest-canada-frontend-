@@ -46,6 +46,9 @@ export function CityList({ events }) {
           </h2>
           <GradientRule style={{ marginTop: 16 }} />
         </Reveal>
+        <p style={{ margin: "18px 0 0", opacity: 0.85, maxWidth: 620, lineHeight: 1.65 }}>
+          One festival, five cities. Every Briefing is a single senior, curated day; the Main Event is the two-day national gathering in Toronto.
+        </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginTop: 28 }}>
           {CITIES.map((c, i) => {
             const next = (events || [])

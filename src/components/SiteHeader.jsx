@@ -175,8 +175,18 @@ export default function SiteHeader() {
         .sh-drop-row:hover { background: rgba(122,63,209,0.09); }
         .sh-city-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 12px; text-decoration: none; font-weight: 700; }
         .sh-city-row:hover { background: rgba(122,63,209,0.09); }
-        .sh-mid { flex: 1; display: flex; justify-content: center; }
-        .sh-mid ul { display: flex; align-items: center; gap: 2px; list-style: none; margin: 0; padding: 4px 5px; border-radius: 999px; }
+        /* The middle group must sit INLINE in the bar. src/styles.css carries a legacy
+           global rule, nav:not(.tfc-nav), that restyles any bare <nav> as a full-width
+           sticky bar (background: var(--bg-nav) — near-white in light mode — height: 80px,
+           padding: 1rem 5%, width: 100%). It hit this <nav> and rendered the middle links
+           as an overlapping white panel. The nav below carries the tfc-nav opt-out class
+           (the codebase's own marker; the class has no styles of its own), and these
+           resets keep .sh-mid inline and transparent regardless. */
+        .sh-mid { flex: 1; display: flex; justify-content: center; align-items: center; min-width: 0;
+          position: static; width: auto; height: auto; padding: 0; background: transparent;
+          border-bottom: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+        .sh-mid ul { display: flex; align-items: center; gap: 2px; list-style: none; margin: 0; padding: 4px 5px; border-radius: 999px;
+          min-width: 0; flex-wrap: nowrap; overflow: hidden; }
         .sh-link { font-family: 'Orbitron', sans-serif; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 12px; border-radius: 999px; text-decoration: none; white-space: nowrap; }
         .sh-link:hover { background: rgba(122,63,209,0.10); }
         .sh-link.active { background: rgba(122,63,209,0.15); }
@@ -261,8 +271,9 @@ export default function SiteHeader() {
             )}
           </div>
 
-          {/* The middle: swaps with context. */}
-          <nav className="sh-mid" aria-label={current ? "Event" : "Site"}>
+          {/* The middle: swaps with context. (tfc-nav = opt-out from the legacy
+              global nav:not(.tfc-nav) bar styling in src/styles.css — see .sh-mid.) */}
+          <nav className="sh-mid tfc-nav" aria-label={current ? "Event" : "Site"}>
             <ul style={{ background: pillBg, border: `1px solid ${border}` }}>
               {middleLinks.map((l) => (
                 <li key={l.path}>
@@ -339,3 +350,4 @@ export default function SiteHeader() {
     </>
   );
 }
+

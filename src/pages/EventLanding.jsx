@@ -15,7 +15,8 @@ import { urlFor } from "../utils/sanity";
 import { speakerSlug } from "../seo/slug";
 import {
   LIFECYCLE_LABEL, cityBySlug, eventAgendaPath, eventPath, eventSpeakersPath,
-  eventTicketsPath, findEvent, formatDateRange, lifecycleOf, useEventContent, useEvents,
+  eventTicketsPath, findEvent, formatDateRange, lifecycleOf, pastEditionLabel,
+  useEventContent, useEvents, usePastEditionFallback,
 } from "../lib/events";
 
 /* =========================================================
@@ -27,6 +28,12 @@ import {
    partners · contextual tickets · gallery · brochure · its
    own FAQs · one quiet app line. A Past event's landing is
    highlights + gallery only, tickets off.
+
+   No empty sections (2026-11-15): an event whose own agenda
+   or speakers are not published yet shows the previous
+   edition's (Toronto Main Event 2026), banner-labelled as
+   borrowed — on this landing and on its agenda / speakers
+   subpages alike. See usePastEditionFallback in lib/events.
 
    Visual enrichment: the template borrows the home page's
    own language — full-bleed cinematic hero, brand aurora
@@ -334,19 +341,53 @@ const AppLine = () => (
   </p>
 );
 
+/** The past-edition notice: sits at the top of a section that is
+    borrowing the previous edition's content, so the borrowed
+    sessions / speakers are never mistaken for this event's own.
+    Text only — it adds no calls to action. */
+function PastEditionBanner({ kind, ev, source }) {
+  const edition = pastEditionLabel(source);
+  const city = source?.city || "Toronto";
+  return (
+    <div role="note" style={{ padding: "18px 22px", borderRadius: 16, background: "rgba(245,166,35,0.08)", border: "1px solid rgba(245,166,35,0.38)" }}>
+      <div style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.98rem", letterSpacing: 0.3 }}>
+        From the {edition}
+      </div>
+      <p style={{ margin: "8px 0 0", fontSize: "0.95rem", lineHeight: 1.65, opacity: 0.92 }}>
+        {kind === "agenda" ? (
+          <>The {ev.name} agenda will be published here as it&rsquo;s confirmed. Until then, here&rsquo;s the agenda from the most recent edition, in {city}.</>
+        ) : (
+          <>The {ev.name} speaker lineup will be announced here. Until then, meet some of the speakers from the {edition}.</>
+        )}
+      </p>
+    </div>
+  );
+}
+
 /** The shared landing template. `below` renders extra sections (the home page's city list). */
 export function EventTemplate({ ev, below, heroHeadingAs }) {
-  const { sessions, speakers, partners } = useEventContent(ev);
+  const { sessions, speakers, partners, loading } = useEventContent(ev);
+  const fb = usePastEditionFallback(ev);
   const lifecycle = lifecycleOf(ev);
   const past = lifecycle === "past";
   const base = eventPath(ev);
+  /* No empty sections: an event with no agenda / speakers of its
+     own yet shows the previous edition's, banner-labelled as such.
+     The decision waits for both fetches to settle, so an event
+     with its own content never flashes the borrowed edition. */
+  const settled = !loading && !fb.loading;
+  const agendaFallback = settled && !fb.isSource && sessions.length === 0 && fb.sessions.length > 0;
+  const speakersFallback = settled && !fb.isSource && speakers.length === 0 && fb.speakers.length > 0;
+  const edition = pastEditionLabel(fb.source);
+  const shownSessions = agendaFallback ? fb.sessions : sessions;
+  const shownSpeakers = speakersFallback ? fb.speakers : speakers;
   const highlights = useMemo(() => {
-    const featured = sessions.filter((s) => s.featured);
-    return (featured.length ? featured : sessions).slice(0, 6);
-  }, [sessions]);
+    const featured = shownSessions.filter((s) => s.featured);
+    return (featured.length ? featured : shownSessions).slice(0, 6);
+  }, [shownSessions]);
   const speakersByName = useMemo(
-    () => new Map(speakers.map((sp) => [speakerSlug(sp.name), sp])),
-    [speakers]
+    () => new Map(shownSpeakers.map((sp) => [speakerSlug(sp.name), sp])),
+    [shownSpeakers]
   );
 
   return (
@@ -390,7 +431,12 @@ export function EventTemplate({ ev, below, heroHeadingAs }) {
       {!past && highlights.length > 0 && (
         <Section tone="band" label="Agenda highlights">
           <div style={wrap}>
-            <SectionHead title="Agenda highlights" />
+            <SectionHead title={agendaFallback ? `Agenda · ${edition}` : "Agenda highlights"} />
+            {agendaFallback && (
+              <div style={{ marginTop: 24 }}>
+                <PastEditionBanner kind="agenda" ev={ev} source={fb.source} />
+              </div>
+            )}
             <div className="ev-cards" style={{ marginTop: 32 }}>
               {highlights.map((s, i) => (
                 <Reveal key={s._id} delay={Math.min(i, 5) * 0.06} className={i === 0 && highlights.length > 2 ? "ev-wide" : undefined} style={{ height: "100%" }}>
@@ -403,18 +449,25 @@ export function EventTemplate({ ev, below, heroHeadingAs }) {
         </Section>
       )}
 
-      {!past && speakers.length > 0 && (
+      {!past && shownSpeakers.length > 0 && (
         <Section label="Speakers">
           <div style={wrap}>
-            <SectionHead title="Speakers" />
+            <SectionHead title={speakersFallback ? `Speakers · ${edition}` : "Speakers"} />
+            {speakersFallback && (
+              <div style={{ marginTop: 24 }}>
+                <PastEditionBanner kind="speakers" ev={ev} source={fb.source} />
+              </div>
+            )}
             <div className="ev-speaker-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16, marginTop: 32 }}>
-              {speakers.slice(0, 8).map((sp, i) => (
+              {shownSpeakers.slice(0, 8).map((sp, i) => (
                 <Reveal key={sp._id} delay={Math.min(i, 7) * 0.05} style={{ height: "100%" }}>
-                  <SpeakerCard speaker={sp} to={speakerPathIn(base, sp)} />
+                  {/* Borrowed speakers render unlinked: their profiles
+                      live under the previous edition, not this event. */}
+                  <SpeakerCard speaker={sp} to={speakersFallback ? undefined : speakerPathIn(base, sp)} />
                 </Reveal>
               ))}
             </div>
-            {speakers.length > 8 && (
+            {shownSpeakers.length > 8 && (
               <p style={{ marginTop: 20 }}><Link to={eventSpeakersPath(ev)} style={{ fontWeight: 700, color: "inherit" }}>All speakers →</Link></p>
             )}
           </div>
@@ -491,14 +544,24 @@ function PageShell({ ev, title, children }) {
 
 function AgendaPage({ ev }) {
   const { sessions, loading } = useEventContent(ev);
-  const days = useMemo(() => [...new Set(sessions.map((s) => s.day || 1))].sort((a, b) => a - b), [sessions]);
+  const fb = usePastEditionFallback(ev);
+  /* Same no-empty-pages rule as the landing: no agenda of its own
+     yet → the previous edition's, banner-labelled. */
+  const fallback = !loading && !fb.loading && !fb.isSource && sessions.length === 0 && fb.sessions.length > 0;
+  const shown = fallback ? fb.sessions : sessions;
+  const days = useMemo(() => [...new Set(shown.map((s) => s.day || 1))].sort((a, b) => a - b), [shown]);
   const [day, setDay] = useState(null);
   const activeDay = day ?? days[0];
   const showTabs = ev.type === "main-event" || days.length > 1;
   useSeo(`${ev.name} agenda`, `The agenda for ${ev.name}: sessions, speakers and stages.`);
   return (
-    <PageShell ev={ev} title="Agenda">
+    <PageShell ev={ev} title={fallback ? `Agenda · ${pastEditionLabel(fb.source)}` : "Agenda"}>
       <div style={wrap}>
+        {fallback && (
+          <div style={{ margin: "18px 0 6px" }}>
+            <PastEditionBanner kind="agenda" ev={ev} source={fb.source} />
+          </div>
+        )}
         {showTabs && days.length > 1 && (
           <div role="tablist" aria-label="Day" style={{ display: "flex", gap: 8, margin: "14px 0 6px" }}>
             {days.map((d) => (
@@ -512,8 +575,8 @@ function AgendaPage({ ev }) {
           </div>
         )}
         {loading ? <p aria-busy="true" style={{ opacity: 0.7 }}>Loading the agenda…</p>
-          : sessions.length === 0 ? <p style={{ opacity: 0.75 }}>The agenda for this event will be published here.</p>
-          : sessions.filter((s) => !showTabs || (s.day || 1) === activeDay).map((s) => <SessionRow key={s._id} s={s} />)}
+          : shown.length === 0 ? <p style={{ opacity: 0.75 }}>The agenda for this event will be published here.</p>
+          : shown.filter((s) => !showTabs || (s.day || 1) === activeDay).map((s) => <SessionRow key={s._id} s={s} />)}
       </div>
       <EventFaqs ev={ev} />
     </PageShell>
@@ -522,15 +585,25 @@ function AgendaPage({ ev }) {
 
 function SpeakersPage({ ev }) {
   const { speakers, loading } = useEventContent(ev);
+  const fb = usePastEditionFallback(ev);
+  /* Same no-empty-pages rule as the landing: no lineup of its own
+     yet → the previous edition's, banner-labelled. */
+  const fallback = !loading && !fb.loading && !fb.isSource && speakers.length === 0 && fb.speakers.length > 0;
+  const shown = fallback ? fb.speakers : speakers;
   useSeo(`${ev.name} speakers`, `Who is speaking at ${ev.name}.`);
   return (
-    <PageShell ev={ev} title="Speakers">
+    <PageShell ev={ev} title={fallback ? `Speakers · ${pastEditionLabel(fb.source)}` : "Speakers"}>
       <div style={wrap}>
+        {fallback && (
+          <div style={{ margin: "18px 0 6px" }}>
+            <PastEditionBanner kind="speakers" ev={ev} source={fb.source} />
+          </div>
+        )}
         {loading ? <p aria-busy="true" style={{ opacity: 0.7 }}>Loading speakers…</p>
-          : speakers.length === 0 ? <p style={{ opacity: 0.75 }}>Speakers for this event will be announced here.</p>
+          : shown.length === 0 ? <p style={{ opacity: 0.75 }}>Speakers for this event will be announced here.</p>
           : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16, marginTop: 12 }}>
-              {speakers.map((sp) => <SpeakerCard key={sp._id} speaker={sp} to={speakerPathIn(eventPath(ev), sp)} />)}
+              {shown.map((sp) => <SpeakerCard key={sp._id} speaker={sp} to={fallback ? undefined : speakerPathIn(eventPath(ev), sp)} />)}
             </div>
           )}
       </div>

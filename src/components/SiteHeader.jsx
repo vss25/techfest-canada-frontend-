@@ -1,6 +1,5 @@
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import useSiteSettings from "../hooks/useSiteSettings";
 import { track } from "../lib/pwaEvents";
 import { isMobileDevice } from "../lib/pwaPlatform";
 import { isNativeVisit } from "../lib/nativeVisit";
@@ -42,23 +41,13 @@ const GLOBAL_LINKS = [
   { label: "About", path: "/about" },
 ];
 
-/* Parity with the existing Navbar (components/Navbar.tsx): every destination it
-   offers stays reachable from this header too — the primary five above in the
-   middle, the rest here (pill dropdown + phone sheet). Nothing the old header
-   links to is dropped. */
-const MORE_LINKS = [
-  { label: "Programme", path: "/programme", agendaGated: true },
-  { label: "Agenda", path: "/agenda", agendaGated: true },
-  { label: "2026 Partners", path: "/partners2026" },
-  { label: "Sponsor", path: "/sponsor" },
-  { label: "Exhibit", path: "/exhibit" },
-  { label: "Venue", path: "/venue" },
-  { label: "Brochure", path: "/brochures" },
-  { label: "Volunteer", path: "/volunteer" },
-  { label: "Organizers", path: "/organizers" },
-  { label: "Media", path: "/media" },
-  { label: "Contact", path: "/contact" },
-];
+/* Menu curation (IA): the pill dropdown's and phone sheet's global set is
+   exactly Home + GLOBAL_LINKS above — the same five destinations the header
+   itself shows in global mode. The legacy Navbar's long tail (Programme, the
+   global Agenda, 2026 Partners, Sponsor, Exhibit, Venue, Brochure, Volunteer,
+   Organizers, Media, Contact) is deliberately NOT carried in this header's
+   menus; those pages stay live and reachable via the existing site
+   navigation and footer, exactly as before. */
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => typeof document !== "undefined" && document.body.classList.contains("dark-mode"));
@@ -76,9 +65,6 @@ export default function SiteHeader({ homeEvent = null } = {}) {
   const location = useLocation();
   const { events } = useEvents();
   const dark = useDarkMode();
-  const site = useSiteSettings();
-  const showAgenda = site["site.show_agenda"] !== false;
-  const moreLinks = MORE_LINKS.filter((l) => showAgenda || !l.agendaGated);
   // Theme behaviour identical to Navbar's: localStorage "theme", body.dark-mode.
   const [theme, setTheme] = useState("light");
   useEffect(() => {
@@ -278,9 +264,6 @@ export default function SiteHeader({ homeEvent = null } = {}) {
                     {GLOBAL_LINKS.map((l) => (
                       <Link key={l.path} to={l.path} className="sh-drop-row"><span style={{ fontWeight: 700, color: textMain }}>{l.label}</span></Link>
                     ))}
-                    {moreLinks.map((l) => (
-                      <Link key={l.path} to={l.path} className="sh-drop-row"><span style={{ fontWeight: 700, color: textMain }}>{l.label}</span></Link>
-                    ))}
                     <div className="sh-drop-label" style={{ color: textMuted }}>Other cities</div>
                     {CITIES.filter((c) => c.slug !== currentCity).map((c) => (
                       <Link key={c.slug} to={`/${c.slug}`} className="sh-city-row" style={{ color: textMain }}
@@ -307,10 +290,6 @@ export default function SiteHeader({ homeEvent = null } = {}) {
                         {byLifecycle(["past", "just-ended"]).slice().sort(compareEventsDesc).map(eventRow)}
                       </details>
                     )}
-                    <div className="sh-drop-label" style={{ color: textMuted }}>More</div>
-                    {moreLinks.map((l) => (
-                      <Link key={l.path} to={l.path} className="sh-drop-row"><span style={{ fontWeight: 700, color: textMain }}>{l.label}</span></Link>
-                    ))}
                   </>
                 )}
               </div>
@@ -371,10 +350,15 @@ export default function SiteHeader({ homeEvent = null } = {}) {
               <Link key={c.slug} to={`/${c.slug}`} style={{ color: textMain, borderBottom: `1px solid ${border}` }}
                 onClick={() => chooseCity(c, nextEvent(events.filter((e) => citySlugOf(e.city) === c.slug)))}>{c.name}</Link>
             ))}
-            <div className="sh-drop-label" style={{ color: textMuted, margin: "18px 4px 4px" }}>More</div>
-            {moreLinks.map((l) => (
-              <Link key={l.path} to={l.path} style={{ color: textMain, borderBottom: `1px solid ${border}` }}>{l.label}</Link>
-            ))}
+            {current && (
+              <>
+                <div className="sh-drop-label" style={{ color: textMuted, margin: "18px 4px 4px" }}>Everywhere</div>
+                <Link to="/" style={{ color: textMain, borderBottom: `1px solid ${border}` }}>Home</Link>
+                {GLOBAL_LINKS.map((l) => (
+                  <Link key={l.path} to={l.path} style={{ color: textMain, borderBottom: `1px solid ${border}` }}>{l.label}</Link>
+                ))}
+              </>
+            )}
             {/* Navbar parity: on a phone this row opens /app/install; on a computer it presents
                 the QR PhoneAppPanel instead (and store-app visitors don't see the row at all). */}
             {!fromStoreApp && (

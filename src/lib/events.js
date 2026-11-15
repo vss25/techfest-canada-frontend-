@@ -290,6 +290,39 @@ export function useEventContent(ev) {
   return state;
 }
 
+/* ---------------- Past-edition fallback ----------------
+   The no-empty-pages rule (2026-11-15): an event whose own
+   agenda / speakers are not published yet shows the most
+   recent completed edition's instead — always the Toronto
+   Main Event 2026 — clearly labelled as the previous
+   edition (see PastEditionBanner in EventLanding.jsx). The
+   fallback source never falls back to itself, and an event
+   with any content of its own never borrows. */
+
+export const FALLBACK_EVENT_KEY = "ttfc-2026-main";
+
+/** "2026 Toronto Main Event" — the previous edition's label. */
+export function pastEditionLabel(source) {
+  if (!source) return "2026 Toronto Main Event";
+  const kind = source.type === "main-event" ? "Main Event" : "Briefing";
+  return `${source.year} ${source.city} ${kind}`;
+}
+
+/** The fallback source event + its sessions/speakers, for an
+    event page. `isSource` is true when `ev` IS the fallback
+    source — its own page never borrows from itself. Content
+    loads only when a source exists and `ev` is not it. */
+export function usePastEditionFallback(ev) {
+  const { events } = useEvents();
+  const source = (events || []).find((e) => e.eventKey === FALLBACK_EVENT_KEY) || null;
+  const isSource = !!ev && ev.eventKey === FALLBACK_EVENT_KEY;
+  const content = useEventContent(isSource ? null : source);
+  return {
+    source, isSource,
+    sessions: content.sessions, speakers: content.speakers, loading: content.loading,
+  };
+}
+
 /** Layered FAQs for an event page: event first, then its city, then global. */
 export function useEventFaqs(ev) {
   const [faqs, setFaqs] = useState([]);

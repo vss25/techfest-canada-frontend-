@@ -46,8 +46,10 @@ const GLOBAL_LINKS = [
 ];
 
 /* Menu curation (IA, revised 2026-11-15): GLOBAL_LINKS above are shown in
-   the header middle on global pages (and as the phone sheet's top rows) —
-   nowhere else. The pill dropdown carries no global-links section: in an
+   the header middle on global pages (and as the phone sheet's top rows);
+   inside an event, Awards and Partners join the event's links there too
+   (user rule: always in the header, never dropdown-only) — and the global
+   links appear nowhere else. The pill dropdown carries no global-links section: in an
    event it is This Event + Other Cities only. The legacy Navbar's long tail
    (Programme, the global Agenda, 2026 Partners, Sponsor, Exhibit, Venue,
    Brochure, Volunteer, Organizers, Media, Contact) is likewise NOT carried
@@ -196,6 +198,16 @@ export default function SiteHeader({ homeEvent = null } = {}) {
       ]
     : GLOBAL_LINKS;
 
+  /* User rule (2026-11-15): Partners and Awards are ALWAYS in the header —
+     never reachable only through a dropdown. In global mode they are already
+     part of GLOBAL_LINKS; inside an event they join the event's own links in
+     the header middle and as top-level rows in the phone sheet. The pill
+     dropdown deliberately does NOT get them — it stays This Event + Other
+     Cities only — so the dropdown keeps using middleLinks, not headerLinks. */
+  const headerLinks = current
+    ? [...middleLinks, ...GLOBAL_LINKS.filter((l) => l.label === "Awards" || l.label === "Partners")]
+    : middleLinks;
+
   return (
     <>
       <style>{`
@@ -300,7 +312,7 @@ export default function SiteHeader({ homeEvent = null } = {}) {
               global nav:not(.tfc-nav) bar styling in src/styles.css — see .sh-mid.) */}
           <nav className="sh-mid tfc-nav" aria-label={current ? "Event" : "Site"}>
             <ul style={{ background: pillBg, border: `1px solid ${border}` }}>
-              {middleLinks.map((l) => (
+              {headerLinks.map((l) => (
                 <li key={l.path}>
                   <Link to={l.path} className={"sh-link" + (location.pathname === l.path ? " active" : "")} style={{ color: textMain }}>{l.label}</Link>
                 </li>
@@ -342,7 +354,7 @@ export default function SiteHeader({ homeEvent = null } = {}) {
 
         {menuOpen && (
           <div className="sh-sheet" style={{ top: 76, background: dropBg, borderTop: `1px solid ${border}` }}>
-            {middleLinks.map((l) => (
+            {headerLinks.map((l) => (
               <Link key={l.path} to={l.path} style={{ color: textMain, borderBottom: `1px solid ${border}` }}>{l.label}</Link>
             ))}
             <div className="sh-drop-label" style={{ color: textMuted, margin: "18px 4px 4px" }}>Cities</div>

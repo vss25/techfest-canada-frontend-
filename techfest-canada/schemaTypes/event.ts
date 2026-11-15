@@ -98,6 +98,33 @@ export default defineType({
             options: { hotspot: true },
         }),
         defineField({
+            name: "gallery",
+            title: "Gallery",
+            type: "array",
+            description: "Photos for the event page's gallery (and its Past-edition highlights). Optional.",
+            of: [
+                {
+                    type: "image",
+                    options: { hotspot: true },
+                    fields: [
+                        {
+                            name: "alt",
+                            title: "Alt Text",
+                            type: "string",
+                            description: "Describes the photo for screen readers and SEO.",
+                        },
+                    ],
+                },
+            ],
+        }),
+        defineField({
+            name: "brochure",
+            title: "Brochure (PDF)",
+            type: "file",
+            description: "Optional: the event's brochure PDF, linked from its page.",
+            options: { accept: ".pdf" },
+        }),
+        defineField({
             name: "description",
             title: "Description",
             type: "text",

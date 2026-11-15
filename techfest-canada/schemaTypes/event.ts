@@ -90,6 +90,14 @@ export default defineType({
             description: "Optional: a short, silent hero loop (YouTube/Vimeo or a hosted file). The hero image is the poster and the mobile fallback.",
         }),
         defineField({
+            name: "citySkyline",
+            title: "City Skyline (hero overlay)",
+            type: "image",
+            description:
+                "Optional: the transparent skyline silhouette graphic for this event's city (SVG/PNG with transparency), layered over the hero video so the city is unmistakable — e.g. Vancouver's skyline with the mountains and harbour.",
+            options: { hotspot: true },
+        }),
+        defineField({
             name: "description",
             title: "Description",
             type: "text",

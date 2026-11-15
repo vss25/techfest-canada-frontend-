@@ -1,6 +1,6 @@
 // schemaTypes/speaker.ts
 import { defineField, defineType } from "sanity";
-import type { StringRule, NumberRule, ImageRule } from "sanity";
+import type { StringRule, NumberRule, ImageRule, TextRule } from "sanity";
 
 export default defineType({
     name: "speaker",
@@ -35,12 +35,83 @@ export default defineType({
             rows: 4,
             description: "A short speaker bio shown on the card (2–3 sentences recommended).",
         }),
+        // ── Bios (Phase 1 schema; the site keeps reading `bio` until the Phase 4 switch) ──
+        defineField({
+            name: "shortBio",
+            title: "Short Bio (cards)",
+            type: "text",
+            rows: 3,
+            description:
+                "One or two sentences for speaker cards and grids. Aim for 240 characters or fewer so it never truncates mid-sentence.",
+            validation: (Rule: TextRule) =>
+                Rule.max(240).warning("Short bios over 240 characters may truncate on cards."),
+        }),
+        defineField({
+            name: "fullBio",
+            title: "Full Bio (profile page)",
+            type: "array",
+            description:
+                "The full speaker bio for the profile page: paragraphs, bold/italic, links and bullet lists. The mark set is deliberately small so formatting stays on-brand.",
+            of: [
+                {
+                    type: "block",
+                    styles: [{ title: "Normal", value: "normal" }],
+                    lists: [{ title: "Bullet", value: "bullet" }],
+                    marks: {
+                        decorators: [
+                            { title: "Bold", value: "strong" },
+                            { title: "Italic", value: "em" },
+                        ],
+                        annotations: [
+                            {
+                                name: "link",
+                                title: "Link",
+                                type: "object",
+                                fields: [
+                                    {
+                                        name: "href",
+                                        title: "URL",
+                                        type: "url",
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                },
+            ],
+        }),
         defineField({
             name: "image",
             title: "Profile Photo",
             type: "image",
+            description:
+                "Headshot, 800×800 px or larger recommended. The site crops it per layout (square on cards, 4:5 on the profile) from the hotspot — set the hotspot on the face.",
             options: { hotspot: true },
+            fields: [
+                {
+                    name: "alt",
+                    title: "Alt Text",
+                    type: "string",
+                    description: "Describes the photo for screen readers and SEO, e.g. “Jane Doe, CEO of Shopify”.",
+                },
+            ],
             validation: (Rule: ImageRule) => Rule.required().error("Profile photo is required."),
+        }),
+        defineField({
+            name: "bannerImage",
+            title: "Banner Image (profile header)",
+            type: "image",
+            description:
+                "Optional wide image for the top of the speaker's profile page, e.g. them speaking on stage. Landscape, 1600×900 px or larger recommended.",
+            options: { hotspot: true },
+            fields: [
+                {
+                    name: "alt",
+                    title: "Alt Text",
+                    type: "string",
+                    description: "Describes the photo for screen readers and SEO.",
+                },
+            ],
         }),
 
         // ── Ordering ──
@@ -114,6 +185,14 @@ export default defineType({
                     { title: "Media & Entertainment", value: "media" },
                 ],
             },
+        }),
+        defineField({
+            name: "events",
+            title: "Events",
+            type: "array",
+            description:
+                "Which event(s) this speaker belongs to. Empty = every event (today's behaviour); set it to scope the speaker to specific events.",
+            of: [{ type: "reference", to: [{ type: "event" }] }],
         }),
 
         // ── Optional social links ──

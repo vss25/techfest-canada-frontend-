@@ -151,6 +151,13 @@ export default defineType({
       initialValue: "auto",
       validation: liveModeRule,
     }),
+    defineField({
+      name: "events",
+      title: "Events",
+      type: "array",
+      description: "Which event(s) this session belongs to. Empty = every event (today's behaviour); set it to scope the session to specific events.",
+      of: [{ type: "reference", to: [{ type: "event" }] }],
+    }),
   ],
   orderings: [
     {

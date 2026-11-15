@@ -56,6 +56,13 @@ export default defineType({
       description: "Uncheck to hide this sponsor without deleting it.",
       initialValue: true,
     }),
+    defineField({
+      name: "events",
+      title: "Events",
+      type: "array",
+      description: "Which event(s) this belongs to. Empty = every event (today's behaviour); set it to scope it to specific events.",
+      of: [{ type: "reference", to: [{ type: "event" }] }],
+    }),
   ],
   orderings: [
     {

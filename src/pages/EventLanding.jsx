@@ -97,7 +97,7 @@ const LANDING_CSS = `
   .ev-logo-wall { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
   .ev-logo-tile {
     background: #ffffff; border-radius: 16px; min-height: 96px; padding: 18px 22px;
-    display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
     border: 1px solid rgba(23,11,51,0.07); box-shadow: 0 2px 14px rgba(23,11,51,0.08);
     transition: transform .3s ease, box-shadow .3s ease;
   }
@@ -131,6 +131,18 @@ const LANDING_CSS = `
   }
   @media (hover: hover) and (pointer: fine) {
     .ev-brochure:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(2,0,10,0.4); }
+  }
+  /* Mobile pass (≤640px): agenda rows stack (time above the title instead
+     of a fixed 110px column), speaker grids go two compact columns, and
+     the About section's decorative glow is clipped to the column so its
+     -60px bleed can never push the page sideways. */
+  @media (max-width: 640px) {
+    .ev-session-row { grid-template-columns: 1fr !important; gap: 4px !important; }
+    .ev-speaker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+    .ev-speaker-grid .sc-body { padding: 10px 12px 12px !important; }
+    .ev-speaker-grid .sc-foot { padding: 0 12px 12px !important; }
+    .ev-speaker-grid .sc-name { font-size: 0.9rem !important; }
+    .ev-about-glow { left: 0 !important; right: 0 !important; }
   }
 `;
 
@@ -168,7 +180,7 @@ function SectionHead({ title, children }) {
 function SessionRow({ s }) {
   const people = [...(s.speakers || []), ...(s.moderator?.name ? [{ ...s.moderator, org: s.moderator.org }] : [])];
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 14, padding: "14px 0", borderBottom: "1px solid rgba(127,90,240,0.14)" }}>
+    <div className="ev-session-row" style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 14, padding: "14px 0", borderBottom: "1px solid rgba(127,90,240,0.14)" }}>
       <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.8rem", fontWeight: 700, opacity: 0.85 }}>
         {s.time}{s.endTime ? `–${s.endTime}` : ""}
       </div>
@@ -414,7 +426,7 @@ export function EventTemplate({ ev, below, heroHeadingAs }) {
       {ev.description && (
         <Section label="About this event">
           <div style={{ ...wrap, maxWidth: 880, position: "relative" }}>
-            <div aria-hidden="true" style={{ position: "absolute", inset: "-30px -60px", background: "radial-gradient(560px 260px at 12% 0%, rgba(127,90,240,0.15), transparent 70%)", pointerEvents: "none" }} />
+            <div aria-hidden="true" className="ev-about-glow" style={{ position: "absolute", inset: "-30px -60px", background: "radial-gradient(560px 260px at 12% 0%, rgba(127,90,240,0.15), transparent 70%)", pointerEvents: "none" }} />
             <Reveal>
               {String(ev.description).split(/\n\s*\n/).filter(Boolean).map((p, i) => (
                 <p key={i} style={i === 0
@@ -602,7 +614,7 @@ function SpeakersPage({ ev }) {
         {loading ? <p aria-busy="true" style={{ opacity: 0.7 }}>Loading speakers…</p>
           : shown.length === 0 ? <p style={{ opacity: 0.75 }}>The speaker lineup will be announced here — expect the people deploying this technology, not just describing it.</p>
           : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16, marginTop: 12 }}>
+            <div className="ev-speaker-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16, marginTop: 12 }}>
               {shown.map((sp) => <SpeakerCard key={sp._id} speaker={sp} to={fallback ? undefined : speakerPathIn(eventPath(ev), sp)} />)}
             </div>
           )}

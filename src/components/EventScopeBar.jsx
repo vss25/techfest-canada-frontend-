@@ -109,23 +109,35 @@ const chipStyle = (active) => ({
   color: "inherit",
 });
 
-/** The pill row itself: "All events" + one pill per event. */
+/** The pill row itself: "All events" + one pill per event. On phones
+    (≤640px) the row stops wrapping and scrolls horizontally instead —
+    see the .ev-scope-bar rules rendered with it. */
 export default function EventScopeBar({ events, scopedEvent, onSelect, style }) {
   if (!events || events.length === 0) return null;
   return (
-    <nav aria-label="Choose an event" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", ...style }}>
-      <button type="button" onClick={() => onSelect(null)} aria-pressed={!scopedEvent} style={chipStyle(!scopedEvent)}>
-        All events
-      </button>
-      {events.map((ev) => {
-        const active = !!scopedEvent && scopedEvent._id === ev._id;
-        return (
-          <button key={ev._id} type="button" onClick={() => onSelect(ev)} aria-pressed={active} style={chipStyle(active)}>
-            {eventPillLabel(ev)}
-          </button>
-        );
-      })}
-    </nav>
+    <>
+      <style>{`
+        .ev-scope-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        @media (max-width: 640px) {
+          .ev-scope-bar { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+          .ev-scope-bar::-webkit-scrollbar { display: none; }
+          .ev-scope-bar > button { flex-shrink: 0; white-space: nowrap; }
+        }
+      `}</style>
+      <nav aria-label="Choose an event" className="ev-scope-bar" style={{ ...style }}>
+        <button type="button" onClick={() => onSelect(null)} aria-pressed={!scopedEvent} style={chipStyle(!scopedEvent)}>
+          All events
+        </button>
+        {events.map((ev) => {
+          const active = !!scopedEvent && scopedEvent._id === ev._id;
+          return (
+            <button key={ev._id} type="button" onClick={() => onSelect(ev)} aria-pressed={active} style={chipStyle(active)}>
+              {eventPillLabel(ev)}
+            </button>
+          );
+        })}
+      </nav>
+    </>
   );
 }
 

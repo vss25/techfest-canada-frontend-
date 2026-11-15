@@ -32,6 +32,13 @@ const HUB_CSS = `
     .ev-hub-card:hover .ev-hub-media img { transform: scale(1.06); }
   }
   .ev-hub-media img { transition: transform .6s ease; }
+  /* Mobile pass (≤640px): tighter hero padding, and the skyline layers
+     capped in viewport units like the event hero's. */
+  @media (max-width: 640px) {
+    .ev-hub-hero-inner { padding: 110px 20px 84px !important; }
+    .ev-hub-backlight { height: 18vh !important; }
+    .ev-hub-skyline { height: 14vh !important; }
+  }
 `;
 
 function EventCard({ ev }) {
@@ -126,13 +133,13 @@ const CITY_INTROS = {
             <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0, background: "radial-gradient(58% 60% at 18% 24%, rgba(127,90,240,0.5), transparent 70%), radial-gradient(46% 50% at 84% 16%, rgba(232,69,139,0.28), transparent 70%), linear-gradient(160deg, #150a33 0%, #0a0618 60%, #070313 100%)" }} />
           )}
           <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 1, background: "linear-gradient(to bottom, rgba(5,2,14,0.5) 0%, transparent 30%, transparent 55%, rgba(7,3,19,0.96) 100%)" }} />
-          <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 2, height: 150, color: "rgba(127,90,240,0.35)", filter: "blur(4px)", pointerEvents: "none" }}>
+          <div aria-hidden="true" className="ev-hub-backlight" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 2, height: 150, color: "rgba(127,90,240,0.35)", filter: "blur(4px)", pointerEvents: "none" }}>
             <SkylineSvg citySlug={city.slug} />
           </div>
-          <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 3, height: 118, color: "rgba(6,2,15,0.94)", filter: "drop-shadow(0 -4px 16px rgba(127,90,240,0.45))", pointerEvents: "none" }}>
+          <div aria-hidden="true" className="ev-hub-skyline" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 3, height: 118, color: "rgba(6,2,15,0.94)", filter: "drop-shadow(0 -4px 16px rgba(127,90,240,0.45))", pointerEvents: "none" }}>
             <SkylineSvg citySlug={city.slug} />
           </div>
-          <div style={{ position: "relative", zIndex: 4, maxWidth: 1200, margin: "0 auto", padding: "168px 20px 120px" }}>
+          <div className="ev-hub-hero-inner" style={{ position: "relative", zIndex: 4, maxWidth: 1200, margin: "0 auto", padding: "168px 20px 120px" }}>
             <Reveal>
               <h1 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(3rem, 9vw, 6rem)", fontWeight: 900, lineHeight: 0.99, letterSpacing: "-0.01em", margin: 0, textShadow: "0 6px 44px rgba(3,0,10,0.55)" }}>
                 {city.name}
@@ -151,7 +158,7 @@ const CITY_INTROS = {
             <AnnouncedSoon source={`city:${city.slug}`} title={`${city.name} — announced soon`}
               message={`The next TTFC event in ${city.name} hasn't been announced yet — when it is, it lands on this page first. Leave your email and we'll keep you updated.`} />
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 18 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(320px, 100%), 1fr))", gap: 18 }}>
               {sorted.map((ev, i) => (
                 <Reveal key={ev._id} delay={Math.min(i, 5) * 0.06} style={{ height: "100%" }}>
                   <EventCard ev={ev} />

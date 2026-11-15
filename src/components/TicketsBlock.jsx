@@ -20,7 +20,7 @@ import { fetchTicketTypes, money, multiCheckout, quoteTickets } from "../lib/tic
 const inputStyle = {
   width: "100%", boxSizing: "border-box", padding: "11px 14px", borderRadius: 12,
   border: "1.5px solid rgba(127,90,240,0.3)", background: "rgba(255,255,255,0.05)",
-  color: "inherit", fontSize: "0.95rem", fontFamily: "inherit",
+  color: "inherit", fontSize: "16px", fontFamily: "inherit",
 };
 const labelStyle = { display: "grid", gap: 6, fontSize: "0.85rem", fontWeight: 600 };
 
@@ -177,12 +177,12 @@ export default function TicketsBlock({ ev }) {
               Quantity
               <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                 <button type="button" aria-label={`One fewer ${t.name}`} onClick={() => setQtyFor(t.id, (qty[t.id] || 0) - 1)}
-                  style={{ width: 36, height: 36, borderRadius: 10, border: "1.5px solid rgba(127,90,240,0.35)", background: "transparent", color: "inherit", cursor: "pointer", fontSize: "1rem" }}>−</button>
+                  style={{ width: 40, height: 40, borderRadius: 10, border: "1.5px solid rgba(127,90,240,0.35)", background: "transparent", color: "inherit", cursor: "pointer", fontSize: "1rem" }}>−</button>
                 <input type="number" min={0} max={100} value={qty[t.id] || 0} aria-label={`Quantity of ${t.name}`}
                   onChange={(e) => setQtyFor(t.id, Number(e.target.value))}
                   style={{ ...inputStyle, width: 70, textAlign: "center" }} />
                 <button type="button" aria-label={`One more ${t.name}`} onClick={() => setQtyFor(t.id, (qty[t.id] || 0) + 1)}
-                  style={{ width: 36, height: 36, borderRadius: 10, border: "1.5px solid rgba(127,90,240,0.35)", background: "transparent", color: "inherit", cursor: "pointer", fontSize: "1rem" }}>+</button>
+                  style={{ width: 40, height: 40, borderRadius: 10, border: "1.5px solid rgba(127,90,240,0.35)", background: "transparent", color: "inherit", cursor: "pointer", fontSize: "1rem" }}>+</button>
               </span>
             </label>
           </div>

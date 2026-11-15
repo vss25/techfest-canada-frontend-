@@ -55,7 +55,8 @@ export default function HomeFeatured() {
   const featuredBlock = featured ? (
     <main style={{ background: "#070313", color: "#f4f1ff" }}>
       <Suspense fallback={null}>
-        <EventTemplate ev={featured} below={<CityList events={events} />} />
+        {/* heroHeadingAs="h2": the homepage keeps its one <h1> — Home's logo, as today. */}
+        <EventTemplate ev={featured} heroHeadingAs="h2" below={<CityList events={events} />} />
       </Suspense>
       <div style={{ paddingBottom: 56 }} />
     </main>

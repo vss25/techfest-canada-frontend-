@@ -111,7 +111,7 @@ const AppLine = () => (
 );
 
 /** The shared landing template. `below` renders extra sections (the home page's city list). */
-export function EventTemplate({ ev, below }) {
+export function EventTemplate({ ev, below, heroHeadingAs }) {
   const { sessions, speakers, partners } = useEventContent(ev);
   const lifecycle = lifecycleOf(ev);
   const past = lifecycle === "past";
@@ -123,7 +123,7 @@ export function EventTemplate({ ev, below }) {
 
   return (
     <>
-      <EventHero ev={ev} />
+      <EventHero ev={ev} headingAs={heroHeadingAs} />
       <div style={{ ...wrap, paddingTop: 22, display: "flex", flexWrap: "wrap", gap: "8px 22px", fontSize: "0.92rem", opacity: 0.85 }}>
         <span>{LIFECYCLE_LABEL[lifecycle]}</span>
         {ev.venueName && <span>{ev.venueName}{ev.venueAddress ? ` — ${ev.venueAddress}` : ""}</span>}

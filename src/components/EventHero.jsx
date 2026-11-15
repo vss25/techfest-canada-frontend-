@@ -110,14 +110,14 @@ export default function EventHero({ ev, headingAs = "h1" }) {
           the media, shade at the top for the header, and a deep base
           that melts into the page below. */}
       <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "radial-gradient(58% 46% at 16% 26%, rgba(127,90,240,0.28), transparent 70%), radial-gradient(44% 36% at 84% 18%, rgba(232,69,139,0.16), transparent 70%)", pointerEvents: "none" }} />
-      <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(5,2,14,0.52) 0%, transparent 26%, transparent 52%, rgba(5,2,14,0.55) 78%, rgba(7,3,19,0.97) 100%)", pointerEvents: "none" }} />
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(5,2,14,0.52) 0%, transparent 26%, transparent 46%, rgba(5,2,14,0.72) 74%, rgba(7,3,19,0.98) 100%)", pointerEvents: "none" }} />
 
       {/* The skyline, anchored at the base: a violet backlight layer
           behind the near-black silhouette gives the city depth. */}
-      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "min(32vh, 300px)", color: "rgba(127,90,240,0.38)", filter: "blur(5px)", pointerEvents: "none" }}>
+      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "min(32vh, 300px)", color: "rgba(127,90,240,0.52)", filter: "blur(5px)", pointerEvents: "none" }}>
         <SkylineSvg citySlug={citySlug} />
       </div>
-      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "min(26vh, 240px)", color: "rgba(6,2,15,0.94)", pointerEvents: "none" }}>
+      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "min(26vh, 240px)", color: "rgba(4,1,10,0.97)", pointerEvents: "none" }}>
         <Skyline ev={ev} citySlug={citySlug} />
       </div>
 

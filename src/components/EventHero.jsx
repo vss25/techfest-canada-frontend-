@@ -43,7 +43,8 @@ const HERO_CSS = `
   }
 `;
 
-export default function EventHero({ ev }) {
+export default function EventHero({ ev, headingAs = "h1" }) {
+  const Heading = headingAs === "h2" ? "h2" : "h1";
   const [showVideo, setShowVideo] = useState(false);
   const poster = ev?.heroImage?.asset ? urlFor(ev.heroImage).width(1920).quality(80).auto("format").url() : null;
   const video = isDirectVideo(ev?.heroVideoUrl) ? ev.heroVideoUrl : null;
@@ -114,9 +115,9 @@ export default function EventHero({ ev }) {
             {where}
           </p>
         )}
-        <h1 className="ev-rise ev-rise-1" style={{ margin: "20px 0 0", fontFamily: "'Orbitron', sans-serif", fontWeight: 900, lineHeight: 0.99, letterSpacing: "-0.01em", fontSize: "clamp(2.6rem, 8vw, 6.1rem)", maxWidth: 1020, textShadow: "0 6px 44px rgba(3,0,10,0.55)" }}>
+        <Heading className="ev-rise ev-rise-1" style={{ margin: "20px 0 0", fontFamily: "'Orbitron', sans-serif", fontWeight: 900, lineHeight: 0.99, letterSpacing: "-0.01em", fontSize: "clamp(2.6rem, 8vw, 6.1rem)", maxWidth: 1020, textShadow: "0 6px 44px rgba(3,0,10,0.55)" }}>
           {ev.name}
-        </h1>
+        </Heading>
         {sentence && (
           <p className="ev-rise ev-rise-2" style={{ margin: "20px 0 0", fontSize: "clamp(1.05rem, 2.1vw, 1.35rem)", lineHeight: 1.55, color: "rgba(255,255,255,0.9)", maxWidth: 660, textShadow: "0 2px 18px rgba(3,0,10,0.5)" }}>
             {sentence}

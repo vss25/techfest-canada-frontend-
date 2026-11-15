@@ -99,6 +99,9 @@ export function fetchEvents() {
   if (!eventsPromise) {
     eventsPromise = client
       .fetch(`*[_type == "event"]{ ${EVENT_FIELDS} } | order(startDate asc, year asc)`)
+      // Drop empty Studio shells (docs with no name, city or year): they are
+      // not events — they must never render, sort, or be picked as next/featured.
+      .then((events) => (events || []).filter((e) => e && e.name && e.city && e.year))
       .catch((err) => { eventsPromise = null; throw err; });
   }
   return eventsPromise;
@@ -117,17 +120,137 @@ export function useEvents() {
   return state;
 }
 
-/** Admin Auto: the next upcoming (or live) event by date; else the most recent past one. */
+/* ---------------- "Next event": ONE definition ----------------
+   The header pill's default selection, the gold Tickets button and
+   the homepage's featured event (Admin Auto) all mean the same
+   thing by "next": the soonest event that is not Past. Dated
+   events order by their startDate; dateless events (the 2027
+   Briefings — month announced, day not yet) order by the month
+   named in their statusNote ("February 2027 · One day") within
+   their year. One comparable key — [year, month, day] — orders
+   both kinds together: a dated event precedes a dateless one only
+   when it is actually earlier. */
+
+const MONTH_NAMES = [
+  "january", "february", "march", "april", "may", "june",
+  "july", "august", "september", "october", "november", "december",
+];
+
+/** 1–12 from a statusNote like "February 2027 · One day"; 0 when it names no month. */
+export function monthFromStatusNote(note) {
+  const s = String(note || "").toLowerCase();
+  const i = MONTH_NAMES.findIndex((m) => s.includes(m));
+  return i >= 0 ? i + 1 : 0;
+}
+
+/** [year, month, day] ordering key, or null when the doc carries no usable
+    date or year at all (e.g. an empty Studio shell — never "next"). */
+export function eventSortKey(ev) {
+  if (!ev) return null;
+  if (ev.startDate) {
+    const d = new Date(`${ev.startDate}T12:00:00`);
+    if (!Number.isNaN(d.getTime())) return [d.getFullYear(), d.getMonth() + 1, d.getDate()];
+  }
+  const year = Number(ev.year);
+  if (!Number.isFinite(year) || year <= 0) return null;
+  // Dateless: the statusNote month, day 1. No month named → month 13, so a
+  // month-less event never jumps ahead of one whose month is announced.
+  return [year, monthFromStatusNote(ev.statusNote) || 13, 1];
+}
+
+const keyTiebreak = (a, b) =>
+  citySlugOf(a?.city).localeCompare(citySlugOf(b?.city))
+  || String(a?.type || "").localeCompare(String(b?.type || ""))
+  || String(a?.name || "").localeCompare(String(b?.name || ""));
+
+/** Soonest first by eventSortKey; keyless docs always last. */
+export function compareEvents(a, b) {
+  const ka = eventSortKey(a);
+  const kb = eventSortKey(b);
+  if (!ka && !kb) return keyTiebreak(a, b);
+  if (!ka) return 1;
+  if (!kb) return -1;
+  return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2] || keyTiebreak(a, b);
+}
+
+/** Most recent first by eventSortKey; keyless docs always last. */
+export function compareEventsDesc(a, b) {
+  const ka = eventSortKey(a);
+  const kb = eventSortKey(b);
+  if (!ka && !kb) return keyTiebreak(a, b);
+  if (!ka) return 1;
+  if (!kb) return -1;
+  return kb[0] - ka[0] || kb[1] - ka[1] || kb[2] - ka[2] || keyTiebreak(a, b);
+}
+
+/** THE next event: the soonest Coming Up / Live event; null when none is upcoming.
+    Keyless docs (empty Studio shells) are excluded outright: a shell with no
+    year at all slips past lifecycleOf as "coming-up", and it is never next. */
+export function nextEvent(events, now = new Date()) {
+  const upcoming = (events || []).filter((e) => eventSortKey(e) && ["coming-up", "live"].includes(lifecycleOf(e, now)));
+  upcoming.sort(compareEvents);
+  return upcoming[0] || null;
+}
+
+/** One city's next event: its soonest upcoming, else its most recent. */
+export function nextEventForCity(events, cityNameOrSlug, now = new Date()) {
+  const slug = citySlugOf(cityNameOrSlug);
+  const mine = (events || []).filter((e) => citySlugOf(e.city) === slug);
+  if (!mine.length) return null;
+  return nextEvent(mine, now) || mine.slice().sort(compareEventsDesc)[0] || null;
+}
+
+/** Admin Auto: the next event; else the most recent past one. The homepage's
+    featured event and the header's default both resolve through here, so the
+    pill, the Tickets button and "/" can never disagree about what is next. */
 export function featuredEvent(events, now = new Date()) {
   const list = events || [];
-  const upcoming = list
-    .filter((e) => ["coming-up", "live"].includes(lifecycleOf(e, now)))
-    .sort((a, b) => String(a.startDate || "9999").localeCompare(String(b.startDate || "9999")));
-  if (upcoming.length) return upcoming[0];
+  const next = nextEvent(list, now);
+  if (next) return next;
   const past = list
-    .filter((e) => lifecycleOf(e, now) === "past")
-    .sort((a, b) => String(b.startDate || "").localeCompare(String(a.startDate || "")));
+    .filter((e) => lifecycleOf(e, now) === "past" && eventSortKey(e))
+    .sort(compareEventsDesc);
   return past[0] || list[0] || null;
+}
+
+/** The pill's label for an event — "Vancouver · Briefing 2027" — one format in
+    every context: default, remembered selection, city hub, event page, home. */
+export function eventPillLabel(ev) {
+  if (!ev) return "";
+  if (!ev.city || !ev.year) return ev.name || "";
+  return `${ev.city} · ${ev.type === "main-event" ? "Main Event" : "Briefing"} ${ev.year}`;
+}
+
+/** Parse /:city (a city hub) out of a pathname; null for anything else,
+    including one-segment global pages (/awards, /about, …). */
+export function parseCityPath(pathname) {
+  const m = String(pathname || "").match(/^\/([a-z-]+)\/?$/i);
+  return m ? cityBySlug(m[1]) : null;
+}
+
+/* The pill's remembered selection, per tab session: an eventKey chosen from
+   the dropdown, or "city:<slug>" for a city. Viewing an event page or a city
+   hub refreshes it (see SiteHeader), so the pill keeps naming the city/event
+   the user is with as they move across the new pages. */
+const PILL_SELECTION_KEY = "ttfc.pillSelection";
+export function getPillSelection() {
+  try { return window.sessionStorage.getItem(PILL_SELECTION_KEY) || null; } catch { return null; }
+}
+export function setPillSelection(value) {
+  try {
+    if (value) window.sessionStorage.setItem(PILL_SELECTION_KEY, value);
+    else window.sessionStorage.removeItem(PILL_SELECTION_KEY);
+  } catch { /* storage unavailable — the pill just falls back to context/default */ }
+}
+/** Resolve a stored selection to { event, city } (either may be null). */
+export function resolvePillSelection(events, value, now = new Date()) {
+  if (!value) return null;
+  if (value.startsWith("city:")) {
+    const city = cityBySlug(value.slice(5));
+    return city ? { event: nextEventForCity(events, city.slug, now), city } : null;
+  }
+  const ev = (events || []).find((e) => e.eventKey && e.eventKey === value) || null;
+  return ev ? { event: ev, city: cityBySlug(citySlugOf(ev.city)) } : null;
 }
 
 /* Sessions / speakers / partners scoped to one event. The Phase 1 rule:

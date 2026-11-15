@@ -82,9 +82,9 @@ const LANDING_CSS = `
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   }
   /* Speakers grid hover (cards themselves come from SpeakerCard) */
-  .ev-speaker-grid a { height: 100%; transition: transform .35s ease, box-shadow .35s ease; }
+  .ev-speaker-grid article { height: 100%; transition: transform .35s ease, box-shadow .35s ease; }
   @media (hover: hover) and (pointer: fine) {
-    .ev-speaker-grid a:hover { transform: translateY(-5px); box-shadow: 0 18px 42px rgba(2,0,10,0.48); }
+    .ev-speaker-grid article:hover { transform: translateY(-5px); box-shadow: 0 18px 42px rgba(2,0,10,0.48); }
   }
   /* Partners logo wall (mirrors PartnerMarquee's white tiles) */
   .ev-logo-wall { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
@@ -335,7 +335,7 @@ const AppLine = () => (
 );
 
 /** The shared landing template. `below` renders extra sections (the home page's city list). */
-export function EventTemplate({ ev, below }) {
+export function EventTemplate({ ev, below, heroHeadingAs }) {
   const { sessions, speakers, partners } = useEventContent(ev);
   const lifecycle = lifecycleOf(ev);
   const past = lifecycle === "past";
@@ -352,7 +352,7 @@ export function EventTemplate({ ev, below }) {
   return (
     <>
       <style>{LANDING_CSS}</style>
-      <EventHero ev={ev} />
+      <EventHero ev={ev} headingAs={heroHeadingAs} />
 
       {/* The status strip, as a glass bar floating over the hero's
           base — the same glass treatment as the home hero's pill. */}

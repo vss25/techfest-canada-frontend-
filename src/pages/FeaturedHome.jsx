@@ -32,6 +32,9 @@ export function CityList({ events }) {
         <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.35rem, 3vw, 1.9rem)", fontWeight: 800, margin: 0 }}>
           Choose your city
         </h2>
+        <p style={{ margin: "10px 0 0", opacity: 0.85, maxWidth: 620, lineHeight: 1.65 }}>
+          One festival, five cities. Every Briefing is a single senior, curated day; the Main Event is the two-day national gathering in Toronto.
+        </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginTop: 22 }}>
           {CITIES.map((c) => {
             const next = (events || [])
@@ -51,7 +54,7 @@ export function CityList({ events }) {
         </div>
         {(events || []).filter((e) => !["coming-up", "live"].includes(lifecycleOf(e))).length > 0 && (
           <p style={{ marginTop: 18, fontSize: "0.92rem", opacity: 0.75 }}>
-            Also:{" "}
+            Earlier editions:{" "}
             {(events || [])
               .filter((e) => !["coming-up", "live"].includes(lifecycleOf(e)))
               .map((e, i, arr) => (
@@ -91,9 +94,9 @@ export default function FeaturedHome() {
               The Tech Festival Canada
             </h1>
             <p style={{ margin: "14px 0 26px", maxWidth: 620, lineHeight: 1.65, opacity: 0.88 }}>
-              Briefings in five cities and the Toronto Main Event. New editions are announced here first.
+              One festival, five cities: Briefings across the country and the two-day Main Event in Toronto. New editions are announced here first.
             </p>
-            <AnnouncedSoon source="home" title="Next edition announced soon" message="The next TTFC edition hasn't been announced yet. Leave your email and we'll keep you updated." />
+            <AnnouncedSoon source="home" title="Next edition announced soon" message="The next TTFC edition hasn't been announced yet — check back, or leave your email and you'll be among the first to know." />
             <CityList events={events} />
           </div>
         )}

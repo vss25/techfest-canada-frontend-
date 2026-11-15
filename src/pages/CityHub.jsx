@@ -16,12 +16,32 @@ import {
    a single-event city goes straight to its Briefing.
 ========================================================= */
 
+/* Per-city hub intros (marketing copy pass, 2026-11-15):
+   one or two sentences that make the city unmistakable,
+   in the festival's voice. Facts only — no dates, venues
+   or themes beyond what each event's record states. */
+const CITY_INTROS = {
+  vancouver:
+    "Vancouver opens the TTFC season. Its Briefing takes on energy and critical infrastructure — one senior, curated day on the west coast, where Alberta molecules meet BC tidewater.",
+  calgary:
+    "Calgary is the festival in Canada's energy capital. Its Briefing brings builders, buyers and policymakers into one room for a single focused day.",
+  ottawa:
+    "Ottawa is the capital edition — technology within reach of policy and procurement. Its Briefing is one senior day where the public sector meets the people building for it.",
+  toronto:
+    "Toronto is TTFC's home stage, with two events in 2027: the one-day Briefing in June and the two-day Main Event in November. Each event has its own agenda, speakers and tickets — pick yours.",
+  montreal:
+    "Montreal brings the research depth — home to an artificial intelligence community recognised around the world. Its Briefing runs from the lab to the deal in one curated day.",
+};
+
 export default function CityHub() {
   const params = useParams();
   const city = cityBySlug(params.city);
   const { events, loading } = useEvents();
   const mine = events.filter((e) => e.city === city?.name);
-  useSeo(city ? `TTFC ${city.name}` : "TTFC cities", city ? `The Tech Festival Canada in ${city.name}: its Briefing and events.` : "");
+  const intro = city
+    ? CITY_INTROS[city.slug] || `The Tech Festival Canada in ${city.name}. Every event has its own agenda, speakers and tickets — pick an event to see them.`
+    : "";
+  useSeo(city ? `TTFC ${city.name}` : "TTFC cities", intro);
 
   if (!city) return <NotFound />;
   if (!loading && mine.length === 1 && city.slug !== "toronto") {
@@ -37,7 +57,7 @@ export default function CityHub() {
             {city.name}
           </h1>
           <p style={{ margin: "12px 0 0", opacity: 0.85, maxWidth: 620, lineHeight: 1.65 }}>
-            The Tech Festival Canada in {city.name}. Pick an event — agendas, speakers and tickets live on each event&rsquo;s own pages.
+            {intro}
           </p>
 
           {loading ? (
@@ -45,7 +65,7 @@ export default function CityHub() {
           ) : mine.length === 0 ? (
             <div style={{ marginTop: 30 }}>
               <AnnouncedSoon source={`city:${city.slug}`} title={`${city.name} — announced soon`}
-                message={`The next TTFC event in ${city.name} hasn't been announced yet. Leave your email and we'll keep you updated.`} />
+                message={`The next TTFC event in ${city.name} hasn't been announced yet — when it is, it lands on this page first. Leave your email and we'll keep you updated.`} />
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 18, marginTop: 30 }}>

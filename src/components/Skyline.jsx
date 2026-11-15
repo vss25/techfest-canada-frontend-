@@ -24,16 +24,27 @@ const PATHS = {
   ),
   vancouver: (
     <>
-      {/* North Shore mountains */}
-      <path d="M0 62 L34 30 L58 48 L88 18 L118 44 L146 26 L176 50 L208 34 L240 56 L260 44 L260 100 L0 100 Z" opacity="0.45" />
-      {/* Harbour + skyline */}
-      <path d="M0 100 L0 84 L30 84 L30 70 L48 70 L48 84 L66 84 L66 60 L82 60 L82 84 L104 84 L104 68 L122 68 L122 84 L146 84 L146 64 L162 64 L162 84 L188 84 L188 72 L206 72 L206 84 L260 84 L260 100 Z" />
-      <path d="M0 96 Q32 92 64 96 T128 96 T192 96 T260 96 L260 100 L0 100 Z" opacity="0.6" />
+      {/* North Shore mountains, behind the city */}
+      <path d="M0 58 L26 34 L44 46 L66 22 L84 38 L104 16 L126 36 L148 24 L172 42 L196 28 L220 46 L240 36 L260 50 L260 100 L0 100 Z" opacity="0.45" />
+      {/* Downtown tower cluster */}
+      <path d="M0 100 L0 86 L22 86 L22 72 L38 72 L38 86 L54 86 L54 62 L70 62 L70 86 L88 86 L88 66 L104 66 L104 86 L120 86 L120 58 L138 58 L138 86 L160 86 L160 70 L178 70 L178 86 L196 86 L196 64 L214 64 L214 86 L232 86 L232 74 L246 74 L246 86 L260 86 L260 100 Z" />
+      {/* Harbour Centre — the lookout tower: slim shaft, wide lookout pod, mast */}
+      <path d="M145 86 L147.2 46 L152.8 46 L155 86 Z" />
+      <ellipse cx="150" cy="43" rx="11" ry="4.4" />
+      <rect x="149.3" y="24" width="1.4" height="13" />
+      {/* Canada Place sails along the harbourfront */}
+      <path d="M56 90 L64 70 L72 90 Z" />
+      <path d="M70 90 L79 66 L88 90 Z" />
+      <path d="M84 90 L92 71 L100 90 Z" />
+      {/* The harbour water, in front of the towers */}
+      <path d="M0 95 Q32 91.5 64 95 T128 95 T192 95 T260 95 L260 100 L0 100 Z" opacity="0.6" />
     </>
   ),
   calgary: (
     <>
       <path d="M0 100 L0 80 L24 80 L24 64 L42 64 L42 80 L60 80 L60 56 L78 56 L78 80 L98 80 L98 66 L116 66 L116 80 L140 80 L140 58 L158 58 L158 80 L184 80 L184 68 L202 68 L202 80 L228 80 L228 62 L246 62 L246 80 L260 80 L260 100 Z" />
+      {/* The Bow — its curved crown over the tower row */}
+      <path d="M96 80 L96 58 Q107 47 118 58 L118 80 Z" />
       {/* Calgary Tower */}
       <path d="M168 80 L171 44 L172 36 L174 36 L175 44 L178 80 Z" />
       <ellipse cx="173" cy="34" rx="8" ry="3.6" />

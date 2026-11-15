@@ -351,14 +351,15 @@ export function EventTemplate({ ev, below, heroHeadingAs }) {
 
   return (
     <>
-      <style>{LANDING_CSS}</style>
       <EventHero ev={ev} headingAs={heroHeadingAs} />
-
-      {/* The status strip, as a glass bar floating over the hero's
-          base — the same glass treatment as the home hero's pill. */}
-      <div style={{ ...wrap, position: "relative", zIndex: 3, marginTop: -46 }}>
-        <Reveal>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 26px", padding: "16px 22px", borderRadius: 18, fontSize: "0.92rem", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", boxShadow: "0 14px 38px rgba(2,0,10,0.4)" }}>
+      <div style={{ ...wrap, paddingTop: 22, display: "flex", flexWrap: "wrap", gap: "8px 22px", fontSize: "0.92rem", opacity: 0.85 }}>
+        {/* The status strip, as a glass bar floating over the hero's
+            base — the same glass treatment as the home hero's pill.
+            The bar rides inside the template's original status row;
+            its own -68 margin (the row's 22px padding + 46) pulls it
+            up over the hero exactly as the standalone bar did. */}
+        <Reveal style={{ flex: "1 1 100%" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 26px", padding: "16px 22px", borderRadius: 18, fontSize: "0.92rem", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", boxShadow: "0 14px 38px rgba(2,0,10,0.4)", position: "relative", zIndex: 3, marginTop: -68 }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontWeight: 700 }}>
               <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", flexShrink: 0 }} />
               {LIFECYCLE_LABEL[lifecycle]}
@@ -458,6 +459,7 @@ export function EventTemplate({ ev, below, heroHeadingAs }) {
       {below}
       {!past && <EventFaqs ev={ev} />}
       <AppLine />
+      <style>{LANDING_CSS}</style>
     </>
   );
 }

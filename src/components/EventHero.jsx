@@ -18,8 +18,6 @@ import Skyline, { SkylineSvg } from "./Skyline";
    aurora-gradient sky over its skyline — never a black box.
 ========================================================= */
 
-const isDirectVideo = (u) => /\.(mp4|webm|mov)(\?|#|$)/i.test(String(u || ""));
-
 const HERO_CSS = `
   .ev-hero { min-height: 100vh; min-height: 100svh; }
   .ev-hero-media { animation: ev-hero-fade 1.4s ease both; }
@@ -31,17 +29,32 @@ const HERO_CSS = `
       radial-gradient(60% 50% at 62% 88%, rgba(245, 166, 35, 0.20), transparent 70%),
       linear-gradient(160deg, #150a33 0%, #0a0618 58%, #070313 100%);
   }
+
+  /* The event name's cinematic scale lives here rather than inline:
+     the heading element is shared markup (the headingAs prop), so its
+     oversized type, depth shadow and spacing come from the stylesheet. */
+  .ev-hero h1, .ev-hero h2 {
+    margin-top: 20px !important;
+    font-size: clamp(2.6rem, 8vw, 6.1rem) !important;
+    line-height: 0.99 !important;
+    letter-spacing: -0.01em;
+    max-width: 1020px !important;
+    text-shadow: 0 6px 44px rgba(3, 0, 10, 0.55);
+  }
   @media (prefers-reduced-motion: no-preference) {
     .ev-kenburns { animation: ev-kenburns 28s ease-in-out infinite alternate; will-change: transform; }
     @keyframes ev-kenburns { from { transform: scale(1) translateY(0); } to { transform: scale(1.09) translateY(-1.2%); } }
     .ev-hero-aurora { animation: ev-aurora-drift 26s ease-in-out infinite alternate; }
     @keyframes ev-aurora-drift { from { transform: scale(1); } to { transform: scale(1.12) translateX(-1.5%); } }
     .ev-rise { animation: ev-rise 1.05s cubic-bezier(.215, .61, .355, 1) both; }
+    .ev-hero h1, .ev-hero h2 { animation: ev-rise 1.05s cubic-bezier(.215, .61, .355, 1) both; animation-delay: .14s; }
     .ev-rise-1 { animation-delay: .14s; }
     .ev-rise-2 { animation-delay: .30s; }
     @keyframes ev-rise { from { opacity: 0; transform: translateY(28px); filter: blur(10px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
   }
 `;
+
+const isDirectVideo = (u) => /\.(mp4|webm|mov)(\?|#|$)/i.test(String(u || ""));
 
 export default function EventHero({ ev, headingAs = "h1" }) {
   const Heading = headingAs === "h2" ? "h2" : "h1";
@@ -109,13 +122,11 @@ export default function EventHero({ ev, headingAs = "h1" }) {
       </div>
 
       <div style={{ position: "relative", width: "100%", maxWidth: 1200, margin: "0 auto", padding: "150px 20px 72px" }}>
-        {where && (
-          <p className="ev-rise" style={{ margin: 0, display: "inline-flex", alignItems: "center", gap: 9, padding: "8px 15px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.20)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "#f5c86e" }}>
-            <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", flexShrink: 0 }} />
-            {where}
-          </p>
-        )}
-        <Heading className="ev-rise ev-rise-1" style={{ margin: "20px 0 0", fontFamily: "'Orbitron', sans-serif", fontWeight: 900, lineHeight: 0.99, letterSpacing: "-0.01em", fontSize: "clamp(2.6rem, 8vw, 6.1rem)", maxWidth: 1020, textShadow: "0 6px 44px rgba(3,0,10,0.55)" }}>
+        <p className="ev-rise" style={{ margin: 0, display: "inline-flex", alignItems: "center", gap: 9, padding: "8px 15px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.20)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "#f5c86e" }}>
+          <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", flexShrink: 0 }} />
+          {where}
+        </p>
+        <Heading style={{ margin: "14px 0 0", fontFamily: "'Orbitron', sans-serif", fontWeight: 900, lineHeight: 1.04, fontSize: "clamp(2.2rem, 6.5vw, 4.4rem)", maxWidth: 900 }}>
           {ev.name}
         </Heading>
         {sentence && (

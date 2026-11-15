@@ -3,8 +3,11 @@ import { Link } from "react-router-dom";
 import SiteHeader from "../components/SiteHeader";
 import Footer from "../components/Footer";
 import AnnouncedSoon from "../components/AnnouncedSoon";
+import Reveal, { GradientRule } from "../components/Reveal";
+import { SkylineSvg } from "../components/Skyline";
 import { EventTemplate } from "./EventLanding";
 import useSeo from "../hooks/useSeo";
+import { urlFor } from "../utils/sanity";
 import {
   CITIES, LIFECYCLE_LABEL, eventPath, featuredEvent, formatDateRange, lifecycleOf, useEvents,
 } from "../lib/events";
@@ -27,25 +30,51 @@ import {
 
 export function CityList({ events }) {
   return (
-    <section aria-label="Choose your city" style={{ padding: "clamp(36px, 6vw, 64px) 0 8px" }}>
+    <section aria-label="Choose your city" style={{ padding: "clamp(48px, 7vw, 80px) 0 8px" }}>
+      <style>{`
+        .ev-city-card { transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease; }
+        @media (hover: hover) and (pointer: fine) {
+          .ev-city-card:hover { transform: translateY(-5px); box-shadow: 0 22px 48px rgba(2,0,10,0.5); border-color: rgba(155,135,245,0.45); }
+          .ev-city-card:hover .ev-city-media img { transform: scale(1.06); }
+        }
+        .ev-city-media img { transition: transform .6s ease; }
+      `}</style>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px" }}>
-        <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.35rem, 3vw, 1.9rem)", fontWeight: 800, margin: 0 }}>
-          Choose your city
-        </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginTop: 22 }}>
-          {CITIES.map((c) => {
+        <Reveal>
+          <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.9rem, 4.6vw, 2.9rem)", fontWeight: 900, letterSpacing: "-0.01em", margin: 0 }}>
+            Choose your city
+          </h2>
+          <GradientRule style={{ marginTop: 16 }} />
+        </Reveal>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginTop: 28 }}>
+          {CITIES.map((c, i) => {
             const next = (events || [])
               .filter((e) => e.city === c.name && ["coming-up", "live"].includes(lifecycleOf(e)))
               .sort((a, b) => String(a.startDate || "9999").localeCompare(String(b.startDate || "9999")))[0];
+            const photo = next?.heroImage?.asset ? urlFor(next.heroImage).width(720).quality(80).auto("format").url() : null;
             return (
-              <Link key={c.slug} to={`/${c.slug}`}
-                style={{ display: "block", borderRadius: 18, padding: "18px 20px", textDecoration: "none", color: "inherit",
-                  border: "1px solid rgba(127,90,240,0.25)", background: "rgba(127,90,240,0.06)" }}>
-                <div style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "1.1rem" }}>{c.name}</div>
-                <div style={{ marginTop: 6, fontSize: "0.86rem", opacity: 0.78 }}>
-                  {next ? `${next.type === "main-event" ? "Main Event" : "Briefing"} · ${formatDateRange(next)}` : "Announced soon"}
-                </div>
-              </Link>
+              <Reveal key={c.slug} delay={Math.min(i, 4) * 0.06} style={{ height: "100%" }}>
+                <Link to={`/${c.slug}`} className="ev-city-card"
+                  style={{ display: "block", height: "100%", borderRadius: 18, overflow: "hidden", textDecoration: "none", color: "inherit",
+                    border: "1px solid rgba(127,90,240,0.25)", background: "rgba(127,90,240,0.06)" }}>
+                  <div className="ev-city-media" style={{ position: "relative", height: 96, overflow: "hidden", background: "linear-gradient(150deg, #2a1160 0%, #7a3fd1 60%, #e8458b 135%)" }}>
+                    {photo ? (
+                      <img src={photo} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    ) : (
+                      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 74, color: "rgba(8,3,20,0.55)" }}>
+                        <SkylineSvg citySlug={c.slug} />
+                      </div>
+                    )}
+                    <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(7,3,19,0.4), transparent 55%)" }} />
+                  </div>
+                  <div style={{ padding: "16px 20px 18px" }}>
+                    <div style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "1.1rem" }}>{c.name}</div>
+                    <div style={{ marginTop: 6, fontSize: "0.86rem", opacity: 0.78 }}>
+                      {next ? `${next.type === "main-event" ? "Main Event" : "Briefing"} · ${formatDateRange(next)}` : "Announced soon"}
+                    </div>
+                  </div>
+                </Link>
+              </Reveal>
             );
           })}
         </div>

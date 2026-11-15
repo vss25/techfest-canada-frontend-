@@ -99,6 +99,9 @@ export function fetchEvents() {
   if (!eventsPromise) {
     eventsPromise = client
       .fetch(`*[_type == "event"]{ ${EVENT_FIELDS} } | order(startDate asc, year asc)`)
+      // Drop empty Studio shells (docs with no name, city or year): they are
+      // not events — they must never render, sort, or be picked as next/featured.
+      .then((events) => (events || []).filter((e) => e && e.name && e.city && e.year))
       .catch((err) => { eventsPromise = null; throw err; });
   }
   return eventsPromise;

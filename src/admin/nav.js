@@ -25,7 +25,11 @@ import { ClipboardList, Gavel, Gift, LifeBuoy, ListChecks, ListPlus, Medal, Mess
 export const NAV = [
   {
     title: null,
-    items: [{ to: "", label: "Overview", icon: LayoutDashboard, end: true }],
+    items: [
+      { to: "", label: "Overview", icon: LayoutDashboard, end: true },
+      // The event spine (Phase 2): per-event attendee visibility, lifecycle grace days, pricing announced.
+      { to: "events", label: "Events", icon: CalendarDays },
+    ],
   },
   {
     title: "People & passes",

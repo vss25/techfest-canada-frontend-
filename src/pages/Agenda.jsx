@@ -10,6 +10,7 @@ import Footer from "../components/Footer";
 import { addConsentedScript } from "../lib/trackers";
 import { client, speakerPhotoUrl } from "../utils/sanity";
 import useAgenda from "../hooks/useAgenda";
+import EventScopeBar, { ScopedEmptyState, matchesEventScope, useEventScope } from "../components/EventScopeBar";
 import { FORMAT_MAP } from "../data/sessionFormats";
 import {
   DAYS,
@@ -501,7 +502,16 @@ function TimeGroup({ time, sessions, dark, base, speakerIndex, highlightId, expa
 export default function AgendaPage() {
   useProtection();
   // Live agenda from the CMS (Website content → Agenda in the admin panel); bundled list until it loads.
-  const { sessions: SESSIONS } = useAgenda();
+  const agendaState = useAgenda();
+  // Event scope: the shared pill selection (default: the most recent event).
+  // Once the CMS agenda has loaded, the list is the scoped event's tagged
+  // sessions; with "All events" this page is exactly as before.
+  const scope = useEventScope();
+  const scopedEvent = scope.scopedEvent;
+  const SESSIONS = scopedEvent && agendaState.loaded
+    ? agendaState.sessions.filter((s) => matchesEventScope(s, scopedEvent._id))
+    : agendaState.sessions;
+  const scopeEmpty = !!scopedEvent && agendaState.loaded && SESSIONS.length === 0;
   const [dark, setDark]                 = useState(false);
   const [activeDay, setActiveDay]       = useState(1);
   const [search, setSearch]             = useState("");
@@ -797,6 +807,13 @@ export default function AgendaPage() {
         </div>
       </section>
 
+      {/* ── EVENT SCOPE — the pill's selection as a filter for this page ── */}
+      {scope.events.length > 0 && (
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "2rem 1.5rem 0" }}>
+          <EventScopeBar events={scope.events} scopedEvent={scopedEvent} onSelect={scope.select} />
+        </div>
+      )}
+
       {/* ── STICKY BAR ────────────────────────────────────────────── */}
       <div style={{
         position: "sticky",
@@ -869,16 +886,21 @@ export default function AgendaPage() {
             )}
           </AnimatePresence>
 
-          <p style={{
-            fontFamily: "'Orbitron', sans-serif",
-            fontSize: "0.66rem", fontWeight: 600, letterSpacing: "0.06em",
-            color: dark ? "rgba(255,255,255,0.38)" : "rgba(13,5,32,0.34)",
-            marginBottom: "1.5rem",
-          }}>
-            {filtered.length} session{filtered.length !== 1 ? "s" : ""} · Day {activeDay} — {DAYS[activeDay].date}, 2026
-          </p>
+          {!scopeEmpty && (
+            <p style={{
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: "0.66rem", fontWeight: 600, letterSpacing: "0.06em",
+              color: dark ? "rgba(255,255,255,0.38)" : "rgba(13,5,32,0.34)",
+              marginBottom: "1.5rem",
+            }}>
+              {filtered.length} session{filtered.length !== 1 ? "s" : ""} · Day {activeDay} — {DAYS[activeDay].date}, 2026
+            </p>
+          )}
 
-          {grouped.length === 0 ? (
+          {scopeEmpty ? (
+            <ScopedEmptyState event={scopedEvent} noun="sessions" />
+          ) : grouped.length === 0 ? (
+
             <div style={{
               display: "flex", flexDirection: "column", alignItems: "center",
               justifyContent: "center", padding: "5rem 0", gap: "0.9rem",

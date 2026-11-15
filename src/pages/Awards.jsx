@@ -8,6 +8,9 @@ import NominationForm from "../components/NominationForm";
 import useSiteSettings from "../hooks/useSiteSettings";
 import { ClosedNotice } from "../components/SiteNotices";
 import AwardWinnersSection from "../components/AwardWinnersSection";
+import EventScopeBar, { useEventScope } from "../components/EventScopeBar";
+import AnnouncedSoon from "../components/AnnouncedSoon";
+import { eventPillLabel } from "../lib/events";
 import { loadWinners } from "../lib/awardWinners";
 import { STAY_UPDATED_PATH, eventOver } from "../lib/eventOver";
 
@@ -206,6 +209,15 @@ export default function Awards() {
   /* The winners (Oct 31 2026): GET /api/awards/winners; null until it answers, then shown while live with winners. */
   var s4 = useState(null); var results = s4[0]; var setResults = s4[1];
   var over = eventOver();
+  // Event selector: this page's content is the 2026 edition's — the Catalyst
+  // Awards held with Toronto Main Event 2026 (the same convention as
+  // /awards/:year, where 2026 is this page). The pills share the header
+  // pill's selection and default to the most recent event; choosing another
+  // event shows that event's announced state instead of the 2026 content.
+  var scope = useEventScope();
+  var scopedEvent = scope.scopedEvent;
+  var awardsEvent = scope.events.find(function (e) { return e.eventKey === "ttfc-2026-main"; }) || null;
+  var showEventAnnounced = !!scopedEvent && !!awardsEvent && scopedEvent._id !== awardsEvent._id;
 
   useEffect(function () {
     var live = true;
@@ -236,6 +248,32 @@ export default function Awards() {
   var today = todayInToronto();
   var tlMuted = dark ? "rgba(185,158,255,0.22)" : "rgba(122,63,209,0.18)";
   var tlDone  = dark ? "#b99eff" : "#7a3fd1";
+
+  // Another event is selected: its awards are not this page's content yet —
+  // show the announced state (the /awards/:year pattern), pills included.
+  if (showEventAnnounced) {
+    return (
+      <div style={{ background: bg, minHeight: "100vh", color: textMain, overflowX: "hidden" }}>
+        <Navbar />
+        <main style={{ background: "#070313", color: "#f4f1ff", minHeight: "100vh", paddingTop: 76 }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto", padding: "44px 20px 64px" }}>
+            <h1 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(2rem, 5.5vw, 3.2rem)", fontWeight: 900, margin: 0 }}>
+              Catalyst Awards
+            </h1>
+            <div style={{ marginTop: 20 }}>
+              <EventScopeBar events={scope.events} scopedEvent={scopedEvent} onSelect={scope.select} />
+            </div>
+            <div style={{ marginTop: 30 }}>
+              <AnnouncedSoon source={"awards:event:" + scopedEvent.eventKey}
+                title={"Catalyst Awards — " + eventPillLabel(scopedEvent)}
+                message={"The Catalyst Awards for " + eventPillLabel(scopedEvent) + " haven't been announced yet — nominations, key dates and the ceremony will appear here. Leave your email and we'll keep you updated."} />
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div style={{ background: bg, minHeight: "100vh", color: textMain, overflowX: "hidden" }}>
@@ -286,6 +324,13 @@ export default function Awards() {
 
       <Navbar />
       <StickyTrophy dark={dark} />
+
+      {/* EVENT SELECTOR — shares the header pill's selection */}
+      {scope.events.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "center", padding: "96px 16px 4px" }}>
+          <EventScopeBar events={scope.events} scopedEvent={scopedEvent} onSelect={scope.select} />
+        </div>
+      )}
 
       {/* ════════════════ HERO ════════════════ */}
       <section className="aw-hero" style={{ position: "relative", overflow: "hidden", background: bg, height: "100vh", minHeight: 700, display: "flex", flexDirection: "column" }}>

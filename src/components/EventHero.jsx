@@ -91,7 +91,7 @@ export default function EventHero({ ev, headingAs = "h1" }) {
 
       {/* The media frame: video, poster (Ken Burns when it stands
           alone), or the brand aurora sky when neither exists yet. */}
-      <div className="ev-hero-media" aria-hidden="true" style={{ position: "absolute", inset: 0 }}>
+      <div className="ev-hero-media" aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0 }}>
         {poster && (
           <img src={poster} alt=""
             srcSet={[480, 960, 1440, 1920].map((w) => `${urlFor(ev.heroImage).width(w).quality(80).auto("format").url()} ${w}w`).join(", ")}
@@ -109,19 +109,26 @@ export default function EventHero({ ev, headingAs = "h1" }) {
       {/* Brand wash + legibility gradients: a violet aurora tint over
           the media, shade at the top for the header, and a deep base
           that melts into the page below. */}
-      <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "radial-gradient(58% 46% at 16% 26%, rgba(127,90,240,0.28), transparent 70%), radial-gradient(44% 36% at 84% 18%, rgba(232,69,139,0.16), transparent 70%)", pointerEvents: "none" }} />
-      <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(5,2,14,0.52) 0%, transparent 26%, transparent 46%, rgba(5,2,14,0.72) 74%, rgba(7,3,19,0.98) 100%)", pointerEvents: "none" }} />
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 1, background: "radial-gradient(58% 46% at 16% 26%, rgba(127,90,240,0.28), transparent 70%), radial-gradient(44% 36% at 84% 18%, rgba(232,69,139,0.16), transparent 70%)", pointerEvents: "none" }} />
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 1, background: "linear-gradient(to bottom, rgba(5,2,14,0.52) 0%, transparent 26%, transparent 46%, rgba(5,2,14,0.72) 74%, rgba(7,3,19,0.98) 100%)", pointerEvents: "none" }} />
 
       {/* The skyline, anchored at the base: a violet backlight layer
-          behind the near-black silhouette gives the city depth. */}
-      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "min(32vh, 300px)", color: "rgba(127,90,240,0.52)", filter: "blur(5px)", pointerEvents: "none" }}>
+          behind the near-black silhouette gives the city depth. The
+          layer stack is explicit — media 0, washes 1, backlight 2,
+          skyline 3, text 4 — so the skyline always paints ABOVE the
+          video/photo, never relying on DOM order alone; and the
+          silhouette carries a violet drop-shadow edge so its outline
+          stays visible over bright or dark footage alike (a flat
+          near-black shape over the near-black base shade is
+          camouflaged without it). */}
+      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 2, height: "min(32vh, 300px)", color: "rgba(127,90,240,0.52)", filter: "blur(5px)", pointerEvents: "none" }}>
         <SkylineSvg citySlug={citySlug} />
       </div>
-      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "min(26vh, 240px)", color: "rgba(4,1,10,0.97)", pointerEvents: "none" }}>
+      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 3, height: "min(26vh, 240px)", color: "rgba(4,1,10,0.97)", filter: "drop-shadow(0 -4px 16px rgba(127,90,240,0.45))", pointerEvents: "none" }}>
         <Skyline ev={ev} citySlug={citySlug} />
       </div>
 
-      <div style={{ position: "relative", width: "100%", maxWidth: 1200, margin: "0 auto", padding: "150px 20px 72px" }}>
+      <div style={{ position: "relative", zIndex: 4, width: "100%", maxWidth: 1200, margin: "0 auto", padding: "150px 20px 72px" }}>
         <p className="ev-rise" style={{ margin: 0, display: "inline-flex", alignItems: "center", gap: 9, padding: "8px 15px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.20)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "#f5c86e" }}>
           <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", flexShrink: 0 }} />
           {where}

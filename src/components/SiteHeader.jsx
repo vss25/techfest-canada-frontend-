@@ -22,8 +22,12 @@ import {
    event in its dropdown — or viewing a city hub / event page —
    re-points it, and the choice is remembered for the session.
    On global pages its dropdown IS the city list; inside an
-   event it carries the global links. There is no separate
-   Events link.
+   event it carries only the event's own nav and the other
+   cities — the global links (Awards, Speakers, Sponsors,
+   Partners, About) live in the header middle itself and get
+   their own on-page event selectors, so there is no
+   "Everywhere" section in the dropdown or the phone sheet.
+   There is no separate Events link.
    Tickets is contextual: inside an event it buys only that
    event; when that event is Past (or Just Ended, tickets off)
    it becomes "Next edition · Notify me".
@@ -41,13 +45,14 @@ const GLOBAL_LINKS = [
   { label: "About", path: "/about" },
 ];
 
-/* Menu curation (IA): the pill dropdown's and phone sheet's global set is
-   exactly Home + GLOBAL_LINKS above — the same five destinations the header
-   itself shows in global mode. The legacy Navbar's long tail (Programme, the
-   global Agenda, 2026 Partners, Sponsor, Exhibit, Venue, Brochure, Volunteer,
-   Organizers, Media, Contact) is deliberately NOT carried in this header's
-   menus; those pages stay live and reachable via the existing site
-   navigation and footer, exactly as before. */
+/* Menu curation (IA, revised 2026-11-15): GLOBAL_LINKS above are shown in
+   the header middle on global pages (and as the phone sheet's top rows) —
+   nowhere else. The pill dropdown carries no global-links section: in an
+   event it is This Event + Other Cities only. The legacy Navbar's long tail
+   (Programme, the global Agenda, 2026 Partners, Sponsor, Exhibit, Venue,
+   Brochure, Volunteer, Organizers, Media, Contact) is likewise NOT carried
+   in this header's menus; those pages stay live and reachable via the
+   existing site navigation and footer, exactly as before. */
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => typeof document !== "undefined" && document.body.classList.contains("dark-mode"));
@@ -259,11 +264,6 @@ export default function SiteHeader({ homeEvent = null } = {}) {
                     {middleLinks.map((l) => (
                       <Link key={l.path} to={l.path} className="sh-drop-row"><span style={{ fontWeight: 700, color: textMain }}>{l.label}</span></Link>
                     ))}
-                    <div className="sh-drop-label" style={{ color: textMuted }}>Everywhere</div>
-                    <Link to="/" className="sh-drop-row"><span style={{ fontWeight: 700, color: textMain }}>Home</span></Link>
-                    {GLOBAL_LINKS.map((l) => (
-                      <Link key={l.path} to={l.path} className="sh-drop-row"><span style={{ fontWeight: 700, color: textMain }}>{l.label}</span></Link>
-                    ))}
                     <div className="sh-drop-label" style={{ color: textMuted }}>Other cities</div>
                     {CITIES.filter((c) => c.slug !== currentCity).map((c) => (
                       <Link key={c.slug} to={`/${c.slug}`} className="sh-city-row" style={{ color: textMain }}
@@ -350,15 +350,6 @@ export default function SiteHeader({ homeEvent = null } = {}) {
               <Link key={c.slug} to={`/${c.slug}`} style={{ color: textMain, borderBottom: `1px solid ${border}` }}
                 onClick={() => chooseCity(c, nextEvent(events.filter((e) => citySlugOf(e.city) === c.slug)))}>{c.name}</Link>
             ))}
-            {current && (
-              <>
-                <div className="sh-drop-label" style={{ color: textMuted, margin: "18px 4px 4px" }}>Everywhere</div>
-                <Link to="/" style={{ color: textMain, borderBottom: `1px solid ${border}` }}>Home</Link>
-                {GLOBAL_LINKS.map((l) => (
-                  <Link key={l.path} to={l.path} style={{ color: textMain, borderBottom: `1px solid ${border}` }}>{l.label}</Link>
-                ))}
-              </>
-            )}
             {/* Navbar parity: on a phone this row opens /app/install; on a computer it presents
                 the QR PhoneAppPanel instead (and store-app visitors don't see the row at all). */}
             {!fromStoreApp && (

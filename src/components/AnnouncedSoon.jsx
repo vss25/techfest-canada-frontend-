@@ -36,7 +36,7 @@ export default function AnnouncedSoon({ eventKey, source, title, message }) {
         {title || "Pricing announced soon"}
       </h3>
       <p style={{ margin: "10px 0 0", fontSize: "1rem", lineHeight: 1.65, color: "rgba(225,215,255,0.82)", maxWidth: 640 }}>
-        {message || "Pricing for this event will be announced soon — please check back. Or leave your email below and we'll keep you updated as soon as it's live."}
+        {message || "Pricing for this event will be announced soon — check back here, or leave your email below and we'll let you know the moment it's live."}
       </p>
       <WaitlistForm copy={copy} source={tag} />
     </div>

@@ -575,7 +575,7 @@ function AgendaPage({ ev }) {
           </div>
         )}
         {loading ? <p aria-busy="true" style={{ opacity: 0.7 }}>Loading the agenda…</p>
-          : sessions.length === 0 ? <p style={{ opacity: 0.75 }}>The agenda for this event will be published here.</p>
+          : sessions.length === 0 ? <p style={{ opacity: 0.75 }}>Sessions, speakers and stages will be published here as the agenda is confirmed.</p>
           : sessions.filter((s) => !showTabs || (s.day || 1) === activeDay).map((s) => <SessionRow key={s._id} s={s} />)}
       </div>
       <EventFaqs ev={ev} />
@@ -600,7 +600,7 @@ function SpeakersPage({ ev }) {
           </div>
         )}
         {loading ? <p aria-busy="true" style={{ opacity: 0.7 }}>Loading speakers…</p>
-          : speakers.length === 0 ? <p style={{ opacity: 0.75 }}>Speakers for this event will be announced here.</p>
+          : speakers.length === 0 ? <p style={{ opacity: 0.75 }}>The speaker lineup will be announced here — expect the people deploying this technology, not just describing it.</p>
           : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16, marginTop: 12 }}>
               {shown.map((sp) => <SpeakerCard key={sp._id} speaker={sp} to={fallback ? undefined : speakerPathIn(eventPath(ev), sp)} />)}
@@ -706,9 +706,9 @@ export default function EventLanding({ section = "overview" }) {
               {city.name} {params.year} · {params.eventType === "main-event" ? "Main Event" : "Briefing"}
             </h1>
             <p style={{ margin: "12px 0 26px", opacity: 0.85, maxWidth: 620, lineHeight: 1.65 }}>
-              This event hasn&rsquo;t been announced yet. Leave your email and we&rsquo;ll keep you updated — including when it&rsquo;s announced and when pricing goes live.
+              This event hasn&rsquo;t been announced yet. Check back — or leave your email and we&rsquo;ll keep you updated, including the moment it&rsquo;s announced and when pricing goes live.
             </p>
-            <AnnouncedSoon source={`event:${city.slug}-${params.year}-${params.eventType}`} title="Not announced yet" message="This event hasn't been announced yet — check back, or leave your email below and we'll keep you updated." />
+            <AnnouncedSoon source={`event:${city.slug}-${params.year}-${params.eventType}`} title="Not announced yet" message="When it's announced, everything lands here first. Leave your email below and we'll keep you updated." />
           </div>
         </main>
         <Footer />

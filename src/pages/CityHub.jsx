@@ -16,6 +16,11 @@ import {
    a single-event city goes straight to its Briefing.
 ========================================================= */
 
+export default function CityHub() {
+  const params = useParams();
+  const city = cityBySlug(params.city);
+  const { events, loading } = useEvents();
+  const mine = events.filter((e) => e.city === city?.name);
 /* Per-city hub intros (marketing copy pass, 2026-11-15):
    one or two sentences that make the city unmistakable,
    in the festival's voice. Facts only — no dates, venues
@@ -33,11 +38,6 @@ const CITY_INTROS = {
     "Montreal brings the research depth — home to an artificial intelligence community recognised around the world. Its Briefing runs from the lab to the deal in one curated day.",
 };
 
-export default function CityHub() {
-  const params = useParams();
-  const city = cityBySlug(params.city);
-  const { events, loading } = useEvents();
-  const mine = events.filter((e) => e.city === city?.name);
   const intro = city
     ? CITY_INTROS[city.slug] || `The Tech Festival Canada in ${city.name}. Every event has its own agenda, speakers and tickets — pick an event to see them.`
     : "";
@@ -57,7 +57,7 @@ export default function CityHub() {
             {city.name}
           </h1>
           <p style={{ margin: "12px 0 0", opacity: 0.85, maxWidth: 620, lineHeight: 1.65 }}>
-            {intro}
+            The Tech Festival Canada in {city.name}. Pick an event — agendas, speakers and tickets live on each event&rsquo;s own pages.
           </p>
 
           {loading ? (
@@ -65,7 +65,7 @@ export default function CityHub() {
           ) : mine.length === 0 ? (
             <div style={{ marginTop: 30 }}>
               <AnnouncedSoon source={`city:${city.slug}`} title={`${city.name} — announced soon`}
-                message={`The next TTFC event in ${city.name} hasn't been announced yet — when it is, it lands on this page first. Leave your email and we'll keep you updated.`} />
+                message={`The next TTFC event in ${city.name} hasn't been announced yet. Leave your email and we'll keep you updated.`} />
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 18, marginTop: 30 }}>

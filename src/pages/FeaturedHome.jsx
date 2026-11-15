@@ -32,9 +32,6 @@ export function CityList({ events }) {
         <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.35rem, 3vw, 1.9rem)", fontWeight: 800, margin: 0 }}>
           Choose your city
         </h2>
-        <p style={{ margin: "10px 0 0", opacity: 0.85, maxWidth: 620, lineHeight: 1.65 }}>
-          One festival, five cities. Every Briefing is a single senior, curated day; the Main Event is the two-day national gathering in Toronto.
-        </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginTop: 22 }}>
           {CITIES.map((c) => {
             const next = (events || [])

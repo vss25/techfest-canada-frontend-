@@ -1,8 +1,11 @@
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import useSiteSettings from "../hooks/useSiteSettings";
+import { track } from "../lib/pwaEvents";
+import { isMobileDevice } from "../lib/pwaPlatform";
+import { isNativeVisit } from "../lib/nativeVisit";
 import {
-  CITIES, LIFECYCLE_LABEL, eventPath, eventTicketsPath, featuredEvent,
+  CITIES, LIFECYCLE_LABEL, citySlugOf, eventPath, eventTicketsPath, featuredEvent,
   findEvent, formatDateRange, lifecycleOf, parseEventPath, ticketsOpen, useEvents,
 } from "../lib/events";
 
@@ -23,6 +26,8 @@ import {
 ========================================================= */
 
 const AuthModal = lazy(() => import("./AuthModal"));
+// "Get the TTFC app" on a computer: the store badges and a QR code to the phone (Navbar parity). Loaded on first use.
+const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
 
 const GLOBAL_LINKS = [
   { label: "Awards", path: "/awards" },
@@ -62,7 +67,7 @@ function useDarkMode() {
   return dark;
 }
 
-export default function SiteHeader() {
+export default function SiteHeader({ homeEvent = null } = {}) {
   const location = useLocation();
   const { events } = useEvents();
   const dark = useDarkMode();
@@ -87,11 +92,18 @@ export default function SiteHeader() {
   const [pillOpen, setPillOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [phoneQr, setPhoneQr] = useState(false);
+  // Came from the iPhone or Android app (?source=ios …, lib/nativeVisit.js): they have it, so no "Get the TTFC app" row (Navbar parity).
+  const [fromStoreApp] = useState(() => isNativeVisit());
   const [user, setUser] = useState(null);
   const pillRef = useRef(null);
 
   const parsed = parseEventPath(location.pathname);
-  const current = parsed ? findEvent(events, parsed) : null;
+  // On the homepage the composed page (pages/HomeFeatured.jsx) hands over its featured
+  // event: "/" acts as that event's home, so the pill names it and the header behaves
+  // exactly as it does on the event's own landing. Everywhere else the prop is absent.
+  const current = parsed ? findEvent(events, parsed) : (location.pathname === "/" ? homeEvent : null);
+  const currentCity = parsed ? parsed.city : (current ? citySlugOf(current.city) : null);
   const featured = useMemo(() => featuredEvent(events), [events]);
 
   useEffect(() => { setPillOpen(false); setMenuOpen(false); }, [location.pathname]);
@@ -226,7 +238,7 @@ export default function SiteHeader() {
                       <Link key={l.path} to={l.path} className="sh-drop-row"><span style={{ fontWeight: 700, color: textMain }}>{l.label}</span></Link>
                     ))}
                     <div className="sh-drop-label" style={{ color: textMuted }}>Other cities</div>
-                    {CITIES.filter((c) => c.slug !== parsed.city).map((c) => (
+                    {CITIES.filter((c) => c.slug !== currentCity).map((c) => (
                       <Link key={c.slug} to={`/${c.slug}`} className="sh-city-row" style={{ color: textMain }}>{c.name}<span aria-hidden="true">→</span></Link>
                     ))}
                   </>
@@ -317,9 +329,19 @@ export default function SiteHeader() {
             {moreLinks.map((l) => (
               <Link key={l.path} to={l.path} style={{ color: textMain, borderBottom: `1px solid ${border}` }}>{l.label}</Link>
             ))}
-            <a href="/app/install?from=drawer" style={{ color: textMain, borderBottom: `1px solid ${border}`, display: "block", padding: "13px 4px", textDecoration: "none", fontFamily: "'Orbitron', sans-serif", fontSize: "0.82rem", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>
-              Get the TTFC app
-            </a>
+            {/* Navbar parity: on a phone this row opens /app/install; on a computer it presents
+                the QR PhoneAppPanel instead (and store-app visitors don't see the row at all). */}
+            {!fromStoreApp && (
+              <a href="/app/install?from=drawer"
+                onClick={(e) => {
+                  setMenuOpen(false);
+                  if (!isMobileDevice()) { e.preventDefault(); setPhoneQr(true); track("pwa_phone_qr_open", { where: "drawer" }); return; }
+                  track("pwa_guide_open", { where: "drawer" });
+                }}
+                style={{ color: textMain, borderBottom: `1px solid ${border}`, display: "block", padding: "13px 4px", textDecoration: "none", fontFamily: "'Orbitron', sans-serif", fontSize: "0.82rem", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>
+                Get the TTFC app
+              </a>
+            )}
             <Link to="/stay-updated" style={{ color: textMain, borderBottom: `1px solid ${border}` }}>Stay updated for 2027</Link>
             {!user && (
               <button type="button" onClick={() => { setMenuOpen(false); setAuthOpen(true); }}
@@ -334,6 +356,11 @@ export default function SiteHeader() {
       {authOpen && (
         <Suspense fallback={null}>
           <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+        </Suspense>
+      )}
+      {phoneQr && (
+        <Suspense fallback={null}>
+          <PhoneAppPanel where="drawer" onDismiss={() => setPhoneQr(false)} actions={[{ label: "Close", onClick: () => setPhoneQr(false) }]} />
         </Suspense>
       )}
     </>

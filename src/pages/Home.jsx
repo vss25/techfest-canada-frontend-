@@ -373,7 +373,7 @@ export default function Home(props) {
         <div style={{ maxWidth: 920, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
           <TextReveal
             text="MEET BUILD SCALE"
-            colors={[dark ? "#ffffff" : "#0d0520", accent, "var(--brand-orange, #f5a623)"]}
+            colors={[dark ? "#ffffff" : "#0d0520", accent, dark ? "var(--brand-orange, #f5a623)" : "#c26a00"]}
             style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(2.2rem, 8vw, 6rem)", fontWeight: 900, lineHeight: 1.1, letterSpacing: "-1px", marginBottom: "0.5rem", whiteSpace: "nowrap", flexWrap: "nowrap" }}
           />
           <SubtitleReveal textMid={textMid} />

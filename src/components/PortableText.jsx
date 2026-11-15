@@ -1,4 +1,5 @@
 import React from "react";
+import { decodeEntities } from "../utils/decodeEntities";
 
 /* =========================================================
    A deliberately small Portable Text renderer (Phase 4) for
@@ -52,8 +53,11 @@ export default function PortableText({ value }) {
   return <>{out}</>;
 }
 
-/** Plain-text fallback: a legacy `bio` string as paragraphs. */
+/** Plain-text fallback: a legacy `bio` string as paragraphs.
+    The string is raw Sanity text, so decode any HTML entities
+    it carries before rendering (the Portable Text renderer
+    above works on real text and is untouched). */
 export function PlainParagraphs({ text }) {
-  const paras = String(text || "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  const paras = decodeEntities(text || "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
   return <>{paras.map((p, i) => <p key={i}>{p}</p>)}</>;
 }

@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { urlFor } from "../utils/sanity";
 import { speakerSlug } from "../seo/slug";
+import { decodeEntities } from "../utils/decodeEntities";
 
 /* =========================================================
    The Phase 4 speaker card (§8): photo, name, title · company
@@ -29,9 +30,9 @@ const LinkedInIcon = () => (
     else a brief excerpt of the long bio — its first sentence,
     capped — never the whole bio. */
 function cardLine(speaker) {
-  const short = String(speaker?.shortBio || "").trim();
+  const short = decodeEntities(speaker?.shortBio || "").trim();
   if (short) return short;
-  const bio = String(speaker?.bio || "").trim();
+  const bio = decodeEntities(speaker?.bio || "").trim();
   if (!bio) return "";
   const first = bio.split(/(?<=[.!?])\s/)[0] || bio;
   return first.length > 180 ? `${first.slice(0, 177).trimEnd()}…` : first;
@@ -54,8 +55,8 @@ export default function SpeakerCard({ speaker, to }) {
       ) : (
         <div aria-hidden="true" style={{ width: "100%", aspectRatio: "1 / 1", background: "rgba(122,63,209,0.12)" }} />
       )}
-      <div className="sc-body" style={{ padding: "14px 16px 18px" }}>
-        <div className="sc-name" style={{ fontWeight: 800, fontSize: "1rem", lineHeight: 1.25 }}>{speaker.name}</div>
+      <div style={{ padding: "14px 16px 18px" }}>
+        <div style={{ fontWeight: 800, fontSize: "1rem", lineHeight: 1.25 }}>{speaker.name}</div>
         <div style={{ marginTop: 3, fontSize: "0.85rem", opacity: 0.75 }}>
           {[speaker.title, speaker.company].filter(Boolean).join(" · ")}
         </div>
@@ -77,7 +78,7 @@ export default function SpeakerCard({ speaker, to }) {
         <Link to={to} style={{ display: "block", color: "inherit", textDecoration: "none" }} aria-label={`${speaker.name} — speaker profile`}>{main}</Link>
       ) : main}
       {speaker.linkedin && (
-        <div className="sc-foot" style={{ padding: "0 16px 16px", marginTop: "auto" }}>
+        <div style={{ padding: "0 16px 16px", marginTop: "auto" }}>
           <a href={speaker.linkedin} target="_blank" rel="noopener noreferrer"
             style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "9px 0", borderRadius: 8, background: "#0A66C2", color: "#fff", fontFamily: "'Orbitron', sans-serif", fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.06em", textDecoration: "none", textTransform: "uppercase", boxSizing: "border-box" }}>
             <LinkedInIcon /> View on LinkedIn

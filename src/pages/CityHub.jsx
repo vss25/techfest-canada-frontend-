@@ -111,24 +111,28 @@ const CITY_INTROS = {
         <style>{HUB_CSS}</style>
 
         {/* The city hero: the next event's photo when there is one,
-            otherwise the aurora sky — the skyline anchors both. */}
+            otherwise the aurora sky — the skyline anchors both. The
+            layer stack is explicit (media 0, shade 1, backlight 2,
+            skyline 3, text 4) and the silhouette carries a violet
+            drop-shadow edge, so the city outline always paints above
+            the photo and stays visible over any backdrop. */}
         <section aria-label={city.name} style={{ position: "relative", overflow: "hidden", background: "#0a0618" }}>
           {heroPhoto ? (
             <img src={urlFor(heroPhoto).width(1920).quality(80).auto("format").url()} alt="" aria-hidden="true"
               srcSet={[480, 960, 1440, 1920].map((w) => `${urlFor(heroPhoto).width(w).quality(80).auto("format").url()} ${w}w`).join(", ")}
               sizes="100vw"
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+              style={{ position: "absolute", inset: 0, zIndex: 0, width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "radial-gradient(58% 60% at 18% 24%, rgba(127,90,240,0.5), transparent 70%), radial-gradient(46% 50% at 84% 16%, rgba(232,69,139,0.28), transparent 70%), linear-gradient(160deg, #150a33 0%, #0a0618 60%, #070313 100%)" }} />
+            <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0, background: "radial-gradient(58% 60% at 18% 24%, rgba(127,90,240,0.5), transparent 70%), radial-gradient(46% 50% at 84% 16%, rgba(232,69,139,0.28), transparent 70%), linear-gradient(160deg, #150a33 0%, #0a0618 60%, #070313 100%)" }} />
           )}
-          <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(5,2,14,0.5) 0%, transparent 30%, transparent 55%, rgba(7,3,19,0.96) 100%)" }} />
-          <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 150, color: "rgba(127,90,240,0.35)", filter: "blur(4px)", pointerEvents: "none" }}>
+          <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 1, background: "linear-gradient(to bottom, rgba(5,2,14,0.5) 0%, transparent 30%, transparent 55%, rgba(7,3,19,0.96) 100%)" }} />
+          <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 2, height: 150, color: "rgba(127,90,240,0.35)", filter: "blur(4px)", pointerEvents: "none" }}>
             <SkylineSvg citySlug={city.slug} />
           </div>
-          <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 118, color: "rgba(6,2,15,0.94)", pointerEvents: "none" }}>
+          <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 3, height: 118, color: "rgba(6,2,15,0.94)", filter: "drop-shadow(0 -4px 16px rgba(127,90,240,0.45))", pointerEvents: "none" }}>
             <SkylineSvg citySlug={city.slug} />
           </div>
-          <div style={{ position: "relative", maxWidth: 1200, margin: "0 auto", padding: "168px 20px 120px" }}>
+          <div style={{ position: "relative", zIndex: 4, maxWidth: 1200, margin: "0 auto", padding: "168px 20px 120px" }}>
             <Reveal>
               <h1 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(3rem, 9vw, 6rem)", fontWeight: 900, lineHeight: 0.99, letterSpacing: "-0.01em", margin: 0, textShadow: "0 6px 44px rgba(3,0,10,0.55)" }}>
                 {city.name}

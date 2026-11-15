@@ -265,7 +265,7 @@ function RegisterWidget() {
   );
 }
 
-export default function Home() {
+export default function Home(props) {
   var s1 = useState(false); var inquiryOpen = s1[0];        var setInquiryOpen = s1[1];
   var s2 = useState(false); var surveyOpen = s2[0];         var setSurveyOpen = s2[1];
   var s3 = useState("");    var surveyName = s3[0];         var setSurveyName = s3[1];
@@ -298,6 +298,12 @@ export default function Home() {
   var accent   = dark ? "#b99eff"                : "#7a3fd1";
   var over     = eventOver();   // TTFC 2026 is over: the "See you in 2027" note in the hero
 
+  // Composition slots (additive — used only by pages/HomeFeatured.jsx, the seasonal
+  // featured-event homepage): a caller may supply the header and one block to render
+  // above the hero. With neither prop this page renders exactly as it always has.
+  var header = props && props.header ? props.header : <Navbar />;
+  var before = props && props.before ? props.before : null;
+
   return (
     <div style={{ background: bg, minHeight: "100vh", color: textMain, overflowX: "hidden", width: "100%", position: "relative" }}>
       <style>{`
@@ -323,7 +329,8 @@ export default function Home() {
         }
       `}</style>
 
-      <Navbar />
+      {header}
+      {before}
 
       {/* HERO UPPER — always dark regardless of theme */}
       <section style={{ position: "relative", overflow: "hidden", background: "#06020f", minHeight: "76vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(100px, 15vh, 150px) 0 clamp(70px, 10vh, 110px)" }}>

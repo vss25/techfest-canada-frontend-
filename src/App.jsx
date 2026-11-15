@@ -1,10 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import Home from "./pages/Home";
-/* Phase 4 (IA build-out) pages. NOTE: "/" stays the existing homepage (src/pages/Home.jsx) —
-   nothing live is removed or displaced. src/pages/FeaturedHome.jsx (the seasonal
-   featured-event home) is built but deliberately NOT routed here; wiring it to "/" is a
-   one-line change that waits for an explicit decision to retire the current homepage. */
+import HomeFeatured from "./pages/HomeFeatured";
+/* Phase 4 (IA build-out) pages. NOTE: "/" is the COMPOSED homepage (src/pages/HomeFeatured.jsx):
+   the seasonal featured-event home on top of the full existing homepage — every section of
+   src/pages/Home.jsx still renders, in its original order, under the featured block, and
+   Home.jsx itself is untouched in behaviour (it gained two optional slots: header / before).
+   src/pages/FeaturedHome.jsx stays the standalone featured-only page (unrouted); its
+   CityList is reused by the composition. Nothing live is removed or displaced. */
 const CityHub = lazy(() => import("./pages/CityHub"));
 const EventLanding = lazy(() => import("./pages/EventLanding"));
 const Highlights = lazy(() => import("./pages/Highlights"));
@@ -134,7 +137,7 @@ function App() {
       <RouteErrorBoundary>
       <Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<HomeFeatured />} />
         <Route path="/programme" element={<AgendaGate><Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Programme /></Suspense></AgendaGate>} />
         <Route path="/speakers" element={<Speakers />} />
         <Route path="/speakers/:slug" element={<SpeakerProfile />} />

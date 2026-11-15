@@ -15,7 +15,8 @@ import Skyline from "./Skyline";
 
 const isDirectVideo = (u) => /\.(mp4|webm|mov)(\?|#|$)/i.test(String(u || ""));
 
-export default function EventHero({ ev }) {
+export default function EventHero({ ev, headingAs = "h1" }) {
+  const Heading = headingAs === "h2" ? "h2" : "h1";
   const [showVideo, setShowVideo] = useState(false);
   const poster = ev?.heroImage?.asset ? urlFor(ev.heroImage).width(1920).quality(80).auto("format").url() : null;
   const video = isDirectVideo(ev?.heroVideoUrl) ? ev.heroVideoUrl : null;
@@ -63,9 +64,9 @@ export default function EventHero({ ev }) {
         <p style={{ margin: 0, fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "#f5c86e" }}>
           {where}
         </p>
-        <h1 style={{ margin: "14px 0 0", fontFamily: "'Orbitron', sans-serif", fontWeight: 900, lineHeight: 1.04, fontSize: "clamp(2.2rem, 6.5vw, 4.4rem)", maxWidth: 900 }}>
+        <Heading style={{ margin: "14px 0 0", fontFamily: "'Orbitron', sans-serif", fontWeight: 900, lineHeight: 1.04, fontSize: "clamp(2.2rem, 6.5vw, 4.4rem)", maxWidth: 900 }}>
           {ev.name}
-        </h1>
+        </Heading>
         {sentence && (
           <p style={{ margin: "16px 0 0", fontSize: "clamp(1rem, 2vw, 1.2rem)", lineHeight: 1.55, color: "rgba(255,255,255,0.88)", maxWidth: 640 }}>
             {sentence}

@@ -1,9 +1,13 @@
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import useSiteSettings from "../hooks/useSiteSettings";
+import { track } from "../lib/pwaEvents";
+import { isMobileDevice } from "../lib/pwaPlatform";
+import { isNativeVisit } from "../lib/nativeVisit";
 import {
-  CITIES, LIFECYCLE_LABEL, eventPath, eventTicketsPath, featuredEvent,
-  findEvent, formatDateRange, lifecycleOf, parseEventPath, ticketsOpen, useEvents,
+  CITIES, LIFECYCLE_LABEL, cityBySlug, citySlugOf, compareEvents, compareEventsDesc,
+  eventPath, eventPillLabel, eventTicketsPath, featuredEvent, findEvent, formatDateRange,
+  getPillSelection, lifecycleOf, nextEvent, nextEventForCity, parseCityPath, parseEventPath,
+  resolvePillSelection, setPillSelection, ticketsOpen, useEvents,
 } from "../lib/events";
 
 /* =========================================================
@@ -13,16 +17,21 @@ import {
      Tickets button (the only primary button on any screen).
    - The middle swaps: global links on global pages, the
      event's own nav inside an event.
-   The pill NEVER disappears. On global pages it reads
-   "Choose a city · All Events" and its dropdown IS the city
-   list; inside an event it names that event and its dropdown
-   carries the global links. There is no separate Events link.
+   The pill NEVER disappears. By default it names the immediate
+   next event ("Vancouver · Briefing 2027"); picking a city or
+   event in its dropdown — or viewing a city hub / event page —
+   re-points it, and the choice is remembered for the session.
+   On global pages its dropdown IS the city list; inside an
+   event it carries the global links. There is no separate
+   Events link.
    Tickets is contextual: inside an event it buys only that
    event; when that event is Past (or Just Ended, tickets off)
    it becomes "Next edition · Notify me".
 ========================================================= */
 
 const AuthModal = lazy(() => import("./AuthModal"));
+// "Get the TTFC app" on a computer: the store badges and a QR code to the phone (Navbar parity). Loaded on first use.
+const PhoneAppPanel = lazy(() => import("./PhoneAppPanel"));
 
 const GLOBAL_LINKS = [
   { label: "Awards", path: "/awards" },
@@ -32,23 +41,13 @@ const GLOBAL_LINKS = [
   { label: "About", path: "/about" },
 ];
 
-/* Parity with the existing Navbar (components/Navbar.tsx): every destination it
-   offers stays reachable from this header too — the primary five above in the
-   middle, the rest here (pill dropdown + phone sheet). Nothing the old header
-   links to is dropped. */
-const MORE_LINKS = [
-  { label: "Programme", path: "/programme", agendaGated: true },
-  { label: "Agenda", path: "/agenda", agendaGated: true },
-  { label: "2026 Partners", path: "/partners2026" },
-  { label: "Sponsor", path: "/sponsor" },
-  { label: "Exhibit", path: "/exhibit" },
-  { label: "Venue", path: "/venue" },
-  { label: "Brochure", path: "/brochures" },
-  { label: "Volunteer", path: "/volunteer" },
-  { label: "Organizers", path: "/organizers" },
-  { label: "Media", path: "/media" },
-  { label: "Contact", path: "/contact" },
-];
+/* Menu curation (IA): the pill dropdown's and phone sheet's global set is
+   exactly Home + GLOBAL_LINKS above — the same five destinations the header
+   itself shows in global mode. The legacy Navbar's long tail (Programme, the
+   global Agenda, 2026 Partners, Sponsor, Exhibit, Venue, Brochure, Volunteer,
+   Organizers, Media, Contact) is deliberately NOT carried in this header's
+   menus; those pages stay live and reachable via the existing site
+   navigation and footer, exactly as before. */
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => typeof document !== "undefined" && document.body.classList.contains("dark-mode"));
@@ -62,13 +61,10 @@ function useDarkMode() {
   return dark;
 }
 
-export default function SiteHeader() {
+export default function SiteHeader({ homeEvent = null } = {}) {
   const location = useLocation();
   const { events } = useEvents();
   const dark = useDarkMode();
-  const site = useSiteSettings();
-  const showAgenda = site["site.show_agenda"] !== false;
-  const moreLinks = MORE_LINKS.filter((l) => showAgenda || !l.agendaGated);
   // Theme behaviour identical to Navbar's: localStorage "theme", body.dark-mode.
   const [theme, setTheme] = useState("light");
   useEffect(() => {
@@ -87,12 +83,49 @@ export default function SiteHeader() {
   const [pillOpen, setPillOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [phoneQr, setPhoneQr] = useState(false);
+  // Came from the iPhone or Android app (?source=ios …, lib/nativeVisit.js): they have it, so no "Get the TTFC app" row (Navbar parity).
+  const [fromStoreApp] = useState(() => isNativeVisit());
   const [user, setUser] = useState(null);
   const pillRef = useRef(null);
 
   const parsed = parseEventPath(location.pathname);
-  const current = parsed ? findEvent(events, parsed) : null;
+  // On the homepage the composed page (pages/HomeFeatured.jsx) hands over its featured
+  // event: "/" acts as that event's home, so the pill names it and the header behaves
+  // exactly as it does on the event's own landing. Everywhere else the prop is absent.
+  const current = parsed ? findEvent(events, parsed) : (location.pathname === "/" ? homeEvent : null);
+  const currentCity = parsed ? parsed.city : (current ? citySlugOf(current.city) : null);
   const featured = useMemo(() => featuredEvent(events), [events]);
+
+  // The pill's selection. Page context wins: an event page (or the homepage
+  // acting as its event's home) names its event, a city hub names its city.
+  // Otherwise the pill shows the user's remembered dropdown choice; with no
+  // choice it defaults to the immediate next event — the same nextEvent()
+  // featuredEvent() resolves through (and HomeFeatured passes as homeEvent),
+  // so the pill, the Tickets button and "/" can never disagree. The generic
+  // "Choose a city" label survives only when there are no events at all.
+  const hubCity = !parsed && !current ? parseCityPath(location.pathname) : null;
+  const [selection, setSelection] = useState(() => getPillSelection());
+  const chooseEvent = (ev) => { if (ev?.eventKey) { setPillSelection(ev.eventKey); setSelection(ev.eventKey); } };
+  const chooseCity = (city, ev) => {
+    const v = ev?.eventKey || `city:${city.slug}`;
+    setPillSelection(v); setSelection(v);
+  };
+  // Viewing an event or a city refreshes the remembered selection to match,
+  // so the pill keeps naming it as the user moves across the new pages.
+  useEffect(() => {
+    if (current?.eventKey) { setPillSelection(current.eventKey); setSelection(current.eventKey); }
+    else if (hubCity) { const v = `city:${hubCity.slug}`; setPillSelection(v); setSelection(v); }
+  }, [current?.eventKey, hubCity?.slug]);
+  const selected = useMemo(() => resolvePillSelection(events, selection), [events, selection]);
+  const namedEvent = current
+    || (hubCity ? nextEventForCity(events, hubCity.slug) : null)
+    || (selected ? selected.event : null)
+    || (hubCity || selected ? null : featured);
+  const displayCity = (currentCity ? cityBySlug(currentCity) : null)
+    || hubCity
+    || (selected ? selected.city : null)
+    || (namedEvent ? cityBySlug(citySlugOf(namedEvent.city)) : null);
 
   useEffect(() => { setPillOpen(false); setMenuOpen(false); }, [location.pathname]);
   useEffect(() => {
@@ -125,24 +158,23 @@ export default function SiteHeader() {
   const dropBg = dark ? "#0e0820" : "#ffffff";
   const pillBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.06)";
 
-  // The ONE gold button: contextual Tickets.
+  // The ONE gold button: contextual Tickets. It follows the pill's event —
+  // the page's own event in context, else the selected/defaulted next event —
+  // so the button and the pill can never point at different events.
   let ticketsTo = "/stay-updated#join";
   let ticketsLabel = "Tickets";
   let ticketsNotify = false;
-  if (current) {
-    if (ticketsOpen(current)) { ticketsTo = eventTicketsPath(current); }
+  const ticketEvent = current || namedEvent || featured;
+  if (ticketEvent) {
+    if (ticketsOpen(ticketEvent)) { ticketsTo = eventTicketsPath(ticketEvent); }
     else { ticketsLabel = "Next edition · Notify me"; ticketsNotify = true; }
-  } else if (featured && ticketsOpen(featured)) {
-    ticketsTo = eventTicketsPath(featured);
-  } else if (featured) {
-    ticketsLabel = "Next edition · Notify me"; ticketsNotify = true;
   }
 
-  const pillLabel = current ? current.name : "Choose a city · All Events";
+  const pillLabel = namedEvent ? eventPillLabel(namedEvent) : (displayCity ? displayCity.name : "Choose a city · All Events");
   const byLifecycle = (want) => events.filter((e) => want.includes(lifecycleOf(e)));
 
   const eventRow = (ev) => (
-    <Link key={ev._id} to={eventPath(ev)} className="sh-drop-row">
+    <Link key={ev._id} to={eventPath(ev)} className="sh-drop-row" onClick={() => chooseEvent(ev)}>
       <span style={{ fontWeight: 700, color: textMain }}>{ev.name}</span>
       <span style={{ color: textMuted, fontSize: "0.78rem" }}>
         {formatDateRange(ev)}{ev.venueName ? ` · ${ev.venueName}` : ""} · {LIFECYCLE_LABEL[lifecycleOf(ev)]}
@@ -232,39 +264,32 @@ export default function SiteHeader() {
                     {GLOBAL_LINKS.map((l) => (
                       <Link key={l.path} to={l.path} className="sh-drop-row"><span style={{ fontWeight: 700, color: textMain }}>{l.label}</span></Link>
                     ))}
-                    {moreLinks.map((l) => (
-                      <Link key={l.path} to={l.path} className="sh-drop-row"><span style={{ fontWeight: 700, color: textMain }}>{l.label}</span></Link>
-                    ))}
                     <div className="sh-drop-label" style={{ color: textMuted }}>Other cities</div>
-                    {CITIES.filter((c) => c.slug !== parsed.city).map((c) => (
-                      <Link key={c.slug} to={`/${c.slug}`} className="sh-city-row" style={{ color: textMain }}>{c.name}<span aria-hidden="true">→</span></Link>
+                    {CITIES.filter((c) => c.slug !== currentCity).map((c) => (
+                      <Link key={c.slug} to={`/${c.slug}`} className="sh-city-row" style={{ color: textMain }}
+                        onClick={() => chooseCity(c, nextEvent(events.filter((e) => citySlugOf(e.city) === c.slug)))}>{c.name}<span aria-hidden="true">→</span></Link>
                     ))}
                   </>
                 ) : (
                   <>
                     <div className="sh-drop-label" style={{ color: textMuted }}>Choose a city</div>
                     {CITIES.map((c) => {
-                      const next = events.filter((e) => e.city === c.name && ["coming-up", "live"].includes(lifecycleOf(e)))
-                        .sort((a, b) => String(a.startDate || "9999").localeCompare(String(b.startDate || "9999")))[0];
+                      const next = nextEvent(events.filter((e) => citySlugOf(e.city) === c.slug));
                       return (
-                        <Link key={c.slug} to={`/${c.slug}`} className="sh-city-row" style={{ color: textMain }}>
+                        <Link key={c.slug} to={`/${c.slug}`} className="sh-city-row" style={{ color: textMain }} onClick={() => chooseCity(c, next)}>
                           {c.name}
-                          <span style={{ color: textMuted, fontSize: "0.76rem", fontWeight: 500 }}>{next ? formatDateRange(next) : ""}</span>
+                          <span style={{ color: textMuted, fontSize: "0.76rem", fontWeight: 500 }}>{next ? (next.startDate ? formatDateRange(next) : (next.statusNote || "")) : ""}</span>
                         </Link>
                       );
                     })}
                     <div className="sh-drop-label" style={{ color: textMuted }}>Coming up</div>
-                    {byLifecycle(["coming-up", "live"]).map(eventRow)}
+                    {byLifecycle(["coming-up", "live"]).slice().sort(compareEvents).map(eventRow)}
                     {byLifecycle(["past", "just-ended"]).length > 0 && (
                       <details>
                         <summary className="sh-drop-label" style={{ color: textMuted, cursor: "pointer" }}>Past events</summary>
-                        {byLifecycle(["past", "just-ended"]).map(eventRow)}
+                        {byLifecycle(["past", "just-ended"]).slice().sort(compareEventsDesc).map(eventRow)}
                       </details>
                     )}
-                    <div className="sh-drop-label" style={{ color: textMuted }}>More</div>
-                    {moreLinks.map((l) => (
-                      <Link key={l.path} to={l.path} className="sh-drop-row"><span style={{ fontWeight: 700, color: textMain }}>{l.label}</span></Link>
-                    ))}
                   </>
                 )}
               </div>
@@ -304,7 +329,7 @@ export default function SiteHeader() {
             ) : (
               <button type="button" className="sh-login" style={{ color: textMain }} onClick={() => setAuthOpen(true)}>Log in</button>
             )}
-            <Link to={ticketsTo} className="sh-gold" aria-label={ticketsNotify ? ticketsLabel : `Tickets${current ? ` for ${current.name}` : ""}`}>
+            <Link to={ticketsTo} className="sh-gold" aria-label={ticketsNotify ? ticketsLabel : `Tickets${ticketEvent ? ` for ${ticketEvent.name || eventPillLabel(ticketEvent)}` : ""}`}>
               {ticketsLabel}
             </Link>
             <button type="button" className="sh-burger" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen}
@@ -322,15 +347,31 @@ export default function SiteHeader() {
             ))}
             <div className="sh-drop-label" style={{ color: textMuted, margin: "18px 4px 4px" }}>Cities</div>
             {CITIES.map((c) => (
-              <Link key={c.slug} to={`/${c.slug}`} style={{ color: textMain, borderBottom: `1px solid ${border}` }}>{c.name}</Link>
+              <Link key={c.slug} to={`/${c.slug}`} style={{ color: textMain, borderBottom: `1px solid ${border}` }}
+                onClick={() => chooseCity(c, nextEvent(events.filter((e) => citySlugOf(e.city) === c.slug)))}>{c.name}</Link>
             ))}
-            <div className="sh-drop-label" style={{ color: textMuted, margin: "18px 4px 4px" }}>More</div>
-            {moreLinks.map((l) => (
-              <Link key={l.path} to={l.path} style={{ color: textMain, borderBottom: `1px solid ${border}` }}>{l.label}</Link>
-            ))}
-            <a href="/app/install?from=drawer" style={{ color: textMain, borderBottom: `1px solid ${border}`, display: "block", padding: "13px 4px", textDecoration: "none", fontFamily: "'Orbitron', sans-serif", fontSize: "0.82rem", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>
-              Get the TTFC app
-            </a>
+            {current && (
+              <>
+                <div className="sh-drop-label" style={{ color: textMuted, margin: "18px 4px 4px" }}>Everywhere</div>
+                <Link to="/" style={{ color: textMain, borderBottom: `1px solid ${border}` }}>Home</Link>
+                {GLOBAL_LINKS.map((l) => (
+                  <Link key={l.path} to={l.path} style={{ color: textMain, borderBottom: `1px solid ${border}` }}>{l.label}</Link>
+                ))}
+              </>
+            )}
+            {/* Navbar parity: on a phone this row opens /app/install; on a computer it presents
+                the QR PhoneAppPanel instead (and store-app visitors don't see the row at all). */}
+            {!fromStoreApp && (
+              <a href="/app/install?from=drawer"
+                onClick={(e) => {
+                  setMenuOpen(false);
+                  if (!isMobileDevice()) { e.preventDefault(); setPhoneQr(true); track("pwa_phone_qr_open", { where: "drawer" }); return; }
+                  track("pwa_guide_open", { where: "drawer" });
+                }}
+                style={{ color: textMain, borderBottom: `1px solid ${border}`, display: "block", padding: "13px 4px", textDecoration: "none", fontFamily: "'Orbitron', sans-serif", fontSize: "0.82rem", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>
+                Get the TTFC app
+              </a>
+            )}
             <Link to="/stay-updated" style={{ color: textMain, borderBottom: `1px solid ${border}` }}>Stay updated for 2027</Link>
             {!user && (
               <button type="button" onClick={() => { setMenuOpen(false); setAuthOpen(true); }}
@@ -345,6 +386,11 @@ export default function SiteHeader() {
       {authOpen && (
         <Suspense fallback={null}>
           <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+        </Suspense>
+      )}
+      {phoneQr && (
+        <Suspense fallback={null}>
+          <PhoneAppPanel where="drawer" onDismiss={() => setPhoneQr(false)} actions={[{ label: "Close", onClick: () => setPhoneQr(false) }]} />
         </Suspense>
       )}
     </>

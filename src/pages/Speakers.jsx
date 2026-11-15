@@ -13,6 +13,8 @@ import { submitForm, useFormGuard, FORMS_FALLBACK_EMAIL } from "../lib/forms";
 import { client, speakerPhotoUrl } from "../utils/sanity";
 import useAgenda from "../hooks/useAgenda";
 import SpeakerMarquee from "../components/SpeakerMarquee";
+import EventScopeBar, { ScopedEmptyState, matchesEventScope, useEventScope } from "../components/EventScopeBar";
+import { eventPillLabel } from "../lib/events";
 import { sessionsForSpeaker, buildSpeakerCategoryMap, slugifyName, formatTime12, DAYS } from "../data/agenda";
 
 // ─── Protection ──────────────────────────────────────────────────
@@ -395,6 +397,10 @@ export default function Speakers() {
   var s4 = useState(""); var search = s4[0]; var setSearch = s4[1];
   var s5 = useState(null); var activePillar = s5[0]; var setActivePillar = s5[1];
   var s6 = useState(null); var activeSector = s6[0]; var setActiveSector = s6[1];
+  // Event scope: the shared pill selection (default: the most recent
+  // event). Null — All events chosen — is this page exactly as before.
+  var scope = useEventScope();
+  var scopedEvent = scope.scopedEvent;
 
   useEffect(function () {
     var check = function () { setDark(document.body.classList.contains("dark-mode")); };
@@ -412,7 +418,7 @@ export default function Speakers() {
   useEffect(function () {
     client
       .fetch(
-        '*[_type == "speaker"] | order(order asc, coalesce(rowPosition, 9999) asc) { _id, name, title, company, bio, linkedin, image, rowPosition }'
+        '*[_type == "speaker"] | order(order asc, coalesce(rowPosition, 9999) asc) { _id, name, title, company, bio, linkedin, image, rowPosition, "eventIds": events[]._ref }'
       )
       .then(function (data) { setSpeakers(data); setLoading(false); })
       .catch(function () { setLoading(false); });
@@ -446,8 +452,16 @@ export default function Speakers() {
     }
   }, [loading, agendaState.loaded, agendaState.source, speakers, categoryMap]);
 
+  // The roster under the active event scope: with no scope this is the
+  // speakers list itself; with a scope, only speakers tagged with it.
+  var scopedSpeakers = useMemo(function () {
+    if (!scopedEvent) return speakers;
+    return speakers.filter(function (s) { return matchesEventScope(s, scopedEvent._id); });
+  }, [speakers, scopedEvent]);
+  var scopeEmpty = !!scopedEvent && !loading && scopedSpeakers.length === 0;
+
   var filtered = useMemo(function () {
-    return speakers.filter(function (s) {
+    return scopedSpeakers.filter(function (s) {
       if (search.trim()) {
         var q = search.toLowerCase();
         var textMatch =
@@ -462,7 +476,7 @@ export default function Speakers() {
       if (activeSector && !(cats && cats.sectors.has(activeSector))) return false;
       return true;
     });
-  }, [speakers, search, activePillar, activeSector, categoryMap]);
+  }, [scopedSpeakers, search, activePillar, activeSector, categoryMap]);
 
   var hasFilters = !!(activePillar || activeSector || search.trim());
   var fp = { dark: dark, accent: accent, border: border, inactiveText: inactiveText };
@@ -619,6 +633,13 @@ export default function Speakers() {
           </div>
         </section>
 
+        {/* EVENT SCOPE — the pill's selection as a filter for this page */}
+        {scope.events.length > 0 && (
+          <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "2rem 1.5rem 0" }}>
+            <EventScopeBar events={scope.events} scopedEvent={scopedEvent} onSelect={scope.select} />
+          </div>
+        )}
+
         <SpeakerMarquee dark={dark} title="Where our speakers work at" />
 
         {/* STICKY BAR */}
@@ -671,10 +692,12 @@ export default function Speakers() {
             }}>
               {loading
                 ? "Loading speakers..."
-                : filtered.length + " speaker" + (filtered.length !== 1 ? "s" : "") + " · TTFC 2026"}
+                : filtered.length + " speaker" + (filtered.length !== 1 ? "s" : "") + " · " + (scopedEvent ? eventPillLabel(scopedEvent) : "TTFC 2026")}
             </p>
             {loading ? (
               <div style={{ textAlign: "center", color: mutedText, padding: 80 }}>Loading speakers...</div>
+            ) : scopeEmpty ? (
+              <ScopedEmptyState event={scopedEvent} noun="speakers" />
             ) : filtered.length === 0 ? (
               <div style={{
                 display: "flex", flexDirection: "column", alignItems: "center",
@@ -711,7 +734,7 @@ export default function Speakers() {
                 })}
               </div>
             )}
-            {!loading && (
+            {!loading && !scopeEmpty && (
               <div style={{
                 marginTop: "3.5rem", padding: "2.2rem 2rem", borderRadius: "10px",
                 border: "1px solid " + border,

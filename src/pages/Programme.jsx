@@ -5,6 +5,8 @@ import Navbar from "../components/Navbar.tsx";
 import Footer from "../components/Footer";
 import WaitlistForm from "../components/WaitlistForm";
 import useAgenda from "../hooks/useAgenda";
+import EventScopeBar, { ScopedEmptyState, matchesEventScope, useEventScope } from "../components/EventScopeBar";
+import { eventPillLabel } from "../lib/events";
 import useSiteSettings, { PUBLIC_API } from "../hooks/useSiteSettings";
 import useSeo from "../hooks/useSeo";
 import { client, speakerPhotoUrl } from "../utils/sanity";
@@ -48,7 +50,7 @@ const SEO_TITLE = "TTFC 2026 Programme at a Glance | The Tech Festival Canada";
 const SEO_DESCRIPTION = "Key times, the agenda, speakers and exhibitors of The Tech Festival Canada, October 26–27, 2026 at The Westin Harbour Castle, Toronto.";
 
 // The Speakers page's list and order (src/pages/Speakers.jsx).
-const SPEAKER_QUERY = '*[_type == "speaker"] | order(order asc, coalesce(rowPosition, 9999) asc) { _id, name, title, company, image }';
+const SPEAKER_QUERY = '*[_type == "speaker"] | order(order asc, coalesce(rowPosition, 9999) asc) { _id, name, title, company, image, "eventIds": events[]._ref }';
 const SPEAKERS_SHOWN = 12;
 
 const PILLAR_LABEL = Object.fromEntries(PILLARS.map((p) => [p.value, p.label]));
@@ -423,7 +425,14 @@ export default function Programme() {
   const settings = useSiteSettings();
   const copy = stayFrom(settings);
   const { sessions, source, loaded } = useAgenda();
-  const times = useMemo(() => keyTimes(sessions, { live: source === "cms" }), [sessions, source]);
+  // Event scope: the shared pill selection (default: the most recent event).
+  // Sessions and speakers filter to the scoped event's tagged docs once the
+  // CMS agenda has loaded; with "All events" this page is exactly as before.
+  const scope = useEventScope();
+  const scopedEvent = scope.scopedEvent;
+  const scopedSessions = scopedEvent && loaded ? sessions.filter((s) => matchesEventScope(s, scopedEvent._id)) : sessions;
+  const scopeEmpty = !!scopedEvent && loaded && scopedSessions.length === 0;
+  const times = useMemo(() => keyTimes(scopedSessions, { live: source === "cms" }), [scopedSessions, source]);
 
   const [speakerDocs, setSpeakerDocs] = useState(null);
   const [speakersFailed, setSpeakersFailed] = useState(false);
@@ -435,6 +444,8 @@ export default function Programme() {
     return () => { alive = false; };
   }, []);
   const speakerIndex = useMemo(() => buildSpeakerIndex(speakerDocs || []), [speakerDocs]);
+  const scopedDocs = !scopedEvent || !speakerDocs ? speakerDocs : speakerDocs.filter((d) => matchesEventScope(d, scopedEvent._id));
+  const speakersScopeEmpty = !!scopedEvent && !!speakerDocs && scopedDocs.length === 0;
 
   const [ex, setEx] = useState({ status: "loading", data: null });
   const [exTry, setExTry] = useState(0);
@@ -688,6 +699,14 @@ export default function Programme() {
           </div>
         </section>
 
+        {scope.events.length > 0 && (
+          <section className="pg-sec" style={{ paddingTop: 28, paddingBottom: 0 }} aria-label="Choose an event">
+            <div className="pg-wrap">
+              <EventScopeBar events={scope.events} scopedEvent={scopedEvent} onSelect={scope.select} />
+            </div>
+          </section>
+        )}
+
         <section id="key-times" className="pg-sec" aria-labelledby="pg-key-h" style={{ paddingTop: 8 }}>
           <div className="pg-wrap">
             <div className="pg-head">
@@ -697,7 +716,11 @@ export default function Programme() {
               </div>
               <Link to="/tickets" className="pg-link">What each pass includes <ArrowRight size={16} aria-hidden="true" /></Link>
             </div>
-            <KeyTimes data={times} />
+            {scopeEmpty ? (
+              <p className="pg-muted">{eventPillLabel(scopedEvent)} — key times will be announced with its programme.</p>
+            ) : (
+              <KeyTimes data={times} />
+            )}
           </div>
         </section>
 
@@ -709,7 +732,11 @@ export default function Programme() {
                 <p className="pg-lede">Every session, day by day. Open one for its speakers, or see it in the full agenda.</p>
               </div>
             </div>
-            <AgendaSummary sessions={sessions} loaded={loaded} speakerIndex={speakerIndex} dark={dark} />
+            {scopeEmpty ? (
+              <ScopedEmptyState event={scopedEvent} noun="sessions" />
+            ) : (
+              <AgendaSummary sessions={scopedSessions} loaded={loaded} speakerIndex={speakerIndex} dark={dark} />
+            )}
             <div className="pg-cta-row">
               <Link to="/agenda" className="pg-btn">See the full agenda <ArrowRight size={16} aria-hidden="true" /></Link>
             </div>
@@ -724,7 +751,12 @@ export default function Programme() {
                 <p className="pg-lede">Select a speaker for their profile and sessions.</p>
               </div>
             </div>
-            <SpeakerGrid docs={speakerDocs} failed={speakersFailed} />
+            {speakersScopeEmpty ? (
+              <ScopedEmptyState event={scopedEvent} noun="speakers" />
+            ) : (
+              <SpeakerGrid docs={scopedDocs} failed={speakersFailed} />
+            )}
+
           </div>
         </section>
 

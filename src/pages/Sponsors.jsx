@@ -3,9 +3,17 @@ import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import SponsorMarquee from "../components/SponsorMarquee";
+import EventScopeBar, { ScopedEmptyState, useEventScope } from "../components/EventScopeBar";
 
 export default function Sponsors() {
   const [isDark, setIsDark] = useState(false);
+  // Event scope: the shared pill selection (default: the most recent
+  // event). Null — All events chosen — is this page exactly as before.
+  const scope = useEventScope();
+  const scopedEvent = scope.scopedEvent;
+  const [scopedCount, setScopedCount] = useState(null);
+
+  useEffect(() => { setScopedCount(null); }, [scopedEvent?._id]);
 
   useEffect(() => {
     setIsDark(document.body.classList.contains("dark-mode"));
@@ -34,6 +42,12 @@ export default function Sponsors() {
       }}
     >
       <Navbar />
+
+      {scope.events.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "center", padding: "96px 5% 0" }}>
+          <EventScopeBar events={scope.events} scopedEvent={scopedEvent} onSelect={scope.select} />
+        </div>
+      )}
 
       <main
         style={{
@@ -111,7 +125,13 @@ export default function Sponsors() {
         </motion.div>
       </main>
 
-      <SponsorMarquee dark={isDark} />
+      {scopedEvent && scopedCount === 0 ? (
+        <ScopedEmptyState event={scopedEvent} noun="sponsors" />
+      ) : (
+        <SponsorMarquee dark={isDark}
+          eventId={scopedEvent ? scopedEvent._id : null}
+          onCount={scopedEvent ? setScopedCount : undefined} />
+      )}
 
       <Footer />
     </div>

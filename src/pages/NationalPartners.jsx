@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import SiteHeader from "../components/SiteHeader";
 import Footer from "../components/Footer";
 import YearPills from "../components/YearPills";
 import AnnouncedSoon from "../components/AnnouncedSoon";
 import useSeo from "../hooks/useSeo";
 import { client, urlFor } from "../utils/sanity";
-import { editionYears, useEvents } from "../lib/events";
+import {
+  editionYears, getPillSelection, resolvePillSelection, setPillSelection, useEvents,
+} from "../lib/events";
+import { ALL_SELECTION, mostRecentEvent } from "../components/EventScopeBar";
 
 /* =========================================================
    National Partners (Phase 4): the roll-up page above the
@@ -31,9 +34,36 @@ const CATEGORY_TITLES = {
 
 export default function NationalPartners() {
   const params = useParams();
+  const navigate = useNavigate();
   const { events } = useEvents();
   const years = editionYears(events);
-  const selected = params.year ? Number(params.year) : years[0];
+  // Partners are YEAR-level only — never filtered to a single Briefing: a
+  // partner shows under a year when any of its tagged events fall in it.
+  // The URL year wins; on the landing the default is the shared pill
+  // selection's year when one is set, else the most recent year (the newest
+  // edition that has happened). "All years" — the national roll-up — is the
+  // shared slot's "all" sentinel, or the All years pill below.
+  const [storedSel] = useState(() => getPillSelection());
+  const [allYears, setAllYears] = useState(false);
+  const sharedYear = useMemo(() => {
+    if (!storedSel || storedSel === ALL_SELECTION) return null;
+    const resolved = resolvePillSelection(events, storedSel);
+    return resolved && resolved.event ? Number(resolved.event.year) : null;
+  }, [events, storedSel]);
+  const recentYear = useMemo(() => {
+    const mr = mostRecentEvent(events);
+    return mr ? Number(mr.year) : null;
+  }, [events]);
+  const urlYear = params.year ? Number(params.year) : null;
+  const selected = urlYear != null
+    ? urlYear
+    : (allYears || storedSel === ALL_SELECTION ? null : (sharedYear ?? recentYear ?? years[0] ?? null));
+  const chooseAllYears = () => {
+    setPillSelection(ALL_SELECTION);
+    setAllYears(true);
+    if (urlYear != null) navigate("/partners");
+  };
+  const clearAllSentinel = () => { if (getPillSelection() === ALL_SELECTION) setPillSelection(null); };
   const [partners, setPartners] = useState(null);
   useSeo(`TTFC partners ${selected || ""}`.trim(), "The partners of The Tech Festival Canada, across every city and edition.");
 
@@ -47,9 +77,11 @@ export default function NationalPartners() {
   }, []);
 
   const yearEventIds = new Set(events.filter((e) => Number(e.year) === selected).map((e) => e._id));
-  const mine = (partners || []).filter(
-    (p) => !p.eventIds || p.eventIds.length === 0 || p.eventIds.some((id) => yearEventIds.has(id))
-  );
+  const mine = selected == null
+    ? (partners || [])
+    : (partners || []).filter(
+        (p) => !p.eventIds || p.eventIds.length === 0 || p.eventIds.some((id) => yearEventIds.has(id))
+      );
   const groups = Object.entries(CATEGORY_TITLES)
     .map(([key, title]) => ({ key, title, items: mine.filter((p) => (p.category || "other") === key) }))
     .filter((g) => g.items.length > 0);
@@ -66,8 +98,20 @@ export default function NationalPartners() {
             The organisations behind The Tech Festival Canada, across every city. Partner and sponsor packages for each
             edition are announced with that event&rsquo;s pricing.
           </p>
-          <div style={{ marginTop: 20 }}>
-            <YearPills years={years} current={selected} basePath="/partners" />
+          <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 8, alignItems: "flex-start" }}>
+            <button type="button" aria-pressed={selected == null} onClick={chooseAllYears}
+              style={{
+                padding: "8px 18px", borderRadius: 999, cursor: "pointer",
+                fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 1,
+                border: `1.5px solid ${selected == null ? "#f5a623" : "rgba(127,90,240,0.35)"}`,
+                background: selected == null ? "rgba(245,166,35,0.14)" : "transparent",
+                color: "inherit",
+              }}>
+              All years
+            </button>
+            <div style={{ display: "contents" }} onClick={clearAllSentinel}>
+              <YearPills years={years} current={selected} basePath="/partners" />
+            </div>
           </div>
 
           {partners === null ? (

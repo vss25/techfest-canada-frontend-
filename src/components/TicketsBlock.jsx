@@ -84,13 +84,13 @@ export default function TicketsBlock({ ev }) {
   if (lifecycle === "past") {
     return (
       <AnnouncedSoon eventKey={ev.eventKey} title="This event has ended"
-        message="Thanks to everyone who came. The next edition is on its way — leave your email and we'll keep you updated, including when pricing is announced." />
+        message="Thank you to everyone who was in the room. The next edition is on its way — leave your email and we'll keep you updated, including when its pricing is announced." />
     );
   }
   if (lifecycle === "just-ended") {
     return (
       <AnnouncedSoon eventKey={ev.eventKey} title="Ticket sales have closed"
-        message="This event has just wrapped. Leave your email and we'll keep you updated about the next edition — including when its pricing is announced." />
+        message="This event has just wrapped — thank you to everyone who came. Leave your email and we'll keep you updated about the next edition, including when its pricing is announced." />
     );
   }
   if (!announced || types === null || (types !== undefined && types.length === 0)) {

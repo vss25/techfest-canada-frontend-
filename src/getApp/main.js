@@ -8,4 +8,7 @@ if (t.kind === "store") {
   track("pwa_guide_open", { from: t.from, flow: "qr-store", device: t.os });
   flush();
 }
-window.location.replace(t.url);
+// A store link leaves this page in the history, so coming back from a store that hasn't got TTFC (not every
+// country does) shows its "Use TTFC in your browser" line. /app/install replaces it, as before.
+if (t.kind === "store") window.location.assign(t.url);
+else window.location.replace(t.url);

@@ -11,8 +11,9 @@ import { storeNames, storePlan } from "../../lib/appStores.js";
        browser too, so nobody has to switch browsers first;
      - on a computer, both badges and a QR code to this page on the
        phone;
-     - "Already using TTFC in your browser? You can keep using it
-       here": the web app keeps working at /app, it just isn't
+     - "App not in your country's store? Use TTFC here in your
+       browser" (Oct 27 2026: the stores don't list TTFC in every
+       country, not yet in the EU): the web app keeps working at /app, it just isn't
        offered as a Home Screen install any more (no steps, no
        videos; the recordings in public/app/guide stay, unused).
    Opened from the emails, the website's "Get the TTFC app" links
@@ -44,7 +45,7 @@ export function getAppPage({ os, standalone = false } = {}, urls) {
     search: own ? `Button not opening? Search for “${STORE_NAME}” in ${own.id === "appstore" ? "the App Store" : "Google Play"}.` : "",
     qr: plan.phone ? "" : `${INSTALL_URL}?source=desktop-qr`,
     keep: plan.phone
-      ? { text: standalone ? "You're using the TTFC web app. You can keep using it here." : "Already using TTFC in your browser? You can keep using it here.", link: true }
+      ? { text: standalone ? "You're using the TTFC web app. You can keep using it here." : "App not in your country's store? Use TTFC here in your browser.", link: true }
       : { text: `Already using TTFC in your phone's browser? It keeps working at ${WEB_APP_LABEL}.`, link: false },
   };
 }

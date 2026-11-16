@@ -55,6 +55,15 @@ export function storeNames(urls = LIVE, os = "") {
   return (mine ? [mine] : live).map((s) => (s.id === "appstore" ? "the App Store" : "Google Play")).join(" or ");
 }
 
+/** The line under the store badges on a phone (Oct 27 2026, the organiser: "make it accessible on web app"): the
+    stores don't list TTFC in every country (not yet in the EU), so anyone whose store hasn't got it can use the
+    web app at /app. → { text, linkText, href } or null: not on a computer (/app there is "open it on your phone"),
+    not inside the web app itself (/app/…) and not in a store app's in-app browser. Pure. */
+export function browserFallback({ phone, pathname = "", native = false } = {}) {
+  if (!phone || native || /^\/app(\/|$)/.test(String(pathname))) return null;
+  return { text: "App not in your country's store?", linkText: "Use TTFC in your browser", href: "/app/?from=store-badges" };
+}
+
 /**
  * The phone link a desktop QR code opens: /app/install, the "Get the TTFC app" page, which puts the phone's own
  * store first, tagged ?source=desktop-qr. Another /app/… path is kept as it is. Nothing else from the address

@@ -21,8 +21,8 @@ import { track } from "../../lib/pwaEvents";
        phone;
      - (the swag kit advert was taken off on Oct 27 2026: the
        leaderboard is appreciation, not a prize);
-     - "Already using TTFC in your browser? You can keep using it
-       here" (the web app keeps working at /app).
+     - "App not in your country's store? Use TTFC here in your
+       browser" (the web app keeps working at /app).
    No Home Screen steps or videos any more. Opened from the emails
    (…/app/install?utm_…#r=<token>: main.jsx reports the visit), the
    website's "Get the TTFC app" links (/app/?install=1), the sign-in

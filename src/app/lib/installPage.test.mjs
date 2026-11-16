@@ -11,7 +11,7 @@ test("a phone: both stores named, its own store's search hint, no QR, a link to 
   assert.match(ios.lead, /^Free on the App Store\./);
   assert.match(ios.search, /“The Tech Festival Canada” in the App Store/);
   assert.equal(ios.qr, "");
-  assert.deepEqual(ios.keep, { text: "Already using TTFC in your browser? You can keep using it here.", link: true });
+  assert.deepEqual(ios.keep, { text: "App not in your country's store? Use TTFC here in your browser.", link: true });
   assert.match(getAppPage({ os: "android" }).search, /in Google Play\.$/);
   assert.match(getAppPage({ os: "ios", standalone: true }).keep.text, /^You're using the TTFC web app/);
 });

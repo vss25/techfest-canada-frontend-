@@ -67,7 +67,8 @@ export default function AdminShell({ me, onSignOut, children }) {
       </a>
 
       {/* Desktop: rail + workspace menu */}
-      <div className="fixed inset-y-0 left-0 z-40 hidden lg:block">
+      {/* Above the staging banner when there is one (--ttfc-staging-bar, components/PreviewBar.jsx). */}
+      <div className="fixed left-0 top-0 z-40 hidden lg:block" style={{ bottom: "var(--ttfc-staging-bar, 0px)" }}>
         <Navigation />
       </div>
 

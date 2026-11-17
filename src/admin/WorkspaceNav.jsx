@@ -159,7 +159,8 @@ export function PhoneTabs({ onSignOut }) {
       )}
       {more && (
         <div role="dialog" aria-modal="true" aria-label="More pages"
-          className="fixed inset-x-0 bottom-[72px] z-50 flex max-h-[78vh] flex-col gap-3.5 overflow-auto rounded-t-[18px] bg-white px-4 pb-7 pt-[18px] lg:hidden">
+          className="fixed inset-x-0 z-50 flex max-h-[78vh] flex-col gap-3.5 overflow-auto rounded-t-[18px] bg-white px-4 pb-7 pt-[18px] lg:hidden"
+          style={{ bottom: "calc(72px + var(--ttfc-staging-bar, 0px))" }}>
           <div className="h-1 w-10 self-center rounded bg-[#E3E0EE]" aria-hidden="true" />
           {rest.map((w) => (
             <div key={w.id} className="flex flex-col gap-1.5">
@@ -177,8 +178,9 @@ export function PhoneTabs({ onSignOut }) {
         </div>
       )}
       <div role="navigation" aria-label="Workspaces"
-        className="fixed inset-x-0 bottom-0 z-50 grid h-[72px] border-t border-[#E3E0EE] bg-white lg:hidden"
-        style={{ gridTemplateColumns: `repeat(${tabs.length + 1}, minmax(0, 1fr))`, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        className="fixed inset-x-0 z-50 grid h-[72px] border-t border-[#E3E0EE] bg-white lg:hidden"
+        // Above the staging banner when there is one (--ttfc-staging-bar, components/PreviewBar.jsx).
+        style={{ gridTemplateColumns: `repeat(${tabs.length + 1}, minmax(0, 1fr))`, paddingBottom: "env(safe-area-inset-bottom, 0px)", bottom: "var(--ttfc-staging-bar, 0px)" }}>
         {tabs.map((w) => <TabButton key={w.id} to={`/admin/ws/${w.id}`} label={w.label} d={TAB_ICON[w.id] || w.rail} on={!more && w.id === current} />)}
         <TabButton label="More" d={MORE_DOTS} on={more || !TABS.includes(current)} onClick={() => setMore((m) => !m)} />
       </div>

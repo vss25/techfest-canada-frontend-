@@ -9,7 +9,8 @@ import { Link, useLocation } from "react-router-dom";
 import { AlertTriangle, Eye, EyeOff, Inbox, Loader2, Lock, RefreshCw, X } from "lucide-react";
 import { useAdmin } from "./adminContext";
 import { navItemFor } from "./nav";
-import HelpButton from "./HelpButton";
+import HelpButton, { HelpLabel } from "./HelpButton";
+import { useFieldHelp } from "./fieldHelp";
 import { isManagementError } from "./api";
 import { twMerge } from "tailwind-merge";
 
@@ -122,9 +123,10 @@ export function Field({ label, hint, error, required, children, className, id: i
   return (
     <div className={cx("flex flex-col gap-1.5", className)}>
       {label && (
-        <label htmlFor={id} className="text-[13px] font-semibold text-ttfc-text/90">
+        // The ⓘ after the label explains the field when the page's guide does (help.js FIELD_HELP).
+        <HelpLabel label={label} htmlFor={id}>
           {label}{required && <span className="ml-0.5 text-ttfc-pink" aria-hidden="true">*</span>}
-        </label>
+        </HelpLabel>
       )}
       {child}
       {error ? <p className="text-xs text-red-300" role="alert">{error}</p> : hint ? <p className="text-xs text-ttfc-dim">{hint}</p> : null}
@@ -195,7 +197,7 @@ export function Switch({ checked, onChange, label, description, disabled, id: id
       style={checked && onColor ? { background: onColor, borderColor: onColor } : undefined}
       className={cx(
         "relative inline-flex shrink-0 items-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50",
-        track, checked ? (onColor ? "" : "border-transparent bg-gradient-to-r from-ttfc-pink to-ttfc-purple") : "border-ttfc-line bg-ttfc-track", focusRing,
+        track, checked ? (onColor ? "" : "border-transparent bg-[#D6308C]") : "border-ttfc-line bg-ttfc-track", focusRing,
       )}
     >
       <span className={cx("inline-block translate-x-1 rounded-full bg-white shadow transition", knob, checked && shift)} />
@@ -204,10 +206,12 @@ export function Switch({ checked, onChange, label, description, disabled, id: id
   if (!label) return btn;
   return (
     <div className="flex items-start justify-between gap-4">
-      <label htmlFor={id} className="min-w-0 cursor-pointer">
-        <span className="block text-sm font-semibold text-ttfc-text">{label}</span>
+      <div className="min-w-0">
+        <SwitchHelp label={label}>
+          <label htmlFor={id} className="cursor-pointer text-sm font-semibold text-ttfc-text">{label}</label>
+        </SwitchHelp>
         {description && <span className="mt-0.5 block text-xs leading-relaxed text-ttfc-muted">{description}</span>}
-      </label>
+      </div>
       {btn}
     </div>
   );
@@ -561,5 +565,26 @@ export function Drawer({ open, onClose, title, description, children, footer, wi
       </aside>
     </div>,
     document.body,
+  );
+}
+
+/* A switch's label with its ⓘ (the label stays the switch's own clickable label). */
+function SwitchHelp({ label, children }) {
+  const text = useFieldHelp(label);
+  const [open, setOpen] = useState(false);
+  const panel = useId();
+  return (
+    <>
+      <span className="flex items-center gap-1.5">
+        {children}
+        {text && (
+          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls={panel} aria-label={`What is ${label}?`} title={`What is ${label}?`}
+            className={cx("inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border text-[11px] font-bold leading-none", open ? "border-[#D6308C] bg-[#D6308C] text-white" : "border-[#CFCBE0] bg-white text-[#6B6688] hover:border-[#D6308C] hover:text-[#D6308C]", focusRing)}>
+            i
+          </button>
+        )}
+      </span>
+      {text && open && <span id={panel} role="note" className="mt-1.5 block rounded-lg border border-[#E3E0EE] bg-[#F6F5FA] px-3 py-2 text-xs leading-relaxed text-[#4A4566]">{text}</span>}
+    </>
   );
 }

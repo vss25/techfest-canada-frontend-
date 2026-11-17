@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { NAV, WORKSPACES, navItemFor, titleFor, workspaceFor } from "./nav.js";
-import { HELP, START_HERE } from "./help.js";
+import { FIELD_HELP, HELP, START_HERE, fieldHelpFor } from "./help.js";
 import {
   NOT_FOR_VOLUNTEERS, VOLUNTEER_ACCESS, VOLUNTEER_FORBIDDEN, VOLUNTEER_FORBIDDEN_TEXT, accountKind, isVolunteerAccount, navFor, searchGroupsFor,
   volunteerMayOpen, volunteerRecents, workspacesFor,
@@ -178,4 +178,15 @@ test("every page in the menu has a how-to guide, and every guide belongs to a pa
   }
   for (const key of Object.keys(HELP)) assert.ok(tos.includes(key), `guide for a page not in the menu: ${key}`);
   assert.ok(START_HERE.length >= 4 && START_HERE.every((s) => s.h && s.p));
+});
+
+test("field help: only for pages in the menu, every explanation a real sentence, unknown labels give nothing", () => {
+  const tos = WORKSPACES.flatMap((w) => w.groups.flatMap((g) => g.items.map((it) => it.to)));
+  for (const [to, fields] of Object.entries(FIELD_HELP)) {
+    assert.ok(tos.includes(to), `field help for a page not in the menu: ${to}`);
+    for (const [label, text] of Object.entries(fields)) assert.ok(text.length > 20 && /[.!?]$/.test(text), `${to} › ${label}`);
+  }
+  assert.match(fieldHelpFor("content/events", "City"), /address/);
+  assert.equal(fieldHelpFor("content/events", "Nope"), "");
+  assert.equal(fieldHelpFor(undefined, "City"), "");
 });

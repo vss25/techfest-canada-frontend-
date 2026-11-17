@@ -6,6 +6,7 @@ import { Banner, Button, Card, ErrorState, Input, LoadingState, PageHeader, Swit
 import ContentSettings from "../content/ContentSettings";
 import { Globe, Lock } from "lucide-react";
 import { LIVE_NOTE } from "./cmsMeta";
+import { ChangeBadge } from "./workflow";
 import useCmsStatus from "./useCmsStatus";
 import LargeSiteFiles from "./LargeSiteFiles";
 
@@ -26,18 +27,18 @@ export default function SiteSettings() {
   const toast = useToast();
   const { configured } = useCmsStatus();
   const readOnly = configured === false;
-  const { data, error, loading, reload, setData } = useApi("/cms/siteSettings");
+  const { data, error, loading, reload, setData } = useApi("/cms/siteSettings?drafts=1");
   const [busy, setBusy] = useState("");
   const doc = data?.[0] || null;
 
   const toggle = async (key, value) => {
     setBusy(key);
     const prev = data;
-    setData(doc ? [{ ...doc, [key]: value }, ...data.slice(1)] : [{ [key]: value }]);
+    setData(doc ? [{ ...doc, [key]: value, hasDraft: true }, ...data.slice(1)] : [{ [key]: value, hasDraft: true }]);
     try {
-      if (doc?._id) await api.patch(`/cms/siteSettings/${doc._id}`, { [key]: value });
+      if (doc?._id) await api.patch(`/cms/siteSettings/${doc._id}?draft=1`, { [key]: value });
       else {
-        const saved = await api.post("/cms/siteSettings", { [key]: value });
+        const saved = await api.post("/cms/siteSettings?draft=1", { [key]: value });
         setData([saved]);
       }
       toast.success(`${value ? "Turned on" : "Turned off"}. ${LIVE_NOTE}`);
@@ -55,7 +56,7 @@ export default function SiteSettings() {
 
       <section aria-labelledby="sections-h" className="mb-10">
         <h2 id="sections-h" className="mb-1 text-base font-semibold">Homepage sections</h2>
-        <p className="mb-4 text-sm text-ttfc-muted">Stored in Sanity. Saves as soon as you flip a switch.</p>
+        <p className="mb-4 text-sm text-ttfc-muted">Saved as soon as you flip a switch, then reach the website through Changes (staging first, then a manager publishes). <ChangeBadge doc={doc} /></p>
         {configured === false && (
           <Banner tone="warn" icon={Lock} className="mb-4 max-w-2xl" title="Read-only for now">
             Editing is read-only until SANITY_WRITE_TOKEN is added on Render.
@@ -91,7 +92,7 @@ export default function SiteSettings() {
 /* The numbers on the About page (Sanity `aboutContent.stats`): value, suffix and label. */
 function AboutNumbers({ readOnly }) {
   const toast = useToast();
-  const { data, error, loading, reload, setData } = useApi("/cms/aboutContent");
+  const { data, error, loading, reload, setData } = useApi("/cms/aboutContent?drafts=1");
   const doc = data?.[0] || null;
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -103,8 +104,8 @@ function AboutNumbers({ readOnly }) {
     setSaving(true);
     try {
       const body = { stats: stats.map((s) => ({ ...s, label: String(s.label).trim(), value: Number(s.value), suffix: String(s.suffix || "").trim() })) };
-      const saved = await api.patch(`/cms/aboutContent/${doc._id}`, body);
-      setData([{ ...doc, stats: saved?.stats || body.stats }, ...data.slice(1)]);
+      const saved = await api.patch(`/cms/aboutContent/${doc._id}?draft=1`, body);
+      setData([{ ...doc, stats: saved?.stats || body.stats, hasDraft: true }, ...data.slice(1)]);
       setDraft(null);
       toast.success(`Saved. ${LIVE_NOTE}`);
     } catch (err) {
@@ -117,7 +118,7 @@ function AboutNumbers({ readOnly }) {
   return (
     <section aria-labelledby="about-numbers-h" data-highlight="aboutNumbers" className="mb-10">
       <h2 id="about-numbers-h" className="mb-1 text-base font-semibold">About page numbers</h2>
-      <p className="mb-4 text-sm text-ttfc-muted">The figures in the About section, for example 1000+ attendees across 2 days. Stored in Sanity.</p>
+      <p className="mb-4 text-sm text-ttfc-muted">The figures in the About section, for example 1000+ attendees across 2 days. Stored in Sanity; goes live through Changes. <ChangeBadge doc={doc} /></p>
       {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !doc ? (
         <Card className="max-w-2xl"><p className="text-sm text-ttfc-muted">There's no About content in the CMS yet.</p></Card>
       ) : (

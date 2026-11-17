@@ -10,6 +10,7 @@ import {
   Switch, Tabs, Textarea, focusRing,
 } from "../ui";
 import { CmsBanners } from "./CmsParts";
+import { ChangeBadge } from "./workflow";
 import { LIVE_NOTE } from "./cmsMeta";
 import useCmsStatus from "./useCmsStatus";
 import { EARLIER_STEPS, LATER_STEPS, planShift, stageOf } from "./agendaShift";
@@ -162,7 +163,7 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
     if (creating) body.sessionId = uniqueSessionId(form.day, all);
     setSaving(true);
     try {
-      const saved = creating ? await api.post("/cms/session", body) : await api.patch(`/cms/session/${doc._id}`, body);
+      const saved = creating ? await api.post("/cms/session?draft=1", body) : await api.patch(`/cms/session/${doc._id}?draft=1`, body);
       toast.success(creating ? `Session added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
       onSaved({ ...(doc || {}), ...body, ...(saved || {}) });
     } catch (err) { toast.error(err); } finally { setSaving(false); }
@@ -333,6 +334,7 @@ function SessionRow({ s, speakerIndex, readOnly, globalLive, onEdit, onDuplicate
           {live.qaOn && <Badge>{BADGE_LABELS.qa}<span className="sr-only"> on in the app</span></Badge>}
         </div>
         <p className="mt-1 font-semibold text-ttfc-text">{s.title}</p>
+        <ChangeBadge doc={s} className="mt-1" />
         {(people.length > 0 || s.moderator?.name) && (
           <p className="mt-1 text-xs leading-relaxed text-ttfc-muted">
             {people.length > 0 && <><Mic className="mr-1 inline h-3 w-3" aria-hidden="true" />{people.join(", ")}</>}
@@ -489,9 +491,9 @@ export default function Agenda() {
   const toast = useToast();
   const { configured } = useCmsStatus();
   const readOnly = configured === false;
-  const { data, error, loading, reload, setData } = useApi("/cms/session");
-  const speakers = useApi("/cms/speaker");
-  const eventsApi = useApi("/cms/event");
+  const { data, error, loading, reload, setData } = useApi("/cms/session?drafts=1");
+  const speakers = useApi("/cms/speaker?drafts=1");
+  const eventsApi = useApi("/cms/event?drafts=1");
   const eventList = useMemo(() => (eventsApi.data || []).filter((e) => e?.name), [eventsApi.data]);
   const [eventId, setEventId] = useState("");
   const appContent = useApi("/console/app-content");   // the global polls / Q&A switches (on if it can't be read)
@@ -534,7 +536,7 @@ export default function Agenda() {
     const body = toBody({ ...toForm(s), title: `${s.title} (copy)` }, null);
     body.sessionId = uniqueSessionId(s.day, list);
     try {
-      const saved = await api.post("/cms/session", body);
+      const saved = await api.post("/cms/session?draft=1", body);
       setData((xs) => [...(xs || []), { ...body, ...(saved || {}) }]);
       toast.success("Session duplicated — edit the copy to change it");
     } catch (err) { toast.error(err); }

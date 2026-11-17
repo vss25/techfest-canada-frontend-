@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus, Eye, Lock, Plus, Trash2, Upload, X } from "lucide-react";
+import { CalendarPlus, Eye, Lock, Plus, Send, Trash2, Upload, X } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
@@ -11,7 +11,8 @@ import {
 import { ImagePicker } from "./CmsParts";
 import useCmsStatus from "./useCmsStatus";
 import { eventPath, formatDateRange } from "../../lib/events";
-import { previewUrl } from "../../lib/preview";
+import { WorkflowBanner } from "./workflow";
+import { changeState, stagingUrl } from "./workflowState";
 
 /* =========================================================
    Admin › Website content › Event pages (redesign step 1).
@@ -33,9 +34,7 @@ const PAGE_MODES = [
 ];
 
 function stateOf(ev) {
-  if (ev.unpublished) return { tone: "warn", label: "Draft, not on the website yet" };
-  if (ev.hasDraft) return { tone: "purple", label: "Live, with unpublished changes" };
-  return { tone: "good", label: "Live" };
+  return changeState(ev) || { tone: "good", label: "Live" };
 }
 
 function toForm(ev) {
@@ -74,7 +73,7 @@ function NewEvent({ onCreated, onCancel }) {
     setBusy(true);
     try {
       const created = await api.post("/cms/event", { ...f, name: f.name.trim() || autoName, year: Number(f.year), pageMode: "auto" });
-      toast.success("Event created as a draft. It isn't on the website until it's published.");
+      toast.success("Event created. It isn't on any website until it's sent to staging and published.");
       onCreated(created);
     } catch (err) { toast.error(err); } finally { setBusy(false); }
   };
@@ -152,25 +151,25 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
     setBusy(name);
     try { await fn(); } catch (err) { toast.error(err); } finally { setBusy(""); }
   };
-  const onSave = run("save", async () => { await saveDraft(); toast.success("Draft saved. Preview it, then publish when it's ready."); });
-  const onPreview = run("preview", async () => {
-    // Open the tab first (pop-up blockers allow it only straight from the click), then save.
-    const tab = window.open("about:blank", "_blank");
+  const onSave = run("save", async () => { await saveDraft(); toast.success("Saved. Send it to staging when it's ready."); });
+  const onStage = run("stage", async () => {
     await saveDraft();
-    if (tab) tab.location.href = previewUrl(path); else window.location.href = previewUrl(path);
+    const out = await api.post(`/cms/event/${ev._id}/stage`);
+    onSaved({ ...ev, ...out, citySkylineUrl: form.citySkylineUrl, _id: ev._id });
+    toast.success("On staging. Open it on staging to check it.");
   });
+  const onOpenStaging = () => window.open(stagingUrl(path), "_blank", "noopener");
   const onPublish = run("publish", async () => {
-    await saveDraft();
     const out = await api.post(`/cms/event/${ev._id}/publish`);
-    onSaved({ ...ev, ...out, citySkylineUrl: form.citySkylineUrl, _id: ev._id, hasDraft: false, unpublished: false });
+    onSaved({ ...ev, ...out, citySkylineUrl: form.citySkylineUrl, _id: ev._id });
     toast.success("Published. The page is live on the website within about a minute.");
   });
-  const onDiscard = run("discard", async () => {
-    const out = await api.del(`/cms/event/${ev._id}/draft`);
-    if (out.deleted) { toast.success("Draft event deleted."); onGone(ev._id); return; }
-    toast.success("Unpublished changes thrown away.");
+  const onDiscard = (which) => run("discard", async () => {
+    const out = await api.del(`/cms/event/${ev._id}/draft?which=${which}`);
+    if (out.deleted) { toast.success("Event deleted: it was never on the website."); onGone(ev._id); return; }
+    toast.success(which === "unsent" ? "Saved changes thrown away." : "Taken off staging.");
     onSaved(null);
-  });
+  })();
   const onDelete = run("delete", async () => {
     await api.del(`/cms/event/${ev._id}`);
     toast.success("Event deleted from the website.");
@@ -190,11 +189,11 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
             <span>{path}</span>
           </div>
         </div>
-        <Button variant="secondary" onClick={onSave} disabled={disabled || !dirty}>{busy === "save" ? "Saving…" : "Save draft"}</Button>
-        <Button variant="secondary" icon={Eye} onClick={onPreview} disabled={disabled}>{busy === "preview" ? "Opening…" : "Preview"}</Button>
-        {isManagement
-          ? <Button variant="primary" icon={Upload} onClick={onPublish} disabled={disabled || (!dirty && !ev.hasDraft)}>{busy === "publish" ? "Publishing…" : "Publish"}</Button>
-          : <span className="text-xs text-ttfc-muted">A manager publishes</span>}
+        <Button variant="secondary" onClick={onSave} disabled={disabled || !dirty}>{busy === "save" ? "Saving…" : "Save"}</Button>
+        <Button variant="secondary" icon={Send} onClick={onStage} disabled={disabled || (!dirty && !ev.hasDraft)}>{busy === "stage" ? "Sending…" : "Send to staging"}</Button>
+        <Button variant="secondary" icon={Eye} onClick={onOpenStaging} disabled={!ev.staged}>Open on staging</Button>
+        <Button variant="primary" icon={Upload} onClick={onPublish} disabled={disabled || !ev.staged}
+          title={ev.hasDraft || dirty ? "Publishes the version on staging. Newer changes need to go to staging first." : undefined}>{busy === "publish" ? "Publishing…" : "Publish to live"}</Button>
       </Card>
 
       <Card className="grid gap-4">
@@ -256,10 +255,13 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
       </Card>
 
       <Card className="flex flex-wrap items-center gap-3">
-        {(ev.hasDraft || ev.unpublished) && (
-          <Button variant="secondary" onClick={onDiscard} disabled={disabled}>
-            {ev.unpublished ? "Delete this draft event" : "Throw away unpublished changes"}
+        {ev.hasDraft && (
+          <Button variant="secondary" onClick={() => onDiscard("unsent")} disabled={disabled}>
+            {ev.unpublished && !ev.staged ? "Delete this new event" : "Throw away saved changes"}
           </Button>
+        )}
+        {ev.staged && (
+          <Button variant="secondary" onClick={() => onDiscard("staged")} disabled={disabled}>Take off staging</Button>
         )}
         {isManagement && !ev.unpublished && (
           <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -287,9 +289,10 @@ export default function EventPages() {
       <PageHeader
         eyebrow="Website content"
         title="Event pages"
-        description="Each event's page on the website. Changes save as a draft that only staff can see in preview. A manager publishes them."
+        description="Each event's page on the website. Save your changes, send them to staging, check them on the staging site, then publish them to the live website."
         actions={<Button variant="primary" icon={Plus} onClick={() => setCreating(true)} disabled={readOnly}>New event</Button>}
       />
+      <div className="mb-4 max-w-3xl"><WorkflowBanner /></div>
       {readOnly && <Banner tone="warn" icon={Lock} className="mb-4 max-w-2xl" title="Read-only for now">Editing needs SANITY_WRITE_TOKEN on the server.</Banner>}
       {creating && (
         <NewEvent

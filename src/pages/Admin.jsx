@@ -17,6 +17,7 @@ import Legacy from "../admin/sections/Legacy";
 import Speakers from "../admin/cms/Speakers";
 import AgendaAdmin from "../admin/cms/Agenda";
 import EventPages from "../admin/cms/EventPages";
+import Changes from "../admin/cms/Changes";
 import LogoCollection from "../admin/cms/LogoCollection";
 import SiteSettings from "../admin/cms/SiteSettings";
 import AttendingOrgs from "../admin/cms/AttendingOrgs";
@@ -237,6 +238,7 @@ function AdminPanel() {
             <Route path="analytics" element={<ManagementOnly><SalesAnalytics /></ManagementOnly>} />
 
             <Route path="content" element={<Navigate to="/admin/content/speakers" replace />} />
+            <Route path="content/changes" element={<Changes />} />
             <Route path="content/events" element={<EventPages />} />
             <Route path="content/agenda" element={<AgendaAdmin />} />
             <Route path="content/speakers" element={<Speakers />} />

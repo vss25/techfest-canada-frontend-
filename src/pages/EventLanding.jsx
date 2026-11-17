@@ -678,8 +678,9 @@ function TicketsPage({ ev }) {
 
 /* ---------------- Route wrapper ---------------- */
 
-export default function EventLanding({ section = "overview" }) {
-  const params = useParams();
+export default function EventLanding({ section = "overview", type = "" }) {
+  const routeParams = useParams();
+  const params = { ...routeParams, eventType: routeParams.eventType || type };
   const { events, loading } = useEvents();
   const ev = events.length ? findEvent(events, { city: params.city, year: params.year, type: params.eventType }) : null;
   // A city staff added in Admin › Event pages works too, once it has an event.

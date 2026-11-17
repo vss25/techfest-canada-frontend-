@@ -227,11 +227,18 @@ function App() {
         <Route path="/partners/:year" element={<NationalPartners />} />
         <Route path="/awards/:year" element={<AwardsYear />} />
         <Route path="/:city" element={<CityHub />} />
-        <Route path="/:city/:year/:eventType" element={live(<EventLanding section="overview" />)} />
-        <Route path="/:city/:year/:eventType/agenda" element={live(<EventLanding section="agenda" />)} />
-        <Route path="/:city/:year/:eventType/speakers" element={live(<EventLanding section="speakers" />)} />
-        <Route path="/:city/:year/:eventType/speakers/:speakerSlug" element={<EventLanding section="speaker" />} />
-        <Route path="/:city/:year/:eventType/tickets" element={live(<EventLanding section="tickets" />)} />
+        {/* The event type is spelled out (not :eventType) so these never catch the admin panel's
+            three-part addresses (/admin/content/speakers ranked higher than /admin/* and showed "Page not found"). */}
+        <Route path="/:city/:year/briefing" element={live(<EventLanding section="overview" type="briefing" />)} />
+        <Route path="/:city/:year/briefing/agenda" element={live(<EventLanding section="agenda" type="briefing" />)} />
+        <Route path="/:city/:year/briefing/speakers" element={live(<EventLanding section="speakers" type="briefing" />)} />
+        <Route path="/:city/:year/briefing/speakers/:speakerSlug" element={<EventLanding section="speaker" type="briefing" />} />
+        <Route path="/:city/:year/briefing/tickets" element={live(<EventLanding section="tickets" type="briefing" />)} />
+        <Route path="/:city/:year/main-event" element={live(<EventLanding section="overview" type="main-event" />)} />
+        <Route path="/:city/:year/main-event/agenda" element={live(<EventLanding section="agenda" type="main-event" />)} />
+        <Route path="/:city/:year/main-event/speakers" element={live(<EventLanding section="speakers" type="main-event" />)} />
+        <Route path="/:city/:year/main-event/speakers/:speakerSlug" element={<EventLanding section="speaker" type="main-event" />} />
+        <Route path="/:city/:year/main-event/tickets" element={live(<EventLanding section="tickets" type="main-event" />)} />
         {/* Any other address: "Page not found", noindex (src/pages/NotFound.jsx). */}
         <Route path="*" element={<NotFound />} />
       </Routes>

@@ -1,9 +1,9 @@
 import { useId, useRef, useState } from "react";
-import { ImagePlus, Lock, RefreshCw, Sparkles, UploadCloud } from "lucide-react";
+import { ImagePlus, Lock, RefreshCw, UploadCloud } from "lucide-react";
 import { Banner, Button, Spinner } from "../ui";
 import { useToast } from "../toastContext";
 import { uploadImage } from "./imageUpload";
-import { LIVE_NOTE } from "./cmsMeta";
+import { WorkflowBanner } from "./workflow";
 
 export function CmsBanners({ configured }) {
   return (
@@ -13,7 +13,7 @@ export function CmsBanners({ configured }) {
           Editing is read-only until SANITY_WRITE_TOKEN is added on Render. You can still browse everything below.
         </Banner>
       )}
-      <Banner tone="info" icon={Sparkles}>{LIVE_NOTE} No deploy or Sanity Studio needed.</Banner>
+      <WorkflowBanner />
     </div>
   );
 }

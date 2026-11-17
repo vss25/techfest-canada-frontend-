@@ -130,8 +130,8 @@ test("the search for volunteers: People results only, masked, no pages, never a 
 
 // The approved admin design (Nov 2026): nine workspaces; every page that had a place in the old sidebar still has one,
 // at the same address.
-test("nine workspaces in the design's order, Settings at the bottom of the rail", () => {
-  assert.deepEqual(WORKSPACES.map((w) => w.label), ["Home", "Content", "Marketing", "Sales", "Operations", "People", "Event day", "Awards", "Settings"]);
+test("nine workspaces in the organiser's order, Settings at the bottom of the rail", () => {
+  assert.deepEqual(WORKSPACES.map((w) => w.label), ["Home", "Content", "Marketing", "Sales", "Operations", "People", "Awards", "Event day", "Settings"]);
   assert.deepEqual(WORKSPACES.filter((w) => w.bottom).map((w) => w.id), ["settings"]);
   for (const w of WORKSPACES) assert.ok(w.rail && w.job && w.groups.length, w.id);
 });

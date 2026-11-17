@@ -1,43 +1,27 @@
 import { Fragment, useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { LogOut, Menu, X, ExternalLink } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { titleFor } from "./nav";
 import { volunteerMayOpen } from "./access";
-import SidebarNav from "./SidebarNav";
-import { focusRing, IconButton } from "./ui";
+import { PhoneTabs, WorkspaceMenu, WorkspaceRail } from "./WorkspaceNav";
+import { focusRing } from "./ui";
 import { initials } from "./format";
 import { useAdmin } from "./adminContext";
 import GlobalSearch from "./search/GlobalSearch";
-import ThemeSwitch from "./ThemeSwitch";
-import { useAdminTheme } from "./theme";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
 /* No website-status chip in the top bar: the kill switch is gone (the organiser, Oct 23 2026: "Its risky"). The website and the apps
    can't be taken offline from the panel; only the developers can, through Vercel / Render. */
 
-function SidebarContent({ onNavigate }) {
-  const { theme } = useAdminTheme();
-  const { isVolunteer } = useAdmin();
+/* The approved admin design (boards 16–18, Nov 2026): the navy workspace rail and the open workspace's
+   menu on the left, a white top bar, pages on a pale lilac background. One light look (no dark mode). */
+function Navigation({ onNavigate }) {
   return (
-    <nav aria-label="Admin sections" className="adm-sidebar-nav">
-      <Link to={isVolunteer ? "/admin/people" : "/admin"} onClick={onNavigate} className={cx("mb-6 flex items-center gap-3 rounded-xl px-2 py-1", focusRing)}>
-        <img src={theme === "light" ? "/Tech_Festival_Canada_Logo_Light_Transparent.webp" : "/Tech_Festival_Canada_Logo_Dark_Transparent.webp"} alt="" className="h-12 w-auto" />
-        <span className="leading-tight">
-          <span className="font-display block text-[13px] font-bold text-ttfc-contrast">TTFC</span>
-          <span className="block text-[11px] font-medium text-ttfc-muted">{isVolunteer ? "Volunteer view" : "Staff panel"}</span>
-        </span>
-      </Link>
-      <SidebarNav onNavigate={onNavigate} />
-      <a
-        href="/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cx("mt-2 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-ttfc-dim hover:text-ttfc-text", focusRing)}
-      >
-        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Open the website
-      </a>
-    </nav>
+    <div className="flex h-full">
+      <WorkspaceRail onNavigate={onNavigate} />
+      <WorkspaceMenu onNavigate={onNavigate} />
+    </div>
   );
 }
 
@@ -67,7 +51,6 @@ function useHighlightFromUrl(location, nonce) {
 
 export default function AdminShell({ me, onSignOut, children }) {
   const { isManagement, isVolunteer } = useAdmin();
-  const [drawer, setDrawer] = useState(false);
   // Bumped when the global search opens a link: the page starts fresh from its URL (search, drawer, highlight),
   // even when it's the page already open.
   const [searchNonce, setSearchNonce] = useState(0);
@@ -76,12 +59,6 @@ export default function AdminShell({ me, onSignOut, children }) {
   const title = isVolunteer && !volunteerMayOpen(location.pathname) && location.pathname.replace(/\/+$/, "") !== "/admin" ? "Not available" : titleFor(location.pathname);
   useHighlightFromUrl(location, searchNonce);
 
-  useEffect(() => {
-    if (!drawer) return undefined;
-    const onKey = (e) => e.key === "Escape" && setDrawer(false);
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [drawer]);
 
   return (
     <div className="ttfc-admin">
@@ -89,61 +66,72 @@ export default function AdminShell({ me, onSignOut, children }) {
         Skip to content
       </a>
 
-      {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[264px] border-r border-ttfc-line bg-ttfc-ink/85 px-4 py-6 backdrop-blur-xl lg:block">
-        <SidebarContent />
-      </aside>
+      {/* Desktop: rail + workspace menu */}
+      <div className="fixed inset-y-0 left-0 z-40 hidden lg:block">
+        <Navigation />
+      </div>
 
-      {/* Mobile drawer */}
-      {drawer && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDrawer(false)} aria-hidden="true" />
-          <aside className="absolute inset-y-0 left-0 w-[84%] max-w-[300px] border-r border-ttfc-line bg-ttfc-ink px-4 py-6 shadow-2xl animate-in slide-in-from-left" aria-label="Menu">
-            <IconButton icon={X} label="Close menu" onClick={() => setDrawer(false)} className="absolute right-3 top-5" />
-            <SidebarContent onNavigate={() => setDrawer(false)} />
-          </aside>
-        </div>
-      )}
+      <div className="lg:pl-[336px]">
+        {/* Phone and tablet bar (board 18): navy, the logo, search and you */}
+        <header className="sticky top-0 z-30 bg-[#151035] text-white lg:hidden">
+          <div className="flex items-center gap-2.5 px-4 pb-3 pt-3.5">
+            <Link to={isVolunteer ? "/admin/people" : "/admin"} className={cx("flex items-center gap-2.5 rounded-lg", focusRing)} aria-label="Staff panel home">
+              <img src="/Tech_Festival_Canada_Logo_Dark_Transparent.webp" alt="" className="block h-[30px] w-auto" />
+              <span className="text-xs font-semibold opacity-75">Admin</span>
+            </Link>
+            <p className="sr-only">{title}</p>
+            <div className="adm-phone-search ml-auto"><GlobalSearch onNavigated={() => setSearchNonce((n) => n + 1)} /></div>
+            {isVolunteer ? (
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#151035]" title={me?.email || undefined} aria-label={me?.name || "Volunteer"}>{initials(me?.name, me?.email)}</span>
+            ) : (
+              <NavLink to="/admin/account" aria-label={`My account: ${me?.name || "Staff"}`} className={cx("inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#151035]", focusRing)}>
+                {initials(me?.name, me?.email)}
+              </NavLink>
+            )}
+            {isVolunteer && (
+              <button type="button" onClick={onSignOut} aria-label="Sign out" className={cx("inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/[.14]", focusRing)}>
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        </header>
 
-      <div className="lg:pl-[264px]">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 border-b border-ttfc-line bg-ttfc-ink/80 backdrop-blur-xl">
-          <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-10">
-            <IconButton icon={Menu} label="Open menu" onClick={() => setDrawer(true)} className="lg:hidden" aria-expanded={drawer} />
-            <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ttfc-text">{title}</p>
-            <GlobalSearch onNavigated={() => setSearchNonce((n) => n + 1)} />
-            <ThemeSwitch />
-            <div className="flex items-center gap-3 border-l border-ttfc-line pl-3">
+        {/* Desktop top bar */}
+        <header className="sticky top-0 z-30 hidden border-b border-[#E3E0EE] bg-white lg:block">
+          <div className="flex h-16 items-center gap-3 px-6">
+            <div className="flex min-w-0 max-w-[380px] flex-1 items-center">
+              <GlobalSearch onNavigated={() => setSearchNonce((n) => n + 1)} />
+            </div>
+            <div className="ml-auto flex items-center gap-2.5">
+              <a href="/" target="_blank" rel="noopener noreferrer"
+                className={cx("hidden h-9 items-center rounded-[9px] border border-[#E3E0EE] px-3 text-[13px] font-semibold text-[#151035] hover:bg-[#F6F5FA] md:inline-flex", focusRing)}>
+                View site
+              </a>
               {isVolunteer ? (
                 // Volunteers have no My account page (account settings are for staff): just who's signed in.
-                <div className="flex min-w-0 items-center gap-3" title={me?.email || undefined}>
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ttfc-pink via-ttfc-purple to-ttfc-orange text-xs font-bold text-white" aria-hidden="true">
+                <div className="flex min-w-0 items-center gap-2" title={me?.email || undefined}>
+                  <span className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#151035] text-xs font-semibold text-white" aria-hidden="true">
                     {initials(me?.name, me?.email)}
                   </span>
-                  <div className="hidden min-w-0 leading-tight md:block">
-                    <p className="truncate text-sm font-semibold text-ttfc-text">{me?.name || "Volunteer"}</p>
-                    <p className="truncate text-xs text-ttfc-dim">Volunteer · look-up only</p>
-                  </div>
+                  <span className="hidden truncate text-[13px] font-semibold text-[#151035] md:inline">Volunteer · look-up only</span>
                 </div>
               ) : (
               /* Your name opens My account (your level, change your password). */
-              <NavLink to="/admin/account" aria-label={`My account: ${me?.name || "Staff"}`} title={`My account${me?.email ? ` (${me.email})` : ""}`} className={cx("flex min-w-0 items-center gap-3 rounded-xl hover:opacity-90", focusRing)}>
-              <span
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ttfc-pink via-ttfc-purple to-ttfc-orange text-xs font-bold text-white"
-                aria-hidden="true"
-              >
-                {initials(me?.name, me?.email)}
-              </span>
-              <div className="hidden min-w-0 leading-tight md:block">
-                <p className="truncate text-sm font-semibold text-ttfc-text">{me?.name || "Staff"}</p>
-                <p className="truncate text-xs text-ttfc-dim">{isManagement ? "Management" : "Staff"} · My account</p>
-              </div>
+              <NavLink to="/admin/account" aria-label={`My account: ${me?.name || "Staff"}`} title={`My account${me?.email ? ` (${me.email})` : ""}`}
+                className={cx("flex min-w-0 items-center gap-2 rounded-[9px] hover:opacity-90", focusRing)}>
+                <span className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#151035] text-xs font-semibold text-white" aria-hidden="true">
+                  {initials(me?.name, me?.email)}
+                </span>
+                <span className="hidden min-w-0 leading-tight md:block">
+                  <span className="block truncate text-[13px] font-semibold text-[#151035]">{me?.name || "Staff"}</span>
+                  <span className="block truncate text-xs text-[#6B6688]">{isManagement ? "Management" : "Staff"}</span>
+                </span>
               </NavLink>
               )}
               <button
                 type="button"
                 onClick={onSignOut}
-                className={cx("inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-ttfc-muted transition hover:bg-ttfc-contrast/5 hover:text-ttfc-text", focusRing)}
+                className={cx("inline-flex h-9 items-center gap-2 rounded-[9px] px-2.5 text-[13px] font-semibold text-[#4A4566] transition hover:bg-[#F6F5FA] hover:text-[#151035]", focusRing)}
               >
                 <LogOut className="h-4 w-4" aria-hidden="true" />
                 <span className="hidden sm:inline">Sign out</span>
@@ -152,10 +140,11 @@ export default function AdminShell({ me, onSignOut, children }) {
           </div>
         </header>
 
-        <main id="admin-main" className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10" tabIndex={-1}>
+        <main id="admin-main" className="mx-auto w-full max-w-[1400px] px-4 pb-[96px] pt-4 sm:px-6 lg:px-7 lg:pb-10 lg:pt-6" tabIndex={-1}>
           <Fragment key={searchNonce}>{children}</Fragment>
         </main>
       </div>
+      <PhoneTabs onSignOut={onSignOut} />
     </div>
   );
 }

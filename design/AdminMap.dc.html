@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin panel: how it's organised</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 1440px; box-sizing: border-box; padding: 48px 56px 56px; background: #F6F5FA; font-family: Poppins, system-ui, sans-serif; color: #151035; display: flex; flex-direction: column; gap: 28px">
+  <div style="display: flex; flex-direction: column; gap: 8px; max-width: 1040px">
+    <span style="font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #D6308C">Admin panel · proposed structure</span>
+    <h1 style="margin: 0; font-size: 34px; line-height: 42px; font-weight: 700; letter-spacing: -0.015em">Nine workspaces instead of one long list</h1>
+    <p style="margin: 0; font-size: 16px; line-height: 26px; color: #4A4566">Today the sidebar lists 55 screens in nine groups. The new panel has a slim rail of nine workspaces named for the job someone came to do. Each workspace shows only its own pages, with small headings. Event work is scoped to one event, chosen at the top. Every current screen keeps its address and what it does; only its place in the menu changes.</p>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: #4A4566">
+    <span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #D6308C"></span>Scoped to the event chosen at the top</span>
+    <span style="display: inline-flex; align-items: center; gap: 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Management only (hidden for staff)</span>
+    <span style="display: inline-flex; align-items: center; gap: 8px"><span style="padding: 1px 8px; border-radius: 999px; background: #151035; color: #FFFFFF; font-size: 11px; font-weight: 600">Merged</span>Two or more of today's screens become tabs on one page</span>
+    <span style="display: inline-flex; align-items: center; gap: 8px"><span style="padding: 1px 8px; border-radius: 999px; background: #F5A623; color: #151035; font-size: 11px; font-weight: 600">New</span>Added in redesign step 1</span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px">
+    <sc-for list="{{ spaces }}" as="w" hint-placeholder-count="9">
+      <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 14px; padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 12px; border-top: 4px solid {{ w.edge }}">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="width: 32px; height: 32px; border-radius: 9px; background: #151035; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ w.icon }}"></path></svg></span>
+          <div style="display: flex; flex-direction: column">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 700">{{ w.label }}</h2>
+            <span style="font-size: 12px; color: #6B6688">{{ w.who }}</span>
+          </div>
+        </div>
+        <p style="margin: 0; font-size: 13px; line-height: 20px; color: #4A4566">{{ w.job }}</p>
+        <sc-for list="{{ w.groups }}" as="g" hint-placeholder-count="2">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <sc-if value="{{ g.h }}" hint-placeholder-val="{{ true }}"><span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A86A0">{{ g.h }}</span></sc-if>
+            <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+              <div style="display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 8px; background: #F6F5FA">
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600">
+                  <sc-if value="{{ it.scoped }}" hint-placeholder-val="{{ false }}"><span style="width: 7px; height: 7px; border-radius: 2px; background: #D6308C; flex: 0 0 7px"></span></sc-if>
+                  {{ it.label }}
+                  <sc-if value="{{ it.m }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-label="Management only"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></sc-if>
+                  <sc-if value="{{ it.merged }}" hint-placeholder-val="{{ false }}"><span style="margin-left: auto; padding: 1px 7px; border-radius: 999px; background: #151035; color: #FFFFFF; font-size: 10px; font-weight: 600">Merged</span></sc-if>
+                  <sc-if value="{{ it.isNew }}" hint-placeholder-val="{{ false }}"><span style="margin-left: auto; padding: 1px 7px; border-radius: 999px; background: #F5A623; color: #151035; font-size: 10px; font-weight: 600">New</span></sc-if>
+                </span>
+                <span style="font-size: 12px; line-height: 17px; color: #6B6688">{{ it.from }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </section>
+    </sc-for>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px">
+    <sc-for list="{{ rules }}" as="r" hint-placeholder-count="3">
+      <div style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 6px">
+        <b style="font-size: 15px">{{ r.t }}</b>
+        <span style="font-size: 13px; line-height: 20px; color: #4A4566">{{ r.d }}</span>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const I = {
+      home: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10',
+      event: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+      people: 'M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 20v-1a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+      day: 'M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10',
+      mkt: 'M3 11l18-8-8 18-2-8-8-2z',
+      ops: 'M9 3h6v4H9zM7 5H5v16h14V5h-2M8 12h8M8 16h5',
+      sales: 'M3 8h18v12H3zM8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18',
+      web: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
+      awards: 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3',
+      settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z'
+    };
+    const it = (label, from, o = {}) => ({ label, from, scoped: !!o.s, m: !!o.m, merged: !!o.merged, isNew: !!o.n });
+    const spaces = [
+      { label: 'Home', icon: I.home, edge: '#151035', who: 'Everyone', job: 'What needs doing today: drafts waiting to publish, new enquiries, SOS calls, sales at a glance.', groups: [
+        { h: '', items: [it('Overview', 'Overview, now with a “Needs attention” list'), it('Approvals', 'New: changes and posts sent to you; comment, suggest edits, approve or send back', { n: 1 })] } ] },
+      { label: 'Content', icon: I.web, edge: '#D6308C', who: 'Content team: the only place website and app content is written', job: 'Everything people read and see: event pages, agenda, speakers, partners, ticket prices, packages, floor plan, site pages, switches, logos, files and the app’s text.', groups: [
+        { h: 'Event website', items: [it('Event page', 'Event pages', { s: 1, n: 1 }), it('Agenda', 'Agenda', { s: 1 }), it('Speakers', 'Speakers', { s: 1 }), it('Partners & sponsors', 'Partners + Featured Partners', { s: 1, merged: 1 }), it('Tickets & prices', 'Prices & stock', { s: 1 }), it('Sponsorship packages', 'Moved from Sales: tiers, price, how many, benefits', { s: 1, n: 1 }), it('Booths & floor plan', 'Moved from Sales: pods, booths, floor plan', { s: 1, n: 1 })] },
+        { h: 'Site-wide', items: [it('Site pages', 'New: About, Exhibit, Partner, Media, Volunteer: photos, headlines, text', { n: 1 }), it('Website switches', 'Website switches'), it('Logo strips', 'Team alumni + Community & speakers’ companies + Home sponsors', { merged: 1 }), it('Attending organisations', 'Attending organisations'), it('Files & media', 'New: one library for every upload (images, PDFs, video, Office files); public or staff-only', { n: 1 })] },
+        { h: 'App', items: [it('App text & switches', 'App text & switches'), it('Attendee survey', 'Attendee survey'), it('Top networkers', 'Top networkers'), it('App reports', 'App overview + Live activity + Web app installs', { merged: 1 })] } ] },
+      { label: 'Marketing', icon: I.mkt, edge: '#151035', who: 'Marketing team', job: 'Reaching people: promo codes, leads coming in and the emails we send.', groups: [
+        { h: 'Social', items: [it('Social media calendar', 'New: the month’s posts, emails and site updates; on time, late or missed; who changed what', { n: 1 }), it('Social posts', 'New: write once, preview, publish or schedule to LinkedIn, Instagram and X, with approval', { n: 1 })] },
+        { h: 'Offers', items: [it('Promo codes', 'Promo codes, now open to staff (big discounts need a manager); adds BOGO, buy X get Y free and group offers', { n: 1 })] },
+        { h: 'Leads', items: [it('Form submissions', 'Speaker, media, volunteer and general forms (was under More); sales ones go to Sales'), it('Downloads', 'Brochure downloads; post-show report next')] },
+        { h: 'Emails', items: [it('Purchase email', 'Purchase email'), it('App invite email', 'App invite email'), it('“What you missed” emails', '“What you missed” emails'), it('I’m attending campaign', 'I’m attending campaign (was under More)'), it('Unsubscribed', 'Unsubscribed emails')] } ] },
+      { label: 'Sales', icon: I.sales, edge: '#D6308C', who: 'Sales team (sales@thetechfestival.com)', job: 'Selling for one event: enquiries, contracts, exhibitors and revenue. Uses the packages and prices written in Content.', groups: [
+        { h: 'Enquiries', items: [it('Sales & sponsorship enquiries', 'Sponsorship, exhibiting, partnership and group-ticket queries from the website forms, the apps and sales@, with owner, value and status', { s: 1, n: 1 }), it('Waitlist', '2027 waitlist')] },
+        { h: 'Contracts', items: [it('Contracts', 'New: sponsorship, exhibitor and media agreements; fill in, preview, export PDF, email to sign', { s: 1, n: 1 }), it('Contract templates', 'New: standard wording per agreement, versioned', { m: 1, n: 1 })] },
+        { h: 'Exhibitors', items: [it('Exhibitor passes', 'Exhibitor passes (was in People & passes)')] },
+        { h: 'Revenue', items: [it('Revenue', 'Sales, plus sponsorship once packages are tracked', { s: 1, m: 1 })] } ] },
+      { label: 'Operations', icon: I.ops, edge: '#D6308C', who: 'Ops team', job: 'Running the event: event settings, venue, vendors, food, print and logistics, with tasks and a budget.', groups: [
+        { h: '', items: [it('Tasks & status', 'New: what has to happen, owner, due date, status', { s: 1, n: 1 }), it('Event settings', 'Events (status, pricing announced, who sees attendees)', { s: 1 })] },
+        { h: 'Venue & vendors', items: [it('Venue', 'New: venue, contract, rooms, timings, contacts', { s: 1, n: 1 }), it('Vendors', 'New: AV, printing, catering, logistics, security, photography; contacts, quotes, contracts, payments', { s: 1, n: 1 })] },
+        { h: 'On site', items: [it('Catering & menu', 'New: meals, menu, dietary counts from RSVPs, final numbers', { s: 1, n: 1 }), it('Print & signage', 'New: badges, banners, signs, proofs, delivery', { s: 1, n: 1 }), it('Logistics', 'New: shipments, load-in and load-out, storage', { s: 1, n: 1 })] },
+        { h: 'Money', items: [it('Budget', 'New: planned, committed and paid by area', { s: 1, m: 1, n: 1 })] } ] },
+      { label: 'People', icon: I.people, edge: '#151035', who: 'Everyone; volunteers see only this', job: 'Find anyone, give them a pass, fix their records.', groups: [
+        { h: '', items: [it('People', 'People')] },
+        { h: 'Passes', items: [it('Give a pass', 'Give a pass'), it('Speaker passes', 'Speaker passes')] },
+        { h: 'Records', items: [it('Ticket records', 'Ticket records (was under More)'), it('App accounts', 'App accounts (was under More)')] } ] },
+      { label: 'Event day', icon: I.day, edge: '#D6308C', who: 'Ops team and volunteers on the day', job: 'Headcounts before the event, then check-in, help requests and app moderation during it.', groups: [
+        { h: 'Before', items: [it('Event summary', 'Event summary', { s: 1 }), it('RSVPs & headcounts', 'Headcounts & RSVPs + RSVP reminders', { s: 1, merged: 1 })] },
+        { h: 'On the day', items: [it('Check-in', 'Check-in', { s: 1 }), it('SOS & help', 'SOS & help'), it('App moderation', 'App moderation'), it('Send an app update', 'Send an app update')] } ] },
+      { label: 'Awards', icon: I.awards, edge: '#151035', who: 'Awards team', job: 'The Catalyst Awards from nomination to winners, in the order the work happens.', groups: [
+        { h: '', items: [it('Nominations', 'Nominations'), it('Jury', 'Jury'), it('Allocation', 'Allocation'), it('Scoring rubric', 'Scoring rubric'), it('Jury results', 'Jury results', { m: 1 }), it('Winners', 'Winners')] } ] },
+      { label: 'Settings', icon: I.settings, edge: '#151035', who: 'At the bottom of the rail', job: 'Who has access, where form emails go, and the record of who changed what.', groups: [
+        { h: '', items: [it('Staff accounts', 'Staff accounts', { m: 1 }), it('App rights', 'App rights'), it('Connected accounts', 'New: the TTFC LinkedIn, Instagram and X accounts posts go out from', { m: 1, n: 1 }), it('Where website forms go', 'Where website forms go'), it('Audit log', 'Audit log'), it('My account', 'My account (also under your name)')] } ] }
+    ];
+    return {
+      spaces: spaces.map((w) => ({ ...w, groups: w.groups.map((g) => ({ ...g, h: g.h || '' })) })),
+      rules: [
+        { t: 'One event at a time', d: 'The event switcher at the top sets which event the Event and Event day pages show. It remembers your last choice. “All events” is there for the pages that support it.' },
+        { t: 'Search finds any page', d: 'Press ⌘K (Ctrl K) and type a page, person, ticket ID or session. Nobody has to remember which workspace a page lives in.' },
+        { t: 'Past events lock after 7 days', d: 'Seven days after an event ends, its agenda, speakers, partners, tickets, contracts and records become read only for everyone. Only the super admin (Vishwa) can change them, and each change is logged.' },
+        { t: 'Same rights as today', d: 'Management sees everything. Staff don’t see management-only pages. Volunteers see People (look-up only) and nothing else. Pages keep their addresses, so bookmarks still work.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

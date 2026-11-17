@@ -5,9 +5,10 @@
 ========================================================= */
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AlertTriangle, Eye, EyeOff, Inbox, Loader2, Lock, RefreshCw, X } from "lucide-react";
 import { useAdmin } from "./adminContext";
+import { navItemFor } from "./nav";
 import { isManagementError } from "./api";
 import { twMerge } from "tailwind-merge";
 
@@ -20,8 +21,9 @@ export const focusRing =
 /* ---------------- Buttons ---------------- */
 const BTN_VARIANT = {
   primary:
-    "bg-gradient-to-r from-ttfc-pink via-ttfc-purple to-ttfc-purple text-white shadow-lg shadow-ttfc-pink/20 hover:brightness-110",
-  secondary: "border border-ttfc-line bg-ttfc-panel2 text-ttfc-text hover:border-ttfc-purple/60 hover:bg-ttfc-panel3",
+    // The approved admin design: one solid magenta main action, white secondary buttons with a thin line.
+    "border border-[#D6308C] bg-[#D6308C] text-white hover:bg-[#BF2A7C] hover:border-[#BF2A7C]",
+  secondary: "border border-ttfc-line bg-ttfc-panel text-ttfc-text hover:bg-ttfc-panel2",
   ghost: "text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text",
   danger: "bg-ttfc-bad/90 text-white hover:bg-ttfc-bad shadow-lg shadow-red-900/30",
   dangerOutline: "border border-red-400/40 text-red-300 hover:bg-red-500/10",
@@ -29,7 +31,7 @@ const BTN_VARIANT = {
 };
 const BTN_SIZE = {
   sm: "h-8 gap-1.5 rounded-lg px-3 text-xs",
-  md: "h-10 gap-2 rounded-xl px-4 text-sm",
+  md: "h-[38px] gap-2 rounded-[9px] px-3.5 text-sm",
   lg: "h-12 gap-2 rounded-2xl px-6 text-base",
 };
 
@@ -77,15 +79,21 @@ export function Card({ className, children, as = "div", ...rest }) {
   );
 }
 
+/* Page heading in the approved admin design: where the page sits ("Content › Event website", from the
+   menu; the page's own eyebrow when it isn't in the menu), the title, its actions on the right, then
+   what the page is for. */
 export function PageHeader({ eyebrow, title, description, actions }) {
+  const { pathname } = useLocation();
+  const hit = navItemFor(pathname);
+  const crumbs = hit ? hit.group.title : eyebrow;
   return (
-    <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0">
-        {eyebrow && <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-ttfc-orange">{eyebrow}</p>}
-        <h1 className="text-2xl font-bold tracking-tight text-ttfc-text sm:text-[28px]">{title}</h1>
-        {description && <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ttfc-muted">{description}</p>}
+    <header className="mb-6 flex flex-col gap-1">
+      {crumbs && <p className="text-xs text-ttfc-dim">{crumbs}</p>}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-[26px] font-bold leading-[34px] tracking-[-0.01em] text-ttfc-text">{title}</h1>
+        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {description && <p className="max-w-[760px] text-sm leading-relaxed text-ttfc-muted">{description}</p>}
     </header>
   );
 }

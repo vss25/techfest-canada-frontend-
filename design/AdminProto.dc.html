@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin panel prototype (desktop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.x-press{cursor:pointer;transition:background-color .15s ease,color .15s ease,transform .12s ease}
+.x-press:active{transform:scale(.98)}
+.x-rail:hover{background:rgba(255,255,255,.08)}
+.x-item:hover{background:#F6F5FA}
+.x-menu{opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .16s ease,transform .16s ease}
+.x-menu.open{opacity:1;transform:none;pointer-events:auto}
+.x-in{animation:x-up .28s cubic-bezier(.2,.8,.2,1) both}
+@keyframes x-up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.x-toast{opacity:0;transform:translateY(10px);transition:opacity .2s ease,transform .2s ease;pointer-events:none}.x-toast.show{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){.x-in{animation:none}.x-menu,.x-toast{transition-duration:.01ms}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 960px; display: flex; flex-direction: column; font-family: Poppins, system-ui, sans-serif; color: #151035; background: #E9E6F2">
+  <!-- Board chrome: view as -->
+  <div style="height: 52px; flex: 0 0 52px; display: flex; align-items: center; gap: 14px; padding: 0 20px; background: #FFFFFF; border-bottom: 1px solid #E3E0EE; font-size: 13px">
+    <b>Admin panel prototype</b>
+    <span style="color: #6B6688">Click the rail, the menu, the event switcher and the search. View the menu as:</span>
+    <div role="tablist" aria-label="View as" style="display: flex; gap: 4px; padding: 3px; border-radius: 999px; background: #F6F5FA">
+      <sc-for list="{{ roles }}" as="r" hint-placeholder-count="3">
+        <button type="button" role="tab" aria-selected="{{ r.on }}" class="x-press" onClick="{{ r.pick }}" style="height: 30px; padding: 0 14px; border: 0; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 600; background: {{ r.bg }}; color: {{ r.fg }}">{{ r.label }}</button>
+      </sc-for>
+    </div>
+    <span style="margin-left: auto; color: #6B6688">{{ roleNote }}</span>
+  </div>
+
+  <div style="flex: 1 1 auto; display: flex; min-height: 0">
+    <!-- Rail -->
+    <nav aria-label="Workspaces" style="width: 84px; flex: 0 0 84px; background: #151035; display: flex; flex-direction: column; align-items: center; padding: 14px 0; gap: 4px">
+      <img src="/_blob/91b82cf91cc133bbda3abd88aa79c556" alt="The Tech Festival Canada admin" style="width: 64px; height: auto; display: block; margin: 2px 0 14px">
+      <sc-for list="{{ rail }}" as="w" hint-placeholder-count="7">
+        <button type="button" class="x-press x-rail" onClick="{{ w.pick }}" aria-current="{{ w.current }}" style="position: relative; width: 72px; padding: 9px 0 7px; border: 0; border-radius: 12px; background: {{ w.bg }}; color: {{ w.fg }}; font-family: inherit; font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 5px">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ w.icon }}"></path></svg>
+          {{ w.label }}
+          <sc-if value="{{ w.badge }}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 5px; right: 12px; min-width: 18px; height: 18px; border-radius: 999px; background: #F5A623; color: #151035; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{ w.badge }}</span></sc-if>
+          <sc-if value="{{ w.current }}" hint-placeholder-val="{{ false }}"><span style="position: absolute; left: -6px; top: 14px; width: 4px; height: 28px; border-radius: 4px; background: #D6308C"></span></sc-if>
+        </button>
+      </sc-for>
+      <div style="flex: 1 1 auto"></div>
+      <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ true }}">
+        <button type="button" class="x-press x-rail" onClick="{{ settingsRail.pick }}" style="width: 72px; padding: 9px 0 7px; border: 0; border-radius: 12px; background: {{ settingsRail.bg }}; color: {{ settingsRail.fg }}; font-family: inherit; font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 5px">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ settingsRail.icon }}"></path></svg>Settings
+        </button>
+      </sc-if>
+    </nav>
+
+    <!-- Workspace menu -->
+    <aside aria-label="{{ ws.label }} pages" style="width: 252px; flex: 0 0 252px; background: #FFFFFF; border-right: 1px solid #E3E0EE; display: flex; flex-direction: column; padding: 20px 14px; gap: 14px; overflow: auto">
+      <div style="display: flex; flex-direction: column; gap: 4px; padding: 0 8px">
+        <h2 style="margin: 0; font-size: 20px; font-weight: 700">{{ ws.label }}</h2>
+        <span style="font-size: 12px; line-height: 18px; color: #6B6688">{{ ws.job }}</span>
+      </div>
+      <sc-if value="{{ ws.scoped }}" hint-placeholder-val="{{ true }}">
+        <button type="button" class="x-press" onClick="{{ toggleEv }}" title="{{ evName }}" style="margin: 0 8px; height: 34px; padding: 0 10px; border: 0; border-radius: 9px; background: #FBE9F3; color: #9D1D63; font-family: inherit; font-size: 12px; font-weight: 600; display: flex; gap: 8px; align-items: center; white-space: nowrap; min-width: 0; text-align: left">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #D6308C; flex: 0 0 7px"></span>
+          <span style="overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1 1 auto">{{ evName }}</span>
+          <span style="flex: 0 0 auto; color: #D6308C; text-decoration: underline">Change</span>
+        </button>
+      </sc-if>
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <sc-if value="{{ g.h }}" hint-placeholder-val="{{ true }}"><span style="padding: 4px 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A86A0">{{ g.h }}</span></sc-if>
+          <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+            <button type="button" class="x-press x-item" onClick="{{ it.pick }}" aria-current="{{ it.current }}" style="height: 38px; padding: 0 10px; border: 0; border-radius: 9px; text-align: left; font-family: inherit; font-size: 14px; font-weight: {{ it.weight }}; background: {{ it.bg }}; color: {{ it.fg }}; display: flex; align-items: center; gap: 8px">
+              {{ it.label }}
+              <sc-if value="{{ it.m }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-label="Management only"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></sc-if>
+              <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ false }}"><span style="margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #F5A623; color: #151035; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{ it.badge }}</span></sc-if>
+            </button>
+          </sc-for>
+        </div>
+      </sc-for>
+    </aside>
+
+    <!-- Main -->
+    <div style="flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; background: #F6F5FA; position: relative">
+      <header style="height: 64px; flex: 0 0 64px; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #E3E0EE">
+        <div style="position: relative">
+          <button type="button" class="x-press" onClick="{{ toggleEv }}" aria-expanded="{{ evOpen }}" style="height: 40px; padding: 0 12px; border: 1px solid #E3E0EE; border-radius: 10px; background: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600; color: #151035; display: flex; align-items: center; gap: 10px">
+            <span style="width: 8px; height: 8px; border-radius: 2px; background: #D6308C"></span>{{ evName }}<span style="font-size: 12px; font-weight: 500; color: #6B6688">{{ evStatus }}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#151035" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+          </button>
+          <div class="x-menu {{ evCls }}" role="menu" style="position: absolute; top: 46px; left: 0; z-index: 20; width: 320px; padding: 6px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E3E0EE; box-shadow: 0 14px 34px rgba(21,16,53,.14)">
+            <sc-for list="{{ evList }}" as="e" hint-placeholder-count="4">
+              <sc-if value="{{ e.sep }}" hint-placeholder-val="{{ false }}"><span style="display: block; padding: 8px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: .08em; color: #8A86A0">PAST EVENTS · READ ONLY AFTER 7 DAYS</span></sc-if>
+              <button type="button" role="menuitem" class="x-press x-item" onClick="{{ e.pick }}" style="width: 100%; padding: 9px 10px; border: 0; border-radius: 8px; background: {{ e.bg }}; font-family: inherit; text-align: left; display: flex; align-items: center; gap: 10px">
+                <span style="display: flex; flex-direction: column; gap: 1px"><b style="font-size: 14px; color: #151035">{{ e.name }}</b><span style="font-size: 12px; color: #6B6688">{{ e.when }}</span></span>
+                <span style="margin-left: auto; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: {{ e.tagBg }}; color: {{ e.tagFg }}">{{ e.tag }}</span>
+              </button>
+            </sc-for>
+            <div style="border-top: 1px solid #E3E0EE; margin-top: 6px; padding: 6px 4px 2px; display: flex; align-items: center; gap: 8px">
+              <button type="button" class="x-press" onClick="{{ togglePast }}" style="height: 30px; padding: 0 8px; border: 0; border-radius: 7px; background: transparent; font-family: inherit; font-size: 13px; font-weight: 600; color: #151035">{{ pastLabel }}</button>
+              <span style="margin-left: auto; padding: 0 8px; font-size: 13px; font-weight: 600; color: #D6308C">+ New event</span>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="x-press" onClick="{{ openSearch }}" style="flex: 0 1 380px; height: 40px; padding: 0 12px; border: 1px solid #E3E0EE; border-radius: 10px; background: #F6F5FA; font-family: inherit; font-size: 14px; color: #6B6688; display: flex; align-items: center; gap: 10px; text-align: left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6688" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+          Search pages, people, tickets…<span style="margin-left: auto; font-size: 12px; padding: 1px 6px; border-radius: 6px; border: 1px solid #E3E0EE; background: #FFFFFF">⌘K</span>
+        </button>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 10px">
+          <span style="height: 36px; padding: 0 12px; border: 1px solid #E3E0EE; border-radius: 9px; font-size: 13px; font-weight: 600; display: flex; align-items: center">View site</span>
+          <span style="position: relative; width: 36px; height: 36px; border-radius: 9px; border: 1px solid #E3E0EE; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#151035" stroke-width="1.9" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0"></path></svg><span style="position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; border-radius: 999px; background: #F5A623; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{ attention }}</span></span>
+          <span style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600"><span style="width: 34px; height: 34px; border-radius: 999px; background: #151035; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px">{{ me.ini }}</span>{{ me.role }}</span>
+        </div>
+      </header>
+
+      <div style="flex: 1 1 auto; display: flex; min-height: 0">
+      <main style="flex: 1 1 auto; overflow: auto; padding: 24px 28px 40px; min-width: 0">
+        <div class="x-in" style="display: flex; flex-direction: column; gap: 18px" data-key="{{ pageKey }}">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 12px; color: #6B6688">{{ crumbs }}</span>
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+              <h1 style="margin: 0; font-size: 26px; line-height: 34px; font-weight: 700; letter-spacing: -0.01em">{{ page.label }}</h1>
+              <sc-if value="{{ isEventPage }}" hint-placeholder-val="{{ false }}"><span style="padding: 3px 10px; border-radius: 999px; background: #EDE9FE; color: #5B21B6; font-size: 12px; font-weight: 600">Live, with unpublished changes</span></sc-if>
+              <div style="margin-left: auto; display: flex; gap: 8px">
+                <sc-if value="{{ showHist }}" hint-placeholder-val="{{ false }}">
+                  <button type="button" class="x-press" onClick="{{ toggleHist }}" aria-expanded="{{ histOpen }}" title="Change history" aria-label="Change history" style="width: 38px; height: 38px; border-radius: 9px; border: 1px solid {{ histBorder }}; background: {{ histBg }}; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#151035" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l3 2"></path></svg></button>
+                </sc-if>
+                <sc-for list="{{ actions }}" as="a" hint-placeholder-count="2">
+                  <button type="button" class="x-press" onClick="{{ a.pick }}" style="height: 38px; padding: 0 14px; border-radius: 9px; border: 1px solid {{ a.border }}; background: {{ a.bg }}; color: {{ a.fg }}; font-family: inherit; font-size: 14px; font-weight: 600">{{ a.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <span style="font-size: 14px; color: #4A4566; max-width: 760px">{{ page.desc }}</span>
+            <sc-if value="{{ lockOn }}" hint-placeholder-val="{{ false }}">
+              <div role="status" style="display: flex; align-items: center; gap: 10px; margin-top: 6px; padding: 10px 12px; border-radius: 10px; background: {{ lockBg }}; color: {{ lockFg }}; font-size: 13px; line-height: 19px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 16px"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+                <span>{{ lockText }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ histOpen }}" hint-placeholder-val="{{ false }}">
+              <section id="hist" style="margin-top: 8px; max-width: 760px; background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 14px 16px; box-shadow: 0 10px 26px rgba(21,16,53,.08); display: flex; flex-direction: column; gap: 10px">
+                <div style="display: flex; align-items: baseline; gap: 10px"><h2 style="margin: 0; font-size: 14px; font-weight: 700">Last edited by {{ lastBy }} · {{ lastAt }}</h2><span style="font-size: 12px; color: #6B6688">Last 5 changes</span><span style="margin-left: auto; font-size: 13px; font-weight: 600; color: #D6308C">Full history in Settings › Audit log</span></div>
+                <sc-for list="{{ hist }}" as="h" hint-placeholder-count="5">
+                  <div style="display: grid; grid-template-columns: 170px 150px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid #F0EEF6; font-size: 13px">
+                    <span style="color: #6B6688; font-variant-numeric: tabular-nums">{{ h.when }}</span>
+                    <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="width: 22px; height: 22px; border-radius: 999px; background: {{ h.col }}; color: #FFFFFF; font-size: 9px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">{{ h.ini }}</span>{{ h.who }}</span>
+                    <span>{{ h.what }}</span>
+                    <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: {{ h.tagBg }}; color: {{ h.tagFg }}">{{ h.tag }}</span>
+                  </div>
+                </sc-for>
+              </section>
+            </sc-if>
+          </div>
+          <sc-if value="{{ hasFilters }}" hint-placeholder-val="{{ false }}">
+            <div role="search" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px">
+              <span style="flex: 0 1 280px; height: 36px; padding: 0 12px; border: 1px solid #E3E0EE; border-radius: 9px; background: #F6F5FA; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6B6688"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6688" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>{{ searchHint }}</span>
+              <sc-for list="{{ filters }}" as="fl" hint-placeholder-count="3">
+                <button type="button" class="x-press" onClick="{{ fl.pick }}" style="height: 36px; padding: 0 12px; border-radius: 9px; border: 1px solid {{ fl.border }}; background: {{ fl.bg }}; font-family: inherit; font-size: 13px; color: #151035; display: flex; align-items: center; gap: 6px"><span style="color: #6B6688">{{ fl.l }}:</span><b style="font-weight: 600">{{ fl.v }}</b><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B6688" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+              </sc-for>
+              <button type="button" class="x-press" onClick="{{ clearFilters }}" style="height: 36px; padding: 0 10px; border: 0; background: transparent; font-family: inherit; font-size: 13px; font-weight: 600; color: #D6308C">Clear</button>
+              <span style="margin-left: auto; font-size: 12px; color: #6B6688">{{ filterCount }}</span>
+            </div>
+          </sc-if>
+
+          <!-- Home -->
+          <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px">
+              <sc-for list="{{ stats }}" as="st" hint-placeholder-count="4">
+                <div role="button" tabindex="0" class="x-press x-item" onClick="{{ st.go }}" style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px">
+                  <span style="font-size: 12px; color: #6B6688">{{ st.l }}</span>
+                  <b style="font-size: 26px; font-variant-numeric: tabular-nums">{{ st.v }}</b>
+                  <span style="font-size: 12px; color: {{ st.c }}">{{ st.s }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px">
+              <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+                <h2 style="margin: 0; font-size: 16px; font-weight: 700">Needs attention</h2>
+                <sc-for list="{{ todo }}" as="t" hint-placeholder-count="4">
+                  <button type="button" class="x-press x-item" onClick="{{ t.go }}" style="padding: 12px; border: 1px solid #E3E0EE; border-radius: 10px; background: #FFFFFF; font-family: inherit; text-align: left; display: flex; gap: 12px; align-items: center">
+                    <span style="width: 8px; height: 36px; border-radius: 4px; background: {{ t.c }}"></span>
+                    <span style="display: flex; flex-direction: column; gap: 2px"><b style="font-size: 14px; color: #151035">{{ t.t }}</b><span style="font-size: 12px; color: #6B6688">{{ t.where }}</span></span>
+                    <span style="margin-left: auto; font-size: 13px; font-weight: 600; color: #D6308C">{{ t.cta }} →</span>
+                  </button>
+                </sc-for>
+              </section>
+              <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+                <h2 style="margin: 0; font-size: 16px; font-weight: 700">Quick actions</h2>
+                <sc-for list="{{ quick }}" as="q" hint-placeholder-count="4">
+                  <button type="button" class="x-press x-item" onClick="{{ q.go }}" style="height: 44px; padding: 0 12px; border: 1px solid #E3E0EE; border-radius: 10px; background: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600; color: #151035; text-align: left">{{ q.label }}</button>
+                </sc-for>
+                <span style="font-size: 12px; color: #8A86A0">Sample numbers for the mockup.</span>
+              </section>
+            </div>
+          </sc-if>
+
+          <!-- Event page editor: preview card (its fields are in the sections below) -->
+          <sc-if value="{{ falseFlag }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px">
+              <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 18px; display: grid; gap: 12px">
+                <h2 style="margin: 0; font-size: 16px; font-weight: 700">Top of the page</h2>
+                <sc-for list="{{ evFields }}" as="f" hint-placeholder-count="4">
+                  <label style="display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: #4A4566">{{ f.l }}<span style="height: 38px; padding: 0 12px; border: 1px solid #E3E0EE; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 400; color: #151035">{{ f.v }}</span></label>
+                </sc-for>
+              </section>
+              <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+                <h2 style="margin: 0; font-size: 16px; font-weight: 700">Which page shows</h2>
+                <span style="font-size: 14px">Automatic: coming-soon page until the event has its own sessions</span>
+                <div style="padding: 12px; border-radius: 10px; background: #F6F5FA; font-size: 13px; line-height: 20px; color: #4A4566">Save draft keeps changes private. Preview opens the real website with your changes. A manager publishes.</div>
+                <div style="height: 140px; border-radius: 10px; background: #151035; color: #FFFFFF; padding: 16px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px"><span style="font-size: 11px; color: #F5A623; font-weight: 600; letter-spacing: .06em">VANCOUVER · BRIEFING 2027</span><b style="font-size: 20px">Vancouver Briefing 2027</b><span style="font-size: 12px; opacity: .8">Page preview thumbnail</span></div>
+              </section>
+            </div>
+          </sc-if>
+
+          <!-- People -->
+          <sc-if value="{{ isPeople }}" hint-placeholder-val="{{ false }}">
+            <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; overflow: hidden">
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+                <div style="display: grid; grid-template-columns: 1.3fr 1.4fr 1fr 0.8fr; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #F0EEF6; font-size: 14px; align-items: center">
+                  <b>{{ r.n }}</b><span style="color: #4A4566">{{ r.o }}</span><span>{{ r.p }}</span><span style="font-size: 12px; font-weight: 600; color: {{ r.c }}">{{ r.s }}</span>
+                </div>
+              </sc-for>
+            </section>
+          </sc-if>
+
+          <!-- Check-in -->
+          <sc-if value="{{ isCheckin }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px">
+              <section style="background: #151035; color: #FFFFFF; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 260px">
+                <div style="width: 160px; height: 160px; border: 3px dashed rgba(255,255,255,.5); border-radius: 16px"></div>
+                <b>Point the camera at a pass</b><span style="font-size: 13px; opacity: .75">Or type a ticket ID</span>
+              </section>
+              <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 18px; display: grid; gap: 10px; align-content: start">
+                <sc-for list="{{ ciStats }}" as="s" hint-placeholder-count="3"><div style="display: flex; justify-content: space-between; font-size: 14px; padding: 10px 0; border-bottom: 1px solid #F0EEF6"><span>{{ s.l }}</span><b>{{ s.v }}</b></div></sc-for>
+              </section>
+            </div>
+          </sc-if>
+
+          <!-- Editing a row: its form opens here -->
+          <sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
+            <section style="background: #FFFFFF; border: 2px solid #D6308C; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 14px">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+                <span style="padding: 2px 8px; border-radius: 999px; background: #FBE9F3; color: #9D1D63; font-size: 11px; font-weight: 700">EDITING</span>
+                <h2 style="margin: 0; font-size: 16px; font-weight: 700">{{ editTitle }}</h2>
+                <span style="font-size: 12px; color: #6B6688">Last edited by {{ editLastBy }} · {{ editLastAt }}</span>
+                <div style="margin-left: auto; display: flex; gap: 8px">
+                  <button type="button" class="x-press" onClick="{{ editSave }}" style="height: 34px; padding: 0 12px; border: 1px solid #E3E0EE; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600; color: #151035">{{ editSaveLabel }}</button>
+                  <button type="button" class="x-press" onClick="{{ editDone }}" style="height: 34px; padding: 0 12px; border: 0; border-radius: 8px; background: #151035; font-family: inherit; font-size: 13px; font-weight: 600; color: #FFFFFF">Done</button>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px">
+                <sc-for list="{{ editFields }}" as="ef" hint-placeholder-count="4">
+                  <label style="display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: #4A4566">{{ ef.l }}
+                    <input type="text" value="{{ ef.v }}" style="height: 40px; padding: 0 12px; border: 1px solid #D6D2E6; border-radius: 9px; font-family: inherit; font-size: 14px; color: #151035; background: #FFFFFF">
+                  </label>
+                </sc-for>
+              </div>
+              <div style="padding: 12px 14px; border: 1px solid #E3E0EE; border-radius: 10px; display: flex; flex-direction: column; gap: 8px">
+                <b style="font-size: 13px">Submit for approval to</b>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                  <sc-for list="{{ approvers }}" as="ap" hint-placeholder-count="4">
+                    <label class="x-press" onClick="{{ ap.pick }}" style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid {{ ap.border }}; background: {{ ap.bg }}; font-size: 13px; font-weight: 600">
+                      <span style="width: 16px; height: 16px; border-radius: 4px; border: 2px solid {{ ap.box }}; background: {{ ap.fill }}; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 11px; line-height: 1">{{ ap.tick }}</span>{{ ap.name }}<span style="font-weight: 400; color: #6B6688">{{ ap.role }}</span>
+                    </label>
+                  </sc-for>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <span style="font-size: 12px; color: #6B6688">{{ approvalNote }}</span>
+                  <button type="button" class="x-press" onClick="{{ submitApproval }}" style="margin-left: auto; height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: {{ approvalBtnBg }}; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">Submit for approval</button>
+                </div>
+              </div>
+              <div style="padding: 12px 14px; border: 1px solid #E3E0EE; border-radius: 10px; display: flex; flex-direction: column; gap: 8px"><b style="font-size: 13px">Comments and suggested edits</b>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <sc-for list="{{ revComments }}" as="cm" hint-placeholder-count="2">
+                  <div style="display: flex; gap: 8px; align-items: flex-start">
+                    <span style="width: 26px; height: 26px; flex: 0 0 26px; border-radius: 999px; background: {{ cm.col }}; color: #FFFFFF; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{ cm.ini }}</span>
+                    <div style="flex: 1 1 auto; padding: 8px 10px; border-radius: 10px; background: #F6F5FA; display: flex; flex-direction: column; gap: 4px">
+                      <span style="font-size: 12px"><b>{{ cm.who }}</b> <span style="color: #6B6688">· {{ cm.when }}</span> <sc-if value="{{ cm.isSug }}" hint-placeholder-val="{{ false }}"><span style="padding: 1px 6px; border-radius: 999px; background: #FEF3C7; color: #92400E; font-size: 10px; font-weight: 700">SUGGESTED EDIT</span></sc-if><sc-if value="{{ cm.done }}" hint-placeholder-val="{{ false }}"><span style="padding: 1px 6px; border-radius: 999px; background: {{ cm.doneBg }}; color: {{ cm.doneFg }}; font-size: 10px; font-weight: 700">{{ cm.doneLabel }}</span></sc-if></span>
+                      <span style="font-size: 13px; line-height: 19px">{{ cm.text }}</span>
+                      <sc-if value="{{ cm.isSug }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size: 13px; line-height: 19px; padding: 6px 8px; border-radius: 6px; background: #FFFFFF; border: 1px solid #E3E0EE"><span style="text-decoration: line-through; color: #B91C1C; background: #FEE2E2">{{ cm.from }}</span> <span style="color: #166534; background: #DCFCE7">{{ cm.to }}</span></span>
+                        <sc-if value="{{ cm.open }}" hint-placeholder-val="{{ true }}"><span style="display: flex; gap: 6px"><button type="button" class="x-press" onClick="{{ cm.accept }}" style="height: 26px; padding: 0 10px; border: 0; border-radius: 6px; background: #166534; color: #FFFFFF; font-family: inherit; font-size: 12px; font-weight: 600">Accept</button><button type="button" class="x-press" onClick="{{ cm.reject }}" style="height: 26px; padding: 0 10px; border: 1px solid #E3E0EE; border-radius: 6px; background: #FFFFFF; font-family: inherit; font-size: 12px; font-weight: 600">Reject</button></span></sc-if>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <input type="text" placeholder="{{ revPlaceholder }}" style="flex: 1 1 auto; height: 36px; padding: 0 10px; border: 1px solid #E3E0EE; border-radius: 8px; font-family: inherit; font-size: 13px">
+                  <button type="button" class="x-press" onClick="{{ revToggleSug }}" style="height: 36px; padding: 0 10px; border: 1px solid {{ revSugBorder }}; border-radius: 8px; background: {{ revSugBg }}; font-family: inherit; font-size: 12px; font-weight: 600; color: #151035">✎ Suggest an edit</button>
+                  <button type="button" class="x-press" onClick="{{ revSend }}" style="height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: #151035; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">Comment</button>
+                </div>
+              </div>
+              </div>
+              <div onClick="{{ dropPick }}" class="x-press" style="padding: 12px 14px; border: 2px dashed #C9C3DE; border-radius: 10px; background: #FBFAFE; display: flex; align-items: center; gap: 10px; font-size: 13px">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D6308C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.6l-8.5 8.5a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"></path></svg>
+                <b>Attach files</b><span style="color: #6B6688">Drop any file here or click to choose · saved to Files & media</span>
+              </div>
+              <span style="font-size: 12px; color: #6B6688">{{ editNote }}</span>
+            </section>
+          </sc-if>
+          <!-- Content calendar: month plan, on-time tracking and updates -->
+          <sc-if value="{{ isCalendar }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+              <sc-for list="{{ calKpis }}" as="ck" hint-placeholder-count="4">
+                <div style="padding: 14px 16px; border: 1px solid #E3E0EE; border-radius: 12px; background: #FFFFFF; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 12px; color: #6B6688">{{ ck.l }}</span><b style="font-size: 22px; color: {{ ck.c }}">{{ ck.v }}</b><span style="font-size: 12px; color: #6B6688">{{ ck.s }}</span></div>
+              </sc-for>
+            </div>
+            <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+                <h2 style="margin: 0; font-size: 16px; font-weight: 700">November 2026</h2>
+                <span style="font-size: 13px; font-weight: 600; color: #D6308C">‹ October · December ›</span>
+                <div style="margin-left: auto; display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: #4A4566">
+                  <sc-for list="{{ calLegend }}" as="lg" hint-placeholder-count="5"><span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 3px; background: {{ lg.c }}"></span>{{ lg.t }}</span></sc-for>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; font-size: 11px; font-weight: 600; color: #8A86A0"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+              <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px">
+                <sc-for list="{{ calDays }}" as="cd" hint-placeholder-count="28">
+                  <div style="min-height: 84px; border: 1px solid {{ cd.border }}; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; background: {{ cd.bg }}">
+                    <span style="font-size: 11px; font-weight: 700; color: {{ cd.numC }}">{{ cd.n }}</span>
+                    <sc-for list="{{ cd.items }}" as="ci" hint-placeholder-count="1">
+                      <button type="button" class="x-press" onClick="{{ ci.pick }}" title="{{ ci.full }}" style="padding: 3px 5px; border: 0; border-left: 3px solid {{ ci.c }}; border-radius: 4px; background: {{ ci.bg }}; font-family: inherit; text-align: left; font-size: 10px; line-height: 13px; color: #151035; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{ ci.icon }} {{ ci.t }}</button>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+              <span style="font-size: 12px; color: #6B6688">Drag an item to another day to move it. Click to open it. Each item’s border colour is its status.</span>
+            </section>
+          </sc-if>
+          <!-- Approvals: review queue with comments, suggested edits and a decision -->
+          <sc-if value="{{ isApprovals }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px; align-items: start">
+              <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 4px">
+                <sc-for list="{{ apprQueue }}" as="q" hint-placeholder-count="3">
+                  <button type="button" class="x-press x-item" onClick="{{ q.pick }}" style="padding: 10px; border: 0; border-left: 3px solid {{ q.edge }}; border-radius: 8px; background: {{ q.bg }}; font-family: inherit; text-align: left; display: flex; flex-direction: column; gap: 3px">
+                    <b style="font-size: 13px; color: #151035">{{ q.t }}</b>
+                    <span style="font-size: 12px; color: #6B6688">{{ q.sub }}</span>
+                    <span style="font-size: 11px; font-weight: 700; color: {{ q.stC }}">{{ q.st }}</span>
+                  </button>
+                </sc-for>
+              </section>
+              <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+                  <div style="display: flex; flex-direction: column; gap: 2px"><b style="font-size: 16px">{{ apprItem.t }}</b><span style="font-size: 12px; color: #6B6688">{{ apprItem.sub }}</span></div>
+                  <div style="margin-left: auto; display: flex; gap: 8px">
+                    <button type="button" class="x-press" onClick="{{ apprReject }}" style="height: 34px; padding: 0 12px; border: 1px solid #E3E0EE; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600; color: #B91C1C">Reject</button>
+                    <button type="button" class="x-press" onClick="{{ apprChanges }}" style="height: 34px; padding: 0 12px; border: 1px solid #E3E0EE; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">Request changes</button>
+                    <button type="button" class="x-press" onClick="{{ apprApprove }}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 8px; background: #166534; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">{{ apprApproveLabel }}</button>
+                  </div>
+                </div>
+                <div style="padding: 12px; border-radius: 10px; background: #F6F5FA; display: flex; flex-direction: column; gap: 6px">
+                  <span style="font-size: 11px; font-weight: 700; letter-spacing: .06em; color: #8A86A0">WHAT CHANGED</span>
+                  <sc-for list="{{ apprDiff }}" as="df" hint-placeholder-count="2">
+                    <div style="display: grid; grid-template-columns: 140px 1fr; gap: 10px; font-size: 13px; line-height: 19px"><b>{{ df.f }}</b><span><span style="text-decoration: line-through; color: #B91C1C; background: #FEE2E2">{{ df.from }}</span> <span style="color: #166534; background: #DCFCE7">{{ df.to }}</span></span></div>
+                  </sc-for>
+                  <button type="button" class="x-press" onClick="{{ apprPreview }}" style="align-self: flex-start; height: 28px; padding: 0 10px; border: 1px solid #E3E0EE; border-radius: 7px; background: #FFFFFF; font-family: inherit; font-size: 12px; font-weight: 600">Preview on the page</button>
+                </div>
+                <b style="font-size: 13px">Comments and suggested edits</b>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <sc-for list="{{ revComments }}" as="cm" hint-placeholder-count="2">
+                  <div style="display: flex; gap: 8px; align-items: flex-start">
+                    <span style="width: 26px; height: 26px; flex: 0 0 26px; border-radius: 999px; background: {{ cm.col }}; color: #FFFFFF; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{ cm.ini }}</span>
+                    <div style="flex: 1 1 auto; padding: 8px 10px; border-radius: 10px; background: #F6F5FA; display: flex; flex-direction: column; gap: 4px">
+                      <span style="font-size: 12px"><b>{{ cm.who }}</b> <span style="color: #6B6688">· {{ cm.when }}</span> <sc-if value="{{ cm.isSug }}" hint-placeholder-val="{{ false }}"><span style="padding: 1px 6px; border-radius: 999px; background: #FEF3C7; color: #92400E; font-size: 10px; font-weight: 700">SUGGESTED EDIT</span></sc-if><sc-if value="{{ cm.done }}" hint-placeholder-val="{{ false }}"><span style="padding: 1px 6px; border-radius: 999px; background: {{ cm.doneBg }}; color: {{ cm.doneFg }}; font-size: 10px; font-weight: 700">{{ cm.doneLabel }}</span></sc-if></span>
+                      <span style="font-size: 13px; line-height: 19px">{{ cm.text }}</span>
+                      <sc-if value="{{ cm.isSug }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size: 13px; line-height: 19px; padding: 6px 8px; border-radius: 6px; background: #FFFFFF; border: 1px solid #E3E0EE"><span style="text-decoration: line-through; color: #B91C1C; background: #FEE2E2">{{ cm.from }}</span> <span style="color: #166534; background: #DCFCE7">{{ cm.to }}</span></span>
+                        <sc-if value="{{ cm.open }}" hint-placeholder-val="{{ true }}"><span style="display: flex; gap: 6px"><button type="button" class="x-press" onClick="{{ cm.accept }}" style="height: 26px; padding: 0 10px; border: 0; border-radius: 6px; background: #166534; color: #FFFFFF; font-family: inherit; font-size: 12px; font-weight: 600">Accept</button><button type="button" class="x-press" onClick="{{ cm.reject }}" style="height: 26px; padding: 0 10px; border: 1px solid #E3E0EE; border-radius: 6px; background: #FFFFFF; font-family: inherit; font-size: 12px; font-weight: 600">Reject</button></span></sc-if>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <input type="text" placeholder="{{ revPlaceholder }}" style="flex: 1 1 auto; height: 36px; padding: 0 10px; border: 1px solid #E3E0EE; border-radius: 8px; font-family: inherit; font-size: 13px">
+                  <button type="button" class="x-press" onClick="{{ revToggleSug }}" style="height: 36px; padding: 0 10px; border: 1px solid {{ revSugBorder }}; border-radius: 8px; background: {{ revSugBg }}; font-family: inherit; font-size: 12px; font-weight: 600; color: #151035">✎ Suggest an edit</button>
+                  <button type="button" class="x-press" onClick="{{ revSend }}" style="height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: #151035; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">Comment</button>
+                </div>
+              </div>
+              </section>
+            </div>
+          </sc-if>
+          <!-- Social: LinkedIn-style composer with a live preview -->
+          <sc-if value="{{ isSocial }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 14px; align-items: start">
+              <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; overflow: hidden">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 14px 16px 6px">
+                  <span style="width: 44px; height: 44px; border-radius: 999px; background: #151035; display: flex; align-items: center; justify-content: center; flex: 0 0 44px"><img src="/_blob/91b82cf91cc133bbda3abd88aa79c556" alt="" style="width: 34px; height: auto"></span>
+                  <span style="display: flex; flex-direction: column"><b style="font-size: 14px">The Tech Festival Canada</b><span style="font-size: 12px; color: #6B6688">Post to: Anyone · {{ evName }}</span></span>
+                </div>
+                <div style="display: flex; gap: 6px; padding: 6px 16px; flex-wrap: wrap">
+                  <sc-for list="{{ socialChannels }}" as="ch" hint-placeholder-count="3">
+                    <button type="button" class="x-press" onClick="{{ ch.pick }}" style="height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid {{ ch.border }}; background: {{ ch.bg }}; color: {{ ch.fg }}; font-family: inherit; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px">{{ ch.label }}<span style="font-weight: 500; opacity: .8">{{ ch.count }}</span></button>
+                  </sc-for>
+                </div>
+                <div style="display: flex; gap: 2px; padding: 4px 12px; border-top: 1px solid #F0EEF6; border-bottom: 1px solid #F0EEF6">
+                  <sc-for list="{{ socialFormat }}" as="fm" hint-placeholder-count="5">
+                    <button type="button" class="x-press x-item" onClick="{{ fm.pick }}" title="{{ fm.title }}" aria-label="{{ fm.title }}" style="min-width: 32px; height: 30px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; font-family: inherit; font-size: 13px; font-weight: {{ fm.w }}; font-style: {{ fm.st }}; color: #151035">{{ fm.label }}</button>
+                  </sc-for>
+                </div>
+                <div role="tablist" aria-label="Text for each channel" style="display: flex; align-items: center; gap: 4px; padding: 8px 12px 0; border-bottom: 1px solid #F0EEF6">
+                  <sc-for list="{{ editTabs }}" as="et" hint-placeholder-count="3">
+                    <button type="button" role="tab" aria-selected="{{ et.on }}" class="x-press" onClick="{{ et.pick }}" style="height: 34px; padding: 0 12px; border: 0; background: transparent; font-family: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; color: {{ et.fg }}; box-shadow: inset 0 -2px 0 {{ et.line }}; display: flex; align-items: center; gap: 6px">{{ et.label }}<sc-if value="{{ et.tag }}" hint-placeholder-val="{{ false }}"><span style="padding: 1px 6px; border-radius: 999px; background: #FBE9F3; color: #9D1D63; font-size: 10px; font-weight: 700">{{ et.tag }}</span></sc-if></button>
+                  </sc-for>
+                  <button type="button" class="x-press" onClick="{{ repOpen }}" style="margin-left: auto; height: 30px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: #D6308C; font-family: inherit; font-size: 12px; font-weight: 600; white-space: nowrap">{{ repLabel }}</button>
+                </div>
+                <textarea aria-label="{{ editAria }}" onInput="{{ editInput }}" placeholder="What do you want to talk about?" style="display: block; width: 100%; min-height: 190px; box-sizing: border-box; border: 0; outline: none; resize: vertical; padding: 14px 16px; font-family: inherit; font-size: 15px; line-height: 23px; color: #151035; background: #FFFFFF">{{ editText }}</textarea>
+                <sc-if value="{{ editIsChannel }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 0 16px 10px; font-size: 12px; color: #6B6688; white-space: nowrap; flex-wrap: wrap">
+                    <span>{{ editHow }}</span>
+                    <button type="button" class="x-press" onClick="{{ editRegen }}" style="border: 0; background: transparent; padding: 0; font-family: inherit; font-size: 12px; font-weight: 600; color: #D6308C">Suggest another</button>
+                    <button type="button" class="x-press" onClick="{{ editReset }}" style="border: 0; background: transparent; padding: 0; font-family: inherit; font-size: 12px; font-weight: 600; color: #6B6688">Use the main text</button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ socialHasMedia }}" hint-placeholder-val="{{ true }}">
+                  <div style="display: flex; gap: 8px; padding: 0 16px 12px">
+                    <span style="width: 120px; height: 76px; border-radius: 8px; background: linear-gradient(135deg, #3B3170, #151035); color: rgba(255,255,255,.75); font-size: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 6px; box-sizing: border-box; gap: 4px">maya-chen.jpg<span style="font-size: 9px; color: #F5A623; font-weight: 700">RESIZED FOR 3 CHANNELS</span></span>
+                    <button type="button" class="x-press" onClick="{{ dropPick }}" style="width: 76px; height: 76px; border: 2px dashed #C9C3DE; border-radius: 8px; background: #FBFAFE; font-family: inherit; font-size: 22px; color: #D6308C">+</button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ socialSchedOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin: 0 12px 10px; padding: 14px; border: 1px solid #D6308C; border-radius: 10px; background: #FFFBFD; display: flex; flex-direction: column; gap: 10px">
+                    <b style="font-size: 14px">Schedule post</b>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 8px">
+                      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: #4A4566">Date<input type="date" value="2026-11-20" style="height: 36px; padding: 0 8px; border: 1px solid #E3E0EE; border-radius: 8px; font-family: inherit"></label>
+                      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: #4A4566">Time<input type="time" value="{{ socialTimeValue }}" style="height: 36px; padding: 0 8px; border: 1px solid #E3E0EE; border-radius: 8px; font-family: inherit"></label>
+                      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: #4A4566">Time zone<select style="height: 36px; padding: 0 8px; border: 1px solid #E3E0EE; border-radius: 8px; font-family: inherit"><option>Toronto (Eastern)</option><option>Vancouver (Pacific)</option><option>Calgary (Mountain)</option></select></label>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span style="font-size: 12px; color: #6B6688">Good times for your audience:</span>
+                      <sc-for list="{{ socialSlots }}" as="sl" hint-placeholder-count="3"><button type="button" class="x-press" onClick="{{ sl.pick }}" style="height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid {{ sl.border }}; background: {{ sl.bg }}; font-family: inherit; font-size: 12px; font-weight: 600; color: #151035">{{ sl.label }}</button></sc-for>
+                    </div>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px"><input type="checkbox"> Post at a different time on each channel</label>
+                    <div style="display: flex; gap: 8px; justify-content: flex-end">
+                      <button type="button" class="x-press" onClick="{{ socialSchedCancel }}" style="height: 32px; padding: 0 12px; border: 1px solid #E3E0EE; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">Cancel</button>
+                      <button type="button" class="x-press" onClick="{{ socialSchedSet }}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: #151035; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">Set schedule</button>
+                    </div>
+                  </div>
+                </sc-if>
+                <div style="padding: 0 12px 10px">
+                    <div style="padding: 12px 14px; border: 1px solid #E3E0EE; border-radius: 10px; display: flex; flex-direction: column; gap: 8px">
+                <b style="font-size: 13px">Submit for approval to</b>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                  <sc-for list="{{ approvers }}" as="ap" hint-placeholder-count="4">
+                    <label class="x-press" onClick="{{ ap.pick }}" style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid {{ ap.border }}; background: {{ ap.bg }}; font-size: 13px; font-weight: 600">
+                      <span style="width: 16px; height: 16px; border-radius: 4px; border: 2px solid {{ ap.box }}; background: {{ ap.fill }}; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 11px; line-height: 1">{{ ap.tick }}</span>{{ ap.name }}<span style="font-weight: 400; color: #6B6688">{{ ap.role }}</span>
+                    </label>
+                  </sc-for>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <span style="font-size: 12px; color: #6B6688">{{ approvalNote }}</span>
+                  <button type="button" class="x-press" onClick="{{ submitApproval }}" style="margin-left: auto; height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: {{ approvalBtnBg }}; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">Submit for approval</button>
+                </div>
+              </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 2px; padding: 8px 12px; border-top: 1px solid #F0EEF6; flex-wrap: wrap">
+                  <sc-for list="{{ socialTools }}" as="tl" hint-placeholder-count="7">
+                    <button type="button" class="x-press x-item" onClick="{{ tl.pick }}" title="{{ tl.title }}" aria-label="{{ tl.title }}" style="width: 36px; height: 36px; border: 0; border-radius: 999px; background: transparent; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ tl.color }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ tl.icon }}"></path></svg></button>
+                  </sc-for>
+                  <span style="margin-left: auto; font-size: 12px; color: #6B6688">{{ socialWhen }}</span>
+                  <button type="button" class="x-press" onClick="{{ socialSchedule }}" title="Schedule" aria-label="Schedule" style="width: 36px; height: 36px; border: 0; border-radius: 999px; background: transparent; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#151035" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></button>
+                  <button type="button" class="x-press" onClick="{{ socialPost }}" style="height: 34px; padding: 0 16px; border: 0; border-radius: 999px; background: {{ socialPostBg }}; color: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600">{{ socialPostLabel }}</button>
+                </div>
+              </section>
+              <section style="display: flex; flex-direction: column; gap: 8px">
+                <div style="display: flex; gap: 4px; padding: 3px; border-radius: 999px; background: #EDEBF5; width: fit-content">
+                  <sc-for list="{{ socialPreviewTabs }}" as="pt" hint-placeholder-count="3"><button type="button" class="x-press" onClick="{{ pt.pick }}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 999px; font-family: inherit; font-size: 12px; font-weight: 600; background: {{ pt.bg }}; color: {{ pt.fg }}">{{ pt.label }}</button></sc-for>
+                </div>
+                <div style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 10px; overflow: hidden">
+                  <div style="display: flex; gap: 10px; align-items: center; padding: 12px 14px">
+                    <span style="width: 40px; height: 40px; border-radius: {{ socialAvatarRadius }}; background: #151035; display: flex; align-items: center; justify-content: center"><img src="/_blob/91b82cf91cc133bbda3abd88aa79c556" alt="" style="width: 30px; height: auto"></span>
+                    <span style="display: flex; flex-direction: column"><b style="font-size: 13px">{{ socialHandle }}</b><span style="font-size: 11px; color: #6B6688">{{ socialSub }}</span></span>
+                  </div>
+                  <p style="margin: 0; padding: 0 14px 10px; font-size: 13px; line-height: 20px; white-space: pre-wrap">{{ socialPreviewText }}</p>
+                  <div style="aspect-ratio: {{ socialRatio }}; max-height: 260px; width: 100%; background: {{ socialImgBg }}; color: rgba(255,255,255,.85); display: flex; align-items: center; justify-content: center; font-size: 12px; position: relative"><span style="padding: {{ socialImgPad }}; background: linear-gradient(135deg, #3B3170, #241C55); border-radius: 4px">maya-chen.jpg</span><span style="position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(21,16,53,.85); color: #F5A623; font-size: 10px; font-weight: 700">AUTO-RESIZED {{ socialSize }}</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px solid #F0EEF6; flex-wrap: wrap">
+                    <div style="display: flex; gap: 3px; padding: 2px; border-radius: 999px; background: #F1F0F5">
+                      <sc-for list="{{ socialFits }}" as="sf" hint-placeholder-count="2"><button type="button" class="x-press" onClick="{{ sf.pick }}" style="height: 26px; padding: 0 10px; border: 0; border-radius: 999px; font-family: inherit; font-size: 11px; font-weight: 600; background: {{ sf.bg }}; color: {{ sf.fg }}">{{ sf.label }}</button></sc-for>
+                    </div>
+                    <button type="button" class="x-press" onClick="{{ cropPick }}" style="height: 26px; padding: 0 10px; border: 1px solid #E3E0EE; border-radius: 999px; background: #FFFFFF; font-family: inherit; font-size: 11px; font-weight: 600">Adjust focus for {{ socialTabName }}</button>
+                    <span style="margin-left: auto; font-size: 11px; color: #6B6688">Face kept in view automatically</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-around; padding: 8px; border-top: 1px solid #F0EEF6; font-size: 12px; color: #6B6688"><span>{{ socialActions }}</span></div>
+                </div>
+                <span style="font-size: 12px; color: #6B6688">{{ socialNote }}</span>
+              </section>
+            </div>
+            <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; align-items: baseline; gap: 10px"><h2 style="margin: 0; font-size: 16px; font-weight: 700">Schedule · week of Nov 16</h2><span style="font-size: 12px; color: #6B6688">Click a post to edit or move it</span><span style="margin-left: auto; font-size: 13px; font-weight: 600; color: #D6308C">‹ Previous week · Next week ›</span></div>
+              <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px">
+                <sc-for list="{{ socialWeek }}" as="dy" hint-placeholder-count="7">
+                  <div style="min-height: 120px; border: 1px solid #F0EEF6; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px; background: {{ dy.bg }}">
+                    <span style="font-size: 12px; font-weight: 600; color: #4A4566">{{ dy.d }}</span>
+                    <sc-for list="{{ dy.posts }}" as="pp" hint-placeholder-count="1">
+                      <button type="button" class="x-press" onClick="{{ pp.pick }}" style="padding: 6px 8px; border: 0; border-left: 3px solid {{ pp.c }}; border-radius: 6px; background: #F6F5FA; font-family: inherit; text-align: left; font-size: 11px; line-height: 15px; color: #151035"><b>{{ pp.t }}</b><br>{{ pp.x }}</button>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </section>
+          </sc-if>
+          <!-- Every other page: its real fields and tables -->
+          <sc-if value="{{ isGeneric }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size: 12px; color: #8A86A0">Today: {{ page.from }}</span>
+            <sc-for list="{{ sections }}" as="sec" hint-placeholder-count="2">
+              <section style="background: #FFFFFF; border: 1px solid #E3E0EE; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 14px">
+                <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+                  <h2 style="margin: 0; font-size: 16px; font-weight: 700">{{ sec.t }}</h2>
+                  <sc-if value="{{ sec.hint }}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; color: #6B6688">{{ sec.hint }}</span></sc-if>
+                </div>
+                <sc-if value="{{ sec.isForm }}" hint-placeholder-val="{{ true }}">
+                  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px">
+                    <sc-for list="{{ sec.fields }}" as="f" hint-placeholder-count="4">
+                      <div style="display: flex; flex-direction: column; gap: 5px; grid-column: {{ f.span }}">
+                        <sc-if value="{{ f.isImg }}" hint-placeholder-val="{{ false }}">
+                          <span style="font-size: 12px; font-weight: 600; color: #4A4566">{{ f.l }}</span>
+                          <div style="display: flex; gap: 12px; align-items: center; padding: 10px; border: 1px solid #E3E0EE; border-radius: 10px">
+                            <span style="width: 96px; height: 64px; flex: 0 0 96px; border-radius: 8px; background: linear-gradient(135deg, #3B3170, #151035); color: rgba(255,255,255,.7); font-size: 10px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4px; box-sizing: border-box">{{ f.thumb }}</span>
+                            <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+                              <span style="font-size: 13px; color: #151035; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ f.v }}</span>
+                              <span style="display: flex; gap: 6px; flex-wrap: wrap">
+                                <button type="button" class="x-press" onClick="{{ dropPick }}" style="height: 28px; padding: 0 10px; border: 1px solid #D6308C; border-radius: 7px; background: #FFFFFF; color: #D6308C; font-family: inherit; font-size: 12px; font-weight: 600">Replace photo</button>
+                                <button type="button" class="x-press" onClick="{{ cropPick }}" style="height: 28px; padding: 0 10px; border: 1px solid #E3E0EE; border-radius: 7px; background: #FFFFFF; color: #151035; font-family: inherit; font-size: 12px; font-weight: 600">Adjust crop</button>
+                                <button type="button" class="x-press" onClick="{{ removePick }}" style="height: 28px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: #6B6688; font-family: inherit; font-size: 12px; font-weight: 600">Remove</button>
+                              </span>
+                              <span style="font-size: 11px; color: #8A86A0">{{ f.hint }}</span>
+                            </span>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ f.isDrop }}" hint-placeholder-val="{{ false }}">
+                          <div onClick="{{ dropPick }}" class="x-press" style="padding: 22px; border: 2px dashed #C9C3DE; border-radius: 12px; background: #FBFAFE; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D6308C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"></path><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg>
+                            <b style="font-size: 14px">{{ f.l }}</b>
+                            <span style="font-size: 12px; color: #6B6688">{{ f.v }}</span>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ f.isToggle }}" hint-placeholder-val="{{ false }}">
+                          <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #E3E0EE; border-radius: 10px">
+                            <span style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto"><b style="font-size: 14px">{{ f.l }}</b><sc-if value="{{ f.hint }}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; color: #6B6688">{{ f.hint }}</span></sc-if></span>
+                            <span style="width: 40px; height: 22px; border-radius: 999px; background: {{ f.tBg }}; position: relative; flex: 0 0 40px"><span style="position: absolute; top: 2px; left: {{ f.tX }}; width: 18px; height: 18px; border-radius: 999px; background: #FFFFFF"></span></span>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ f.isInput }}" hint-placeholder-val="{{ true }}">
+                          <span style="font-size: 12px; font-weight: 600; color: #4A4566">{{ f.l }}<sc-if value="{{ f.req }}" hint-placeholder-val="{{ false }}"><span style="color: #D6308C"> *</span></sc-if></span>
+                          <span style="min-height: {{ f.h }}; padding: 9px 12px; box-sizing: border-box; border: 1px solid #E3E0EE; border-radius: 9px; background: {{ f.bg }}; font-size: 14px; line-height: 21px; color: {{ f.fg }}; display: flex; align-items: {{ f.align }}; gap: 8px">{{ f.v }}<sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}"><svg style="margin-left: auto; flex: 0 0 14px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6688" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></sc-if></span>
+                          <sc-if value="{{ f.hint }}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; color: #8A86A0">{{ f.hint }}</span></sc-if>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ sec.isKpi }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+                    <sc-for list="{{ sec.cards }}" as="k" hint-placeholder-count="3">
+                      <button type="button" class="x-press" onClick="{{ k.pick }}" style="padding: 14px 16px; border: 1px solid {{ k.border }}; border-radius: 12px; background: {{ k.bg }}; font-family: inherit; text-align: left; display: flex; flex-direction: column; gap: 3px">
+                        <span style="font-size: 12px; color: #6B6688">{{ k.l }}</span>
+                        <b style="font-size: 24px; color: {{ k.c }}; font-variant-numeric: tabular-nums">{{ k.v }}</b>
+                        <span style="font-size: 12px; color: #6B6688">{{ k.s }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ sec.isTable }}" hint-placeholder-val="{{ false }}">
+                  <div style="border: 1px solid #F0EEF6; border-radius: 10px; overflow: hidden">
+                    <div style="display: grid; grid-template-columns: {{ sec.cols }}; gap: 12px; padding: 10px 12px; background: #F6F5FA; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #6B6688">
+                      <sc-for list="{{ sec.head }}" as="hd" hint-placeholder-count="4"><span>{{ hd.t }}</span></sc-for>
+                    </div>
+                    <sc-for list="{{ sec.rows }}" as="row" hint-placeholder-count="3">
+                      <div role="button" tabindex="0" class="x-press x-item" onClick="{{ row.pick }}" title="Click to edit" style="display: grid; grid-template-columns: {{ sec.cols }}; gap: 12px; padding: 11px 12px; border-top: 1px solid #F0EEF6; font-size: 13px; align-items: center; background: {{ row.bg }}; box-shadow: inset 3px 0 0 {{ row.edge }}">
+                        <sc-for list="{{ row.cells }}" as="cl" hint-placeholder-count="4"><span style="font-weight: {{ cl.w }}; color: {{ cl.c }}">{{ cl.t }}</span></sc-for>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </section>
+            </sc-for>
+          </sc-if>
+        </div>
+      </main>
+      <!-- Editing mode: the page as it will look, beside the form -->
+      <sc-if value="{{ livePane }}" hint-placeholder-val="{{ false }}">
+        <aside aria-label="Live page" style="width: 400px; flex: 0 0 400px; border-left: 1px solid #E3E0EE; background: #2A2448; display: flex; flex-direction: column">
+          <div style="height: 44px; flex: 0 0 44px; display: flex; align-items: center; gap: 8px; padding: 0 14px; color: #FFFFFF; font-size: 12px; border-bottom: 2px solid #F5A623"><b style="color: #F5A623">Live page</b><span style="opacity: .8">updates as you type · not published</span><button type="button" class="x-press" onClick="{{ editDone }}" style="margin-left: auto; height: 26px; padding: 0 10px; border: 1px solid rgba(255,255,255,.4); border-radius: 7px; background: transparent; color: #FFFFFF; font-family: inherit; font-size: 12px">Hide</button></div>
+          <div style="flex: 1 1 auto; overflow: auto; padding: 14px">
+            <div style="background: #FFFFFF; border-radius: 10px; overflow: hidden">
+              <div style="height: 40px; background: #151035; display: flex; align-items: center; gap: 12px; padding: 0 12px; color: rgba(255,255,255,.85); font-size: 11px"><img src="/_blob/91b82cf91cc133bbda3abd88aa79c556" alt="The Tech Festival Canada" style="height: 26px; width: auto; display: block"><span>Events</span><span>Speakers</span><span style="margin-left: auto; padding: 4px 9px; border-radius: 6px; background: #F5A623; color: #151035; font-weight: 600">Tickets</span></div>
+              <div style="padding: 20px 16px; background: #3B3170; color: #FFFFFF; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 10px; font-weight: 600; letter-spacing: .06em; color: #F5A623">VANCOUVER · BRIEFING 2027</span><b style="font-size: 20px; line-height: 25px">{{ evName }}</b><span style="font-size: 12px; opacity: .85">February 2027 · Vancouver · One day</span></div>
+              <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+                <b style="font-size: 14px">{{ liveSection }}</b>
+                <div style="padding: 10px; border-radius: 8px; border: 2px dashed #D6308C; background: #FBE9F3; font-size: 12px; line-height: 18px; color: #151035"><span style="font-size: 10px; font-weight: 700; color: #9D1D63; letter-spacing: .06em">YOU’RE EDITING</span><br><b>{{ liveTitle }}</b><br>{{ liveSub }}</div>
+                <sc-for list="{{ liveOthers }}" as="lo" hint-placeholder-count="2"><div style="padding: 8px 10px; border-radius: 8px; background: #F6F5FA; font-size: 12px"><b>{{ lo.a }}</b> · {{ lo.b }}</div></sc-for>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </sc-if>
+      </div>
+
+      <!-- Search -->
+      <sc-if value="{{ searchOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeSearch }}" style="position: absolute; inset: 0; background: rgba(21,16,53,.35); display: flex; justify-content: center; padding-top: 90px; z-index: 30">
+          <div style="width: 560px; height: fit-content; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 60px rgba(21,16,53,.3); overflow: hidden">
+            <div style="height: 54px; padding: 0 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #E3E0EE; font-size: 15px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B6688" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>tick<span style="width: 1px; height: 20px; background: #151035"></span></div>
+            <div style="padding: 8px">
+              <span style="display: block; padding: 6px 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em; color: #8A86A0">PAGES</span>
+              <sc-for list="{{ hits }}" as="h" hint-placeholder-count="3">
+                <button type="button" class="x-press x-item" onClick="{{ h.go }}" style="width: 100%; padding: 10px; border: 0; border-radius: 8px; background: #FFFFFF; font-family: inherit; text-align: left; display: flex; justify-content: space-between; font-size: 14px; color: #151035"><b>{{ h.t }}</b><span style="color: #6B6688; font-size: 12px">{{ h.w }}</span></button>
+              </sc-for>
+              <span style="display: block; padding: 6px 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em; color: #8A86A0">PEOPLE</span>
+              <div style="padding: 10px; font-size: 14px; display: flex; justify-content: space-between"><b>Priya Natarajan</b><span style="color: #6B6688; font-size: 12px">Buy-side delegate · ticket TTFC-2027-VAN-001234</span></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Preview: the page as visitors will see it, with unpublished changes -->
+      <sc-if value="{{ previewOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; inset: 0; z-index: 25; background: #2A2448; display: flex; flex-direction: column">
+          <div style="height: 56px; flex: 0 0 56px; display: flex; align-items: center; gap: 12px; padding: 0 18px; background: #151035; color: #FFFFFF; border-bottom: 3px solid #F5A623">
+            <b style="color: #F5A623">Preview</b>
+            <span style="font-size: 13px; opacity: .85">{{ evName }} · {{ previewWhat }} · unpublished changes. Visitors still see the live page.</span>
+            <div style="margin-left: auto; display: flex; gap: 4px; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.12)">
+              <sc-for list="{{ pDevs }}" as="d" hint-placeholder-count="2"><button type="button" class="x-press" onClick="{{ d.pick }}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 999px; font-family: inherit; font-size: 12px; font-weight: 600; background: {{ d.bg }}; color: {{ d.fg }}">{{ d.label }}</button></sc-for>
+            </div>
+            <span style="font-size: 13px; text-decoration: underline; opacity: .85">Open in a new tab</span>
+            <button type="button" class="x-press" onClick="{{ pPublish }}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 8px; background: #D6308C; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">{{ pPublishLabel }}</button>
+            <button type="button" class="x-press" onClick="{{ closePreview }}" style="height: 34px; padding: 0 14px; border: 1px solid rgba(255,255,255,.4); border-radius: 8px; background: transparent; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">Back to editing</button>
+          </div>
+          <div style="flex: 1 1 auto; overflow: auto; display: flex; justify-content: center; padding: 18px">
+            <div style="width: {{ pW }}; max-width: 100%; background: #FFFFFF; border-radius: 10px; overflow: hidden; box-shadow: 0 18px 44px rgba(0,0,0,.35); height: fit-content">
+              <div style="height: 52px; background: #151035; display: flex; align-items: center; gap: 18px; padding: 0 18px; color: rgba(255,255,255,.85); font-size: 13px"><img src="/_blob/91b82cf91cc133bbda3abd88aa79c556" alt="The Tech Festival Canada" style="height: 26px; width: auto; display: block"><span>Events</span><span>Speakers</span><span>Partners</span><span style="margin-left: auto; padding: 6px 12px; border-radius: 8px; background: #F5A623; color: #151035; font-weight: 600">Tickets</span></div>
+              <div style="padding: 34px 28px; background: linear-gradient(90deg, rgba(21,16,53,.94), rgba(21,16,53,.6)), #3B3170; color: #FFFFFF; display: flex; flex-direction: column; gap: 10px">
+                <span style="font-size: 12px; font-weight: 600; letter-spacing: .06em; color: #F5A623">VANCOUVER · BRIEFING 2027 · ENERGY &amp; CRITICAL INFRASTRUCTURE</span>
+                <b style="font-size: 30px; line-height: 36px">{{ evName }}</b>
+                <span style="font-size: 15px; opacity: .88">Where Alberta molecules meet BC tidewater</span>
+                <span style="font-size: 13px; opacity: .85">When: February 2027 · Where: Vancouver · Format: One day · 8 sessions</span>
+                <div style="display: flex; gap: 10px; margin-top: 6px"><span style="padding: 9px 16px; border-radius: 8px; background: #F5A623; color: #151035; font-weight: 600; font-size: 14px">Get tickets</span><span style="padding: 9px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,.5); font-weight: 600; font-size: 14px">Partner with us</span></div>
+              </div>
+              <div style="padding: 22px 28px; display: flex; flex-direction: column; gap: 12px">
+                <div style="padding: 10px 12px; border-radius: 8px; border: 2px dashed #D6308C; background: #FBE9F3; font-size: 13px; color: #9D1D63"><b>Your change:</b> {{ pChange }}</div>
+                <b style="font-size: 18px">Agenda</b>
+                <div style="display: grid; grid-template-columns: 80px 1fr; gap: 8px 14px; font-size: 14px"><b>9:00 am</b><span>Opening: Five Pillars, One Sector</span><b>9:30 am</b><span>Building the Corridor: Power, Pipelines &amp; Tidewater</span><b>10:15 am</b><span>AI in Production, Not Pilots</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Contract PDF preview -->
+      <sc-if value="{{ pdfOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; inset: 0; z-index: 26; background: #3A3550; display: flex; flex-direction: column">
+          <div style="height: 54px; flex: 0 0 54px; display: flex; align-items: center; gap: 10px; padding: 0 18px; background: #151035; color: #FFFFFF">
+            <b>PDF preview</b><span style="font-size: 13px; opacity: .8">TTFC-VAN27-016 · Exhibitor agreement · 3 pages</span>
+            <button type="button" class="x-press" onClick="{{ closePdf }}" style="margin-left: auto; height: 34px; padding: 0 12px; border: 1px solid rgba(255,255,255,.4); border-radius: 8px; background: transparent; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">Back to editing</button>
+            <button type="button" class="x-press" onClick="{{ pdfEmail }}" style="height: 34px; padding: 0 12px; border: 1px solid rgba(255,255,255,.4); border-radius: 8px; background: transparent; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">Email to signatory</button>
+            <button type="button" class="x-press" onClick="{{ pdfDownload }}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 8px; background: #D6308C; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600">Download PDF</button>
+          </div>
+          <div style="flex: 1 1 auto; overflow: auto; padding: 22px; display: flex; justify-content: center">
+            <div style="width: 560px; min-height: 790px; height: fit-content; background: #FFFFFF; box-shadow: 0 16px 40px rgba(0,0,0,.35); padding: 44px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; font-size: 11px; line-height: 17px; color: #1F1B3A">
+              <div style="display: flex; align-items: center; justify-content: space-between; background: #151035; margin: -44px -48px 8px; padding: 18px 48px"><img src="/_blob/91b82cf91cc133bbda3abd88aa79c556" alt="The Tech Festival Canada" style="height: 34px; width: auto"><span style="color: #F5A623; font-size: 10px; font-weight: 600; letter-spacing: .08em">TTFC-VAN27-016</span></div>
+              <b style="font-size: 20px; line-height: 26px; color: #151035">Exhibitor Agreement</b>
+              <span>This agreement is between The Tech Festival Canada (“TTFC”) and <b>Coldstream Carbon Technologies Inc.</b> (“Exhibitor”), 1200 – 555 West Hastings St, Vancouver, BC, for <b>Vancouver Briefing 2027</b>, February 18, 2027, Vancouver.</span>
+              <b style="font-size: 12px; color: #151035">1. What the Exhibitor receives</b>
+              <div style="border: 1px solid #E3E0EE; border-radius: 6px; overflow: hidden">
+                <div style="display: grid; grid-template-columns: 1fr 90px; padding: 7px 10px; background: #F6F5FA; font-weight: 600"><span>Item</span><span style="text-align: right">Amount</span></div>
+                <div style="display: grid; grid-template-columns: 1fr 90px; padding: 7px 10px; border-top: 1px solid #E3E0EE"><span>Demo pod, spot P2 (3 × 2 m), with 2 exhibitor passes, logo on the event page and exhibitor list, and a listing in the app</span><span style="text-align: right">$3,500.00</span></div>
+                <div style="display: grid; grid-template-columns: 1fr 90px; padding: 7px 10px; border-top: 1px solid #E3E0EE"><span>HST 13%</span><span style="text-align: right">$455.00</span></div>
+                <div style="display: grid; grid-template-columns: 1fr 90px; padding: 7px 10px; border-top: 1px solid #E3E0EE; font-weight: 700"><span>Total (CAD)</span><span style="text-align: right">$3,955.00</span></div>
+              </div>
+              <b style="font-size: 12px; color: #151035">2. Payment</b>
+              <span>50% on signing and 50% by January 18, 2027. Invoices are payable within 15 days. HST applies.</span>
+              <b style="font-size: 12px; color: #151035">3. Special terms</b>
+              <span>Power outlet and one monitor included.</span>
+              <b style="font-size: 12px; color: #151035">4. Cancellation, liability and insurance</b>
+              <span>Cancellation more than 60 days before the event: 50% refund; within 60 days: no refund. The Exhibitor holds general liability insurance of at least $2,000,000 for the event.</span>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 18px">
+                <div style="display: flex; flex-direction: column; gap: 4px"><span style="height: 34px; border-bottom: 1px solid #1F1B3A"></span><b>For TTFC</b><span>Vishwa, Managing Director</span><span>Date:</span></div>
+                <div style="display: flex; flex-direction: column; gap: 4px"><span style="height: 34px; border-bottom: 1px solid #1F1B3A"></span><b>For the Exhibitor</b><span>Samuel Reid, Founder &amp; CEO</span><span>Date:</span></div>
+              </div>
+              <span style="margin-top: auto; padding-top: 18px; font-size: 9px; color: #8A86A0">Exhibitor agreement v3 · Page 1 of 3 · Page 2: floor plan · Page 3: full terms</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <div class="x-toast {{ toastCls }}" role="status" style="position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); background: #151035; color: #FFFFFF; padding: 10px 16px; border-radius: 10px; font-size: 13px">{{ toast }}</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { role: 0, ws: 'home', page: 'overview', ev: 0, evOpen: false, search: false, toast: '' }; }
+  toastIt(t) { this.setState({ toast: t }); clearTimeout(this.tt); this.tt = setTimeout(() => this.setState({ toast: '' }), 2400); }
+  componentWillUnmount() { clearTimeout(this.tt); }
+  renderVals() {
+    const s = this.state;
+    const I = {
+      home: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10',
+      event: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+      people: 'M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 20v-1a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+      day: 'M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10',
+      mkt: 'M3 11l18-8-8 18-2-8-8-2z',
+      ops: 'M9 3h6v4H9zM7 5H5v16h14V5h-2M8 12h8M8 16h5',
+      sales: 'M3 8h18v12H3zM8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18',
+      web: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
+      awards: 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3',
+      settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1'
+    };
+    const P = (k, label, from, desc, o = {}) => ({ k, label, from, desc: desc || '', m: !!o.m, v: !!o.v, s: !!o.s, badge: o.badge || 0 });
+    const WS = [
+      { id: 'home', label: 'Home', icon: I.home, badge: 2, job: 'What needs doing today.', groups: [{ h: '', items: [P('overview', 'Overview', 'Overview', 'What needs your attention across every event, and the shortcuts people use most.'), P('approvals', 'Approvals', 'New', 'Changes and posts sent to you for review. Comment, suggest edits, then approve or send back.', { badge: 2 })] }] },
+      { id: 'content', label: 'Content', icon: I.web, job: 'Everything people read and see on the website and in the app. All content is written here.', groups: [
+        { h: 'Event website', items: [P('evpage', 'Event page', 'Website content › Event pages', 'This event’s page on the website. Changes save as a draft; preview them, then a manager publishes.', { s: 1 }), P('agenda', 'Agenda', 'Website & app › Agenda', 'Sessions for this event, by day and time.', { s: 1 }), P('speakers', 'Speakers', 'Website & app › Speakers', 'Speakers on this event.', { s: 1 }), P('partners', 'Partners & sponsors', 'Partners and Featured Partners, now two tabs', 'Logos on this event’s pages and the Partners page.', { s: 1 }), P('tickets', 'Tickets & prices', 'Sales & emails › Prices & stock', 'Ticket types, prices, stock, sales windows and group discounts for this event.', { s: 1 }), P('packages', 'Sponsorship packages', 'New: the tiers on the event page (presenting, pillar, moment sponsor), with price, how many and benefits', '', { s: 1 }), P('booths', 'Booths & floor plan', 'New: demo pods and booths, the floor plan and which are sold', '', { s: 1 })] },
+        { h: 'Site-wide', items: [P('sitepages', 'Site pages', 'New: About, Exhibit, Partner, Media, Volunteer and other pages', 'The pages that aren’t about one event: their photos, headlines and text.'), P('switches', 'Website switches', 'Website & app › Website switches', ''), P('logos', 'Logo strips', 'Team alumni, Community & speakers’ companies and Home sponsors, now tabs', ''), P('orgs', 'Attending organisations', 'Website & app › Attending organisations', ''), P('files', 'Files & media', 'New: one library for every upload', 'Upload any file once (images, logos, PDFs, videos, Word, Excel, slides) and use it anywhere. Public files can appear on the website; staff-only files never do.')] },
+        { h: 'App', items: [P('apptext', 'App text & switches', 'Website & app › App text & switches', ''), P('survey', 'Attendee survey', 'Website & app › Attendee survey', ''), P('swag', 'Top networkers', 'Website & app › Top networkers', ''), P('reports', 'App reports', 'App overview, Live activity and Web app installs, now tabs', '')] }] },
+      { id: 'mkt', label: 'Marketing', icon: I.mkt, badge: 3, job: 'Reaching people: offers, leads coming in and the emails we send.', groups: [
+        { h: 'Social', items: [P('calendar', 'Social media calendar', 'New', 'Everything planned for the month across LinkedIn, Instagram, X, emails and the website, and whether it went out on time.'), P('social', 'Social posts', 'New: write once, post to LinkedIn, Instagram and X', 'Write a post, add photos or video, preview it for each channel, then publish now or schedule it. Posts go out from the TTFC accounts connected in Settings.')] },
+        { h: 'Offers', items: [P('promos', 'Promo codes', 'Sales & emails › Promo codes (today a settings screen); now with BOGO and buy-X-get-Y offers', 'Codes buyers enter at ticket checkout on the website and in the apps. The price is always worked out on the server, so a code can’t be misused.')] },
+        { h: 'Leads', items: [P('forms', 'Form submissions', 'More › Records › Form submissions (sales and sponsorship ones now go to Sales)', 'Speaker, media, volunteer and general contact forms. Sponsorship, exhibiting and partnership forms go to Sales › Sales & sponsorship enquiries.', { badge: 3 }), P('downloads', 'Downloads', 'More › Records › Brochure downloads', '')] },
+        { h: 'Emails', items: [P('purchase', 'Purchase email', 'Sales & emails › Purchase email', 'What buyers receive after paying.'), P('invite', 'App invite email', 'Website & app › App invite email', ''), P('digest', '“What you missed” emails', 'Website & app › “What you missed” emails', ''), P('attending', 'I’m attending campaign', 'More › Records › I’m attending campaign', ''), P('unsub', 'Unsubscribed', 'Website & app › Unsubscribed emails', '')] }] },
+      { id: 'sales', label: 'Sales', icon: I.sales, scoped: true, badge: 4, job: 'Selling sponsorship and exhibiting for one event: enquiries, contracts, exhibitors and revenue. Packages and prices are written in Content.', groups: [
+        { h: 'Enquiries', items: [P('pipeline', 'Sales & sponsorship enquiries', 'Sponsorship, exhibiting, partnership and group-ticket forms (from Form submissions) and emails to sales@, in one inbox', 'Every sales and sponsorship query for this event: sponsorship, exhibiting, partnerships and group tickets, from the website forms, the apps and emails to sales@thetechfestival.com. Each has an owner, a status, a value and a next step.', { badge: 4 }), P('waitlist', 'Waitlist', 'Sales & emails › 2027 waitlist', '')] },
+        { h: 'Contracts', items: [P('contracts', 'Contracts', 'New: sponsorship, exhibitor and media partner agreements, filled from the deal and exported as PDF', 'Fill in a contract from a won deal, check it as a PDF, then download it or email it to the signatory.'), P('ctemplates', 'Contract templates', 'New: the standard wording for each kind of agreement, versioned', 'The clauses each contract starts from. Changing a template never changes contracts already sent.', { m: 1 })] },
+        { h: 'Exhibitors', items: [P('exh', 'Exhibitor passes', 'People & passes › Exhibitor passes', '')] },
+        { h: 'Revenue', items: [P('sales', 'Revenue', 'Sales & emails › Sales, plus sponsorship and exhibiting', 'Total revenue across every event, then click any card or event to see where it came from.', { m: 1 })] }] },
+      { id: 'ops', label: 'Operations', icon: I.ops, scoped: true, badge: 2, job: 'Running the event: settings, venue, vendors, food, print and logistics.', groups: [
+        { h: '', items: [P('opsboard', 'Tasks & status', 'New', 'Everything that has to happen before the doors open, who owns it and when it is due.', { badge: 2 }), P('evset', 'Event settings', 'Events', 'Status, pricing announced, and who can see this event’s attendees.')] },
+        { h: 'Venue & vendors', items: [P('venue', 'Venue', 'New', 'The venue, its contract, rooms, timings and the people to call.'), P('vendors', 'Vendors', 'New', 'AV, printing, catering, logistics, security, photography: contacts, contracts, prices and status.')] },
+        { h: 'On site', items: [P('menu', 'Catering & menu', 'New', 'What is served when, dietary counts from the RSVPs, and the final numbers deadline.'), P('print', 'Print & signage', 'New', 'Badges, banners, signs and printed material, with quantities, proofs and delivery.'), P('logistics', 'Logistics', 'New', 'Shipments, load-in and load-out, equipment and storage.')] },
+        { h: 'Money', items: [P('budget', 'Budget', 'New', 'Planned against actual cost for each part of the event.', { m: 1 })] }] },
+      { id: 'people', label: 'People', icon: I.people, job: 'Find anyone, give passes, fix records.', groups: [
+        { h: '', items: [P('people', 'People', 'People & passes › People', 'Everyone with a pass, an account or an RSVP, in one list.', { v: 1 })] },
+        { h: 'Passes', items: [P('give', 'Give a pass', 'People & passes › Give a pass', ''), P('spk', 'Speaker passes', 'People & passes › Speaker passes', '')] },
+        { h: 'Records', items: [P('records', 'Ticket records', 'More › Records › Ticket records', ''), P('accounts', 'App accounts', 'More › Records › App accounts', '')] }] },
+      { id: 'day', label: 'Event day', icon: I.day, scoped: true, badge: 2, job: 'Headcounts before, check-in and help during.', groups: [
+        { h: 'Before', items: [P('summary', 'Event summary', 'RSVPs & meals › Event summary', ''), P('rsvps', 'RSVPs & headcounts', 'Headcounts & RSVPs and RSVP reminders, now two tabs', '')] },
+        { h: 'On the day', items: [P('checkin', 'Check-in', 'Event day › Check-in', 'Scan passes at the door. Counts update live.'), P('sos', 'SOS & help', 'Event day › SOS & help', '', { badge: 1 }), P('mod', 'App moderation', 'Event day › App moderation', '', { badge: 1 }), P('broadcast', 'Send an app update', 'Event day › Send an app update', '')] }] },
+      { id: 'awards', label: 'Awards', icon: I.awards, job: 'Catalyst Awards, nomination to winners.', groups: [
+        { h: '', items: [P('noms', 'Nominations', 'Catalyst Awards › Nominations', ''), P('jury', 'Jury', 'Catalyst Awards › Jury', ''), P('alloc', 'Allocation', 'Catalyst Awards › Allocation', ''), P('rubric', 'Scoring rubric', 'Catalyst Awards › Scoring rubric', ''), P('results', 'Jury results', 'Catalyst Awards › Jury results', '', { m: 1 }), P('winners', 'Winners', 'Catalyst Awards › Winners', '')] }] }
+    ];
+    const SETTINGS = { id: 'settings', label: 'Settings', icon: I.settings, job: 'Access, form inboxes and the change log.', groups: [{ h: '', items: [P('staff', 'Staff accounts', 'More › Settings › Staff accounts', '', { m: 1 }), P('rights', 'App rights', 'More › Settings › App rights', ''), P('connections', 'Connected accounts', 'New', 'The TTFC social accounts posts go out from.', { m: 1 }), P('forminbox', 'Where website forms go', 'More › Settings › Where website forms go', 'Which inbox gets the email for each form. Sales and sponsorship forms also land in Sales › Sales & sponsorship enquiries; the rest in Marketing › Form submissions.'), P('audit', 'Audit log', 'More › Settings › Audit log', ''), P('account', 'My account', 'Under your name in the top bar', '')] }] };
+    const role = s.role; // 0 management, 1 staff, 2 volunteer
+    const allowed = (p) => (role === 2 ? p.v : role === 1 ? !p.m : true);
+    const visibleWs = [...WS, SETTINGS].map((w) => ({ ...w, groups: w.groups.map((g) => ({ ...g, items: g.items.filter(allowed) })).filter((g) => g.items.length) })).filter((w) => w.groups.length);
+    let ws = visibleWs.find((w) => w.id === s.ws) || visibleWs[0];
+    const pages = ws.groups.flatMap((g) => g.items);
+    const page = pages.find((p) => p.k === s.page) || pages[0];
+    const go = (wsId, pageK) => (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ ws: wsId, page: pageK, search: false, evOpen: false, preview: false, edit: null, pdf: false, hist: false, rev: null, revSrc: null, revCity: null }); };
+    const EVENTS = [
+      ['Vancouver Briefing 2027', 'Feb 2027 · tickets on sale', 'On sale', '#DCFCE7', '#166534'],
+      ['Montreal Briefing 2027', 'April 2027', 'Coming soon', '#FEF3C7', '#92400E'],
+      ['Toronto Main Event 2027', 'October 2027', 'Coming soon', '#FEF3C7', '#92400E'],
+      ['The Tech Festival Canada 2026', 'Oct 26–27, 2026 · ended 21 days ago', 'Read only', '#F1F0F5', '#4A4566']
+    ];
+    const ev = EVENTS[s.ev];
+    const W = (id) => visibleWs.some((w) => w.id === id);
+    // Pages whose changes reach the website or app get Save draft · Preview · Publish.
+    const PREVIEWABLE = { sitepages: 'the page', promos: 'the checkout with this code', evpage: 'the event page', agenda: 'the agenda on the event page', speakers: 'the speakers on the event page', partners: 'the partners on the event page', tickets: 'the tickets section', packages: 'the sponsorship packages', booths: 'the floor plan', switches: 'the announcement bar', logos: 'the logo strips', apptext: 'the app home screen' };
+    const draftActs = [['Save draft', 0, () => this.toastIt('Draft saved. Only staff can see it in preview')], ['Preview', 0, () => this.setState({ preview: true, pdev: 0 })], ['Publish', 1, () => this.toastIt(role === 0 ? 'Published. Live within about a minute' : 'Saved for a manager to publish')]];
+    // Each page's own buttons, in the words of what they do. The last one is the main action.
+    const toast = (m) => () => this.toastIt(m);
+    const PV = ['Preview', () => this.setState({ preview: true, pdev: 0 })];
+    const PUB = ['Publish', toast(role === 0 ? 'Published. Live within about a minute' : 'Saved for a manager to publish')];
+    const DRAFT = ['Save draft', toast('Draft saved. Only staff can see it in preview')];
+    const exportCsv = (what) => ['Export CSV', toast(role === 0 ? what + ' downloaded as CSV' : 'Exports are management only')];
+    const ACTS = {
+      overview: [],
+      evpage: [DRAFT, PV, PUB],
+      agenda: [['Add session', toast('New session opened')], PV, PUB],
+      speakers: [['Add speaker', toast('New speaker opened')], PV, PUB],
+      partners: [['Add partner', toast('New partner opened')], PV, PUB],
+      tickets: [['Add ticket type', toast('New ticket type opened')], PV, PUB],
+      purchase: [['Send me a test', toast('Test email sent to you')], ['Save email', toast('Saved. New purchases get this version')]],
+      evset: [['Save settings', toast('Event settings saved')]],
+      forms: [exportCsv('Form submissions'), ['Move to Sales', toast('Moved to Sales & sponsorship enquiries')], ['Mark as replied', toast('Marked as replied')]],
+      pipeline: [exportCsv('Enquiries'), ['Assign to me', toast('Assigned to you')], ['Add enquiry', toast('New enquiry opened (for one that came by phone or email)')]],
+      packages: [['Add package', toast('New package opened')], PV, PUB],
+      booths: [['Add spot', toast('New spot opened')], PV, PUB],
+      sitepages: [DRAFT, PV, PUB],
+      calendar: [['Export CSV', toast(role === 0 ? 'Social media calendar downloaded as CSV' : 'Exports are management only')], ['Plan an item', toast('New calendar item: pick a date, channel and owner')], ['New post', () => this.setState({ ws: 'mkt', page: 'social' })]],
+      social: [['Preview posts', toast('Shows each post as it will look on LinkedIn, Instagram and X')], ['Save draft', toast('Draft saved')], [role === 0 ? 'Schedule' : 'Send for approval', toast(role === 0 ? 'Scheduled for Nov 20, 10:00 AM' : 'Sent to a manager to approve')]],
+      connections: [['Disconnect', toast('Choose an account to disconnect')], ['Connect an account', toast('Opens the platform’s sign-in to give TTFC permission to post')]],
+      files: [['New folder', toast('New folder created')], ['Upload files', () => this.toastIt('Choose files to upload')]],
+      opsboard: [['Export CSV', toast(role === 0 ? 'Tasks downloaded as CSV' : 'Exports are management only')], ['Add task', toast('New task opened')]],
+      venue: [['Upload contract', toast('Choose the signed PDF')], ['Save venue', toast('Venue saved')]],
+      vendors: [exportCsv('Vendors'), ['Add vendor', toast('New vendor opened')]],
+      menu: [['Send to caterer', toast('Menu and dietary list emailed to the caterer')], ['Save menu', toast('Menu saved')]],
+      print: [['Send proofs', toast('Proofs sent to PrintHaus')], ['Add item', toast('New print item opened')]],
+      logistics: [['Add shipment', toast('New shipment opened')], ['Save', toast('Saved')]],
+      budget: [exportCsv('Budget'), ['Add cost', toast('New cost line opened')]],
+      contracts: [['New contract', toast('Pick a won deal or start blank')], ['Preview PDF', () => this.setState({ pdf: true })], ['Export PDF', toast('TTFC-VAN27-016 Coldstream Carbon Exhibitor Agreement.pdf downloaded')]],
+      ctemplates: [['Add clause', toast('New clause added')], ['Save as new version', toast('Exhibitor agreement v4 saved. Contracts already sent keep v3')]],
+      exh: [['Send all unsent passes', toast('Passes sent')], ['New exhibitor pass', toast('New exhibitor pass opened')]],
+      sales: (s.rev != null || s.revSrc || s.revCity != null) ? [['Back to all events', () => this.setState({ rev: null, revSrc: null, revCity: null })], exportCsv('Revenue')] : [exportCsv('Revenue')],
+      people: [exportCsv('People'), ['Give a pass', () => this.setState({ ws: 'people', page: 'give', edit: null })]],
+      give: [['Preview email', toast('Shows the pass email')], ['Create and send pass', toast('Pass created and emailed')]],
+      spk: [['Sync from Speakers', toast('Speaker passes synced')], ['Send all unsent passes', toast('Passes sent')]],
+      records: [exportCsv('Ticket records')],
+      accounts: [exportCsv('App accounts')],
+      summary: [exportCsv('Event summary'), ['Refresh numbers', toast('Numbers refreshed')]],
+      rsvps: [exportCsv('RSVPs'), ['Send reminders', toast('Reminders sent to 12 people')]],
+      checkin: [['Open desk app', toast('Opens the check-in desk app')]],
+      sos: [['Mark all as seen', toast('All marked as seen')]],
+      mod: [['Hide selected', toast('Hidden')], ['Approve selected', toast('Approved and shown')]],
+      broadcast: [['Send me a test', toast('Test notification sent to your phone')], ['Send now', toast('Sent to everyone at ' + ev[0])]],
+      downloads: [exportCsv('Downloads'), ['Upload a file', toast('Choose a PDF')]],
+      waitlist: [['Preview email', toast('Shows the confirmation email')], exportCsv('Waitlist')],
+      promos: [['Preview checkout', () => this.setState({ preview: true, pdev: 0 })], ['New promo code', toast('New promo code opened')]],
+      invite: [['Send me a test', toast('Test email sent to you')], ['Send to next 20', toast('Sending to 20 people')]],
+      digest: [['Send me a test', toast('Test email sent to you')], ['Save settings', toast('Saved')]],
+      attending: [['Send me a test', toast('Test email sent to you')], ['Send to everyone not emailed', toast('Sending')]],
+      unsub: [['Add addresses', toast('Addresses added to the list')]],
+      switches: [DRAFT, PV, PUB],
+      logos: [['Add logo', toast('New logo opened')], PV, PUB],
+      orgs: [['Find missing logos', toast('Searching for 14 missing logos')], ['Merge organisations', toast('Choose two to merge')]],
+      apptext: [DRAFT, PV, PUB],
+      survey: [['Add question', toast('New question added')], ['Save survey', toast('Survey saved')]],
+      swag: [['Announce now', toast('Top networkers announced')], ['Save settings', toast('Saved')]],
+      reports: [exportCsv('App report')],
+      noms: [exportCsv('Nominations'), ['Shortlist selected', toast('Shortlisted')]],
+      jury: [['Remind everyone behind', toast('Reminders sent')], ['Invite juror', toast('New juror opened')]],
+      alloc: [['Clear allocation', toast('Cleared')], ['Allocate evenly', toast('Nominations allocated, 3 jurors each')]],
+      rubric: [['Add criterion', toast('New criterion added')], ['Save as new version', toast('Rubric version 3 saved')]],
+      results: [exportCsv('Jury results')],
+      winners: [['Add winner', toast('New winner opened')], ['Publish results', toast(role === 0 ? 'Results are live on the website' : 'A manager publishes')]],
+      staff: [['Add staff', toast('New staff account opened')]],
+      rights: [['Reset to defaults', toast('Back to the default rights')], ['Save rights', toast('Saved')]],
+      forminbox: [['Send a test form', toast('Test sent to each inbox')], ['Save inboxes', toast('Saved')]],
+      audit: [exportCsv('Audit log')],
+      account: [['Change password', toast('Password form opened')], ['Save', toast('Saved')]]
+    };
+    const list = ACTS[page.k] || [];
+    // Past events: more than 7 days after the end, event pages are read only for everyone but the super admin.
+    const sa = !!s.sa && role === 0;
+    const pastEv = s.ev === 3;
+    const lockable = !!ws.scoped || !!page.s;
+    const locked = pastEv && lockable && !sa;
+    const READ_ONLY_OK = ['Export CSV', 'Preview', 'Preview PDF', 'Preview checkout', 'Refresh numbers', 'Open desk app'];
+    if (locked) { for (let i = list.length - 1; i >= 0; i--) if (!READ_ONLY_OK.includes(list[i][0])) list.splice(i, 1); }
+    const acts = list.map(([label, fn], i) => { const primary = i === list.length - 1; return { label, pick: fn, bg: primary ? '#D6308C' : '#FFFFFF', fg: primary ? '#FFFFFF' : '#151035', border: primary ? '#D6308C' : '#E3E0EE' }; });
+    const generic = !['overview', 'people', 'checkin', 'approvals'].includes(page.k);
+    // ---- Every page's real fields and tables (sample values) ----
+    const F = (l, v, o = {}) => ({ l, v, t: o.t || 'text', h: o.h || '', r: !!o.r, w: !!o.w });
+    const S = (l, v, o = {}) => F(l, v, { ...o, t: 'select' });
+    const A = (l, v, o = {}) => F(l, v, { ...o, t: 'area', w: true });
+    const T = (l, on, h) => F(l, on, { t: 'toggle', h, w: true });
+    const D = (l, v) => F(l, v, { t: 'drop', w: true });
+    const IMG = (l, v, h) => F(l, v, { t: 'img', h: h || 'Shown on the website · alt text: describe the photo for screen readers' });
+    const form = (t, fields, hint) => ({ t, hint: hint || '', kind: 'form', fields });
+    const table = (t, cols, rows, hint) => ({ t, hint: hint || '', kind: 'table', cols, rows });
+    const GOOD = '#166534', WARN = '#B45309', MUTED = '#6B6688', BAD = '#B91C1C';
+    const c = (t, col) => ({ t, c: col });
+    const evN = ev[0];
+    const SPEC = {
+      evpage: [
+        form('Basics', [F('Event name', evN, { r: 1 }), F('City', 'Vancouver', { r: 1, h: 'Changing it changes the page address' }), S('Type', 'Briefing (one day)'), F('Year', '2027', { r: 1 }), F('First day', 'Feb 18, 2027', { h: 'Leave empty until the date is fixed' }), F('Last day', 'Feb 18, 2027'), F('Date line while the day isn’t fixed', 'February 2027 · One day'), F('Venue', 'To be announced', { h: 'Empty shows “venue to be announced”' }), F('Venue address', '', { w: true })]),
+        form('Top of the page', [IMG('City photo (top of the page)', 'vancouver-skyline.jpg · 2400 × 1350', 'Top of the event page · alt text: Vancouver skyline at dusk'), F('Photo credit', 'Photo: Kyle Pearce, CC BY-SA 2.0'), F('Theme', 'Energy & Critical Infrastructure'), F('One line under the name', 'Where Alberta molecules meet BC tidewater'), F('Format', 'One day · 8 sessions'), F('Who’s in the room', '150 senior delegates'), A('About this event', 'Vancouver opens the 2027 season with a one-day Briefing on energy and critical infrastructure. A senior, curated room: the people who produce, move, power and protect energy on the west coast, together with the builders whose technology they are adopting.', { h: 'Paragraphs separated by a blank line' })]),
+        form('Coming-soon page', [S('Page version', 'Automatic: coming soon until it has its own sessions', { w: true }), F('What we know so far · 1', 'When: February 2027'), F('What we know so far · 2', 'Format: One day, 150 delegates'), F('Coming next · 1', 'Venue announced · December ✓'), F('Coming next · 2', 'Speakers announced · January'), F('Notify form heading', 'Hear first about Vancouver 2027'), T('Show the Toronto 2026 post-show report card', true)]),
+        form('Photos further down the page', [IMG('Gallery photos (12)', '12 photos · drag to reorder', 'Gallery strip on the event page'), IMG('Highlights video cover', 'recap-cover.jpg · 1920 × 1080', 'Shown before the recap video plays'), IMG('Report card image', 'report-cover.jpg', 'Post-show report card'), IMG('Share image (LinkedIn, WhatsApp)', 'vancouver-og.jpg · 1200 × 630', 'The picture when someone shares the link')])
+      ],
+      agenda: [
+        table('Sessions · ' + evN, '70px 1.8fr 0.9fr 1fr 0.8fr', [['Time', 'Session', 'Format', 'Speakers', 'Status'], ['9:00', 'Opening: Five Pillars, One Sector', 'Keynote', '2 of 3 named', c('Draft', MUTED)], ['9:30', 'Building the Corridor: Power, Pipelines & Tidewater', 'Panel', '4 of 5 named', c('In review', WARN)], ['10:15', 'AI in Production, Not Pilots', 'Panel', '0 of 5 named', c('Needs speakers', BAD)], ['11:20', 'Decarbonising the Hard Stuff', 'Fireside chat', '3 of 3 named', c('Confirmed', GOOD)]], 'Click a row to edit it'),
+        form('Edit session: AI in Production, Not Pilots', [F('Title', 'AI in Production, Not Pilots, and the 400 MW Fight for Power', { r: 1, w: true }), S('Day', 'Day 1'), S('Format', 'Panel'), F('Start', '10:15', { r: 1 }), F('End', '11:00', { r: 1 }), F('Stage or room', 'Main stage'), S('Events', evN), A('Description', 'Enterprise AI already running in operations, and the data-centre load question BC’s grid has to answer.'), F('Moderator', 'Name, organisation'), F('Speakers', '+ Add speaker (from the speakers list)'), S('Live polls', 'Automatic'), S('Audience Q&A', 'Automatic'), F('Session sponsor', 'None'), T('Feature this session', false, 'Shows it first on the event page')])
+      ],
+      speakers: [
+        table('Speakers on ' + evN, '1.2fr 1.6fr 0.8fr 0.7fr', [['Name', 'Title, organisation', 'Type', 'Status'], ['Maya Chen', 'Director of OT Security, Westcoast Grid Services', 'Panellist', c('Confirmed', GOOD)], ['Daniel Kowalski', 'VP Operations, Fraser Basin Hydro', 'Moderator', c('Invited', WARN)], ['Grace Whitford', 'Research Director, Quantum Systems Lab', 'Keynote', c('Confirmed', GOOD)]]),
+        form('Edit speaker: Maya Chen', [F('Full name', 'Maya Chen', { r: 1 }), F('Job title', 'Director of OT Security', { r: 1 }), F('Organisation', 'Westcoast Grid Services', { r: 1 }), S('Speaker type', 'Panellist'), IMG('Photo', 'maya-chen.jpg · 800 × 1000', 'Speaker cards and profile · required'), F('LinkedIn', 'linkedin.com/in/…'), A('Bio', 'Leads operational-technology security for a utility serving 1.2 million customers across BC.'), S('Events', evN), S('Technology pillar', 'Cybersecurity'), S('Sector', 'Energy'), F('Order on the page', '20', { h: 'Lower shows first' }), T('Featured speaker', true, 'Shown on the home page')])
+      ],
+      partners: [
+        table('Partners & sponsors on ' + evN, '1.2fr 1fr 0.9fr 0.6fr 0.6fr', [['Name', 'Row on the Partners page', 'Category', 'Website', 'App'], ['Northline Robotics', 'Featured (paid)', 'Corporate partner', c('Shown', GOOD), c('Shown', GOOD)], ['Pacific Ports Authority', 'Energy', 'Industry associate', c('Shown', GOOD), c('Hidden', MUTED)], ['Cascadia Climate Ventures', 'Ecosystem', 'Startup ecosystem', c('Shown', GOOD), c('Shown', GOOD)]], 'Tabs: Partners · Featured partners'),
+        form('Edit partner: Northline Robotics', [F('Name', 'Northline Robotics', { r: 1 }), IMG('Logo', 'northline.svg', 'Partners page and event page · SVG or PNG with a clear background'), F('Website', 'northlinerobotics.ca'), S('Category', 'Corporate & enterprise partner'), S('Row on the Partners page', 'Featured (paid partners)'), F('Logo size', '100%'), A('Description (featured partners)', 'Field robotics for inspection and maintenance on utility and mining sites.', { h: 'Up to 600 characters; the apps show it on the sponsor card' }), S('Events', evN), T('Show on the website', true), T('Show in the app', true)])
+      ],
+      tickets: [
+        role === 0
+          ? table('Ticket types · ' + evN, '1.4fr 0.7fr 0.6fr 0.6fr 0.9fr', [['Ticket', 'Price', 'Stock', 'Sold', 'Sales window'], ['Buy-side delegate', '$149', '80', '31', 'Nov 20 – Feb 17'], ['Enabler & capital', '$395', '50', '9', 'Nov 20 – Feb 17'], ['Technology delegate', '$495', '20', '2', c('Application only', WARN)]])
+          : table('Ticket types · ' + evN, '1.4fr 0.7fr 0.6fr 0.9fr', [['Ticket', 'Price', 'Stock', 'Sales window'], ['Buy-side delegate', '$149', '80', 'Nov 20 – Feb 17'], ['Enabler & capital', '$395', '50', 'Nov 20 – Feb 17'], ['Technology delegate', '$495', '20', c('Application only', WARN)]], 'Sales numbers are management only'),
+        form('Edit ticket: Buy-side delegate', [F('Name', 'Buy-side delegate', { r: 1 }), F('Price (CAD, before tax)', '$149.00', { r: 1 }), F('Stock', '80', { h: 'Empty = no limit' }), F('Display order', '1'), F('Sales open', 'Nov 20, 2026, 9:00 AM'), F('Sales close', 'Feb 17, 2027, 11:59 PM'), A('Who it’s for', 'Utilities, LNG, mining, ports and data-centre operators buying technology.'), A('Includes', 'Full-day programme · Lunch and networking reception · Meeting app access'), T('On sale', true, 'Off hides it from the event page'), T('Application only', false, 'Shows “Apply” instead of a price and holds the order for approval')]),
+        form('Event-wide pricing', [T('Pricing announced', true, 'Off shows “Pricing announced soon” and blocks checkout'), T('Group discount', true, 'Applied automatically at checkout'), F('Group size', '5 or more tickets'), F('Group discount', '10%')])
+      ],
+      purchase: [form('Purchase email', [F('Subject', 'Your ticket for {passName}: The Tech Festival Canada', { w: true }), F('Preheader', 'Your pass, QR code and what happens next'), F('Headline', 'You’re in, {firstName}'), A('Message', 'Thanks for booking. Your pass and QR code are below and attached as a PDF. Show the QR code at registration on the day.'), F('Help text', 'Questions? enquire@thetechfestival.com'), S('Preview as', 'Buy-side delegate'), T('Show the app store buttons', true)], 'Placeholders: {firstName} {passName} {ticketId}')],
+      evset: [form('Event settings · ' + evN, [S('Status', 'Live (tickets on sale)'), F('Event key', 'ttfc-2027-vancouver-briefing', { h: 'Fixed once created' }), F('“Just ended” grace days', '7', { h: 'Days the full page stays up after the event' }), T('Pricing announced', true)]), form('Who can see this event’s attendees', [S('What attendees expose', 'Names: name, company and job title'), S('Who can see them', 'Own event: this event’s attendees'), S('Also shared with', 'Toronto Main Event 2027', { w: true })])],
+      forms: [table('Form submissions', '0.8fr 0.8fr 1.1fr 1.1fr 0.7fr', [['Received', 'Form', 'From', 'Company', 'Status'], ['Today', 'Speaker', 'Anika Rao', 'Pune Robotics Labs', c('New', BAD)], ['Today', 'Media', 'Jordan Lee', 'BC Business Journal', c('New', BAD)], ['Yesterday', 'Volunteer', 'Leo Martin', '—', c('Replied', GOOD)], ['Nov 14', 'General', 'Grace Whitford', 'Quantum Systems Lab', c('New', BAD)]], 'Sponsorship, exhibiting and partnership forms go to Sales')],
+      pipeline: [
+        table('Sales & sponsorship enquiries · ' + evN, '1.1fr 0.8fr 1fr 0.7fr 0.8fr 0.8fr 0.6fr', [['Company', 'Type', 'Interested in', 'Value', 'Owner', 'Status', 'Next'], ['Northern Compute', 'Sponsorship', 'Presenting partner', '$25,000', 'Unassigned', c('New', BAD), 'Today'], ['Pacific Ports Authority', 'Group tickets', '6 buy-side delegates', '$894', 'Unassigned', c('New', BAD), 'Today'], ['Tidewater Grid Analytics', 'Sponsorship', 'Moment sponsor', '$5,000', 'Baldeep', c('Proposal sent', WARN), 'Nov 21'], ['Coldstream Carbon', 'Exhibiting', 'Demo pod', '$3,500', 'Lubna', c('Talking', MUTED), 'Nov 19'], ['Fraser Basin Hydro', 'Partnership', 'Pillar sponsor', '$10,000', 'Vishwa', c('Won', GOOD), '—']], 'Website sponsorship, exhibit and partnership forms, the apps and sales@thetechfestival.com land here'),
+        form('Enquiry: Northern Compute', [S('Type', 'Sponsorship', { h: 'Sponsorship · Exhibiting · Partnership · Group tickets' }), F('Came from', 'Website partnership form · Nov 17, 2026, 8:12 AM'), F('Contact', 'Omar Haddad, Data Centre Development Lead'), F('Email', 'omar.haddad@northern-compute.example'), F('Phone', '+1 604 555 0142'), S('Interested in', 'Presenting partner, Demo pod'), S('Owner', 'Unassigned'), S('Status', 'New'), F('Value (CAD)', '$25,000'), F('Next step date', 'Nov 18, 2026'), A('Their message', 'Interested in the presenting partnership for Vancouver and a demo pod for our modular data-centre units.'), A('Notes for the team', '')])
+      ],
+      packages: [
+        table('Sponsorship packages · ' + evN, '1.3fr 0.7fr 0.7fr 0.7fr 0.6fr', [['Package', 'Price', 'Available', 'Sold', 'On page'], ['Presenting partner', '$25,000', '1', '0', c('Shown', GOOD)], ['Pillar sponsor', '$10,000', '5', '1', c('Shown', GOOD)], ['Moment sponsor', '$5,000', '6', '0', c('Shown', GOOD)], ['Demo pod', '$3,500', '10', '2', c('Shown', GOOD)]]),
+        form('Edit package: Pillar sponsor', [F('Name', 'Pillar sponsor', { r: 1 }), F('Price (CAD, before tax)', '$10,000', { r: 1 }), F('How many', '5'), F('Display order', '2'), IMG('Package image', 'pillar-sponsor.jpg', 'Package card on the event and partner pages'), A('Short description', 'Own one of the five technology pillars for the day: AI, quantum, cyber, robotics or cleantech.'), A('Benefits (one per line)', 'Logo on stage and on the pillar’s sessions\nOne panel seat in your pillar\n4 delegate passes\nLead list of attendees who opt in'), T('Show on the event page', true), T('Show “Sold out” when all are sold', true)])
+      ],
+      booths: [table('Booths & demo pods · ' + evN, '0.6fr 1fr 0.8fr 1.2fr 0.7fr', [['Spot', 'Type', 'Size', 'Company', 'Status'], ['P1', 'Demo pod', '3 × 2 m', 'Fraser Basin Hydro', c('Sold', GOOD)], ['P2', 'Demo pod', '3 × 2 m', 'Coldstream Carbon', c('Held', WARN)], ['P3', 'Demo pod', '3 × 2 m', '—', c('Available', MUTED)]]), form('Floor plan', [IMG('Floor plan image', 'vancouver-floorplan.png · 2000 × 1400', 'Floor plan on the event and exhibit pages'), IMG('Booth photos', 'demo-pod.jpg, booth-3x3.jpg', 'Booth detail panels'), S('Booth type for new spots', 'Demo pod · $3,500'), T('Show the floor plan on the event page', true), T('Show which spots are sold', true)])],
+      sitepages: [
+        table('Pages', '1.2fr 1fr 0.8fr 0.8fr', [['Page', 'Address', 'Photos', 'Status'], ['About', '/about', '3', c('Live', GOOD)], ['Exhibit', '/exhibit', '4', c('Draft changes', WARN)], ['Partner with us', '/sponsor', '2', c('Live', GOOD)], ['Media', '/media', '1', c('Live', GOOD)], ['Volunteer', '/volunteer', '1', c('Live', GOOD)]], 'Click a page to edit it'),
+        form('Edit page: Exhibit', [IMG('Top photo', 'expo-floor-2026.jpg · 2400 × 1200', 'Top of the Exhibit page'), F('Headline', 'Show your technology to the people who buy it'), A('Introduction', 'Demo pods and booths at every TTFC event, with buyers from utilities, ports, mining and government.'), IMG('Section photo: Demo pods', 'demo-pod.jpg', 'Beside the “Demo pods” section'), IMG('Section photo: Booths', 'booth-3x3.jpg', 'Beside the “Booths” section'), IMG('Section photo: Past exhibitors', 'exhibitors-2026.jpg', 'Above the past exhibitors logos')])
+      ],
+      calendar: [
+        table('Plan vs actual · November', '0.6fr 1.6fr 0.9fr 0.7fr 0.8fr 0.9fr', [['Planned', 'Item', 'Channel', 'Owner', 'Went out', 'Status'], ['Nov 2', 'Toronto 2026 thank-you post', 'LinkedIn, Instagram', 'Lubna', 'Nov 2', c('On time', GOOD)], ['Nov 10', '2027 season announcement', 'All channels + email', 'Vishwa', 'Nov 10', c('On time', GOOD)], ['Nov 13', 'Toronto 2026 report teaser', 'LinkedIn', 'Lubna', 'Nov 15', c('2 days late', WARN)], ['Nov 14', 'Calgary save-the-date', 'X', 'Shweta', '—', c('Missed', BAD)], ['Nov 17', 'Vancouver tickets on sale', 'LinkedIn, X + email', 'Lubna', 'Nov 17', c('On time', GOOD)], ['Nov 20', 'Meet Maya Chen', 'LinkedIn, Instagram, X', 'Shweta', '—', c('Scheduled', MUTED)], ['Nov 24', 'Pillar sponsor spotlight', 'LinkedIn', 'Baldeep', '—', c('In review', WARN)]], 'Click an item to edit, reschedule or mark it done'),
+        table('Recent updates', '0.9fr 0.7fr 2fr', [['When', 'Who', 'What changed'], ['Today, 10:12 AM', 'Lubna', 'Published “Vancouver tickets on sale” to LinkedIn and X'], ['Today, 9:40 AM', 'Shweta', 'Moved “Meet Maya Chen” from Nov 19 to Nov 20'], ['Yesterday, 4:05 PM', 'Baldeep', 'Sent “Pillar sponsor spotlight” for approval to Vishwa'], ['Nov 15, 11:30 AM', 'Lubna', 'Published “Toronto 2026 report teaser”, 2 days after the plan'], ['Nov 14, 6:00 PM', 'System', 'Flagged “Calgary save-the-date” as missed and told Shweta']])
+      ],
+      social: [
+        table('Posts', '1.6fr 1fr 1fr 0.8fr 0.8fr', [['Post', 'Channels', 'When', 'By', 'Status'], ['Vancouver tickets are on sale: one day on energy and critical infrastructure…', 'LinkedIn, X', 'Today, 9:00 AM', 'Lubna', c('Published', GOOD)], ['Meet our first Vancouver speaker: Maya Chen, Westcoast Grid Services', 'LinkedIn, Instagram, X', 'Nov 20, 10:00 AM', 'Shweta', c('Scheduled', WARN)], ['Toronto 2026 in 60 seconds (recap video)', 'Instagram, LinkedIn', '—', 'Lubna', c('Waiting for approval', WARN)], ['Pillar sponsor spotlight: Fraser Basin Hydro', 'LinkedIn', '—', 'Baldeep', c('Draft', MUTED)]], 'Click a post to edit it')
+      ],
+      connections: [table('Connected accounts', '1fr 1.2fr 0.9fr 0.9fr', [['Channel', 'Account', 'Connected by', 'Status'], ['LinkedIn', 'The Tech Festival Canada (company page)', 'Vishwa', c('Connected', GOOD)], ['Instagram', '@thetechfestival (business account)', 'Lubna', c('Connected', GOOD)], ['X', '@thetechfestival', '—', c('Not connected', MUTED)]], 'Management only · posting needs each platform’s approval')],
+      files: [
+        form('Upload', [D('Drop files here, or click to choose', 'Any file: images, logos (SVG, PNG), PDFs, videos (MP4), Word, Excel, PowerPoint, ZIP · up to 200 MB each · several at once'), S('Folder', 'Vancouver Briefing 2027 / Sponsors'), S('Who can see it', 'Public: can be used on the website and in emails', { h: 'Public · Staff only (never on the website) · Management only' }), S('Event', evN)]),
+        table('Files', '1.5fr 0.6fr 0.5fr 1.1fr 0.8fr 0.9fr', [['Name', 'Type', 'Size', 'Used on', 'Who can see it', 'Uploaded'], ['vancouver-skyline.jpg', 'Image', '2.4 MB', 'Event page hero', c('Public', GOOD), 'Vishwa · Nov 16'], ['TTFC-2027-sponsorship-brochure.pdf', 'PDF', '8.1 MB', 'Downloads, sales emails', c('Public', GOOD), 'Baldeep · Nov 12'], ['NorthshoreAV-quote-v2.pdf', 'PDF', '320 KB', 'Vendors › Northshore AV', c('Staff only', WARN), 'Baldeep · Nov 15'], ['TTFC-VAN27-014-signed.pdf', 'PDF', '410 KB', 'Contracts › Fraser Basin Hydro', c('Management only', BAD), 'Vishwa · Nov 12'], ['ttfc-2026-recap.mp4', 'Video', '146 MB', 'Past event page', c('Public', GOOD), 'Lubna · Nov 2'], ['speaker-run-of-show.xlsx', 'Excel', '58 KB', '—', c('Staff only', WARN), 'Shweta · Nov 14']], 'Click a file to rename, move, replace or delete it'),
+        form('Storage', [F('Used', '1.8 GB of 10 GB'), F('Largest files', 'Videos (1.2 GB)'), T('Shrink images automatically for the website', true, 'Keeps pages fast; the original is kept'), T('Warn before deleting a file that is in use', true)])
+      ],
+      opsboard: [
+        table('Tasks · ' + evN, '1.6fr 0.9fr 0.8fr 0.8fr 0.8fr', [['Task', 'Area', 'Owner', 'Due', 'Status'], ['Sign the venue contract and pay the deposit', 'Venue', 'Vishwa', 'Nov 25', c('Overdue', BAD)], ['Confirm AV quote (2 screens, 6 mics, livestream)', 'Vendors', 'Baldeep', 'Dec 5', c('Waiting on vendor', WARN)], ['Send badge print file', 'Print', 'Shweta', 'Feb 4', c('Not started', MUTED)], ['Final catering numbers', 'Catering', 'Lubna', 'Feb 11', c('Not started', MUTED)], ['Floor plan approved by the venue', 'Venue', 'Vishwa', 'Dec 12', c('Done', GOOD)]], 'Click a task to edit it'),
+        form('Event status', [S('Overall status', 'On track · 1 overdue task'), F('Days to the event', '93'), F('Doors open', 'Feb 18, 2027, 8:00 AM'), F('Ops lead', 'Lubna'), A('Notes for the team', 'Venue deposit due before the holiday break.')])
+      ],
+      venue: [
+        form('Venue', [F('Venue name', 'Vancouver Convention Centre, West', { r: 1 }), F('Address', '1055 Canada Place, Vancouver, BC V6C 0C3', { w: true }), F('Main room', 'Ballroom B · theatre for 180'), F('Breakout room', 'Room 118 · 40'), F('Meeting lounge', 'Foyer, 12 tables'), F('Capacity on the permit', '220'), F('Load-in', 'Feb 17, 2027, 2:00 PM'), F('Doors open', 'Feb 18, 8:00 AM'), F('Load-out by', 'Feb 18, 9:00 PM'), F('Wi-Fi', 'Event network, 300 devices')]),
+        form('Contract & money', [S('Contract status', 'Sent, not signed'), F('Contract file', 'VCC-West-TTFC-2027.pdf'), F('Room hire', '$12,500'), F('Food & beverage minimum', '$9,000'), F('Deposit', '$6,250 due Nov 25'), F('Balance', 'Due Feb 4, 2027'), F('Cancellation terms', 'Full deposit kept within 90 days', { w: true })]),
+        table('Venue contacts', '1fr 1fr 1.3fr 1fr', [['Name', 'Role', 'Email', 'Phone'], ['Hannah Cole', 'Event manager', 'h.cole@venue.example', '+1 604 555 0110'], ['Ravi Gill', 'Catering manager', 'r.gill@venue.example', '+1 604 555 0124'], ['Security desk', 'On the day', '—', '+1 604 555 0100']])
+      ],
+      vendors: [
+        table('Vendors · ' + evN, '1.1fr 0.8fr 1fr 0.7fr 0.6fr 0.8fr', [['Vendor', 'Category', 'Contact', 'Price', 'Paid', 'Status'], ['Northshore AV', 'AV & livestream', 'Ben Ortiz', '$14,200', '$0', c('Quote received', WARN)], ['PrintHaus Vancouver', 'Printing', 'Mara Li', '$2,350', '$0', c('Booked', GOOD)], ['Harbour Logistics', 'Shipping & storage', 'Sam Patel', '$1,100', '$550', c('Contract signed', GOOD)], ['Lens & Light', 'Photography', 'Ines Rocha', '$1,800', '$0', c('Not booked', MUTED)], ['Venue catering', 'Catering', 'Ravi Gill', 'In venue contract', '—', c('Booked', GOOD)]]),
+        form('Edit vendor: Northshore AV', [F('Vendor name', 'Northshore AV', { r: 1 }), S('Category', 'AV & livestream', { h: 'AV · Printing · Catering · Logistics · Security · Photography · Staffing · Other' }), F('Contact name', 'Ben Ortiz'), F('Email', 'ben@northshoreav.example'), F('Phone', '+1 604 555 0167'), F('Website', 'northshoreav.example'), F('Quote', '$14,200 + tax'), F('Quote file', 'NorthshoreAV-quote-v2.pdf'), S('Contract status', 'Quote received'), F('Contract file', 'Upload when signed'), F('Deposit', '$4,260 (30%) on signing'), F('Paid so far', '$0'), A('What they provide', '2 projection screens · 6 wireless mics · stage lighting · livestream to YouTube · 1 technician all day'), F('Arrives on site', 'Feb 17, 3:00 PM'), F('Deliverables due', 'Livestream recording by Feb 25'), A('Notes', 'Wants the run of show by Feb 1.')])
+      ],
+      menu: [
+        table('Meals · ' + evN, '1fr 0.8fr 1.6fr 0.7fr', [['Meal', 'Time', 'Menu', 'Numbers'], ['Breakfast & coffee', '8:00–9:00', 'Pastries, fruit, yogurt, coffee and tea', '150'], ['Lunch', '12:00–12:50', 'Salmon, roasted vegetables, grain salad; vegetarian and halal options', '150'], ['Afternoon break', '2:40–2:55', 'Cookies, fruit, coffee', '150'], ['Networking reception', '3:40–5:30', 'Canapés, two drink tickets', '120']]),
+        form('Dietary needs (from the RSVPs)', [F('Vegetarian', '12'), F('Vegan', '4'), F('Halal', '6'), F('Gluten-free', '5'), F('Nut allergy', '2'), F('Other notes', '3 (see RSVPs)')]),
+        form('Catering details', [F('Caterer', 'Venue catering (Ravi Gill)'), F('Cost per head (day)', '$68 + tax and service'), F('Final numbers due', 'Feb 11, 2027'), T('Send the dietary list to the caterer automatically', true)])
+      ],
+      print: [
+        table('Print & signage · ' + evN, '1.3fr 0.6fr 0.9fr 0.8fr 0.8fr', [['Item', 'Qty', 'Vendor', 'Proof', 'Delivery'], ['Name badges + lanyards', '180', 'PrintHaus', c('Not sent', MUTED), 'Feb 16'], ['Stage backdrop 6 × 3 m', '1', 'PrintHaus', c('Approved', GOOD), 'Feb 17'], ['Sponsor wall', '1', 'PrintHaus', c('Waiting on 2 logos', WARN), 'Feb 17'], ['Directional signs', '12', 'PrintHaus', c('Approved', GOOD), 'Feb 17']]),
+        form('Edit item: Name badges', [F('Item', 'Name badges + lanyards'), F('Quantity', '180', { h: 'Ticket holders + speakers + staff + 10% spare' }), F('Size', '4 × 6 in, double-sided'), F('Artwork file', 'Generated from the attendee list'), F('Vendor', 'PrintHaus Vancouver'), F('Cost', '$540'), S('Proof status', 'Not sent'), F('Deliver to', 'Venue loading dock, Feb 16')])
+      ],
+      logistics: [
+        table('Shipments & equipment', '1.3fr 0.9fr 0.9fr 0.8fr', [['What', 'From', 'Arrives', 'Status'], ['Registration kit (scanners, printers)', 'Toronto office', 'Feb 15', c('Booked', GOOD)], ['Pop-up banners × 6', 'Storage', 'Feb 16', c('Booked', GOOD)], ['Demo pod furniture', 'Harbour Logistics', 'Feb 17', c('Waiting on count', WARN)]]),
+        form('Load-in & load-out', [F('Load-in window', 'Feb 17, 2:00–8:00 PM'), F('Loading dock', 'West dock, door 4'), F('Freight elevator', 'Booked 2:00–6:00 PM'), F('Load-out by', 'Feb 18, 9:00 PM'), F('Storage after', 'Harbour Logistics, unit 12'), A('Instructions for exhibitors', 'Demo pods set up from 4:00 PM on Feb 17. Bring your own extension cords.')])
+      ],
+      budget: [
+        table('Budget · ' + evN, '1.2fr 0.8fr 0.8fr 0.8fr', [['Area', 'Planned', 'Committed', 'Paid'], ['Venue', '$21,500', '$21,500', '$0'], ['AV & livestream', '$15,000', '$14,200', '$0'], ['Catering', '$12,000', '$10,200', '$0'], ['Printing & signage', '$3,000', '$2,350', '$0'], ['Logistics', '$1,500', '$1,100', '$550'], ['Photography', '$2,000', '$0', '$0']], 'Management only'),
+        form('Totals', [F('Planned', '$55,000'), F('Committed', '$49,350'), F('Paid', '$550'), F('Left in the budget', '$5,650')])
+      ],
+      contracts: [
+        table('Contracts · ' + evN, '1fr 1.2fr 1fr 0.7fr 0.8fr', [['Number', 'Company', 'Agreement', 'Value', 'Status'], ['TTFC-VAN27-014', 'Fraser Basin Hydro', 'Sponsorship · Pillar sponsor', '$10,000', c('Signed Nov 12', GOOD)], ['TTFC-VAN27-015', 'Tidewater Grid Analytics', 'Sponsorship · Moment sponsor', '$5,000', c('Sent Nov 16', WARN)], ['TTFC-VAN27-016', 'Coldstream Carbon', 'Exhibitor · Demo pod P2', '$3,500', c('Draft', MUTED)]], 'Click a contract to edit it'),
+        form('Contract TTFC-VAN27-016 · Coldstream Carbon', [S('Agreement type', 'Exhibitor agreement', { h: 'Sponsorship · Exhibitor · Media partner · Speaker' }), S('Template version', 'Exhibitor agreement v3 (Nov 2026)'), F('Linked deal', 'Coldstream Carbon · Demo pod (Sales pipeline)'), S('Event', evN), F('Company legal name', 'Coldstream Carbon Technologies Inc.', { r: 1 }), F('Business number / GST-HST', '81234 5678 RT0001'), F('Address', '1200 – 555 West Hastings St, Vancouver, BC V6B 4N6', { w: true }), F('Signatory name', 'Samuel Reid', { r: 1 }), F('Signatory title', 'Founder & CEO'), F('Signatory email', 'samuel@coldstream.example', { r: 1 }), F('TTFC signatory', 'Vishwa, Managing Director'), S('Package', 'Demo pod · spot P2 (3 × 2 m)'), F('Price (CAD)', '$3,500.00'), F('Discount', '$0.00'), S('Tax', 'HST 13% · $455.00'), F('Total', '$3,955.00'), S('Payment schedule', '50% on signing, 50% by Jan 18, 2027'), F('Invoice due', '15 days from invoice'), A('Deliverables (from the package; edit if agreed otherwise)', 'Demo pod P2 on the floor plan · 2 exhibitor passes · Logo on the event page and exhibitor list · Listing in the app'), A('Special terms', 'Power outlet and one monitor included.'), F('Signature deadline', 'Nov 30, 2026'), T('Include the floor plan page', true), T('Include the logo and brand guidelines page', false)]),
+        form('After it is signed', [S('Status', 'Draft'), F('Signed copy', 'Upload the signed PDF'), T('Create the invoice when marked signed', true), T('Give exhibitor passes when marked signed', true)])
+      ],
+      ctemplates: [
+        table('Contract templates', '1.3fr 0.6fr 0.9fr 0.8fr', [['Template', 'Version', 'Last changed', 'Used by'], ['Sponsorship agreement', 'v4', 'Nov 10, 2026 · Vishwa', '6 contracts'], ['Exhibitor agreement', 'v3', 'Nov 2, 2026 · Baldeep', '4 contracts'], ['Media partner agreement', 'v1', 'Sep 30, 2026 · Lubna', '1 contract']], 'Management only'),
+        form('Exhibitor agreement · v3', [F('Title on the PDF', 'Exhibitor Agreement'), A('Parties clause', 'This agreement is between The Tech Festival Canada (“TTFC”) and {companyLegalName} (“Exhibitor”) for {eventName}, {eventDates}, {venue}.'), A('Payment terms', '{paymentSchedule}. Invoices are payable within {invoiceDue}. HST applies.'), A('Cancellation', 'Cancellation by the Exhibitor more than 60 days before the event: 50% refund. Within 60 days: no refund.'), A('Liability and insurance', 'The Exhibitor holds general liability insurance of at least $2,000,000 for the event.'), A('Signature block', 'For TTFC: {ttfcSignatory} · For the Exhibitor: {signatoryName}, {signatoryTitle}')], 'Placeholders in {braces} fill in from the contract')
+      ],
+      exh: [table('Exhibitor passes', '1.1fr 1.2fr 0.6fr 0.8fr', [['Name', 'Company', 'Booth', 'Pass email'], ['Nina Patel', 'Northline Robotics', 'P1', c('Sent Nov 15', GOOD)], ['Samuel Reid', 'Coldstream Carbon', 'P2', c('Not sent', WARN)]]), form('New exhibitor pass', [F('First name', '', { r: 1 }), F('Last name', '', { r: 1 }), F('Email', '', { r: 1 }), F('Company', ''), F('Booth', 'P3'), S('Event', evN), T('Send the pass email now', true)])],
+      sales: (() => {
+        const EVR = [['The Tech Festival Canada 2026', '$118,400', '$85,000', '$24,500', '$227,900', c('Past', MUTED)], ['Vancouver Briefing 2027', '$8,860', '$10,000', '$3,500', '$22,360', c('On sale', GOOD)], ['Montreal Briefing 2027', '$0', '$0', '$0', '$0', c('Coming soon', WARN)], ['Toronto Main Event 2027', '$0', '$25,000', '$0', '$25,000', c('Coming soon', WARN)]];
+        const out = [{ t: 'All events · total revenue', hint: 'Net of discounts and refunds, before tax · click a card for its breakdown', kind: 'kpi', cards: [['all', 'Total revenue', '$275,260', '4 events, since Jan 2026', '#151035'], ['tickets', 'Tickets', '$127,260', '1,076 tickets', '#151035'], ['sponsorship', 'Sponsorship', '$120,000', '11 deals', '#151035'], ['exhibiting', 'Exhibiting & demo pods', '$28,000', '19 booths and pods', '#151035'], ['discounts', 'Promo discounts given', '−$6,140', '214 orders used a code', '#B45309'], ['refunds', 'Refunds', '−$1,800', '9 orders', '#B91C1C']] },
+          table('By event', '1.6fr 0.8fr 0.9fr 0.9fr 0.8fr 0.7fr', [['Event', 'Tickets', 'Sponsorship', 'Exhibiting', 'Total', 'Status'], ...EVR], 'Click an event for its breakdown'),
+          table('By city', '1.1fr 0.6fr 0.8fr 0.9fr 0.9fr 0.8fr 0.6fr', [['City', 'Events', 'Tickets', 'Sponsorship', 'Exhibiting', 'Total', 'Share'], ['Toronto', '3', '$118,400', '$110,000', '$24,500', '$252,900', '92%'], ['Vancouver', '1', '$8,860', '$10,000', '$3,500', '$22,360', '8%'], ['Montreal', '1', '$0', '$0', '$0', '$0', '0%'], ['Calgary', '1', '$0', '$0', '$0', '$0', '0%'], ['Ottawa', '1', '$0', '$0', '$0', '$0', '0%']], 'Click a city for its events'),
+          table('By revenue stream', '1.4fr 0.8fr 0.9fr 0.9fr 0.6fr', [['Stream', 'Orders or deals', 'Gross', 'Net', 'Share'], ['Tickets', '1,076 tickets', '$135,200', '$127,260', '46%'], ['Sponsorship', '11 deals', '$120,000', '$120,000', '44%'], ['Exhibiting & demo pods', '19', '$28,000', '$28,000', '10%'], ['Promo discounts', '214 orders', '—', '−$6,140', 'in tickets'], ['Refunds', '9 orders', '—', '−$1,800', 'in tickets']], 'Click a stream for its breakdown')];
+        const SRC = { all: null, tickets: ['Tickets across all events', '1.6fr 1fr 0.6fr 0.8fr', [['Event', 'Ticket type', 'Sold', 'Net'], ['TTFC 2026', 'Power Pass', '312', '$62,400'], ['TTFC 2026', 'Connect Pass', '540', '$43,200'], ['TTFC 2026', 'Apex Pass', '28', '$12,800'], ['Vancouver 2027', 'Buy-side delegate', '31', '$4,619'], ['Vancouver 2027', 'Enabler & capital', '9', '$3,555'], ['Vancouver 2027', 'Technology delegate', '2', '$686']]], sponsorship: ['Sponsorship across all events', '1.4fr 1.2fr 0.8fr 0.7fr', [['Company', 'Package', 'Amount', 'Paid'], ['Fraser Basin Hydro', 'Vancouver · Pillar sponsor', '$10,000', c('50%', WARN)], ['Northline Robotics', 'Toronto 2027 · Presenting partner', '$25,000', c('Deposit', WARN)], ['Westcoast Grid Services', 'TTFC 2026 · Featured partner', '$15,000', c('Paid', GOOD)]]], exhibiting: ['Exhibiting across all events', '1.4fr 1.2fr 0.8fr', [['Company', 'Booth', 'Amount'], ['Coldstream Carbon', 'Vancouver · Demo pod P2', '$3,500'], ['Pacific Ports Authority', 'TTFC 2026 · Booth 14', '$2,500']]], discounts: ['Promo discounts across all events', '1fr 1.2fr 0.6fr 0.8fr', [['Code', 'Offer', 'Orders', 'Discount'], ['EARLYVAN', '20% off', '14', '−$1,240'], ['BRINGACOLLEAGUE', 'Buy 1, get 1 free', '3', '−$447'], ['SPRING20 (2026)', '20% off', '160', '−$4,453']]], refunds: ['Refunds across all events', '1.2fr 1fr 0.8fr 0.8fr', [['Buyer', 'Event', 'Amount', 'Date'], ['A. Moreau', 'TTFC 2026', '−$200', 'Oct 20, 2026'], ['K. Osei', 'TTFC 2026', '−$400', 'Oct 18, 2026']]] };
+        const src = s.revSrc && SRC[s.revSrc];
+        if (src) out.push(table('Breakdown: ' + src[0], src[1], src[2], 'Click the card again to close'));
+        const CITY = [['Toronto', [['The Tech Festival Canada 2026', 'Oct 2026', '$227,900', 'Past'], ['Toronto Briefing 2027', 'Jun 2027', '$0', 'Coming soon'], ['Toronto Main Event 2027', 'Oct 2027', '$25,000', 'Coming soon']]], ['Vancouver', [['Vancouver Briefing 2027', 'Feb 2027', '$22,360', 'On sale']]], ['Montreal', [['Montreal Briefing 2027', 'Apr 2027', '$0', 'Coming soon']]], ['Calgary', [['Calgary Briefing 2027', 'Jun 2027', '$0', 'Coming soon']]], ['Ottawa', [['Ottawa Briefing 2027', 'Sep 2027', '$0', 'Coming soon']]]];
+        if (s.revCity != null && CITY[s.revCity]) out.push(table('Breakdown: ' + CITY[s.revCity][0] + ' · its events', '1.6fr 0.8fr 0.8fr 0.8fr', [['Event', 'When', 'Total', 'Status'], ...CITY[s.revCity][1]], 'Click the city again to close'));
+        if (s.rev != null && EVR[s.rev]) {
+          const name = EVR[s.rev][0];
+          out.push(table('Breakdown: ' + name + ' · by source', '1.3fr 0.6fr 0.8fr 0.8fr 0.8fr', [['Source', 'Count', 'Gross', 'Discounts', 'Net'], ['Tickets', s.rev === 1 ? '42' : '880', s.rev === 1 ? '$10,100' : '$124,000', s.rev === 1 ? '−$1,240' : '−$4,900', EVR[s.rev][1]], ['Sponsorship', s.rev === 1 ? '1' : '7', EVR[s.rev][2], '$0', EVR[s.rev][2]], ['Exhibiting', s.rev === 1 ? '1' : '17', EVR[s.rev][3], '$0', EVR[s.rev][3]]], 'Click the event row again to close'));
+          out.push(table(name + ' · by month', '1fr 0.8fr 0.8fr 0.8fr', [['Month', 'Tickets', 'Sponsorship', 'Total'], ['November 2026', EVR[s.rev][1], EVR[s.rev][2], EVR[s.rev][4]], ['December 2026', '—', '—', '—']]));
+        }
+        return out;
+      })(),
+      give: [form('Give a pass', [F('First name', 'Arjun', { r: 1 }), F('Last name', 'Mehta', { r: 1 }), F('Email', 'arjun.mehta@coastline-energy.example', { r: 1 }), F('Company', 'Coastline Energy'), S('Pass', 'Buy-side delegate'), S('Event', evN), T('VIP', false), T('Media', false), A('Reason (for the audit log)', 'Speaker’s colleague, approved by Vishwa'), T('Send the pass email now', true)])],
+      spk: [table('Speaker passes', '1.1fr 1.3fr 0.9fr', [['Speaker', 'Email', 'Pass email'], ['Maya Chen', 'maya.chen@westcoastgrid.example', c('Sent Nov 15', GOOD)], ['Grace Whitford', '—', c('Needs an email', WARN)]]), form('Speaker pass email', [F('Subject', 'Your Speaker Pass for {passName}', { w: true }), A('Message', 'Thank you for speaking. Your pass is below; please RSVP so we can plan your day.'), T('Include the run of show', true)])],
+      records: [table('Ticket records', '1.2fr 1fr 1fr 0.8fr', [['Ticket ID', 'Holder', 'Pass', 'Code'], ['TTFC-2027-VAN-001234', 'Priya Natarajan', 'Buy-side delegate', 'No code'], ['TTFC-2027-VAN-001235', 'Arjun Mehta', 'Buy-side delegate', 'Given by staff']])],
+      accounts: [table('App accounts', '1.2fr 1.4fr 0.8fr 0.8fr', [['Name', 'Email', 'Types', 'Last active'], ['Priya Natarajan', 'priya.natarajan@coastline-energy.example', 'Attendee', '2 days ago'], ['Maya Chen', 'maya.chen@westcoastgrid.example', 'Speaker', 'Today']]), form('Account: Priya Natarajan', [S('Person types', 'Attendee'), T('Hide from the attendee list', false), T('Not taking messages', false), T('Not taking connection requests', false)])],
+      summary: [table('Event summary · ' + evN, '1.2fr 0.7fr 0.7fr 0.7fr', [['Pass', 'People', 'RSVP’d', 'Checked in'], ['Buy-side delegate', '31', '24', '—'], ['Enabler & capital', '9', '6', '—'], ['Speaker pass', '18', '15', '—']], 'Read only'), table('Meals', '1.2fr 0.7fr 0.7fr 0.9fr', [['Meal', 'Included', 'RSVP’d', 'Dietary notes'], ['Lunch', '58', '45', '6 vegetarian, 2 halal'], ['Networking reception', '58', '39', '—']])],
+      rsvps: [table('RSVPs', '1.1fr 1fr 0.9fr 0.8fr', [['Name', 'Pass', 'Answer', 'By'], ['Priya Natarajan', 'Buy-side delegate', c('Attending', GOOD), 'Attendee'], ['James Moreau', 'Exhibitor pass', c('No answer', WARN), '—']], 'Tabs: RSVPs · Reminders'), form('RSVP reminder', [F('Subject', 'Please confirm you’re coming to {passName}', { w: true }), A('Message', 'We’re planning lunch and seating. Tap below to tell us which parts of the day you’ll join.'), S('Send to', 'Everyone who hasn’t RSVP’d (12 people)'), T('Skip anyone emailed in the last 20 hours', true)])],
+      sos: [table('Help requests', '0.8fr 1fr 1fr 0.8fr', [['Time', 'Person', 'Category', 'Status'], ['10:42', 'Daniel Kowalski', 'Accessibility help', c('Open', BAD)], ['9:15', 'Mei Tanaka', 'Lost or separated', c('Resolved', GOOD)]]), form('Reply to Daniel Kowalski', [F('Where they are', 'Main hall, near registration'), F('Phone', '+1 604 555 0188'), A('Your reply', 'A team member is on their way with a chair.'), S('Status', 'Seen by staff')])],
+      mod: [table('Held for review', '1fr 1.8fr 0.8fr', [['Author', 'Post', 'Reason'], ['Omar Haddad', '“Anyone heading to the reception after the closing panel?”', 'Contains a link']]), form('Moderation settings', [T('Allow people to post', true), T('Allow groups', true), T('Live polls', true), T('Audience Q&A', true)])],
+      broadcast: [form('Send an app update', [F('Title', 'Lunch is served', { r: 1, w: true }), A('Message', 'Lunch is on the mezzanine until 1:30. Vegetarian and halal options are labelled.'), S('Send to', 'Everyone at ' + evN), S('Opens', 'Agenda'), S('When', 'Now'), T('Also email people who don’t have the app', false)])],
+      promos: [
+        table('Promo codes', '1fr 1.5fr 1.1fr 0.7fr 0.7fr', [['Code', 'Offer', 'Applies to', 'Used', 'Status'], ['EARLYVAN', '20% off', 'All Vancouver tickets', '14 of 50', c('Active', GOOD)], ['BRINGACOLLEAGUE', 'Buy 1, get 1 free (BOGO)', 'Buy-side delegate', '3 of 20', c('Active', GOOD)], ['TEAM3', 'Buy 2, get 1 free', 'Buy-side delegate, Enabler & capital', '1', c('Active', GOOD)], ['UTILITY5', 'Group: 5+ tickets, 15% off', 'All Vancouver tickets', '0', c('Scheduled · Dec 1', WARN)], ['SPEAKERGUEST', '$100 off', 'Enabler & capital', '20 of 20', c('Used up', MUTED)]], '“Used” counts paid orders only'),
+        form('New promo code', [F('Code', 'TEAM3', { r: 1, h: 'Letters and numbers; not case-sensitive' }), S('Offer type', 'Buy X, get Y free', { h: 'Percentage off · Fixed amount off · Buy X, get Y free (BOGO is buy 1 get 1) · Group: N or more tickets get a discount' }), F('Buy (paid tickets)', '2'), F('Get free', '1', { h: 'Cheapest ticket in the group is the free one' }), F('Percentage or amount', '— (not used for buy X get Y)'), F('Group size (group offers)', '— (e.g. 5 or more)'), S('Event', evN), S('Ticket types', 'Buy-side delegate, Enabler & capital', { h: 'Leave empty for every ticket type' }), F('Starts', 'Nov 20, 2026, 9:00 AM'), F('Ends', 'Feb 10, 2027, 11:59 PM'), F('Total uses', '30', { h: 'Empty = no limit' }), F('Uses per buyer', '1'), F('Minimum tickets in the order', '3'), T('Can combine with the automatic group discount', false, 'Off: the buyer gets whichever saves them more'), T('Active', true, role === 0 ? 'Management can switch any code on' : 'Staff codes go live straight away, unless they are over 50% off, free tickets, or have no use limit: those wait for a manager'), A('Internal note', 'For utility teams of three; agreed with Baldeep, Nov 17')]),
+        form('Check the price before saving', [S('Example basket', '3 × Buy-side delegate ($149 each)'), F('Without the code', '$447.00 before tax'), F('With TEAM3', '$298.00 before tax · 1 ticket free'), F('Applied in this order', 'Price → BOGO / buy X get Y → group discount → code', { w: true })])
+      ],
+      downloads: [table('Downloads', '0.8fr 1.1fr 1fr 1fr', [['When', 'Name', 'Email', 'File'], ['Today', 'Luis Ferreira', 'luis@cascadia-climate.example', 'Toronto 2026 post-show report'], ['Nov 15', 'Mei Tanaka', 'mei.tanaka@pacificports.example', 'Sponsorship brochure']]), form('Files people can download', [F('Sponsorship brochure (PDF)', 'TTFC-2027-brochure.pdf'), IMG('Brochure cover', 'brochure-cover.jpg', 'Cover image on the download card'), F('Toronto 2026 post-show report (PDF)', 'TTFC-2026-report.pdf'), T('Ask for name and email first', true), F('Send leads to', 'enquire@thetechfestival.com')])],
+      waitlist: [table('Waitlist', '1fr 1.2fr 1fr 0.8fr', [['Name', 'Email', 'Interested in', 'Source'], ['Samuel Reid', 'samuel@coldstream.example', 'Exhibiting', 'Website'], ['—', 'k.osei@majorprojects.example', 'Attending', 'iOS app']]), form('Page wording', [F('Form heading', 'Be first to hear about TTFC 2027'), F('Button', 'Join the waitlist'), A('Thank-you message', 'Thanks for your interest. Someone from our team will reach out.')])],
+      invite: [form('App invite email', [F('Subject', 'Your TTFC app is ready', { w: true }), F('Headline', 'Meet the room before you arrive'), A('Message', 'Download the TTFC app to see the agenda, message other attendees and request meetings.'), T('App Store button', true), T('Google Play button', true), S('Send to', 'Next 20 people who aren’t on the app'), T('Skip people already using the app', true)])],
+      digest: [form('“What you missed” emails', [T('Send summaries', false, 'Off until switched on'), F('Daily send time', '5:00 PM Toronto'), F('Quiet hours', '9 PM – 8 AM'), F('Daily cap', '4,000 emails')])],
+      attending: [table('I’m attending campaign', '1.1fr 1.2fr 0.8fr 0.8fr', [['Name', 'Email', 'Sent', 'Posted on LinkedIn'], ['Priya Natarajan', 'priya.natarajan@coastline-energy.example', 'Nov 15', c('Yes', GOOD)], ['Arjun Mehta', 'arjun.mehta@coastline-energy.example', '—', '—']]), form('Send', [S('Send to', 'Ticket holders not emailed yet'), T('Skip anyone emailed in the last 3 days', true)])],
+      unsub: [table('Unsubscribed emails', '1.4fr 0.8fr 0.8fr', [['Email', 'When', 'How'], ['someone@example.com', 'Nov 12', 'Email link']]), form('Add addresses', [A('Paste addresses (one per line)', '')])],
+      switches: [form('Home page photos', [IMG('Home hero photo', 'vancouver-skyline-hero.jpg · 2400 × 1350', 'Top of the home page'), F('Home hero video (optional)', 'ttfc-2026-recap.mp4', { h: 'Plays muted behind the headline; the photo shows on slow connections' }), IMG('“Past events” highlight photos', '6 photos', 'Highlights section on the home page'), IMG('Event card photos', 'One per event (set on each event page)', 'Event cards on the home page')]), form('Selling', [T('Ticket sales open', true, 'Management only'), F('Message while sales are paused', 'Ticket sales reopen shortly.'), T('Pass upgrades', false)]), form('Site-wide', [F('Announcement text', 'Vancouver Briefing tickets are on sale', { w: true }), F('Announcement link', '/vancouver/2027/briefing'), F('Contact email', 'enquire@thetechfestival.com'), T('Show the agenda', true), T('Award nominations open', false), T('Volunteer applications open', false), F('LinkedIn page', 'linkedin.com/company/thetechfestival'), F('Instagram', 'instagram.com/thetechfestival')])],
+      logos: [table('Logo strips', '1.2fr 1fr 0.6fr 0.6fr', [['Logo', 'Strip', 'Order', 'Shown'], ['University of British Columbia', 'Team alumni', '1', c('Yes', GOOD)], ['Pacific Ports Authority', 'Community & speakers’ companies', '4', c('Yes', GOOD)]], 'Tabs: Team alumni · Community & speakers’ companies · Home sponsors'), form('Add a logo', [F('Name', '', { r: 1 }), IMG('Logo', 'Upload a logo', 'Logo strip · SVG or PNG'), F('Link', ''), F('Size', '100%')])],
+      orgs: [table('Attending organisations', '1.3fr 0.6fr 0.6fr 0.7fr', [['Organisation', 'People', 'Logo', 'Shown'], ['Coastline Energy', '4', c('Found', GOOD), c('Yes', GOOD)], ['Northern Compute', '2', c('Missing', WARN), c('Yes', GOOD)]]), form('Organisation: Northern Compute', [IMG('Logo', 'northern-compute.png (found automatically)', 'Attending organisations strip'), F('Merge into', 'Choose an organisation'), T('Hide from the list', false)])],
+      apptext: [form('App text', [F('Sign-in screen tagline', 'Canada’s technology decision-makers, in one place'), F('Welcome greeting', 'Welcome, {firstName}'), F('Home screen banner', 'Vancouver Briefing · Feb 2027'), F('Support email', 'enquire@thetechfestival.com')]), form('App switches', [T('Show partners on Home', true), T('Show news on Home', true), T('Prompt web users to get the store app', true), F('Newest iPhone app version', '1.0.8')])],
+      survey: [form('Attendee survey', [F('Title', 'How was the Vancouver Briefing?', { w: true }), F('Opens', 'Feb 18, 2027, 3:00 PM'), F('Closes', 'Mar 4, 2027'), T('Invitation only (checked-in attendees)', true)]), table('Questions', '0.4fr 2fr 0.8fr', [['#', 'Question', 'Type'], ['1', 'How likely are you to recommend the Briefing?', '0–10 scale'], ['2', 'Which session was most useful?', 'Choice'], ['3', 'Anything we should change?', 'Text']])],
+      swag: [form('Top networkers', [T('Celebrate the top networkers', true), F('How many', '3'), F('Leaderboard cut-off', 'Feb 18, 2027, 4:00 PM'), F('Announce at', 'Feb 18, 2027, 5:00 PM'), T('Announce automatically', true), A('Feed post', 'Thank you to our top networkers: {list}')])],
+      reports: [table('App reports', '1.2fr 0.8fr 0.8fr', [['Measure', 'Last 30 days', 'Change'], ['People on the app', '412', '+38'], ['Web app installs', '57', '+9'], ['Messages sent', '1,284', '+210']], 'Tabs: Overview · Live activity · Web app installs')],
+      noms: [table('Nominations', '1.2fr 1.3fr 0.8fr 0.7fr', [['Nominee', 'Category', 'Jurors', 'Status'], ['Coldstream Carbon', 'Climate Tech × Energy', '3 of 3', c('Shortlisted', GOOD)], ['Pune Robotics Labs', 'Rising Innovator', '1 of 3', c('Pending', WARN)]]), form('Nomination: Pune Robotics Labs', [S('Category', 'Rising Innovator'), S('Status', 'Pending'), S('Nominee’s sector', 'Manufacturing'), A('Change note (staff only)', '')])],
+      jury: [table('Jurors', '1.1fr 1.3fr 0.6fr 0.7fr', [['Juror', 'Email', 'Assigned', 'Submitted'], ['Dr. Lena Brooks', 'lena.brooks@example.org', '12', '9'], ['Raj Malhotra', 'raj.malhotra@example.org', '12', '4']]), form('Invite a juror', [F('Name', '', { r: 1 }), F('Email', '', { r: 1 }), T('Send the invite email now', true)])],
+      alloc: [form('Allocation', [S('Nominations to allocate', 'Shortlisted'), F('Jurors per nomination', '3'), T('Skip declared conflicts', true)]), table('Juror load', '1.2fr 0.6fr 0.6fr', [['Juror', 'Assigned', 'Conflicts'], ['Dr. Lena Brooks', '12', '1'], ['Raj Malhotra', '12', '0']])],
+      rubric: [table('Scoring rubric', '1.4fr 0.5fr 1.6fr', [['Criterion', 'Weight', 'What a 5 looks like'], ['Innovation', '1', 'New to the market, hard to copy'], ['Impact', '1', 'Measured results for customers or the public'], ['Traction & evidence', '1', 'Paying customers or deployed pilots']]), form('Deadline', [F('Scoring closes', 'Oct 10, 2027, 11:59 PM Toronto')])],
+      results: [table('Jury results', '1.2fr 1.2fr 0.6fr 0.5fr', [['Nominee', 'Category', 'Score /100', 'Rank'], ['Coldstream Carbon', 'Climate Tech × Energy', '86', '1'], ['Fraser Basin Hydro', 'Climate Tech × Energy', '78', '2']], 'Management only')],
+      winners: [table('Winners', '1.2fr 1.3fr 0.7fr', [['Winner', 'Award', 'On website'], ['Coldstream Carbon', 'Climate Tech × Energy', c('Shown', GOOD)]]), form('Results page', [IMG('Winner photo', 'coldstream-team.jpg', 'Winner card and certificate page'), T('Show the winners on the website', false), F('Results headline', 'The 2027 Catalyst Award winners')])],
+      staff: [table('Staff accounts', '1.1fr 1.4fr 0.8fr 0.8fr', [['Name', 'Email', 'Access', 'Last sign-in'], ['Vishwa', '—', c('Management', GOOD), 'Today'], ['Baldeep', '—', 'Staff', 'Yesterday'], ['Leo Martin', '—', 'Volunteer', 'Never']], 'Management only'), form('Add staff', [F('Name', '', { r: 1 }), F('Email', '', { r: 1 }), S('Access', 'Staff (no prices, sales or staff accounts)'), F('Temporary password', 'Generated')])],
+      rights: [table('App rights', '1.4fr 0.6fr 0.6fr 0.6fr 0.6fr', [['Right', 'Attendee', 'Speaker', 'Exhibitor', 'Volunteer'], ['Send messages', '✓', '✓', '✓', '✓'], ['Start discussions', '✓', '✓', '—', '—'], ['Check people in', '—', '—', '—', '✓']])],
+      forminbox: [form('Where website forms go', [F('Partnership & sponsorship', 'sales@thetechfestival.com'), F('Exhibit', 'sales@thetechfestival.com'), F('Speaker', 'enquire@thetechfestival.com'), F('Volunteer', 'enquire@thetechfestival.com'), F('Downloads (leads)', 'enquire@thetechfestival.com'), F('General enquiries', 'enquire@thetechfestival.com')])],
+      audit: [table('Changes', '0.8fr 0.9fr 1.8fr', [['When', 'Who', 'What'], ['10:04', 'Vishwa', 'Published Event page: Vancouver Briefing 2027'], ['9:51', 'Baldeep', 'Saved draft: Montreal Briefing 2027 (theme, tagline)']])],
+      account: [form('My account', [F('Name', 'Vishwa'), F('Sign-in email', 'Your staff email'), F('Change password', '••••••••'), S('Panel theme', 'Match my device')])]
+    };
+    const fieldOut = (f) => ({ bg: locked ? '#F6F5FA' : '#FFFFFF', l: f.l, v: f.t === 'toggle' ? '' : (f.v || (f.t === 'area' ? 'Type here…' : 'Empty')), fg: f.v ? '#151035' : '#A19DB6', hint: f.h, req: f.r, span: f.w ? '1 / -1' : 'auto', h: f.t === 'area' ? '84px' : '40px', align: f.t === 'area' ? 'flex-start' : 'center', isImg: f.t === 'img', thumb: f.t === 'img' ? f.l : '', isDrop: f.t === 'drop', isToggle: f.t === 'toggle', isInput: f.t !== 'toggle' && f.t !== 'drop' && f.t !== 'img', isSelect: f.t === 'select', tBg: f.v ? '#151035' : '#D4D4D8', tX: f.v ? '20px' : '2px' });
+    const sections = (SPEC[page.k] || []).map((sec) => sec.kind === 'kpi'
+      ? { t: sec.t, hint: sec.hint, isKpi: true, isForm: false, isTable: false, fields: [], cols: '', head: [], rows: [], cards: sec.cards.map(([key, l, v, sub, col]) => { const on = s.revSrc === key; return { l, v, s: sub, c: col, bg: on ? '#FBE9F3' : '#FFFFFF', border: on ? '#D6308C' : '#E3E0EE', pick: () => this.setState({ revSrc: on || key === 'all' ? null : key, rev: null, revCity: null }) }; }) }
+      : sec.kind === 'form'
+      ? { t: sec.t, hint: sec.hint, isKpi: false, isForm: true, isTable: false, fields: sec.fields.map(fieldOut), cols: '', head: [], rows: [], cards: [] }
+      : { t: sec.t, hint: sec.hint, isKpi: false, cards: [], isForm: false, isTable: true, fields: [], cols: sec.cols, head: sec.rows[0].map((t) => ({ t })), rows: sec.rows.slice(1).map((r, j) => ({ pick: (e) => { if (e && e.stopPropagation) e.stopPropagation(); if (page.k === 'sales') { if (sec.t === 'By event') this.setState({ rev: s.rev === j ? null : j, revSrc: null, revCity: null }); if (sec.t === 'By city') this.setState({ revCity: s.revCity === j ? null : j, rev: null, revSrc: null }); if (sec.t === 'By revenue stream') { const key = ['tickets', 'sponsorship', 'exhibiting', 'discounts', 'refunds'][j]; this.setState({ revSrc: s.revSrc === key ? null : key, rev: null, revCity: null }); } return; } if (locked) { this.toastIt('Read only: this event ended more than 7 days ago'); return; } this.setState({ edit: { k: page.k, t: sec.t, row: j } }); }, bg: ((s.edit && s.edit.k === page.k && s.edit.t === sec.t && s.edit.row === j) || (page.k === 'sales' && ((sec.t === 'By event' && s.rev === j) || (sec.t === 'By city' && s.revCity === j) || (sec.t === 'By revenue stream' && s.revSrc === ['tickets', 'sponsorship', 'exhibiting', 'discounts', 'refunds'][j])))) ? '#FBE9F3' : '#FFFFFF', edge: (s.edit && s.edit.k === page.k && s.edit.t === sec.t && s.edit.row === j) ? '#D6308C' : 'transparent', cells: r.map((cell, i) => (typeof cell === 'object' ? { t: cell.t, c: cell.c, w: 600 } : { t: cell, c: i === 0 ? '#151035' : '#4A4566', w: i === 0 ? 600 : 400 })) })) });
+    return {
+      roles: [['Super admin (Vishwa)', 0, true], ['Management', 0, false], ['Staff', 1, false], ['Volunteer', 2, false]].map(([label, r, isSa]) => { const on = role === r && !!s.sa === isSa; return { label, on, bg: on ? '#151035' : 'transparent', fg: on ? '#FFFFFF' : '#4A4566', pick: () => this.setState({ role: r, sa: isSa, ws: r === 2 ? 'people' : s.ws, page: r === 2 ? 'people' : s.page }) }; }),
+      roleNote: sa ? 'Everything, including changing past events' : ['Sees every page; past events are read only', 'Management-only pages are hidden (Revenue, Jury results, Staff accounts)', 'Sees only People, look-up only'][role],
+      lockOn: pastEv && lockable,
+      lockBg: locked ? '#F1F0F5' : '#FFF7E6', lockFg: locked ? '#4A4566' : '#7A4B00',
+      lockText: locked ? 'Read only. ' + ev[0] + ' ended on Oct 27, 2026, more than 7 days ago, so its agenda, speakers, partners, tickets and other records are locked. Only the super admin can change them. You can still view, preview and export.' : 'Past event, unlocked for you as super admin. Every change is recorded in the audit log with a reason.',
+      togglePast: () => this.setState({ showPast: !s.showPast }),
+      pastLabel: s.showPast ? 'Hide past events' : 'Show past events (1)',
+      rail: visibleWs.filter((w) => w.id !== 'settings').map((w) => ({ label: w.label, icon: w.icon, badge: w.badge || 0, current: w.id === ws.id, bg: w.id === ws.id ? 'rgba(255,255,255,.14)' : 'transparent', fg: w.id === ws.id ? '#FFFFFF' : 'rgba(255,255,255,.72)', pick: go(w.id, w.groups[0].items[0].k) })),
+      showSettings: W('settings'),
+      settingsRail: { icon: I.settings, bg: ws.id === 'settings' ? 'rgba(255,255,255,.14)' : 'transparent', fg: ws.id === 'settings' ? '#FFFFFF' : 'rgba(255,255,255,.72)', pick: go('settings', 'staff') },
+      ws: { label: ws.label, job: ws.job, scoped: !!ws.scoped || !!page.s },
+      groups: ws.groups.map((g) => ({ h: g.h, items: g.items.map((p) => ({ label: p.label, m: p.m, badge: p.badge, current: p.k === page.k, bg: p.k === page.k ? '#151035' : 'transparent', fg: p.k === page.k ? '#FFFFFF' : '#151035', weight: p.k === page.k ? 600 : 500, pick: go(ws.id, p.k) })) })),
+      evName: ev[0], evStatus: ev[2], evOpen: s.evOpen, evCls: s.evOpen ? 'open' : '',
+      toggleEv: () => this.setState({ evOpen: !s.evOpen }),
+      evList: EVENTS.map((e, i) => ({ i, sep: i === 3, name: e[0], when: e[1], tag: e[2], tagBg: e[3], tagFg: e[4], bg: i === s.ev ? '#F6F5FA' : '#FFFFFF', pick: () => { this.setState({ ev: i, evOpen: false }); this.toastIt('Event and Event day pages now show ' + e[0]); } })).filter((e) => e.i < 3 || s.showPast || s.ev === 3),
+      openSearch: () => this.setState({ search: true, evOpen: false }), closeSearch: () => this.setState({ search: false }), searchOpen: s.search,
+      hits: [['Tickets & prices', 'Content', 'content', 'tickets'], ['Ticket records', 'People', 'people', 'records'], ['Give a pass', 'People', 'people', 'give']].filter((h) => W(h[2])).map(([t, w, a, b]) => ({ t, w, go: go(a, b) })),
+      attention: role === 2 ? 0 : 11,
+      me: { ini: 'VS', role: sa ? 'Super admin' : ['Management', 'Staff', 'Volunteer'][role] },
+      pageKey: ws.id + page.k + s.ev,
+      crumbs: [ws.label, (ws.scoped || page.s) ? ev[0] : null, page.label].filter(Boolean).join('  ›  '),
+      page: { label: page.label, desc: page.desc || 'Same page as today, in its new place.', from: page.from },
+      actions: acts,
+      isHome: page.k === 'overview', isEventPage: page.k === 'evpage', isPeople: page.k === 'people', isCheckin: page.k === 'checkin', isGeneric: generic,
+      stats: [(role === 0 ? ['Vancouver tickets sold', '42', 'of 150 · sample', '#166534'] : ['Vancouver sessions with speakers', '1 of 8', 'agenda', '#4A4566']), (role === 0 ? ['Total revenue · all events', '$275,260', 'net, before tax · click for the breakdown', '#4A4566'] : ['Passes not sent yet', '5', 'speaker and exhibitor passes', '#B45309']), ['New enquiries', '7', 'since yesterday', '#B45309'], ['Drafts to publish', '2', 'event pages', '#5B21B6']].map(([l, v, s2, c], i) => ({ l, v, s: s2, c, go: [role === 0 ? go('content', 'tickets') : go('content', 'agenda'), role === 0 ? go('sales', 'sales') : go('people', 'spk'), go('sales', 'pipeline'), go('content', 'evpage')][i] })),
+      todo: [
+        { t: '2 event page drafts waiting to publish', where: 'Content › Event page · Montreal, Calgary', cta: 'Review', c: '#7C3AED', go: go('content', 'evpage') },
+        { t: '2 new sales enquiries today, both unassigned', where: 'Sales › Sales & sponsorship enquiries', cta: 'Open', c: '#F5A623', go: go('sales', 'pipeline') },
+        { t: 'Vancouver agenda has 3 sessions without speakers', where: 'Content › Agenda', cta: 'Fix', c: '#D6308C', go: go('content', 'agenda') },
+        { t: 'Venue contract and deposit overdue (Nov 25)', where: 'Operations › Tasks & status', cta: 'Open', c: '#B91C1C', go: go('ops', 'opsboard') },
+        { t: '1 post held for moderation', where: 'Event day › App moderation', cta: 'Check', c: '#151035', go: go('day', 'mod') }
+      ].filter((t) => role === 0 || t.cta !== 'Review' || true),
+      quick: [['Give a pass', 'people', 'give'], ['Add a session', 'content', 'agenda'], ['Preview the event page', 'content', 'evpage'], ['Check someone in', 'day', 'checkin']].map(([label, a, b]) => ({ label, go: go(a, b) })),
+      evFields: [['Event name', ev[0]], ['City photo credit', 'Photo: Kyle Pearce, CC BY-SA 2.0'], ['Theme', 'Energy & Critical Infrastructure'], ['Who’s in the room', '150 senior delegates']].map(([l, v]) => ({ l, v })),
+      chips: [['Everyone', 1], ['Delegates', 0], ['Speakers', 0], ['Exhibitors', 0], ['Not RSVP’d', 0]].map(([t, on]) => ({ t, bg: on ? '#151035' : '#FFFFFF', fg: on ? '#FFFFFF' : '#151035' })),
+      rows: [['Priya Natarajan', 'Coastline Energy', 'Buy-side delegate', 'RSVP’d', '#166534'], ['Maya Chen', 'Westcoast Grid Services', 'Speaker pass', 'RSVP’d', '#166534'], ['James Moreau', 'Northline Robotics', 'Exhibitor pass', 'Not RSVP’d', '#B45309'], ['Daniel Kowalski', 'Fraser Basin Hydro', 'Buy-side delegate', 'RSVP’d', '#166534'], ['Elena Vasquez', 'Tidewater Grid Analytics', 'Exhibitor pass', 'Pass not sent', '#6B6688']].map(([n, o, p, st, c]) => ({ n, o, p, s: st, c })),
+      ciStats: [['Checked in', '0 of 150'], ['Expected today', '150'], ['Practice scans', '4']].map(([l, v]) => ({ l, v })),
+      sections, falseFlag: false,
+      ...(() => {
+        if (page.k !== 'calendar') return { isCalendar: false };
+        const ST = { pub: ['#166534', '#F0FDF4', 'Published on time'], late: ['#B45309', '#FFFBEB', 'Late'], miss: ['#B91C1C', '#FEF2F2', 'Missed'], sched: ['#5B21B6', '#F5F3FF', 'Scheduled'], rev: ['#D6308C', '#FDF2F8', 'In review'], plan: ['#8A86A0', '#F6F5FA', 'Planned'] };
+        const ICON = { li: 'in', ig: 'IG', x: 'X', em: '✉', web: '◎' };
+        const ITEMS = { 2: [['li', 'Toronto 2026 thank-you', 'pub']], 5: [['em', 'Newsletter: 2027 season', 'pub']], 10: [['li', '2027 season announcement', 'pub'], ['web', 'Event pages go live', 'pub']], 13: [['li', 'Report teaser', 'late']], 14: [['x', 'Calgary save-the-date', 'miss']], 17: [['li', 'Vancouver tickets on sale', 'pub'], ['em', 'Tickets email', 'pub']], 20: [['li', 'Meet Maya Chen', 'sched'], ['ig', 'Meet Maya Chen', 'sched']], 22: [['ig', 'Toronto 2026 in 60s', 'sched']], 24: [['li', 'Pillar sponsor spotlight', 'rev']], 26: [['x', 'Agenda reveal', 'plan']], 28: [['em', 'Black Friday ticket offer', 'plan']] };
+        const days = [];
+        for (let n = 1; n <= 30; n++) { const items = (ITEMS[n] || []).map(([ch, t, st]) => ({ t, full: t + ' · ' + ST[st][2], icon: ICON[ch], c: ST[st][0], bg: ST[st][1], pick: () => this.toastIt('Opens “' + t + '”: edit, reschedule or mark done') })); days.push({ n: String(n), items, bg: n === 17 ? '#FFFBFD' : '#FFFFFF', border: n === 17 ? '#D6308C' : '#F0EEF6', numC: n === 17 ? '#D6308C' : '#4A4566' }); }
+        return {
+          isCalendar: true,
+          calKpis: [['Planned this month', '14', 'posts, emails and site updates', '#151035'], ['Out on time', '5 of 7', 'so far · 71%', '#166534'], ['Late or missed', '2', '1 late, 1 missed', '#B91C1C'], ['Coming up', '7', '3 scheduled · 1 in review · 3 planned', '#5B21B6']].map(([l, v, sub, col]) => ({ l, v, s: sub, c: col })),
+          calLegend: Object.values(ST).map(([col, , t]) => ({ c: col, t })),
+          calDays: [{ n: '', items: [], bg: '#FFFFFF', border: 'transparent', numC: '#4A4566' }, { n: '', items: [], bg: '#FFFFFF', border: 'transparent', numC: '#4A4566' }, { n: '', items: [], bg: '#FFFFFF', border: 'transparent', numC: '#4A4566' }, { n: '', items: [], bg: '#FFFFFF', border: 'transparent', numC: '#4A4566' }, { n: '', items: [], bg: '#FFFFFF', border: 'transparent', numC: '#4A4566' }, { n: '', items: [], bg: '#FFFFFF', border: 'transparent', numC: '#4A4566' }].concat(days)
+        };
+      })(),
+      ...(() => {
+        const st = s.rev2 || {};
+        const sugState = st.sug || 'open';
+        const comments = [
+          { who: 'Lubna', ini: 'LS', col: '#7C3AED', when: 'Today, 9:40 AM', text: 'Can we mention the panel by name? People search for it.', isSug: false },
+          { who: 'Vishwa', ini: 'VS', col: '#151035', when: 'Today, 10:02 AM', text: 'Tighter opening:', isSug: true, from: 'Energy and critical infrastructure, in one room.', to: 'Where Alberta molecules meet BC tidewater.', open: sugState === 'open', done: sugState !== 'open', doneLabel: sugState === 'accepted' ? 'ACCEPTED' : 'REJECTED', doneBg: sugState === 'accepted' ? '#DCFCE7' : '#F1F0F5', doneFg: sugState === 'accepted' ? '#166534' : '#4A4566' }
+        ].concat((st.extra || []).map((t) => ({ who: 'You', ini: 'VS', col: '#D6308C', when: 'Just now', text: t.text, isSug: t.sug, from: t.sug ? 'one day' : '', to: t.sug ? 'one focused day' : '', open: t.sug, done: false })));
+        const comments2 = comments.map((cm) => ({ isSug: false, open: false, done: false, from: '', to: '', doneLabel: '', doneBg: '', doneFg: '', ...cm, accept: () => this.setState({ rev2: { ...st, sug: 'accepted' } }), reject: () => this.setState({ rev2: { ...st, sug: 'rejected' } }) }));
+        const Q = [
+          { t: 'Event page: Vancouver Briefing 2027', sub: 'Lubna · tagline, theme · today 9:31 AM', diff: [['One line under the name', 'Energy and critical infrastructure, in one room.', 'Where Alberta molecules meet BC tidewater.'], ['Theme', 'Energy', 'Energy & Critical Infrastructure']] },
+          { t: 'Social post: Meet Maya Chen', sub: 'Shweta · LinkedIn, Instagram, X · scheduled Nov 20', diff: [['Post text', 'Meet our speaker.', 'Meet our first Vancouver speaker. Maya Chen leads OT security…']] },
+          { t: 'Promo code: TEAM3', sub: 'Baldeep · buy 2, get 1 free · 30 uses', diff: [['Offer', '—', 'Buy 2, get 1 free on Buy-side delegate']] }
+        ];
+        const qi = st.q || 0;
+        const status = (i) => (st.done && st.done[i]) || 'Waiting for you';
+        return {
+          isApprovals: page.k === 'approvals',
+          revComments: comments2,
+          revPlaceholder: st.sugMode ? 'Type the new wording you suggest…' : 'Write a comment…',
+          revToggleSug: () => this.setState({ rev2: { ...st, sugMode: !st.sugMode } }),
+          revSugBg: st.sugMode ? '#FEF3C7' : '#FFFFFF', revSugBorder: st.sugMode ? '#B45309' : '#E3E0EE',
+          revSend: () => this.setState({ rev2: { ...st, extra: [...(st.extra || []), { text: st.sugMode ? 'Suggest:' : 'Looks good once the photo credit is in.', sug: !!st.sugMode }], sugMode: false } }),
+          apprQueue: Q.map((q, i) => ({ t: q.t, sub: q.sub, st: status(i), stC: status(i) === 'Approved' ? '#166534' : status(i) === 'Changes requested' ? '#B45309' : status(i) === 'Rejected' ? '#B91C1C' : '#5B21B6', bg: i === qi ? '#FBE9F3' : '#FFFFFF', edge: i === qi ? '#D6308C' : 'transparent', pick: () => this.setState({ rev2: { ...st, q: i } }) })),
+          apprItem: { t: Q[qi].t, sub: 'Submitted by ' + Q[qi].sub + ' · sent to you and Baldeep' },
+          apprDiff: Q[qi].diff.map(([f, from, to]) => ({ f, from, to })),
+          apprPreview: () => this.setState({ preview: true, pdev: 0, ws: 'content', page: 'evpage' }),
+          apprApproveLabel: role === 0 ? 'Approve and publish' : 'Approve',
+          apprApprove: () => { this.setState({ rev2: { ...st, done: { ...(st.done || {}), [qi]: 'Approved' } } }); this.toastIt(role === 0 ? 'Approved and published. ' + Q[qi].sub.split(' ·')[0] + ' is told' : 'Approved. A manager publishes it'); },
+          apprChanges: () => { this.setState({ rev2: { ...st, done: { ...(st.done || {}), [qi]: 'Changes requested' } } }); this.toastIt('Sent back with your comments and suggested edits'); },
+          apprReject: () => { this.setState({ rev2: { ...st, done: { ...(st.done || {}), [qi]: 'Rejected' } } }); this.toastIt('Rejected. The author sees your comments'); }
+        };
+      })(),
+      ...(() => {
+        const PEOPLE = [['vs', 'Vishwa', 'Super admin'], ['bs', 'Baldeep', 'Management'], ['ls', 'Lubna', 'Marketing'], ['sh', 'Shweta', 'Operations']];
+        const sel = s.appr || { vs: true };
+        const names = PEOPLE.filter(([k]) => sel[k]).map(([, n]) => n);
+        return {
+          approvers: PEOPLE.map(([k, name, r]) => ({ name, role: r, tick: sel[k] ? '✓' : '', bg: sel[k] ? '#FBE9F3' : '#FFFFFF', border: sel[k] ? '#D6308C' : '#E3E0EE', box: sel[k] ? '#D6308C' : '#A19DB6', fill: sel[k] ? '#D6308C' : '#FFFFFF', pick: (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ appr: { ...sel, [k]: !sel[k] } }); } })),
+          approvalNote: names.length ? (names.length === 1 ? names[0] + ' gets an email and a notification to approve.' : names.join(', ') + ' get an email; any one of them can approve.') : 'Tick at least one person.',
+          approvalBtnBg: names.length ? '#151035' : '#A19DB6',
+          submitApproval: () => this.toastIt(names.length ? 'Sent to ' + names.join(', ') + ' for approval. It goes live once one of them approves' : 'Tick at least one person to approve it')
+        };
+      })(),
+      ...(() => {
+        if (page.k !== 'social') return { isSocial: false };
+        const txt = s.socialText != null ? s.socialText : 'Meet our first Vancouver speaker. Maya Chen leads OT security for a utility serving 1.2 million customers across BC, and joins the “Securing What Runs the Province” panel on Feb 18.\n\nFull agenda and tickets: thetechfestival.com/vancouver\n\n#TTFC2027 #Vancouver #CriticalInfrastructure';
+        const ch = s.socialCh || { li: true, ig: true, x: true };
+        const XV = ['Meet Maya Chen, our first Vancouver speaker: OT security for a utility serving 1.2M people across BC. On the “Securing What Runs the Province” panel, Feb 18.\n\nthetechfestival.com/vancouver #TTFC2027', 'First Vancouver speaker: Maya Chen (Westcoast Grid Services) on keeping BC’s grid secure. Feb 18 → thetechfestival.com/vancouver #TTFC2027 #OTsecurity'];
+        const IGV = ['Meet our first Vancouver speaker ⚡️\n\nMaya Chen leads OT security for a utility serving 1.2 million people across BC. She joins the “Securing What Runs the Province” panel on February 18.\n\nTickets and full agenda: link in bio.\n\n#TTFC2027 #Vancouver #CriticalInfrastructure #Cybersecurity #EnergyTransition #BCtech', 'Who keeps the lights on, and who keeps them safe? 🔐\n\nMaya Chen, Westcoast Grid Services, speaks at the TTFC Vancouver Briefing on Feb 18.\n\nLink in bio for tickets.\n\n#TTFC2027 #Vancouver #OTsecurity #Energy #BCtech'];
+        const rep = !!s.repOn;
+        const xText = s.repX != null ? s.repX : XV[(s.repXi || 0) % 2];
+        const igText = s.repIg != null ? s.repIg : IGV[(s.repIgi || 0) % 2];
+        const len = txt.length;
+        const xSrc = rep ? xText : txt;
+        const xLen = xSrc.replace(/\S*thetechfestival\.com\S*/g, 'x'.repeat(23)).length;
+        const igLen = rep ? igText.length : len;
+        const LIM = { li: 3000, ig: 2200, x: 280 };
+        const used = { li: len, ig: igLen, x: xLen };
+        const over = (k) => used[k] > LIM[k];
+        const tab = s.socialTab || 'li';
+        const I2 = { photo: 'M4 5h16v14H4zM8 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4M20 16l-5-5-9 8', video: 'M4 6h11v12H4zM15 10l5-3v10l-5-3', doc: 'M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5', emoji: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M9 10h.01M15 10h.01M8.5 14.5a4 4 0 0 0 7 0', at: 'M16 12a4 4 0 1 1-1.2-2.9M16 8v5a2 2 0 0 0 4 0v-1a8 8 0 1 0-3.1 6.3', hash: 'M5 9h14M4 15h14M10 3 8 21M16 3l-2 18', link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1', ai: 'M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4zM19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z' };
+        const tool = (k, title, color, msg) => ({ title, icon: I2[k], color, pick: msg });
+        const add = (piece) => () => this.setState({ socialText: txt + piece });
+        const canPost = (ch.li || ch.ig || ch.x) && !['li', 'ig', 'x'].some((k) => ch[k] && over(k));
+        return {
+          isSocial: true,
+          ...(() => {
+            const et = s.editTab || 'main';
+            const versions = { main: { text: txt, set: (v) => this.setState({ socialText: v }) }, x: { text: rep ? xText : txt, set: (v) => this.setState({ repOn: true, repX: v }) }, ig: { text: rep ? igText : txt, set: (v) => this.setState({ repOn: true, repIg: v }) } };
+            const cur = versions[et];
+            return {
+              editTabs: [['main', 'Main post · LinkedIn'], ['x', 'X'], ['ig', 'Instagram']].map(([k, label]) => ({ label, on: et === k, fg: et === k ? '#151035' : '#6B6688', line: et === k ? '#D6308C' : 'transparent', tag: k !== 'main' && rep ? ((k === 'x' ? s.repX : s.repIg) != null ? 'edited' : 'suggested') : '', pick: () => this.setState(k === 'main' ? { editTab: k } : { editTab: k, repOn: true, socialTab: k }) })),
+              editText: cur.text,
+              editAria: { main: 'Main post text', x: 'Text for X', ig: 'Instagram caption' }[et],
+              editInput: (e) => cur.set(e && e.target ? e.target.value : cur.text),
+              editIsChannel: et !== 'main',
+              editHow: et === 'x' ? 'Shortened to fit 280, link kept, 1–2 hashtags' : 'Hook first, “link in bio”, more hashtags',
+              editRegen: () => this.setState(et === 'x' ? { repXi: (s.repXi || 0) + 1, repX: null } : { repIgi: (s.repIgi || 0) + 1, repIg: null }),
+              editReset: () => this.setState(et === 'x' ? { repX: txt } : { repIg: txt }),
+              repLabel: rep ? '✓ X and Instagram have their own text' : '✦ Write X and Instagram versions'
+            };
+          })(),
+          repOn: rep,
+          repOpen: () => this.setState(rep ? { repOn: false, editTab: 'main' } : { repOn: true, editTab: 'x', socialTab: 'x' }),
+          repHint: rep ? 'X and Instagram now post their own versions. Edit them below.' : 'Writes a short X version and an Instagram caption from your LinkedIn text.',
+          repVersions: [
+            { label: 'X version', how: 'Shortened to fit 280, link kept, 1–2 hashtags', text: xText, count: xLen + ' / 280', countColor: xLen > 280 ? '#B91C1C' : '#166534', input: (e) => this.setState({ repX: e && e.target ? e.target.value : xText }), regen: () => this.setState({ repXi: (s.repXi || 0) + 1, repX: null }), preview: () => this.setState({ socialTab: 'x' }), reset: () => this.setState({ repX: txt }) },
+            { label: 'Instagram caption', how: 'Hook first, “link in bio”, more hashtags, emoji', text: igText, count: igText.length + ' / 2,200', countColor: igText.length > 2200 ? '#B91C1C' : '#166534', input: (e) => this.setState({ repIg: e && e.target ? e.target.value : igText }), regen: () => this.setState({ repIgi: (s.repIgi || 0) + 1, repIg: null }), preview: () => this.setState({ socialTab: 'ig' }), reset: () => this.setState({ repIg: txt }) }
+          ],
+          socialText: txt,
+          socialInput: (e) => this.setState({ socialText: e && e.target ? e.target.value : txt }),
+          socialChannels: [['li', 'LinkedIn'], ['ig', 'Instagram'], ['x', 'X']].map(([k, label]) => ({ label, count: ch[k] ? used[k] + ' / ' + LIM[k].toLocaleString() : 'off', bg: ch[k] ? (over(k) ? '#FEE2E2' : '#151035') : '#FFFFFF', fg: ch[k] ? (over(k) ? '#B91C1C' : '#FFFFFF') : '#6B6688', border: ch[k] ? (over(k) ? '#B91C1C' : '#151035') : '#E3E0EE', pick: () => this.setState({ socialCh: { ...ch, [k]: !ch[k] } }) })),
+          socialFormat: [['B', 'Bold', 700, 'normal'], ['I', 'Italic', 400, 'italic'], ['•', 'Bulleted list', 400, 'normal'], ['1.', 'Numbered list', 400, 'normal'], ['↺', 'Undo', 400, 'normal']].map(([label, title, w, st]) => ({ label, title, w, st, pick: () => this.toastIt(title + ' (works on selected text; LinkedIn and Instagram show it with special characters)') })),
+          socialTools: [tool('photo', 'Add photos', '#378FE9', () => this.toastIt('Choose photos, or pick from Files & media')), tool('video', 'Add a video', '#5F9B41', () => this.toastIt('Choose a video (MP4, up to 10 minutes)')), tool('doc', 'Add a document (LinkedIn carousel)', '#E7A33E', () => this.toastIt('Choose a PDF; LinkedIn shows it as a swipeable carousel')), tool('emoji', 'Emoji', '#6B6688', add(' 🎉')), tool('at', 'Mention a person or company', '#6B6688', add(' @Westcoast Grid Services')), tool('hash', 'Add a hashtag', '#6B6688', add(' #EnergyTransition')), tool('link', 'Add a tracked link', '#6B6688', add(' thetechfestival.com/vancouver')), tool('ai', 'Write X and Instagram versions', '#D6308C', () => this.setState({ repOn: true, editTab: 'x', socialTab: 'x' }))],
+          socialHasMedia: true,
+          socialWhen: s.socialSched ? 'Scheduled: ' + (s.socialSlot || 'Fri Nov 20, 10:00 AM') + ' ET · ' : 'Posts now · ',
+          socialSchedule: () => this.setState({ socialSchedOpen: !s.socialSchedOpen }),
+          socialSchedOpen: !!s.socialSchedOpen,
+          socialTimeValue: { 'Tue Nov 17, 9:00 AM': '09:00', 'Wed Nov 18, 12:00 PM': '12:00', 'Thu Nov 19, 8:30 AM': '08:30' }[s.socialSlot] || '10:00',
+          socialSlots: ['Tue Nov 17, 9:00 AM', 'Wed Nov 18, 12:00 PM', 'Thu Nov 19, 8:30 AM'].map((label) => ({ label, bg: s.socialSlot === label ? '#FBE9F3' : '#FFFFFF', border: s.socialSlot === label ? '#D6308C' : '#E3E0EE', pick: () => this.setState({ socialSlot: label }) })),
+          socialSchedCancel: () => this.setState({ socialSchedOpen: false }),
+          socialSchedSet: () => { this.setState({ socialSched: true, socialSchedOpen: false }); this.toastIt('Scheduled. It shows on the calendar below'); },
+          socialWeek: [['Mon 16', []], ['Tue 17', [['9:00 AM', 'Vancouver tickets on sale', '#166534']]], ['Wed 18', []], ['Thu 19', [['12:00 PM', 'Partner spotlight: Fraser Basin Hydro', '#B45309']]], ['Fri 20', [['10:00 AM', 'Meet Maya Chen (this post)', '#D6308C']]], ['Sat 21', []], ['Sun 22', [['6:00 PM', 'Toronto 2026 in 60 seconds', '#B45309']]]].map(([d, posts], i) => ({ d, bg: i === 1 ? '#FFFBFD' : '#FFFFFF', posts: posts.map(([t, x, c]) => ({ t, x, c, pick: () => this.toastIt('Opens “' + x + '” to edit or move it') })) })),
+          socialPostLabel: role === 0 ? (s.socialSched ? 'Schedule' : 'Post now') : 'Send for approval',
+          socialPostBg: canPost ? '#0A66C2' : '#A19DB6',
+          socialPost: () => this.toastIt(!canPost ? 'Shorten the text for X, or switch X off' : role === 0 ? (s.socialSched ? 'Scheduled for ' + (s.socialSlot || 'Fri Nov 20, 10:00 AM') : 'Posted to ' + ['li', 'ig', 'x'].filter((k) => ch[k]).map((k) => ({ li: 'LinkedIn', ig: 'Instagram', x: 'X' })[k]).join(', ')) : 'Sent to a manager to approve'),
+          socialPreviewTabs: [['li', 'LinkedIn'], ['ig', 'Instagram'], ['x', 'X']].map(([k, label]) => ({ label, bg: tab === k ? '#FFFFFF' : 'transparent', fg: tab === k ? '#151035' : '#6B6688', pick: () => this.setState({ socialTab: k }) })),
+          socialHandle: { li: 'The Tech Festival Canada', ig: 'thetechfestival', x: 'The Tech Festival Canada @thetechfestival' }[tab],
+          socialSub: { li: '4,812 followers · Now · 🌐', ig: 'Vancouver, British Columbia', x: 'Now' }[tab],
+          socialAvatarRadius: tab === 'li' ? '6px' : '999px',
+          socialPreviewText: tab === 'x' ? (xLen > 280 ? xSrc.slice(0, 250) + '…' : xSrc) : tab === 'ig' ? (rep ? igText : txt) : (txt.length > 210 ? txt.slice(0, 210) + '… see more' : txt),
+          socialSize: { li: '1200 × 627', ig: '1080 × 1350', x: '1600 × 900' }[tab],
+          socialTabName: { li: 'LinkedIn', ig: 'Instagram', x: 'X' }[tab],
+          socialImgBg: (s.socialFit || 'crop') === 'fit' ? '#151035' : 'linear-gradient(135deg, #3B3170, #151035)',
+          socialImgPad: (s.socialFit || 'crop') === 'fit' ? '30px 46px' : '0',
+          socialFits: [['crop', 'Crop to fill'], ['fit', 'Fit on navy background']].map(([k, label]) => ({ label, bg: (s.socialFit || 'crop') === k ? '#FFFFFF' : 'transparent', fg: (s.socialFit || 'crop') === k ? '#151035' : '#6B6688', pick: () => this.setState({ socialFit: k }) })),
+          socialRatio: { li: '1.91 / 1', ig: '4 / 5', x: '16 / 9' }[tab], socialRatioLabel: { li: '1.91:1', ig: '4:5', x: '16:9' }[tab],
+          socialActions: { li: '👍 Like   💬 Comment   🔁 Repost   ✈ Send', ig: '♡   💬   ✈   ·   🔖', x: '💬   🔁   ♡   📊   ↗' }[tab],
+          socialNote: tab === 'ig' ? 'Instagram: links aren’t clickable in captions, so the link goes in the bio.' : tab === 'x' ? (xLen > 280 ? 'Too long for X: shorten it, use “Rewrite with AI”, or switch X off.' : 'X counts each link as 23 characters.') : 'LinkedIn shows the first lines, then “see more”.'
+        };
+      })(),
+      cropPick: () => this.toastIt('Drag to choose what stays in view on desktop and phone'),
+      removePick: () => this.toastIt('Photo removed. The section shows its default image until you add one'),
+      dropPick: () => this.toastIt('Choose files to upload'),
+      pdfOpen: !!s.pdf && page.k === 'contracts',
+      closePdf: () => this.setState({ pdf: false }),
+      pdfDownload: () => this.toastIt('TTFC-VAN27-016 Coldstream Carbon Exhibitor Agreement.pdf downloaded'),
+      pdfEmail: () => { this.setState({ pdf: false }); this.toastIt('PDF emailed to samuel@coldstream.example. Status set to Sent'); },
+      ...(() => {
+        const ed = s.edit && s.edit.k === page.k ? s.edit : null;
+        const sec = ed ? (SPEC[page.k] || []).find((x) => x.kind === 'table' && x.t === ed.t) : null;
+        const row = sec ? sec.rows[ed.row + 1] : null;
+        if (!row) return { editLastBy: '', editLastAt: '', editing: false, livePane: false, editFields: [], editTitle: '', editNote: '', editSaveLabel: '', editSave: () => {}, editDone: () => this.setState({ edit: null }), liveSection: '', liveTitle: '', liveSub: '', liveOthers: [] };
+        const txt = (cell) => (typeof cell === 'object' ? cell.t : cell);
+        const head = sec.rows[0];
+        const onSite = !!PREVIEWABLE[page.k];
+        return {
+          editing: true,
+          editLastBy: ['Baldeep', 'Lubna', 'Vishwa', 'Shweta'][ed.row % 4], editLastAt: ['Yesterday, 4:37 PM', 'Nov 15, 2026, 2:12 PM', 'Today, 9:51 AM', 'Nov 14, 2026, 11:20 AM'][ed.row % 4],
+          livePane: onSite,
+          editTitle: txt(row[0]),
+          editFields: head.map((h, i) => ({ l: h, v: txt(row[i]) })),
+          editNote: onSite ? 'Changes save as a draft. The live page on the right shows how it will look; visitors see it only after Publish.' : 'Changes save straight away and are recorded in the history below.',
+          editSaveLabel: onSite ? 'Save draft' : 'Save',
+          editSave: () => this.toastIt(onSite ? 'Draft saved' : 'Saved'),
+          editDone: () => this.setState({ edit: null }),
+          liveSection: sec.t.split(' · ')[0],
+          liveTitle: txt(row[0]),
+          liveSub: row.slice(1).map(txt).filter((x) => x && x !== '—').join(' · '),
+          liveOthers: sec.rows.slice(1).filter((r, j) => j !== ed.row).slice(0, 2).map((r) => ({ a: txt(r[0]), b: txt(r[1]) }))
+        };
+      })(),
+      ...(() => {
+        // Edit history only where people change things; never on reports, inboxes or read-only lists.
+        const NO_HISTORY = ['approvals', 'connections', 'overview', 'sales', 'summary', 'reports', 'audit', 'results', 'checkin', 'people', 'records', 'accounts', 'forms', 'downloads', 'waitlist', 'unsub', 'sos', 'mod'];
+        if (NO_HISTORY.includes(page.k)) return { showHist: false, hist: [], lastBy: '', lastAt: '', lastIni: '', histOpen: false, histLabel: '', histBg: '#FFFFFF', histBorder: '#E3E0EE', toggleHist: () => {} };
+        const PEOPLE = [['Vishwa', 'VS', '#151035'], ['Baldeep', 'BS', '#D6308C'], ['Lubna', 'LS', '#7C3AED'], ['Shweta', 'SH', '#0F766E']];
+        const seed = page.k.split('').reduce((n, ch) => n + ch.charCodeAt(0), 0);
+        const labels = [];
+        (SPEC[page.k] || []).forEach((sec) => (sec.kind === 'form' ? sec.fields : []).forEach((f) => labels.push(f.l)));
+        const things = labels.length ? labels : ['the list', 'a row', 'the order', 'a status', 'the notes'];
+        const times = ['Today, 10:04 AM', 'Today, 9:51 AM', 'Yesterday, 4:37 PM', 'Nov 15, 2026, 2:12 PM', 'Nov 14, 2026, 11:20 AM'];
+        const verbs = [['Changed', 'Saved', '#EDE9FE', '#5B21B6'], ['Published', 'Published', '#DCFCE7', '#166534'], ['Changed', 'Draft', '#FEF3C7', '#92400E'], ['Updated', 'Saved', '#EDE9FE', '#5B21B6'], ['Edited', 'Saved', '#EDE9FE', '#5B21B6']];
+        const hist = times.map((when, i) => {
+          const p = PEOPLE[(seed + i) % PEOPLE.length];
+          const v = verbs[(seed + i * 2) % verbs.length];
+          const thing = things[(seed + i) % things.length];
+          const what = v[0] === 'Published' ? 'Published the changes to the live site' : v[0] + ' “' + thing + '”';
+          return { when, who: p[0], ini: p[1], col: p[2], what, tag: v[1], tagBg: v[2], tagFg: v[3] };
+        });
+        return { showHist: true, hist, lastBy: hist[0].who, lastAt: hist[0].when, lastIni: hist[0].ini, histOpen: !!s.hist, histLabel: s.hist ? 'Hide history' : 'History', histBg: s.hist ? '#FBE9F3' : '#FFFFFF', histBorder: s.hist ? '#D6308C' : '#E3E0EE', toggleHist: () => this.setState({ hist: !s.hist }) };
+      })(),
+      ...(() => {
+        const FL = {
+          people: ['Name, company, email or ticket ID', [['Event', evN, 'All events'], ['Type', 'Everyone', 'Delegates'], ['Pass', 'Any', 'Buy-side delegate'], ['RSVP', 'Any', 'Not RSVP’d'], ['VIP', 'Any', 'VIP only'], ['Pass email', 'Any', 'Not sent']], '58 people'],
+          agenda: ['Session title or speaker', [['Day', 'Day 1', 'All days'], ['Stage', 'All stages', 'Main stage'], ['Format', 'Any', 'Panel'], ['Status', 'Any', 'Needs speakers']], '8 sessions'],
+          speakers: ['Name or organisation', [['Type', 'Any', 'Keynote'], ['Status', 'Any', 'Invited'], ['Pillar', 'Any', 'Cybersecurity'], ['Featured', 'Any', 'Featured only']], '18 speakers'],
+          partners: ['Partner name', [['Row', 'All rows', 'Featured (paid)'], ['Category', 'Any', 'Corporate partner'], ['Shown on', 'Website and app', 'Hidden somewhere']], '24 partners'],
+          tickets: ['Ticket name', [['Status', 'On sale', 'All'], ['Type', 'Any', 'Application only']], '3 ticket types'],
+          pipeline: ['Company, contact or email', [['Type', 'All', 'Sponsorship'], ['Status', 'Open deals', 'Won'], ['Owner', 'Anyone', 'Unassigned'], ['Came from', 'Everywhere', 'sales@ email'], ['Received', 'Any time', 'Last 7 days']], '4 open · $44,394'],
+          forms: ['Name, email or company', [['Form', 'All forms', 'Speaker'], ['Status', 'New', 'All'], ['Received', 'Any time', 'Last 7 days'], ['Spam', 'Hidden', 'Shown']], '3 new'],
+          booths: ['Spot or company', [['Type', 'All', 'Demo pod'], ['Status', 'Any', 'Available']], '10 spots · 2 sold'],
+          calendar: ['Item', [['Channel', 'All', 'LinkedIn'], ['Status', 'All', 'Missed or late'], ['Owner', 'Anyone', 'Me'], ['Type', 'Posts, emails, website', 'Posts only']], '14 items this month'],
+          social: ['Post text', [['Channel', 'All', 'LinkedIn'], ['Status', 'All', 'Scheduled'], ['Event', 'All events', evN], ['By', 'Anyone', 'Me']], '4 posts · 1 waiting for approval'],
+          files: ['File name', [['Type', 'All', 'PDF'], ['Who can see it', 'Anyone', 'Staff only'], ['Folder', 'All folders', 'Sponsors'], ['Event', 'All events', evN], ['Uploaded by', 'Anyone', 'Me']], '6 files · 1.8 GB used'],
+          opsboard: ['Task', [['Area', 'All', 'Vendors'], ['Owner', 'Anyone', 'Me'], ['Status', 'Open', 'Overdue']], '12 open · 1 overdue'],
+          vendors: ['Vendor or contact', [['Category', 'All', 'AV & livestream'], ['Status', 'Any', 'Not booked'], ['Paid', 'Any', 'Unpaid']], '5 vendors'],
+          print: ['Item', [['Proof', 'Any', 'Not approved'], ['Vendor', 'All', 'PrintHaus']], '4 items'],
+          logistics: ['What', [['Status', 'Any', 'Waiting']], '3 shipments'],
+          contracts: ['Company or contract number', [['Agreement', 'All', 'Sponsorship'], ['Status', 'Any', 'Sent, not signed'], ['Owner', 'Anyone', 'Me']], '3 contracts · $18,500'],
+          ctemplates: ['Template', [['Agreement', 'All', 'Exhibitor']], '4 templates'],
+          exh: ['Name, company or booth', [['Booth', 'Any', 'P1'], ['Pass email', 'Any', 'Not sent']], '2 exhibitors'],
+          sales: ['', [['City', 'All cities', 'Toronto'], ['Events', 'All events', evN], ['Period', 'All time', 'This year'], ['Source', 'All', 'Tickets'], ['Compare with', 'Nothing', 'Same time last year']], 'Management only'],
+          spk: ['Speaker name', [['Pass email', 'Any', 'Not sent'], ['Email', 'Any', 'Missing']], '18 passes'],
+          records: ['Name, email or ticket ID', [['Pass', 'Any', 'Buy-side delegate'], ['Bought with a code', 'Any', 'Yes'], ['Paid', 'Any', 'Given by staff'], ['Show hidden', 'No', 'Yes']], '42 tickets'],
+          accounts: ['Name or email', [['Type', 'Any', 'Speaker'], ['On the app', 'Any', 'Active this week'], ['Hidden', 'Any', 'Hidden from the app']], '412 accounts'],
+          rsvps: ['Name or ticket ID', [['Answer', 'Any', 'No answer'], ['Pass', 'Any', 'Speaker pass'], ['Meal', 'Any', 'Lunch'], ['Possible duplicates', 'Show', 'Only these']], '45 of 58 answered'],
+          summary: ['', [['Day', 'Both days', 'Day 1'], ['Pass', 'All', 'Speaker pass']], 'Read only'],
+          sos: ['Name', [['Status', 'Open', 'All'], ['Category', 'Any', 'Medical']], '1 open'],
+          mod: ['Author or text', [['Type', 'Posts and comments', 'Messages'], ['Reason', 'Any', 'Reported']], '1 held'],
+          promos: ['Code', [['Event', evN, 'All events'], ['Offer type', 'Any', 'Buy X, get Y free'], ['Status', 'Active', 'All'], ['Ticket type', 'Any', 'Buy-side delegate']], '5 codes · 3 active'],
+          downloads: ['Name, email or company', [['File', 'All files', 'Post-show report'], ['When', 'Any time', 'Last 30 days']], '86 downloads'],
+          waitlist: ['Name, email, company or phone', [['Interested in', 'Anything', 'Sponsorship'], ['Source', 'All', 'Website']], '1,204 people'],
+          attending: ['Name or email', [['Email', 'Any', 'Not sent'], ['Posted on LinkedIn', 'Any', 'Yes']], '58 ticket holders'],
+          unsub: ['Email', [['How', 'Any', 'Email link']], '23 addresses'],
+          logos: ['Logo name', [['Strip', 'Team alumni', 'All strips'], ['Shown', 'Any', 'Hidden']], '31 logos'],
+          orgs: ['Organisation', [['Logo', 'Any', 'Missing'], ['Shown', 'Any', 'Hidden'], ['Partner', 'Any', 'Partners only']], '96 organisations'],
+          reports: ['', [['Period', 'Last 30 days', 'Last 7 days'], ['Platform', 'All', 'iPhone']], ''],
+          noms: ['Nominee or organisation', [['Category', 'All', 'Rising Innovator'], ['Status', 'Any', 'Shortlisted'], ['Jurors', 'Any', 'Not fully scored']], '48 nominations'],
+          jury: ['Juror name or email', [['Progress', 'Any', 'Behind'], ['Active', 'Yes', 'All']], '12 jurors'],
+          results: ['Nominee', [['Category', 'All', 'Climate Tech × Energy']], 'Management only'],
+          winners: ['Winner', [['Year', '2027', '2026']], ''],
+          staff: ['Name or email', [['Access', 'All', 'Management']], '9 accounts'],
+          audit: ['What changed', [['Who', 'Anyone', 'Me'], ['What', 'All changes', 'Published pages'], ['From', 'Nov 1, 2026', 'Today']], '']
+        };
+        const def = FL[page.k];
+        if (!def) return { hasFilters: false, filters: [], searchHint: '', filterCount: '', clearFilters: () => {} };
+        const fs = s.fs || {};
+        return {
+          hasFilters: true,
+          searchHint: def[0] ? 'Search ' + def[0].charAt(0).toLowerCase() + def[0].slice(1) : 'Search',
+          filters: def[1].map(([l, v, alt]) => { const key = page.k + l; const on = !!fs[key]; return { l, v: on ? alt : v, bg: on ? '#FBE9F3' : '#FFFFFF', border: on ? '#D6308C' : '#E3E0EE', pick: () => this.setState({ fs: { ...fs, [key]: !on } }) }; }),
+          clearFilters: () => this.setState({ fs: {} }),
+          filterCount: def[2]
+        };
+      })(),
+      previewOpen: !!s.preview && !!PREVIEWABLE[page.k],
+      previewWhat: PREVIEWABLE[page.k] || '',
+      closePreview: () => this.setState({ preview: false }),
+      pDevs: ['Desktop', 'Phone'].map((label, i) => ({ label, bg: (s.pdev || 0) === i ? '#FFFFFF' : 'transparent', fg: (s.pdev || 0) === i ? '#151035' : 'rgba(255,255,255,.8)', pick: () => this.setState({ pdev: i }) })),
+      pW: (s.pdev || 0) === 0 ? '100%' : '390px',
+      pPublish: () => { this.setState({ preview: false }); this.toastIt(role === 0 ? 'Published. Live within about a minute' : 'Saved for a manager to publish'); },
+      pPublishLabel: role === 0 ? 'Publish' : 'Ask a manager to publish',
+      pChange: { promos: 'Code TEAM3 applied: 3 tickets, 1 free, total $298.00', evpage: 'Theme and tagline changed', agenda: '“AI in Production” now 10:15–11:00 with 2 speakers', speakers: 'Maya Chen added', partners: 'Northline Robotics logo added', tickets: 'Buy-side delegate description changed', packages: 'Pillar sponsor benefits changed', booths: 'P2 marked held', switches: 'Announcement text changed', logos: 'New logo in the community strip', apptext: 'Home banner changed' }[page.k] || '',
+      toast: s.toast, toastCls: s.toast ? 'show' : ''
+    };
+  }
+}
+</script>
+</body>
+</html>

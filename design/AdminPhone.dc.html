@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin panel prototype (phone)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.p-press{cursor:pointer;transition:transform .12s ease}.p-press:active{transform:scale(.97)}
+.p-sheet{transform:translateY(105%);transition:transform .3s cubic-bezier(.2,.8,.2,1)}.p-sheet.open{transform:none}
+.p-scrim{opacity:0;pointer-events:none;transition:opacity .2s ease}.p-scrim.open{opacity:1;pointer-events:auto}
+@media (prefers-reduced-motion: reduce){.p-sheet,.p-scrim{transition-duration:.01ms}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; font-family: Poppins, system-ui, sans-serif; color: #151035; background: #F6F5FA; display: flex; flex-direction: column">
+  <header style="padding: 14px 16px 12px; background: #151035; color: #FFFFFF; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <img src="/_blob/91b82cf91cc133bbda3abd88aa79c556" alt="The Tech Festival Canada" style="height: 30px; width: auto; display: block"><span style="font-size: 12px; font-weight: 600; opacity: .75">Admin</span>
+      <span style="margin-left: auto; width: 32px; height: 32px; border-radius: 999px; background: rgba(255,255,255,.14); display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></span>
+      <span style="width: 32px; height: 32px; border-radius: 999px; background: #FFFFFF; color: #151035; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">VS</span>
+    </div>
+    <sc-if value="{{ scoped }}" hint-placeholder-val="{{ true }}">
+      <button type="button" class="p-press" onClick="{{ nextEv }}" style="height: 36px; padding: 0 12px; border: 1px solid rgba(255,255,255,.3); border-radius: 10px; background: transparent; color: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px"><span style="width: 7px; height: 7px; border-radius: 2px; background: #D6308C"></span>{{ evName }}<span style="margin-left: auto; font-size: 12px; opacity: .7">Change</span></button>
+    </sc-if>
+  </header>
+
+  <main style="flex: 1 1 auto; overflow: auto; padding: 16px 16px 90px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 12px; color: #6B6688">{{ crumbs }}</span>
+      <h1 style="margin: 0; font-size: 22px; font-weight: 700">{{ title }}</h1>
+    </div>
+    <sc-for list="{{ links }}" as="l" hint-placeholder-count="4">
+      <button type="button" class="p-press" onClick="{{ l.go }}" style="padding: 14px; border: 1px solid #E3E0EE; border-radius: 12px; background: #FFFFFF; font-family: inherit; text-align: left; display: flex; align-items: center; gap: 10px">
+        <span style="display: flex; flex-direction: column; gap: 2px"><b style="font-size: 15px; color: #151035">{{ l.t }}</b><span style="font-size: 12px; color: #6B6688">{{ l.s }}</span></span>
+        <sc-if value="{{ l.badge }}" hint-placeholder-val="{{ false }}"><span style="margin-left: auto; min-width: 22px; height: 22px; border-radius: 999px; background: #F5A623; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{ l.badge }}</span></sc-if>
+      </button>
+    </sc-for>
+  </main>
+
+  <nav aria-label="Workspaces" style="position: absolute; left: 0; right: 0; bottom: 0; height: 72px; background: #FFFFFF; border-top: 1px solid #E3E0EE; display: grid; grid-template-columns: repeat(5, 1fr)">
+    <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+      <button type="button" class="p-press" onClick="{{ t.pick }}" style="border: 0; background: transparent; font-family: inherit; font-size: 11px; font-weight: 600; color: {{ t.fg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; position: relative">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ t.icon }}"></path></svg>{{ t.label }}
+        <sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 0; width: 28px; height: 3px; border-radius: 3px; background: #D6308C"></span></sc-if>
+      </button>
+    </sc-for>
+  </nav>
+
+  <div class="p-scrim {{ moreCls }}" onClick="{{ closeMore }}" style="position: absolute; inset: 0; background: rgba(21,16,53,.4)"></div>
+  <div class="p-sheet {{ moreCls }}" style="position: absolute; left: 0; right: 0; bottom: 0; max-height: 78%; overflow: auto; background: #FFFFFF; border-radius: 18px 18px 0 0; padding: 18px 16px 28px; display: flex; flex-direction: column; gap: 14px">
+    <div style="width: 40px; height: 4px; border-radius: 4px; background: #E3E0EE; align-self: center"></div>
+    <sc-for list="{{ more }}" as="m" hint-placeholder-count="4">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #8A86A0">{{ m.h }}</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <sc-for list="{{ m.items }}" as="i" hint-placeholder-count="3"><span style="padding: 7px 11px; border-radius: 999px; background: #F6F5FA; font-size: 13px; font-weight: 600">{{ i.t }}</span></sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 0, more: false, ev: 0 }; }
+  renderVals() {
+    const s = this.state;
+    const I = {
+      home: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10',
+      event: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+      people: 'M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
+      day: 'M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10',
+      more: 'M5 12h.01M12 12h.01M19 12h.01'
+    };
+    const EV = ['Vancouver Briefing 2027', 'Montreal Briefing 2027', 'Toronto Main Event 2027'];
+    const L = (t, sub, badge) => ({ t, s: sub, badge: badge || 0, go: () => {} });
+    const views = [
+      { label: 'Home', icon: I.home, title: 'Needs attention', scoped: false, links: [L('2 changes waiting for your approval', 'Home › Approvals', 2), L('2 event page drafts to publish', 'Event › Event page'), L('2 new sales enquiries today', 'Sales › Sales & sponsorship enquiries', 2), L('3 sessions without speakers', 'Event › Agenda'), L('1 post held for moderation', 'Event day › App moderation', 1)] },
+      { label: 'Content', icon: I.event, title: 'Event website', scoped: true, links: [L('Event page', 'Draft saved · not published'), L('Agenda', '8 sessions'), L('Speakers', '0 announced'), L('Partners & sponsors', 'Logos on this event'), L('Tickets & prices', '3 ticket types · on sale'), L('Sponsorship packages', '4 packages')] },
+      { label: 'People', icon: I.people, title: 'People', scoped: false, links: [L('Search people', 'Name, company, email or ticket ID'), L('Give a pass', 'Speaker, exhibitor, guest'), L('Speaker passes', ''), L('Exhibitor passes', '')] },
+      { label: 'Event day', icon: I.day, title: 'Event day', scoped: true, links: [L('Check-in', 'Scan passes at the door'), L('SOS & help', 'Open requests', 1), L('App moderation', 'Held posts', 1), L('Event summary', 'Passes, RSVPs, meals')] }
+    ];
+    const tab = Math.min(s.tab, 3);
+    const v = views[tab];
+    return {
+      scoped: v.scoped, evName: EV[s.ev], nextEv: () => this.setState({ ev: (s.ev + 1) % EV.length }),
+      crumbs: v.scoped ? v.label + '  ›  ' + EV[s.ev] : v.label, title: v.title, links: v.links,
+      tabs: views.map((x, i) => ({ label: x.label, icon: x.icon, on: !s.more && i === tab, fg: !s.more && i === tab ? '#151035' : '#8A86A0', pick: () => this.setState({ tab: i, more: false }) })).concat([{ label: 'More', icon: I.more, on: s.more, fg: s.more ? '#151035' : '#8A86A0', pick: () => this.setState({ more: !s.more }) }]),
+      moreCls: s.more ? 'open' : '', closeMore: () => this.setState({ more: false }),
+      more: [
+        { h: 'Operations', items: ['Tasks & status', 'Event settings', 'Venue', 'Vendors', 'Catering & menu', 'Print & signage', 'Logistics', 'Budget'] },
+        { h: 'Sales', items: ['Sales & sponsorship enquiries', 'Waitlist', 'Contracts', 'Contract templates', 'Exhibitor passes', 'Revenue'] },
+        { h: 'More content', items: ['Booths & floor plan', 'Site pages', 'Website switches', 'Logo strips', 'Attending organisations', 'Files & media', 'App text & switches', 'Attendee survey', 'Top networkers', 'App reports'] },
+        { h: 'Marketing', items: ['Social media calendar', 'Social posts', 'Promo codes', 'Form submissions', 'Downloads', 'Purchase email', 'App invite email', '“What you missed”', 'I’m attending', 'Unsubscribed'] },
+        { h: 'Awards', items: ['Nominations', 'Jury', 'Allocation', 'Scoring rubric', 'Jury results', 'Winners'] },
+        { h: 'Settings', items: ['Connected accounts', 'Staff accounts', 'App rights', 'Where website forms go', 'Audit log', 'My account'] }
+      ].map((m) => ({ h: m.h, items: m.items.map((t) => ({ t })) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

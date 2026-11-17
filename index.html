@@ -212,12 +212,8 @@
       (function () {
         try {
           if (!/^\/admin(-login)?(\/|$)/i.test(location.pathname)) return;
-          var choice = null;
-          try { choice = localStorage.getItem("ttfc.admin.theme"); } catch (e) { /* storage blocked: follow the device */ }
-          var mq = function (q) { return window.matchMedia(q).matches; };
-          var sysDark = !window.matchMedia || mq("(prefers-color-scheme: dark)") || !mq("(prefers-color-scheme: light)");
-          var dark = choice === "dark" || (choice !== "light" && sysDark);
-          document.documentElement.setAttribute("data-admin-theme", dark ? "dark" : "light");
+          // The approved admin design (Nov 2026) has one light look.
+          document.documentElement.setAttribute("data-admin-theme", "light");
         } catch (e) { /* the panel applies it itself once it loads */ }
       })();
     </script>

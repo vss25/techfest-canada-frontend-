@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { LogOut, ShieldX } from "lucide-react";
 
+// The approved admin design's typeface (self-hosted; loaded with the panel only).
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
 import "../admin/admin.css";
 import AdminShell from "../admin/AdminShell";
 import Toaster from "../admin/Toaster";
@@ -18,6 +23,7 @@ import Speakers from "../admin/cms/Speakers";
 import AgendaAdmin from "../admin/cms/Agenda";
 import EventPages from "../admin/cms/EventPages";
 import Changes from "../admin/cms/Changes";
+import WorkspaceHub from "../admin/WorkspaceHub";
 import LogoCollection from "../admin/cms/LogoCollection";
 import SiteSettings from "../admin/cms/SiteSettings";
 import AttendingOrgs from "../admin/cms/AttendingOrgs";
@@ -238,6 +244,8 @@ function AdminPanel() {
             <Route path="analytics" element={<ManagementOnly><SalesAnalytics /></ManagementOnly>} />
 
             <Route path="content" element={<Navigate to="/admin/content/speakers" replace />} />
+            {/* A workspace's pages as cards: the phone's bottom tabs open these (approved admin design). */}
+            <Route path="ws/:id" element={<WorkspaceHub />} />
             <Route path="content/changes" element={<Changes />} />
             <Route path="content/events" element={<EventPages />} />
             <Route path="content/agenda" element={<AgendaAdmin />} />

@@ -304,7 +304,8 @@ export default function EventPages() {
         <EmptyState title="No events yet" body="Create the first event with New event." />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <nav aria-label="Events" className="grid content-start gap-2">
+          {/* Not a <nav>: the public site styles every <nav> as its sticky 80px header bar. */}
+          <div role="navigation" aria-label="Events" className="grid content-start gap-2">
             {events.map((ev) => {
               const st = stateOf(ev);
               return (
@@ -321,7 +322,7 @@ export default function EventPages() {
                 </button>
               );
             })}
-          </nav>
+          </div>
           <div>
             {current ? (
               <Editor

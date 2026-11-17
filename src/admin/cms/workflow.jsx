@@ -28,9 +28,9 @@ export function WorkflowBanner() {
     <Banner
       tone="info"
       icon={GitPullRequestArrow}
-      action={<Link to="/admin/content/changes" className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-ttfc-pink hover:underline">Changes{waiting ? ` (${waiting})` : ""} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>}
+      action={<Link to="/admin/content/changes" className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-ttfc-pink hover:underline">Website changes{waiting ? ` (${waiting})` : ""} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>}
     >
-      Saving doesn't change the website. When your changes are ready, send them to staging from Changes, check them on the staging site, then publish them to the live website.
+      Saving doesn't change the website. When your changes are ready, send them to staging from Website changes, check them on the staging site, then publish them to the live website.
     </Banner>
   );
 }

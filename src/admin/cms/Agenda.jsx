@@ -534,7 +534,8 @@ export default function Agenda() {
   const dayList = list.filter((s) => Number(s.day) === day && s.time);
   // Sessions made elsewhere (e.g. Sanity Studio) without a day or time don't show on the site.
   const unscheduled = list.filter((s) => !(Number(s.day) === 1 || Number(s.day) === 2) || !s.time);
-  const imported = new Set(list.map((s) => s.sessionId).filter(Boolean));
+  // The built-in agenda is Toronto 2026's: compare it with every session, whatever event is picked.
+  const imported = new Set(allSessions.map((s) => s.sessionId).filter(Boolean));
   const missing = SESSIONS.filter((s) => !imported.has(s.id)).length;
   const counts = { 1: list.filter((s) => Number(s.day) === 1).length, 2: list.filter((s) => Number(s.day) === 2).length };
 
@@ -599,13 +600,13 @@ export default function Agenda() {
         description="Every session on the website's Agenda page and in the app: titles, times, formats, speakers and moderators."
         actions={(
           <div className="flex flex-wrap gap-2">
-            {missing > 0 && (
+            {missing > 0 && !eventId && (
               <Button icon={Download} loading={importing} disabled={readOnly} onClick={importAgenda}
-                title="Adds the built-in sessions that aren't in the CMS yet. Never changes sessions you've edited.">
-                Import current agenda ({missing})
+                title="Adds the built-in Toronto 2026 sessions that aren't in the CMS yet. Never changes sessions you've edited.">
+                Import Toronto 2026 agenda ({missing})
               </Button>
             )}
-            {list.length > 0 && <Button variant="primary" icon={Plus} disabled={readOnly} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add session</Button>}
+            {(allSessions.length > 0 || eventId) && <Button variant="primary" icon={Plus} disabled={readOnly} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add session</Button>}
           </div>
         )}
       />
@@ -621,7 +622,7 @@ export default function Agenda() {
         </div>
       )}
 
-      {loading ? <SkeletonGrid count={4} className="h-20" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !list.length ? (
+      {loading ? <SkeletonGrid count={4} className="h-20" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !allSessions.length && !eventId ? (
         <EmptyState
           icon={CalendarDays}
           title="The agenda isn't in the CMS yet"

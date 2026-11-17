@@ -4,6 +4,8 @@ import { Lock, LogOut } from "lucide-react";
 import { navItemFor, workspaceFor } from "./nav";
 import { workspacesFor } from "./access";
 import { useAdmin } from "./adminContext";
+import { useAdminEvent } from "./eventContext";
+import { EventChip } from "./EventSwitcher";
 
 /* =========================================================
    The approved admin design's navigation (boards 16–18):
@@ -27,7 +29,19 @@ function RailIcon({ d }) {
   );
 }
 
-function RailButton({ w, current, onNavigate }) {
+/* Gold counts (the board's badges): Home = website changes waiting; Event day = open SOS requests. */
+function useBadges() {
+  const { attention } = useAdminEvent();
+  return {
+    ws: { home: attention.changes, day: attention.sos },
+    page: { "content/changes": attention.changes, "app/sos": attention.sos },
+  };
+}
+const Gold = ({ n, className = "" }) => (n > 0 ? (
+  <span className={cx("flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#F5A623] px-1 text-[10px] font-bold text-[#151035]", className)}>{n}</span>
+) : null);
+
+function RailButton({ w, current, onNavigate, badge = 0 }) {
   const first = w.groups[0].items[0];
   return (
     <Link
@@ -38,6 +52,7 @@ function RailButton({ w, current, onNavigate }) {
         current ? "bg-white/[.14] text-white" : "text-white/[.72] hover:bg-white/[.08] hover:text-white", RING)}
     >
       {current && <span className="absolute -left-1.5 top-3.5 h-7 w-1 rounded bg-[#D6308C]" aria-hidden="true" />}
+      <Gold n={badge} className="absolute right-3 top-[5px]" />
       <RailIcon d={w.rail} />
       {w.label}
     </Link>
@@ -50,6 +65,7 @@ export function WorkspaceRail({ onNavigate }) {
   const { pathname } = useLocation();
   const all = workspacesFor({ isManagement, isVolunteer });
   const current = workspaceFor(pathname).id;
+  const badges = useBadges();
   const top = all.filter((w) => !w.bottom);
   const bottom = all.filter((w) => w.bottom);
   return (
@@ -58,7 +74,7 @@ export function WorkspaceRail({ onNavigate }) {
       <Link to={isVolunteer ? "/admin/people" : "/admin"} onClick={onNavigate} className={cx("mb-3.5 mt-0.5 block rounded-lg", RING)} aria-label="The Tech Festival Canada staff panel, Home">
         <img src="/Tech_Festival_Canada_Logo_Dark_Transparent.webp" alt="" className="block h-auto w-16" />
       </Link>
-      {top.map((w) => <RailButton key={w.id} w={w} current={w.id === current} onNavigate={onNavigate} />)}
+      {top.map((w) => <RailButton key={w.id} w={w} current={w.id === current} onNavigate={onNavigate} badge={badges.ws[w.id] || 0} />)}
       <div className="flex-1" />
       {bottom.map((w) => <RailButton key={w.id} w={w} current={w.id === current} onNavigate={onNavigate} />)}
     </div>
@@ -73,6 +89,7 @@ export function WorkspaceMenu({ onNavigate }) {
   const id = workspaceFor(pathname).id;
   const ws = all.find((w) => w.id === id) || all[0];
   const active = navItemFor(pathname)?.item.to;
+  const badges = useBadges();
   if (!ws) return null;
   return (
     <aside aria-label={`${ws.label} pages`} className="flex h-full w-[252px] flex-col gap-3.5 overflow-y-auto border-r border-[#E3E0EE] bg-white px-3.5 py-5">
@@ -80,6 +97,7 @@ export function WorkspaceMenu({ onNavigate }) {
         <h2 className="m-0 text-xl font-bold text-[#151035]">{ws.label}</h2>
         <span className="text-xs leading-[18px] text-[#6B6688]">{isVolunteer ? "Look someone up. Read only." : ws.job}</span>
       </div>
+      {ws.scoped && !isVolunteer && <EventChip />}
       {ws.groups.map((g, gi) => (
         <div key={gi} className="flex flex-col gap-0.5">
           {g.title && <span className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8A86A0]">{g.title}</span>}
@@ -97,6 +115,7 @@ export function WorkspaceMenu({ onNavigate }) {
               >
                 <span className="min-w-0 truncate">{it.label}</span>
                 {it.management && <Lock className={cx("h-3 w-3 shrink-0", on ? "text-[#F5A623]" : "text-[#B45309]")} aria-label="Management only" />}
+                {badges.page[it.to] > 0 && <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#F5A623] px-1.5 text-[11px] font-bold text-[#151035]">{badges.page[it.to]}</span>}
               </NavLink>
             );
           })}

@@ -490,3 +490,23 @@ body.ttfc-admin-open .ticket-bar { display: none !important; }
   background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
 }
+
+/* Desktop top bar search (board 17): fills its slot, 40px, lilac, 10px corners, white ⌘K chip. */
+.adm-desk-search > button.md\:flex {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border-color: #e3e0ee;
+  background: #f6f5fa;
+  color: #6b6688;
+  font-size: 14px;
+  gap: 10px;
+}
+.adm-desk-search > button.md\:flex kbd {
+  background: #ffffff;
+  border-color: #e3e0ee;
+  border-radius: 6px;
+  color: #151035;
+  font-size: 12px;
+  font-weight: 500;
+}

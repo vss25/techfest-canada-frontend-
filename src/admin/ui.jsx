@@ -11,6 +11,7 @@ import { useAdmin } from "./adminContext";
 import { navItemFor } from "./nav";
 import HelpButton, { HelpLabel } from "./HelpButton";
 import { useFieldHelp } from "./fieldHelp";
+import { useAdminEvent } from "./eventContext";
 import { isManagementError } from "./api";
 import { twMerge } from "tailwind-merge";
 
@@ -86,11 +87,15 @@ export function Card({ className, children, as = "div", ...rest }) {
    what the page is for. */
 export function PageHeader({ eyebrow, title, description, actions }) {
   const { pathname } = useLocation();
+  const { current } = useAdminEvent();
   const hit = navItemFor(pathname);
-  const crumbs = hit ? hit.group.title : eyebrow;
+  // The board's crumbs: workspace  ›  the chosen event (pages about one event)  ›  page.
+  const crumbs = hit
+    ? [hit.group.workspaceLabel, hit.group.scoped && current ? current.name : null, hit.item.label].filter(Boolean).join("  ›  ")
+    : eyebrow;
   return (
     <header className="mb-6 flex flex-col gap-1">
-      {crumbs && <p className="text-xs text-ttfc-dim">{crumbs}</p>}
+      {crumbs && <p className="whitespace-pre text-xs text-[#6B6688]">{crumbs}</p>}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-2.5">
           <h1 className="text-[26px] font-bold leading-[34px] tracking-[-0.01em] text-ttfc-text">{title}</h1>

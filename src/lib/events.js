@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { client } from "../utils/sanity";
+import { GRACE_DAYS, citySlugOf, compareEvents, compareEventsDesc, eventSortKey, formatDateRange, lifecycleOf, monthFromStatusNote } from "./eventDates.js";
+export { GRACE_DAYS, citySlugOf, compareEvents, compareEventsDesc, eventSortKey, formatDateRange, lifecycleOf, monthFromStatusNote };
 
 /* =========================================================
    Phase 4 (IA build-out): the event layer.
@@ -27,10 +29,9 @@ export const CITIES = [
   { slug: "montreal", name: "Montreal" },
 ];
 
-export const GRACE_DAYS = 7;
+
 
 export const cityBySlug = (slug) => CITIES.find((c) => c.slug === String(slug || "").toLowerCase()) || null;
-export const citySlugOf = (name) => String(name || "").trim().toLowerCase().replace(/\s+/g, "-");
 
 /** The event's public path, e.g. /toronto/2027/main-event. */
 export function eventPath(ev) {
@@ -54,20 +55,6 @@ export function findEvent(events, { city, year, type }) {
   ) || null;
 }
 
-const dayMs = 24 * 60 * 60 * 1000;
-const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
-
-/** coming-up | live | just-ended | past — derived from dates alone. */
-export function lifecycleOf(ev, now = new Date()) {
-  if (!ev?.startDate) return ev && Number(ev.year) < now.getFullYear() ? "past" : "coming-up";
-  const start = startOfDay(ev.startDate);
-  const end = startOfDay(ev.endDate || ev.startDate);
-  const today = startOfDay(now);
-  if (today < start) return "coming-up";
-  if (today <= end) return "live";
-  if (today <= new Date(end.getTime() + GRACE_DAYS * dayMs)) return "just-ended";
-  return "past";
-}
 export const LIFECYCLE_LABEL = {
   "coming-up": "Coming up",
   live: "Live now",
@@ -77,14 +64,6 @@ export const LIFECYCLE_LABEL = {
 
 /** Tickets can be sold only while an event is coming up or live. */
 export const ticketsOpen = (ev, now = new Date()) => ["coming-up", "live"].includes(lifecycleOf(ev, now));
-
-export function formatDateRange(ev) {
-  if (!ev?.startDate) return ev?.year ? String(ev.year) : "";
-  const fmt = (d) => new Date(`${d}T12:00:00`).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
-  const a = fmt(ev.startDate);
-  if (!ev.endDate || ev.endDate === ev.startDate) return a;
-  return `${a} – ${fmt(ev.endDate)}`;
-}
 
 /* ---------------- Sanity reads (one fetch per page load) ---------------- */
 
@@ -144,58 +123,8 @@ export function useEvents() {
    both kinds together: a dated event precedes a dateless one only
    when it is actually earlier. */
 
-const MONTH_NAMES = [
-  "january", "february", "march", "april", "may", "june",
-  "july", "august", "september", "october", "november", "december",
-];
 
 /** 1–12 from a statusNote like "February 2027 · One day"; 0 when it names no month. */
-export function monthFromStatusNote(note) {
-  const s = String(note || "").toLowerCase();
-  const i = MONTH_NAMES.findIndex((m) => s.includes(m));
-  return i >= 0 ? i + 1 : 0;
-}
-
-/** [year, month, day] ordering key, or null when the doc carries no usable
-    date or year at all (e.g. an empty Studio shell — never "next"). */
-export function eventSortKey(ev) {
-  if (!ev) return null;
-  if (ev.startDate) {
-    const d = new Date(`${ev.startDate}T12:00:00`);
-    if (!Number.isNaN(d.getTime())) return [d.getFullYear(), d.getMonth() + 1, d.getDate()];
-  }
-  const year = Number(ev.year);
-  if (!Number.isFinite(year) || year <= 0) return null;
-  // Dateless: the statusNote month, day 1. No month named → month 13, so a
-  // month-less event never jumps ahead of one whose month is announced.
-  return [year, monthFromStatusNote(ev.statusNote) || 13, 1];
-}
-
-const keyTiebreak = (a, b) =>
-  citySlugOf(a?.city).localeCompare(citySlugOf(b?.city))
-  || String(a?.type || "").localeCompare(String(b?.type || ""))
-  || String(a?.name || "").localeCompare(String(b?.name || ""));
-
-/** Soonest first by eventSortKey; keyless docs always last. */
-export function compareEvents(a, b) {
-  const ka = eventSortKey(a);
-  const kb = eventSortKey(b);
-  if (!ka && !kb) return keyTiebreak(a, b);
-  if (!ka) return 1;
-  if (!kb) return -1;
-  return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2] || keyTiebreak(a, b);
-}
-
-/** Most recent first by eventSortKey; keyless docs always last. */
-export function compareEventsDesc(a, b) {
-  const ka = eventSortKey(a);
-  const kb = eventSortKey(b);
-  if (!ka && !kb) return keyTiebreak(a, b);
-  if (!ka) return 1;
-  if (!kb) return -1;
-  return kb[0] - ka[0] || kb[1] - ka[1] || kb[2] - ka[2] || keyTiebreak(a, b);
-}
-
 /** THE next event: the soonest Coming Up / Live event; null when none is upcoming.
     Keyless docs (empty Studio shells) are excluded outright: a shell with no
     year at all slips past lifecycleOf as "coming-up", and it is never next. */

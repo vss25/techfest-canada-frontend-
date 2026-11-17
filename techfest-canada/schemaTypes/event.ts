@@ -145,6 +145,44 @@ export default defineType({
                 "While off, the site shows “Pricing to be announced” for this event's tickets, exhibitor and sponsor packages. Turn it on only when staff announce the pricing.",
             initialValue: false,
         }),
+        // Redesign step 1 (Nov 2026): the event page's own text, edited in Admin › Event pages.
+        defineField({ name: "photoCredit", title: "Photo credit", type: "string" }),
+        defineField({ name: "theme", title: "Theme", type: "string" }),
+        defineField({ name: "tagline", title: "One line under the name", type: "string" }),
+        defineField({ name: "formatLine", title: "Format", type: "string", description: "e.g. “One day · 8 sessions”" }),
+        defineField({ name: "audience", title: "Who's in the room", type: "string", description: "e.g. “150 senior delegates”" }),
+        defineField({
+            name: "pageMode",
+            title: "Page version",
+            type: "string",
+            options: { list: [
+                { title: "Automatic (coming soon until it has sessions)", value: "auto" },
+                { title: "Coming soon", value: "coming-soon" },
+                { title: "Full page", value: "full" },
+            ] },
+            initialValue: "auto",
+        }),
+        defineField({
+            name: "knownSoFar",
+            title: "Coming soon: What we know so far",
+            type: "array",
+            of: [{ type: "object", fields: [
+                defineField({ name: "label", type: "string" }),
+                defineField({ name: "value", type: "string" }),
+            ] }],
+        }),
+        defineField({
+            name: "comingNext",
+            title: "Coming soon: Coming next",
+            type: "array",
+            of: [{ type: "object", fields: [
+                defineField({ name: "label", type: "string" }),
+                defineField({ name: "when", type: "string" }),
+                defineField({ name: "done", type: "boolean" }),
+            ] }],
+        }),
+        defineField({ name: "notifyHeading", title: "Notify form heading", type: "string" }),
+        defineField({ name: "showReport", title: "Show the Toronto 2026 report card", type: "boolean", initialValue: true }),
     ],
 
     // Preview in Studio list — name + city

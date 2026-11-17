@@ -24,6 +24,7 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const Resources = lazy(() => import("./pages/Resources"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Contact = lazy(() => import("./pages/Contact"));
+import PreviewBar from "./components/PreviewBar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AboutUs from "./components/AboutUs";
 const AuthSuccess = lazy(() => import("./pages/AuthSuccess"));
@@ -134,6 +135,7 @@ function App() {
       <ScrollToTop />
       <RouteSeo />
       <OffJury><AnnouncementBar /></OffJury>
+      <PreviewBar />
       <RouteErrorBoundary>
       <Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}>
       <Routes>

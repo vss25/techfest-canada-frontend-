@@ -10,12 +10,13 @@ import Reveal, { GradientRule } from "../components/Reveal";
 import PortableText, { PlainParagraphs } from "../components/PortableText";
 import AnnouncedSoon from "../components/AnnouncedSoon";
 import NotFound from "./NotFound";
+import BrandEventPage from "../redesign/BrandEventPage";
 import useSeo from "../hooks/useSeo";
 import { urlFor } from "../utils/sanity";
 import { speakerSlug } from "../seo/slug";
 import {
   LIFECYCLE_LABEL, cityBySlug, eventAgendaPath, eventPath, eventSpeakersPath,
-  eventTicketsPath, findEvent, formatDateRange, lifecycleOf, pastEditionLabel,
+  findEvent, formatDateRange, lifecycleOf, pastEditionLabel,
   useEventContent, useEvents, usePastEditionFallback,
 } from "../lib/events";
 
@@ -679,11 +680,12 @@ function TicketsPage({ ev }) {
 export default function EventLanding({ section = "overview" }) {
   const params = useParams();
   const { events, loading } = useEvents();
-  const city = cityBySlug(params.city);
   const ev = events.length ? findEvent(events, { city: params.city, year: params.year, type: params.eventType }) : null;
+  // A city staff added in Admin › Event pages works too, once it has an event.
+  const city = cityBySlug(params.city) || (ev ? { slug: params.city, name: ev.city } : null);
   useSeo(ev ? ev.name : "TTFC events", ev?.description || "");
 
-  if (!city || !["briefing", "main-event"].includes(params.eventType) || !/^\d{4}$/.test(params.year || "")) {
+  if (!["briefing", "main-event"].includes(params.eventType) || !/^\d{4}$/.test(params.year || "") || (!city && !loading)) {
     return <NotFound />;
   }
   if (loading) {
@@ -721,14 +723,6 @@ export default function EventLanding({ section = "overview" }) {
   if (section === "speaker") return <SpeakerDetailPage ev={ev} slug={params.speakerSlug} />;
   if (section === "tickets") return <TicketsPage ev={ev} />;
 
-  return (
-    <>
-      <SiteHeader />
-      <main style={{ background: "#070313", color: "#f4f1ff", minHeight: "100vh" }}>
-        <EventTemplate ev={ev} />
-        <div style={{ paddingBottom: 56 }} />
-      </main>
-      <Footer />
-    </>
-  );
+  // The approved brand design (redesign step 1): full page or coming-soon page, from the event's record.
+  return <BrandEventPage ev={ev} />;
 }

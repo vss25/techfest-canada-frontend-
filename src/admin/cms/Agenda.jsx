@@ -44,8 +44,10 @@ function FormatBadge({ format }) {
 const blank = (day) => ({
   title: "", day, time: "09:00", endTime: "09:30", type: "", format: "keynote", featured: false, isBreak: false,
   pillar: "", sector: "", stage: "", description: "", speakers: [], moderator: { name: "", org: "" },
-  polls: "auto", qa: "auto",
+  polls: "auto", qa: "auto", events: [],
 });
+
+const refIds = (d) => (d?.events || []).map((r) => r?._ref).filter(Boolean);
 
 const toForm = (d) => ({
   title: d.title || "", day: Number(d.day) || 1, time: d.time || "09:00", endTime: d.endTime || d.time || "09:30",
@@ -53,7 +55,7 @@ const toForm = (d) => ({
   pillar: d.pillar || "", sector: d.sector || "", stage: d.stage || "", description: d.description || "",
   speakers: (d.speakers || []).map((p) => ({ name: p.name || "", org: p.org || "", tentative: !!p.tentative })),
   moderator: { name: d.moderator?.name || "", org: d.moderator?.org || "" },
-  polls: liveMode(d.polls), qa: liveMode(d.qa),
+  polls: liveMode(d.polls), qa: liveMode(d.qa), events: refIds(d),
 });
 
 /** Form → request body. Speakers/moderator are sent as plain objects (the server adds _key). */
@@ -73,6 +75,9 @@ function toBody(form, original) {
   }
   // Live switches: always on create; on edit only when changed (missing = "auto").
   for (const k of LIVE_FEATURES) if (!original || liveMode(original[k]) !== form[k]) body[k] = form[k];
+  // Which events the session is on (redesign step 1): sent on create when picked, on edit when changed.
+  const evs = [...(form.events || [])].sort();
+  if (original ? JSON.stringify(evs) !== JSON.stringify(refIds(original).sort()) : evs.length) body.events = evs;
   return body;
 }
 
@@ -128,11 +133,11 @@ function LiveModeControl({ feature, value, onChange, reason, globalOff, readOnly
   );
 }
 
-function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNames, readOnly, globalLive, onClose, onSaved }) {
+function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = [], all, speakerIndex, speakerNames, readOnly, globalLive, onClose, onSaved }) {
   const toast = useToast();
   const listId = useId();
   const typeListId = useId();
-  const [form, setForm] = useState(() => (doc ? toForm(doc) : blank(defaultDay)));
+  const [form, setForm] = useState(() => (doc ? toForm(doc) : { ...blank(defaultDay), events: defaultEventId ? [defaultEventId] : [] }));
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v?.target ? (v.target.type === "checkbox" ? v.target.checked : v.target.value) : v }));
@@ -224,6 +229,24 @@ function SessionDrawer({ doc, creating, defaultDay, all, speakerIndex, speakerNa
               <option value="">None</option>{SECTORS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
             </Select>
           )}</Field>
+          {eventList.length > 0 && (
+            <fieldset className="sm:col-span-2">
+              <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">Events</legend>
+              <p className="mb-2 text-xs text-ttfc-dim">The event pages this session appears on. None ticked = every event (the old behaviour).</p>
+              <div className="flex flex-wrap gap-2">
+                {eventList.map((ev) => {
+                  const on = form.events.includes(ev._id);
+                  return (
+                    <label key={ev._id} className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-1.5 text-sm ${on ? "border-ttfc-pink bg-ttfc-pink/10" : "border-ttfc-line"}`}>
+                      <input type="checkbox" checked={on} disabled={readOnly}
+                        onChange={(e) => setForm((f) => ({ ...f, events: e.target.checked ? [...f.events, ev._id] : f.events.filter((x) => x !== ev._id) }))} />
+                      {ev.name}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
           <Field label="Stage / room">{(id) => <Input id={id} value={form.stage} onChange={set("stage")} maxLength={80} disabled={readOnly} placeholder="Main stage" />}</Field>
         </div>
 
@@ -468,6 +491,9 @@ export default function Agenda() {
   const readOnly = configured === false;
   const { data, error, loading, reload, setData } = useApi("/cms/session");
   const speakers = useApi("/cms/speaker");
+  const eventsApi = useApi("/cms/event");
+  const eventList = useMemo(() => (eventsApi.data || []).filter((e) => e?.name), [eventsApi.data]);
+  const [eventId, setEventId] = useState("");
   const appContent = useApi("/console/app-content");   // the global polls / Q&A switches (on if it can't be read)
   const [day, setDay] = useState(1);
   const [editing, setEditing] = useState(null);
@@ -475,7 +501,11 @@ export default function Agenda() {
   const [importing, setImporting] = useState(false);
   const [shifting, setShifting] = useState(null);
 
-  const list = useMemo(() => [...(data || [])].sort(byTime), [data]);
+  const allSessions = useMemo(() => [...(data || [])].sort(byTime), [data]);
+  // The event picker above the days: only that event's sessions (untagged ones are on every event).
+  const list = useMemo(() => (eventId
+    ? allSessions.filter((s) => { const ids = refIds(s); return !ids.length || ids.includes(eventId); })
+    : allSessions), [allSessions, eventId]);
   // From the global search: ?edit=<id> opens that session on its day.
   useEditFromUrl(list, (doc) => {
     if (Number(doc.day) === 1 || Number(doc.day) === 2) setDay(Number(doc.day));
@@ -563,6 +593,16 @@ export default function Agenda() {
         )}
       />
       <CmsBanners configured={configured} />
+      {eventList.length > 0 && (
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+          <label htmlFor="agenda-event" className="text-sm font-semibold">Event</label>
+          <Select id="agenda-event" className="w-auto min-w-[260px]" value={eventId} onChange={(e) => setEventId(e.target.value)}>
+            <option value="">All events</option>
+            {eventList.map((ev) => <option key={ev._id} value={ev._id}>{ev.name}</option>)}
+          </Select>
+          {eventId && <span className="text-xs text-ttfc-dim">New sessions are added to this event. Sessions tied to no event show on every event.</span>}
+        </div>
+      )}
 
       {loading ? <SkeletonGrid count={4} className="h-20" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !list.length ? (
         <EmptyState
@@ -611,6 +651,8 @@ export default function Agenda() {
           doc={editing.doc}
           creating={editing.creating}
           defaultDay={day}
+          defaultEventId={eventId}
+          eventList={eventList}
           all={list}
           speakerIndex={speakerIndex}
           speakerNames={speakerNames}

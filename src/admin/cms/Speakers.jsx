@@ -98,7 +98,9 @@ function SpeakerCard({ s, readOnly, onEdit, onToggleFeatured, onOrder }) {
   );
 }
 
-function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, onSaved, onDelete }) {
+const refIds = (d) => (d?.events || []).map((r) => r?._ref).filter(Boolean).sort();
+
+function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, onSaved, onDelete, eventList = [] }) {
   const toast = useToast();
   const [form, setForm] = useState(() => (doc ? toForm(doc) : blank(defaultOrder)));
   const [image, setImage] = useState({ assetId: null, url: doc?.imageUrl || "" });
@@ -111,6 +113,8 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e }));
+  // Which event pages the speaker appears on (redesign step 1). None = every event.
+  const [evs, setEvs] = useState(() => refIds(doc));
 
   const save = async (e) => {
     e?.preventDefault();
@@ -128,12 +132,14 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
     if (assetId && (image.assetId || framingChanged)) {
       body.image = framing ? { asset: assetId, crop: framing.crop, hotspot: framing.hotspot } : assetId;
     }
+    const evSorted = [...evs].sort();
+    if (creating ? evSorted.length : JSON.stringify(evSorted) !== JSON.stringify(refIds(doc))) body.events = evSorted;
     if (!creating && !Object.keys(body).length) { toast.info("Nothing changed"); onClose(); return; }
     setSaving(true);
     try {
       const saved = creating ? await api.post("/cms/speaker", body) : await api.patch(`/cms/speaker/${doc._id}`, body);
       toast.success(creating ? `${form.name} added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
-      onSaved({ ...(doc || {}), ...saved, imageUrl: image.url, image: assetId ? { asset: { _ref: assetId }, ...(framing || {}) } : doc?.image });
+      onSaved({ ...(doc || {}), ...saved, events: evSorted.map((id) => ({ _ref: id })), imageUrl: image.url, image: assetId ? { asset: { _ref: assetId }, ...(framing || {}) } : doc?.image });
     } catch (err) {
       toast.error(err);
     } finally {
@@ -208,6 +214,24 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
           <Field label="Company" required error={errors.company}>
             {(id) => <Input id={id} value={form.company} onChange={set("company")} maxLength={160} disabled={readOnly} />}
           </Field>
+          {eventList.length > 0 && (
+            <fieldset className="sm:col-span-2">
+              <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">Events</legend>
+              <p className="mb-2 text-xs text-ttfc-dim">The event pages this speaker appears on. None ticked = every event.</p>
+              <div className="flex flex-wrap gap-2">
+                {eventList.map((ev) => {
+                  const on = evs.includes(ev._id);
+                  return (
+                    <label key={ev._id} className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-1.5 text-sm ${on ? "border-ttfc-pink bg-ttfc-pink/10" : "border-ttfc-line"}`}>
+                      <input type="checkbox" checked={on} disabled={readOnly}
+                        onChange={(e) => setEvs((x) => (e.target.checked ? [...x, ev._id] : x.filter((y) => y !== ev._id)))} />
+                      {ev.name}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
           <Field label="Bio" hint={`${form.bio.length}/2000 characters`} className="sm:col-span-2">
             {(id) => <Textarea id={id} rows={6} value={form.bio} onChange={set("bio")} maxLength={2000} disabled={readOnly} />}
           </Field>
@@ -256,6 +280,8 @@ export default function Speakers() {
   const { configured } = useCmsStatus();
   const readOnly = configured === false;
   const { data, error, loading, reload, setData } = useApi("/cms/speaker");
+  const eventsApi = useApi("/cms/event");
+  const eventList = useMemo(() => (eventsApi.data || []).filter((e) => e?.name), [eventsApi.data]);
   const initialQ = useInitialQuery(); // "See all in Speakers" from the global search
   const [q, setQ] = useState(initialQ);
   const [type, setType] = useState("");
@@ -380,6 +406,7 @@ export default function Speakers() {
 
       {editing && (
         <SpeakerDrawer
+          eventList={eventList}
           key={editing.key}
           open
           doc={editing.doc}

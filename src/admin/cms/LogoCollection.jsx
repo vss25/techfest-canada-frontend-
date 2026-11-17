@@ -7,6 +7,7 @@ import {
   Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, PageHeader, Select, SkeletonGrid, Switch, Textarea, focusRing,
 } from "../ui";
 import { CmsBanners, ImagePicker } from "./CmsParts";
+import { ChangeBadge } from "./workflow";
 import { PARTNER_CATEGORIES, LIVE_NOTE } from "./cmsMeta";
 import { buildBody, nextOrder } from "./fields";
 import useCmsStatus from "./useCmsStatus";
@@ -86,6 +87,7 @@ function LogoTile({ doc, readOnly, light, withVisibility, showSponsor, onEdit, o
       <div className="flex items-center gap-2 border-t border-ttfc-line p-3">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-ttfc-text" title={doc.name}>{doc.name}</p>
+          <ChangeBadge doc={doc} className="mt-1" />
           <p className="text-xs text-ttfc-dim">
             {doc.order != null ? `Order ${doc.order}` : "No order"}
             {!withVisibility && <PlaceBadges doc={doc} />}
@@ -151,7 +153,7 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
     if (!creating && !Object.keys(body).length) { toast.info("Nothing changed"); onClose(); return; }
     setSaving(true);
     try {
-      const saved = creating ? await api.post(`/cms/${type}`, body) : await api.patch(`/cms/${type}/${doc._id}`, body);
+      const saved = creating ? await api.post(`/cms/${type}?draft=1`, body) : await api.patch(`/cms/${type}/${doc._id}?draft=1`, body);
       toast.success(creating ? `${form.name} added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
       const merged = { ...(doc || {}), ...saved, logoUrl: logo.url };
       for (const [k, v] of Object.entries(body)) if (v === null) delete merged[k];   // cleared fields
@@ -296,7 +298,7 @@ export default function LogoCollection({ type, title, singular, description, wit
   const toast = useToast();
   const { configured } = useCmsStatus();
   const readOnly = configured === false;
-  const { data, error, loading, reload, setData } = useApi(`/cms/${type}`);
+  const { data, error, loading, reload, setData } = useApi(`/cms/${type}?drafts=1`);
   const initialQ = useInitialQuery(); // "See all in Partners" from the global search
   const [q, setQ] = useState(initialQ);
   const [category, setCategory] = useState("");
@@ -336,10 +338,9 @@ export default function LogoCollection({ type, title, singular, description, wit
     const next = d.active === false;
     patchLocal(d._id, { active: next });
     try {
-      await api.patch(`/cms/${type}/${d._id}`, { active: next });
-      toast.success(withVisibility
-        ? (next ? `${d.name} is active again (website and app follow their own switches)` : `${d.name} is hidden everywhere`)
-        : (next ? `${d.name} is visible on the website` : `${d.name} is hidden from the website`));
+      await api.patch(`/cms/${type}/${d._id}?draft=1`, { active: next });
+      patchLocal(d._id, { hasDraft: true });
+      toast.success(`${d.name}: ${next ? "active" : "hidden"}, saved. ${LIVE_NOTE}`);
     } catch (err) {
       patchLocal(d._id, { active: d.active });
       toast.error(err);
@@ -351,8 +352,9 @@ export default function LogoCollection({ type, title, singular, description, wit
     if (next === before) return;
     patchLocal(d._id, { logoScale: next });
     try {
-      await api.patch(`/cms/${type}/${d._id}`, { logoScale: next });
-      toast.success(`${d.name}: ${next}% size`);
+      await api.patch(`/cms/${type}/${d._id}?draft=1`, { logoScale: next });
+      patchLocal(d._id, { hasDraft: true });
+      toast.success(`${d.name}: ${next}% size, saved`);
     } catch (err) {
       patchLocal(d._id, { logoScale: d.logoScale });
       toast.error(err);

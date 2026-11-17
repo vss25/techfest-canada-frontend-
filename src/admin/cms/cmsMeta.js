@@ -37,4 +37,5 @@ export const PARTNER_CATEGORIES = [
 
 export const labelOf = (list, value) => list.find((x) => x.value === value)?.label || value || "";
 
-export const LIVE_NOTE = "Changes appear on the website and the apps within about a minute.";
+/* Since Nov 2026 the editors save into the content workflow (cms/workflow.jsx): nothing goes live on save. */
+export const LIVE_NOTE = "It isn't on the website yet: send it to staging from Changes when it's ready.";

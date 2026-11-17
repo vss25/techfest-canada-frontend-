@@ -45,7 +45,9 @@ export default function AdminLogin() {
       }
       localStorage.setItem("token", data.token);
       window.dispatchEvent(new Event("authChanged"));
-      navigate("/admin");
+      // ?next=/some/page (the staging bar's "Staff sign-in"): back to that page on this site only.
+      const next = new URLSearchParams(window.location.search).get("next") || "";
+      navigate(/^\/(?!\/)/.test(next) ? next : "/admin");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Sign-in failed";
       setError(msg === "Failed to fetch" ? "Can't reach the server. Check your connection and try again." : msg);

@@ -8,6 +8,7 @@ import {
   Textarea, focusRing,
 } from "../ui";
 import { CmsBanners, ImagePicker } from "./CmsParts";
+import { ChangeBadge } from "./workflow";
 import { SECTORS, SPEAKER_TYPES, TECH_PILLARS, labelOf, LIVE_NOTE } from "./cmsMeta";
 import { buildBody, nextOrder } from "./fields";
 import useCmsStatus from "./useCmsStatus";
@@ -60,6 +61,7 @@ function SpeakerCard({ s, readOnly, onEdit, onToggleFeatured, onOrder }) {
       <div className="flex flex-1 flex-col gap-2 p-3.5">
         <div className="min-w-0">
           <h3 className="truncate text-sm font-bold text-ttfc-text" title={s.name}>{s.name}</h3>
+          <ChangeBadge doc={s} className="mt-1" />
           <p className="line-clamp-2 text-xs text-ttfc-muted">{[s.title, s.company].filter(Boolean).join(" · ")}</p>
         </div>
         <div className="flex flex-wrap gap-1">
@@ -98,7 +100,9 @@ function SpeakerCard({ s, readOnly, onEdit, onToggleFeatured, onOrder }) {
   );
 }
 
-function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, onSaved, onDelete }) {
+const refIds = (d) => (d?.events || []).map((r) => r?._ref).filter(Boolean).sort();
+
+function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, onSaved, onDelete, eventList = [] }) {
   const toast = useToast();
   const [form, setForm] = useState(() => (doc ? toForm(doc) : blank(defaultOrder)));
   const [image, setImage] = useState({ assetId: null, url: doc?.imageUrl || "" });
@@ -111,6 +115,8 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e }));
+  // Which event pages the speaker appears on (redesign step 1). None = every event.
+  const [evs, setEvs] = useState(() => refIds(doc));
 
   const save = async (e) => {
     e?.preventDefault();
@@ -128,12 +134,14 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
     if (assetId && (image.assetId || framingChanged)) {
       body.image = framing ? { asset: assetId, crop: framing.crop, hotspot: framing.hotspot } : assetId;
     }
+    const evSorted = [...evs].sort();
+    if (creating ? evSorted.length : JSON.stringify(evSorted) !== JSON.stringify(refIds(doc))) body.events = evSorted;
     if (!creating && !Object.keys(body).length) { toast.info("Nothing changed"); onClose(); return; }
     setSaving(true);
     try {
-      const saved = creating ? await api.post("/cms/speaker", body) : await api.patch(`/cms/speaker/${doc._id}`, body);
+      const saved = creating ? await api.post("/cms/speaker?draft=1", body) : await api.patch(`/cms/speaker/${doc._id}?draft=1`, body);
       toast.success(creating ? `${form.name} added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
-      onSaved({ ...(doc || {}), ...saved, imageUrl: image.url, image: assetId ? { asset: { _ref: assetId }, ...(framing || {}) } : doc?.image });
+      onSaved({ ...(doc || {}), ...saved, events: evSorted.map((id) => ({ _ref: id })), imageUrl: image.url, image: assetId ? { asset: { _ref: assetId }, ...(framing || {}) } : doc?.image });
     } catch (err) {
       toast.error(err);
     } finally {
@@ -208,6 +216,24 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
           <Field label="Company" required error={errors.company}>
             {(id) => <Input id={id} value={form.company} onChange={set("company")} maxLength={160} disabled={readOnly} />}
           </Field>
+          {eventList.length > 0 && (
+            <fieldset className="sm:col-span-2">
+              <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">Events</legend>
+              <p className="mb-2 text-xs text-ttfc-dim">The event pages this speaker appears on. None ticked = every event.</p>
+              <div className="flex flex-wrap gap-2">
+                {eventList.map((ev) => {
+                  const on = evs.includes(ev._id);
+                  return (
+                    <label key={ev._id} className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-1.5 text-sm ${on ? "border-ttfc-pink bg-ttfc-pink/10" : "border-ttfc-line"}`}>
+                      <input type="checkbox" checked={on} disabled={readOnly}
+                        onChange={(e) => setEvs((x) => (e.target.checked ? [...x, ev._id] : x.filter((y) => y !== ev._id)))} />
+                      {ev.name}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
           <Field label="Bio" hint={`${form.bio.length}/2000 characters`} className="sm:col-span-2">
             {(id) => <Textarea id={id} rows={6} value={form.bio} onChange={set("bio")} maxLength={2000} disabled={readOnly} />}
           </Field>
@@ -255,7 +281,9 @@ export default function Speakers() {
   const toast = useToast();
   const { configured } = useCmsStatus();
   const readOnly = configured === false;
-  const { data, error, loading, reload, setData } = useApi("/cms/speaker");
+  const { data, error, loading, reload, setData } = useApi("/cms/speaker?drafts=1");
+  const eventsApi = useApi("/cms/event?drafts=1");
+  const eventList = useMemo(() => (eventsApi.data || []).filter((e) => e?.name), [eventsApi.data]);
   const initialQ = useInitialQuery(); // "See all in Speakers" from the global search
   const [q, setQ] = useState(initialQ);
   const [type, setType] = useState("");
@@ -282,8 +310,9 @@ export default function Speakers() {
   const toggleFeatured = async (s) => {
     patchLocal(s._id, { featured: !s.featured });
     try {
-      await api.patch(`/cms/speaker/${s._id}`, { featured: !s.featured });
-      toast.success(!s.featured ? `${s.name} is now featured` : `${s.name} is no longer featured`);
+      await api.patch(`/cms/speaker/${s._id}?draft=1`, { featured: !s.featured });
+      patchLocal(s._id, { hasDraft: true });
+      toast.success(`${s.name}: ${!s.featured ? "featured" : "not featured"}, saved. ${LIVE_NOTE}`);
     } catch (err) {
       patchLocal(s._id, { featured: s.featured });
       toast.error(err);
@@ -293,8 +322,9 @@ export default function Speakers() {
   const changeOrder = async (s, order, revert) => {
     patchLocal(s._id, { order });
     try {
-      await api.patch(`/cms/speaker/${s._id}`, { order });
-      toast.success(`${s.name} moved to position ${order}`);
+      await api.patch(`/cms/speaker/${s._id}?draft=1`, { order });
+      patchLocal(s._id, { hasDraft: true });
+      toast.success(`${s.name} moved to position ${order}, saved`);
       setData((xs) => [...(xs || [])].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999) || (a.name || "").localeCompare(b.name || "")));
     } catch (err) {
       patchLocal(s._id, { order: s.order });
@@ -380,6 +410,7 @@ export default function Speakers() {
 
       {editing && (
         <SpeakerDrawer
+          eventList={eventList}
           key={editing.key}
           open
           doc={editing.doc}

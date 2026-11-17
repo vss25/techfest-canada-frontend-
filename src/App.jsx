@@ -214,11 +214,18 @@ function App() {
         <Route path="/partners/:year" element={<NationalPartners />} />
         <Route path="/awards/:year" element={<AwardsYear />} />
         <Route path="/:city" element={<CityHub />} />
-        <Route path="/:city/:year/:eventType" element={<EventLanding section="overview" />} />
-        <Route path="/:city/:year/:eventType/agenda" element={<EventLanding section="agenda" />} />
-        <Route path="/:city/:year/:eventType/speakers" element={<EventLanding section="speakers" />} />
-        <Route path="/:city/:year/:eventType/speakers/:speakerSlug" element={<EventLanding section="speaker" />} />
-        <Route path="/:city/:year/:eventType/tickets" element={<EventLanding section="tickets" />} />
+        <Route path="/:city/:year/briefing" element={<EventLanding section="overview" type="briefing" />} />
+        <Route path="/:city/:year/main-event" element={<EventLanding section="overview" type="main-event" />} />
+        <Route path="/:city/:year/briefing/agenda" element={<EventLanding section="agenda" type="briefing" />} />
+        <Route path="/:city/:year/main-event/agenda" element={<EventLanding section="agenda" type="main-event" />} />
+        <Route path="/:city/:year/briefing/speakers" element={<EventLanding section="speakers" type="briefing" />} />
+        <Route path="/:city/:year/main-event/speakers" element={<EventLanding section="speakers" type="main-event" />} />
+        <Route path="/:city/:year/briefing/speakers/:speakerSlug" element={<EventLanding section="speaker" type="briefing" />} />
+        <Route path="/:city/:year/main-event/speakers/:speakerSlug" element={<EventLanding section="speaker" type="main-event" />} />
+        <Route path="/:city/:year/briefing/tickets" element={<EventLanding section="tickets" type="briefing" />} />
+        <Route path="/:city/:year/main-event/tickets" element={<EventLanding section="tickets" type="main-event" />} />
+        {/* Event types are spelled out (not :eventType) so these never catch the admin panel's three-part
+            addresses: /admin/content/speakers used to rank above /admin/* and show "Page not found". */}
         {/* Any other address: "Page not found", noindex (src/pages/NotFound.jsx). */}
         <Route path="*" element={<NotFound />} />
       </Routes>

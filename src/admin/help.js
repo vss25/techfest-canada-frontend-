@@ -1,0 +1,326 @@
+/* =========================================================
+   How to use each admin page (Nov 2026: "a help section and
+   how to use under each page … to make it easy for a new person
+   to understand"). Keyed by the page's address under /admin
+   (nav.js `to`). Each guide:
+     what   one or two sentences: what the page is for
+     steps  how to do the main job, in order
+     tips   good to know: what goes live at once, who can do what
+   The ⓘ next to every page title shows its guide (HelpButton.jsx);
+   Home › Help & how-to lists them all. When a page changes, change
+   its guide here too.
+========================================================= */
+
+/** Where the website's content goes live: said once, used by every content guide. */
+const FLOW = "Saving keeps your change in the panel only. Send it to staging from Home › Website changes, check it on the staging site, then publish it to the live website.";
+const NOW = (what) => `${what} change the live website straight away: they don't go through staging.`;
+
+export const HELP = {
+  /* ---------- Home ---------- */
+  "": {
+    what: "Your starting point: today's numbers across tickets, the website and the app, and shortcuts to the jobs people do most.",
+    steps: ["Read the cards at the top for today's numbers.", "Use Quick actions to jump straight to a common job, like giving a pass or checking someone in.", "Use the rail on the left (or the tabs at the bottom on a phone) to go to any other area."],
+    tips: ["Revenue figures are for management only.", "Press ⌘K (Ctrl K on Windows) anywhere to search for a person, a ticket or a page."],
+  },
+  "content/changes": {
+    what: "Every website content change on its way to the website: what's saved but not sent, and what's on staging waiting to be published.",
+    steps: ["Edit content in its own page (Event pages, Agenda, Speakers, Partners…) and save. It appears here under Saved, not sent.", "Tick the changes you want, or none for all, and click Send to staging.", "Click Open staging site and check the pages. Sign in there once with your staff email and password to see staged content.", "When it looks right, click Publish to live. It's on thetechfestival.com and in the apps within about a minute."],
+    tips: ["Only what's on staging can be published, so what goes live is what was checked.", "Throw away removes a change; the live website keeps its current version.", "Older drafts, not from this panel, were left in Sanity before this page existed. They can't be published from here: throw away the ones nobody needs.", "Deleting an item in an editor (a speaker, a session, a partner) takes it off the live website at once, without staging."],
+  },
+  help: {
+    what: "How the panel works, and a guide to every page.",
+    steps: ["Read Start here once.", "Find a page in the list, or type in the search box, and open its guide.", "On any page, the ⓘ next to its title shows the same guide."],
+    tips: [],
+  },
+
+  /* ---------- Content ---------- */
+  "content/events": {
+    what: "Each event's page on the website: its name, dates, venue, theme, photo and the coming-soon details.",
+    steps: ["Pick an event on the left, or click New event to start one (it isn't on the website until it's published).", "Change the fields and click Save.", "Click Send to staging, then Open on staging to see the page as visitors will.", "Click Publish to live when it's right."],
+    tips: ["Set First day and Last day once the date is fixed: the page then shows the full date and a countdown. Until then, Date line shows something like “February 2027 · One day”.", "Leave Venue empty to show “Venue announced with tickets”.", "Sessions and speakers appear on the page when they're tied to this event in Agenda and Speakers. Ticket prices come from Tickets & prices.", "Deleting an event is for management only and takes it off the website."],
+  },
+  "content/agenda": {
+    what: "Every session on the website's agenda and in the app: titles, times, formats, speakers and moderators.",
+    steps: ["Pick the event at the top (for example Vancouver Briefing 2027).", "Choose Day 1 or Day 2, then click Add session and fill it in. New sessions are tied to the event you picked.", "Use Edit or Duplicate on a session to change or copy it.", "Save, then send it to staging and publish from Home › Website changes."],
+    tips: [FLOW, "The clock button (Running late) moves times on the live agenda straight away: it's for event day.", "Delete takes a session off the live website at once.", "Import Toronto 2026 agenda only appears under All events and is only for the 2026 sessions."],
+  },
+  "content/speakers": {
+    what: "Everyone on the website's Speakers pages and in the app.",
+    steps: ["Click Add speaker. Add a photo (required), name, job title and company.", "Choose which events they speak at, so they appear on those event pages.", "Click a photo to edit a speaker; click the star to feature them; change the number to set the order.", "Save, then send to staging and publish from Home › Website changes."],
+    tips: [FLOW, "Use a clear head-and-shoulders photo; you can set the framing after uploading.", "Delete takes a speaker off the live website at once."],
+  },
+  "content/partners": {
+    what: "Partner logos on the Partners page and in the apps' Organisations, grouped by category.",
+    steps: ["Click Add partner: name, logo, category and website link.", "Use the switches to choose whether it shows on the website, in the apps, or both. Active off hides it everywhere without deleting it.", "Use − and + under a logo to make it smaller or bigger.", "Save, then send to staging and publish from Home › Website changes."],
+    tips: [FLOW, "Paid partners go in the Featured Partners row; they also show on Featured Partners.", "Dark preview shows how logos look on the dark parts of the site."],
+  },
+  "content/sponsors": {
+    what: "The paid partners: the Featured Partners row on the Partners page and the first section of the apps' Organisations.",
+    steps: ["Add or open a partner and give it a short description (it shows as the logo's tooltip and on the apps' Sponsors cards).", "Choose where it shows with the website and app switches.", "Save, then send to staging and publish from Home › Website changes."],
+    tips: ["These are the same records as on Partners: editing one here edits it there too.", FLOW],
+  },
+  inventory: {
+    what: "Ticket types, prices and how many are left.",
+    steps: ["Find the ticket type.", "Change its price or stock and save."],
+    tips: [NOW("Prices and stock"), "Check the numbers twice before saving while tickets are on sale."],
+  },
+  "content/settings": {
+    what: "Switch parts of the website on or off and edit site-wide text.",
+    steps: ["Find the section or setting.", "Flip the switch or change the text; each one saves on its own."],
+    tips: ["Homepage section switches and the About page numbers go through staging: send them from Home › Website changes.", NOW("The other switches and texts on this page"), "Selling switches are for management only."],
+  },
+  "content/alumni-logos": {
+    what: "The “Our team includes alumni from” logo strip on the Home and Sponsors pages. Not the paid partners.",
+    steps: ["Click Add logo, upload it and give it a name.", "Change the number to set the order; use − and + for size.", "Save, then send to staging and publish from Home › Website changes."],
+    tips: [FLOW],
+  },
+  "content/sponsor-marquee": {
+    what: "The scrolling logo strips: “Our Community” on the Home page and “Where our speakers work” on the Speakers page. Not sponsors.",
+    steps: ["Click Add logo, upload it and give it a name.", "Set the order and size.", "Save, then send to staging and publish from Home › Website changes."],
+    tips: [FLOW],
+  },
+  "content/home-sponsors": {
+    what: "Logos for the home page's sponsor strip.",
+    steps: ["Add or edit a logo, set its order and size.", "Save, then send to staging and publish from Home › Website changes."],
+    tips: [FLOW],
+  },
+  "content/organisations": {
+    what: "The organisations the apps list: partners, speakers' companies and the company of everyone with a pass, one entry each.",
+    steps: ["Search for an organisation.", "Hide one that shouldn't be listed, or merge two spellings of the same company into one.", "Add or change a logo where one is missing."],
+    tips: ["New organisations appear on their own as people join.", NOW("Hiding, merging and logos")],
+  },
+  "app/text": {
+    what: "The words people see in the TTFC app, and the app's on/off switches.",
+    steps: ["Find the text or switch (use the search box).", "Change it and save."],
+    tips: [NOW("These"), "The app picks changes up within about a minute.", "Selling switches are for management only."],
+  },
+  "app/survey": {
+    what: "The post-event survey: its questions, when it opens, the answers, and how attendees are invited.",
+    steps: ["Write or change the questions and set the opening and closing dates.", "Preview it.", "Invite people: the app notification, the email, or a personal link you copy for one person.", "Read the answers and download them as CSV."],
+    tips: ["Only people who checked in can answer: each gets their own link.", "Editing and sending are for management."],
+  },
+  "app/swag": {
+    what: "The app leaderboard's top networkers: an appreciation, not a prize.",
+    steps: ["Check the list of top networkers.", "At the announce time they're celebrated in the app automatically, or click Announce."],
+    tips: ["Staff, volunteers and moderators are never on the list."],
+  },
+  app: {
+    what: "Everything happening in the TTFC apps (iPhone, Android and the web app) at a glance.",
+    steps: ["Read the numbers and charts.", "Open App accounts or Live activity for details."],
+    tips: ["Read only."],
+  },
+  "app/activity": {
+    what: "Every screen and button press in the apps, newest first. Refreshes every 10 seconds.",
+    steps: ["Watch it live, or filter to find what someone did."],
+    tips: ["Read only. Useful when someone says “the app didn't work”."],
+  },
+  "app/pwa": {
+    what: "The web app at thetechfestival.com/app: who saw the install prompt, installed it and opens it.",
+    steps: ["Pick a period and read the numbers."],
+    tips: ["Read only."],
+  },
+
+  /* ---------- Marketing ---------- */
+  "form-submissions": {
+    what: "Everything sent through the website's forms: volunteer, speaker, booth, sponsor, partnership and general enquiries.",
+    steps: ["Click a row to read everything the person sent.", "Reply from your email: each enquiry is also emailed to the team with reply-to set to the person."],
+    tips: ["Downloading as CSV is for management.", "Where website forms go (Settings) shows who receives each form."],
+  },
+  "brochure-downloads": {
+    what: "Everyone who asked for a brochure or report on the website.",
+    steps: ["Click a row to see who they are and what they downloaded.", "Follow up from your email."],
+    tips: ["Each person is emailed the file automatically; sales@ gets a copy."],
+  },
+  "purchase-email": {
+    what: "The email every buyer gets after paying, with their ticket PDF, QR code and Apple Wallet button.",
+    steps: ["Pick a pass type to see its version.", "Change any wording and preview it.", "Save."],
+    tips: ["Saving is for management. New purchases get the saved version at once."],
+  },
+  "app/invite": {
+    what: "The “Get the TTFC app” email, with the App Store and Google Play buttons.",
+    steps: ["Edit the wording and preview it.", "Send a test to yourself.", "Send to one person, a small group, or everyone who isn't on the app yet."],
+    tips: ["People already using the app are skipped.", "Sending to many is for management. Unsubscribed people never get it."],
+  },
+  "app/digest": {
+    what: "Short “What you missed” emails to people who missed messages, replies or mentions in the app.",
+    steps: ["Preview what an email looks like.", "Send yourself a test.", "Turn the emails on or off (management)."],
+    tips: ["Sent at most a few times a day, never at night."],
+  },
+  "marketing/attending": {
+    what: "The “Show the world you're attending” email: each ticket holder makes an “I'm attending” image for LinkedIn.",
+    steps: ["Preview the email and send yourself a test.", "Send it to everyone (management), or nudge one person from their People profile."],
+    tips: ["People who already posted, or got it in the last 3 days, are skipped."],
+  },
+  "app/unsubscribes": {
+    what: "People who don't want bulk emails from TTFC.",
+    steps: ["Search for an address.", "Paste addresses from people who replied “unsubscribe” and add them."],
+    tips: ["They still get passes, tickets, sign-in codes and receipts.", "Resubscribing someone is for management."],
+  },
+
+  /* ---------- Sales ---------- */
+  "waitlist-2027": {
+    what: "People who joined the 2027 waitlist, what they're interested in, and the wording and 2027 journey on that page.",
+    steps: ["Filter by interest (delegate, exhibitor, sponsorship, delegation) to find the right people.", "Open someone to see their details and follow up.", "Use the Wording and 2027 journey tabs to change the page."],
+    tips: ["The team gets an email for each sign-up.", "Downloading as CSV is for management."],
+  },
+  "india-pavilion": {
+    what: "Applications for the India Startup Pavilion, with their $500 deposits.",
+    steps: ["Click a row to read the application.", "Change its status as you process it."],
+    tips: ["Each application is emailed to sales@; the applicant gets a confirmation."],
+  },
+  "exhibitor-passes": {
+    what: "Passes for exhibitors' staff, with their booth.",
+    steps: ["Add the exhibitor's people and their booth.", "Preview the pass email, then send it."],
+    tips: ["Creating and sending exhibitor passes is for management."],
+  },
+  analytics: {
+    what: "Ticket revenue and sales, from Stripe (what buyers actually paid).",
+    steps: ["Pick a period and read the totals.", "Click into a pass type or a day for detail."],
+    tips: ["Management only."],
+  },
+
+  /* ---------- Operations ---------- */
+  events: {
+    what: "Each event's settings: who can see its attendees, how long it stays “just ended”, and whether its pricing is announced.",
+    steps: ["Pick the event.", "Change the setting and save."],
+    tips: [NOW("These settings"), "Changing events is for management."],
+  },
+
+  /* ---------- People ---------- */
+  people: {
+    what: "Everyone in one list: delegates, speakers, exhibitors, volunteers, staff, vendors and media.",
+    steps: ["Search by name or company; an exact email or ticket ID works too.", "Use the filters to narrow the list (pass, RSVP, VIP, exhibitor…).", "Open someone to see and change their details, pass, meals, RSVP and company logo."],
+    tips: ["Volunteers see this page only, read only, without contact details.", "Changes to a person's record apply at once."],
+  },
+  "issued-passes": {
+    what: "Give someone a pass (guest, speaker, media, VIP) and email it to them.",
+    steps: ["Click Give a pass and choose the pass type.", "Fill in their name and email.", "Preview the email, then send it."],
+    tips: ["Staff can give up to 30 passes an hour; editing and deleting passes is for management."],
+  },
+  "speaker-passes": {
+    what: "Every speaker on the website gets a Speaker Pass: an internal pass, never sold.",
+    steps: ["Click Sync to make passes for new speakers.", "Add each speaker's email.", "Preview, then send."],
+    tips: ["Sending is for management."],
+  },
+  attendees: {
+    what: "Every ticket record: app accounts and guest checkouts, in one list.",
+    steps: ["Search for a ticket or buyer.", "Tidy up what staff see (for example hide a duplicate) without touching anyone's ticket."],
+    tips: ["To change someone's pass, meals or RSVP, use People."],
+  },
+  "app/people": {
+    what: "Every account on the TTFC app.",
+    steps: ["Search for someone and open their account.", "Change what you need: their type, whether they can message, hide them from the attendee list."],
+    tips: ["For passes, meals and RSVP, open their full profile in People."],
+  },
+
+  /* ---------- Awards ---------- */
+  awards: {
+    what: "Every Catalyst Awards nomination.",
+    steps: ["Open a nomination to read it in full.", "Shortlist it, mark winners and keep jury notes."],
+    tips: ["Changing a nomination's category, exporting and deleting are for management."],
+  },
+  "awards/jury": {
+    what: "The people judging the Catalyst Awards.",
+    steps: ["Add a juror with their name and email.", "Send them the invite; they sign in at thetechfestival.com/awards/jury-admin with a code.", "Send reminders to anyone who hasn't finished."],
+    tips: ["Jurors only see what you allocate to them, never contact details or each other's scores.", "Sending emails is for management."],
+  },
+  "awards/allocation": {
+    what: "Which jurors score which nominations.",
+    steps: ["Tick nominations.", "Assign them to jurors, or click Share out evenly."],
+    tips: ["A juror who declares a conflict is skipped automatically."],
+  },
+  "awards/rubric": {
+    what: "What jurors score each nomination on: up to six criteria, each from 1 to 5.",
+    steps: ["Edit the criteria and what 1, 3 and 5 mean.", "Save: scores already given are kept."],
+    tips: ["Keep it quick: about 5 minutes a nominee."],
+  },
+  "awards/results": {
+    what: "The jury's scores per nomination, the weighted total out of 100, and the rank in each category.",
+    steps: ["Pick a category and read the ranking.", "Open a nomination for each juror's scores and comments.", "Download as CSV."],
+    tips: ["Management only. Drafts and declared conflicts don't count."],
+  },
+  "awards/winners": {
+    what: "What the website, certificates and apps show for the winners.",
+    steps: ["Mark winners in Nominations.", "Check here how the results, each winner's page and certificate will look."],
+    tips: [],
+  },
+
+  /* ---------- Event day ---------- */
+  "event-summary": {
+    what: "The event at a glance: passes, RSVPs, meals and check-in for each day. Read only.",
+    steps: ["Read the totals for each day and each pass type.", "Use the meals table for catering numbers and dietary needs."],
+    tips: ["Counted live from People: each person once."],
+  },
+  rsvps: {
+    what: "Who's coming to each day and each meal, from the RSVP form.",
+    steps: ["Click a tile to see who's coming.", "Open someone to see or add to their RSVP.", "Review possible duplicates and merge or keep them apart."],
+    tips: ["Staff can add special events to an attendee's RSVP but never remove what the attendee chose."],
+  },
+  "marketing/rsvp-reminders": {
+    what: "Ticket holders who haven't RSVP'd yet, and the reminder email.",
+    steps: ["Check who hasn't RSVP'd.", "Send the reminder to one person, or to everyone (management)."],
+    tips: ["Each person gets at most one reminder in 20 hours. Unsubscribed people are skipped."],
+  },
+  "check-in": {
+    what: "Check attendees in at the door by scanning their pass.",
+    steps: ["Allow camera access when the browser asks.", "Point the camera at the QR code on their pass or phone.", "Check the card: green means checked in; a warning means already checked in or not found."],
+    tips: ["Before or after the event days, a scan is a practice scan: nothing is recorded.", "The check-in desk app (lobby, pass desk, meals) is further down the page."],
+  },
+  "app/sos": {
+    what: "Help requests from the app's Help & SOS screen: emergencies only.",
+    steps: ["Open a new request: it shows who, where and what.", "Reply: your message reaches the attendee in the app.", "Mark it Resolved when it's dealt with."],
+    tips: ["New requests push to every staff phone and email the SOS address.", "For a real emergency, call 911 first."],
+  },
+  "app/moderation": {
+    what: "Approve, hide, edit or delete anything people post in the app, and handle reports.",
+    steps: ["Check held posts and reports.", "Approve, hide or delete each one.", "Use Hidden people to see anyone staff hid from the app."],
+    tips: ["Hiding can be undone; deleting can't."],
+  },
+  "app/broadcast": {
+    what: "Send a notification to people's phones: one person, or everyone.",
+    steps: ["Write a short title and message.", "Choose who gets it.", "Preview, then send (or schedule it)."],
+    tips: ["Sending to everyone is for management. It can't be taken back once sent."],
+  },
+
+  /* ---------- Settings ---------- */
+  staff: {
+    what: "Who can sign in to this panel, and at what level.",
+    steps: ["Add someone with their email and a starting password.", "Choose Management, Staff or Volunteer."],
+    tips: ["Management sees everything; staff can't see sales, revenue, promo codes or staff settings; volunteers see People only.", "Management only."],
+  },
+  "app/rights": {
+    what: "What each type of person can do in the app (message, post, connect…).",
+    steps: ["Tick or untick a right for a type of person.", "Save."],
+    tips: ["Set someone's type on their People profile. Saving is for management."],
+  },
+  "email-tracking": {
+    what: "Who receives each website form, and what the person who sent it gets back.",
+    steps: ["Find the form.", "Check the inbox it goes to."],
+    tips: ["Use it to find a missing enquiry or to know who should answer."],
+  },
+  "app/audit": {
+    what: "Every change made by staff, newest first.",
+    steps: ["Search or filter by person or kind of change."],
+    tips: ["Read only. Every save, send, publish and delete is recorded here."],
+  },
+  account: {
+    what: "Your own staff sign-in.",
+    steps: ["Change your password here."],
+    tips: ["If you forget it, ask someone in management to reset it."],
+  },
+};
+
+/** The guide for a page under /admin, or null. Sub-pages (a person's profile) use their list's guide. */
+export function helpFor(to) {
+  if (to == null) return null;
+  return HELP[to] || null;
+}
+
+/* Start here: the few things a new person needs before any page. */
+export const START_HERE = [
+  { h: "Finding your way", p: "The navy rail on the left has the areas of work: Home, Content, Marketing, Sales, Operations, People, Awards, Event day and Settings. Pick one and its pages appear beside it. On a phone, use the tabs at the bottom and More. Press ⌘K (Ctrl K on Windows) to search for anything: a person, a ticket ID or a page." },
+  { h: "Changing the website", p: "Website content (event pages, agenda, speakers, partners, logos) never changes the live site when you save. Send it to staging from Home › Website changes, check it on the staging site, then publish it to the live website." },
+  { h: "What changes at once", p: "Some things take effect as soon as you save: ticket prices and stock, event settings, app text and switches, people's records, passes you send, check-ins and app notifications. Deleting a speaker, session or partner also takes it off the website at once. Their guides say so." },
+  { h: "Who can do what", p: "Management sees everything. Staff can't see sales, revenue, promo codes or staff settings, and pages marked with a lock are management only. Volunteers see People only, read only." },
+  { h: "Getting help", p: "Every page has an ⓘ next to its title with how to use it. If something looks wrong, check Settings › Audit log for who changed what, then ask management." },
+];

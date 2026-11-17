@@ -24,6 +24,7 @@ import AgendaAdmin from "../admin/cms/Agenda";
 import EventPages from "../admin/cms/EventPages";
 import Changes from "../admin/cms/Changes";
 import WorkspaceHub from "../admin/WorkspaceHub";
+import HelpGuide from "../admin/HelpGuide";
 import LogoCollection from "../admin/cms/LogoCollection";
 import SiteSettings from "../admin/cms/SiteSettings";
 import AttendingOrgs from "../admin/cms/AttendingOrgs";
@@ -246,6 +247,7 @@ function AdminPanel() {
             <Route path="content" element={<Navigate to="/admin/content/speakers" replace />} />
             {/* A workspace's pages as cards: the phone's bottom tabs open these (approved admin design). */}
             <Route path="ws/:id" element={<WorkspaceHub />} />
+            <Route path="help" element={<HelpGuide />} />
             <Route path="content/changes" element={<Changes />} />
             <Route path="content/events" element={<EventPages />} />
             <Route path="content/agenda" element={<AgendaAdmin />} />

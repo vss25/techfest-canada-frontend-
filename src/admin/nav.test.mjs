@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { NAV, WORKSPACES, navItemFor, titleFor, workspaceFor } from "./nav.js";
+import { HELP, START_HERE } from "./help.js";
 import {
   NOT_FOR_VOLUNTEERS, VOLUNTEER_ACCESS, VOLUNTEER_FORBIDDEN, VOLUNTEER_FORBIDDEN_TEXT, accountKind, isVolunteerAccount, navFor, searchGroupsFor,
   volunteerMayOpen, volunteerRecents, workspacesFor,
@@ -163,4 +164,18 @@ test("workspaces per account: volunteers People only; staff without management's
   const mgmt = workspacesFor({ isManagement: true }).flatMap((w) => w.groups.flatMap((g) => g.items.map((it) => it.to)));
   for (const to of ["analytics", "staff", "awards/results"]) assert.ok(mgmt.includes(to), to);
   assert.ok(!mgmt.includes("content/home-sponsors"));
+});
+
+// Nov 2026: "a help section and how to use under each page". Every page in the menu has a guide (help.js), and
+// no guide is left behind for a page that no longer exists.
+test("every page in the menu has a how-to guide, and every guide belongs to a page", () => {
+  const tos = WORKSPACES.flatMap((w) => w.groups.flatMap((g) => g.items.map((it) => it.to)));
+  for (const to of tos) {
+    const g = HELP[to];
+    assert.ok(g, `no guide for ${to || "Overview"}`);
+    assert.ok(g.what && g.what.length > 20, `${to}: what`);
+    assert.ok(Array.isArray(g.steps) && Array.isArray(g.tips), `${to}: steps and tips`);
+  }
+  for (const key of Object.keys(HELP)) assert.ok(tos.includes(key), `guide for a page not in the menu: ${key}`);
+  assert.ok(START_HERE.length >= 4 && START_HERE.every((s) => s.h && s.p));
 });

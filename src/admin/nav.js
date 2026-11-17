@@ -3,7 +3,7 @@ import { MapPinned,
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
-import { ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
+import { CircleHelp, ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
    The panel's structure (Nov 2026, the approved admin design,
@@ -40,6 +40,8 @@ export const WORKSPACES = [
       { to: "", label: "Overview", icon: LayoutDashboard, end: true },
       // Nov 2026: website content goes save → staging → live from here.
       { to: "content/changes", label: "Website changes", icon: GitPullRequestArrow },
+      // Nov 2026: how the panel works and every page's guide (help.js); each page's ⓘ shows its own.
+      { to: "help", label: "Help & how-to", icon: CircleHelp },
     ] },
   ] },
   { id: "content", label: "Content", rail: RAIL.web, job: "Everything people read and see on the website and in the app. All content is written here.", groups: [

@@ -9,6 +9,7 @@ import { Link, useLocation } from "react-router-dom";
 import { AlertTriangle, Eye, EyeOff, Inbox, Loader2, Lock, RefreshCw, X } from "lucide-react";
 import { useAdmin } from "./adminContext";
 import { navItemFor } from "./nav";
+import HelpButton from "./HelpButton";
 import { isManagementError } from "./api";
 import { twMerge } from "tailwind-merge";
 
@@ -90,7 +91,10 @@ export function PageHeader({ eyebrow, title, description, actions }) {
     <header className="mb-6 flex flex-col gap-1">
       {crumbs && <p className="text-xs text-ttfc-dim">{crumbs}</p>}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-[26px] font-bold leading-[34px] tracking-[-0.01em] text-ttfc-text">{title}</h1>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <h1 className="text-[26px] font-bold leading-[34px] tracking-[-0.01em] text-ttfc-text">{title}</h1>
+          {hit && <HelpButton to={hit.item.to} title={hit.item.label} />}
+        </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
       {description && <p className="max-w-[760px] text-sm leading-relaxed text-ttfc-muted">{description}</p>}

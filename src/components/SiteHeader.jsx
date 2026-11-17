@@ -1,3 +1,4 @@
+import BrandHeader from "../redesign/BrandHeader";
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { track } from "../lib/pwaEvents";
@@ -68,7 +69,8 @@ function useDarkMode() {
   return dark;
 }
 
-export default function SiteHeader({ homeEvent = null } = {}) {
+/* Kept for reference until every page is moved to the brand design (redesign step 2). */
+export function LegacySiteHeader({ homeEvent = null } = {}) {
   const location = useLocation();
   const { events } = useEvents();
   const dark = useDarkMode();
@@ -400,3 +402,9 @@ export default function SiteHeader({ homeEvent = null } = {}) {
   );
 }
 
+
+/* Redesign step 2: every page gets the approved navy header. It stays fixed at the top
+   because the older page bodies leave room for a fixed header. */
+export default function SiteHeader({ homeEvent = null } = {}) {
+  return <div className="tb" style={{ background: "transparent" }}><BrandHeader ev={homeEvent} fixed /></div>;
+}

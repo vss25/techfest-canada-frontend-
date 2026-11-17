@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import Home from "./pages/Home";
-import HomeFeatured from "./pages/HomeFeatured";
 /* Phase 4 (IA build-out) pages. NOTE: "/" is the COMPOSED homepage (src/pages/HomeFeatured.jsx):
    the seasonal featured-event home on top of the full existing homepage — every section of
    src/pages/Home.jsx still renders, in its original order, under the featured block, and
@@ -25,6 +24,12 @@ const Resources = lazy(() => import("./pages/Resources"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Contact = lazy(() => import("./pages/Contact"));
 import PreviewBar from "./components/PreviewBar";
+import BrandHome from "./redesign/BrandHome";
+const ApprovedSite = lazy(() => import("./redesign/approved/ApprovedSite"));
+// The approved design, live: every screen of board 12 at its own address (redesign step 2).
+const ApprovedRoute = lazy(() => import("./redesign/approved/LiveSite"));
+const live = (fallback) => <Suspense fallback={<div style={{ minHeight: "100vh", background: "#151035" }} aria-busy="true" />}><ApprovedRoute fallback={fallback} /></Suspense>;
+import "./redesign/skin.css";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AboutUs from "./components/AboutUs";
 const AuthSuccess = lazy(() => import("./pages/AuthSuccess"));
@@ -116,9 +121,8 @@ function AdminLoading() {
 
 /* ================= SYSTEM THEME DETECTOR ================= */
 function applySystemTheme() {
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const theme = prefersDark ? "dark" : "light";
-  document.documentElement.setAttribute("data-theme", theme);
+  // Redesign (Nov 2026): the approved design has one light look and no dark mode.
+  document.documentElement.setAttribute("data-theme", "light");
 }
 
 function App() {
@@ -139,9 +143,10 @@ function App() {
       <RouteErrorBoundary>
       <Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}>
       <Routes>
-        <Route path="/" element={<HomeFeatured />} />
+        <Route path="/" element={live(null)} />
+        <Route path="/approved-preview" element={<Suspense fallback={null}><ApprovedSite /></Suspense>} />
         <Route path="/programme" element={<AgendaGate><Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Programme /></Suspense></AgendaGate>} />
-        <Route path="/speakers" element={<Speakers />} />
+        <Route path="/speakers" element={live(null)} />
         <Route path="/speakers/:slug" element={<SpeakerProfile />} />
         <Route path="/sponsors" element={<Sponsors />} />
         <Route path="/tickets" element={<Tickets />} />
@@ -154,8 +159,8 @@ function App() {
         {/* The attendee dashboard was retired (the app replaces it); keep old links working. */}
         <Route path="/dashboard" element={<Navigate to="/" replace />} />
         <Route path="/privacy" element={<Privacy />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/about" element={<AboutUs />} />
+        <Route path="/contact" element={live(null)} />
+        <Route path="/about" element={live(null)} />
         <Route path="/agenda" element={<AgendaGate><Agenda /></AgendaGate>} />
         <Route
           path="/admin-login"
@@ -176,24 +181,29 @@ function App() {
           }
         />
         <Route path="/auth-success" element={<AuthSuccess />} />
-        <Route path="/sponsor" element={<Sponsor />} />
-        <Route path="/exhibit" element={<Exhibit />} />
+        <Route path="/sponsor" element={live(null)} />
+        <Route path="/exhibit" element={live(null)} />
+        <Route path="/exhibitors" element={live(null)} />
+        <Route path="/faqs" element={live(null)} />
+        <Route path="/speak" element={live(null)} />
+        <Route path="/news" element={live(null)} />
+        <Route path="/app" element={live(null)} />
         <Route path="/exhibit/india-pavilion" element={<IndiaPavilion />} />
         <Route path="/exhibit/india-pavilion/pay" element={<PavilionPayment />} />
         <Route path="/brochures" element={<Brochures />} />
-        <Route path="/venue" element={<Venue />} />
+        <Route path="/venue" element={live(null)} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/awards" element={<Awards />} />
+        <Route path="/awards" element={live(null)} />
         <Route path="/awards/nominations" element={<Awards />} />
         <Route path="/awards/winners/:id" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><AwardWinner /></Suspense>} />
         <Route path="/awards/jury-admin/*" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#f6f4fa" }} aria-busy="true" />}><JuryPortal /></Suspense>} />
         {/* KYC form hidden (13 Oct 2026); the page is kept in src/pages/KycForm.jsx */}
         <Route path="/kyc" element={<Navigate to="/" replace />} />
-        <Route path="/volunteer" element={<Volunteer />} />
+        <Route path="/volunteer" element={live(null)} />
         <Route path="/partners2026" element={<Partners2026 />} />
         <Route path="/organizers" element={<Organizers />} />
         <Route path="/linkedin" element={<LinkedinLanding />} />
-        <Route path="/media" element={<Media />} />
+        <Route path="/media" element={live(null)} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
         <Route path="/app-login" element={<AppLogin />} />
         <Route path="/rsvp" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><Rsvp /></Suspense>} />
@@ -211,16 +221,17 @@ function App() {
         <Route path="/toronto2027" element={<Navigate to="/toronto/2027/main-event" replace />} />
         <Route path="/toronto-briefing" element={<Navigate to="/toronto/2027/briefing" replace />} />
         <Route path="/highlights" element={<Highlights />} />
+        <Route path="/highlights/2026" element={live(<Highlights />)} />
         <Route path="/highlights/:year" element={<Highlights />} />
-        <Route path="/partners" element={<NationalPartners />} />
+        <Route path="/partners" element={live(null)} />
         <Route path="/partners/:year" element={<NationalPartners />} />
         <Route path="/awards/:year" element={<AwardsYear />} />
         <Route path="/:city" element={<CityHub />} />
-        <Route path="/:city/:year/:eventType" element={<EventLanding section="overview" />} />
-        <Route path="/:city/:year/:eventType/agenda" element={<EventLanding section="agenda" />} />
-        <Route path="/:city/:year/:eventType/speakers" element={<EventLanding section="speakers" />} />
+        <Route path="/:city/:year/:eventType" element={live(<EventLanding section="overview" />)} />
+        <Route path="/:city/:year/:eventType/agenda" element={live(<EventLanding section="agenda" />)} />
+        <Route path="/:city/:year/:eventType/speakers" element={live(<EventLanding section="speakers" />)} />
         <Route path="/:city/:year/:eventType/speakers/:speakerSlug" element={<EventLanding section="speaker" />} />
-        <Route path="/:city/:year/:eventType/tickets" element={<EventLanding section="tickets" />} />
+        <Route path="/:city/:year/:eventType/tickets" element={live(<EventLanding section="tickets" />)} />
         {/* Any other address: "Page not found", noindex (src/pages/NotFound.jsx). */}
         <Route path="*" element={<NotFound />} />
       </Routes>

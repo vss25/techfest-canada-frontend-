@@ -1,0 +1,25 @@
+/* =========================================================
+   Brand skin for the older public pages (redesign step 2).
+   Until each page is rebuilt in the brand design, this brings
+   them onto the same typeface and colours as the new pages:
+   Poppins everywhere, brand magenta and navy in place of the
+   old purple. Never applies inside the staff panel (which sets
+   data-admin-theme on <html>).
+========================================================= */
+html:not([data-admin-theme]) body,
+html:not([data-admin-theme]) body button,
+html:not([data-admin-theme]) body input,
+html:not([data-admin-theme]) body select,
+html:not([data-admin-theme]) body textarea {
+  font-family: Poppins, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+html:not([data-admin-theme]) body h1:not(.ap-root h1),
+html:not([data-admin-theme]) body h2:not(.ap-root h2),
+html:not([data-admin-theme]) body h3:not(.ap-root h3),
+html:not([data-admin-theme]) body h4:not(.ap-root h4),
+html:not([data-admin-theme]) body [style*="Orbitron"]:not(.ap-root *),
+html:not([data-admin-theme]) body [class*="orbitron"] {
+  font-family: Poppins, system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none;
+}

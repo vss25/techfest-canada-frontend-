@@ -1,4 +1,5 @@
 import React, { lazy, Suspense, useEffect, useState, useRef } from "react";
+import BrandHeader from "../redesign/BrandHeader";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,7 +32,8 @@ const MORE_DROPDOWN = [
 ];
 
 
-export default function Navbar() {
+/* Kept for reference until every page is moved to the brand design (redesign step 2). */
+export function LegacyNavbar() {
   const [authOpen, setAuthOpen] = useState(false);
   const [theme, setTheme] = useState("light");
   const isDark = theme === "dark";
@@ -505,4 +507,9 @@ export default function Navbar() {
       )}
     </>
   );
+}
+
+/* Redesign step 2: the older pages get the approved navy header too (fixed, as they expect). */
+export default function Navbar() {
+  return <div className="tb" style={{ background: "transparent" }}><BrandHeader fixed /></div>;
 }

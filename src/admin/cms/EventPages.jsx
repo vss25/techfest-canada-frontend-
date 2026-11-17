@@ -46,8 +46,9 @@ function toForm(ev) {
   f.showReport = ev?.showReport !== false;
   f.knownSoFar = (ev?.knownSoFar || []).map(({ label, value }) => ({ label, value }));
   f.comingNext = (ev?.comingNext || []).map(({ label, when, done }) => ({ label, when: when || "", done: !!done }));
-  f.heroImage = ev?.heroImage?.asset?._ref || "";
-  f.heroImageUrl = ev?.heroImageUrl || "";
+  // "City photo" on the approved design: its own field, so the previous design's photo stays as it was.
+  f.citySkyline = ev?.citySkyline?.asset?._ref || "";
+  f.citySkylineUrl = ev?.citySkylineUrl || "";
   return f;
 }
 
@@ -58,7 +59,7 @@ function diff(form, base) {
   if (form.showReport !== base.showReport) out.showReport = form.showReport;
   if (JSON.stringify(form.knownSoFar) !== JSON.stringify(base.knownSoFar)) out.knownSoFar = form.knownSoFar;
   if (JSON.stringify(form.comingNext) !== JSON.stringify(base.comingNext)) out.comingNext = form.comingNext;
-  if (form.heroImage !== base.heroImage) out.heroImage = form.heroImage || "";
+  if (form.citySkyline !== base.citySkyline) out.citySkyline = form.citySkyline || "";
   return out;
 }
 
@@ -144,7 +145,7 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
   const saveDraft = async () => {
     if (!dirty) return ev;
     const saved = await api.patch(`/cms/event/${ev._id}?draft=1`, changes);
-    onSaved({ ...ev, ...saved, heroImageUrl: form.heroImageUrl, _id: ev._id, hasDraft: true });
+    onSaved({ ...ev, ...saved, citySkylineUrl: form.citySkylineUrl, _id: ev._id, hasDraft: true });
     return saved;
   };
   const run = (name, fn) => async () => {
@@ -161,7 +162,7 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
   const onPublish = run("publish", async () => {
     await saveDraft();
     const out = await api.post(`/cms/event/${ev._id}/publish`);
-    onSaved({ ...ev, ...out, heroImageUrl: form.heroImageUrl, _id: ev._id, hasDraft: false, unpublished: false });
+    onSaved({ ...ev, ...out, citySkylineUrl: form.citySkylineUrl, _id: ev._id, hasDraft: false, unpublished: false });
     toast.success("Published. The page is live on the website within about a minute.");
   });
   const onDiscard = run("discard", async () => {
@@ -221,9 +222,9 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
           <ImagePicker
             label="City photo"
             aspect="aspect-[16/9]"
-            url={form.heroImageUrl}
+            url={form.citySkylineUrl}
             disabled={readOnly}
-            onUploaded={({ assetId, url, preview }) => setForm((f) => ({ ...f, heroImage: assetId, heroImageUrl: url || preview }))}
+            onUploaded={({ assetId, url, preview }) => setForm((f) => ({ ...f, citySkyline: assetId, citySkylineUrl: url || preview }))}
           />
           <div className="grid content-start gap-4">
             <Field label="Photo credit" hint="Shown on the photo. Required for Creative Commons photos."><Input value={form.photoCredit} onChange={set("photoCredit")} placeholder="Photo: Kyle Pearce, CC BY-SA 2.0" disabled={readOnly} /></Field>

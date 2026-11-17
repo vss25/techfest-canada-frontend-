@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import "./brand.css";
 import BrandHeader from "./BrandHeader";
-import Footer from "../components/Footer";
+import BrandFooter from "./BrandFooter";
 import TicketsBlock from "../components/TicketsBlock";
 import WaitlistForm from "../components/WaitlistForm";
 import { speakerPhoto, speakerPathIn } from "../components/SpeakerCard";
@@ -317,7 +317,7 @@ export default function BrandEventPage({ ev }) {
         )}
         {mode && <PartnerBand ev={ev} />}
       </main>
-      <Footer />
+      <BrandFooter />
     </div>
   );
 }

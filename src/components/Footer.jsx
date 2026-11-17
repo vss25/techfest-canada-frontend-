@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import BrandFooter from "../redesign/BrandFooter";
 import { openCookieSettings } from "../lib/trackers";
 import { useEffect, useState } from "react";
 import useSiteSettings, { safeUrl } from "../hooks/useSiteSettings";
@@ -31,7 +32,8 @@ const DEFAULT_SOCIAL = {
   instagram: "https://www.instagram.com/thetechfestival?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
 };
 
-export default function Footer() {
+/* Kept for reference until every page is moved to the brand design (redesign step 2). */
+export function LegacyFooter() {
   var site = useSiteSettings();
   var social = {
     linkedin: safeUrl(site["site.linkedin_url"]) || DEFAULT_SOCIAL.linkedin,
@@ -146,4 +148,9 @@ export default function Footer() {
       </div>
     </footer>
   );
+}
+
+/* Redesign step 2: every page gets the approved navy footer. */
+export default function Footer() {
+  return <BrandFooter />;
 }

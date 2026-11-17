@@ -520,19 +520,20 @@ export function EventTemplate({ ev, below, heroHeadingAs }) {
 
 /* ---------------- Subpages ---------------- */
 
+/* Event sub-pages (agenda, speakers, tickets) in the brand: navy page, brand header and
+   footer, Poppins. Their content was built for a dark page, so the page stays dark (navy). */
 function PageShell({ ev, title, children }) {
   return (
     <>
-      <SiteHeader />
-      <main style={{ background: "#070313", color: "#f4f1ff", minHeight: "100vh", paddingTop: 76 }}>
-        <div style={{ background: "radial-gradient(680px 260px at 16% -60px, rgba(127,90,240,0.24), transparent 70%)", borderBottom: "1px solid rgba(127,90,240,0.14)" }}>
-          <div style={{ ...wrap, paddingTop: 38, paddingBottom: 30 }}>
-            <p style={{ margin: 0, fontSize: "0.85rem", opacity: 0.75 }}>
-              <Link to={eventPath(ev)} style={{ color: "inherit", fontWeight: 700 }}>{ev.name}</Link>
+      <SiteHeader homeEvent={ev} />
+      <main style={{ background: "#151035", color: "#ffffff", minHeight: "100vh", paddingTop: 68, fontFamily: "Poppins, system-ui, sans-serif" }}>
+        <div style={{ background: "#1d1747", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+          <div style={{ ...wrap, paddingTop: 36, paddingBottom: 30 }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#F5A623" }}>
+              <Link to={eventPath(ev)} style={{ color: "inherit" }}>{ev.name}</Link>
               {" · "}{formatDateRange(ev)}{ev.venueName ? ` · ${ev.venueName}` : ""}
             </p>
-            <h1 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.9rem, 5vw, 3rem)", fontWeight: 900, margin: "12px 0 0" }}>{title}</h1>
-            <GradientRule style={{ marginTop: 16 }} />
+            <h1 style={{ fontFamily: "Poppins, system-ui, sans-serif", fontSize: "clamp(1.9rem, 5vw, 2.8rem)", fontWeight: 700, letterSpacing: "-0.015em", margin: "10px 0 0" }}>{title}</h1>
           </div>
         </div>
         {children}

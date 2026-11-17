@@ -133,7 +133,8 @@ body.dark-mode .nav-logo {
 .urgency-banner span { background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 4px; margin-left: 10px; }
 
 /* --- NAVIGATION --- */
-nav:not(.tfc-nav) { 
+/* Not inside the approved design (.ap-root, redesign step 2): its boards style their own navs. */
+nav:not(.tfc-nav):where(:not(.ap-root nav)) { 
   display: flex; 
   justify-content: space-between; 
   align-items: center; 

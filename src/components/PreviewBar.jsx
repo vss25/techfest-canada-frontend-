@@ -38,9 +38,11 @@ export default function PreviewBar() {
   useEffect(() => {
     if (!shown || !ref.current || typeof ResizeObserver === "undefined") return undefined;
     const el = ref.current;
-    const ro = new ResizeObserver(() => { document.body.style.paddingBottom = `${el.offsetHeight}px`; });
+    // Its height also goes in --ttfc-staging-bar, so things pinned to the bottom (the admin's phone tabs and rail) sit above it.
+    const root = document.documentElement.style;
+    const ro = new ResizeObserver(() => { document.body.style.paddingBottom = `${el.offsetHeight}px`; root.setProperty("--ttfc-staging-bar", `${el.offsetHeight}px`); });
     ro.observe(el);
-    return () => { ro.disconnect(); document.body.style.paddingBottom = ""; };
+    return () => { ro.disconnect(); document.body.style.paddingBottom = ""; root.removeProperty("--ttfc-staging-bar"); };
   }, [shown]);
   if (!shown) return null;
 

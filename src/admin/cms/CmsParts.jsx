@@ -4,6 +4,7 @@ import { Banner, Button, Spinner } from "../ui";
 import { useToast } from "../toastContext";
 import { uploadImage } from "./imageUpload";
 import { WorkflowBanner } from "./workflow";
+import { HelpLabel } from "../HelpButton";
 
 export function CmsBanners({ configured }) {
   return (
@@ -52,9 +53,9 @@ export function ImagePicker({ label, kind = "photo", url, onUploaded, disabled, 
   const shownError = localErr || error;
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={inputId} className="text-[13px] font-semibold text-ttfc-text/90">
+      <HelpLabel label={label} htmlFor={inputId}>
         {label}{required && <span className="ml-0.5 text-ttfc-pink" aria-hidden="true">*</span>}
-      </label>
+      </HelpLabel>
       <div
         onDragOver={(e) => { e.preventDefault(); if (!disabled) setDrag(true); }}
         onDragLeave={() => setDrag(false)}

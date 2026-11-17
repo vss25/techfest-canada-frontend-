@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { Info } from "lucide-react";
 import { Drawer } from "./ui";
 import { helpFor } from "./help";
+import { useFieldHelp } from "./fieldHelp";
 
 /* The ⓘ next to every page title: how to use this page (help.js), in a side panel.
    Pages without a guide show nothing. */
@@ -65,5 +66,34 @@ export default function HelpButton({ to, title }) {
         <HelpContent guide={guide} />
       </Drawer>
     </>
+  );
+}
+
+/* ---------- Help on a single field or section ----------
+   An ⓘ after a field's label when this page's guide explains that field (help.js FIELD_HELP,
+   keyed by the page and the label as shown). Click it: the explanation opens under the label. */
+
+/** A field's label row with its ⓘ and, when opened, the explanation. `as` is the label element. */
+export function HelpLabel({ label, children, className = "", as: As = "label", htmlFor, text: given }) {
+  const found = useFieldHelp(label);
+  const text = given || found;
+  const [open, setOpen] = useState(false);
+  const panel = useId();
+  return (
+    <span className={`flex flex-col gap-1.5 ${className}`}>
+      <span className="flex items-center gap-1.5">
+        <As {...(As === "label" ? { htmlFor } : {})} className="text-[13px] font-semibold text-ttfc-text/90">{children}</As>
+        {text && (
+          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls={panel}
+            aria-label={`What is ${label}?`} title={`What is ${label}?`}
+            className={`inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border text-[11px] font-bold leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D6308C] ${open ? "border-[#D6308C] bg-[#D6308C] text-white" : "border-[#CFCBE0] bg-white text-[#6B6688] hover:border-[#D6308C] hover:text-[#D6308C]"}`}>
+            i
+          </button>
+        )}
+      </span>
+      {text && open && (
+        <span id={panel} role="note" className="block rounded-lg border border-[#E3E0EE] bg-[#F6F5FA] px-3 py-2 text-xs font-normal leading-relaxed text-[#4A4566]">{text}</span>
+      )}
+    </span>
   );
 }

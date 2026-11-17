@@ -9,6 +9,7 @@ import {
   Select, Switch, Textarea,
 } from "../ui";
 import { ImagePicker } from "./CmsParts";
+import { HelpLabel } from "../HelpButton";
 import useCmsStatus from "./useCmsStatus";
 import { eventPath, formatDateRange } from "../../lib/events";
 import { WorkflowBanner } from "./workflow";
@@ -107,7 +108,7 @@ function Rows({ label, hint, rows, onChange, kind }) {
   const set = (i, k, v) => onChange(rows.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
   return (
     <fieldset className="grid gap-2">
-      <legend className="mb-1 text-[13px] font-semibold">{label}</legend>
+      <legend className="mb-1 w-full"><HelpLabel label={label} as="span">{label}</HelpLabel></legend>
       {hint && <p className="text-xs text-ttfc-muted">{hint}</p>}
       {rows.map((r, i) => (
         <div key={i} className="grid items-center gap-2 sm:grid-cols-[1fr_1.4fr_auto]">

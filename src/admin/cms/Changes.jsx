@@ -80,6 +80,8 @@ export default function Changes() {
   const canPublish = data?.canPublish !== false;
   const unsent = items.filter((i) => i.unsent);
   const staged = items.filter((i) => i.staged);
+  // Sanity drafts nobody sent from here (left in Sanity Studio or by an old script): never published from this page.
+  const older = data?.older || [];
   const chosen = (list) => {
     const sel = list.filter((i) => picked.has(i.id));
     return sel.length ? sel : list;
@@ -122,7 +124,7 @@ export default function Changes() {
     <>
       <PageHeader
         eyebrow="Website & app"
-        title="Changes"
+        title="Website changes"
         description="Website content on its way to the website. Saving in an editor keeps the change here. Send it to staging, check it on the staging site, then publish it to the live website."
         actions={(
           <>
@@ -184,7 +186,38 @@ export default function Changes() {
               </ul>
             )}
           </Card>
-          {!items.length && <EmptyState title="No changes on their way" body="Edits saved in Event pages, Agenda, Speakers, Partners and the other website editors show up here." />}
+          {older.length > 0 && (
+            <Card className="grid gap-3">
+              <div>
+                <h2 className="font-semibold">Older drafts, not from this panel</h2>
+                <p className="text-xs text-ttfc-muted">
+                  {older.length} unpublished {older.length === 1 ? "draft" : "drafts"} left in Sanity before this page existed. They aren't on the live website and can't be published from here.
+                  To put one live, edit it in its editor and send it to staging. They do show on the staging site, so throw away the ones nobody needs.
+                </p>
+              </div>
+              <ul className="rounded-xl border border-ttfc-line">
+                {older.map((o) => (
+                  <li key={o.id} className="flex flex-col gap-2 border-t border-ttfc-line px-4 py-3 first:border-t-0 sm:flex-row sm:items-center">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-ttfc-muted">{o.typeLabel}</span>
+                        <span className="truncate font-semibold">{o.title}</span>
+                        <Badge tone={o.isNew ? "neutral" : "warn"}>{o.isNew ? "Never on the website" : "Edits to a live item"}</Badge>
+                      </div>
+                      <div className="mt-1 text-xs text-ttfc-muted">Last changed {when(o.updatedAt)}{o.fields.length && !o.isNew ? ` · ${fieldList(o.fields)}` : ""}</div>
+                    </div>
+                    <Button size="sm" variant="ghost" icon={Trash2} disabled={!!busy} onClick={() => setConfirm({
+                      title: `Throw away the older draft of ${o.title}?`,
+                      body: o.isNew ? "It was never on the website, so it's deleted for good." : "The live version stays exactly as it is; only these unpublished edits go.",
+                      label: "Throw away", tone: "danger",
+                      go: async () => { await api.del(`/cms/${o.type}/${o.id}/draft?which=older`); toast.success("Thrown away."); reload(); },
+                    })}>Throw away</Button>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+          {!items.length && !older.length && <EmptyState title="No changes on their way" body="Edits saved in Event pages, Agenda, Speakers, Partners and the other website editors show up here." />}
         </div>
       )}
       <ConfirmDialog

@@ -134,8 +134,23 @@ function LiveModeControl({ feature, value, onChange, reason, globalOff, readOnly
   );
 }
 
+/* "Day 1 · Feb 3": the day's date from the event's start date (Nov 2026: the built-in DAYS are
+   Toronto 2026's, Oct 26–27, which is wrong for every 2027 event). No event, or one without a
+   start date: the built-in label for 2026, else just "Day 1". */
+function dayLabel(d, ev) {
+  if (ev?.startDate) {
+    const t = new Date(`${ev.startDate}T12:00:00Z`);
+    t.setUTCDate(t.getUTCDate() + d - 1);
+    return `Day ${d} · ${t.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`;
+  }
+  if (ev) return `Day ${d}`;
+  return `${DAYS[d].label} · ${DAYS[d].date}`;
+}
+
 function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = [], all, speakerIndex, speakerNames, readOnly, globalLive, onClose, onSaved }) {
   const toast = useToast();
+  // Whose dates the Day picker shows: the event the agenda is filtered to, else the session's own first event.
+  const dayEvent = eventList.find((e) => e._id === (defaultEventId || refIds(doc)[0]));
   const listId = useId();
   const typeListId = useId();
   const [form, setForm] = useState(() => (doc ? toForm(doc) : { ...blank(defaultDay), events: defaultEventId ? [defaultEventId] : [] }));
@@ -194,8 +209,8 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Day">{(id) => (
             <Select id={id} value={String(form.day)} onChange={(e) => set("day")(Number(e.target.value))} disabled={readOnly}>
-              <option value="1">{DAYS[1].label} · {DAYS[1].date}</option>
-              <option value="2">{DAYS[2].label} · {DAYS[2].date}</option>
+              <option value="1">{dayLabel(1, dayEvent)}</option>
+              <option value="2">{dayLabel(2, dayEvent)}</option>
             </Select>
           )}</Field>
           <Field label="Starts" required error={errors.time}>{(id) => <Input id={id} type="time" step={300} value={form.time} onChange={set("time")} disabled={readOnly} />}</Field>
@@ -628,7 +643,7 @@ export default function Agenda() {
             </div>
           )}
           <Tabs value={day} onChange={setDay} label="Day"
-            tabs={[1, 2].map((d) => ({ key: d, label: `${DAYS[d].label} · ${DAYS[d].date}`, count: counts[d] }))} />
+            tabs={[1, 2].map((d) => ({ key: d, label: dayLabel(d, eventList.find((e) => e._id === eventId)), count: counts[d] }))} />
           {dayList.length ? (
             <ul className="overflow-hidden rounded-[18px] border border-ttfc-line bg-ttfc-panel">
               {dayList.map((s) => (

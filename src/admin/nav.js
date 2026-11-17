@@ -29,6 +29,8 @@ export const NAV = [
       { to: "", label: "Overview", icon: LayoutDashboard, end: true },
       // The event spine (Phase 2): per-event attendee visibility, lifecycle grace days, pricing announced.
       { to: "events", label: "Events", icon: CalendarDays },
+      // Nov 2026: website content goes save → staging → live from here (top of the menu: staff couldn't find it lower down).
+      { to: "content/changes", label: "Website changes", icon: GitPullRequestArrow },
     ],
   },
   {
@@ -75,8 +77,6 @@ export const NAV = [
   {
     title: "Website & app",
     items: [
-      // Nov 2026: website content goes save → staging → live from here.
-      { to: "content/changes", label: "Changes", icon: GitPullRequestArrow },
       { to: "content/events", label: "Event pages", icon: MapPinned },
       { to: "content/agenda", label: "Agenda", icon: CalendarDays },
       { to: "content/speakers", label: "Speakers", icon: Mic2 },

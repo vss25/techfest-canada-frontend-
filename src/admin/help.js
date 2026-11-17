@@ -324,3 +324,105 @@ export const START_HERE = [
   { h: "Who can do what", p: "Management sees everything. Staff can't see sales, revenue, promo codes or staff settings, and pages marked with a lock are management only. Volunteers see People only, read only." },
   { h: "Getting help", p: "Every page has an ⓘ next to its title with how to use it. If something looks wrong, check Settings › Audit log for who changed what, then ask management." },
 ];
+
+/* ---------- Field help ----------
+   The ⓘ after a field's label (HelpButton.jsx HelpLabel): what to put in it and what it changes.
+   Keyed by page (nav.js `to`), then by the field's label exactly as shown. Only fields where a
+   new person could go wrong; a label with no entry shows no ⓘ. */
+const LOGO_FIELDS = {
+  Name: "The organisation's name as people know it, e.g. “Deloitte”. Used for the logo's alt text and search.",
+  Logo: "Upload the logo image. A PNG with a transparent background works best; check how it looks with Dark preview.",
+  "Website link": "Where the logo goes when someone clicks it: the organisation's own website, starting with https://.",
+  "Display order": "Lower numbers show first. Leave gaps (10, 20, 30) so you can slot logos in later without renumbering.",
+  "Logo size": "Makes this logo bigger or smaller than the others (100% is normal). Use it to balance wide and square logos.",
+  Active: "Off hides this logo everywhere (website and apps) without deleting it. Turn it back on any time.",
+  "Show on the website": "Off hides it from the website only; the apps follow their own switch.",
+  "Show in the app": "Off hides it from the apps' Organisations only; the website follows its own switch.",
+};
+const PARTNER_FIELDS = {
+  ...LOGO_FIELDS,
+  Category: "The group the logo sits in on the Partners page, e.g. Government Partners or Industry Associates.",
+  "Partners page row": "Featured Partners is the row for paid partners: they also appear first in the apps. Pick a pillar or sector row for everyone else.",
+  Description: "One or two sentences about the partner. Shown when someone hovers the logo on the website and on the apps' Sponsors cards.",
+};
+
+export const FIELD_HELP = {
+  "content/events": {
+    "Event name": "The name on the page and everywhere the event is listed, e.g. “Vancouver Briefing 2027”.",
+    City: "Changing the city changes the page's address (thetechfestival.com/<city>/<year>/<type>), so old links stop working. Only change it before the event is announced.",
+    Type: "Briefing is a one-day event; Main Event is the Toronto flagship. Changes the page's address too.",
+    Year: "The year of the event. Part of the page's address.",
+    "First day": "Set this once the date is confirmed. The page then shows the full date instead of the date line below.",
+    "Last day": "The same as the first day for a one-day event.",
+    "Date line while the day isn't fixed": "Shown instead of a date until First day is set, e.g. “February 2027 · One day”. Also decides where the event sits in date order.",
+    Venue: "The venue's name, e.g. “The Westin Harbour Castle”. Leave it empty until it's confirmed: the page then says the venue will be announced.",
+    "Venue address": "The street address, shown with the venue. Leave it empty until it's confirmed.",
+    "City photo": "The large photo at the top of the event page in the new website design. Landscape, at least 2000 pixels wide.",
+    "Photo credit": "Required for photos you don't own (Creative Commons). Shown on the photo, e.g. “Photo: Kyle Pearce, CC BY-SA 2.0”.",
+    Theme: "The event's focus in a few words, e.g. “Energy & Critical Infrastructure”. Shown on the event's card and page.",
+    "One line under the name": "One sentence under the event name that says why someone should come.",
+    Format: "The shape of the day, e.g. “One day · 8 sessions”.",
+    "Who's in the room": "Who attends, e.g. “150 senior delegates”.",
+    "About this event": "A longer description for the event page. A few short paragraphs.",
+    "Page version": "Automatic shows the coming-soon page until the event has its own sessions in Agenda, then the full page. Choose one to override it.",
+    "Coming-soon page: What we know so far": "Facts shown on the coming-soon page, as label and value pairs (e.g. Date / February 2027). Leave empty to use the date, venue, format and theme above.",
+    "Coming-soon page: Coming next": "The steps ahead (e.g. Speakers announced, Tickets on sale). Tick Done as each one happens.",
+    "Heading on the notify-me form": "The heading above the email sign-up on the coming-soon page.",
+    "Show the Toronto 2026 post-show report card": "Shows a card linking to the 2026 report, so visitors can see what past events were like.",
+  },
+  "content/agenda": {
+    Title: "The session's name as it appears on the agenda and in the app.",
+    Day: "Day 1 or Day 2 of the event. One-day events use Day 1.",
+    Starts: "Start time, local time at the venue.",
+    Ends: "End time. The agenda shows the length from Starts and Ends.",
+    "Session type label": "The small label on the session's card, e.g. “Fireside Chat”. Any wording.",
+    Format: "Decides the colour and badge on the agenda (keynote, panel, break…). Pick the closest one.",
+    "Stage / room": "Where it happens, e.g. “Harbour Ballroom”. Leave empty for the main stage.",
+    "Tech pillar": "The theme it belongs to, for the agenda's filters.",
+    Sector: "The industry it's about, for the agenda's filters.",
+    Description: "A short paragraph shown when someone opens the session.",
+    Featured: "Featured sessions get a star and stand out on the agenda.",
+    "Break / meal": "Turn on for breaks, lunches and receptions: they're styled differently and have no polls or Q&A.",
+    "Moderator name": "Who runs the session. Sessions with a moderator get live polls and Q&A in the app automatically (not keynotes or breaks).",
+    "Moderator organisation": "The moderator's company, shown next to their name.",
+  },
+  "content/speakers": {
+    "Profile photo": "Required. A clear head-and-shoulders photo, ideally square. After uploading you can set the framing.",
+    "Full name": "As the speaker wants it shown, e.g. “Dr. Jane Smith”.",
+    "Job title": "Their role, e.g. “Chief Technology Officer”.",
+    Company: "Their organisation. It's also added to the apps' Organisations.",
+    Bio: "Two or three sentences in the third person. Shown on their speaker page.",
+    "Display order": "Lower numbers show first on the Speakers page. Leave gaps (10, 20, 30) so you can slot speakers in later.",
+    "Speaker type": "Keynote, Panelist, Moderator or Speaker. Shown as a badge and used by the filters.",
+    "Tech pillar": "The theme they speak on, for the Speakers page filters.",
+    Sector: "Their industry, for the Speakers page filters.",
+    "Featured speaker": "Featured speakers are marked with a star and highlighted on the website.",
+    "LinkedIn URL": "Their LinkedIn profile, starting with https://www.linkedin.com/in/.",
+    "X / Twitter URL": "Their X profile link, if they want it shown.",
+    "GitHub URL": "Their GitHub profile link, if relevant.",
+    "Personal website URL": "Their own website, if they want it shown.",
+  },
+  "content/partners": PARTNER_FIELDS,
+  "content/sponsors": PARTNER_FIELDS,
+  "content/alumni-logos": LOGO_FIELDS,
+  "content/sponsor-marquee": LOGO_FIELDS,
+  "content/home-sponsors": LOGO_FIELDS,
+  "issued-passes": {
+    Pass: "The pass type decides what they get: days, meals, lounge and CxO Breakfasts. The email lists what's included.",
+    "Full name": "The person's name as it should appear on the pass and in the email.",
+    "Title (optional)": "Their job title, shown on the pass.",
+    "Name on the pass (optional)": "Changes the pass's printed name, e.g. “Media Pass”. Leave empty for the pass type's usual name.",
+  },
+  "exhibitor-passes": {
+    "Booth no.": "The booth number from the floor plan, e.g. 07. Printed in the exhibitor manual and on the booth sign.",
+    "Zone / location": "Where the booth is in the venue, so the exhibitor can find it on the day.",
+    "Passes allotted": "How many staff passes this exhibitor gets with their booth.",
+    "Full name": "The exhibitor contact's name, as it should appear on the pass.",
+  },
+};
+
+/** The explanation of a field on a page, or "". */
+export function fieldHelpFor(to, label) {
+  if (to == null || !label) return "";
+  return FIELD_HELP[to]?.[label] || "";
+}

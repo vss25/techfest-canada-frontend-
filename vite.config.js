@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { execSync } from 'node:child_process'
+import process from 'node:process'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
@@ -29,6 +30,11 @@ import { prerenderSite } from './src/seo/prerender.mjs'
 ========================================================= */
 
 const root = fileURLToPath(new URL('.', import.meta.url))
+
+/** The commit for script file names: Vercel's (VERCEL_GIT_COMMIT_SHA), else git's, else the time. */
+const FILE_BUILD = (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || (() => {
+  try { return execSync('git rev-parse --short HEAD', { cwd: fileURLToPath(new URL('.', import.meta.url)), stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() } catch { return Date.now().toString(36) }
+})()
 
 /** Short build id for the app's "appVersion" (≤ 20 chars). */
 function buildId() {
@@ -264,6 +270,14 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      /* Every script's name carries this build's commit (Nov 17 2026). Two Vercel builds produced a
+         main-<hash>.js with the same name but different contents; /assets is cached for a year
+         ("immutable"), so a browser that had the old one kept loading files that no longer existed
+         and the admin opened blank. With the commit in the name, a deploy never reuses a name. */
+      output: {
+        entryFileNames: `assets/[name]-[hash]-${FILE_BUILD}.js`,
+        chunkFileNames: `assets/[name]-[hash]-${FILE_BUILD}.js`,
+      },
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
         app: fileURLToPath(new URL('./app/index.html', import.meta.url)),

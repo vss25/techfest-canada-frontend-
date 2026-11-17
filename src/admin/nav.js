@@ -7,7 +7,9 @@ import { ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, 
 
 /* =========================================================
    The panel's structure (Nov 2026, the approved admin design,
-   boards 16–18): nine workspaces in a navy rail, each with its own
+   boards 16–18): nine workspaces in a navy rail (in the organiser's
+   order, Nov 17 2026: Home, Content, Marketing, Sales, Operations,
+   People, Awards, Event day, Settings), each with its own
    menu of pages in groups. Every page keeps its address (`to`,
    relative to /admin), so links and bookmarks still work.
      management: true  management only (Revenue, Staff accounts, Jury results)
@@ -113,6 +115,18 @@ export const WORKSPACES = [
       { to: "app/people", label: "App accounts", icon: Users },
     ] },
   ] },
+  // Catalyst Awards (Oct 20 2026): the nominations, and the jury who score them at thetechfestival.com/awards/jury-admin.
+  { id: "awards", label: "Awards", rail: RAIL.awards, job: "Catalyst Awards, nomination to winners.", groups: [
+    { title: "", items: [
+      { to: "awards", label: "Nominations", icon: Award, end: true },
+      { to: "awards/jury", label: "Jury", icon: Gavel },
+      { to: "awards/allocation", label: "Allocation", icon: Network },
+      { to: "awards/rubric", label: "Scoring rubric", icon: ListChecks },
+      { to: "awards/results", label: "Jury results", icon: Trophy, management: true },
+      // Oct 31 2026: what the website's "Results are out" and each winner's certificate show.
+      { to: "awards/winners", label: "Winners", icon: Medal },
+    ] },
+  ] },
   { id: "day", label: "Event day", rail: RAIL.day, job: "Headcounts before, check-in and help during.", groups: [
     { title: "Before", items: [
       // Event summary (Oct 23 2026): passes, RSVPs, meals and check-in for both days on one read-only page.
@@ -125,18 +139,6 @@ export const WORKSPACES = [
       { to: "app/sos", label: "SOS & help", icon: LifeBuoy },
       { to: "app/moderation", label: "App moderation", icon: ShieldAlert },
       { to: "app/broadcast", label: "Send an app update", icon: Megaphone },
-    ] },
-  ] },
-  // Catalyst Awards (Oct 20 2026): the nominations, and the jury who score them at thetechfestival.com/awards/jury-admin.
-  { id: "awards", label: "Awards", rail: RAIL.awards, job: "Catalyst Awards, nomination to winners.", groups: [
-    { title: "", items: [
-      { to: "awards", label: "Nominations", icon: Award, end: true },
-      { to: "awards/jury", label: "Jury", icon: Gavel },
-      { to: "awards/allocation", label: "Allocation", icon: Network },
-      { to: "awards/rubric", label: "Scoring rubric", icon: ListChecks },
-      { to: "awards/results", label: "Jury results", icon: Trophy, management: true },
-      // Oct 31 2026: what the website's "Results are out" and each winner's certificate show.
-      { to: "awards/winners", label: "Winners", icon: Medal },
     ] },
   ] },
   { id: "settings", label: "Settings", rail: RAIL.settings, bottom: true, job: "Access, form inboxes and the change log.", groups: [

@@ -1,13 +1,15 @@
 import { Fragment, useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { LogOut } from "lucide-react";
-import { titleFor } from "./nav";
+import { navItemFor, titleFor, workspaceFor } from "./nav";
 import { volunteerMayOpen } from "./access";
 import { PhoneTabs, WorkspaceMenu, WorkspaceRail } from "./WorkspaceNav";
 import { focusRing } from "./ui";
 import { initials } from "./format";
 import { useAdmin } from "./adminContext";
 import GlobalSearch from "./search/GlobalSearch";
+import { AdminEventProvider, EventSwitcher, PhoneEventChip } from "./EventSwitcher";
+import { AccountMenu, AlertsBell } from "./TopBarMenus";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
@@ -58,9 +60,13 @@ export default function AdminShell({ me, onSignOut, children }) {
   // Volunteers: every address but People is "Not available", so the bar says so too.
   const title = isVolunteer && !volunteerMayOpen(location.pathname) && location.pathname.replace(/\/+$/, "") !== "/admin" ? "Not available" : titleFor(location.pathname);
   useHighlightFromUrl(location, searchNonce);
+  const here = navItemFor(location.pathname);
+  const hub = workspaceFor(location.pathname);
+  const scopedHere = here ? here.group.scoped : /^\/admin\/ws\//.test(location.pathname) && (hub.scoped || hub.id === "content");
 
 
   return (
+    <AdminEventProvider enabled={!isVolunteer}>
     <div className="ttfc-admin">
       <a href="#admin-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-ttfc-purple focus:px-4 focus:py-2 focus:text-white">
         Skip to content
@@ -95,48 +101,24 @@ export default function AdminShell({ me, onSignOut, children }) {
               </button>
             )}
           </div>
+          {/* The chosen event, on the event pages (board 18) */}
+          {!isVolunteer && scopedHere && <div className="px-4 pb-3"><PhoneEventChip /></div>}
         </header>
 
-        {/* Desktop top bar */}
+        {/* Desktop top bar (board 17): event switcher, search, View site, alerts, you */}
         <header className="sticky top-0 z-30 hidden border-b border-[#E3E0EE] bg-white lg:block">
           <div className="flex h-16 items-center gap-3 px-6">
-            <div className="flex min-w-0 max-w-[380px] flex-1 items-center">
+            {!isVolunteer && <EventSwitcher />}
+            <div className="adm-desk-search flex min-w-0 flex-[0_1_380px] items-center">
               <GlobalSearch onNavigated={() => setSearchNonce((n) => n + 1)} />
             </div>
             <div className="ml-auto flex items-center gap-2.5">
               <a href="/" target="_blank" rel="noopener noreferrer"
-                className={cx("hidden h-9 items-center rounded-[9px] border border-[#E3E0EE] px-3 text-[13px] font-semibold text-[#151035] hover:bg-[#F6F5FA] md:inline-flex", focusRing)}>
+                className={cx("flex h-9 items-center rounded-[9px] border border-[#E3E0EE] px-3 text-[13px] font-semibold text-[#151035] hover:bg-[#F6F5FA]", focusRing)}>
                 View site
               </a>
-              {isVolunteer ? (
-                // Volunteers have no My account page (account settings are for staff): just who's signed in.
-                <div className="flex min-w-0 items-center gap-2" title={me?.email || undefined}>
-                  <span className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#151035] text-xs font-semibold text-white" aria-hidden="true">
-                    {initials(me?.name, me?.email)}
-                  </span>
-                  <span className="hidden truncate text-[13px] font-semibold text-[#151035] md:inline">Volunteer · look-up only</span>
-                </div>
-              ) : (
-              /* Your name opens My account (your level, change your password). */
-              <NavLink to="/admin/account" aria-label={`My account: ${me?.name || "Staff"}`} title={`My account${me?.email ? ` (${me.email})` : ""}`}
-                className={cx("flex min-w-0 items-center gap-2 rounded-[9px] hover:opacity-90", focusRing)}>
-                <span className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#151035] text-xs font-semibold text-white" aria-hidden="true">
-                  {initials(me?.name, me?.email)}
-                </span>
-                <span className="hidden min-w-0 leading-tight md:block">
-                  <span className="block truncate text-[13px] font-semibold text-[#151035]">{me?.name || "Staff"}</span>
-                  <span className="block truncate text-xs text-[#6B6688]">{isManagement ? "Management" : "Staff"}</span>
-                </span>
-              </NavLink>
-              )}
-              <button
-                type="button"
-                onClick={onSignOut}
-                className={cx("inline-flex h-9 items-center gap-2 rounded-[9px] px-2.5 text-[13px] font-semibold text-[#4A4566] transition hover:bg-[#F6F5FA] hover:text-[#151035]", focusRing)}
-              >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Sign out</span>
-              </button>
+              {!isVolunteer && <AlertsBell />}
+              <AccountMenu me={me} role={isVolunteer ? "Volunteer" : isManagement ? "Management" : "Staff"} onSignOut={onSignOut} volunteer={isVolunteer} />
             </div>
           </div>
         </header>
@@ -147,5 +129,6 @@ export default function AdminShell({ me, onSignOut, children }) {
       </div>
       <PhoneTabs onSignOut={onSignOut} />
     </div>
+    </AdminEventProvider>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "../ui";
 import { ImagePicker } from "./CmsParts";
 import { HelpLabel } from "../HelpButton";
+import { useAdminEvent } from "../eventContext";
 import useCmsStatus from "./useCmsStatus";
 import { eventPath, formatDateRange } from "../../lib/events";
 import { WorkflowBanner } from "./workflow";
@@ -280,8 +281,14 @@ export default function EventPages() {
   const readOnly = configured === false;
   const { data, error, loading, reload, setData } = useApi("/cms/event?drafts=1");
   // From the global search or a link: ?edit=<event id> opens that event.
-  const [selected, setSelected] = useState(() => new URLSearchParams(window.location.search).get("edit") || "");
-  const [creating, setCreating] = useState(false);
+  // ?edit=<id> (search, links) wins; otherwise the event chosen in the top bar. Picking one here chooses it there too.
+  const { current: chosenEvent, setCurrent: chooseEvent, refresh: refreshEvents } = useAdminEvent();
+  const [fromUrl] = useState(() => new URLSearchParams(window.location.search).get("edit") || "");
+  const [picked, setPicked] = useState("");
+  const selected = picked || fromUrl || chosenEvent?._id || "";
+  const setSelected = (id) => { setPicked(id); if (id) chooseEvent(id); };
+  // "+ New event" in the switcher opens the new-event form (?new=1).
+  const [creating, setCreating] = useState(() => new URLSearchParams(window.location.search).get("new") === "1");
   const events = useMemo(() => (data || []).filter((e) => e && e.name), [data]);
   const current = events.find((e) => e._id === selected) || null;
 
@@ -298,7 +305,7 @@ export default function EventPages() {
       {creating && (
         <NewEvent
           onCancel={() => setCreating(false)}
-          onCreated={(ev) => { setCreating(false); setData((d) => [...(d || []), ev]); setSelected(ev._id); }}
+          onCreated={(ev) => { setCreating(false); setData((d) => [...(d || []), ev]); setSelected(ev._id); refreshEvents(); }}
         />
       )}
       {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !events.length ? (

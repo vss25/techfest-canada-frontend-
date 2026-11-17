@@ -20,6 +20,7 @@ import {
 import { SESSIONS, DAYS, buildSpeakerIndex, matchSpeaker, formatTime12, getDuration } from "../../data/agenda";
 import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS, SESSION_TYPE_SUGGESTIONS } from "../../data/sessionFormats";
 import { useEditFromUrl } from "../search/deepLink";
+import { useAdminEvent } from "../eventContext";
 import { useAdminTheme } from "../theme";
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -510,7 +511,11 @@ export default function Agenda() {
   const speakers = useApi("/cms/speaker?drafts=1");
   const eventsApi = useApi("/cms/event?drafts=1");
   const eventList = useMemo(() => (eventsApi.data || []).filter((e) => e?.name), [eventsApi.data]);
-  const [eventId, setEventId] = useState("");
+  // The event chosen in the top bar (the approved design's switcher), unless this page picks "All events".
+  const { current: chosenEvent, setCurrent: chooseEvent } = useAdminEvent();
+  const [picked, setPicked] = useState(null);
+  const eventId = picked ?? chosenEvent?._id ?? "";
+  const setEventId = (id) => { if (id) { chooseEvent(id); setPicked(null); } else setPicked(""); };
   const appContent = useApi("/console/app-content");   // the global polls / Q&A switches (on if it can't be read)
   const [day, setDay] = useState(1);
   const [editing, setEditing] = useState(null);

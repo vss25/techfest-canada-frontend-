@@ -63,7 +63,8 @@ export function useAdminThemeRoot() {
     return () => window.removeEventListener("storage", on);
   }, []);
 
-  const theme = resolveTheme(choice, sysDark);
+  // The approved admin design (Nov 2026) has one light look: the saved choice is kept but no longer applied.
+  const theme = "light";
   useLayoutEffect(() => { document.documentElement.setAttribute(ATTR, theme); }, [theme]);
   useLayoutEffect(() => () => document.documentElement.removeAttribute(ATTR), []);
 

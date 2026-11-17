@@ -1,4 +1,4 @@
-import { NAV } from "./nav.js";
+import { NAV, WORKSPACES } from "./nav.js";
 import { maskName, maskText } from "./people/volunteerMask.js";
 
 /* =========================================================
@@ -45,6 +45,15 @@ export function navFor({ isManagement = false, isVolunteer = false } = {}) {
     if (items.length) out.push({ ...g, items, collapsible: isVolunteer ? false : g.collapsible });
   }
   return out;
+}
+
+/** The rail's workspaces for this account, each with only the pages it may open; empty ones are left out
+ *  (volunteers: People › People only; staff: everything but management's pages). */
+export function workspacesFor({ isManagement = false, isVolunteer = false } = {}) {
+  const may = (it) => !it.hidden && (isVolunteer ? it.volunteer === true : isManagement || !it.management);
+  return WORKSPACES
+    .map((w) => ({ ...w, groups: w.groups.map((g) => ({ ...g, items: g.items.filter(may) })).filter((g) => g.items.length) }))
+    .filter((w) => w.groups.length);
 }
 
 /**

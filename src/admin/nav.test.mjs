@@ -5,10 +5,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { NAV, navItemFor, titleFor } from "./nav.js";
+import { NAV, WORKSPACES, navItemFor, titleFor, workspaceFor } from "./nav.js";
 import {
   NOT_FOR_VOLUNTEERS, VOLUNTEER_ACCESS, VOLUNTEER_FORBIDDEN, VOLUNTEER_FORBIDDEN_TEXT, accountKind, isVolunteerAccount, navFor, searchGroupsFor,
-  volunteerMayOpen, volunteerRecents,
+  volunteerMayOpen, volunteerRecents, workspacesFor,
 } from "./access.js";
 
 const src = (rel) => fileURLToPath(new URL(`../${rel}`, import.meta.url));
@@ -64,10 +64,9 @@ test("staff and management keep their sidebar: management-only items for managem
     assert.ok(!staff.includes(to), `staff must not see ${to}`);
     assert.ok(mgmt.includes(to), `management sees ${to}`);
   }
-  // Hidden pages stay out of the sidebar for everyone.
-  assert.ok(!mgmt.includes("account") && !mgmt.includes("content/home-sponsors"));
-  // More still folds away for staff.
-  assert.equal(navFor({ isManagement: true }).find((g) => g.title === "More")?.collapsible, true);
+  // Hidden pages stay out of the menu for everyone; My account is in Settings (the approved design).
+  assert.ok(!mgmt.includes("content/home-sponsors"));
+  assert.ok(mgmt.includes("account") && staff.includes("account"));
 });
 
 test("volunteers: the sidebar is People only", () => {
@@ -127,4 +126,41 @@ test("the search for volunteers: People results only, masked, no pages, never a 
   assert.deepEqual(masked.map((it) => [it.title, it.subtitle]), [["No name", "Call (hidden) · Connect Pass"], ["No name", "Account, no pass"]]);
   // Staff see the server's results as they are.
   assert.equal(searchGroupsFor([{ key: "people", items: [{ id: "a-1", link: "/admin/people/a-1", title: "yara.leak@example.com" }] }])[0].items[0].title, "yara.leak@example.com");
+});
+
+// The approved admin design (Nov 2026): nine workspaces; every page that had a place in the old sidebar still has one,
+// at the same address.
+test("nine workspaces in the design's order, Settings at the bottom of the rail", () => {
+  assert.deepEqual(WORKSPACES.map((w) => w.label), ["Home", "Content", "Marketing", "Sales", "Operations", "People", "Event day", "Awards", "Settings"]);
+  assert.deepEqual(WORKSPACES.filter((w) => w.bottom).map((w) => w.id), ["settings"]);
+  for (const w of WORKSPACES) assert.ok(w.rail && w.job && w.groups.length, w.id);
+});
+
+test("every admin page is in exactly one workspace, and every route in Admin.jsx is reachable", () => {
+  const tos = WORKSPACES.flatMap((w) => w.groups.flatMap((g) => g.items.map((it) => it.to)));
+  assert.equal(new Set(tos).size, tos.length, "no page twice");
+  const routes = [...read("pages/Admin.jsx").matchAll(/<Route path="([^"]+)"/g)].map((m) => m[1])
+    .filter((p) => !p.includes(":") && p !== "*" && p !== "content" && p !== "kill-switch");
+  for (const r of routes) assert.ok(tos.includes(r), `route ${r} has no place in a workspace`);
+});
+
+test("the workspace of a page: the longest match, Home when nothing matches", () => {
+  assert.equal(workspaceFor("/admin").id, "home");
+  assert.equal(workspaceFor("/admin/content/changes").id, "home");
+  assert.equal(workspaceFor("/admin/content/agenda").id, "content");
+  assert.equal(workspaceFor("/admin/app/people/123").id, "people");
+  assert.equal(workspaceFor("/admin/app/activity").id, "content");
+  assert.equal(workspaceFor("/admin/awards/jury").id, "awards");
+  assert.equal(workspaceFor("/admin/inventory").id, "content");
+  assert.equal(workspaceFor("/admin/nowhere").id, "home");
+  assert.equal(navItemFor("/admin/content/agenda").group.title, "Content › Event website");
+});
+
+test("workspaces per account: volunteers People only; staff without management's pages", () => {
+  assert.deepEqual(workspacesFor({ isVolunteer: true }).map((w) => [w.id, w.groups.flatMap((g) => g.items.map((it) => it.to))]), [["people", ["people"]]]);
+  const staff = workspacesFor({ isManagement: false }).flatMap((w) => w.groups.flatMap((g) => g.items.map((it) => it.to)));
+  for (const to of ["analytics", "staff", "awards/results", "content/home-sponsors"]) assert.ok(!staff.includes(to), to);
+  const mgmt = workspacesFor({ isManagement: true }).flatMap((w) => w.groups.flatMap((g) => g.items.map((it) => it.to)));
+  for (const to of ["analytics", "staff", "awards/results"]) assert.ok(mgmt.includes(to), to);
+  assert.ok(!mgmt.includes("content/home-sponsors"));
 });

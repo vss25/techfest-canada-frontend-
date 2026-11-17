@@ -44,6 +44,31 @@ export function routeFor(pathname) {
 }
 
 export const monthYear = (d) => new Date(`${d}T12:00:00`).toLocaleDateString("en-CA", { month: "long", year: "numeric" });
+/** "February 3, 2027": an event's exact date once it's fixed (the card and "When" show this, not just the month). */
+export const fullDate = (d) => new Date(`${d}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+/* The countdown on an event page (Nov 2026: the board's "90 days 08 hours" was fixed sample text).
+   Counts to 9:00 AM local time on the first day, in the event city's time zone. */
+const CITY_TZ = { van: "America/Vancouver", cgy: "America/Edmonton" };
+function tzOffsetMinutes(tz, t) {
+  const o = {};
+  new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+    .formatToParts(new Date(t)).forEach((x) => { o[x.type] = x.value; });
+  return (Date.UTC(+o.year, +o.month - 1, +o.day, +o.hour, +o.minute) - t) / 60000;
+}
+/** { hasCountdown, cdDays, cdHours, cdMins } for a "YYYY-MM-DD" start date; hasCountdown false once it has started. */
+export function countdownTo(startDate, cityId, now = Date.now()) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(startDate || ""));
+  if (!m) return { hasCountdown: false };
+  const tz = CITY_TZ[cityId] || "America/Toronto";
+  const guess = Date.UTC(+m[1], +m[2] - 1, +m[3], 9, 0);
+  const ms = guess - tzOffsetMinutes(tz, guess) * 60000 - now;
+  if (!(ms > 0)) return { hasCountdown: false };
+  const mins = Math.floor(ms / 60000);
+  const pad = (n) => String(n).padStart(2, "0");
+  return { hasCountdown: true, cdDays: String(Math.floor(mins / 1440)), cdHours: pad(Math.floor((mins % 1440) / 60)), cdMins: pad(mins % 60) };
+}
+
 export const monthShort = (d) => new Date(`${d}T12:00:00`).toLocaleDateString("en-CA", { month: "short" });
 
 // Read what a visitor typed: every field in the block that holds the clicked button,

@@ -6,7 +6,7 @@ import useSeo from "../../hooks/useSeo";
 import { urlFor } from "../../utils/sanity";
 import { findEvent, useEvents } from "../../lib/events";
 import {
-  CITY_EVENT, EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, fieldsNear, monthShort, monthYear, pick, post, routeFor, sendForm, splitName,
+  CITY_EVENT, EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, countdownTo, fieldsNear, fullDate, monthShort, pick, post, routeFor, sendForm, splitName,
 } from "./liveShared";
 import { fetchTicketTypes, multiCheckout } from "../../lib/ticketsApi";
 
@@ -252,6 +252,9 @@ export default function ApprovedRoute({ fallback = null }) {
   const route = base && location.state && location.state.sec ? { ...base, sec: location.state.sec } : base;
   const { events } = useEvents();
   const [types, setTypes] = useState(null);
+  // The countdown moves on every minute.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(t); }, []);
 
   const byCity = useMemo(() => {
     const out = {};
@@ -272,9 +275,16 @@ export default function ApprovedRoute({ fallback = null }) {
       const out = { ...base };
       Object.keys(out).forEach((id) => {
         const ev = byCity[id];
+        // Venue and audience: the event's own fields, else the approved design's wording (never "[Venue]").
+        out[id] = { venue: "Venue announced with tickets", venueArea: `Downtown ${out[id].name}`, audience: "150 senior delegates", ...out[id] };
         if (!ev) return;
         const c = { ...out[id] };
-        if (ev.startDate) { c.date = monthYear(ev.startDate); c.month = monthShort(ev.startDate); }
+        if (ev.venueName) c.venue = ev.venueName;
+        if (ev.venueAddress) c.venueArea = ev.venueAddress;
+        if (ev.audience) c.audience = ev.audience;
+        // A fixed date shows in full, with a countdown to it; without one, the month (and no countdown).
+        if (ev.startDate) { c.date = fullDate(ev.startDate); c.month = monthShort(ev.startDate); }
+        Object.assign(c, countdownTo(ev.startDate, id, now));
         if (ev.theme) c.theme = ev.theme;
         if (ev.formatLine) c.format = ev.formatLine;
         if (ev.tagline) c.blurb = ev.tagline; // "One line under the name" (the older long descriptions belong to the previous design)
@@ -286,7 +296,7 @@ export default function ApprovedRoute({ fallback = null }) {
       return out;
     },
     types: types ? types.map((t) => ({ id: t.id, name: t.name, note: t.description, cents: t.priceCents })) : undefined,
-  }), [byCity, types]);
+  }), [byCity, types, now]);
 
   const ev = route && route.city ? byCity[route.city] : null;
   useSeo(

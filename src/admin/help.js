@@ -177,6 +177,11 @@ export const HELP = {
     steps: ["Type a code or press Generate, pick the discount, the passes it's for, a usage limit and an end date.", "Press Create promo code.", "Switch a code off to pause it."],
     tips: ["Staff: a code over 50% off, free, or without a usage limit is saved switched off until a manager approves it.", "Used = paid orders with the code. Revenue and discount given are for management."],
   },
+  "content/videos": {
+    what: "TTFC's YouTube and Vimeo videos on the website. Only the link is saved, so they cost nothing to host.",
+    steps: ["Upload the video to TTFC's YouTube channel or Vimeo.", "Press Add a video and paste its link: the title and picture fill in.", "Pick where it shows: home page, Media page, event pages, speakers.", "Save, then send it to staging and publish from Website changes."],
+    tips: ["On the website the player loads only when someone presses play, so pages stay fast.", "Switch “Shown on the website” off to hide a video without deleting it."],
+  },
 
   /* ---------- Sales ---------- */
   contracts: {

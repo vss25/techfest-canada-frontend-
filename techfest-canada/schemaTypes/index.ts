@@ -7,5 +7,6 @@ import partner from './partner'
 import session from './session'
 import event from './event'
 import faq from './faq'
+import video from './video'
 
-export const schemaTypes = [siteSettings, sponsors, sponsorMarquee, homeSponsor, speaker, partner, session, event, faq]
+export const schemaTypes = [siteSettings, sponsors, sponsorMarquee, homeSponsor, speaker, partner, session, event, faq, video]

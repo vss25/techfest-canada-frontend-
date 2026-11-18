@@ -1,4 +1,5 @@
 import React from "react";
+import VideoFacade from "./VideoFacade";
 import ApprovedPhone from "./ApprovedPhone";
 import { multiCheckout } from "../../lib/ticketsApi";
 import { EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, fieldsNear, pick, post, sendForm, splitName } from "./liveShared";
@@ -118,6 +119,7 @@ export default class LivePhone extends ApprovedPhone {
       if (past.speakers.length) v.starSpeakers = past.speakers;
       if (past.partners.length) v.sixLogos = past.partners.map((p) => ({ n: p.name }));
       if (past.photos) v.galleryFour = past.photos.slice(0, 4);
+      if (past.recap) v.recapPlayer = <VideoFacade video={past.recap} radius={12} />;
     }
     const at = (e) => (e && e.currentTarget) || null;
     v.goSpeakers = (e) => { if (e && e.preventDefault) e.preventDefault(); this.props.navigate("/speakers"); };

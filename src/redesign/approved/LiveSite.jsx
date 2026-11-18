@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import ApprovedSite from "./ApprovedSite";
+import VideoFacade from "./VideoFacade";
 import LivePhone from "./LivePhone";
 import useSeo from "../../hooks/useSeo";
 import { client, urlFor } from "../../utils/sanity";
@@ -156,6 +157,10 @@ class LiveSite extends ApprovedSite {
       if (past.speakers.length) v.starSpeakers = past.speakers.map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));
       if (past.partners.length) v.pastPartners = past.partners;
       v.photos = PAST_PHOTOS;
+      if (past.recap) {
+        v.recapPlayer = <VideoFacade video={past.recap} radius={16} />;
+        v.recapCaption = past.recap.title;
+      }
     }
     const n = (v.sessions || []).length;
     const maxSlide = Math.max(0, n - 3);
@@ -304,7 +309,9 @@ function usePast2026(on) {
     Promise.all([
       client.fetch(`*[_type == "speaker" && !(_id in path("drafts.**")) && defined(image.asset) && ${scoped}] | order(featured desc, order asc)[0...4]{ name, title, company, speakerType, image }`, { ev }),
       client.fetch(`*[_type == "partner" && active != false && showOnWebsite != false && defined(logo.asset) && ${scoped}] | order(order asc){ _id, name, logo, matrixGroup, logoScale }`, { ev }),
-    ]).then(([spk, ptn]) => {
+      // The recap box: a YouTube / Vimeo video from Admin › Content › Videos (2026's first, else one marked for the home page).
+      client.fetch(`*[_type == "video" && active != false && defined(videoId) && ($ev in events[]._ref || showOnHome == true)] | order(($ev in events[]._ref) desc, coalesce(order, 9999) asc, recordedOn desc)[0]{ title, provider, videoId, thumbnailUrl, url }`, { ev }).catch(() => null),
+    ]).then(([spk, ptn, recap]) => {
       if (!live) return;
       const kinds = { keynote: "Keynote", panelist: "Panel", moderator: "Moderator", fireside: "Fireside chat" };
       const speakers = (spk || []).map((x) => ({
@@ -319,7 +326,7 @@ function usePast2026(on) {
           style={{ display: "block", maxHeight: 48, maxWidth: "75%", objectFit: "contain", margin: "0 auto" }} />,
         tier: matrixGroupOf(p) === "featured" ? "Featured partner" : "Partner",
       }));
-      setPast({ speakers, partners, photos: PAST_PHOTOS });
+      setPast({ speakers, partners, photos: PAST_PHOTOS, recap: recap || null });
     }).catch(() => { if (live) setPast(null); });
     return () => { live = false; };
   }, [on, past]);

@@ -163,6 +163,16 @@ export const HELP = {
   },
 
   /* ---------- Sales ---------- */
+  contracts: {
+    what: "Sponsor and exhibitor contracts for the chosen event, built from the offerings catalogue.",
+    steps: ["Press New contract, enter the partner and add offerings or packages.", "Change a price only when a discount was agreed; a big discount waits for a manager's Approve prices.", "Download the PDF, send it, then Mark as sent.", "When it comes back signed, Mark signed and upload the signed copy.", "Tick off each task (LinkedIn post 1 of 2…) with its link once it's done."],
+    tips: ["Drafts save automatically 30 seconds after a change.", "Items with a limit (booths) show how many are left to sell.", "Cancelling a contract is for management."],
+  },
+  offerings: {
+    what: "The catalogue contracts are built from: offerings, packages and the contract settings (TTFC's details, signatories, numbering, terms and conditions).",
+    steps: ["Add an offering: its category, price, unit and what a signed contract tracks.", "Bundle offerings into a package at one price.", "Set TTFC's details, who signs, numbering and the clauses in Contract settings."],
+    tips: ["Only the super admin changes the catalogue and settings; everyone can use them on contracts.", "Retire an offering instead of deleting it once it's on a contract."],
+  },
   "waitlist-2027": {
     what: "People who joined the 2027 waitlist, what they're interested in, and the wording and 2027 journey on that page.",
     steps: ["Filter by interest (delegate, exhibitor, sponsorship, delegation) to find the right people.", "Open someone to see their details and follow up.", "Use the Wording and 2027 journey tabs to change the page."],

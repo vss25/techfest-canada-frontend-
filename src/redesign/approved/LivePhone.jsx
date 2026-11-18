@@ -109,6 +109,9 @@ export default class LivePhone extends ApprovedPhone {
   renderVals() {
     const v = super.renderVals();
     const s = this.state;
+    // The agenda from Admin › Agenda (LiveSite's ApprovedRoute passes it for both designs).
+    const rows = this.props.data && this.props.data.sessionsData;
+    if (rows) v.sessions = rows;
     const at = (e) => (e && e.currentTarget) || null;
     v.goSpeakers = (e) => { if (e && e.preventDefault) e.preventDefault(); this.props.navigate("/speakers"); };
     v.soon = (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ menu: false }); this.props.navigate(PAGE_PATH.contact); };

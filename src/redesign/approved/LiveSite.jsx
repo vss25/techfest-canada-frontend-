@@ -4,7 +4,8 @@ import ApprovedSite from "./ApprovedSite";
 import LivePhone from "./LivePhone";
 import useSeo from "../../hooks/useSeo";
 import { urlFor } from "../../utils/sanity";
-import { findEvent, useEvents } from "../../lib/events";
+import { findEvent, useEventContent, useEvents } from "../../lib/events";
+import { AGENDA_SOON, toDesignSessions } from "../../data/approvedAgendas";
 import {
   CITY_EVENT, EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, countdownTo, fieldsNear, fullDate, monthShort, pick, post, routeFor, sendForm, splitName,
 } from "./liveShared";
@@ -16,6 +17,7 @@ import { fetchTicketTypes, multiCheckout } from "../../lib/ticketsApi";
    - each screen of the design has its own address (/, the six 2027 event pages,
      /speakers, /partners, /awards, /highlights/2026, /exhibit, /sponsor, /contact, …);
    - the six events' dates, themes and photos come from the event records in the admin panel;
+   - each event's agenda comes from Admin › Agenda ("announced soon" until it has sessions);
    - ticket types and prices come from the backend, and "Pay" places a real order (Stripe);
    - every form posts to the backend (forms inbox, brochure, waitlist), sign-in uses the
      real account API. Anything the board shows as sample content stays as approved. */
@@ -132,6 +134,15 @@ class LiveSite extends ApprovedSite {
     const v = super.renderVals();
     const s = this.state;
     const at = (e) => (e && e.currentTarget) || null;
+    const n = (v.sessions || []).length;
+    const maxSlide = Math.max(0, n - 3);
+    const slide = Math.min(s.slide || 0, maxSlide);
+    v.trackX = -slide * 413;
+    v.slideLabel = n ? `${slide + 1}–${Math.min(n, slide + 3)} of ${n}` : "";
+    v.prevOpacity = slide === 0 ? 0.4 : 1;
+    v.nextOpacity = slide >= maxSlide ? 0.4 : 1;
+    v.prevSlide = () => this.setState({ slide: Math.max(0, slide - 1) });
+    v.nextSlide = () => this.setState({ slide: Math.min(maxSlide, slide + 1) });
     v.fakeLoad = (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ auth: "login", authStep2: false }); };
     v.moreToast = (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ more: false }); this.props.navigate(PAGE_PATH.contact); };
     v.sendFiles = (e) => {
@@ -270,6 +281,15 @@ export default function ApprovedRoute({ fallback = null }) {
     return () => { live = false; };
   }, [evKey]);
 
+  // The agenda: the sessions of the event this page is about (Vancouver on the home page).
+  const ev = route && route.city ? byCity[route.city] : null;
+  const content = useEventContent(ev || van);
+  const sessionsData = useMemo(() => {
+    if (content.loading) return undefined;   // the design's own rows until the first answer (no flash of "soon")
+    const rows = toDesignSessions(content.sessions);
+    return rows.length ? rows : AGENDA_SOON;
+  }, [content]);
+
   const data = useMemo(() => ({
     CITIES: (base) => {
       const out = { ...base };
@@ -296,9 +316,9 @@ export default function ApprovedRoute({ fallback = null }) {
       return out;
     },
     types: types ? types.map((t) => ({ id: t.id, name: t.name, note: t.description, cents: t.priceCents })) : undefined,
-  }), [byCity, types, now]);
+    sessionsData,
+  }), [byCity, types, now, sessionsData]);
 
-  const ev = route && route.city ? byCity[route.city] : null;
   useSeo(
     route && route.screen === "event" && ev ? `${ev.name} · The Tech Festival Canada` : undefined,
     route && route.screen === "event" && ev ? ev.theme || undefined : undefined,

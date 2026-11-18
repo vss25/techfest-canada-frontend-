@@ -20,8 +20,8 @@ const KINDS = [
 ];
 
 const btn = (primary) => ({
-  height: 46, padding: "0 18px", borderRadius: 8, cursor: "pointer",
-  fontFamily: "inherit", fontSize: 15, fontWeight: 600, whiteSpace: "nowrap",
+  height: 36, padding: "0 14px", borderRadius: 8, cursor: "pointer",
+  fontFamily: "inherit", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
   border: primary ? "0" : `1px solid #D4D4D8`,
   background: primary ? NAVY : "#FFFFFF",
   color: primary ? "#FFFFFF" : NAVY,
@@ -62,41 +62,40 @@ export default function CookieConsent() {
       className="ttfc-cookie"
       style={{
         position: "fixed", left: 16, right: 16, bottom: "calc(16px + var(--ttfc-staging-bar, 0px))", zIndex: 99999,
-        maxWidth: 560, margin: "0 auto", boxSizing: "border-box",
+        maxWidth: 420, margin: "0 auto", boxSizing: "border-box",
         background: "#FFFFFF", color: NAVY, border: `1px solid ${LINE}`, borderRadius: 12,
-        boxShadow: "0 12px 40px rgba(21,16,53,0.16)", padding: 20,
+        boxShadow: "0 10px 30px rgba(21,16,53,0.14)", padding: 14,
         fontFamily: "Poppins, system-ui, sans-serif",
-        display: "flex", flexDirection: "column", gap: 14,
+        display: "flex", flexDirection: "column", gap: 10,
       }}
     >
       <style>{`
         .ttfc-cookie button:focus-visible, .ttfc-cookie a:focus-visible { outline: 2px solid #D6308C; outline-offset: 2px; }
         .ttfc-cookie .ttfc-cookie-row { display: flex; gap: 8px; flex-wrap: wrap; }
-        @media (max-width: 520px) { .ttfc-cookie .ttfc-cookie-row > button { flex: 1 1 100%; } }
         @media (prefers-reduced-motion: no-preference) { .ttfc-cookie { animation: ttfc-cookie-in .25s ease-out; } }
         @keyframes ttfc-cookie-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
       `}</style>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
-          <strong style={{ fontSize: 17, lineHeight: "24px" }}>Cookies on The Tech Festival Canada</strong>
-          <p id="cookie-text" style={{ margin: 0, fontSize: 14, lineHeight: "22px", color: MUTED }}>
-            We use essential cookies to run the site, keep you signed in and sell tickets. With your permission we also
-            use analytics and advertising cookies. <a href="/privacy" style={{ color: NAVY, fontWeight: 600, textUnderlineOffset: 3 }}>Privacy policy</a>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+          <strong style={{ fontSize: 14, lineHeight: "20px" }}>Cookies</strong>
+          <p id="cookie-text" style={{ margin: 0, fontSize: 12.5, lineHeight: "18px", color: MUTED }}>
+            Essential cookies run the site. With your OK we also use analytics and advertising cookies.{" "}
+            <a href="/privacy" style={{ color: NAVY, fontWeight: 600, textUnderlineOffset: 3 }}>Privacy</a>
           </p>
         </div>
         <button type="button" onClick={() => accept("essential")} aria-label="Close: essential cookies only"
           style={{ border: 0, background: "transparent", color: MUTED, cursor: "pointer", padding: 4, lineHeight: 0, borderRadius: 6 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
         </button>
       </div>
 
       {details && (
         <ul style={{ listStyle: "none", margin: 0, padding: 0, border: `1px solid ${LINE}`, borderRadius: 10 }}>
           {KINDS.map((k, i) => (
-            <li key={k.label} style={{ display: "flex", gap: 12, alignItems: "baseline", padding: "10px 12px", borderTop: i ? `1px solid ${LINE}` : 0 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, minWidth: 92 }}>{k.label}</span>
-              <span style={{ flex: 1, fontSize: 13, lineHeight: "20px", color: MUTED }}>{k.desc}</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: k.always ? "#15803D" : MUTED, whiteSpace: "nowrap" }}>{k.always ? "Always on" : "Accept all"}</span>
+            <li key={k.label} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "7px 10px", borderTop: i ? `1px solid ${LINE}` : 0 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, minWidth: 78 }}>{k.label}</span>
+              <span style={{ flex: 1, fontSize: 12, lineHeight: "17px", color: MUTED }}>{k.desc}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: k.always ? "#15803D" : MUTED, whiteSpace: "nowrap" }}>{k.always ? "Always on" : "Accept all"}</span>
             </li>
           ))}
         </ul>
@@ -107,7 +106,7 @@ export default function CookieConsent() {
         <button type="button" onClick={() => accept("essential")} style={{ ...btn(false), flex: "1 1 auto" }}>Essential only</button>
         <button type="button" onClick={() => setDetails((v) => !v)} aria-expanded={details}
           style={{ ...btn(false), border: 0, padding: "0 6px", textDecoration: "underline", textUnderlineOffset: 4 }}>
-          {details ? "Hide details" : "What we use"}
+          {details ? "Hide" : "Details"}
         </button>
       </div>
     </section>

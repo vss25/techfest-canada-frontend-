@@ -12,6 +12,17 @@ import {
 } from "./liveShared";
 import { fetchTicketTypes, multiCheckout } from "../../lib/ticketsApi";
 
+// The Toronto 2026 post-show report (public/, the same file the backend emails: services/brochureDownloads.js "report2026").
+const REPORT_PDF = "/TTFC-2026-Post-Show-Report-2027-Prospectus.pdf";
+function downloadReport() {
+  const a = document.createElement("a");
+  a.href = REPORT_PDF;
+  a.download = "TTFC_2026_Post_Show_Report_2027_Prospectus.pdf";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 /* The approved website design (board 12), live (redesign step 2, Nov 2026).
    ApprovedSite is generated 1:1 from the approved board and must not be edited by hand.
    This file is the only place it meets the real site:
@@ -172,8 +183,11 @@ class LiveSite extends ApprovedSite {
         // The post-show report, not the 2026 sponsorship brochure (services/brochureDownloads.js "report2026").
         await post("/brochure/submit", { brochure: "report2026", firstName, lastName, email: f.email, company: pick(f, "company"), page: window.location.pathname, _hp: "" });
         this.setState({ dlSent: true });
+        downloadReport();
       });
     };
+    // "Download now" in the sent state (the generated design only closed the dialog).
+    v.downloadReport = (e) => { if (e && e.preventDefault) e.preventDefault(); downloadReport(); this.setState({ dl: null }); };
     v.sendEnquiry = (e) => {
       const f = fieldsNear(at(e));
       this.run("Sending your enquiry", () => this.form("partnership", f, { interests: (s.interests || ["Sponsorship"]).join(", "), event: cityPath(s.city || "van") }),

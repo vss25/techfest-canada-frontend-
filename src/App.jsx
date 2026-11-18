@@ -1,18 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import Home from "./pages/Home";
-import HomeFeatured from "./pages/HomeFeatured";
-/* Phase 4 (IA build-out) pages. NOTE: "/" is the COMPOSED homepage (src/pages/HomeFeatured.jsx):
-   the seasonal featured-event home on top of the full existing homepage — every section of
-   src/pages/Home.jsx still renders, in its original order, under the featured block, and
-   Home.jsx itself is untouched in behaviour (it gained two optional slots: header / before).
-   src/pages/FeaturedHome.jsx stays the standalone featured-only page (unrouted); its
-   CityList is reused by the composition. Nothing live is removed or displaced. */
-const CityHub = lazy(() => import("./pages/CityHub"));
-const EventLanding = lazy(() => import("./pages/EventLanding"));
-const Highlights = lazy(() => import("./pages/Highlights"));
-const NationalPartners = lazy(() => import("./pages/NationalPartners"));
-const AwardsYear = lazy(() => import("./pages/AwardsYear"));
 /* Every other page is its own chunk, fetched when it opens (Oct 31 2026): the script every visit starts with went
    from 941 kB to 414 kB. The <Suspense> around <Routes> covers them; moving between pages keeps the current one on
    screen until the next has loaded (React Router navigates in a transition). AboutUs stays: the homepage shows it. */
@@ -137,7 +125,7 @@ function App() {
       <RouteErrorBoundary>
       <Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}>
       <Routes>
-        <Route path="/" element={<HomeFeatured />} />
+        <Route path="/" element={<Home />} />
         <Route path="/programme" element={<AgendaGate><Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Programme /></Suspense></AgendaGate>} />
         <Route path="/speakers" element={<Speakers />} />
         <Route path="/speakers/:slug" element={<SpeakerProfile />} />
@@ -202,30 +190,6 @@ function App() {
         <Route path="/rate" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Rate /></Suspense>} />
         <Route path="/survey" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Survey /></Suspense>} />
         <Route path={FACT_SHEET_PATH} caseSensitive element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><FactSheet /></Suspense>} />
-        {/* ===== Phase 4: city + event route layer (city before year, no country segment) =====
-            The flat 2026 routes above stay live: they ARE the 2026 edition's pages. The new
-            layer is additive — /:city hubs and /:city/:year/(briefing|main-event) event pages
-            with agenda / speakers / tickets underneath the event, never under the city. */}
-        <Route path="/toronto2027" element={<Navigate to="/toronto/2027/main-event" replace />} />
-        <Route path="/toronto-briefing" element={<Navigate to="/toronto/2027/briefing" replace />} />
-        <Route path="/highlights" element={<Highlights />} />
-        <Route path="/highlights/:year" element={<Highlights />} />
-        <Route path="/partners" element={<NationalPartners />} />
-        <Route path="/partners/:year" element={<NationalPartners />} />
-        <Route path="/awards/:year" element={<AwardsYear />} />
-        <Route path="/:city" element={<CityHub />} />
-        <Route path="/:city/:year/briefing" element={<EventLanding section="overview" type="briefing" />} />
-        <Route path="/:city/:year/main-event" element={<EventLanding section="overview" type="main-event" />} />
-        <Route path="/:city/:year/briefing/agenda" element={<EventLanding section="agenda" type="briefing" />} />
-        <Route path="/:city/:year/main-event/agenda" element={<EventLanding section="agenda" type="main-event" />} />
-        <Route path="/:city/:year/briefing/speakers" element={<EventLanding section="speakers" type="briefing" />} />
-        <Route path="/:city/:year/main-event/speakers" element={<EventLanding section="speakers" type="main-event" />} />
-        <Route path="/:city/:year/briefing/speakers/:speakerSlug" element={<EventLanding section="speaker" type="briefing" />} />
-        <Route path="/:city/:year/main-event/speakers/:speakerSlug" element={<EventLanding section="speaker" type="main-event" />} />
-        <Route path="/:city/:year/briefing/tickets" element={<EventLanding section="tickets" type="briefing" />} />
-        <Route path="/:city/:year/main-event/tickets" element={<EventLanding section="tickets" type="main-event" />} />
-        {/* Event types are spelled out (not :eventType) so these never catch the admin panel's three-part
-            addresses: /admin/content/speakers used to rank above /admin/* and show "Page not found". */}
         {/* Any other address: "Page not found", noindex (src/pages/NotFound.jsx). */}
         <Route path="*" element={<NotFound />} />
       </Routes>

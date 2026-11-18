@@ -87,7 +87,7 @@ function NewEvent({ onCreated, onCancel }) {
           <button type="button" onClick={onCancel} className="ml-auto text-ttfc-muted hover:text-ttfc-text" aria-label="Close"><X className="h-4 w-4" /></button>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="City" required><Input value={f.city} onChange={set("city")} placeholder="Halifax" required /></Field>
+          <Field label="City" required><Input value={f.city} onChange={set("city")} placeholder="e.g. Halifax" required /></Field>
           <Field label="Type">
             <Select value={f.type} onChange={set("type")}>
               <option value="briefing">Briefing (one day)</option>
@@ -228,12 +228,12 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
             onUploaded={({ assetId, url, preview }) => setForm((f) => ({ ...f, citySkyline: assetId, citySkylineUrl: url || preview }))}
           />
           <div className="grid content-start gap-4">
-            <Field label="Photo credit" hint="Shown on the photo. Required for Creative Commons photos."><Input value={form.photoCredit} onChange={set("photoCredit")} placeholder="Photo: Kyle Pearce, CC BY-SA 2.0" disabled={readOnly} /></Field>
-            <Field label="Theme"><Input value={form.theme} onChange={set("theme")} placeholder="Energy & Critical Infrastructure" disabled={readOnly} /></Field>
+            <Field label="Photo credit" hint="Shown on the photo. Required for Creative Commons photos."><Input value={form.photoCredit} onChange={set("photoCredit")} placeholder="e.g. Photo: Kyle Pearce, CC BY-SA 2.0" disabled={readOnly} /></Field>
+            <Field label="Theme"><Input value={form.theme} onChange={set("theme")} placeholder="e.g. Energy & Critical Infrastructure" disabled={readOnly} /></Field>
             <Field label="One line under the name"><Input value={form.tagline} onChange={set("tagline")} disabled={readOnly} /></Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Format"><Input value={form.formatLine} onChange={set("formatLine")} placeholder="One day · 8 sessions" disabled={readOnly} /></Field>
-              <Field label="Who's in the room"><Input value={form.audience} onChange={set("audience")} placeholder="150 senior delegates" disabled={readOnly} /></Field>
+              <Field label="Format"><Input value={form.formatLine} onChange={set("formatLine")} placeholder="e.g. One day · 8 sessions" disabled={readOnly} /></Field>
+              <Field label="Who's in the room"><Input value={form.audience} onChange={set("audience")} placeholder="e.g. 150 senior delegates" disabled={readOnly} /></Field>
             </div>
           </div>
         </div>

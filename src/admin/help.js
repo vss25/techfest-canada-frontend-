@@ -59,8 +59,13 @@ export const HELP = {
     steps: ["Add or open a partner and give it a short description (it shows as the logo's tooltip and on the apps' Sponsors cards).", "Choose where it shows with the website and app switches.", "Save, then send to staging and publish from Home › Website changes."],
     tips: ["These are the same records as on Partners: editing one here edits it there too.", FLOW],
   },
+  "content/tickets": {
+    what: "The tickets the chosen event sells on the website: name, price, how many and when they're on sale.",
+    steps: ["Choose the event in the top bar.", "A Briefing shows the default Briefing tickets: edit them for every Briefing, or Customise for this event to give it its own.", "Click a ticket to change it, or Add ticket. Management only.", "When it's time to sell, turn on Pricing announced in Operations › Event settings."],
+    tips: [NOW("Ticket changes"), "The Toronto Main Event always has its own tickets.", "Use the default tickets puts a customised Briefing back on the defaults, unless someone has already ordered its own."],
+  },
   inventory: {
-    what: "Ticket types, prices and how many are left.",
+    what: "TTFC 2026's passes and booths: prices and how many are left.",
     steps: ["Find the ticket type.", "Change its price or stock and save."],
     tips: [NOW("Prices and stock"), "Check the numbers twice before saving while tickets are on sale."],
   },

@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import ApprovedSite from "./ApprovedSite";
 import LivePhone from "./LivePhone";
 import useSeo from "../../hooks/useSeo";
-import { urlFor } from "../../utils/sanity";
+import { client, urlFor } from "../../utils/sanity";
+import { matrixGroupOf } from "../../data/partnerMatrix";
 import { findEvent, useEventContent, useEvents } from "../../lib/events";
 import { AGENDA_SOON, toDesignSessions } from "../../data/approvedAgendas";
 import {
@@ -18,6 +19,7 @@ import { fetchTicketTypes, multiCheckout } from "../../lib/ticketsApi";
      /speakers, /partners, /awards, /highlights/2026, /exhibit, /sponsor, /contact, …);
    - the six events' dates, themes and photos come from the event records in the admin panel;
    - each event's agenda comes from Admin › Agenda ("announced soon" until it has sessions);
+   - the Partners page's logos come from Admin › Partners & sponsors, in their rows;
    - ticket types and prices come from the backend, and "Pay" places a real order (Stripe);
    - every form posts to the backend (forms inbox, brochure, waitlist), sign-in uses the
      real account API. Anything the board shows as sample content stays as approved. */
@@ -134,6 +136,8 @@ class LiveSite extends ApprovedSite {
     const v = super.renderVals();
     const s = this.state;
     const at = (e) => (e && e.currentTarget) || null;
+    // The Partners page's count: the partner records shown (the design's own wording until they load).
+    if (this.props.ptCount) v.ptCountText = `${this.props.ptCount} partners and supporters · 2026`;
     const n = (v.sessions || []).length;
     const maxSlide = Math.max(0, n - 3);
     const slide = Math.min(s.slide || 0, maxSlide);
@@ -290,6 +294,32 @@ export default function ApprovedRoute({ fallback = null }) {
     return rows.length ? rows : AGENDA_SOON;
   }, [content]);
 
+  // Partners page: the partner records (logo, row) from the admin panel, instead of the design's sample names.
+  const [partners, setPartners] = useState(null);
+  const onPartners = !!(route && route.screen === "partners");
+  useEffect(() => {
+    if (!onPartners || partners) return undefined;
+    let live = true;
+    client.fetch(`*[_type == "partner" && active != false && showOnWebsite != false]{ _id, name, logo, matrixGroup, logoScale } | order(order asc)`)
+      .then((list) => { if (live) setPartners(list || []); })
+      .catch(() => { if (live) setPartners([]); });
+    return () => { live = false; };
+  }, [onPartners, partners]);
+  const partnerRows = useMemo(() => {
+    if (!partners || !partners.length) return null;
+    const rows = {};
+    partners.forEach((p) => {
+      const k = matrixGroupOf(p);
+      const scale = Math.min(2.5, Math.max(0.3, (Number(p.logoScale) || 100) / 100));
+      const tile = p.logo && p.logo.asset
+        ? <img src={urlFor(p.logo).height(160).fit("max").auto("format").url()} alt={p.name} title={p.name} loading="lazy"
+            style={{ display: "block", maxHeight: `${Math.round(55 * scale)}%`, maxWidth: `${Math.round(75 * scale)}%`, objectFit: "contain", margin: "0 auto" }} />
+        : p.name;
+      (rows[k] = rows[k] || []).push(tile);
+    });
+    return rows;
+  }, [partners]);
+
   const data = useMemo(() => ({
     CITIES: (base) => {
       const out = { ...base };
@@ -317,7 +347,20 @@ export default function ApprovedRoute({ fallback = null }) {
     },
     types: types ? types.map((t) => ({ id: t.id, name: t.name, note: t.description, cents: t.priceCents })) : undefined,
     sessionsData,
-  }), [byCity, types, now, sessionsData]);
+    PT: partnerRows ? (base) => {
+      const out = {};
+      Object.keys(base).forEach((k) => { out[k] = partnerRows[k] || []; });
+      Object.keys(partnerRows).forEach((k) => { if (!out[k]) out[k] = partnerRows[k]; });
+      return out;
+    } : undefined,
+    // Rows with partners only; the admin panel's Energy & Utilities row goes before Ecosystem.
+    PTG: partnerRows ? (base) => {
+      const list = base.filter(([k]) => k !== "ecosystem");
+      if (partnerRows.energy) list.push(["energy", "Energy & Utilities", "Sector"]);
+      list.push(base.find(([k]) => k === "ecosystem"));
+      return list.filter((g) => g && (partnerRows[g[0]] || []).length);
+    } : undefined,
+  }), [byCity, types, now, sessionsData, partnerRows]);
 
   useSeo(
     route && route.screen === "event" && ev ? `${ev.name} · The Tech Festival Canada` : undefined,
@@ -332,6 +375,7 @@ export default function ApprovedRoute({ fallback = null }) {
       routeKey={location.pathname + "|" + location.key}
       navigate={navigate}
       data={data}
+      ptCount={partners && partners.length ? partners.length : 0}
       eventKey={evKey}
       loaderMs={0}
     />

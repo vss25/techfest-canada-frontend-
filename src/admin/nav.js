@@ -3,6 +3,7 @@ import { MapPinned,
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
+import { Boxes, FileSignature } from "lucide-react";
 import { CircleHelp, ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
@@ -86,7 +87,12 @@ export const WORKSPACES = [
       { to: "app/unsubscribes", label: "Unsubscribed", icon: MailX },
     ] },
   ] },
-  { id: "sales", scoped: true, label: "Sales", rail: RAIL.sales, job: "Selling sponsorship and exhibiting: enquiries, exhibitors and revenue. Packages and prices are written in Content.", groups: [
+  { id: "sales", scoped: true, label: "Sales", rail: RAIL.sales, job: "Selling sponsorship and exhibiting: contracts, enquiries, exhibitors and revenue.", groups: [
+    // Nov 18 2026: contracts built from the offerings catalogue (only the super admin edits the catalogue).
+    { title: "Contracts", items: [
+      { to: "contracts", label: "Contracts", icon: FileSignature },
+      { to: "offerings", label: "Offerings", icon: Boxes },
+    ] },
     { title: "Enquiries", items: [
       // "Stay updated" (Oct 23 2026): who joined the TTFC 2027 waitlist, and the page's wording.
       { to: "waitlist-2027", label: "Waitlist", icon: ListPlus },

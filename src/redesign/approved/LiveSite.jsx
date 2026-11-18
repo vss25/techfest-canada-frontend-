@@ -313,7 +313,7 @@ export default function ApprovedRoute({ fallback = null }) {
       const scale = Math.min(2.5, Math.max(0.3, (Number(p.logoScale) || 100) / 100));
       const tile = p.logo && p.logo.asset
         ? <img src={urlFor(p.logo).height(160).fit("max").auto("format").url()} alt={p.name} title={p.name} loading="lazy"
-            style={{ display: "block", maxHeight: `${Math.round(55 * scale)}%`, maxWidth: `${Math.round(75 * scale)}%`, objectFit: "contain", margin: "0 auto" }} />
+            style={{ display: "block", maxHeight: Math.round((k === "featured" ? 64 : 40) * scale), maxWidth: `min(${Math.round(80 * scale)}%, 100%)`, width: "auto", height: "auto", objectFit: "contain", margin: "0 auto" }} />
         : p.name;
       (rows[k] = rows[k] || []).push(tile);
     });

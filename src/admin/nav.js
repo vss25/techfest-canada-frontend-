@@ -50,8 +50,9 @@ export const WORKSPACES = [
       { to: "content/events", label: "Event page", icon: MapPinned },
       { to: "content/agenda", label: "Agenda", icon: CalendarDays },
       { to: "content/speakers", label: "Speakers", icon: Mic2 },
-      { to: "content/partners", label: "Partners", icon: Handshake },
-      { to: "content/sponsors", label: "Featured Partners", icon: Gem },
+      // The approved design: one page, two tabs (Partners · Featured partners).
+      { to: "content/partners", label: "Partners & sponsors", icon: Handshake },
+      { to: "content/sponsors", label: "Featured partners", icon: Gem, hidden: true, parent: "content/partners" },
       { to: "inventory", label: "Tickets & prices", icon: Package },
     ] },
     { title: "Site-wide", items: [

@@ -88,7 +88,9 @@ export function WorkspaceMenu({ onNavigate }) {
   const all = workspacesFor({ isManagement, isVolunteer });
   const id = workspaceFor(pathname).id;
   const ws = all.find((w) => w.id === id) || all[0];
-  const active = navItemFor(pathname)?.item.to;
+  // A hidden page that is a tab of another (Featured partners) lights up that page.
+  const hit = navItemFor(pathname)?.item;
+  const active = hit?.parent || hit?.to;
   const badges = useBadges();
   if (!ws) return null;
   return (

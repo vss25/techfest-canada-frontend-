@@ -254,11 +254,11 @@ function AdminPanel() {
             <Route path="content/speakers" element={<Speakers />} />
             <Route path="content/partners" element={
               <LogoCollection key="partner" type="partner" title="Partners" singular="partner" withCategory
-                description="Partner logos on the Partners page and in the apps' Organisations, grouped by category. Partners in the Featured Partners row are the paid partners (also on the Featured Partners page). Each partner has its own website and app switches; Active off hides it everywhere without deleting it." />
+                description="Logos on this event's pages, the Partners page and in the apps' Organisations. Each partner has its own website and app switches." />
             } />
             <Route path="content/sponsors" element={
               <LogoCollection key="sponsors" type="partner" title="Featured Partners" singular="Featured Partner" withCategory sponsorsOnly
-                description="The paid partners: the Featured Partners row on the Partners page, and the Featured Partners section shown first in the apps' Organisations. These are the same records as on the Partners page, so the website and the apps always read one copy. Add a description and choose where each one shows." />
+                description="The paid partners: the Featured Partners row on the Partners page and first in the apps' Organisations. The same records as the Partners tab." />
             } />
             <Route path="content/organisations" element={<AttendingOrgs />} />
             <Route path="content/alumni-logos" element={

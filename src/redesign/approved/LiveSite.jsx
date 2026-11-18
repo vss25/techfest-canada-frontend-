@@ -304,7 +304,7 @@ function usePast2026(on) {
           style={{ display: "block", maxHeight: 48, maxWidth: "75%", objectFit: "contain", margin: "0 auto" }} />,
         tier: matrixGroupOf(p) === "featured" ? "Featured partner" : "Partner",
       }));
-      setPast({ speakers, partners });
+      setPast({ speakers, partners, photos: PAST_PHOTOS });
     }).catch(() => { if (live) setPast(null); });
     return () => { live = false; };
   }, [on, past]);

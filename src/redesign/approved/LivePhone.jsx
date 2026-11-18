@@ -117,6 +117,7 @@ export default class LivePhone extends ApprovedPhone {
     if (past) {
       if (past.speakers.length) v.starSpeakers = past.speakers;
       if (past.partners.length) v.sixLogos = past.partners.map((p) => ({ n: p.name }));
+      if (past.photos) v.galleryFour = past.photos.slice(0, 4);
     }
     const at = (e) => (e && e.currentTarget) || null;
     v.goSpeakers = (e) => { if (e && e.preventDefault) e.preventDefault(); this.props.navigate("/speakers"); };

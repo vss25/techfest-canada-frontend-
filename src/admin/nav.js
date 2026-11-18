@@ -3,7 +3,7 @@ import { MapPinned,
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
-import { Boxes, CalendarRange, FileSignature, Percent } from "lucide-react";
+import { Boxes, CalendarRange, Clapperboard, FileSignature, Percent } from "lucide-react";
 import { CircleHelp, ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
@@ -62,6 +62,8 @@ export const WORKSPACES = [
       { to: "content/sponsor-marquee", label: "Community & speakers' companies", icon: GalleryHorizontal },
       { to: "content/home-sponsors", label: "Home sponsors", icon: House, hidden: true },
       { to: "content/organisations", label: "Attending organisations", icon: Building2 },
+      // Nov 18 2026: YouTube / Vimeo videos on the website (only the link is stored).
+      { to: "content/videos", label: "Videos", icon: Clapperboard },
     ] },
     { title: "App", items: [
       { to: "app/text", label: "App text & switches", icon: ToggleRight },

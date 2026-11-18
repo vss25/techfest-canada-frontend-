@@ -3,8 +3,7 @@ import { MapPinned,
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
-import { Boxes, FileSignature } from "lucide-react";
-import { Clapperboard } from "lucide-react";
+import { Boxes, CalendarRange, Clapperboard, FileSignature, Percent } from "lucide-react";
 import { CircleHelp, ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
@@ -77,7 +76,16 @@ export const WORKSPACES = [
       { to: "app/pwa", label: "Web app installs", icon: Download },
     ] },
   ] },
-  { id: "marketing", label: "Marketing", rail: RAIL.mkt, job: "Reaching people: leads coming in and the emails we send.", groups: [
+  { id: "marketing", label: "Marketing", rail: RAIL.mkt, job: "Reaching people: social posts, leads coming in and the emails we send.", groups: [
+    // Nov 18 2026: the approved design's Social group. Claude writes the X and Instagram versions.
+    { title: "Social", items: [
+      { to: "calendar", label: "Social media calendar", icon: CalendarRange },
+      { to: "social", label: "Social posts", icon: Megaphone },
+    ] },
+    // Nov 18 2026: staff add codes; big discounts wait for a manager.
+    { title: "Offers", items: [
+      { to: "promo-codes", label: "Promo codes", icon: Percent },
+    ] },
     { title: "Leads", items: [
       { to: "form-submissions", label: "Form submissions", icon: Inbox },
       { to: "brochure-downloads", label: "Downloads", icon: FileDown },

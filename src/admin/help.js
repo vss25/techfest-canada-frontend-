@@ -162,6 +162,21 @@ export const HELP = {
     tips: ["They still get passes, tickets, sign-in codes and receipts.", "Resubscribing someone is for management."],
   },
 
+  social: {
+    what: "Social posts for LinkedIn, Instagram and X: write once, let Claude write each channel's version, preview, schedule, approve, post.",
+    steps: ["Press New post. Write the main (LinkedIn) post, or use ✦ Write about… to draft it from a speaker, session, partner or event page.", "Press ✦ Write X and Instagram versions. Edit them, or Suggest another; the arrows flip between versions.", "Add a photo: it's cropped for each channel. Pick a date and time.", "Submit for approval. A manager approves it.", "When it's time, copy each channel's text, download its photo, post it, then Mark posted with the link."],
+    tips: ["Drafts save automatically 30 seconds after a change.", "A post for a contract's promised post ticks that task when it's marked posted.", "Settings: hashtags, voice, words to avoid and the monthly writing limit (management)."],
+  },
+  calendar: {
+    what: "The month's social posts and contract promises, coloured by whether they went out on time.",
+    steps: ["Click a post to open it.", "Click a day's + to plan a post for it.", "Click a dashed ◇ item to plan a post a partner bought."],
+    tips: ["Missed = its time passed two hours ago and a channel wasn't marked posted."],
+  },
+  "promo-codes": {
+    what: "Discount codes buyers enter at checkout.",
+    steps: ["Type a code or press Generate, pick the discount, the passes it's for, a usage limit and an end date.", "Press Create promo code.", "Switch a code off to pause it."],
+    tips: ["Staff: a code over 50% off, free, or without a usage limit is saved switched off until a manager approves it.", "Used = paid orders with the code. Revenue and discount given are for management."],
+  },
   "content/videos": {
     what: "TTFC's YouTube and Vimeo videos on the website. Only the link is saved, so they cost nothing to host.",
     steps: ["Upload the video to TTFC's YouTube channel or Vimeo.", "Press Add a video and paste its link: the title and picture fill in.", "Pick where it shows: home page, Media page, event pages, speakers.", "Save, then send it to staging and publish from Website changes."],

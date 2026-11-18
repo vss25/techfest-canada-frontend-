@@ -19,6 +19,7 @@ import {
   AUTO_HINTS, BADGE_LABELS, FEATURE_LABELS, LIVE_FEATURES, LIVE_MODES, MODE_LABELS, autoReason, globalSwitches, liveMode,
 } from "./sessionLive";
 import { SESSIONS, DAYS, buildSpeakerIndex, matchSpeaker, formatTime12, getDuration } from "../../data/agenda";
+import { approvedAgendaFor } from "../../data/approvedAgendas";
 import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS, SESSION_TYPE_SUGGESTIONS } from "../../data/sessionFormats";
 import { useEditFromUrl } from "../search/deepLink";
 import { useAdminEvent } from "../eventContext";
@@ -347,7 +348,7 @@ function SessionRow({ s, speakerIndex, selected, onEdit }) {
           {s.title}
         </span>
       </td>
-      <td>{FORMAT_MAP[s.format]?.label || s.type || "—"}</td>
+      <td>{s.type || FORMAT_MAP[s.format]?.label || "—"}</td>
       <td className="whitespace-nowrap text-[#4A4566]" title={people.map((p) => p.name).join(", ") || undefined}>
         {s.isBreak ? "—" : people.length ? `${named} of ${people.length} named` : "None yet"}
       </td>
@@ -524,6 +525,30 @@ export default function Agenda() {
   const missing = SESSIONS.filter((s) => !imported.has(s.id)).length;
   const counts = { 1: list.filter((s) => Number(s.day) === 1).length, 2: list.filter((s) => Number(s.day) === 2).length };
 
+  // The approved design's agenda for this event (Vancouver): copied in as saved changes, never straight to the website.
+  const chosenRecord = eventList.find((e) => e._id === eventId);
+  const approved = eventId ? approvedAgendaFor(chosenRecord || chosenEvent) : null;
+  const ownTitles = new Set(allSessions.filter((x) => refIds(x).includes(eventId)).map((x) => x.title));
+  const approvedMissing = approved ? approved.filter((a) => !ownTitles.has(a.title)) : [];
+  const [copying, setCopying] = useState(false);
+  const copyApproved = async () => {
+    setCopying(true);
+    const made = [];
+    try {
+      for (const a of approvedMissing) {
+        const body = toBody({ ...blank(1), ...a, events: [eventId] }, null);
+        body.sessionId = uniqueSessionId(1, [...allSessions, ...made]);
+        const saved = await api.post("/cms/session?draft=1", body);
+        made.push({ ...body, ...(saved || {}) });
+      }
+      toast.success(`${plural(made.length, "session")} copied from the approved design. They're saved here, not on the website: send them to staging from Website changes.`);
+    } catch (err) { toast.error(err); } finally {
+      if (made.length) setData((xs) => [...(xs || []), ...made]);
+      setDay(1);
+      setCopying(false);
+    }
+  };
+
   const importAgenda = async () => {
     setImporting(true);
     try {
@@ -584,6 +609,12 @@ export default function Agenda() {
         description="Every session on the website's Agenda page and in the app: titles, times, formats, speakers and moderators."
         actions={(
           <div className="flex flex-wrap gap-2">
+            {approvedMissing.length > 0 && (
+              <Button icon={Download} loading={copying} disabled={readOnly} onClick={copyApproved}
+                title="Adds the sessions written into the approved website design as saved changes for this event. Nothing goes to the website until you send it to staging and publish.">
+                Copy the approved design's agenda ({approvedMissing.length})
+              </Button>
+            )}
             {missing > 0 && !eventId && (
               <Button icon={Download} loading={importing} disabled={readOnly} onClick={importAgenda}
                 title="Adds the built-in Toronto 2026 sessions that aren't in the CMS yet. Never changes sessions you've edited.">

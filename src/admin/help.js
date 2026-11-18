@@ -162,6 +162,12 @@ export const HELP = {
     tips: ["They still get passes, tickets, sign-in codes and receipts.", "Resubscribing someone is for management."],
   },
 
+  "promo-codes": {
+    what: "Discount codes buyers enter at checkout.",
+    steps: ["Type a code or press Generate, pick the discount, the passes it's for, a usage limit and an end date.", "Press Create promo code.", "Switch a code off to pause it."],
+    tips: ["Staff: a code over 50% off, free, or without a usage limit is saved switched off until a manager approves it.", "Used = paid orders with the code. Revenue and discount given are for management."],
+  },
+
   /* ---------- Sales ---------- */
   contracts: {
     what: "Sponsor and exhibitor contracts for the chosen event, built from the offerings catalogue.",

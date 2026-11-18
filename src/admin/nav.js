@@ -3,7 +3,7 @@ import { MapPinned,
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
-import { Boxes, FileSignature } from "lucide-react";
+import { Boxes, FileSignature, Percent } from "lucide-react";
 import { CircleHelp, ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
@@ -75,6 +75,10 @@ export const WORKSPACES = [
     ] },
   ] },
   { id: "marketing", label: "Marketing", rail: RAIL.mkt, job: "Reaching people: leads coming in and the emails we send.", groups: [
+    // Nov 18 2026: staff add codes; big discounts wait for a manager.
+    { title: "Offers", items: [
+      { to: "promo-codes", label: "Promo codes", icon: Percent },
+    ] },
     { title: "Leads", items: [
       { to: "form-submissions", label: "Form submissions", icon: Inbox },
       { to: "brochure-downloads", label: "Downloads", icon: FileDown },

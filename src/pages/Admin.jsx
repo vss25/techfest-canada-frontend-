@@ -53,6 +53,7 @@ import Waitlist2027 from "../admin/leads/Waitlist2027";
 import Contracts from "../admin/sales/Contracts";
 import ContractEditor from "../admin/sales/ContractEditor";
 import Offerings from "../admin/sales/Offerings";
+import PromoCodesPage from "../admin/marketing/PromoCodesPage";
 import IndiaPavilion from "../admin/leads/IndiaPavilion";
 import FormSubmissions from "../admin/leads/FormSubmissions";
 import Rsvps from "../admin/leads/Rsvps";
@@ -245,6 +246,7 @@ function AdminPanel() {
             <Route path="contracts" element={<Contracts />} />
             <Route path="contracts/:id" element={<ContractEditor />} />
             <Route path="offerings" element={<Offerings />} />
+            <Route path="promo-codes" element={<PromoCodesPage />} />
             <Route path="issued-passes" element={<IssuedPasses />} />
             <Route path="exhibitor-passes" element={<ExhibitorPasses />} />
             <Route path="inventory" element={<Inventory />} />

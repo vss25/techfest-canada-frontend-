@@ -246,8 +246,9 @@ function EditPromo({ promo, passes, onClose, onSaved }) {
   );
 }
 
-function PromoCodes({ passes }) {
+export function PromoCodes({ passes, heading = true }) {
   const toast = useToast();
+  const { isManagement } = useAdmin();
   const { data, error, loading, reload, setData } = useApi("/admin/promos");
   const [code, setCode] = useState("");
   const [discount, setDiscount] = useState("10");
@@ -277,7 +278,8 @@ function PromoCodes({ passes }) {
       const expiresAt = torontoLocalToIso(ends);
       const out = await api.post("/admin/promos", { code: c, discount: d, tiers, maxUses: limitValue(maxUses), expiresAt });
       const lim = limitValue(maxUses);
-      toast.success(`Created ${out.code || c}: ${out.discount ?? d}% off ${tiers.length ? tiers.map(label).join(", ") : "all passes"}${lim ? `, ${num(lim)} uses` : ""}${expiresAt ? `, ends ${endsLabel(expiresAt)}` : ""}`);
+      if (out.waiting) toast.success(out.notice || `Saved ${out.code}. A manager approves it before it works.`);
+      else toast.success(`Created ${out.code || c}: ${out.discount ?? d}% off ${tiers.length ? tiers.map(label).join(", ") : "all passes"}${lim ? `, ${num(lim)} uses` : ""}${expiresAt ? `, ends ${endsLabel(expiresAt)}` : ""}`);
       setCode(""); setDiscount("10"); setTiers([]); setMaxUses(""); setEnds(""); reload();
     } catch (e2) { setErr(e2.message); toast.error(e2); } finally { setBusy(false); }
   };
@@ -289,9 +291,9 @@ function PromoCodes({ passes }) {
   };
 
   return (
-    <section aria-labelledby="promos-h" className="mt-10">
-      <h2 id="promos-h" className="mb-1 flex items-center gap-2 text-base font-semibold"><Tag className="h-4 w-4 text-ttfc-pink" aria-hidden="true" /> Promo codes</h2>
-      <p className="mb-4 text-sm text-ttfc-muted">Discount codes buyers enter at checkout. Used = paid orders with the code.</p>
+    <section aria-labelledby="promos-h" className={heading ? "mt-10" : ""}>
+      <h2 id="promos-h" className={heading ? "mb-1 flex items-center gap-2 text-base font-semibold" : "sr-only"}><Tag className="h-4 w-4 text-ttfc-pink" aria-hidden="true" /> Promo codes</h2>
+      {heading && <p className="mb-4 text-sm text-ttfc-muted">Discount codes buyers enter at checkout. Used = paid orders with the code.</p>}
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <Card as="form" onSubmit={create} className="space-y-4" noValidate>
           <h3 className="text-sm font-semibold">New code</h3>
@@ -302,6 +304,7 @@ function PromoCodes({ passes }) {
             </div>
           )}</Field>
           <PromoTermsFields passes={passes} discount={discount} setDiscount={setDiscount} tiers={tiers} setTiers={setTiers} maxUses={maxUses} setMaxUses={setMaxUses} ends={ends} setEnds={setEnds} />
+          {!isManagement && <p className="text-xs text-ttfc-muted">More than 50% off, free tickets, or no usage limit: the code is saved switched off until a manager approves it.</p>}
           {err && <p role="alert" className="text-xs text-red-300">{err}</p>}
           <Button type="submit" variant="primary" icon={Plus} loading={busy} className="w-full">Create promo code</Button>
         </Card>
@@ -338,6 +341,7 @@ function PromoCodes({ passes }) {
                             {p.code}
                             {full && <Badge tone="warn" className="font-sans tracking-normal">Full</Badge>}
                             {p.expired && <Badge tone="warn" className="font-sans tracking-normal">Expired</Badge>}
+                            {p.waiting && <Badge tone="warn" className="font-sans tracking-normal">Waits for a manager</Badge>}
                           </p>
                           <div className="mt-1 flex flex-wrap items-center gap-1.5">
                             <Badge tone="pink">{p.discount}% off</Badge>
@@ -347,7 +351,7 @@ function PromoCodes({ passes }) {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-ttfc-muted">{p.active ? "On" : "Off"}</span>
-                          <Switch checked={!!p.active} onChange={() => toggle(p)} ariaLabel={`${p.code} active`} />
+                          <Switch checked={!!p.active} disabled={p.waiting && !isManagement} onChange={() => toggle(p)} ariaLabel={`${p.code} active`} />
                         </div>
                       </div>
                       <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -356,17 +360,25 @@ function PromoCodes({ passes }) {
                           <PromoUsed p={p} />
                           {!paid && <dd className="text-[10px] text-amber-200/80">(Stripe unavailable)</dd>}
                         </div>
-                        <div className="px-1 py-2"><dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Revenue</dt><dd className="text-sm font-semibold tabular-nums">{paid ? cad(p.revenue) : "—"}</dd></div>
-                        <div className="px-1 py-2"><dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Discount given</dt><dd className="text-sm font-semibold tabular-nums">{paid ? cad(p.discountGiven) : "—"}</dd></div>
+                        {isManagement && <div className="px-1 py-2"><dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Revenue</dt><dd className="text-sm font-semibold tabular-nums">{paid ? cad(p.revenue) : "—"}</dd></div>}
+                        {isManagement && <div className="px-1 py-2"><dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Discount given</dt><dd className="text-sm font-semibold tabular-nums">{paid ? cad(p.discountGiven) : "—"}</dd></div>}
                         <div className="px-1 py-2"><dt className="text-[11px] font-semibold uppercase tracking-wider text-ttfc-dim">Last used</dt><dd className="text-sm">{p.lastUsedAt ? day(p.lastUsedAt) : "Never"}</dd></div>
                       </dl>
+                      {p.waiting && (
+                        <p className="mt-3 rounded-lg bg-[#FFF7E6] px-3 py-2 text-xs text-[#7A4B00]">
+                          {p.approval?.requestedBy || "Staff"} made it: {(p.approval?.reasons || []).join(" and ") || "needs a manager"}. It's switched off until a manager approves it.
+                        </p>
+                      )}
                       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ttfc-line pt-3">
                         <Link to={`/admin/attendees?promo=${encodeURIComponent(p.code)}`} className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-ttfc-pink hover:bg-ttfc-contrast/5 ${focusRing}`}>
                           <Ticket className="h-4 w-4" aria-hidden="true" /> See tickets
                         </Link>
                         <span className="flex-1" />
                         <Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditing(p)}>Edit</Button>
-                        <Button size="sm" variant="dangerOutline" icon={Trash2} onClick={() => setDeleting(p)}>Delete</Button>
+                        {p.canApprove && <Button size="sm" variant="success" onClick={async () => {
+                          try { await api.post(`/admin/promos/${p._id}/approve`, {}); toast.success(`${p.code} approved and switched on`); reload(); } catch (e2) { toast.error(e2); }
+                        }}>Approve</Button>}
+                        {isManagement && <Button size="sm" variant="dangerOutline" icon={Trash2} onClick={() => setDeleting(p)}>Delete</Button>}
                       </div>
                     </li>
                   );
@@ -516,7 +528,8 @@ export default function Inventory() {
             )}
           </section>
 
-          {isManagement && <PromoCodes passes={passes.map((p) => p.tier)} />}
+          <Banner className="mt-10" icon={Tag} title="Promo codes are in Marketing › Promo codes"
+            action={<Link to="/admin/promo-codes" className="text-sm font-semibold text-ttfc-pink hover:underline">Open promo codes</Link>} />
         </>
       )}
 

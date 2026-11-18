@@ -114,14 +114,14 @@ export default function Organizers() {
   var heroY = useTransform(scrollData.scrollYProgress, [0, 1], ["0%", "30%"]);
   var heroOpacity = useTransform(scrollData.scrollYProgress, [0, 0.7], [1, 0]);
 
-  var bg = dark ? "#06020f" : "#ffffff";
+  var bg = dark ? "#151035" : "#ffffff";
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.62)" : "rgba(13,5,32,0.62)";
   var textDim = dark ? "rgba(255,255,255,0.30)" : "rgba(13,5,32,0.30)";
-  var accent = dark ? "#b99eff" : "#7a3fd1";
+  var accent = dark ? "#F06AB0" : "#D6308C";
   var orange = dark ? "#f5a623" : "#d98a14";
-  var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.10)";
-  var cardBg = dark ? "rgba(255,255,255,0.03)" : "rgba(122,63,209,0.025)";
+  var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(214,48,140,0.10)";
+  var cardBg = dark ? "rgba(255,255,255,0.03)" : "rgba(214,48,140,0.025)";
 
   var brandGradient = "linear-gradient(135deg, " + accent + ", " + orange + ")";
 
@@ -183,8 +183,8 @@ export default function Organizers() {
         /* ─── AURORA ─── */
         :root {
           --org-aurora-white: #ffffff;
-          --org-aurora-black: #06020f;
-          --org-aurora-purple: #7a3fd1;
+          --org-aurora-black: #151035;
+          --org-aurora-purple: #D6308C;
           --org-aurora-violet: #9b57e8;
           --org-aurora-lilac: #c4a0f5;
           --org-aurora-orange: #f5a623;
@@ -328,17 +328,17 @@ export default function Organizers() {
             : "linear-gradient(180deg, #0d0520 0%, rgba(13,5,32,0.55) 100%)",
           ["--org-silver-filter"]: dark
             ? "drop-shadow(0px 8px 18px rgba(185,158,255,0.15)) drop-shadow(0px 2px 4px rgba(0,0,0,0.4))"
-            : "drop-shadow(0px 8px 18px rgba(122,63,209,0.12)) drop-shadow(0px 2px 4px rgba(122,63,209,0.06))",
+            : "drop-shadow(0px 8px 18px rgba(214,48,140,0.12)) drop-shadow(0px 2px 4px rgba(214,48,140,0.06))",
           ["--org-grid-line"]: dark ? "rgba(255,255,255,0.05)" : "rgba(13,5,32,0.05)",
-          ["--org-divider-color"]: dark ? "rgba(185,158,255,0.35)" : "rgba(122,63,209,0.35)",
+          ["--org-divider-color"]: dark ? "rgba(185,158,255,0.35)" : "rgba(214,48,140,0.35)",
           ["--org-card-bg"]: cardBg,
           ["--org-card-border"]: borderCol,
-          ["--org-sheen"]: dark ? "rgba(185,158,255,0.10)" : "rgba(122,63,209,0.08)",
-          ["--org-pill-bg"]: dark ? "rgba(255,255,255,0.05)" : "rgba(122,63,209,0.05)",
+          ["--org-sheen"]: dark ? "rgba(185,158,255,0.10)" : "rgba(214,48,140,0.08)",
+          ["--org-pill-bg"]: dark ? "rgba(255,255,255,0.05)" : "rgba(214,48,140,0.05)",
           ["--org-pill-text"]: dark ? "rgba(255,255,255,0.85)" : "rgba(13,5,32,0.78)",
-          ["--org-pill-border"]: dark ? "rgba(155,135,245,0.25)" : "rgba(122,63,209,0.20)",
-          ["--org-pill-hover-bg"]: dark ? "rgba(155,135,245,0.12)" : "rgba(122,63,209,0.10)",
-          ["--org-pill-hover-border"]: dark ? "rgba(155,135,245,0.5)" : "rgba(122,63,209,0.4)",
+          ["--org-pill-border"]: dark ? "rgba(240,106,176,0.25)" : "rgba(214,48,140,0.20)",
+          ["--org-pill-hover-bg"]: dark ? "rgba(240,106,176,0.12)" : "rgba(214,48,140,0.10)",
+          ["--org-pill-hover-border"]: dark ? "rgba(240,106,176,0.5)" : "rgba(214,48,140,0.4)",
         }}
       >
 
@@ -354,8 +354,8 @@ export default function Organizers() {
             padding: "clamp(120px, 16vw, 160px) 5% clamp(60px, 10vw, 120px)",
             overflow: "hidden",
             background: dark
-              ? "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.14) 0%, transparent 70%)"
-              : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.07) 0%, transparent 70%)",
+              ? "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(214,48,140,0.14) 0%, transparent 70%)"
+              : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(214,48,140,0.07) 0%, transparent 70%)",
           }}
         >
           <div className="org-grid-backdrop" />
@@ -367,7 +367,7 @@ export default function Organizers() {
           <div style={{
             position: "absolute", inset: 0, pointerEvents: "none",
             background: dark
-              ? "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 30%, #06020f 100%)"
+              ? "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 30%, #151035 100%)"
               : "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 30%, #ffffff 100%)",
           }} />
 
@@ -784,12 +784,12 @@ export default function Organizers() {
                 padding: "clamp(40px, 6vw, 64px)",
                 borderRadius: 24,
                 background: dark
-                  ? "linear-gradient(135deg, rgba(122,63,209,0.12), rgba(245,166,35,0.06))"
-                  : "linear-gradient(135deg, rgba(122,63,209,0.07), rgba(245,166,35,0.04))",
+                  ? "linear-gradient(135deg, rgba(214,48,140,0.12), rgba(245,166,35,0.06))"
+                  : "linear-gradient(135deg, rgba(214,48,140,0.07), rgba(245,166,35,0.04))",
                 border: "1px solid " + borderCol,
                 boxShadow: dark
                   ? "0 30px 80px -20px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.05)"
-                  : "0 30px 80px -20px rgba(122,63,209,0.18), inset 0 1px 1px rgba(255,255,255,0.8)",
+                  : "0 30px 80px -20px rgba(214,48,140,0.18), inset 0 1px 1px rgba(255,255,255,0.8)",
               }}
             >
               <div
@@ -850,7 +850,7 @@ export default function Organizers() {
                     letterSpacing: "1.5px",
                     textTransform: "uppercase",
                     textDecoration: "none",
-                    boxShadow: "0 12px 28px rgba(122,63,209,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
+                    boxShadow: "0 12px 28px rgba(214,48,140,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
                   }}
                 >
                   Email Us

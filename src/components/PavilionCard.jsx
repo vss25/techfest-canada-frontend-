@@ -9,7 +9,7 @@ export default function PavilionCard({ isDark, textMain, textMuted, border, card
   return (
     <section style={{
       padding: "clamp(3rem, 6vw, 5rem) 5%",
-      background: isDark ? "rgba(122,63,209,0.03)" : "rgba(122,63,209,0.02)",
+      background: isDark ? "rgba(214,48,140,0.03)" : "rgba(214,48,140,0.02)",
       borderTop: "1px solid " + border,
       borderBottom: "1px solid " + border,
     }}>
@@ -45,9 +45,9 @@ export default function PavilionCard({ isDark, textMain, textMuted, border, card
         }
         .pavilion-cta:hover { transform: translateY(-1px); }
         .pavilion-cta-primary {
-          background: linear-gradient(135deg, #7a3fd1, #f5a623);
+          background: #D6308C;
           color: #fff;
-          box-shadow: 0 4px 20px rgba(122,63,209,0.3);
+          box-shadow: 0 4px 20px rgba(214,48,140,0.3);
         }
         .pavilion-cta-secondary {
           background: transparent;
@@ -92,7 +92,7 @@ export default function PavilionCard({ isDark, textMain, textMuted, border, card
             border: "1px solid " + border,
             borderRadius: 24,
             padding: "clamp(24px, 4vw, 44px)",
-            boxShadow: isDark ? "0 4px 32px rgba(122,63,209,0.08)" : "0 4px 24px rgba(122,63,209,0.05)",
+            boxShadow: isDark ? "0 4px 32px rgba(214,48,140,0.08)" : "0 4px 24px rgba(214,48,140,0.05)",
           }}
         >
           <div style={{ minWidth: 0 }}>
@@ -127,7 +127,7 @@ export default function PavilionCard({ isDark, textMain, textMuted, border, card
             }}>
               India Startup Pavilion —{" "}
               <span style={{
-                background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                background: "#D6308C",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
               }}>Subsidised Booths</span>
             </h2>

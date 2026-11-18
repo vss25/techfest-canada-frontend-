@@ -50,9 +50,9 @@ export default function SpeakerCard({ speaker, to }) {
       {src ? (
         <img src={src} srcSet={srcSet} sizes="(max-width: 640px) 45vw, 240px" alt={speaker.image?.alt || speaker.name}
           loading="lazy" width={480} height={480}
-          style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block", background: "rgba(122,63,209,0.12)" }} />
+          style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block", background: "rgba(214,48,140,0.12)" }} />
       ) : (
-        <div aria-hidden="true" style={{ width: "100%", aspectRatio: "1 / 1", background: "rgba(122,63,209,0.12)" }} />
+        <div aria-hidden="true" style={{ width: "100%", aspectRatio: "1 / 1", background: "rgba(214,48,140,0.12)" }} />
       )}
       <div style={{ padding: "14px 16px 18px" }}>
         <div style={{ fontWeight: 800, fontSize: "1rem", lineHeight: 1.25 }}>{speaker.name}</div>

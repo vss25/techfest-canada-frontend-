@@ -19,14 +19,14 @@ export default function LinkedinLanding() {
     return () => obs.disconnect();
   }, []);
 
-  const bg = dark ? "#06020f" : "#f4f0ff";
+  const bg = dark ? "#151035" : "#f4f0ff";
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.68)";
   const textLight = dark ? "rgba(255,255,255,0.40)" : "rgba(13,5,32,0.45)";
   const cardBg = dark ? "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)" : "#ffffff";
-  const cardBorder = dark ? "1px solid rgba(122,63,209,0.35)" : "1px solid rgba(122,63,209,0.20)";
-  const inputBg = dark ? "rgba(255,255,255,0.04)" : "rgba(122,63,209,0.03)";
-  const inputBdr = dark ? "rgba(155,135,245,0.20)" : "rgba(122,63,209,0.20)";
+  const cardBorder = dark ? "1px solid rgba(214,48,140,0.35)" : "1px solid rgba(214,48,140,0.20)";
+  const inputBg = dark ? "rgba(255,255,255,0.04)" : "rgba(214,48,140,0.03)";
+  const inputBdr = dark ? "rgba(240,106,176,0.20)" : "rgba(214,48,140,0.20)";
 
   const handleSubmit = async (e) => {
     e?.preventDefault?.();
@@ -72,8 +72,8 @@ export default function LinkedinLanding() {
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
         background: dark
-          ? "radial-gradient(ellipse 70% 55% at 30% 20%, rgba(122,63,209,0.15) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 70% 80%, rgba(245,166,35,0.08) 0%, transparent 70%)"
-          : "radial-gradient(ellipse 70% 55% at 30% 20%, rgba(122,63,209,0.06) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 70% 80%, rgba(245,166,35,0.04) 0%, transparent 70%)",
+          ? "radial-gradient(ellipse 70% 55% at 30% 20%, rgba(214,48,140,0.15) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 70% 80%, rgba(245,166,35,0.08) 0%, transparent 70%)"
+          : "radial-gradient(ellipse 70% 55% at 30% 20%, rgba(214,48,140,0.06) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 70% 80%, rgba(245,166,35,0.04) 0%, transparent 70%)",
       }} />
 
       <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 480 }}>
@@ -104,7 +104,7 @@ export default function LinkedinLanding() {
           background: cardBg, border: cardBorder,
           borderRadius: 24, padding: "clamp(28px, 5vw, 44px)",
           backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
-          boxShadow: dark ? "0 20px 60px rgba(122,63,209,0.25)" : "0 20px 60px rgba(122,63,209,0.12)",
+          boxShadow: dark ? "0 20px 60px rgba(214,48,140,0.25)" : "0 20px 60px rgba(214,48,140,0.12)",
         }}>
 
           <h1 style={{
@@ -115,7 +115,7 @@ export default function LinkedinLanding() {
           }}>
             Get Event{" "}
             <span style={{
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               backgroundClip: "text",
             }}>Info</span>
@@ -195,8 +195,8 @@ export default function LinkedinLanding() {
                 fontFamily: "'Orbitron', sans-serif", fontWeight: 800,
                 fontSize: "0.78rem", letterSpacing: "1px", textTransform: "uppercase",
                 color: "white",
-                background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
-                boxShadow: "0 4px 20px rgba(122,63,209,0.4)",
+                background: "#D6308C",
+                boxShadow: "0 4px 20px rgba(214,48,140,0.4)",
                 transition: "all 0.2s", opacity: loading ? 0.7 : 1,
                 display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
               }}

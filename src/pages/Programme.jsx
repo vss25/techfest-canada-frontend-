@@ -5,6 +5,8 @@ import Navbar from "../components/Navbar.tsx";
 import Footer from "../components/Footer";
 import WaitlistForm from "../components/WaitlistForm";
 import useAgenda from "../hooks/useAgenda";
+import EventScopeBar, { ScopedEmptyState, matchesEventScope, useEventScope } from "../components/EventScopeBar";
+import { eventPillLabel } from "../lib/events";
 import useSiteSettings, { PUBLIC_API } from "../hooks/useSiteSettings";
 import useSeo from "../hooks/useSeo";
 import { client, speakerPhotoUrl } from "../utils/sanity";
@@ -48,7 +50,7 @@ const SEO_TITLE = "TTFC 2026 Programme at a Glance | The Tech Festival Canada";
 const SEO_DESCRIPTION = "Key times, the agenda, speakers and exhibitors of The Tech Festival Canada, October 26–27, 2026 at The Westin Harbour Castle, Toronto.";
 
 // The Speakers page's list and order (src/pages/Speakers.jsx).
-const SPEAKER_QUERY = '*[_type == "speaker"] | order(order asc, coalesce(rowPosition, 9999) asc) { _id, name, title, company, image }';
+const SPEAKER_QUERY = '*[_type == "speaker"] | order(order asc, coalesce(rowPosition, 9999) asc) { _id, name, title, company, image, "eventIds": events[]._ref }';
 const SPEAKERS_SHOWN = 12;
 
 const PILLAR_LABEL = Object.fromEntries(PILLARS.map((p) => [p.value, p.label]));
@@ -423,7 +425,14 @@ export default function Programme() {
   const settings = useSiteSettings();
   const copy = stayFrom(settings);
   const { sessions, source, loaded } = useAgenda();
-  const times = useMemo(() => keyTimes(sessions, { live: source === "cms" }), [sessions, source]);
+  // Event scope: the shared pill selection (default: the most recent event).
+  // Sessions and speakers filter to the scoped event's tagged docs once the
+  // CMS agenda has loaded; with "All events" this page is exactly as before.
+  const scope = useEventScope();
+  const scopedEvent = scope.scopedEvent;
+  const scopedSessions = scopedEvent && loaded ? sessions.filter((s) => matchesEventScope(s, scopedEvent._id)) : sessions;
+  const scopeEmpty = !!scopedEvent && loaded && scopedSessions.length === 0;
+  const times = useMemo(() => keyTimes(scopedSessions, { live: source === "cms" }), [scopedSessions, source]);
 
   const [speakerDocs, setSpeakerDocs] = useState(null);
   const [speakersFailed, setSpeakersFailed] = useState(false);
@@ -435,6 +444,8 @@ export default function Programme() {
     return () => { alive = false; };
   }, []);
   const speakerIndex = useMemo(() => buildSpeakerIndex(speakerDocs || []), [speakerDocs]);
+  const scopedDocs = !scopedEvent || !speakerDocs ? speakerDocs : speakerDocs.filter((d) => matchesEventScope(d, scopedEvent._id));
+  const speakersScopeEmpty = !!scopedEvent && !!speakerDocs && scopedDocs.length === 0;
 
   const [ex, setEx] = useState({ status: "loading", data: null });
   const [exTry, setExTry] = useState(0);
@@ -447,10 +458,10 @@ export default function Programme() {
   }, [exTry]);
 
   const t = dark
-    ? { bg: "#06020f", bg2: "#0b0518", text: "#ffffff", mid: "rgba(225,215,255,0.8)", dim: "rgba(200,185,255,0.62)", card: "rgba(255,255,255,0.045)", cardSolid: "#0f0820",
-        line: "rgba(155,135,245,0.2)", accent: "#c4adff", chip: "rgba(155,135,245,0.16)", input: "rgba(255,255,255,0.06)", err: "#ff9b9b", key: "rgba(245,166,35,0.12)", keyText: "#ffd08a", skel: "rgba(255,255,255,0.07)" }
+    ? { bg: "#151035", bg2: "#1E1847", text: "#ffffff", mid: "rgba(225,215,255,0.8)", dim: "rgba(200,185,255,0.62)", card: "rgba(255,255,255,0.045)", cardSolid: "#0f0820",
+        line: "rgba(240,106,176,0.2)", accent: "#F06AB0", chip: "rgba(240,106,176,0.16)", input: "rgba(255,255,255,0.06)", err: "#ff9b9b", key: "rgba(245,166,35,0.12)", keyText: "#ffd08a", skel: "rgba(255,255,255,0.07)" }
     : { bg: "#f8f7fc", bg2: "#f0ecfa", text: "#0d0520", mid: "rgba(13,5,32,0.72)", dim: "rgba(13,5,32,0.56)", card: "#ffffff", cardSolid: "#ffffff",
-        line: "rgba(122,63,209,0.16)", accent: "#6a2fc4", chip: "rgba(122,63,209,0.09)", input: "#ffffff", err: "#b42318", key: "rgba(245,166,35,0.12)", keyText: "#8a5200", skel: "rgba(122,63,209,0.08)" };
+        line: "rgba(214,48,140,0.16)", accent: "#B0246F", chip: "rgba(214,48,140,0.09)", input: "#ffffff", err: "#b42318", key: "rgba(245,166,35,0.12)", keyText: "#8a5200", skel: "rgba(214,48,140,0.08)" };
 
   const vars = {
     "--pg-bg": t.bg, "--pg-bg2": t.bg2, "--pg-text": t.text, "--pg-mid": t.mid, "--pg-dim": t.dim, "--pg-card": t.card, "--pg-card-solid": t.cardSolid,
@@ -472,11 +483,11 @@ export default function Programme() {
 
           .pg-hero { position: relative; padding: clamp(112px, 15vw, 168px) 0 clamp(36px, 5vw, 56px); text-align: center; isolation: isolate; }
           .pg-hero::before { content: ""; position: absolute; inset: 0; z-index: -1;
-            background: radial-gradient(ellipse 75% 55% at 50% 0%, rgba(122,63,209,${dark ? 0.3 : 0.12}) 0%, transparent 70%),
+            background: radial-gradient(ellipse 75% 55% at 50% 0%, rgba(214,48,140,${dark ? 0.3 : 0.12}) 0%, transparent 70%),
                         radial-gradient(ellipse 40% 35% at 88% 25%, rgba(245,166,35,${dark ? 0.14 : 0.1}) 0%, transparent 70%); }
           .pg-eyebrow { margin: 0; font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: var(--pg-accent); }
           .pg-h1 { margin: 16px 0 0; font-family: 'Orbitron', sans-serif; font-size: clamp(34px, 6.4vw, 68px); font-weight: 900; line-height: 1.08; letter-spacing: -0.5px; }
-          .pg-grad { background: linear-gradient(135deg, #7a3fd1 10%, #d9468f 55%, #f5a623 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+          .pg-grad { background: #D6308C; -webkit-background-clip: text; background-clip: text; color: transparent; }
           .pg-intro { max-width: 640px; margin: 18px auto 0; font-size: clamp(16px, 2vw, 19px); line-height: 1.65; color: var(--pg-mid); }
           .pg-jump { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 26px 0 0; padding: 0; list-style: none; }
           .pg-jump a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--pg-line); background: var(--pg-card);
@@ -489,14 +500,14 @@ export default function Programme() {
           .pg-h2 { margin: 0; font-family: 'Orbitron', sans-serif; font-size: clamp(24px, 3.4vw, 34px); font-weight: 800; line-height: 1.15; }
           .pg-lede { max-width: 720px; margin: 10px 0 0; font-size: 16px; line-height: 1.6; color: var(--pg-mid); }
           .pg-muted { margin: 0; color: var(--pg-dim); font-size: 15px; line-height: 1.55; }
-          .pg-card { background: var(--pg-card); border: 1px solid var(--pg-line); border-radius: 20px; box-shadow: 0 10px 30px rgba(122,63,209,${dark ? 0.12 : 0.06}); }
+          .pg-card { background: var(--pg-card); border: 1px solid var(--pg-line); border-radius: 20px; box-shadow: 0 10px 30px rgba(214,48,140,${dark ? 0.12 : 0.06}); }
 
           .pg-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 700; color: var(--pg-accent) !important; text-decoration: none; }
           .pg-link:hover { text-decoration: underline; text-underline-offset: 3px; }
           .pg-inline { color: var(--pg-accent) !important; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
           .pg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px; border: 0; border-radius: 999px;
-            background: linear-gradient(135deg, #7a3fd1 0%, #f5a623 100%); color: #fff !important; font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 800;
-            letter-spacing: 1px; text-transform: uppercase; text-decoration: none; cursor: pointer; box-shadow: 0 6px 20px rgba(122,63,209,0.28); }
+            background: #D6308C; color: #fff !important; font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 800;
+            letter-spacing: 1px; text-transform: uppercase; text-decoration: none; cursor: pointer; box-shadow: 0 6px 20px rgba(214,48,140,0.28); }
           .pg-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 18px; border-radius: 999px;
             border: 1.5px solid var(--pg-line); background: transparent; color: var(--pg-text) !important; font: inherit; font-size: 15px; font-weight: 700; text-decoration: none; cursor: pointer; }
           .pg-ghost:hover { border-color: var(--pg-accent); }
@@ -602,14 +613,14 @@ export default function Programme() {
           .pg-ex { position: relative; width: 100%; height: 100%; display: grid; align-content: start; gap: 10px; padding: 12px; border-radius: 18px; border: 1px solid var(--pg-line);
             background: var(--pg-card); color: var(--pg-text); font: inherit; text-align: left; cursor: pointer; transition: transform .2s, border-color .2s; }
           .pg-ex:hover { transform: translateY(-3px); border-color: var(--pg-accent); }
-          .pg-ex-booth { position: absolute; top: 18px; left: 18px; z-index: 1; padding: 3px 10px; border-radius: 999px; background: #7a3fd1; color: #fff;
+          .pg-ex-booth { position: absolute; top: 18px; left: 18px; z-index: 1; padding: 3px 10px; border-radius: 999px; background: #D6308C; color: #fff;
             font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; }
           .pg-ex-name { font-size: 15px; font-weight: 800; line-height: 1.3; padding: 0 2px; }
           .pg-logo { display: grid; place-items: center; overflow: hidden; border-radius: 12px; background: #ffffff; border: 1px solid rgba(13,5,32,0.06); }
           .pg-logo--md { aspect-ratio: 16 / 10; padding: 32px 18px 12px; }
           .pg-logo--lg { width: min(260px, 100%); aspect-ratio: 16 / 9; padding: 18px; margin: 0 auto; }
           .pg-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-          .pg-monogram { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #7a3fd1, #d9468f);
+          .pg-monogram { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #D6308C, #d9468f);
             color: #fff; font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 900; }
           .pg-empty { display: grid; justify-items: start; gap: 8px; padding: 22px; }
           .pg-empty p { margin: 0; color: var(--pg-mid); }
@@ -634,7 +645,7 @@ export default function Programme() {
 
           /* stay updated */
           .pg-stay-card { margin-top: 18px; position: relative; overflow: hidden; padding: clamp(22px, 4vw, 38px); }
-          .pg-stay-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, #7a3fd1 0 40%, #d9468f 40% 75%, #f5a623 75% 100%); }
+          .pg-stay-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, #D6308C 0 40%, #d9468f 40% 75%, #f5a623 75% 100%); }
           .pg-stay-title { margin: 0; font-family: 'Orbitron', sans-serif; font-size: clamp(20px, 2.6vw, 26px); font-weight: 800; line-height: 1.2; }
 
           @media (min-width: 1024px) {
@@ -688,6 +699,14 @@ export default function Programme() {
           </div>
         </section>
 
+        {scope.events.length > 0 && (
+          <section className="pg-sec" style={{ paddingTop: 28, paddingBottom: 0 }} aria-label="Choose an event">
+            <div className="pg-wrap">
+              <EventScopeBar events={scope.events} scopedEvent={scopedEvent} onSelect={scope.select} />
+            </div>
+          </section>
+        )}
+
         <section id="key-times" className="pg-sec" aria-labelledby="pg-key-h" style={{ paddingTop: 8 }}>
           <div className="pg-wrap">
             <div className="pg-head">
@@ -697,7 +716,11 @@ export default function Programme() {
               </div>
               <Link to="/tickets" className="pg-link">What each pass includes <ArrowRight size={16} aria-hidden="true" /></Link>
             </div>
-            <KeyTimes data={times} />
+            {scopeEmpty ? (
+              <p className="pg-muted">{eventPillLabel(scopedEvent)} — key times will be announced with its programme.</p>
+            ) : (
+              <KeyTimes data={times} />
+            )}
           </div>
         </section>
 
@@ -709,7 +732,11 @@ export default function Programme() {
                 <p className="pg-lede">Every session, day by day. Open one for its speakers, or see it in the full agenda.</p>
               </div>
             </div>
-            <AgendaSummary sessions={sessions} loaded={loaded} speakerIndex={speakerIndex} dark={dark} />
+            {scopeEmpty ? (
+              <ScopedEmptyState event={scopedEvent} noun="sessions" />
+            ) : (
+              <AgendaSummary sessions={scopedSessions} loaded={loaded} speakerIndex={speakerIndex} dark={dark} />
+            )}
             <div className="pg-cta-row">
               <Link to="/agenda" className="pg-btn">See the full agenda <ArrowRight size={16} aria-hidden="true" /></Link>
             </div>
@@ -724,7 +751,12 @@ export default function Programme() {
                 <p className="pg-lede">Select a speaker for their profile and sessions.</p>
               </div>
             </div>
-            <SpeakerGrid docs={speakerDocs} failed={speakersFailed} />
+            {speakersScopeEmpty ? (
+              <ScopedEmptyState event={scopedEvent} noun="speakers" />
+            ) : (
+              <SpeakerGrid docs={scopedDocs} failed={speakersFailed} />
+            )}
+
           </div>
         </section>
 

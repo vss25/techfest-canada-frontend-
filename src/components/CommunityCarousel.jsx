@@ -31,7 +31,7 @@ function CommunityCard({ speaker, dark }) {
   var mySessions = useMemo(function () { return sessionsForSpeaker(speaker.name, agenda); }, [speaker.name, agenda]);
   var firstSession = mySessions[0] || null;
 
-  var accent = dark ? "#b99eff" : "#7a3fd1";
+  var accent = dark ? "#F06AB0" : "#D6308C";
   var primaryText = dark ? "#ffffff" : "#0d0520";
   var secondaryText = dark ? "rgba(255,255,255,0.75)" : "rgba(13,5,32,0.65)";
   var mutedText = dark ? "rgba(255,255,255,0.48)" : "rgba(13,5,32,0.42)";
@@ -248,7 +248,7 @@ export default function CommunityCarousel({ dark, limit = 14, showAllTo = "/spea
   if (!loading && people.length === 0) return null;
 
   var text = dark ? "#ffffff" : "#0d0520";
-  var accent = dark ? "#b99eff" : "#7a3fd1";
+  var accent = dark ? "#F06AB0" : "#D6308C";
   var border = dark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.10)";
   var mutedText = dark ? "rgba(255,255,255,0.48)" : "rgba(13,5,32,0.42)";
 
@@ -287,7 +287,7 @@ export default function CommunityCarousel({ dark, limit = 14, showAllTo = "/spea
           .community-nav { display: none !important; }\
         }\
         .community-gradient-text {\
-          background: linear-gradient(135deg, var(--grad-start, #b99eff), #f5a623);\
+          background: linear-gradient(135deg, var(--grad-start, #F06AB0), #f5a623);\
           -webkit-background-clip: text;\
           -webkit-text-fill-color: transparent;\
           background-clip: text;\
@@ -356,12 +356,12 @@ export default function CommunityCarousel({ dark, limit = 14, showAllTo = "/spea
 
         <div style={{
           position: "absolute", top: 0, bottom: 0, left: 0, width: 40, pointerEvents: "none",
-          background: "linear-gradient(to right, " + (dark ? "#06020f" : "#ffffff") + ", transparent)",
+          background: "linear-gradient(to right, " + (dark ? "#151035" : "#ffffff") + ", transparent)",
           opacity: atStart ? 0 : 1, transition: "opacity 0.25s ease",
         }} />
         <div style={{
           position: "absolute", top: 0, bottom: 0, right: 0, width: 40, pointerEvents: "none",
-          background: "linear-gradient(to left, " + (dark ? "#06020f" : "#ffffff") + ", transparent)",
+          background: "linear-gradient(to left, " + (dark ? "#151035" : "#ffffff") + ", transparent)",
           opacity: atEnd ? 0 : 1, transition: "opacity 0.25s ease",
         }} />
       </div>

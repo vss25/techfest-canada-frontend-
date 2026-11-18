@@ -19,7 +19,7 @@ function ConfettiCanvas() {
     const handleResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
     window.addEventListener("resize", handleResize);
 
-    const colors = ["#7a3fd1", "#f5a623", "#e91e8c", "#b99eff", "#56b3f5", "#3fd19c", "#ffffff"];
+    const colors = ["#D6308C", "#f5a623", "#e91e8c", "#F06AB0", "#56b3f5", "#3fd19c", "#ffffff"];
     const particles = [];
     const origins = [
       { x: w * 0.3, y: h * 0.45 },
@@ -135,14 +135,14 @@ export default function PavilionPayment() {
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
 
-  const bg = dark ? "#06020f" : "#ffffff";
+  const bg = dark ? "#151035" : "#ffffff";
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.68)";
   const textLight = dark ? "rgba(255,255,255,0.40)" : "rgba(13,5,32,0.45)";
   const cardBg = dark ? "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)" : "#ffffff";
-  const cardBorder = dark ? "1px solid rgba(122,63,209,0.55)" : "1px solid rgba(122,63,209,0.40)";
-  const inputBg = dark ? "rgba(255,255,255,0.04)" : "rgba(122,63,209,0.03)";
-  const inputBdr = dark ? "rgba(155,135,245,0.14)" : "rgba(122,63,209,0.16)";
+  const cardBorder = dark ? "1px solid rgba(214,48,140,0.55)" : "1px solid rgba(214,48,140,0.40)";
+  const inputBg = dark ? "rgba(255,255,255,0.04)" : "rgba(214,48,140,0.03)";
+  const inputBdr = dark ? "rgba(240,106,176,0.14)" : "rgba(214,48,140,0.16)";
 
   const handlePay = async () => {
     setError("");
@@ -213,8 +213,8 @@ export default function PavilionPayment() {
         <div style={{
           position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
           background: dark
-            ? "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.10) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(245,166,35,0.06) 0%, transparent 70%)"
-            : "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.05) 0%, transparent 70%)",
+            ? "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(214,48,140,0.10) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(245,166,35,0.06) 0%, transparent 70%)"
+            : "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(214,48,140,0.05) 0%, transparent 70%)",
         }} />
 
         <div style={{ position: "relative", zIndex: 1 }}>
@@ -240,7 +240,7 @@ export default function PavilionPayment() {
             }}>
               Complete Your{" "}
               <span style={{
-                background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                background: "#D6308C",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
               }}>Pavilion Payment</span>
@@ -257,7 +257,7 @@ export default function PavilionPayment() {
               backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
               background: cardBg, border: cardBorder,
               borderRadius: 24, padding: "clamp(28px, 5vw, 44px)",
-              boxShadow: dark ? "0 8px 48px rgba(122,63,209,0.20)" : "0 8px 32px rgba(122,63,209,0.15)",
+              boxShadow: dark ? "0 8px 48px rgba(214,48,140,0.20)" : "0 8px 32px rgba(214,48,140,0.15)",
             }}>
 
               {/* Amount */}
@@ -288,7 +288,7 @@ export default function PavilionPayment() {
                 width: "100%", height: 1,
                 background: dark
                   ? "linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 50%,transparent)"
-                  : "linear-gradient(90deg,transparent,rgba(122,63,209,0.18) 50%,transparent)",
+                  : "linear-gradient(90deg,transparent,rgba(214,48,140,0.18) 50%,transparent)",
                 margin: "0 0 28px",
               }} />
 
@@ -349,8 +349,8 @@ export default function PavilionPayment() {
                   fontFamily: "'Orbitron', sans-serif", fontWeight: 800,
                   fontSize: "0.78rem", letterSpacing: "1px", textTransform: "uppercase",
                   color: "white",
-                  background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
-                  boxShadow: "0 4px 20px rgba(122,63,209,0.4)",
+                  background: "#D6308C",
+                  boxShadow: "0 4px 20px rgba(214,48,140,0.4)",
                   transition: "all 0.2s", opacity: loading ? 0.7 : 1,
                   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
                 }}
@@ -383,8 +383,8 @@ export default function PavilionPayment() {
             <div style={{
               textAlign: "center", marginTop: 32,
               padding: "20px 24px", borderRadius: 16,
-              background: dark ? "rgba(255,255,255,0.02)" : "rgba(122,63,209,0.03)",
-              border: dark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(122,63,209,0.08)",
+              background: dark ? "rgba(255,255,255,0.02)" : "rgba(214,48,140,0.03)",
+              border: dark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(214,48,140,0.08)",
             }}>
               <p style={{ fontSize: "0.85rem", color: textMuted, marginBottom: 12, lineHeight: 1.6 }}>
                 Haven't submitted an application yet?
@@ -418,17 +418,17 @@ export default function PavilionPayment() {
                 width: "100%", maxWidth: 460,
                 background: dark ? "#120a22" : "#ffffff",
                 padding: "48px 32px", borderRadius: 24,
-                border: dark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(122,63,209,0.1)",
-                boxShadow: "0 30px 80px rgba(122,63,209,0.35)",
+                border: dark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(214,48,140,0.1)",
+                boxShadow: "0 30px 80px rgba(214,48,140,0.35)",
                 animation: "ttfcSuccessIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
               }}>
                 <style>{`@keyframes ttfcSuccessIn { from { opacity: 0; transform: scale(0.85) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }`}</style>
 
                 <div style={{
                   width: 72, height: 72, borderRadius: "50%",
-                  background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                  background: "#D6308C",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 12px 32px rgba(122,63,209,0.4)",
+                  boxShadow: "0 12px 32px rgba(214,48,140,0.4)",
                 }}>
                   <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 6 9 17l-5-5" />
@@ -441,7 +441,7 @@ export default function PavilionPayment() {
                     fontSize: "1.9rem", margin: "0 0 12px", letterSpacing: "-0.5px",
                   }}>
                     <span style={{
-                      backgroundImage: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                      backgroundImage: "#D6308C",
                       WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                       color: "transparent",
                     }}>Payment Received!</span>
@@ -457,12 +457,12 @@ export default function PavilionPayment() {
                 <button
                   onClick={() => { setShowSuccessModal(false); navigate("/"); }}
                   style={{
-                    background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                    background: "#D6308C",
                     border: "none", color: "white", padding: "16px 32px",
                     borderRadius: 12, cursor: "pointer",
                     fontFamily: "'Orbitron', sans-serif", textTransform: "uppercase",
                     fontSize: "0.78rem", letterSpacing: "1.5px", fontWeight: 800,
-                    width: "100%", boxShadow: "0 8px 24px rgba(122,63,209,0.4)",
+                    width: "100%", boxShadow: "0 8px 24px rgba(214,48,140,0.4)",
                   }}
                 >Back to Home</button>
               </div>

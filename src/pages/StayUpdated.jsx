@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { ArrowDown } from "lucide-react";
 import Navbar from "../components/Navbar";
@@ -28,28 +28,15 @@ import { journeyFrom } from "../lib/stayJourney";
    material. Every word is a stay.* app content key (… › Wording),
    with the defaults in src/lib/stayUpdated.js. ?source=ios|android|
    webapp (links from the apps) is sent with the form. No store
-   badges on this page. Light and dark like the rest of the site.
+   badges on this page. Light only, in the approved design (Nov 2026).
    The web app has the same page at /app/stay-updated. The form
    itself is components/WaitlistForm.jsx (Oct 24 2026), shared
    with the "Stay updated for TTFC 2027" section of /programme.
 ========================================================= */
 
-function useDarkMode() {
-  const [dark, setDark] = useState(() => typeof document !== "undefined" && document.body.classList.contains("dark-mode"));
-  useEffect(() => {
-    const read = () => setDark(document.body.classList.contains("dark-mode"));
-    read();
-    const obs = new MutationObserver(read);
-    obs.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-    return () => obs.disconnect();
-  }, []);
-  return dark;
-}
-
 export default function StayUpdated() {
   const settings = useSiteSettings();
   const copy = stayFrom(settings);
-  const dark = useDarkMode();
   const { search, hash } = useLocation();
   // Arriving from the footer button (/stay-updated#join): straight to the form, after the page has rendered.
   useEffect(() => {
@@ -63,14 +50,12 @@ export default function StayUpdated() {
   const hero = heroParts(copy["stay.hero_title"]);
   const stops = journeyFrom(copy["stay.journey"]);
 
-  const t = dark
-    ? { bg: "#06020f", bg2: "#0b0518", text: "#ffffff", mid: "rgba(225,215,255,0.8)", dim: "rgba(200,185,255,0.6)", card: "rgba(255,255,255,0.045)", line: "rgba(155,135,245,0.2)", accent: "#c4adff", chip: "rgba(155,135,245,0.16)", input: "rgba(255,255,255,0.06)", err: "#ff9b9b", skyline: 0.16 }
-    : { bg: "#faf9ff", bg2: "#f2eefc", text: "#0d0520", mid: "rgba(13,5,32,0.72)", dim: "rgba(13,5,32,0.55)", card: "#ffffff", line: "rgba(122,63,209,0.16)", accent: "#6a2fc4", chip: "rgba(122,63,209,0.09)", input: "#ffffff", err: "#b42318", skyline: 0.22 };
+  // The approved design's light palette (Nov 2026): navy text, #E8E5F1 lines, magenta accent, no dark mode.
+  const t = { bg: "#FFFFFF", bg2: "#F5F3FA", text: "#151035", mid: "#3F3F46", dim: "#71717A", card: "#FFFFFF", line: "#E8E5F1", accent: "#D6308C", chip: "#FBE9F3", input: "#FFFFFF", err: "#B42318", skyline: 0.18 };
   // The journey's map and list (components/StayJourney.jsx): the land in a soft brand tint, opaque labels.
   const journeyVars = {
-    "--jv-text": t.text, "--jv-mid": t.mid, "--jv-card": dark ? "#0f0820" : "#ffffff", "--jv-line": t.line, "--jv-accent": t.accent, "--jv-chip": t.chip,
-    "--jv-land": dark ? "rgba(155,135,245,0.2)" : "rgba(122,63,209,0.09)", "--jv-land-edge": dark ? "rgba(196,173,255,0.45)" : "rgba(122,63,209,0.3)",
-    "--jv-route": dark ? "#c4adff" : "#6a2fc4", "--jv-label-bg": dark ? "#150b2c" : "#ffffff",
+    "--jv-text": t.text, "--jv-mid": t.mid, "--jv-card": "#ffffff", "--jv-line": t.line, "--jv-accent": t.accent, "--jv-chip": t.chip,
+    "--jv-land": "#F1EFF7", "--jv-land-edge": "#D9D5E8", "--jv-route": "#D6308C", "--jv-label-bg": "#ffffff",
   };
 
   return (
@@ -84,31 +69,23 @@ export default function StayUpdated() {
           .su { background: var(--su-bg); color: var(--su-text); min-height: 100vh; overflow-x: hidden; overflow-x: clip; }
           .su-wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
           .su-hero { position: relative; padding: clamp(100px, 12vw, 132px) 0 clamp(56px, 7vw, 88px); text-align: center; isolation: isolate; }
-          .su-hero::before { content: ""; position: absolute; inset: 0; z-index: -2;
-            background: radial-gradient(ellipse 70% 55% at 50% 0%, rgba(122,63,209,${dark ? 0.35 : 0.16}) 0%, transparent 70%),
-                        radial-gradient(ellipse 45% 35% at 85% 30%, rgba(245,166,35,${dark ? 0.16 : 0.12}) 0%, transparent 70%); }
           .su-skyline { position: absolute; left: 0; right: 0; bottom: 0; height: min(22vw, 190px); z-index: -1; pointer-events: none;
-            background: url(/toronto-skyline.jpg) center bottom / cover no-repeat; opacity: ${t.skyline};
-            ${dark ? "filter: invert(1) brightness(0.9);" : "mix-blend-mode: multiply;"}
+            background: url(/toronto-skyline.jpg) center bottom / cover no-repeat; opacity: ${t.skyline}; mix-blend-mode: multiply;
             -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 55%, #000 75%, transparent 100%);
                     mask-image: linear-gradient(to bottom, transparent 0%, #000 55%, #000 75%, transparent 100%); }
-          .su-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--su-chip); color: var(--su-accent);
-            font-size: 13px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
-          .su-h1 { margin: 18px 0 0; font-family: 'Orbitron', sans-serif; font-weight: 900; line-height: 1.05; letter-spacing: -0.5px; }
-          .su-h1-lead { display: block; font-size: clamp(44px, 9vw, 92px);
-            background: linear-gradient(135deg, #7a3fd1 10%, #d9468f 55%, #f5a623 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+          .su-chip { display: inline-flex; align-items: center; gap: 8px; padding: 0; color: var(--su-accent); font-size: 14px; font-weight: 600; }
+          .su-h1 { margin: 10px 0 0; font-family: inherit; font-weight: 700; line-height: 1.08; letter-spacing: -0.02em; }
+          .su-h1-lead { display: block; font-size: clamp(40px, 7vw, 64px); color: var(--su-text); }
           .su-h1-rest { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; font-family: inherit; }
           .su-h1-rest > span { display: inline-flex; align-items: center; min-height: 40px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--su-line);
-            background: var(--su-card); font-size: clamp(13px, 2vw, 17px); font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--su-text); }
+            background: var(--su-card); font-size: 15px; font-weight: 600; color: var(--su-text); }
           .su-intro { max-width: 640px; margin: 22px auto 0; font-size: clamp(16px, 2.1vw, 19px); line-height: 1.6; color: var(--su-mid); }
           .su-hero-cta { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 18px; margin-top: 30px; }
           .su-sec { padding: clamp(48px, 7vw, 80px) 0; }
           .su-sec--alt { background: var(--su-bg2); }
-          .su-h2 { margin: 0; font-family: 'Orbitron', sans-serif; font-size: clamp(24px, 3.6vw, 34px); font-weight: 800; line-height: 1.15; }
+          .su-h2 { margin: 0; font-family: inherit; font-size: clamp(24px, 3.4vw, 32px); font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
           .su-journey { margin-top: 28px; }
-          .su-join { position: relative; border-radius: 26px; padding: clamp(24px, 4vw, 40px); background: var(--su-card); border: 1px solid var(--su-line);
-            box-shadow: 0 24px 60px rgba(122,63,209,${dark ? 0.22 : 0.12}); overflow: hidden; }
-          .su-join::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, #7a3fd1 0 40%, #d9468f 40% 75%, #f5a623 75% 100%); }
+          .su-join { position: relative; border-radius: 12px; padding: clamp(22px, 4vw, 36px); background: var(--su-card); border: 1px solid var(--su-line); }
         `}</style>
 
         <section className="su-hero" aria-labelledby="su-h1">

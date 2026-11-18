@@ -74,7 +74,7 @@ export function AnnouncementBar() {
         ref={ref}
         role="region"
         aria-label="Announcement"
-        style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 10000, background: "linear-gradient(90deg, #7a3fd1, #d9468f 55%, #f5a623)", color: "#ffffff", fontFamily: "'Montserrat', sans-serif" }}
+        style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 10000, background: "#D6308C", color: "#ffffff", fontFamily: "'Montserrat', sans-serif" }}
       >
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "8px 48px 8px 16px", position: "relative", textAlign: "center", fontSize: "0.82rem", fontWeight: 600, lineHeight: 1.45 }}>
           {link ? (
@@ -102,7 +102,7 @@ export function ClosedNotice({ title, body, dark, cta }) {
   return (
     <div
       role="status"
-      style={{ textAlign: "center", padding: "clamp(32px,5vw,56px) 24px", borderRadius: 20, border: "1px solid " + (dark ? "rgba(155,135,245,0.18)" : "rgba(122,63,209,0.16)"), background: dark ? "rgba(255,255,255,0.03)" : "rgba(122,63,209,0.03)" }}
+      style={{ textAlign: "center", padding: "clamp(32px,5vw,56px) 24px", borderRadius: 20, border: "1px solid " + (dark ? "rgba(240,106,176,0.18)" : "rgba(214,48,140,0.16)"), background: dark ? "rgba(255,255,255,0.03)" : "rgba(214,48,140,0.03)" }}
     >
       <h3 style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "clamp(1.1rem,2.5vw,1.4rem)", color: dark ? "#ffffff" : "#0d0520", margin: "0 0 10px" }}>{title}</h3>
       {body && <p style={{ fontSize: "0.92rem", lineHeight: 1.7, color: dark ? "rgba(220,210,255,0.78)" : "rgba(13,5,32,0.68)", maxWidth: 520, margin: "0 auto" }}>{body}</p>}
@@ -131,7 +131,7 @@ export function AgendaGate({ children }) {
   const dark = useBodyDark();
   if (s["site.show_agenda"] !== false) return children;
   return (
-    <div style={{ background: dark ? "#06020f" : "#faf9ff", color: dark ? "#ffffff" : "#0d0520", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ background: dark ? "#151035" : "#faf9ff", color: dark ? "#ffffff" : "#0d0520", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Navbar />
       <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "clamp(140px,16vw,180px) 6% 80px" }}>
         <div style={{ maxWidth: 640, width: "100%" }}>
@@ -139,7 +139,7 @@ export function AgendaGate({ children }) {
             dark={dark}
             title="Agenda coming soon"
             body="We're putting the finishing touches on the programme. Check back soon for sessions, speakers and timings."
-            cta={<Link to="/speakers" style={{ display: "inline-block", marginTop: 22, padding: "12px 24px", borderRadius: 50, background: "linear-gradient(135deg,#7a3fd1,#f5a623)", color: "#fff", fontFamily: "'Orbitron', sans-serif", fontSize: "0.68rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none" }}>See the speakers</Link>}
+            cta={<Link to="/speakers" style={{ display: "inline-block", marginTop: 22, padding: "12px 24px", borderRadius: 50, background: "#D6308C", color: "#fff", fontFamily: "'Orbitron', sans-serif", fontSize: "0.68rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", textDecoration: "none" }}>See the speakers</Link>}
           />
         </div>
       </main>

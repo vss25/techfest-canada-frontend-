@@ -54,7 +54,7 @@ class CheckoutErrorBoundary extends React.Component {
               The checkout page hit a snag. Please head back to the tickets page and try again.
               {this.state.error?.message ? <><br /><br /><code style={{ fontSize:"0.75rem", opacity:0.6 }}>{this.state.error.message}</code></> : null}
             </p>
-            <a href="/tickets" style={{ display:"inline-block", padding:"14px 28px", borderRadius:12, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"#fff", textDecoration:"none", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.72rem", letterSpacing:"1.5px", textTransform:"uppercase" }}>Back to Tickets</a>
+            <a href="/tickets" style={{ display:"inline-block", padding:"14px 28px", borderRadius:12, background:"#D6308C", color:"#fff", textDecoration:"none", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.72rem", letterSpacing:"1.5px", textTransform:"uppercase" }}>Back to Tickets</a>
           </div>
           <Footer />
         </>
@@ -149,11 +149,11 @@ function CheckoutInner() {
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.68)";
   const textDim = dark ? "rgba(255,255,255,0.40)" : "rgba(13,5,32,0.45)";
-  const bg = dark ? "#06020f" : "#ffffff";
-  const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)";
-  const inputBorder = dark ? "rgba(255,255,255,0.14)" : "rgba(122,63,209,0.20)";
+  const bg = dark ? "#151035" : "#ffffff";
+  const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(214,48,140,0.04)";
+  const inputBorder = dark ? "rgba(255,255,255,0.14)" : "rgba(214,48,140,0.20)";
   const cardBg = dark ? "rgba(255,255,255,0.03)" : "#ffffff";
-  const cardBorder = dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(122,63,209,0.10)";
+  const cardBorder = dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(214,48,140,0.10)";
 
   const set = (key, val) => { setForm(f => ({ ...f, [key]: val })); setErrors(e => ({ ...e, [key]: undefined })); };
   const setJobLevel = (val) => { setForm(f => ({ ...f, jobLevel: val, jobLevelOther: val === "Other" ? f.jobLevelOther : "" })); setErrors(e => ({ ...e, jobLevel: undefined, jobLevelOther: undefined })); };
@@ -287,8 +287,8 @@ function CheckoutInner() {
       <div style={{ minHeight: "100vh", background: bg, color: textMain, position: "relative" }}>
         <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0,
           background: dark
-            ? "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.10) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(245,166,35,0.06) 0%, transparent 70%)"
-            : "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.05) 0%, transparent 70%)" }} />
+            ? "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(214,48,140,0.10) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(245,166,35,0.06) 0%, transparent 70%)"
+            : "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(214,48,140,0.05) 0%, transparent 70%)" }} />
 
         <div style={{ position:"relative", zIndex:1, maxWidth:1200, margin:"0 auto", padding:"clamp(80px, 12vw, 120px) clamp(20px, 5vw, 48px) 80px" }}>
 
@@ -314,7 +314,7 @@ function CheckoutInner() {
             <div style={{ marginTop:24, display:"flex", alignItems:"center", gap:12 }}>
               <span style={{ fontSize:"0.62rem", color:textDim, fontWeight:700, letterSpacing:"1px", textTransform:"uppercase" }}>Step {step} of {TOTAL_STEPS}</span>
               <div style={{ flex:1, display:"flex", gap:6, maxWidth:240 }}>
-                {[1,2].map(s => <div key={s} style={{ flex:1, height:3, borderRadius:999, background: s<=step?"linear-gradient(90deg, #7a3fd1, #f5a623)":(dark?"rgba(255,255,255,0.10)":"rgba(122,63,209,0.12)"), transition:"background 0.3s" }} />)}
+                {[1,2].map(s => <div key={s} style={{ flex:1, height:3, borderRadius:999, background: s<=step?"#D6308C":(dark?"rgba(255,255,255,0.10)":"rgba(214,48,140,0.12)"), transition:"background 0.3s" }} />)}
               </div>
             </div>
           </div>
@@ -385,9 +385,9 @@ function CheckoutInner() {
                     <input type="url" inputMode="url" value={form.linkedin} onChange={e => set("linkedin",e.target.value)} onBlur={handleLinkedInBlur} placeholder="linkedin.com/in/yourname" autoComplete="url" style={inputStyle(false)} />
                   </div>
 
-                  <div style={{ width:"100%", height:1, background: dark?"rgba(255,255,255,0.07)":"rgba(122,63,209,0.10)", margin:"8px 0 4px" }} />
+                  <div style={{ width:"100%", height:1, background: dark?"rgba(255,255,255,0.07)":"rgba(214,48,140,0.10)", margin:"8px 0 4px" }} />
 
-                  <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.60rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#c8a8ff":"#7a3fd1" }}>Professional Profile</div>
+                  <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.60rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#c8a8ff":"#D6308C" }}>Professional Profile</div>
 
                   <div style={fieldStyle}>
                     <label style={labelStyle}>Job Level *</label>
@@ -423,8 +423,8 @@ function CheckoutInner() {
                     {errors.objectives && <span style={errStyle}>{errors.objectives}</span>}
                   </div>
 
-                  <div style={{ display:"flex", flexDirection:"column", gap:14, padding:"22px", background: dark?"rgba(122,63,209,0.08)":"rgba(122,63,209,0.04)", borderRadius:14, border: dark?"1px solid rgba(122,63,209,0.20)":"1px solid rgba(122,63,209,0.12)" }}>
-                    <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#c8a8ff":"#7a3fd1", marginBottom:2 }}>Your Consent</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:14, padding:"22px", background: dark?"rgba(214,48,140,0.08)":"rgba(214,48,140,0.04)", borderRadius:14, border: dark?"1px solid rgba(214,48,140,0.20)":"1px solid rgba(214,48,140,0.12)" }}>
+                    <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1.5px", textTransform:"uppercase", color: dark?"#c8a8ff":"#D6308C", marginBottom:2 }}>Your Consent</div>
                     {[
                       { key:"consent1", text:"I confirm I am 18 years of age or older. My consents hereto are given to the organisers and I agree to the organiser's terms of service and privacy policies." },
                       { key:"consent2", text:"I acknowledge and agree that the organisers will collect, use, process and/or disclose my personal information for the purposes of securing my registration and attendance for The Tech Festival Canada, including digital platform usage on the The Tech Festival Canada platform, and consent to the collection, use, processing and/or disclosure of my personal information by the organisers for the purposes of receiving updates on the agenda, activities/events, collaboration projects, industry news relating to The Tech Festival Canada." },
@@ -432,7 +432,7 @@ function CheckoutInner() {
                       <label key={key} style={{ display:"flex", gap:12, alignItems:"flex-start", cursor:"pointer" }}>
                         <div style={{ position:"relative", flexShrink:0, marginTop:1 }}>
                           <input type="checkbox" checked={form[key]} onChange={e => set(key, e.target.checked)} style={{ position:"absolute", opacity:0, width:0, height:0 }} />
-                          <div style={{ width:20, height:20, borderRadius:6, border:"2px solid "+(errors[key]?"#e05555":(form[key]?"#7a3fd1":inputBorder)), background: form[key]?"#7a3fd1":"transparent", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}>{form[key] && <TickSmall />}</div>
+                          <div style={{ width:20, height:20, borderRadius:6, border:"2px solid "+(errors[key]?"#e05555":(form[key]?"#D6308C":inputBorder)), background: form[key]?"#D6308C":"transparent", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}>{form[key] && <TickSmall />}</div>
                         </div>
                         <span style={{ fontSize:"14px", color:textMuted, lineHeight:1.6 }}><strong style={{ color:textMain, fontWeight:700 }}>{i+1}. </strong>{text}</span>
                       </label>
@@ -443,13 +443,13 @@ function CheckoutInner() {
               )}
 
               {salesClosed && <TicketSalesNotice dark={dark} message={site["site.ticket_sales_message"]} style={{ marginTop:28 }} />}
-              <div style={{ marginTop:32, paddingTop:24, borderTop: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(122,63,209,0.08)", display:"flex", gap:12 }}>
+              <div style={{ marginTop:32, paddingTop:24, borderTop: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(214,48,140,0.08)", display:"flex", gap:12 }}>
                 <button onClick={back}
-                  style={{ flex:"0 0 auto", padding:"14px 28px", borderRadius:12, border: dark?"1px solid rgba(255,255,255,0.14)":"1px solid rgba(122,63,209,0.20)", background:"transparent", color:textMain, fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer" }}>
+                  style={{ flex:"0 0 auto", padding:"14px 28px", borderRadius:12, border: dark?"1px solid rgba(255,255,255,0.14)":"1px solid rgba(214,48,140,0.20)", background:"transparent", color:textMain, fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer" }}>
                   &larr; {step > 1 ? "Back" : "Cancel"}
                 </button>
                 <button onClick={step < TOTAL_STEPS ? next : submit} disabled={submitting || (salesClosed && step >= TOTAL_STEPS)}
-                  style={{ flex:1, padding:"14px", borderRadius:12, border:"none", background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"white", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1px", textTransform:"uppercase", cursor: (submitting || (salesClosed && step >= TOTAL_STEPS))?"not-allowed":"pointer", opacity: (submitting || (salesClosed && step >= TOTAL_STEPS))?0.5:1, boxShadow:"0 4px 20px rgba(122,63,209,0.35)" }}>
+                  style={{ flex:1, padding:"14px", borderRadius:12, border:"none", background:"#D6308C", color:"white", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.65rem", letterSpacing:"1px", textTransform:"uppercase", cursor: (submitting || (salesClosed && step >= TOTAL_STEPS))?"not-allowed":"pointer", opacity: (submitting || (salesClosed && step >= TOTAL_STEPS))?0.5:1, boxShadow:"0 4px 20px rgba(214,48,140,0.35)" }}>
                   {submitting ? "Redirecting to payment…" : (step < TOTAL_STEPS ? "Continue →" : salesClosed ? "Sales Paused" : "Proceed to Payment →")}
                 </button>
               </div>
@@ -460,7 +460,7 @@ function CheckoutInner() {
               <div style={{ background:cardBg, border:cardBorder, borderRadius:20, padding:"26px 24px", backdropFilter:"blur(12px)" }}>
                 <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.6rem", letterSpacing:"2px", textTransform:"uppercase", color:textDim, marginBottom:14 }}>Order Summary</div>
 
-                <div style={{ paddingBottom:16, borderBottom: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(122,63,209,0.08)" }}>
+                <div style={{ paddingBottom:16, borderBottom: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(214,48,140,0.08)" }}>
                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
                     <div>
                       <div style={{ fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.85rem", color:textMain, letterSpacing:"-0.2px" }}>{tierLabel} Pass</div>
@@ -472,16 +472,16 @@ function CheckoutInner() {
                           ${basePrice.toLocaleString()}
                         </div>
                       ) : (
-                        <div style={{ width:80, height:20, borderRadius:6, background: dark?"linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04))":"linear-gradient(90deg, rgba(122,63,209,0.05), rgba(122,63,209,0.12), rgba(122,63,209,0.05))", backgroundSize:"200% 100%", animation:"ttfcShimmer 1.4s ease-in-out infinite" }} />
+                        <div style={{ width:80, height:20, borderRadius:6, background: dark?"linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04))":"linear-gradient(90deg, rgba(214,48,140,0.05), rgba(214,48,140,0.12), rgba(214,48,140,0.05))", backgroundSize:"200% 100%", animation:"ttfcShimmer 1.4s ease-in-out infinite" }} />
                       )}
                     </div>
                   </div>
                 </div>
 
                 {promoDiscount > 0 && (
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 0", borderBottom: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(122,63,209,0.08)" }}>
-                    <span style={{ fontSize:"0.76rem", color: dark?"#c8a8ff":"#7a3fd1", fontWeight:700 }}>{promoCode} ({promoDiscount}%)</span>
-                    <span style={{ fontSize:"0.85rem", fontWeight:800, color: dark?"#c8a8ff":"#7a3fd1", fontFamily:"'Orbitron', sans-serif" }}>&minus;${(basePrice - finalPrice).toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 0", borderBottom: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(214,48,140,0.08)" }}>
+                    <span style={{ fontSize:"0.76rem", color: dark?"#c8a8ff":"#D6308C", fontWeight:700 }}>{promoCode} ({promoDiscount}%)</span>
+                    <span style={{ fontSize:"0.85rem", fontWeight:800, color: dark?"#c8a8ff":"#D6308C", fontFamily:"'Orbitron', sans-serif" }}>&minus;${(basePrice - finalPrice).toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 )}
 
@@ -492,7 +492,7 @@ function CheckoutInner() {
                   </span>
                 </div>
 
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0 14px", borderBottom: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(122,63,209,0.08)" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0 14px", borderBottom: dark?"1px solid rgba(255,255,255,0.06)":"1px solid rgba(214,48,140,0.08)" }}>
                   <span style={{ fontSize:"0.76rem", color:textMuted, fontWeight:600 }}>HST (13%)</span>
                   <span style={{ fontSize:"0.85rem", fontWeight:700, color:textMain, fontFamily:"'Orbitron', sans-serif" }}>
                     ${formatPrice(hstAmount)}
@@ -522,9 +522,9 @@ function CheckoutInner() {
                 </div>
 
                 {promoCode ? (
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"12px 14px", borderRadius:10, border:"1px solid "+(dark?"rgba(122,63,209,0.45)":"rgba(122,63,209,0.32)"), background: dark?"rgba(122,63,209,0.12)":"rgba(122,63,209,0.06)" }}>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"12px 14px", borderRadius:10, border:"1px solid "+(dark?"rgba(214,48,140,0.45)":"rgba(214,48,140,0.32)"), background: dark?"rgba(214,48,140,0.12)":"rgba(214,48,140,0.06)" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
-                      <div style={{ width:26, height:26, borderRadius:999, flexShrink:0, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      <div style={{ width:26, height:26, borderRadius:999, flexShrink:0, background:"#D6308C", display:"flex", alignItems:"center", justifyContent:"center" }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                       </div>
                       <div style={{ minWidth:0 }}>
@@ -532,7 +532,7 @@ function CheckoutInner() {
                         <div style={{ fontSize:"0.66rem", color:textMuted, marginTop:1 }}>{promoDiscount}% off applied</div>
                       </div>
                     </div>
-                    <button onClick={removePromo} style={{ background:"none", border:"1px solid "+(dark?"rgba(255,255,255,0.18)":"rgba(122,63,209,0.24)"), color:textMuted, borderRadius:8, padding:"6px 12px", fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"0.55rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", flexShrink:0 }}>Remove</button>
+                    <button onClick={removePromo} style={{ background:"none", border:"1px solid "+(dark?"rgba(255,255,255,0.18)":"rgba(214,48,140,0.24)"), color:textMuted, borderRadius:8, padding:"6px 12px", fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"0.55rem", letterSpacing:"1px", textTransform:"uppercase", cursor:"pointer", flexShrink:0 }}>Remove</button>
                   </div>
                 ) : (
                   <>
@@ -547,7 +547,7 @@ function CheckoutInner() {
                         style={{ flex:1, minWidth:0, padding:"11px 14px", borderRadius:10, border:"1px solid "+(promoStatus==="error"?"#e05555":inputBorder), background:inputBg, color:textMain, fontFamily:"'Orbitron', sans-serif", fontWeight:700, fontSize:"15px", letterSpacing:"1.5px", textTransform:"uppercase", outline:"none", boxSizing:"border-box" }}
                       />
                       <button type="button" onClick={applyPromo} disabled={promoStatus === "loading" || !promoInput.trim()}
-                        style={{ flexShrink:0, padding:"11px 18px", borderRadius:10, border:"none", cursor: (promoStatus==="loading" || !promoInput.trim())?"not-allowed":"pointer", opacity:(promoStatus==="loading" || !promoInput.trim())?0.55:1, background:"linear-gradient(135deg, #7a3fd1, #f5a623)", color:"white", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.62rem", letterSpacing:"1px", textTransform:"uppercase" }}>
+                        style={{ flexShrink:0, padding:"11px 18px", borderRadius:10, border:"none", cursor: (promoStatus==="loading" || !promoInput.trim())?"not-allowed":"pointer", opacity:(promoStatus==="loading" || !promoInput.trim())?0.55:1, background:"#D6308C", color:"white", fontFamily:"'Orbitron', sans-serif", fontWeight:800, fontSize:"0.62rem", letterSpacing:"1px", textTransform:"uppercase" }}>
                         {promoStatus === "loading" ? "…" : "Apply"}
                       </button>
                     </div>
@@ -556,7 +556,7 @@ function CheckoutInner() {
                 )}
               </div>
 
-              <div style={{ marginTop:14, padding:"14px 16px", background: dark?"rgba(255,255,255,0.02)":"rgba(122,63,209,0.02)", border: dark?"1px solid rgba(255,255,255,0.05)":"1px solid rgba(122,63,209,0.08)", borderRadius:14 }}>
+              <div style={{ marginTop:14, padding:"14px 16px", background: dark?"rgba(255,255,255,0.02)":"rgba(214,48,140,0.02)", border: dark?"1px solid rgba(255,255,255,0.05)":"1px solid rgba(214,48,140,0.08)", borderRadius:14 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, color:textMuted }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                   <span style={{ fontSize:"0.7rem", fontWeight:600 }}>Secure checkout by Stripe</span>

@@ -114,10 +114,10 @@ function RoleAccordion({ role, dark }) {
   var s = useState(false); var open = s[0]; var setOpen = s[1];
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.60)" : "rgba(13,5,32,0.65)";
-  var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.10)";
+  var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(214,48,140,0.10)";
 
   return (
-    <div style={{ borderRadius: 16, border: "1px solid " + borderCol, overflow: "hidden", background: dark ? "rgba(255,255,255,0.02)" : "rgba(122,63,209,0.02)", transition: "all 0.2s" }}>
+    <div style={{ borderRadius: 16, border: "1px solid " + borderCol, overflow: "hidden", background: dark ? "rgba(255,255,255,0.02)" : "rgba(214,48,140,0.02)", transition: "all 0.2s" }}>
       <button onClick={function () { setOpen(!open); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "18px 22px", background: "transparent", border: "none", cursor: "pointer", color: textMain, textAlign: "left" }}>
         <span style={{ flex: 1, fontFamily: "'Orbitron', sans-serif", fontWeight: 700, fontSize: "0.82rem", letterSpacing: "0.5px" }}>{role.title}</span>
         <ChevronDown open={open} />
@@ -130,7 +130,7 @@ function RoleAccordion({ role, dark }) {
               return <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: "0.8rem", color: textMuted, lineHeight: 1.5 }}><CheckIcon />{d}</li>;
             })}
           </ul>
-          <div style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: dark ? "rgba(185,158,255,0.7)" : "#7a3fd1", marginBottom: 6 }}>Ideal for:</div>
+          <div style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: dark ? "rgba(185,158,255,0.7)" : "#D6308C", marginBottom: 6 }}>Ideal for:</div>
           <p style={{ fontSize: "0.8rem", color: textMuted, lineHeight: 1.55, margin: 0 }}>{role.ideal}</p>
         </div>
       )}
@@ -231,7 +231,7 @@ function VolunteerForm({ dark }) {
         <label style={{ fontSize: "0.72rem", fontWeight: 700, color: textMuted, letterSpacing: "0.5px", marginBottom: 6, display: "block" }}>Why do you want to volunteer at TTFC 2026?</label>
         <textarea value={why} onChange={function (e) { setWhy(e.target.value); }} rows="4" style={Object.assign({}, inputStyle, { resize: "vertical" })} placeholder="Tell us a bit about yourself and why you're interested..." />
       </div>
-      <button type="submit" disabled={status === "sending"} style={{ width: "100%", padding: "16px", borderRadius: 12, border: "none", cursor: status === "sending" ? "wait" : "pointer", fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.72rem", letterSpacing: "1.5px", textTransform: "uppercase", color: "#fff", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", boxShadow: "0 4px 20px rgba(122,63,209,0.3)", transition: "transform 0.2s" }}
+      <button type="submit" disabled={status === "sending"} style={{ width: "100%", padding: "16px", borderRadius: 12, border: "none", cursor: status === "sending" ? "wait" : "pointer", fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.72rem", letterSpacing: "1.5px", textTransform: "uppercase", color: "#fff", background: "#D6308C", boxShadow: "0 4px 20px rgba(214,48,140,0.3)", transition: "transform 0.2s" }}
         onMouseEnter={function (e) { e.currentTarget.style.transform = "translateY(-2px)"; }}
         onMouseLeave={function (e) { e.currentTarget.style.transform = "translateY(0)"; }}
       >{status === "sending" ? "Submitting..." : "Submit Application"}</button>
@@ -254,12 +254,12 @@ export default function Volunteer() {
     return function () { obs.disconnect(); };
   }, []);
 
-  var bg = dark ? "#06020f" : "#ffffff";
+  var bg = dark ? "#151035" : "#ffffff";
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.60)" : "rgba(13,5,32,0.65)";
   var textLight = dark ? "rgba(255,255,255,0.35)" : "rgba(13,5,32,0.40)";
-  var sectionBg = dark ? "rgba(255,255,255,0.02)" : "rgba(122,63,209,0.02)";
-  var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.10)";
+  var sectionBg = dark ? "rgba(255,255,255,0.02)" : "rgba(214,48,140,0.02)";
+  var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(214,48,140,0.10)";
 
   return (
     <>
@@ -349,7 +349,7 @@ export default function Volunteer() {
 
           {/* ─── APPLICATION FORM ─── */}
           <section id="apply">
-            <div style={{ background: dark ? "linear-gradient(135deg, rgba(122,63,209,0.10), rgba(245,166,35,0.05))" : "linear-gradient(135deg, rgba(122,63,209,0.05), rgba(245,166,35,0.03))", border: "1px solid " + borderCol, borderRadius: 24, padding: "clamp(28px, 5vw, 48px)" }}>
+            <div style={{ background: dark ? "linear-gradient(135deg, rgba(214,48,140,0.10), rgba(245,166,35,0.05))" : "linear-gradient(135deg, rgba(214,48,140,0.05), rgba(245,166,35,0.03))", border: "1px solid " + borderCol, borderRadius: 24, padding: "clamp(28px, 5vw, 48px)" }}>
               <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "1.3rem", marginBottom: 6 }}>Apply to Volunteer</h2>
               {volunteerOpen && <p style={{ fontSize: "0.85rem", color: textMuted, lineHeight: 1.6, marginBottom: 28 }}>
                 Fill out the form below and we'll be in touch. Spots are limited — applications are reviewed on a rolling basis.

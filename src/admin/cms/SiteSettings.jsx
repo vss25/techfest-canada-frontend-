@@ -9,6 +9,8 @@ import { LIVE_NOTE } from "./cmsMeta";
 import { ChangeBadge } from "./workflow";
 import useCmsStatus from "./useCmsStatus";
 import LargeSiteFiles from "./LargeSiteFiles";
+import { useAutosave } from "./useAutosave";
+import { AutosaveNote } from "./AutosaveNote";
 
 const SETTINGS = [
   {
@@ -100,13 +102,30 @@ function AboutNumbers({ readOnly }) {
   const change = (i, key) => (e) => setDraft(stats.map((s, j) => (j === i ? { ...s, [key]: e.target.value } : s)));
   const invalid = stats.some((s) => !String(s.label || "").trim() || s.value === "" || !Number.isFinite(Number(s.value)));
 
+  const bodyOf = () => ({ stats: stats.map((s) => ({ ...s, label: String(s.label).trim(), value: Number(s.value), suffix: String(s.suffix || "").trim() })) });
+  // 30 seconds after the last change, or on leaving the page: saved as a draft (useAutosave.js).
+  const auto = useAutosave({
+    value: draft,
+    enabled: !readOnly,
+    save: async () => {
+      if (!draft || !doc?._id) return false;
+      if (invalid) return "Every number needs a value and a label.";
+      const body = bodyOf();
+      const saved = await api.patch(`/cms/aboutContent/${doc._id}?draft=1`, body);
+      setData((d) => [{ ...(d?.[0] || doc), stats: saved?.stats || body.stats, hasDraft: true }, ...(d || []).slice(1)]);
+      setDraft((cur) => (cur === draft ? null : cur));
+      return true;
+    },
+  });
+
   const save = async () => {
     setSaving(true);
     try {
-      const body = { stats: stats.map((s) => ({ ...s, label: String(s.label).trim(), value: Number(s.value), suffix: String(s.suffix || "").trim() })) };
+      const body = bodyOf();
       const saved = await api.patch(`/cms/aboutContent/${doc._id}?draft=1`, body);
       setData([{ ...doc, stats: saved?.stats || body.stats, hasDraft: true }, ...data.slice(1)]);
       setDraft(null);
+      auto.markSaved();
       toast.success(`Saved. ${LIVE_NOTE}`);
     } catch (err) {
       toast.error(err);
@@ -142,6 +161,7 @@ function AboutNumbers({ readOnly }) {
             <div className="mt-4 flex items-center justify-end gap-2">
               {invalid && <p className="mr-auto text-xs text-red-300" role="alert">Every number needs a value and a label.</p>}
               <Button variant="ghost" onClick={() => setDraft(null)} disabled={saving}>Cancel</Button>
+              {!readOnly && <AutosaveNote auto={auto} className="self-center" />}
               <Button variant="primary" onClick={save} loading={saving} disabled={invalid || readOnly}>Save</Button>
             </div>
           )}

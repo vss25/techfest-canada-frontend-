@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useAutosave } from "./useAutosave";
+import { AutosaveNote } from "./AutosaveNote";
 import { useNavigate } from "react-router-dom";
 import { ImageOff, Minus, Moon, Plus, RotateCcw, Search, Sun, Trash2, Pencil, ExternalLink, Globe, Smartphone, Star } from "lucide-react";
 import { useApi } from "../hooks";
@@ -116,7 +118,7 @@ function LogoTile({ doc, readOnly, light, withVisibility, showSponsor, onEdit, o
   );
 }
 
-function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly, doc, creating, defaultOrder, readOnly, onClose, onSaved, onDelete }) {
+function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly, doc, creating, defaultOrder, readOnly, onClose, onSaved, onAutoSaved, onDelete }) {
   const toast = useToast();
   const visibilityKeys = withVisibility ? ["description", "showOnWebsite", "showInApp"] : [];
   const keys = ["name", "url", "order", "active", "logoScale", ...(withCategory ? ["category", "matrixGroup"] : []), ...visibilityKeys];
@@ -138,14 +140,15 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
   const [saving, setSaving] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const save = async (e) => {
-    e.preventDefault();
+  const save = async (e, { auto: isAuto = false } = {}) => {
+    e?.preventDefault();
     const errs = {};
     if (!form.name.trim()) errs.name = "Name is required";
     if (withCategory && !form.category) errs.category = "Pick a category";
     if (form.order !== "" && !Number.isFinite(Number(form.order))) errs.order = "Enter a number";
     if (!logo.url) errs.logo = "A logo is required";
     if (form.description.length > SPONSOR_DESCRIPTION_MAX) errs.description = `Keep it under ${SPONSOR_DESCRIPTION_MAX} characters`;
+    if (Object.keys(errs).length && isAuto) return `${Object.values(errs)[0]}.`;
     setErrors(errs);
     if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
     // A missing switch counts as on, so compare against that (not against "unset").
@@ -155,10 +158,21 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
     const body = buildBody({ form, original, keys, numberKeys: ["order", "logoScale"], boolKeys, creating });
     if (creating) for (const k of boolKeys) body[k] = !!form[k];
     if (logo.assetId) body.logo = logo.assetId;
-    if (!creating && !Object.keys(body).length) { toast.info("Nothing changed"); onClose(); return; }
+    if (isAuto) {
+      // Autosave: saved as a draft, quietly, and the editor stays open.
+      if (!creating && !Object.keys(body).length) return false;
+      const saved = creating ? await api.post(`/cms/${type}?draft=1`, body) : await api.patch(`/cms/${type}/${doc._id}?draft=1`, body);
+      const merged = { ...(doc || {}), ...saved, logoUrl: logo.url, hasDraft: true };
+      for (const [k, v] of Object.entries(body)) if (v === null) delete merged[k];
+      setLogo((l) => ({ ...l, assetId: null }));
+      onAutoSaved(merged);
+      return true;
+    }
+    if (!creating && !Object.keys(body).length) { auto.cancel(); toast.info("Nothing changed"); onClose(); return; }
     setSaving(true);
     try {
       const saved = creating ? await api.post(`/cms/${type}?draft=1`, body) : await api.patch(`/cms/${type}/${doc._id}?draft=1`, body);
+      auto.markSaved();
       toast.success(creating ? `${form.name} added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
       const merged = { ...(doc || {}), ...saved, logoUrl: logo.url };
       for (const [k, v] of Object.entries(body)) if (v === null) delete merged[k];   // cleared fields
@@ -170,6 +184,9 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
     }
   };
 
+  // 30 seconds after the last change, or on closing the panel: saved as a draft (useAutosave.js).
+  const auto = useAutosave({ value: JSON.stringify([form, logo.url]), enabled: !readOnly, save: () => save(null, { auto: true }) });
+
   const Panel = withVisibility ? EditPanel : Drawer;
   return (
     <Panel
@@ -179,9 +196,10 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
       description={readOnly ? "Read-only until editing is switched on." : "Fields marked * are required."}
       footer={
         <>
-          {!creating && <Button variant="dangerOutline" icon={Trash2} disabled={readOnly || saving} onClick={() => onDelete(doc)}>Delete</Button>}
+          {!creating && <Button variant="dangerOutline" icon={Trash2} disabled={readOnly || saving} onClick={() => { auto.cancel(); onDelete(doc); }}>Delete</Button>}
           <span className="flex-1" />
-          <Button onClick={onClose} disabled={saving}>Cancel</Button>
+          {!readOnly && <AutosaveNote auto={auto} className="self-center" />}
+          <Button onClick={() => { auto.cancel(); onClose(); }} disabled={saving}>Cancel</Button>
           <Button variant="primary" type="submit" form={`logo-form-${type}`} loading={saving} disabled={readOnly}>{creating ? `Add ${singular}` : "Save changes"}</Button>
         </>
       }
@@ -379,6 +397,14 @@ export default function LogoCollection({ type, title, singular, description, wit
       return arr.some((x) => x._id === doc._id) ? arr.map((x) => (x._id === doc._id ? doc : x)) : [...arr, doc];
     });
   };
+  // An autosave keeps the panel open; a new one becomes an edit of the saved record.
+  const onAutoSaved = (doc) => {
+    setEditing((ed) => (ed ? { ...ed, doc, creating: false } : ed));
+    setData((xs) => {
+      const arr = xs || [];
+      return arr.some((x) => x._id === doc._id) ? arr.map((x) => (x._id === doc._id ? doc : x)) : [...arr, doc];
+    });
+  };
   const openNew = () => setEditing({ doc: null, creating: true, key: Date.now() });
   const hiddenCount = list.filter((d) => d.active === false).length;
   const notOnWebsite = withVisibility ? list.filter((d) => d.active !== false && !onWebsite(d)).length : 0;
@@ -522,6 +548,7 @@ export default function LogoCollection({ type, title, singular, description, wit
           readOnly={readOnly}
           onClose={() => setEditing(null)}
           onSaved={onSaved}
+          onAutoSaved={onAutoSaved}
           onDelete={(doc) => setDeleting(doc)}
         />
       )}

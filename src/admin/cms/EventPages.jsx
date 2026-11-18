@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarPlus, Eye, Lock, Plus, Send, Trash2, Upload, X } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
@@ -17,6 +17,8 @@ import { WorkflowBanner } from "./workflow";
 import { changeState, stagingUrl } from "./workflowState";
 import { ReadinessCard } from "./ReadinessCard";
 import { useReadiness } from "./useReadiness";
+import { useAutosave } from "./useAutosave";
+import { AutosaveNote } from "./AutosaveNote";
 
 /* =========================================================
    Admin › Website content › Event pages (redesign step 1).
@@ -139,7 +141,13 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
   const [form, setForm] = useState(base);
   const [busy, setBusy] = useState("");
   const [confirmDelete, setConfirmDelete] = useState("");
-  useEffect(() => { setForm(base); setConfirmDelete(""); }, [base]);
+  // After a save the page reloads from what was saved; edits typed while it was saving are kept.
+  const sentRef = useRef(null);
+  useEffect(() => {
+    setForm((f) => (sentRef.current && f !== sentRef.current ? { ...base, ...diff(f, sentRef.current) } : base));
+    sentRef.current = null;
+    setConfirmDelete("");
+  }, [base]);
   const changes = diff(form, base);
   const dirty = Object.keys(changes).length > 0;
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e }));
@@ -147,6 +155,7 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
 
   const saveDraft = async () => {
     if (!dirty) return ev;
+    sentRef.current = form;
     const saved = await api.patch(`/cms/event/${ev._id}?draft=1`, changes);
     onSaved({ ...ev, ...saved, citySkylineUrl: form.citySkylineUrl, _id: ev._id, hasDraft: true });
     return saved;
@@ -155,9 +164,20 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
     setBusy(name);
     try { await fn(); } catch (err) { toast.error(err); } finally { setBusy(""); }
   };
-  const onSave = run("save", async () => { await saveDraft(); toast.success("Saved. Send it to staging when it's ready."); });
+  const onSave = run("save", async () => { await saveDraft(); auto.markSaved(); toast.success("Saved. Send it to staging when it's ready."); });
+  // 30 seconds after the last change (or on leaving the page), save as a draft without asking.
+  const auto = useAutosave({
+    value: form,
+    enabled: !readOnly,
+    save: async () => {
+      if (!dirty || busy) return false;
+      await saveDraft();
+      return true;
+    },
+  });
   const onStage = run("stage", async () => {
     await saveDraft();
+    auto.markSaved();
     const out = await api.post(`/cms/event/${ev._id}/stage`);
     onSaved({ ...ev, ...out, citySkylineUrl: form.citySkylineUrl, _id: ev._id });
     toast.success("On staging. Open it on staging to check it.");
@@ -197,6 +217,7 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
         </>}
         description={`${form.name || ev.name} · ${path}. Save your changes, send them to staging, check them there, then publish to the live website.`}
         actions={<>
+          <AutosaveNote auto={auto} className="self-center" />
           <Button variant="secondary" onClick={onSave} disabled={disabled || !dirty}>{busy === "save" ? "Saving…" : "Save"}</Button>
           <Button variant="secondary" icon={Send} onClick={onStage} disabled={disabled || (!dirty && !ev.hasDraft)}>{busy === "stage" ? "Sending…" : "Send to staging"}</Button>
           <Button variant="secondary" icon={Eye} onClick={onOpenStaging} disabled={!ev.staged}>Open on staging</Button>

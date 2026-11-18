@@ -15,6 +15,8 @@ import useCmsStatus from "./useCmsStatus";
 import { eventPath } from "../../lib/events";
 import { WorkflowBanner } from "./workflow";
 import { changeState, stagingUrl } from "./workflowState";
+import { ReadinessCard } from "./ReadinessCard";
+import { useReadiness } from "./useReadiness";
 
 /* =========================================================
    Admin › Website content › Event pages (redesign step 1).
@@ -180,6 +182,12 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
 
   const st = stateOf(ev);
   const disabled = readOnly || !!busy;
+  // Publish to live stays off until the page has what it needs (and while publishing is paused until launch).
+  const ready = useReadiness(ev, form, dirty);
+  const publishBlocked = ready.loading || !ready.ready || ready.paused;
+  const publishWhy = ready.loading ? "Checking what this page still needs…"
+    : !ready.ready ? `Not ready yet: ${ready.items.filter((i) => i.required && !i.ok).map((i) => i.label).join(", ")}.`
+      : ready.paused ? "Publishing is paused until the new website launches." : undefined;
   return (
     <div className="grid gap-6">
       <PageHeader
@@ -193,10 +201,11 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
           <Button variant="secondary" onClick={onSave} disabled={disabled || !dirty}>{busy === "save" ? "Saving…" : "Save"}</Button>
           <Button variant="secondary" icon={Send} onClick={onStage} disabled={disabled || (!dirty && !ev.hasDraft)}>{busy === "stage" ? "Sending…" : "Send to staging"}</Button>
           <Button variant="secondary" icon={Eye} onClick={onOpenStaging} disabled={!ev.staged}>Open on staging</Button>
-          <Button variant="primary" icon={Upload} onClick={onPublish} disabled={disabled || !ev.staged}
-            title={ev.hasDraft || dirty ? "Publishes the version on staging. Newer changes need to go to staging first." : undefined}>{busy === "publish" ? "Publishing…" : "Publish to live"}</Button>
+          <Button variant="primary" icon={publishBlocked ? Lock : Upload} onClick={onPublish} disabled={disabled || !ev.staged || publishBlocked}
+            title={publishWhy || (ev.hasDraft || dirty ? "Publishes the version on staging. Newer changes need to go to staging first." : undefined)}>{busy === "publish" ? "Publishing…" : "Publish to live"}</Button>
         </>}
       />
+      <ReadinessCard r={ready} />
 
       <Card className="grid gap-4">
         <h3 className="font-semibold">Basics</h3>

@@ -1,4 +1,6 @@
 import { useId, useMemo, useState } from "react";
+import { useAutosave } from "./useAutosave";
+import { AutosaveNote } from "./AutosaveNote";
 import {
   AlertTriangle, ArrowDown, ArrowUp, CalendarDays, Clock, Coffee, Copy, Download, Mic, Pencil, Plus, Star, Trash2, UserRound, X,
 } from "lucide-react";
@@ -160,7 +162,7 @@ function dayLabel(d, ev) {
   return `${DAYS[d].label} · ${DAYS[d].date}`;
 }
 
-function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = [], all, speakerIndex, speakerNames, readOnly, globalLive, onClose, onSaved, onDuplicate, onDelete, onShift }) {
+function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = [], all, speakerIndex, speakerNames, readOnly, globalLive, onClose, onSaved, onAutoSaved, onDuplicate, onDelete, onShift }) {
   const toast = useToast();
   // Whose dates the Day picker shows: the event the agenda is filtered to, else the session's own first event.
   const dayEvent = eventList.find((e) => e._id === (defaultEventId || refIds(doc)[0]));
@@ -178,24 +180,35 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
     return { ...f, speakers: s };
   });
 
-  const save = async (e) => {
+  const save = async (e, { auto: isAuto = false } = {}) => {
     e?.preventDefault();
     const errs = {};
     if (!form.title.trim()) errs.title = "Give the session a title";
     if (!TIME_RE.test(form.time)) errs.time = "Pick a start time";
     if (!TIME_RE.test(form.endTime)) errs.endTime = "Pick an end time";
     else if (TIME_RE.test(form.time) && toMin(form.endTime) <= toMin(form.time)) errs.endTime = "End time must be after the start";
+    if (Object.keys(errs).length && isAuto) return `${Object.values(errs)[0]}.`;
     setErrors(errs);
     if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
     const body = toBody(form, creating ? null : doc);
     if (creating) body.sessionId = uniqueSessionId(form.day, all);
+    if (isAuto) {
+      // Autosave: saved as a draft, quietly, and the editor stays open.
+      const saved = creating ? await api.post("/cms/session?draft=1", body) : await api.patch(`/cms/session/${doc._id}?draft=1`, body);
+      onAutoSaved({ ...(doc || {}), ...body, ...(saved || {}), hasDraft: true });
+      return true;
+    }
     setSaving(true);
     try {
       const saved = creating ? await api.post("/cms/session?draft=1", body) : await api.patch(`/cms/session/${doc._id}?draft=1`, body);
+      auto.markSaved();
       toast.success(creating ? `Session added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
       onSaved({ ...(doc || {}), ...body, ...(saved || {}) });
     } catch (err) { toast.error(err); } finally { setSaving(false); }
   };
+
+  // 30 seconds after the last change, or on closing the panel: saved as a draft (useAutosave.js).
+  const auto = useAutosave({ value: form, enabled: !readOnly, save: () => save(null, { auto: true }) });
 
   const dur = TIME_RE.test(form.time) && TIME_RE.test(form.endTime) && toMin(form.endTime) > toMin(form.time) ? getDuration(form.time, form.endTime) : null;
 
@@ -210,11 +223,12 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
           <>
             {onShift && doc.time && <Button icon={Clock} onClick={() => onShift(doc)} disabled={readOnly || saving}>Running late…</Button>}
             <Button icon={Copy} onClick={() => onDuplicate(doc)} disabled={readOnly || saving}>Duplicate</Button>
-            <Button icon={Trash2} onClick={() => onDelete(doc)} disabled={readOnly || saving} className="text-[#B91C1C]">Delete</Button>
+            <Button icon={Trash2} onClick={() => { auto.cancel(); onDelete(doc); }} disabled={readOnly || saving} className="text-[#B91C1C]">Delete</Button>
           </>
         )}
         <span className="flex-1" />
-        <Button onClick={onClose} disabled={saving}>Cancel</Button>
+        {!readOnly && <AutosaveNote auto={auto} className="self-center" />}
+        <Button onClick={() => { auto.cancel(); onClose(); }} disabled={saving}>Cancel</Button>
         <Button variant="primary" type="submit" form="session-form" loading={saving} disabled={readOnly}>{creating ? "Add session" : "Save changes"}</Button>
       </>}
     >
@@ -607,6 +621,14 @@ export default function Agenda() {
     });
   };
 
+  // An autosave keeps the panel open; a new session becomes an edit of the saved one.
+  const onAutoSaved = (doc) => {
+    setEditing((ed) => (ed ? { ...ed, doc, creating: false } : ed));
+    setData((xs) => {
+      const arr = xs || [];
+      return arr.some((x) => x._id === doc._id) ? arr.map((x) => (x._id === doc._id ? { ...x, ...doc } : x)) : [...arr, doc];
+    });
+  };
   const onSaved = (doc) => {
     setEditing(null);
     if (doc.day) setDay(Number(doc.day));
@@ -711,6 +733,7 @@ export default function Agenda() {
           globalLive={globalLive}
           onClose={() => setEditing(null)}
           onSaved={onSaved}
+          onAutoSaved={onAutoSaved}
           onDuplicate={duplicate}
           onDelete={setDeleting}
           onShift={(doc) => setShifting(doc)}

@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useAutosave } from "./useAutosave";
+import { AutosaveNote } from "./AutosaveNote";
 import { Crop, Mic2, Plus, Search, Star, Trash2, Pencil, X as XIcon } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
@@ -36,7 +38,7 @@ const toForm = (d) => ({
 
 const refIds = (d) => (d?.events || []).map((r) => r?._ref).filter(Boolean).sort();
 
-function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, onSaved, onDelete, eventList = [] }) {
+function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, onSaved, onAutoSaved, onDelete, eventList = [] }) {
   const toast = useToast();
   const [form, setForm] = useState(() => (doc ? toForm(doc) : blank(defaultOrder)));
   const [image, setImage] = useState({ assetId: null, url: doc?.imageUrl || "" });
@@ -52,7 +54,7 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
   // Which event pages the speaker appears on (redesign step 1). None = every event.
   const [evs, setEvs] = useState(() => refIds(doc));
 
-  const save = async (e) => {
+  const save = async (e, { auto: isAuto = false } = {}) => {
     e?.preventDefault();
     const errs = {};
     if (!form.name.trim()) errs.name = "Full name is required";
@@ -61,6 +63,7 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
     if (form.order === "" || !Number.isFinite(Number(form.order))) errs.order = "Enter a number (lower shows first)";
     if (form.rowPosition !== "" && !Number.isFinite(Number(form.rowPosition))) errs.rowPosition = "Enter a whole number";
     if (!image.url) errs.image = "A profile photo is required";
+    if (Object.keys(errs).length && isAuto) return `${Object.values(errs)[0]}.`;
     setErrors(errs);
     if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
 
@@ -70,10 +73,20 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
     }
     const evSorted = [...evs].sort();
     if (creating ? evSorted.length : JSON.stringify(evSorted) !== JSON.stringify(refIds(doc))) body.events = evSorted;
-    if (!creating && !Object.keys(body).length) { toast.info("Nothing changed"); onClose(); return; }
+    if (isAuto) {
+      // Autosave: saved as a draft, quietly, and the editor stays open.
+      if (!creating && !Object.keys(body).length) return false;
+      const saved = creating ? await api.post("/cms/speaker?draft=1", body) : await api.patch(`/cms/speaker/${doc._id}?draft=1`, body);
+      setImage((i) => ({ ...i, assetId: null }));
+      setFramingChanged(false);
+      onAutoSaved({ ...(doc || {}), ...saved, hasDraft: true, events: evSorted.map((id) => ({ _ref: id })), imageUrl: image.url, image: assetId ? { asset: { _ref: assetId }, ...(framing || {}) } : doc?.image });
+      return true;
+    }
+    if (!creating && !Object.keys(body).length) { auto.cancel(); toast.info("Nothing changed"); onClose(); return; }
     setSaving(true);
     try {
       const saved = creating ? await api.post("/cms/speaker?draft=1", body) : await api.patch(`/cms/speaker/${doc._id}?draft=1`, body);
+      auto.markSaved();
       toast.success(creating ? `${form.name} added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
       onSaved({ ...(doc || {}), ...saved, events: evSorted.map((id) => ({ _ref: id })), imageUrl: image.url, image: assetId ? { asset: { _ref: assetId }, ...(framing || {}) } : doc?.image });
     } catch (err) {
@@ -82,6 +95,9 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
       setSaving(false);
     }
   };
+
+  // 30 seconds after the last change, or on closing the panel: saved as a draft (useAutosave.js).
+  const auto = useAutosave({ value: JSON.stringify([form, image.url, framing, evs]), enabled: !readOnly, save: () => save(null, { auto: true }) });
 
   const opt = (list) => [<option key="" value="">Not set</option>, ...list.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)];
 
@@ -94,10 +110,11 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
       footer={
         <>
           {!creating && (
-            <Button variant="dangerOutline" icon={Trash2} disabled={readOnly || saving} onClick={() => onDelete(doc)}>Delete</Button>
+            <Button variant="dangerOutline" icon={Trash2} disabled={readOnly || saving} onClick={() => { auto.cancel(); onDelete(doc); }}>Delete</Button>
           )}
           <span className="flex-1" />
-          <Button onClick={onClose} disabled={saving}>Cancel</Button>
+          {!readOnly && <AutosaveNote auto={auto} className="self-center" />}
+          <Button onClick={() => { auto.cancel(); onClose(); }} disabled={saving}>Cancel</Button>
           <Button variant="primary" type="submit" form="speaker-form" loading={saving} disabled={readOnly}>
             {creating ? "Add speaker" : "Save changes"}
           </Button>
@@ -245,6 +262,14 @@ export default function Speakers() {
 
 
 
+  // An autosave keeps the panel open; a new speaker becomes an edit of the saved one.
+  const onAutoSaved = (doc) => {
+    setEditing((ed) => (ed ? { ...ed, doc, creating: false } : ed));
+    setData((xs) => {
+      const arr = xs || [];
+      return arr.some((x) => x._id === doc._id) ? arr.map((x) => (x._id === doc._id ? { ...x, ...doc } : x)) : [...arr, doc];
+    });
+  };
   const onSaved = (doc) => {
     setEditing(null);
     setData((xs) => {
@@ -363,6 +388,7 @@ export default function Speakers() {
           readOnly={readOnly}
           onClose={() => setEditing(null)}
           onSaved={onSaved}
+          onAutoSaved={onAutoSaved}
           onDelete={(doc) => setDeleting(doc)}
         />
       )}

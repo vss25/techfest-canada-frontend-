@@ -11,6 +11,7 @@ import {
 import { changeState } from "./workflowState";
 import { useAdminEvent } from "../eventContext";
 import { CmsBanners, ImagePicker } from "./CmsParts";
+import { ReadinessStrip } from "./ReadinessCard";
 import { ChangeBadge } from "./workflow";
 import { PARTNER_CATEGORIES, LIVE_NOTE } from "./cmsMeta";
 import { buildBody, nextOrder } from "./fields";
@@ -392,6 +393,7 @@ export default function LogoCollection({ type, title, singular, description, wit
         actions={<Button variant="primary" icon={Plus} disabled={readOnly} onClick={openNew}>Add {singular}</Button>}
       />
       <CmsBanners configured={configured} />
+      {withVisibility && <ReadinessStrip />}
       {withVisibility && (
         <Tabs label="Partners" value={sponsorsOnly ? "featured" : "all"}
           onChange={(k) => navigate(k === "featured" ? "/admin/content/sponsors" : "/admin/content/partners")}

@@ -6,6 +6,7 @@ import { workspacesFor } from "./access";
 import { useAdmin } from "./adminContext";
 import { useAdminEvent } from "./eventContext";
 import { EventChip } from "./EventSwitcher";
+import { ReadinessStrip } from "./cms/ReadinessCard";
 
 /* =========================================================
    The approved admin design's navigation (boards 16–18):
@@ -103,6 +104,7 @@ export function WorkspaceMenu({ onNavigate }) {
       {ws.groups.map((g, gi) => (
         <div key={gi} className="flex flex-col gap-0.5">
           {g.title && <span className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8A86A0]">{g.title}</span>}
+          {g.scoped && ws.id === "content" && !isVolunteer && <ReadinessStrip compact />}
           {g.items.map((it) => {
             const on = it.to === active;
             return (

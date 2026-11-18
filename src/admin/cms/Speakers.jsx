@@ -7,6 +7,7 @@ import {
   Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, PageHeader, Select, SkeletonGrid, Switch, Textarea, focusRing, EditPanel, TableWrap, Card,
 } from "../ui";
 import { CmsBanners, ImagePicker } from "./CmsParts";
+import { ReadinessStrip } from "./ReadinessCard";
 import { ChangeBadge } from "./workflow";
 import { changeState } from "./workflowState";
 import { useAdminEvent } from "../eventContext";
@@ -263,6 +264,7 @@ export default function Speakers() {
         actions={<Button variant="primary" icon={Plus} disabled={readOnly} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add speaker</Button>}
       />
       <CmsBanners configured={configured} />
+      <ReadinessStrip />
 
       <div className="mb-5 grid gap-3 rounded-[18px] border border-ttfc-line bg-ttfc-panel p-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto] lg:items-center">
         <div className="relative">

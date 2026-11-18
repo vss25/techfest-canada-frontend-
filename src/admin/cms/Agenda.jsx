@@ -10,6 +10,7 @@ import {
   Switch, TableWrap, Tabs, Textarea, focusRing,
 } from "../ui";
 import { CmsBanners } from "./CmsParts";
+import { ReadinessStrip } from "./ReadinessCard";
 import { ChangeBadge } from "./workflow";
 import { changeState } from "./workflowState";
 import { LIVE_NOTE } from "./cmsMeta";
@@ -639,6 +640,7 @@ export default function Agenda() {
         )}
       />
       <CmsBanners configured={configured} />
+      <ReadinessStrip />
 
       {loading ? <SkeletonGrid count={4} className="h-20" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !allSessions.length && !eventId ? (
         <EmptyState

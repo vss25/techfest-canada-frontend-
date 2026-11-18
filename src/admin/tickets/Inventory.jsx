@@ -1,3 +1,4 @@
+import { ReadinessStrip } from "../cms/ReadinessCard";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -454,6 +455,7 @@ export default function Inventory() {
           </div>
         )}
       />
+      <ReadinessStrip />
 
       {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : (
         <>

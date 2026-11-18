@@ -170,7 +170,8 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
     value: form,
     enabled: !readOnly,
     save: async () => {
-      if (!dirty || busy) return false;
+      if (!dirty) return false;
+      if (busy) return "Waiting for the current save to finish.";
       await saveDraft();
       return true;
     },

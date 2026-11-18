@@ -148,9 +148,13 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
     if (form.order !== "" && !Number.isFinite(Number(form.order))) errs.order = "Enter a number";
     if (!logo.url) errs.logo = "A logo is required";
     if (form.description.length > SPONSOR_DESCRIPTION_MAX) errs.description = `Keep it under ${SPONSOR_DESCRIPTION_MAX} characters`;
-    if (Object.keys(errs).length && isAuto) return `${Object.values(errs)[0]}.`;
-    setErrors(errs);
-    if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
+    // Autosave keeps an incomplete draft (empty fields are checked when it's sent to staging);
+    // it waits only for a value it can't store.
+    if (isAuto) { const bad = [errs.order, errs.description].filter(Boolean); if (bad.length) return `${bad[0]}.`; }
+    if (!isAuto) {
+      setErrors(errs);
+      if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
+    }
     // A missing switch counts as on, so compare against that (not against "unset").
     const original = doc ? { ...doc, active: doc.active !== false, logoScale: scaleOf(doc),
       showOnWebsite: doc.showOnWebsite !== false, showInApp: doc.showInApp !== false } : null;

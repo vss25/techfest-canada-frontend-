@@ -21,10 +21,8 @@ export function ReadinessCard({ r }) {
           <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <span>
             {r.ready
-              ? r.paused
-                ? "Everything needed is in. Publishing is paused until the new website launches: a manager turns it on in Home › Website changes."
-                : "Everything needed is in. You can publish this page to the live website."
-              : <>Publish to live turns on when these are done: <b className="text-[#151035]">{missing.map((i) => i.label).join(", ")}</b>.</>}
+              ? "Everything needed is in. Publish to live is on."
+              : <>Publish to live turns on when these are done: <b className="text-[#151035]">{missing.map((i) => i.label).join(", ")}</b>. Until then, send changes to staging and review them there.</>}
           </span>
         </p>
       )}

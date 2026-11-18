@@ -76,7 +76,8 @@ export function IconButton({ icon, label, className, ...rest }) {
 export function Card({ className, children, as = "div", ...rest }) {
   const Tag = as;
   return (
-    <Tag className={cx("rounded-[18px] border border-ttfc-line bg-ttfc-panel p-5 sm:p-6", className)} {...rest}>
+    // The approved design's section: white, 1px #E3E0EE, 12px corners, 18px padding.
+    <Tag className={cx("rounded-xl border border-[#E3E0EE] bg-white p-[18px]", className)} {...rest}>
       {children}
     </Tag>
   );
@@ -85,7 +86,7 @@ export function Card({ className, children, as = "div", ...rest }) {
 /* Page heading in the approved admin design: where the page sits ("Content › Event website", from the
    menu; the page's own eyebrow when it isn't in the menu), the title, its actions on the right, then
    what the page is for. */
-export function PageHeader({ eyebrow, title, description, actions }) {
+export function PageHeader({ eyebrow, title, description, actions, status }) {
   const { pathname } = useLocation();
   const { current } = useAdminEvent();
   const hit = navItemFor(pathname);
@@ -100,6 +101,7 @@ export function PageHeader({ eyebrow, title, description, actions }) {
         <div className="flex min-w-0 items-center gap-2.5">
           <h1 className="text-[26px] font-bold leading-[34px] tracking-[-0.01em] text-ttfc-text">{title}</h1>
           {hit && <HelpButton to={hit.item.to} title={hit.item.label} />}
+          {status && <span className="flex flex-wrap items-center gap-1.5">{status}</span>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
@@ -118,15 +120,16 @@ export function SectionTitle({ children, hint, className }) {
 }
 
 /* ---------------- Forms ---------------- */
+// The approved design's field: 38px, 9px corners, 1px #E3E0EE, white, 14px navy text.
 const inputBase =
-  "w-full rounded-xl border border-ttfc-field bg-ttfc-ink/70 px-3.5 py-2.5 text-sm text-ttfc-text placeholder:text-ttfc-dim transition focus:border-ttfc-purple focus:outline-none focus:ring-2 focus:ring-ttfc-purple/30 disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full min-h-[38px] rounded-[9px] border border-[#E3E0EE] bg-white px-3 py-[8px] text-sm leading-[21px] text-[#151035] placeholder:text-[#8A86A0] transition focus:border-[#D6308C] focus:outline-none focus:ring-2 focus:ring-[#D6308C]/20 disabled:cursor-not-allowed disabled:bg-[#F6F5FA] disabled:text-[#6B6688]";
 
 export function Field({ label, hint, error, required, children, className, id: idProp }) {
   const auto = useId();
   const id = idProp || auto;
   const child = typeof children === "function" ? children(id) : children;
   return (
-    <div className={cx("flex flex-col gap-1.5", className)}>
+    <div className={cx("flex flex-col gap-[5px]", className)}>
       {label && (
         // The ⓘ after the label explains the field when the page's guide does (help.js FIELD_HELP).
         <HelpLabel label={label} htmlFor={id}>
@@ -134,7 +137,7 @@ export function Field({ label, hint, error, required, children, className, id: i
         </HelpLabel>
       )}
       {child}
-      {error ? <p className="text-xs text-red-300" role="alert">{error}</p> : hint ? <p className="text-xs text-ttfc-dim">{hint}</p> : null}
+      {error ? <p className="text-xs text-[#B91C1C]" role="alert">{error}</p> : hint ? <p className="text-[11px] leading-4 text-[#8A86A0]">{hint}</p> : null}
     </div>
   );
 }
@@ -187,9 +190,10 @@ export function Select({ className, children, ...rest }) {
 export function Switch({ checked, onChange, label, description, disabled, id: idProp, size = "md", ariaLabel, onColor }) {
   const auto = useId();
   const id = idProp || auto;
-  const track = size === "lg" ? "h-8 w-14" : "h-6 w-11";
-  const knob = size === "lg" ? "h-6 w-6" : "h-4 w-4";
-  const shift = size === "lg" ? "translate-x-7" : "translate-x-6";
+  // The approved design's switch: 40 × 22 with an 18px knob.
+  const track = size === "lg" ? "h-8 w-14" : "h-[22px] w-10";
+  const knob = size === "lg" ? "h-6 w-6" : "h-[18px] w-[18px]";
+  const shift = size === "lg" ? "translate-x-7" : "translate-x-[18px]";
   const btn = (
     <button
       id={id}
@@ -202,10 +206,10 @@ export function Switch({ checked, onChange, label, description, disabled, id: id
       style={checked && onColor ? { background: onColor, borderColor: onColor } : undefined}
       className={cx(
         "relative inline-flex shrink-0 items-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50",
-        track, checked ? (onColor ? "" : "border-transparent bg-[#D6308C]") : "border-ttfc-line bg-ttfc-track", focusRing,
+        track, checked ? (onColor ? "" : "border-transparent bg-[#D6308C]") : "border-transparent bg-[#CFCBE0]", focusRing,
       )}
     >
-      <span className={cx("inline-block translate-x-1 rounded-full bg-white shadow transition", knob, checked && shift)} />
+      <span className={cx("inline-block rounded-full bg-white shadow transition", size === "lg" ? "translate-x-1" : "translate-x-px", knob, checked && shift)} />
     </button>
   );
   if (!label) return btn;
@@ -223,14 +227,15 @@ export function Switch({ checked, onChange, label, description, disabled, id: id
 }
 
 /* ---------------- Feedback ---------------- */
+// The approved design's status pills (the event switcher's tags use the same colours).
 const BADGE = {
-  neutral: "border-ttfc-line bg-ttfc-contrast/5 text-ttfc-muted",
-  pink: "border-ttfc-pink/30 bg-ttfc-pink/10 text-pink-200",
-  purple: "border-ttfc-purple/30 bg-ttfc-purple/10 text-violet-200",
-  orange: "border-ttfc-orange/30 bg-ttfc-orange/10 text-orange-200",
-  good: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-  bad: "border-red-400/30 bg-red-400/10 text-red-200",
-  warn: "border-amber-400/30 bg-amber-400/10 text-amber-200",
+  neutral: "border-transparent bg-[#F1F0F5] text-[#4A4566]",
+  pink: "border-transparent bg-[#FBE9F3] text-[#9D1D63]",
+  purple: "border-transparent bg-[#EDE9FE] text-[#5B21B6]",
+  orange: "border-transparent bg-[#FFEDD5] text-[#9A3412]",
+  good: "border-transparent bg-[#DCFCE7] text-[#166534]",
+  bad: "border-transparent bg-[#FEE2E2] text-[#991B1B]",
+  warn: "border-transparent bg-[#FEF3C7] text-[#92400E]",
 };
 export function Badge({ tone = "neutral", children, className, icon: Icon }) {
   return (
@@ -310,18 +315,19 @@ export function ErrorState({ error, onRetry, title = "Couldn't load this", class
   );
 }
 
+// The approved design's notes: solid light fills, 10px corners, 13px text.
 const BANNER = {
-  info: "border-ttfc-purple/30 bg-ttfc-purple/10 text-violet-100",
-  warn: "border-amber-400/30 bg-amber-400/10 text-amber-100",
-  danger: "border-red-400/40 bg-red-500/10 text-red-100",
-  good: "border-emerald-400/30 bg-emerald-400/10 text-emerald-100",
+  info: "border-[#E3E0EE] bg-[#F6F5FA] text-[#4A4566]",
+  warn: "border-[#F5E1B8] bg-[#FFF7E6] text-[#7A4B00]",
+  danger: "border-[#FBD5D5] bg-[#FEF2F2] text-[#991B1B]",
+  good: "border-[#BBF7D0] bg-[#F0FDF4] text-[#166534]",
 };
 export function Banner({ tone = "info", icon: Icon, title, children, className, action }) {
   return (
-    <div className={cx("adm-banner flex flex-col gap-3 rounded-2xl border px-4 py-3.5 text-sm sm:flex-row sm:items-center", BANNER[tone], className)} role={tone === "danger" ? "alert" : undefined}>
-      <div className="flex flex-1 items-start gap-3">
-        {Icon && <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />}
-        <div className="min-w-0 leading-relaxed">
+    <div className={cx("adm-banner flex flex-col gap-3 rounded-[10px] border px-3 py-2.5 text-[13px] leading-[19px] sm:flex-row sm:items-center", BANNER[tone], className)} role={tone === "danger" ? "alert" : undefined}>
+      <div className="flex flex-1 items-start gap-2.5">
+        {Icon && <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />}
+        <div className="min-w-0">
           {title && <p className="font-semibold">{title}</p>}
           {children && <div className={title ? "mt-0.5 opacity-85" : ""}>{children}</div>}
         </div>
@@ -332,25 +338,22 @@ export function Banner({ tone = "info", icon: Icon, title, children, className, 
 }
 
 /* ---------------- Data display ---------------- */
-const TILE_TONE = {
-  pink: "from-ttfc-pink/25", purple: "from-ttfc-purple/25", orange: "from-ttfc-orange/25",
-  good: "from-emerald-400/20", bad: "from-red-400/25", neutral: "from-ttfc-contrast/5",
-};
 export function StatTile({ label, value, icon: Icon, tone = "purple", hint, to }) {
+  // The approved design's number card: white, 12px corners, 16px padding; label, a 26px number, a coloured line.
+  const hintColor = { good: "#166534", bad: "#B91C1C", orange: "#B45309", pink: "#9D1D63", purple: "#5B21B6", neutral: "#4A4566" }[tone] || "#4A4566";
   const body = (
     <>
-      <div className={cx("pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br to-transparent blur-2xl", TILE_TONE[tone])} />
-      <div className="relative flex items-start justify-between gap-3">
-        <p className="text-[13px] font-medium text-ttfc-muted">{label}</p>
-        {Icon && <Icon className="h-[18px] w-[18px] text-ttfc-muted" aria-hidden="true" />}
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-xs text-[#6B6688]">{label}</span>
+        {Icon && <Icon className="h-4 w-4 text-[#8A86A0]" aria-hidden="true" />}
       </div>
-      <p className="relative mt-3 text-[28px] font-bold leading-none tracking-tight text-ttfc-text">{value ?? "—"}</p>
-      {hint && <p className="relative mt-2 text-xs text-ttfc-dim">{hint}</p>}
+      <b className="text-[26px] font-bold leading-8 tabular-nums text-[#151035]">{value ?? "—"}</b>
+      {hint && <span className="text-xs" style={{ color: hintColor }}>{hint}</span>}
     </>
   );
-  const cls = "relative overflow-hidden rounded-[18px] border border-ttfc-line bg-ttfc-panel p-5";
+  const cls = "flex flex-col gap-1 rounded-xl border border-[#E3E0EE] bg-white p-4";
   return to ? (
-    <Link to={to} className={cx(cls, "block transition hover:border-ttfc-purple/50", focusRing)}>{body}</Link>
+    <Link to={to} className={cx(cls, "transition hover:bg-[#F6F5FA]", focusRing)}>{body}</Link>
   ) : (
     <div className={cls}>{body}</div>
   );
@@ -386,7 +389,7 @@ export function Tabs({ tabs, value, onChange, label = "Sections", className }) {
     onChange(tabs[n].key);
   };
   return (
-    <div role="tablist" aria-label={label} className={cx("-mx-1 mb-5 flex gap-1 overflow-x-auto px-1 pb-1", className)}>
+    <div role="tablist" aria-label={label} className={cx("mb-5 flex gap-1 overflow-x-auto border-b border-[#F0EEF6]", className)}>
       {tabs.map((t, i) => {
         const active = t.key === value;
         return (
@@ -400,13 +403,14 @@ export function Tabs({ tabs, value, onChange, label = "Sections", className }) {
             onKeyDown={(e) => onKey(e, i)}
             onClick={() => onChange(t.key)}
             className={cx(
-              "inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition",
-              active ? "bg-ttfc-contrast/10 text-ttfc-text shadow-inner" : "text-ttfc-muted hover:bg-ttfc-contrast/5 hover:text-ttfc-text",
+              // The approved design's tabs: 34px, 13px semibold, a 2px magenta line under the open one.
+              "inline-flex h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap px-3 text-[13px] font-semibold transition",
+              active ? "text-[#151035] shadow-[inset_0_-2px_0_#D6308C]" : "text-[#6B6688] hover:text-[#151035]",
               focusRing,
             )}
           >
             {t.label}
-            {t.count !== undefined && <span className={cx("rounded-full px-1.5 text-[11px] tabular-nums", active ? "bg-ttfc-pink/30 text-ttfc-contrast" : "bg-ttfc-contrast/5")}>{t.count}</span>}
+            {t.count !== undefined && <span className={cx("rounded-full px-1.5 text-[10px] font-bold tabular-nums", active ? "bg-[#FBE9F3] text-[#9D1D63]" : "bg-[#F1F0F5] text-[#4A4566]")}>{t.count}</span>}
           </button>
         );
       })}
@@ -417,7 +421,7 @@ export function Tabs({ tabs, value, onChange, label = "Sections", className }) {
 /** Horizontal-scrolling table container (styles in admin.css → .adm-table). */
 export function TableWrap({ children, className }) {
   return (
-    <div className={cx("overflow-x-auto rounded-[18px] border border-ttfc-line bg-ttfc-panel", className)}>
+    <div className={cx("overflow-x-auto rounded-[10px] border border-[#F0EEF6] bg-white", className)}>
       <table className="adm-table">{children}</table>
     </div>
   );

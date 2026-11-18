@@ -82,7 +82,7 @@ export function HelpLabel({ label, children, className = "", as: As = "label", h
   return (
     <span className={`flex flex-col gap-1.5 ${className}`}>
       <span className="flex items-center gap-1.5">
-        <As {...(As === "label" ? { htmlFor } : {})} className="text-[13px] font-semibold text-ttfc-text/90">{children}</As>
+        <As {...(As === "label" ? { htmlFor } : {})} className="text-xs font-semibold text-[#4A4566]">{children}</As>
         {text && (
           <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls={panel}
             aria-label={`What is ${label}?`} title={`What is ${label}?`}

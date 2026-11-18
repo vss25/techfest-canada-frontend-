@@ -510,3 +510,24 @@ body.ttfc-admin-open .ticket-bar { display: none !important; }
   font-size: 12px;
   font-weight: 500;
 }
+
+/* The approved design's tables (board 17): lilac header row in small capitals, 13px rows, thin lines. */
+html[data-admin-theme="light"] .ttfc-admin .adm-table th,
+html[data-admin-theme="light"] .ttfc-admin .admin-table th {
+  padding: 10px 12px;
+  background: #f6f5fa;
+  color: #6b6688;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid #f0eef6;
+}
+html[data-admin-theme="light"] .ttfc-admin .adm-table td,
+html[data-admin-theme="light"] .ttfc-admin .admin-table td {
+  padding: 11px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid #f0eef6;
+  color: #151035;
+}
+html[data-admin-theme="light"] .ttfc-admin .adm-table tbody tr:hover td,
+html[data-admin-theme="light"] .ttfc-admin .admin-table tbody tr:hover td { background: #f6f5fa; }

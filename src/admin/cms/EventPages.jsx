@@ -182,12 +182,11 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
 
   const st = stateOf(ev);
   const disabled = readOnly || !!busy;
-  // Publish to live stays off until the page has what it needs (and while publishing is paused until launch).
+  // Publish to live turns on when the page has its required content; until then, staging and review only.
   const ready = useReadiness(ev, form, dirty);
-  const publishBlocked = ready.loading || !ready.ready || ready.paused;
+  const publishBlocked = ready.loading || !ready.ready;
   const publishWhy = ready.loading ? "Checking what this page still needs…"
-    : !ready.ready ? `Not ready yet: ${ready.items.filter((i) => i.required && !i.ok).map((i) => i.label).join(", ")}.`
-      : ready.paused ? "Publishing is paused until the new website launches." : undefined;
+    : !ready.ready ? `Not ready yet: ${ready.items.filter((i) => i.required && !i.ok).map((i) => i.label).join(", ")}.` : undefined;
   return (
     <div className="grid gap-6">
       <PageHeader

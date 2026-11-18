@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, GitPullRequestArrow, PauseCircle, RefreshCw, Send, Trash2, Upload } from "lucide-react";
+import { ExternalLink, GitPullRequestArrow, Lock, RefreshCw, Send, Trash2, Upload } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, ConfirmDialog, EmptyState, ErrorState, LoadingState, PageHeader } from "../ui";
 import { stagingUrl } from "./workflowState";
-import { useAdmin } from "../adminContext";
+import { useAllReadiness } from "./useReadiness";
 
 /* =========================================================
    Admin › Website & app › Changes (Nov 2026): every website
@@ -35,7 +35,7 @@ const when = (iso) => (iso ? new Date(iso).toLocaleString("en-CA", { month: "sho
 const word = (k) => k.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
 const fieldList = (f) => { const w = f.map(word); return w.length > 6 ? `${w.slice(0, 6).join(", ")} +${w.length - 6} more` : w.join(", "); };
 
-function Row({ item, checked, onCheck, onDiscard, busy }) {
+function Row({ item, checked, onCheck, onDiscard, busy, waiting = [] }) {
   return (
     <li className="flex flex-col gap-3 border-t border-ttfc-line px-4 py-3 first:border-t-0 sm:flex-row sm:items-start">
       <input
@@ -53,6 +53,14 @@ function Row({ item, checked, onCheck, onDiscard, busy }) {
           {item.unsent && <Badge tone="warn">Saved, not sent</Badge>}
           {item.staged && <Badge tone="purple">On staging</Badge>}
         </div>
+        {waiting.length > 0 && (
+          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[#B45309]">
+            <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+            {waiting.map((w, i) => (
+              <span key={w.id}>{i > 0 && " · "}Waits for <Link to={`/admin/content/events?edit=${w.id}`} className="font-semibold underline">{w.name}</Link> ({w.pct}% ready)</span>
+            ))}
+          </p>
+        )}
         <div className="mt-1 grid gap-0.5 text-xs text-ttfc-muted">
           {item.unsent && (
             <span>Saved{item.wipBy ? ` by ${item.wipBy}` : ""} {when(item.wipAt)}{item.fields.length ? ` · ${fieldList(item.fields)}` : ""}</span>
@@ -77,24 +85,9 @@ export default function Changes() {
   const [busy, setBusy] = useState("");
   const [confirm, setConfirm] = useState(null);
   const items = useMemo(() => data?.items || [], [data]);
-  // Any staff member publishes what's on staging (Nov 17 2026); the server says so in canPublish.
-  const canPublish = data?.canPublish !== false;
-  // Publishing paused until the new website launches (Nov 17 2026): the live site keeps its content.
-  const paused = data?.publishingPaused === true;
-  const { isManagement } = useAdmin();
-  const setPaused = (next) => setConfirm({
-    title: next ? "Pause publishing to the live website?" : "Turn publishing on?",
-    body: next
-      ? "Nobody can publish to the live website until a manager turns it on again. Saving and sending to staging keep working."
-      : "Staff can publish what's on staging to the live website again. Do this when the new website goes live.",
-    label: next ? "Pause publishing" : "Turn publishing on",
-    tone: next ? "danger" : "primary",
-    go: async () => {
-      await api.put("/cms/publishing", { paused: next });
-      toast.success(next ? "Publishing is paused." : "Publishing is on.");
-      reload();
-    },
-  });
+  // Publish to live works for items whose event has its required content (Event page › Ready to go live);
+  // the rest wait on staging for review.
+  const rd = useAllReadiness();
   const unsent = items.filter((i) => i.unsent);
   const staged = items.filter((i) => i.staged);
   // Sanity drafts nobody sent from here (left in Sanity Studio or by an old script): never published from this page.
@@ -104,7 +97,9 @@ export default function Changes() {
     return sel.length ? sel : list;
   };
   const toStage = chosen(unsent);
-  const toPublish = chosen(staged);
+  const waitingFor = (i) => (rd.loading ? [] : rd.blockedBy(i));
+  const toPublish = chosen(staged).filter((i) => !rd.loading && !waitingFor(i).length);
+  const waitingCount = staged.filter((i) => waitingFor(i).length).length;
   const toggle = (id, on) => setPicked((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n; });
 
   const run = async (name, fn) => {
@@ -152,12 +147,6 @@ export default function Changes() {
           </>
         )}
       />
-      {paused && (
-        <Banner tone="warn" icon={PauseCircle} className="mb-4 max-w-3xl" title="Publishing to the live website is paused"
-          action={isManagement && <Button variant="secondary" onClick={() => setPaused(false)}>Turn publishing on</Button>}>
-          The live website keeps its current content until the new website launches. Keep saving and sending changes to staging: everything on staging is published together at launch.
-        </Banner>
-      )}
       <Banner tone="info" icon={GitPullRequestArrow} className="mb-4 max-w-3xl">
         The staging site shows staged content to staff who are signed in there: sign in once on the staging site with your staff email and password, then use Open staging site.
       </Banner>
@@ -185,13 +174,16 @@ export default function Changes() {
               <div className="mr-auto">
                 <h2 className="font-semibold">On staging</h2>
                 <p className="text-xs text-ttfc-muted">{staged.length ? `${staged.length} on the staging site, not on the live website yet.` : "Nothing on staging."}</p>
+                {waitingCount > 0 && (
+                  <p className="mt-1 text-xs text-[#B45309]">
+                    {waitingCount} {waitingCount === 1 ? "waits" : "wait"} for {waitingCount === 1 ? "its" : "their"} event to be ready. Review them on staging; Publish to live turns on when the event page is 100% ready.
+                  </p>
+                )}
               </div>
-              {paused ? (
-                staged.length > 0 && <span className="text-xs text-ttfc-muted">Published together when the new website launches</span>
-              ) : canPublish ? (
+              {staged.length > 0 && (
                 <Button
                   variant="primary"
-                  icon={Upload}
+                  icon={toPublish.length ? Upload : Lock}
                   disabled={!toPublish.length || !!busy}
                   onClick={() => setConfirm({
                     title: toPublish.length === staged.length ? "Publish everything on staging?" : `Publish ${toPublish.length} to the live website?`,
@@ -201,13 +193,13 @@ export default function Changes() {
                     go: publish,
                   })}
                 >
-                  {toPublish.length === staged.length ? "Publish all to live" : `Publish ${toPublish.length} to live`}
+                  {!toPublish.length ? "Publish to live" : toPublish.length === staged.length ? "Publish all to live" : `Publish ${toPublish.length} to live`}
                 </Button>
-              ) : staged.length > 0 && <span className="text-xs text-ttfc-muted">A manager publishes these</span>}
+              )}
             </div>
             {staged.length > 0 && (
               <ul className="rounded-xl border border-ttfc-line">
-                {staged.map((i) => <Row key={i.id} item={i} checked={picked.has(i.id)} onCheck={(on) => toggle(i.id, on)} onDiscard={() => discard(i, "staged")} busy={!!busy} />)}
+                {staged.map((i) => <Row key={i.id} item={i} checked={picked.has(i.id)} onCheck={(on) => toggle(i.id, on)} onDiscard={() => discard(i, "staged")} busy={!!busy} waiting={waitingFor(i)} />)}
               </ul>
             )}
           </Card>

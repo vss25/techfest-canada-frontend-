@@ -187,9 +187,13 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
     if (!TIME_RE.test(form.time)) errs.time = "Pick a start time";
     if (!TIME_RE.test(form.endTime)) errs.endTime = "Pick an end time";
     else if (TIME_RE.test(form.time) && toMin(form.endTime) <= toMin(form.time)) errs.endTime = "End time must be after the start";
-    if (Object.keys(errs).length && isAuto) return `${Object.values(errs)[0]}.`;
-    setErrors(errs);
-    if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
+    // Autosave keeps an incomplete draft (empty fields are checked when it's sent to staging);
+    // it waits only while the end time is before the start.
+    if (isAuto && TIME_RE.test(form.time) && TIME_RE.test(form.endTime) && errs.endTime) return `${errs.endTime}.`;
+    if (!isAuto) {
+      setErrors(errs);
+      if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
+    }
     const body = toBody(form, creating ? null : doc);
     if (creating) body.sessionId = uniqueSessionId(form.day, all);
     if (isAuto) {

@@ -63,9 +63,13 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
     if (form.order === "" || !Number.isFinite(Number(form.order))) errs.order = "Enter a number (lower shows first)";
     if (form.rowPosition !== "" && !Number.isFinite(Number(form.rowPosition))) errs.rowPosition = "Enter a whole number";
     if (!image.url) errs.image = "A profile photo is required";
-    if (Object.keys(errs).length && isAuto) return `${Object.values(errs)[0]}.`;
-    setErrors(errs);
-    if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
+    // Autosave keeps an incomplete draft (empty fields are checked when it's sent to staging);
+    // it waits only for a value it can't store.
+    if (isAuto) { const bad = [errs.order && form.order !== "" && errs.order, errs.rowPosition].filter(Boolean); if (bad.length) return `${bad[0]}.`; }
+    if (!isAuto) {
+      setErrors(errs);
+      if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
+    }
 
     const body = buildBody({ form, original: doc, keys: KEYS, numberKeys: NUMBER_KEYS, boolKeys: ["featured"], creating });
     if (assetId && (image.assetId || framingChanged)) {

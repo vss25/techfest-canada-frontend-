@@ -150,7 +150,12 @@ function Composer({ id, settings, onSaved, onDeleted }) {
     if (!quiet && r.post.review?.state === "" && post?.review?.state === "approved") toast.info?.("Changed after approval: it needs approving again.");
     return true;
   };
-  const auto = useAutosave({ value, enabled: !isNew && !!form, save: async () => (dirty && !saving ? save({ quiet: true }) : false) });
+  // A new post is created by its first autosave, once something is written.
+  const auto = useAutosave({ value, enabled: !!form, save: async () => {
+    if (!dirty || saving) return false;
+    if (isNew && !String(form.text || "").trim() && !String(form.title || "").trim()) return false;
+    return save({ quiet: true });
+  } });
   const saveNow = async () => {
     setSaving(true);
     try { await save(); auto.markSaved(); toast.success(isNew ? "Post saved" : "Saved"); }

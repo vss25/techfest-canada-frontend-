@@ -4,17 +4,17 @@ import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import {
-  Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, PageHeader, Select, SkeletonGrid, Switch,
-  Textarea, focusRing,
+  Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, PageHeader, Select, SkeletonGrid, Switch, Textarea, focusRing, EditPanel, TableWrap, Card,
 } from "../ui";
 import { CmsBanners, ImagePicker } from "./CmsParts";
 import { ChangeBadge } from "./workflow";
+import { changeState } from "./workflowState";
+import { useAdminEvent } from "../eventContext";
 import { SECTORS, SPEAKER_TYPES, TECH_PILLARS, labelOf, LIVE_NOTE } from "./cmsMeta";
 import { buildBody, nextOrder } from "./fields";
 import useCmsStatus from "./useCmsStatus";
 import PhotoFramer, { FramedPreview } from "./PhotoFramer";
 import { dimsFromAssetId } from "./framing";
-import { speakerPhotoUrl } from "../../utils/sanity";
 import { useEditFromUrl, useInitialQuery } from "../search/deepLink";
 
 const KEYS = ["name", "title", "company", "bio", "order", "rowPosition", "featured", "speakerType", "techPillar", "sector",
@@ -32,73 +32,6 @@ const toForm = (d) => ({
   order: d.order != null ? String(d.order) : "",
   rowPosition: d.rowPosition != null ? String(d.rowPosition) : "",
 });
-
-function SpeakerCard({ s, readOnly, onEdit, onToggleFeatured, onOrder }) {
-  const [order, setOrder] = useState(s.order != null ? String(s.order) : "");
-  const commit = () => {
-    if (order === String(s.order ?? "")) return;
-    if (order === "" || !Number.isFinite(Number(order))) { setOrder(String(s.order ?? "")); return; }
-    onOrder(s, Number(order), () => setOrder(String(s.order ?? "")));
-  };
-  return (
-    <article className="group flex flex-col overflow-hidden rounded-[18px] border border-ttfc-line bg-ttfc-panel transition hover:border-ttfc-purple/50">
-      <button type="button" onClick={() => onEdit(s)} className={`relative block aspect-square w-full overflow-hidden bg-ttfc-ink ${focusRing}`} aria-label={`Edit ${s.name}`}>
-        {s.imageUrl ? (
-          <img src={s.image?.asset?._ref ? speakerPhotoUrl(s.image, 480) : `${s.imageUrl}?w=480&fit=max&auto=format`} alt="" loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
-        ) : (
-          <span className="flex h-full items-center justify-center text-ttfc-dim"><Mic2 className="h-10 w-10" aria-hidden="true" /></span>
-        )}
-        <span className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" aria-hidden="true" />
-        <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
-          <Pencil className="h-3 w-3" aria-hidden="true" /> Edit
-        </span>
-        {s.featured && (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-ttfc-orange px-2 py-0.5 text-[11px] font-bold text-ttfc-ink shadow">
-            <Star className="h-3 w-3" fill="currentColor" aria-hidden="true" /> Featured
-          </span>
-        )}
-      </button>
-      <div className="flex flex-1 flex-col gap-2 p-3.5">
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-bold text-ttfc-text" title={s.name}>{s.name}</h3>
-          <ChangeBadge doc={s} className="mt-1" />
-          <p className="line-clamp-2 text-xs text-ttfc-muted">{[s.title, s.company].filter(Boolean).join(" · ")}</p>
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {s.speakerType && <Badge tone="pink">{labelOf(SPEAKER_TYPES, s.speakerType)}</Badge>}
-          {s.techPillar && <Badge tone="purple">{labelOf(TECH_PILLARS, s.techPillar)}</Badge>}
-        </div>
-        <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-          <label className="flex items-center gap-1.5 text-xs text-ttfc-dim">
-            Order
-            <input
-              type="number"
-              inputMode="numeric"
-              value={order}
-              disabled={readOnly}
-              onChange={(e) => setOrder(e.target.value)}
-              onBlur={commit}
-              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") setOrder(String(s.order ?? "")); }}
-              className="h-8 w-16 rounded-lg border border-ttfc-line bg-ttfc-ink px-2 text-center text-sm text-ttfc-text focus:border-ttfc-purple focus:outline-none focus:ring-2 focus:ring-ttfc-purple/30 disabled:opacity-60"
-              aria-label={`Display order for ${s.name}`}
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => onToggleFeatured(s)}
-            disabled={readOnly}
-            aria-pressed={!!s.featured}
-            aria-label={s.featured ? `Unfeature ${s.name}` : `Feature ${s.name}`}
-            title={s.featured ? "Featured — click to unfeature" : "Feature this speaker"}
-            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition disabled:opacity-50 ${s.featured ? "bg-ttfc-orange/20 text-ttfc-orange" : "text-ttfc-dim hover:bg-ttfc-contrast/5 hover:text-ttfc-text"} ${focusRing}`}
-          >
-            <Star className="h-4 w-4" fill={s.featured ? "currentColor" : "none"} aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-    </article>
-  );
-}
 
 const refIds = (d) => (d?.events || []).map((r) => r?._ref).filter(Boolean).sort();
 
@@ -152,10 +85,10 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
   const opt = (list) => [<option key="" value="">Not set</option>, ...list.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)];
 
   return (
-    <Drawer
+    <EditPanel
       open={open}
       onClose={onClose}
-      title={creating ? "Add a speaker" : doc?.name || "Edit speaker"}
+      title={creating ? "Add a speaker" : `Edit speaker: ${doc?.name || ""}`}
       description={readOnly ? "Read-only until editing is switched on." : "Fields marked * are required."}
       footer={
         <>
@@ -273,7 +206,7 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
           <Field label="Personal website URL">{(id) => <Input id={id} type="url" placeholder="example.com" value={form.website} onChange={set("website")} disabled={readOnly} />}</Field>
         </fieldset>
       </form>
-    </Drawer>
+    </EditPanel>
   );
 }
 
@@ -296,42 +229,20 @@ export default function Speakers() {
   const list = useMemo(() => data || [], [data]);
   // From the global search: ?edit=<id> opens that speaker.
   useEditFromUrl(list, (doc) => setEditing({ doc, creating: false, key: doc._id }));
+  const { current: chosenEvent } = useAdminEvent();
+  const [allEvents, setAllEvents] = useState(false);
+  const onEvent = !allEvents && !!chosenEvent;
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return list.filter((s) =>
+    const evIds = (s) => (s.events || []).map((r) => r?._ref).filter(Boolean);
+    return list.filter((s) => (!onEvent || !evIds(s).length || evIds(s).includes(chosenEvent._id)) &&
       (!needle || [s.name, s.title, s.company].some((x) => (x || "").toLowerCase().includes(needle))) &&
       (!type || s.speakerType === type) && (!pillar || s.techPillar === pillar) && (!sector || s.sector === sector) &&
       (!featuredOnly || s.featured));
-  }, [list, q, type, pillar, sector, featuredOnly]);
+  }, [list, q, type, pillar, sector, featuredOnly, onEvent, chosenEvent]);
   const filtered = q || type || pillar || sector || featuredOnly;
 
-  const patchLocal = (id, fields) => setData((xs) => (xs || []).map((x) => (x._id === id ? { ...x, ...fields } : x)));
 
-  const toggleFeatured = async (s) => {
-    patchLocal(s._id, { featured: !s.featured });
-    try {
-      await api.patch(`/cms/speaker/${s._id}?draft=1`, { featured: !s.featured });
-      patchLocal(s._id, { hasDraft: true });
-      toast.success(`${s.name}: ${!s.featured ? "featured" : "not featured"}, saved. ${LIVE_NOTE}`);
-    } catch (err) {
-      patchLocal(s._id, { featured: s.featured });
-      toast.error(err);
-    }
-  };
-
-  const changeOrder = async (s, order, revert) => {
-    patchLocal(s._id, { order });
-    try {
-      await api.patch(`/cms/speaker/${s._id}?draft=1`, { order });
-      patchLocal(s._id, { hasDraft: true });
-      toast.success(`${s.name} moved to position ${order}, saved`);
-      setData((xs) => [...(xs || [])].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999) || (a.name || "").localeCompare(b.name || "")));
-    } catch (err) {
-      patchLocal(s._id, { order: s.order });
-      revert();
-      toast.error(err);
-    }
-  };
 
   const onSaved = (doc) => {
     setEditing(null);
@@ -395,13 +306,44 @@ export default function Speakers() {
             )}
           </div>
           {shown.length ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-              {shown.map((s) => (
-                <SpeakerCard key={`${s._id}:${s.order}`} s={s} readOnly={readOnly}
-                  onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })}
-                  onToggleFeatured={toggleFeatured} onOrder={changeOrder} />
-              ))}
-            </div>
+            <Card className="flex flex-col gap-3.5">
+              <div className="flex flex-wrap items-baseline gap-2.5">
+                <h2 className="text-base font-bold text-[#151035]">{onEvent && chosenEvent ? `Speakers on ${chosenEvent.name}` : "All speakers"}</h2>
+                <span className="text-xs text-[#6B6688]">Click a row to edit it</span>
+                {chosenEvent && (
+                  <button type="button" onClick={() => setAllEvents((v) => !v)} className={`ml-auto text-[13px] font-semibold text-[#D6308C] hover:underline ${focusRing}`}>
+                    {onEvent ? "Show all speakers" : `Only ${chosenEvent.name}`}
+                  </button>
+                )}
+              </div>
+              <TableWrap>
+                <thead><tr><th>Name</th><th>Title, organisation</th><th>Type</th><th>Order</th><th>Status</th></tr></thead>
+                <tbody>
+                  {shown.map((s) => (
+                    <tr key={s._id} className="is-clickable" tabIndex={0}
+                      onClick={() => setEditing({ doc: s, creating: false, key: s._id })}
+                      onKeyDown={(e) => { if (e.key === "Enter") setEditing({ doc: s, creating: false, key: s._id }); }}
+                      style={editing?.doc?._id === s._id ? { background: "#FBE9F3", boxShadow: "inset 3px 0 0 #D6308C" } : undefined}>
+                      <td className="font-semibold">
+                        <span className="flex items-center gap-2.5">
+                          {s.imageUrl ? <img src={`${s.imageUrl}?w=64&h=64&fit=crop`} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" loading="lazy" /> : <span className="h-8 w-8 shrink-0 rounded-full bg-[#F1F0F5]" aria-hidden="true" />}
+                          {s.name}
+                        </span>
+                      </td>
+                      <td className="text-[#4A4566]">{[s.title, s.company].filter(Boolean).join(", ")}</td>
+                      <td>{labelOf(SPEAKER_TYPES, s.speakerType) || "Speaker"}</td>
+                      <td className="tabular-nums text-[#4A4566]">{s.order ?? "—"}</td>
+                      <td>
+                        <span className="flex flex-wrap items-center gap-1.5">
+                          {changeState(s) ? <ChangeBadge doc={s} /> : <Badge tone="good">Live</Badge>}
+                          {s.featured && <Badge tone="warn">Featured</Badge>}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </TableWrap>
+            </Card>
           ) : (
             <EmptyState icon={Search} title="No speakers match" body="Try a different search or clear the filters." />
           )}

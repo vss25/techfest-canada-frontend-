@@ -597,3 +597,26 @@ function SwitchHelp({ label, children }) {
     </>
   );
 }
+
+/* The approved design's inline editor (board 17: "Edit speaker: Maya Chen" under the table): the same props as
+   Drawer, shown as a section on the page and scrolled into view when it opens. */
+export function EditPanel({ open, onClose, title, description, children, footer }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (open) ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [open]);
+  if (!open) return null;
+  return (
+    <section ref={ref} aria-label={typeof title === "string" ? title : "Edit"} className="mt-3.5 scroll-mt-20 rounded-xl border border-[#E3E0EE] bg-white p-[18px]">
+      <div className="mb-3.5 flex flex-wrap items-baseline gap-2.5">
+        <h2 className="text-base font-bold text-[#151035]">{title}</h2>
+        {description && <span className="text-xs text-[#6B6688]">{description}</span>}
+        {onClose && (
+          <button type="button" onClick={onClose} className={cx("ml-auto rounded-lg px-2 py-1 text-[13px] font-semibold text-[#6B6688] hover:bg-[#F6F5FA] hover:text-[#151035]", focusRing)}>Close</button>
+        )}
+      </div>
+      {children}
+      {footer && <div className="mt-[18px] flex flex-wrap items-center gap-2 border-t border-[#F0EEF6] pt-3.5">{footer}</div>}
+    </section>
+  );
+}

@@ -23,3 +23,11 @@ html:not([data-admin-theme]) body [class*="orbitron"] {
   letter-spacing: -0.01em !important;
   text-transform: none;
 }
+
+/* Gradient headline text on the older pages (purple/magenta to gold) becomes the approved
+   design's solid magenta accent (Nov 2026). Never inside the new design (.ap-root) or the admin. */
+html:not([data-admin-theme]) body :is(.agenda-gradient-text, .agenda-stat-text, .community-gradient-text, .org-grad-text, .speakers-gradient-text, .tfc-grad-text):not(.ap-root *) {
+  background: none !important;
+  -webkit-text-fill-color: #D6308C !important;
+  color: #D6308C !important;
+}

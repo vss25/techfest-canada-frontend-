@@ -7,7 +7,7 @@
 :root {
     /* Brand Colors (From Guidelines) */
     --brand-magenta: #D9468F;
-    --brand-purple:  #7A3FD1;  
+    --brand-purple:  #D6308C;  
     --brand-orange:  #F5A623;  
     --brand-charcoal:#2B2F36; 
     --brand-silver:  #BFC5CC;   
@@ -72,7 +72,7 @@ nav {
 
 .form-input:focus {
   border-color: var(--brand-purple);
-  box-shadow: 0 0 0 2px rgba(122, 63, 209, 0.15);
+  box-shadow: 0 0 0 2px rgba(214, 48, 140, 0.15);
 }
 
 body.dark-mode {
@@ -84,7 +84,7 @@ body.dark-mode {
 
     --text-main: var(--brand-white);
     --text-muted: var(--brand-silver);
-    --border-main: rgba(122, 63, 209, 0.22);
+    --border-main: rgba(214, 48, 140, 0.22);
     --shadow-main: 0 15px 40px rgba(0, 0, 0, 0.7);
 }
 
@@ -102,7 +102,7 @@ body {
 body.dark-mode {
     background-color: #0D0A1A;
     background-image:
-        radial-gradient(ellipse at 20% 0%,   rgba(122, 63, 209, 0.28) 0%, transparent 55%),
+        radial-gradient(ellipse at 20% 0%,   rgba(214, 48, 140, 0.28) 0%, transparent 55%),
         radial-gradient(ellipse at 80% 10%,  rgba(245, 166, 35, 0.12) 0%, transparent 45%),
         radial-gradient(ellipse at 50% 100%, rgba(217, 70, 143, 0.10) 0%, transparent 50%),
         linear-gradient(180deg, #0D0A1A 0%, #070512 100%);
@@ -291,7 +291,7 @@ footer { padding: 4rem 5%; background: var(--bg-card); border-top: 1px solid var
 
   background: linear-gradient(
     135deg,
-    #7a3fd1,
+    #D6308C,
     #f59e0b
   );
 
@@ -621,7 +621,7 @@ body.dark-mode .feature-text h2 {
 }
 
 .ticket-badge.vip {
-  background: rgba(122,63,209,0.15);
+  background: rgba(214,48,140,0.15);
   color: var(--brand-purple);
 }
 
@@ -1053,7 +1053,7 @@ html {
 .admin-table th {
   text-align: left;
   padding: 14px;
-  background: rgba(122,63,209,0.08);
+  background: rgba(214,48,140,0.08);
   font-weight: 700;
   color: var(--text-main);
 }
@@ -1091,7 +1091,7 @@ html {
 
 /* Excel feel */
 .admin-table tbody tr:hover {
-  background: rgba(122,63,209,0.05);
+  background: rgba(214,48,140,0.05);
 }
 
 /* badges */
@@ -1110,12 +1110,12 @@ html {
 ======================================== */
 
 .btn-secondary {
-  background: rgba(122,63,209,0.15);
+  background: rgba(214,48,140,0.15);
   color: #c4a8ff;
   padding: 12px 24px;
   border-radius: 12px;
   font-weight: 600;
-  border: 1px solid rgba(122,63,209,0.3);
+  border: 1px solid rgba(214,48,140,0.3);
   cursor: pointer;
   transition: 0.2s;
   font-family: 'Orbitron', sans-serif;
@@ -1125,8 +1125,8 @@ html {
 }
 
 .btn-secondary:hover {
-  background: rgba(122,63,209,0.25);
-  border-color: rgba(122,63,209,0.5);
+  background: rgba(214,48,140,0.25);
+  border-color: rgba(214,48,140,0.5);
 }
 
 .admin-tabs-wrapper {
@@ -1162,7 +1162,7 @@ html {
 
 .admin-tabs button.active {
   color: #c4a8ff;
-  border-bottom-color: #7a3fd1;
+  border-bottom-color: #D6308C;
 }
 
 .admin-tab-content {
@@ -1720,7 +1720,7 @@ body.dark-mode .mobile-link {
   padding: 14px 26px;
   border-radius: 12px;
 
-  background: linear-gradient(135deg, #7a3fd1, #f5a623);
+  background: #D6308C;
   box-shadow: 0 4px 18px rgba(245,166,35,0.28);
 
   color: #ffffff;

@@ -132,19 +132,19 @@ const css = ({ dark, textMain, textMid, accent, cardBg, cardBdr }) => `
 .aw-winners-pill { display: inline-flex; align-items: center; gap: 7px; background: rgba(245,166,35,0.12); border: 1px solid rgba(245,166,35,0.35); color: ${dark ? "#f5a623" : "#8a4f00"};
   font-family: 'Orbitron', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 18px; border-radius: 999px; }
 .aw-winners-head h2 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: clamp(1.7rem, 4vw, 2.8rem); line-height: 1.12; color: ${textMain}; margin: 18px 0 14px; text-wrap: balance; }
-.aw-winners-head h2 span { background: linear-gradient(135deg, #7a3fd1, #f5a623); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.aw-winners-head h2 span { background: #D6308C; -webkit-background-clip: text; background-clip: text; color: transparent; }
 .aw-winners-head p { font-family: 'Montserrat', sans-serif; font-size: clamp(0.98rem, 1.5vw, 1.08rem); line-height: 1.75; color: ${textMid}; margin: 0; }
 .aw-winners-sub { font-family: 'Orbitron', sans-serif; font-size: 0.62rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: ${dark ? "#f5a623" : "#8a4f00"}; margin: clamp(2.2rem, 4vw, 3rem) 0 14px; }
 .aw-winners-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .aw-winners-grid > li { display: flex; min-width: 0; }
 .aw-winner-card { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 20px 20px 16px; border-radius: 18px; cursor: pointer; font: inherit; text-decoration: none;
   background: ${cardBg}; border: 1px solid ${cardBdr}; color: ${textMain}; transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease;
-  box-shadow: ${dark ? "0 4px 24px rgba(0,0,0,0.25)" : "0 4px 20px rgba(122,63,209,0.05)"}; }
-.aw-winner-card:hover { border-color: #f5a623; transform: translateY(-2px); box-shadow: ${dark ? "0 12px 34px rgba(0,0,0,0.4)" : "0 12px 30px rgba(122,63,209,0.12)"}; }
+  box-shadow: ${dark ? "0 4px 24px rgba(0,0,0,0.25)" : "0 4px 20px rgba(214,48,140,0.05)"}; }
+.aw-winner-card:hover { border-color: #f5a623; transform: translateY(-2px); box-shadow: ${dark ? "0 12px 34px rgba(0,0,0,0.4)" : "0 12px 30px rgba(214,48,140,0.12)"}; }
 .aw-winner-card:focus-visible { outline: 3px solid ${accent}; outline-offset: 3px; }
 .aw-winner-tags { display: flex; gap: 6px; flex-wrap: wrap; min-height: 22px; }
 .aw-winner-tag { font-family: 'Orbitron', sans-serif; font-size: 0.56rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 9px; border-radius: 6px;
-  background: ${dark ? "rgba(185,158,255,0.10)" : "rgba(122,63,209,0.08)"}; color: ${dark ? "#b99eff" : "#7a3fd1"}; }
+  background: ${dark ? "rgba(185,158,255,0.10)" : "rgba(214,48,140,0.08)"}; color: ${dark ? "#F06AB0" : "#D6308C"}; }
 .aw-winner-tag-special { background: rgba(245,166,35,0.12); color: ${dark ? "#f5a623" : "#8a4f00"}; }
 .aw-winner-award { font-family: 'Montserrat', sans-serif; font-size: 0.86rem; font-weight: 600; line-height: 1.5; color: ${textMid}; }
 .aw-winner-company { font-family: 'Orbitron', sans-serif; font-size: clamp(1rem, 1.6vw, 1.15rem); font-weight: 800; line-height: 1.3; color: ${textMain}; overflow-wrap: anywhere; }
@@ -156,7 +156,7 @@ const css = ({ dark, textMain, textMid, accent, cardBg, cardBdr }) => `
 
 .aw-dialog-back { position: fixed; inset: 0; z-index: 20000; background: rgba(6,2,15,0.72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center; padding: clamp(0px, 3vw, 28px); }
-.aw-dialog { width: min(1180px, 100%); height: min(92vh, 980px); display: flex; flex-direction: column; border-radius: 20px; overflow: hidden; background: #06020f;
+.aw-dialog { width: min(1180px, 100%); height: min(92vh, 980px); display: flex; flex-direction: column; border-radius: 20px; overflow: hidden; background: #151035;
   border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 40px 120px rgba(0,0,0,0.6); }
 .aw-dialog-bar { display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; }
 .aw-dialog-title { flex: 1; min-width: 0; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -165,7 +165,7 @@ const css = ({ dark, textMain, textMid, accent, cardBg, cardBdr }) => `
 .aw-dialog-close { width: 40px; height: 40px; border-radius: 99px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06); color: #fff; cursor: pointer; }
 .aw-dialog-close:hover { background: rgba(255,255,255,0.12); }
 .aw-dialog-close:focus-visible, .aw-dialog-link:focus-visible { outline: 2px solid #f5a623; outline-offset: 2px; }
-.aw-dialog-frame { flex: 1; width: 100%; border: 0; background: #06020f; }
+.aw-dialog-frame { flex: 1; width: 100%; border: 0; background: #151035; }
 @media (max-width: 600px) {
   .aw-dialog-back { padding: 0; }
   .aw-dialog { height: 100%; border-radius: 0; border: 0; }

@@ -28,7 +28,7 @@ import {
 const HUB_CSS = `
   .ev-hub-card { transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease; }
   @media (hover: hover) and (pointer: fine) {
-    .ev-hub-card:hover { transform: translateY(-5px); box-shadow: 0 22px 48px rgba(2,0,10,0.5); border-color: rgba(155,135,245,0.45); }
+    .ev-hub-card:hover { transform: translateY(-5px); box-shadow: 0 22px 48px rgba(2,0,10,0.5); border-color: rgba(240,106,176,0.45); }
     .ev-hub-card:hover .ev-hub-media img { transform: scale(1.06); }
   }
   .ev-hub-media img { transition: transform .6s ease; }
@@ -40,7 +40,7 @@ function EventCard({ ev }) {
     <Link to={eventPath(ev)} className="ev-hub-card"
       style={{ display: "block", borderRadius: 20, overflow: "hidden", textDecoration: "none", color: "inherit",
         border: "1px solid rgba(127,90,240,0.25)", background: "rgba(127,90,240,0.06)" }}>
-      <div className="ev-hub-media" style={{ position: "relative", height: 168, overflow: "hidden", background: "linear-gradient(150deg, #2a1160 0%, #7a3fd1 60%, #e8458b 135%)" }}>
+      <div className="ev-hub-media" style={{ position: "relative", height: 168, overflow: "hidden", background: "linear-gradient(150deg, #2a1160 0%, #D6308C 60%, #e8458b 135%)" }}>
         {photo ? (
           <img src={photo} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         ) : (

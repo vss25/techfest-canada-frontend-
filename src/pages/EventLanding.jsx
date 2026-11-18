@@ -58,11 +58,11 @@ const LANDING_CSS = `
   }
   .ev-session-card {
     height: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 20px;
-    background: rgba(255,255,255,0.045); border: 1px solid rgba(155,135,245,0.20);
+    background: rgba(255,255,255,0.045); border: 1px solid rgba(240,106,176,0.20);
     transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
   }
   @media (hover: hover) and (pointer: fine) {
-    .ev-session-card:hover { transform: translateY(-5px); box-shadow: 0 22px 48px rgba(2,0,10,0.5); border-color: rgba(155,135,245,0.45); }
+    .ev-session-card:hover { transform: translateY(-5px); box-shadow: 0 22px 48px rgba(2,0,10,0.5); border-color: rgba(240,106,176,0.45); }
     .ev-session-card:hover .ev-session-media img { transform: scale(1.06); }
   }
   .ev-session-media { position: relative; aspect-ratio: 16 / 9; overflow: hidden; flex-shrink: 0; }
@@ -191,9 +191,9 @@ function SessionRow({ s }) {
 }
 
 const CARD_GRADIENTS = [
-  "linear-gradient(135deg, #2a1160 0%, #7a3fd1 55%, #e8458b 135%)",
+  "linear-gradient(135deg, #2a1160 0%, #D6308C 55%, #e8458b 135%)",
   "linear-gradient(135deg, #1b0b45 0%, #5b2bb0 52%, #f5a623 140%)",
-  "linear-gradient(135deg, #12082f 0%, #3d1a86 55%, #7a3fd1 125%)",
+  "linear-gradient(135deg, #12082f 0%, #3d1a86 55%, #D6308C 125%)",
 ];
 function gradientFor(seed) {
   let h = 0;
@@ -403,7 +403,7 @@ export function EventTemplate({ ev, below, heroHeadingAs }) {
         <Reveal style={{ flex: "1 1 100%" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 26px", padding: "16px 22px", borderRadius: 18, fontSize: "0.92rem", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", boxShadow: "0 14px 38px rgba(2,0,10,0.4)", position: "relative", zIndex: 3, marginTop: -68 }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontWeight: 700 }}>
-              <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", flexShrink: 0 }} />
+              <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "#D6308C", flexShrink: 0 }} />
               {LIFECYCLE_LABEL[lifecycle]}
             </span>
             {ev.venueName && <span style={{ opacity: 0.88 }}>{ev.venueName}{ev.venueAddress ? ` — ${ev.venueAddress}` : ""}</span>}

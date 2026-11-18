@@ -27,7 +27,7 @@ export default function Sponsors() {
     return () => obs.disconnect();
   }, []);
 
-  const bg = isDark ? "#06020f" : "#f4f0ff";
+  const bg = isDark ? "#151035" : "#f4f0ff";
   const textMain = isDark ? "#ffffff" : "#0f0520";
   const textMuted = isDark ? "rgba(200,180,255,0.8)" : "rgba(60,30,110,0.85)";
 
@@ -73,7 +73,7 @@ export default function Sponsors() {
               fontWeight: 800,
               letterSpacing: "3px",
               textTransform: "uppercase",
-              color: isDark ? "#b99eff" : "#7a3fd1",
+              color: isDark ? "#F06AB0" : "#D6308C",
               marginBottom: "1.2rem",
             }}
           >
@@ -100,7 +100,7 @@ export default function Sponsors() {
               fontSize: "clamp(3.5rem, 8vw, 6.5rem)",
               fontWeight: 900,
               marginBottom: "2rem",
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",

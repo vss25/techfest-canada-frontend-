@@ -166,7 +166,7 @@ var SPECIAL_AWARDS = [
 
 /* Jury scoring weights (sum to 100). Ordered by weight so the biggest factor reads first. */
 var CRITERIA = [
-  { label: "Impact", val: 30, desc: "Measurable results the work has already delivered.", color: "#7a3fd1" },
+  { label: "Impact", val: 30, desc: "Measurable results the work has already delivered.", color: "#D6308C" },
   { label: "Innovation", val: 25, desc: "How new and significant the technology or approach is.", color: "#9959a6" },
   { label: "Scale", val: 20, desc: "Reach today and the potential to grow.", color: "#b8737a" },
   { label: "Canadian Relevance", val: 15, desc: "Benefit to Canada's technology ecosystem.", color: "#d68c4f" },
@@ -234,20 +234,20 @@ export default function Awards() {
     return function () { obs.disconnect(); };
   }, []);
 
-  var bg       = dark ? "#06020f" : "#ffffff";
+  var bg       = dark ? "#151035" : "#ffffff";
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMid  = dark ? "rgba(220,210,255,0.78)" : "rgba(13,5,32,0.70)";
   var textSoft = dark ? "rgba(200,185,255,0.38)" : "rgba(13,5,32,0.42)";
-  var accent   = dark ? "#b99eff" : "#7a3fd1";
+  var accent   = dark ? "#F06AB0" : "#D6308C";
   var cardBg   = dark ? "rgba(255,255,255,0.04)" : "#ffffff";
-  var cardBdr  = dark ? "rgba(155,135,245,0.14)" : "rgba(122,63,209,0.14)";
+  var cardBdr  = dark ? "rgba(240,106,176,0.14)" : "rgba(214,48,140,0.14)";
   var sectionBg = dark ? "#0a0618" : "#f4f0ff";
 
   var filtered = activePillar === "all" ? ALL_CATEGORIES : ALL_CATEGORIES.filter(function (a) { return a.pillar === activePillar; });
 
   var today = todayInToronto();
-  var tlMuted = dark ? "rgba(185,158,255,0.22)" : "rgba(122,63,209,0.18)";
-  var tlDone  = dark ? "#b99eff" : "#7a3fd1";
+  var tlMuted = dark ? "rgba(185,158,255,0.22)" : "rgba(214,48,140,0.18)";
+  var tlDone  = dark ? "#F06AB0" : "#D6308C";
 
   // Another event is selected: its awards are not this page's content yet —
   // show the announced state (the /awards/:year pattern), pills included.
@@ -334,7 +334,7 @@ export default function Awards() {
 
       {/* ════════════════ HERO ════════════════ */}
       <section className="aw-hero" style={{ position: "relative", overflow: "hidden", background: bg, height: "100vh", minHeight: 700, display: "flex", flexDirection: "column" }}>
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundImage: "linear-gradient(" + (dark ? "rgba(122,63,209,0.03)" : "rgba(122,63,209,0.04)") + " 1px, transparent 1px), linear-gradient(90deg, " + (dark ? "rgba(122,63,209,0.03)" : "rgba(122,63,209,0.04)") + " 1px, transparent 1px)", backgroundSize: "80px 80px", maskImage: "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundImage: "linear-gradient(" + (dark ? "rgba(214,48,140,0.03)" : "rgba(214,48,140,0.04)") + " 1px, transparent 1px), linear-gradient(90deg, " + (dark ? "rgba(214,48,140,0.03)" : "rgba(214,48,140,0.04)") + " 1px, transparent 1px)", backgroundSize: "80px 80px", maskImage: "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%)" }} />
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.8 }}
           style={{ position: "relative", zIndex: 20, textAlign: "center", paddingTop: "clamp(90px, 12vh, 130px)", paddingLeft: 16, paddingRight: 16 }}>
           {/* No pill once the winners are on show (Nov 1 2026); the wrapper stays for its top padding, which keeps the hero
@@ -361,7 +361,7 @@ export default function Awards() {
               {winners ? "The results are out. Meet the winners of the Catalyst Awards 2026." : "The hard work is done. Now let Canada know about it."}
             </p>
             <motion.a href={winners ? "#winners" : "#awards-list"} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 10, marginTop: 24, padding: "15px 34px", borderRadius: 14, background: "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "#fff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.78rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}>
+              style={{ display: "inline-flex", alignItems: "center", gap: 10, marginTop: 24, padding: "15px 34px", borderRadius: 14, background: "#D6308C", color: "#fff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.78rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}>
               {winners ? "See the winners" : "Explore Awards"}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
             </motion.a>
@@ -371,7 +371,7 @@ export default function Awards() {
             <motion.div animate={{ y: [0, -14, 0], rotate: [-3, -1, -3] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}>
               {/* width/height: the image's own size (632 x 395), so its space is kept before it loads (here and below) */}
               <img className="aw-hero-trophy" src="/awards-trophy-single.webp" alt="The Catalyst Award" width={632} height={395} style={{ width: "clamp(300px, 42vw, 600px)", maxWidth: "100%", height: "auto",
-                filter: dark ? "drop-shadow(0 24px 80px rgba(122,63,209,0.50)) drop-shadow(0 8px 28px rgba(245,166,35,0.20))" : "drop-shadow(0 24px 80px rgba(0,0,0,0.18))",
+                filter: dark ? "drop-shadow(0 24px 80px rgba(214,48,140,0.50)) drop-shadow(0 8px 28px rgba(245,166,35,0.20))" : "drop-shadow(0 24px 80px rgba(0,0,0,0.18))",
               }} />
             </motion.div>
           </motion.div>
@@ -407,7 +407,7 @@ export default function Awards() {
           </div>
 
           <ScrollReveal>
-            <div style={{ background: cardBg, border: "1px solid " + cardBdr, borderRadius: 20, padding: "clamp(24px,4vw,40px)", transition: "border-color 0.3s ease", boxShadow: dark ? "0 4px 32px rgba(0,0,0,0.3)" : "0 4px 24px rgba(122,63,209,0.06)" }}
+            <div style={{ background: cardBg, border: "1px solid " + cardBdr, borderRadius: 20, padding: "clamp(24px,4vw,40px)", transition: "border-color 0.3s ease", boxShadow: dark ? "0 4px 32px rgba(0,0,0,0.3)" : "0 4px 24px rgba(214,48,140,0.06)" }}
               onMouseEnter={function (e) { e.currentTarget.style.borderColor = "#f5a623"; }}
               onMouseLeave={function (e) { e.currentTarget.style.borderColor = cardBdr; }}>
               <span style={{ display: "inline-block", background: "rgba(245,166,35,0.12)", color: "#f5a623", fontFamily: "'Orbitron',sans-serif", fontSize: "0.62rem", fontWeight: 700, letterSpacing: "1.5px", padding: "5px 14px", borderRadius: 999, marginBottom: 20 }}>{nominationsOpen ? "Nominations now open" : "Nominations closed"}</span>
@@ -511,7 +511,7 @@ export default function Awards() {
                 return (
                   <li key={st.title} className={"aw-tl-step is-" + status} aria-current={isNow ? "step" : undefined}>
                     <span className="aw-tl-dot" aria-hidden="true" style={{
-                      background: isNow ? "#f5a623" : isDone ? "#7a3fd1" : bg,
+                      background: isNow ? "#f5a623" : isDone ? "#D6308C" : bg,
                       border: isNow || isDone ? "none" : "2px solid " + tlMuted,
                       boxShadow: isNow ? "0 0 0 5px rgba(245,166,35,0.22), 0 0 18px rgba(245,166,35,0.45)" : "none",
                     }}>
@@ -571,7 +571,7 @@ export default function Awards() {
             </p>
             <div className="aw-hero-ctas" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
               <motion.a href={over ? STAY_UPDATED_PATH : "/tickets"} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "15px 34px", borderRadius: 14, background: "linear-gradient(135deg,#7a3fd1,#f5a623)", color: "#fff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "15px 34px", borderRadius: 14, background: "#D6308C", color: "#fff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}
               >{over ? "Stay Updated for 2027" : "Get Your Pass"}</motion.a>
               <motion.a href="/sponsor#compare-packages" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "15px 34px", borderRadius: 14, border: "1.5px solid " + cardBdr, color: textMain, textDecoration: "none", background: "transparent", fontFamily: "'Orbitron',sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}
@@ -613,13 +613,13 @@ function TrophyScroll({ bg, dark, textMain, textSoft, accent }) {
           <p style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.58rem", fontWeight: 800, letterSpacing: "2.5px", textTransform: "uppercase", color: textSoft, marginBottom: 14 }}>The Catalyst Awards</p>
           <h2 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(1.6rem,3.5vw,3rem)", fontWeight: 900, color: textMain, lineHeight: 1.1, margin: 0 }}>
             28 Awards. One Stage.{" "}
-            <span style={{ background: "linear-gradient(135deg, #7a3fd1, #f5a623)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Infinite Impact.</span>
+            <span style={{ background: "#D6308C", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Infinite Impact.</span>
           </h2>
         </motion.div>
 
         <motion.div style={{ rotateX: rotate, scale: scale, maxWidth: 900, margin: "0 auto", width: "100%", borderRadius: 24, overflow: "hidden",
-          boxShadow: dark ? "0 0 #0000004d, 0 9px 20px #0000004a, 0 37px 37px #00000042, 0 84px 50px #00000026" : "0 9px 20px rgba(122,63,209,0.08), 0 37px 37px rgba(122,63,209,0.06), 0 84px 50px rgba(122,63,209,0.03)",
-          border: "1px solid " + (dark ? "rgba(155,135,245,0.12)" : "rgba(122,63,209,0.10)"),
+          boxShadow: dark ? "0 0 #0000004d, 0 9px 20px #0000004a, 0 37px 37px #00000042, 0 84px 50px #00000026" : "0 9px 20px rgba(214,48,140,0.08), 0 37px 37px rgba(214,48,140,0.06), 0 84px 50px rgba(214,48,140,0.03)",
+          border: "1px solid " + (dark ? "rgba(240,106,176,0.12)" : "rgba(214,48,140,0.10)"),
         }}>
           <img src="/awards-trophy-single.webp" alt="The Catalyst Award Trophy" width={632} height={395} style={{ width: "100%", height: "auto", display: "block" }} />
         </motion.div>
@@ -658,7 +658,7 @@ function AwardRow({ award, dark, textMain, textMid, textSoft, cardBdr, isOpen, o
             {award.desc
               ? <p style={{ fontFamily: "'Montserrat',sans-serif", fontSize: "0.92rem", color: textMid, lineHeight: 1.7, margin: 0 }}>{award.desc}</p>
               : <>
-                  <span style={{ fontSize: "0.72rem", padding: "5px 14px", borderRadius: 6, background: dark ? "rgba(185,158,255,0.10)" : "rgba(122,63,209,0.08)", color: dark ? "#b99eff" : "#7a3fd1", fontWeight: 700, fontFamily: "'Orbitron',sans-serif" }}>{award.pillar}</span>
+                  <span style={{ fontSize: "0.72rem", padding: "5px 14px", borderRadius: 6, background: dark ? "rgba(185,158,255,0.10)" : "rgba(214,48,140,0.08)", color: dark ? "#F06AB0" : "#D6308C", fontWeight: 700, fontFamily: "'Orbitron',sans-serif" }}>{award.pillar}</span>
                   <span style={{ fontSize: "0.72rem", padding: "5px 14px", borderRadius: 6, background: "rgba(245,166,35,0.10)", color: "#f5a623", fontWeight: 700, fontFamily: "'Orbitron',sans-serif" }}>{award.sector}</span>
                 </>
             }
@@ -707,7 +707,7 @@ function StickyTrophy({ dark }) {
   return (
     <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-6deg)", zIndex: 1, pointerEvents: "none", width: "clamp(250px, 30vw, 420px)", opacity: opacity, transition: "opacity 0.3s ease" }}>
       <img src="/awards-trophy-single.webp" alt="" width={632} height={395} style={{ width: "100%", height: "auto",
-        filter: dark ? "drop-shadow(0 16px 48px rgba(122,63,209,0.30)) brightness(0.7)" : "drop-shadow(0 16px 48px rgba(0,0,0,0.08)) brightness(0.9)",
+        filter: dark ? "drop-shadow(0 16px 48px rgba(214,48,140,0.30)) brightness(0.7)" : "drop-shadow(0 16px 48px rgba(0,0,0,0.08)) brightness(0.9)",
       }} />
     </div>
   );

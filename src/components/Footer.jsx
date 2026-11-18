@@ -50,14 +50,14 @@ export function LegacyFooter() {
     return function () { mo.disconnect(); };
   }, []);
 
-  var bg   = dark ? "#06020f" : "#ffffff";
+  var bg   = dark ? "#151035" : "#ffffff";
   var iCol = dark ? "rgba(200,185,255,0.55)" : "rgba(90,40,180,0.50)";
   var iHov = dark ? "#ffffff" : "#0d0520";
   var tCol = dark ? "rgba(200,185,255,0.40)" : "rgba(90,40,180,0.45)";
-  var lCol = dark ? "rgba(185,158,255,0.75)" : "#7a3fd1";
-  var bTop = dark ? "1px solid rgba(155,135,245,0.10)" : "1px solid rgba(122,63,209,0.10)";
+  var lCol = dark ? "rgba(185,158,255,0.75)" : "#D6308C";
+  var bTop = dark ? "1px solid rgba(240,106,176,0.10)" : "1px solid rgba(214,48,140,0.10)";
   var showAgenda = site["site.show_agenda"] !== false;
-  var pillStyle = { display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 18px", borderRadius: 999, border: "1px solid " + (dark ? "rgba(155,135,245,0.30)" : "rgba(122,63,209,0.25)"), color: dark ? "#ffffff" : "#0d0520", fontSize: "0.88rem", fontWeight: 700, textDecoration: "none", transition: "opacity 0.2s ease" };
+  var pillStyle = { display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 18px", borderRadius: 999, border: "1px solid " + (dark ? "rgba(240,106,176,0.30)" : "rgba(214,48,140,0.25)"), color: dark ? "#ffffff" : "#0d0520", fontSize: "0.88rem", fontWeight: 700, textDecoration: "none", transition: "opacity 0.2s ease" };
 
   return (
     <footer style={{ background: bg, borderTop: bTop, display: "flex", flexDirection: "column", alignItems: "center", overflow: "hidden" }}>

@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { Check, Circle, Lock } from "lucide-react";
 import { Card, focusRing } from "../ui";
+import { useAdminEvent } from "../eventContext";
+import { useReadiness } from "./useReadiness";
 
 /** "Ready to go live · 64%": the bar, the reason Publish is off, and every item with where to fix it. */
 export function ReadinessCard({ r }) {
@@ -11,7 +13,7 @@ export function ReadinessCard({ r }) {
       <div className="flex flex-wrap items-baseline gap-2.5">
         <h2 className="text-base font-bold text-[#151035]">Ready to go live</h2>
         <span className="text-2xl font-bold tabular-nums" style={{ color }}>{r.loading ? "…" : `${r.pct}%`}</span>
-        <span className="text-xs text-[#6B6688]">{r.done} of {r.total} needed{r.past ? " for the 2026 archive page" : ""}</span>
+        <span className="text-xs text-[#6B6688]">{r.done} of {r.total} required to go live</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-[#F1F0F5]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={r.pct} aria-label="Ready to go live">
         <div className="h-full rounded-full transition-[width]" style={{ width: `${r.pct}%`, background: color }} />
@@ -21,10 +23,8 @@ export function ReadinessCard({ r }) {
           <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <span>
             {r.ready
-              ? r.paused
-                ? "Everything needed is in. Publishing is paused until the new website launches: a manager turns it on in Home › Website changes."
-                : "Everything needed is in. You can publish this page to the live website."
-              : <>Publish to live turns on when these are done: <b className="text-[#151035]">{missing.map((i) => i.label).join(", ")}</b>.</>}
+              ? "Everything required is in: Publish to live is on. Add the recommended items when you can."
+              : <>Publish to live turns on once this is done: <b className="text-[#151035]">{missing.map((i) => i.label).join(", ")}</b>. Until then, send changes to staging and review them there. The rest is recommended and doesn’t hold it back.</>}
           </span>
         </p>
       )}
@@ -34,7 +34,7 @@ export function ReadinessCard({ r }) {
             <>
               {i.ok ? <Check className="h-4 w-4 shrink-0 text-[#15803D]" aria-hidden="true" /> : <Circle className={`h-4 w-4 shrink-0 ${i.required ? "text-[#D6308C]" : "text-[#CFCBE0]"}`} aria-hidden="true" />}
               <span className={i.ok ? "text-[#4A4566]" : "font-semibold text-[#151035]"}>{i.label}</span>
-              {!i.required && <span className="text-[11px] text-[#8A86A0]">nice to have</span>}
+              {!i.required && <span className="text-[11px] text-[#8A86A0]">recommended</span>}
               {i.detail && <span className="ml-auto text-xs text-[#8A86A0]">{i.detail}</span>}
               <span className="sr-only">{i.ok ? "done" : i.required ? "needed" : "not yet"}</span>
             </>
@@ -49,5 +49,42 @@ export function ReadinessCard({ r }) {
         })}
       </ul>
     </Card>
+  );
+}
+
+/** The chosen event's go-live requirement in one line, for the event's content pages (Agenda, Speakers, Partners, Tickets). */
+export function ReadinessStrip({ compact = false }) {
+  const { current } = useAdminEvent();
+  const r = useReadiness(current, current, false);
+  if (!current || r.loading) return null;
+  const missing = r.items.filter((i) => i.required && !i.ok).map((i) => i.label);
+  const color = r.ready ? "#15803D" : r.pct >= 60 ? "#B45309" : "#D6308C";
+  const to = `/admin/content/events?edit=${current._id}`;
+  if (compact) {
+    return (
+      <Link to={to} className={`mx-0.5 mb-1 flex flex-col gap-1.5 rounded-[10px] border border-[#E3E0EE] bg-[#F6F5FA] px-2.5 py-2 hover:border-[#CFCBE0] ${focusRing}`}
+        aria-label={`${current.name}: ${r.done} of ${r.total} required to go live`}>
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-[#151035]">
+          {r.ready ? <Check className="h-3.5 w-3.5 text-[#15803D]" aria-hidden="true" /> : <Lock className="h-3.5 w-3.5" aria-hidden="true" style={{ color }} />}
+          {r.ready ? "Ready to go live" : "Go live"}
+          <span className="ml-auto tabular-nums" style={{ color }}>{r.done}/{r.total}</span>
+        </span>
+        <span className="h-1 overflow-hidden rounded-full bg-[#E3E0EE]"><span className="block h-full rounded-full" style={{ width: `${r.pct}%`, background: color }} /></span>
+        {!r.ready && <span className="text-[11px] leading-4 text-[#6B6688]">Needs {missing.join(", ")}</span>}
+      </Link>
+    );
+  }
+  return (
+    <div className="mb-3.5 flex items-start gap-2.5 rounded-[10px] border border-[#E3E0EE] bg-white px-3 py-2.5 text-[13px] leading-5 text-[#4A4566]" role="status">
+      {r.ready ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#15803D]" aria-hidden="true" /> : <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" style={{ color }} />}
+      <span className="min-w-0 flex-1">
+        <b className="text-[#151035]">{current.name}</b>{" "}
+        {r.ready
+          ? "has everything required to go live: Publish to live is on."
+          : <>needs <b className="text-[#151035]">{missing.join(", ")}</b> before it can be published to live. Until then, send changes to staging and review them there.</>}
+      </span>
+      <span className="shrink-0 font-bold tabular-nums" style={{ color }}>{r.done} of {r.total}</span>
+      <Link to={to} className={`shrink-0 text-[13px] font-semibold text-[#D6308C] hover:underline ${focusRing}`}>Event page →</Link>
+    </div>
   );
 }

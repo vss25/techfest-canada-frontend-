@@ -3,38 +3,35 @@ import assert from "node:assert/strict";
 import { readinessFor, forEvent, isPastEvent } from "./readiness.js";
 
 const NOW = new Date("2026-11-17T12:00:00Z");
-const full = { startDate: "2027-02-03", theme: "Energy", tagline: "One line", description: "About", citySkyline: "image-x", photoCredit: "Photo: X", formatLine: "One day", audience: "150 delegates", venueName: "" };
+const READY = { city: "Vancouver", theme: "Energy & Critical Infrastructure", tagline: "One line", citySkyline: "image-x", statusNote: "February 2027" };
 
-test("an empty upcoming event is 0%, with every required item listed and Publish locked", () => {
+test("required to go live: city, theme, description, city photo, date or date line", () => {
   const r = readinessFor({}, { ticketTypes: [], unsent: 1 }, NOW);
-  assert.equal(r.past, false);
-  assert.equal(r.ready, false);
-  // "Photo credit" is satisfied while there's no photo: only the rest are missing.
-  assert.equal(r.done, 1);
-  assert.equal(r.pct, Math.round((1 / r.total) * 100));
+  assert.deepEqual([r.past, r.ready, r.total, r.done], [false, false, 5, 0]);
+  assert.deepEqual(r.items.filter((i) => i.required).map((i) => i.key), ["city", "theme", "tagline", "photo", "dates"]);
 });
 
-test("all required items done = 100% and ready; nice-to-haves don't hold it back", () => {
-  const r = readinessFor(full, { sessions: [{ title: "S" }], ticketTypes: [{ id: "t" }], unsent: 0 }, NOW);
-  assert.deepEqual([r.pct, r.ready], [100, true]);
-  assert.equal(r.items.find((i) => i.key === "venue").ok, false);
-  assert.equal(r.items.find((i) => i.key === "speakers").required, false);
+test("those five are enough: no tickets, agenda, venue or unsent changes hold it back", () => {
+  const r = readinessFor(READY, { ticketTypes: [], unsent: 3 }, NOW);
+  assert.deepEqual([r.ready, r.pct], [true, 100]);
+  for (const k of ["tickets", "agenda", "venue", "speakers", "partners", "about", "credit", "format", "audience", "sent"]) {
+    assert.equal(r.items.find((i) => i.key === k).required, false, k);
+  }
+  assert.equal(r.items.find((i) => i.key === "sent").detail, "3 changes saved, not sent (won't be published)");
 });
 
-test("a photo without its credit, no tickets, or unsent changes each block it", () => {
-  const base = { sessions: [{ title: "S" }], ticketTypes: [{ id: "t" }], unsent: 0 };
-  assert.equal(readinessFor({ ...full, photoCredit: "" }, base, NOW).ready, false);
-  assert.equal(readinessFor(full, { ...base, ticketTypes: [] }, NOW).ready, false);
-  assert.equal(readinessFor(full, { ...base, ticketTypes: null }, NOW).items.find((i) => i.key === "tickets").detail, "Couldn't check");
-  assert.equal(readinessFor(full, { ...base, unsent: 2 }, NOW).items.find((i) => i.key === "sent").detail, "2 changes saved, not sent");
+test("each required item missing blocks it; the day or the date line both count", () => {
+  for (const k of ["city", "theme", "tagline", "citySkyline"]) assert.equal(readinessFor({ ...READY, [k]: "" }, {}, NOW).ready, false, k);
+  assert.equal(readinessFor({ ...READY, statusNote: "" }, {}, NOW).ready, false);
+  assert.equal(readinessFor({ ...READY, statusNote: "", startDate: "2027-02-03" }, {}, NOW).ready, true);
+  assert.equal(readinessFor({ ...READY, citySkyline: "", citySkylineUrl: "https://cdn.sanity.io/x.jpg" }, {}, NOW).ready, true);
 });
 
-test("a past event (TTFC 2026) gets the archive checklist", () => {
-  const ev = { startDate: "2026-10-26", endDate: "2026-10-27", venueName: "Westin", description: "About" };
+test("a past event (TTFC 2026) needs only its dates", () => {
+  const ev = { startDate: "2026-10-26", endDate: "2026-10-27" };
   assert.equal(isPastEvent(ev, NOW), true);
-  const r = readinessFor(ev, { sessions: [{}], speakers: [{ imageUrl: "x" }, {}], partners: [{ logoUrl: "y" }], unsent: 0 }, NOW);
-  assert.deepEqual([r.past, r.ready, r.pct], [true, true, 100]);
-  assert.equal(r.items.find((i) => i.key === "speakers").detail, "1 of 2 speakers");
+  const r = readinessFor(ev, { unsent: 0 }, NOW);
+  assert.deepEqual([r.past, r.ready, r.total], [true, true, 1]);
 });
 
 test("only content tagged with the event counts", () => {

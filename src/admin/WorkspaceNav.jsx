@@ -6,6 +6,7 @@ import { workspacesFor } from "./access";
 import { useAdmin } from "./adminContext";
 import { useAdminEvent } from "./eventContext";
 import { EventChip } from "./EventSwitcher";
+import { ReadinessStrip } from "./cms/ReadinessCard";
 
 /* =========================================================
    The approved admin design's navigation (boards 16–18):
@@ -103,6 +104,7 @@ export function WorkspaceMenu({ onNavigate }) {
       {ws.groups.map((g, gi) => (
         <div key={gi} className="flex flex-col gap-0.5">
           {g.title && <span className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8A86A0]">{g.title}</span>}
+          {g.scoped && ws.id === "content" && !isVolunteer && <ReadinessStrip compact />}
           {g.items.map((it) => {
             const on = it.to === active;
             return (
@@ -132,9 +134,11 @@ export function WorkspaceMenu({ onNavigate }) {
 }
 
 /* ---------- Phones and tablets (board 18) ----------
-   A white bar of five tabs at the bottom: Home, Content, People, Event day and More. A tab opens its
-   workspace's pages as cards (/admin/ws/<id>); More opens a sheet with every other workspace's pages. */
-const TABS = ["home", "content", "people", "day"];
+   A white bar of five tabs at the bottom: the first four workspaces in the organiser's order
+   (home, content, marketing, sales, operations, people, awards, event day, settings) that this
+   person can open, then More with the rest, in the same order. A tab opens its workspace's pages
+   as cards (/admin/ws/<id>); More opens a sheet with every other workspace's pages. */
+const TAB_COUNT = 4;
 // The phone board's own tab icons (Content is a calendar there, People a single person).
 const TAB_ICON = {
   content: "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4",
@@ -171,8 +175,8 @@ export function PhoneTabs({ onSignOut }) {
   if (isVolunteer) return null;   // one page (People): nothing to switch between
   const all = workspacesFor({ isManagement, isVolunteer });
   const current = workspaceFor(pathname).id;
-  const tabs = TABS.map((id) => all.find((w) => w.id === id)).filter(Boolean);
-  const rest = all.filter((w) => !TABS.includes(w.id));
+  const tabs = all.filter((w) => w.id !== "settings").slice(0, TAB_COUNT);
+  const rest = all.filter((w) => !tabs.includes(w));
   return (
     <>
       {more && (
@@ -203,7 +207,7 @@ export function PhoneTabs({ onSignOut }) {
         // Above the staging banner when there is one (--ttfc-staging-bar, components/PreviewBar.jsx).
         style={{ gridTemplateColumns: `repeat(${tabs.length + 1}, minmax(0, 1fr))`, paddingBottom: "env(safe-area-inset-bottom, 0px)", bottom: "var(--ttfc-staging-bar, 0px)" }}>
         {tabs.map((w) => <TabButton key={w.id} to={`/admin/ws/${w.id}`} label={w.label} d={TAB_ICON[w.id] || w.rail} on={!more && w.id === current} />)}
-        <TabButton label="More" d={MORE_DOTS} on={more || !TABS.includes(current)} onClick={() => setMore((m) => !m)} />
+        <TabButton label="More" d={MORE_DOTS} on={more || !tabs.some((w) => w.id === current)} onClick={() => setMore((m) => !m)} />
       </div>
     </>
   );

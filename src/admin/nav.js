@@ -47,7 +47,7 @@ export const WORKSPACES = [
   { id: "content", label: "Content", rail: RAIL.web, job: "Everything people read and see on the website and in the app. All content is written here.", groups: [
     // `scoped`: about the event chosen in the top bar (its name goes in the page's crumbs).
     { title: "Event website", scoped: true, items: [
-      { to: "content/events", label: "Event pages", icon: MapPinned },
+      { to: "content/events", label: "Event page", icon: MapPinned },
       { to: "content/agenda", label: "Agenda", icon: CalendarDays },
       { to: "content/speakers", label: "Speakers", icon: Mic2 },
       { to: "content/partners", label: "Partners", icon: Handshake },

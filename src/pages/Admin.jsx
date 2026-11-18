@@ -55,6 +55,7 @@ import ContractEditor from "../admin/sales/ContractEditor";
 import Offerings from "../admin/sales/Offerings";
 import SocialPosts from "../admin/marketing/SocialPosts";
 import SocialCalendar from "../admin/marketing/SocialCalendar";
+import PromoCodesPage from "../admin/marketing/PromoCodesPage";
 import IndiaPavilion from "../admin/leads/IndiaPavilion";
 import FormSubmissions from "../admin/leads/FormSubmissions";
 import Rsvps from "../admin/leads/Rsvps";
@@ -249,6 +250,7 @@ function AdminPanel() {
             <Route path="offerings" element={<Offerings />} />
             <Route path="social" element={<SocialPosts />} />
             <Route path="calendar" element={<SocialCalendar />} />
+            <Route path="promo-codes" element={<PromoCodesPage />} />
             <Route path="issued-passes" element={<IssuedPasses />} />
             <Route path="exhibitor-passes" element={<ExhibitorPasses />} />
             <Route path="inventory" element={<Inventory />} />

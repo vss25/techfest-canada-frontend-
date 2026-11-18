@@ -45,8 +45,9 @@ export const WORKSPACES = [
     ] },
   ] },
   { id: "content", label: "Content", rail: RAIL.web, job: "Everything people read and see on the website and in the app. All content is written here.", groups: [
-    { title: "Event website", items: [
-      { to: "content/events", label: "Event pages", icon: MapPinned },
+    // `scoped`: about the event chosen in the top bar (its name goes in the page's crumbs).
+    { title: "Event website", scoped: true, items: [
+      { to: "content/events", label: "Event page", icon: MapPinned },
       { to: "content/agenda", label: "Agenda", icon: CalendarDays },
       { to: "content/speakers", label: "Speakers", icon: Mic2 },
       { to: "content/partners", label: "Partners", icon: Handshake },
@@ -84,7 +85,7 @@ export const WORKSPACES = [
       { to: "app/unsubscribes", label: "Unsubscribed", icon: MailX },
     ] },
   ] },
-  { id: "sales", label: "Sales", rail: RAIL.sales, job: "Selling sponsorship and exhibiting: enquiries, exhibitors and revenue. Packages and prices are written in Content.", groups: [
+  { id: "sales", scoped: true, label: "Sales", rail: RAIL.sales, job: "Selling sponsorship and exhibiting: enquiries, exhibitors and revenue. Packages and prices are written in Content.", groups: [
     { title: "Enquiries", items: [
       // "Stay updated" (Oct 23 2026): who joined the TTFC 2027 waitlist, and the page's wording.
       { to: "waitlist-2027", label: "Waitlist", icon: ListPlus },
@@ -97,7 +98,7 @@ export const WORKSPACES = [
       { to: "analytics", label: "Revenue", icon: BarChart3, management: true },
     ] },
   ] },
-  { id: "ops", label: "Operations", rail: RAIL.ops, job: "Running the event: settings, venue, vendors, food, print and logistics.", groups: [
+  { id: "ops", scoped: true, label: "Operations", rail: RAIL.ops, job: "Running the event: settings, venue, vendors, food, print and logistics.", groups: [
     { title: "", items: [
       // The event spine (Phase 2): per-event attendee visibility, lifecycle grace days, pricing announced.
       { to: "events", label: "Event settings", icon: CalendarDays },
@@ -129,7 +130,7 @@ export const WORKSPACES = [
       { to: "awards/winners", label: "Winners", icon: Medal },
     ] },
   ] },
-  { id: "day", label: "Event day", rail: RAIL.day, job: "Headcounts before, check-in and help during.", groups: [
+  { id: "day", scoped: true, label: "Event day", rail: RAIL.day, job: "Headcounts before, check-in and help during.", groups: [
     { title: "Before", items: [
       // Event summary (Oct 23 2026): passes, RSVPs, meals and check-in for both days on one read-only page.
       { to: "event-summary", label: "Event summary", icon: ClipboardList },
@@ -157,7 +158,8 @@ export const WORKSPACES = [
 /* The same pages as flat groups ("Content › Event website"), for the search, page titles and the
    pages' small headings. */
 export const NAV = WORKSPACES.flatMap((w) => w.groups.map((g) => ({
-  title: g.title ? `${w.label} › ${g.title}` : w.label, workspace: w.id, items: g.items,
+  title: g.title ? `${w.label} › ${g.title}` : w.label, workspace: w.id, workspaceLabel: w.label,
+  scoped: !!(w.scoped || g.scoped), items: g.items,
 })));
 
 /** The workspace a path under /admin belongs to (Home when none matches). */

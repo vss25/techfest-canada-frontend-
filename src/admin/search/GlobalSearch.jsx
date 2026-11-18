@@ -83,7 +83,7 @@ function SearchTrigger({ onOpen, volunteer }) {
         )}
       >
         <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <span className="min-w-0 flex-1 truncate">{volunteer ? "Search people…" : "Search people, tickets, pages…"}</span>
+        <span className="min-w-0 flex-1 truncate">{volunteer ? "Search people…" : "Search pages, people, tickets…"}</span>
         <kbd className="rounded-md border border-ttfc-line bg-ttfc-ink px-1.5 py-0.5 font-sans text-[11px] font-semibold text-ttfc-muted" aria-hidden="true">{SHORTCUT}</kbd>
       </button>
       <IconButton icon={Search} label={volunteer ? "Search people" : "Search the admin panel"} onClick={() => onOpen("")} onKeyDown={onKeyDown} aria-haspopup="dialog" className="md:hidden" />

@@ -6,20 +6,22 @@ import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import {
-  Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, IconButton, Input, Modal, PageHeader, Select, SkeletonGrid,
-  Switch, Tabs, Textarea, focusRing,
+  Badge, Banner, Button, Card, ConfirmDialog, EditPanel, EmptyState, ErrorState, Field, IconButton, Input, Modal, PageHeader, Select, SkeletonGrid,
+  Switch, TableWrap, Tabs, Textarea, focusRing,
 } from "../ui";
 import { CmsBanners } from "./CmsParts";
 import { ChangeBadge } from "./workflow";
+import { changeState } from "./workflowState";
 import { LIVE_NOTE } from "./cmsMeta";
 import useCmsStatus from "./useCmsStatus";
 import { EARLIER_STEPS, LATER_STEPS, planShift, stageOf } from "./agendaShift";
 import {
-  AUTO_HINTS, BADGE_LABELS, FEATURE_LABELS, LIVE_FEATURES, LIVE_MODES, MODE_LABELS, autoReason, globalSwitches, liveMode, sessionLive,
+  AUTO_HINTS, BADGE_LABELS, FEATURE_LABELS, LIVE_FEATURES, LIVE_MODES, MODE_LABELS, autoReason, globalSwitches, liveMode,
 } from "./sessionLive";
 import { SESSIONS, DAYS, buildSpeakerIndex, matchSpeaker, formatTime12, getDuration } from "../../data/agenda";
 import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS, SESSION_TYPE_SUGGESTIONS } from "../../data/sessionFormats";
 import { useEditFromUrl } from "../search/deepLink";
+import { useAdminEvent } from "../eventContext";
 import { useAdminTheme } from "../theme";
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -147,7 +149,7 @@ function dayLabel(d, ev) {
   return `${DAYS[d].label} · ${DAYS[d].date}`;
 }
 
-function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = [], all, speakerIndex, speakerNames, readOnly, globalLive, onClose, onSaved }) {
+function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = [], all, speakerIndex, speakerNames, readOnly, globalLive, onClose, onSaved, onDuplicate, onDelete, onShift }) {
   const toast = useToast();
   // Whose dates the Day picker shows: the event the agenda is filtered to, else the session's own first event.
   const dayEvent = eventList.find((e) => e._id === (defaultEventId || refIds(doc)[0]));
@@ -187,13 +189,19 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
   const dur = TIME_RE.test(form.time) && TIME_RE.test(form.endTime) && toMin(form.endTime) > toMin(form.time) ? getDuration(form.time, form.endTime) : null;
 
   return (
-    <Drawer
+    <EditPanel
       open
       onClose={onClose}
-      width="max-w-2xl"
-      title={creating ? "Add a session" : form.title || "Edit session"}
-      description={readOnly ? "Read-only until editing is switched on." : LIVE_NOTE}
+      title={creating ? "Add a session" : `Edit session: ${doc?.title || form.title}`}
+      description={readOnly ? "Read-only until editing is switched on." : "Fields marked * are required."}
       footer={<>
+        {!creating && doc && (
+          <>
+            {onShift && doc.time && <Button icon={Clock} onClick={() => onShift(doc)} disabled={readOnly || saving}>Running late…</Button>}
+            <Button icon={Copy} onClick={() => onDuplicate(doc)} disabled={readOnly || saving}>Duplicate</Button>
+            <Button icon={Trash2} onClick={() => onDelete(doc)} disabled={readOnly || saving} className="text-[#B91C1C]">Delete</Button>
+          </>
+        )}
         <span className="flex-1" />
         <Button onClick={onClose} disabled={saving}>Cancel</Button>
         <Button variant="primary" type="submit" form="session-form" loading={saving} disabled={readOnly}>{creating ? "Add session" : "Save changes"}</Button>
@@ -318,62 +326,33 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
           {(id) => <Textarea id={id} rows={4} value={form.description} onChange={set("description")} maxLength={1500} disabled={readOnly} />}
         </Field>
       </form>
-    </Drawer>
+    </EditPanel>
   );
 }
 
-function SessionRow({ s, speakerIndex, readOnly, globalLive, onEdit, onDuplicate, onDelete, onShift }) {
-  const people = (s.speakers || []).map((p) => p.name).filter(Boolean);
-  const live = sessionLive(s, globalLive);
-  const unmatched = [...(s.speakers || []), ...(s.moderator?.name ? [s.moderator] : [])].filter((p) => p.name && !matchSpeaker(speakerIndex, p.name));
+function SessionRow({ s, speakerIndex, selected, onEdit }) {
+  const people = [...(s.speakers || []), ...(s.moderator?.name ? [s.moderator] : [])].filter((p) => p.name);
+  const named = people.filter((p) => matchSpeaker(speakerIndex, p.name)).length;
+  const open = () => onEdit(s);
   return (
-    <li className={`grid gap-3 border-b border-ttfc-line/70 px-4 py-4 last:border-0 sm:grid-cols-[120px_minmax(0,1fr)_auto] sm:items-start sm:px-5 ${s.isBreak ? "bg-ttfc-contrast/[0.02]" : ""}`}>
-      <div className="text-sm tabular-nums">
-        {s.time ? (
-          <>
-            <p className="font-semibold text-ttfc-text">{formatTime12(s.time)}</p>
-            <p className="text-xs text-ttfc-dim">to {formatTime12(s.endTime || s.time)}{s.endTime ? ` · ${getDuration(s.time, s.endTime)}` : ""}</p>
-          </>
-        ) : (
-          <p className="font-semibold text-amber-200">No time</p>
-        )}
-      </div>
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {s.featured && <Star className="h-3.5 w-3.5 text-ttfc-orange" fill="currentColor" aria-label="Featured" />}
-          {s.isBreak && <Coffee className="h-3.5 w-3.5 text-ttfc-dim" aria-label="Break" />}
-          <FormatBadge format={s.format} />
-          {s.type && <span className="text-xs text-ttfc-muted">{s.type}</span>}
-          {s.stage && <Badge>{s.stage}</Badge>}
-          {live.pollsOn && <Badge>{BADGE_LABELS.polls}<span className="sr-only"> on in the app</span></Badge>}
-          {live.qaOn && <Badge>{BADGE_LABELS.qa}<span className="sr-only"> on in the app</span></Badge>}
-        </div>
-        <p className="mt-1 font-semibold text-ttfc-text">{s.title}</p>
-        <ChangeBadge doc={s} className="mt-1" />
-        {(people.length > 0 || s.moderator?.name) && (
-          <p className="mt-1 text-xs leading-relaxed text-ttfc-muted">
-            {people.length > 0 && <><Mic className="mr-1 inline h-3 w-3" aria-hidden="true" />{people.join(", ")}</>}
-            {s.moderator?.name && <span className="ml-2"><UserRound className="mr-1 inline h-3 w-3" aria-hidden="true" />Moderator: {s.moderator.name}</span>}
-          </p>
-        )}
-        {unmatched.length > 0 && (
-          <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-amber-200/90">
-            <AlertTriangle className="h-3 w-3" aria-hidden="true" /> No photo/link for: {unmatched.map((p) => p.name).join(", ")}
-          </p>
-        )}
-      </div>
-      <div className="flex gap-1 sm:justify-end">
-        {onShift && s.time && (
-          <IconButton icon={Clock} label="Shift times" aria-label={`Running late: shift times from ${s.title}`}
-            onClick={() => onShift(s)} disabled={readOnly} className="h-8 w-8 rounded-lg" />
-        )}
-        <Button size="sm" variant="ghost" icon={Pencil} onClick={() => onEdit(s)}>Edit</Button>
-        <Button size="sm" variant="ghost" icon={Copy} onClick={() => onDuplicate(s)} disabled={readOnly}>Duplicate</Button>
-        <Button size="sm" variant="ghost" icon={Trash2} onClick={() => onDelete(s)} disabled={readOnly} className="text-red-300/80 hover:text-red-200" aria-label={`Delete ${s.title}`}>
-          <span className="sr-only sm:not-sr-only">Delete</span>
-        </Button>
-      </div>
-    </li>
+    <tr className="is-clickable" tabIndex={0} onClick={open} onKeyDown={(e) => { if (e.key === "Enter") open(); }}
+      style={selected ? { background: "#FBE9F3", boxShadow: "inset 3px 0 0 #D6308C" } : undefined}>
+      <td className="whitespace-nowrap tabular-nums">
+        {s.time ? formatTime12(s.time) : <span className="font-semibold text-[#B45309]">No time</span>}
+      </td>
+      <td className="font-semibold">
+        <span className="flex items-center gap-1.5">
+          {s.featured && <Star className="h-3.5 w-3.5 shrink-0 text-[#F5A623]" fill="currentColor" aria-label="Featured" />}
+          {s.isBreak && <Coffee className="h-3.5 w-3.5 shrink-0 text-[#8A86A0]" aria-label="Break" />}
+          {s.title}
+        </span>
+      </td>
+      <td>{FORMAT_MAP[s.format]?.label || s.type || "—"}</td>
+      <td className="whitespace-nowrap text-[#4A4566]" title={people.map((p) => p.name).join(", ") || undefined}>
+        {s.isBreak ? "—" : people.length ? `${named} of ${people.length} named` : "None yet"}
+      </td>
+      <td>{changeState(s) ? <ChangeBadge doc={s} /> : <Badge tone="good">Live</Badge>}</td>
+    </tr>
   );
 }
 
@@ -510,7 +489,13 @@ export default function Agenda() {
   const speakers = useApi("/cms/speaker?drafts=1");
   const eventsApi = useApi("/cms/event?drafts=1");
   const eventList = useMemo(() => (eventsApi.data || []).filter((e) => e?.name), [eventsApi.data]);
-  const [eventId, setEventId] = useState("");
+  // The event chosen in the top bar (the approved design's switcher), unless this page picks "All events".
+  const { current: chosenEvent } = useAdminEvent();
+  const [picked, setPicked] = useState(null);
+  const eventId = picked ?? chosenEvent?._id ?? "";
+  const showAll = () => setPicked("");
+  const followSwitcher = () => setPicked(null);
+  const eventName = eventList.find((e) => e._id === eventId)?.name || chosenEvent?.name || "";
   const appContent = useApi("/console/app-content");   // the global polls / Q&A switches (on if it can't be read)
   const [day, setDay] = useState(1);
   const [editing, setEditing] = useState(null);
@@ -595,7 +580,6 @@ export default function Agenda() {
   return (
     <>
       <PageHeader
-        eyebrow="Website & app"
         title="Agenda"
         description="Every session on the website's Agenda page and in the app: titles, times, formats, speakers and moderators."
         actions={(
@@ -611,16 +595,6 @@ export default function Agenda() {
         )}
       />
       <CmsBanners configured={configured} />
-      {eventList.length > 0 && (
-        <div className="mb-5 flex flex-wrap items-center gap-3">
-          <label htmlFor="agenda-event" className="text-sm font-semibold">Event</label>
-          <Select id="agenda-event" className="w-auto min-w-[260px]" value={eventId} onChange={(e) => setEventId(e.target.value)}>
-            <option value="">All events</option>
-            {eventList.map((ev) => <option key={ev._id} value={ev._id}>{ev.name}</option>)}
-          </Select>
-          {eventId && <span className="text-xs text-ttfc-dim">New sessions are added to this event. Sessions tied to no event show on every event.</span>}
-        </div>
-      )}
 
       {loading ? <SkeletonGrid count={4} className="h-20" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !allSessions.length && !eventId ? (
         <EmptyState
@@ -632,32 +606,43 @@ export default function Agenda() {
       ) : (
         <>
           {unscheduled.length > 0 && (
-            <div className="mb-6 rounded-[18px] border border-amber-400/40 bg-amber-400/10 p-4">
-              <p className="text-sm font-semibold text-amber-200">Needs a day &amp; time ({unscheduled.length})</p>
-              <p className="mt-1 text-xs text-ttfc-dim">These don't appear on the website or in the app until they have a day, start and end time. Edit them, or delete them if they were tests.</p>
-              <ul className="mt-3 overflow-hidden rounded-[14px] border border-ttfc-line bg-ttfc-panel">
-                {unscheduled.map((s) => (
-                  <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly} globalLive={globalLive}
-                    onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} onDuplicate={duplicate} onDelete={setDeleting} />
-                ))}
-              </ul>
+            <Banner tone="warn" icon={AlertTriangle} className="mb-3.5" title={`Needs a day & time (${unscheduled.length})`}>
+              These don't appear on the website or in the app until they have a day, start and end time:{" "}
+              {unscheduled.map((s, i) => (
+                <span key={s._id}>{i > 0 && ", "}
+                  <button type="button" className={`font-semibold underline ${focusRing}`} onClick={() => setEditing({ doc: s, creating: false, key: s._id })}>{s.title || "Untitled"}</button>
+                </span>
+              ))}.
+            </Banner>
+          )}
+          <Card className="flex flex-col gap-3.5">
+            <div className="flex flex-wrap items-baseline gap-2.5">
+              <h2 className="text-base font-bold text-[#151035]">{eventId && eventName ? `Sessions · ${eventName}` : "Sessions · all events"}</h2>
+              <span className="text-xs text-[#6B6688]">Click a row to edit it</span>
+              {chosenEvent && (
+                <button type="button" onClick={eventId ? showAll : followSwitcher} className={`ml-auto text-[13px] font-semibold text-[#D6308C] hover:underline ${focusRing}`}>
+                  {eventId ? "Show all events" : `Only ${chosenEvent.name}`}
+                </button>
+              )}
             </div>
-          )}
-          <Tabs value={day} onChange={setDay} label="Day"
-            tabs={[1, 2].map((d) => ({ key: d, label: dayLabel(d, eventList.find((e) => e._id === eventId)), count: counts[d] }))} />
-          {dayList.length ? (
-            <ul className="overflow-hidden rounded-[18px] border border-ttfc-line bg-ttfc-panel">
-              {dayList.map((s) => (
-                <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} readOnly={readOnly} globalLive={globalLive}
-                  onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} onDuplicate={duplicate} onDelete={setDeleting}
-                  onShift={(doc) => setShifting(doc)} />
-              ))}
-            </ul>
-          ) : (
-            <EmptyState icon={CalendarDays} title={`Nothing on ${DAYS[day].label} yet`}
-              action={!readOnly && <Button variant="primary" icon={Plus} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add session</Button>} />
-          )}
-          <p className="mt-3 text-xs text-ttfc-dim">
+            <Tabs value={day} onChange={setDay} label="Day"
+              tabs={[1, 2].map((d) => ({ key: d, label: dayLabel(d, eventList.find((e) => e._id === eventId)), count: counts[d] }))} />
+            {dayList.length ? (
+              <TableWrap>
+                <thead><tr><th style={{ width: 90 }}>Time</th><th>Session</th><th>Format</th><th>Speakers</th><th>Status</th></tr></thead>
+                <tbody>
+                  {dayList.map((s) => (
+                    <SessionRow key={s._id} s={s} speakerIndex={speakerIndex} selected={editing?.doc?._id === s._id}
+                        onEdit={(doc) => setEditing({ doc, creating: false, key: doc._id })} />
+                  ))}
+                </tbody>
+              </TableWrap>
+            ) : (
+              <EmptyState icon={CalendarDays} title={`Nothing on day ${day} yet`}
+                action={!readOnly && <Button variant="primary" icon={Plus} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add session</Button>} />
+            )}
+          </Card>
+          <p className="mt-3 text-xs text-[#8A86A0]">
             Pillars: {PILLARS.map((p) => p.label).join(", ")}. Session ids stay the same when you edit, so links to a session keep working.
           </p>
         </>
@@ -678,6 +663,9 @@ export default function Agenda() {
           globalLive={globalLive}
           onClose={() => setEditing(null)}
           onSaved={onSaved}
+          onDuplicate={duplicate}
+          onDelete={setDeleting}
+          onShift={(doc) => setShifting(doc)}
         />
       )}
 
@@ -703,6 +691,7 @@ export default function Agenda() {
           await api.del(`/cms/session/${deleting._id}`);
           setData((xs) => (xs || []).filter((x) => x._id !== deleting._id));
           toast.success("Session deleted");
+          if (editing?.doc?._id === deleting._id) setEditing(null);
         }}
       />
     </>

@@ -10,8 +10,9 @@ import {
 } from "../ui";
 import { ImagePicker } from "./CmsParts";
 import { HelpLabel } from "../HelpButton";
+import { useAdminEvent } from "../eventContext";
 import useCmsStatus from "./useCmsStatus";
-import { eventPath, formatDateRange } from "../../lib/events";
+import { eventPath } from "../../lib/events";
 import { WorkflowBanner } from "./workflow";
 import { changeState, stagingUrl } from "./workflowState";
 
@@ -181,21 +182,21 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
   const disabled = readOnly || !!busy;
   return (
     <div className="grid gap-6">
-      <Card className="sticky top-2 z-10 flex flex-wrap items-center gap-3">
-        <div className="mr-auto min-w-0">
-          <div className="truncate font-semibold">{form.name || ev.name}</div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-ttfc-muted">
-            <Badge tone={st.tone}>{st.label}</Badge>
-            {dirty && <Badge tone="warn">Not saved</Badge>}
-            <span>{path}</span>
-          </div>
-        </div>
-        <Button variant="secondary" onClick={onSave} disabled={disabled || !dirty}>{busy === "save" ? "Saving…" : "Save"}</Button>
-        <Button variant="secondary" icon={Send} onClick={onStage} disabled={disabled || (!dirty && !ev.hasDraft)}>{busy === "stage" ? "Sending…" : "Send to staging"}</Button>
-        <Button variant="secondary" icon={Eye} onClick={onOpenStaging} disabled={!ev.staged}>Open on staging</Button>
-        <Button variant="primary" icon={Upload} onClick={onPublish} disabled={disabled || !ev.staged}
-          title={ev.hasDraft || dirty ? "Publishes the version on staging. Newer changes need to go to staging first." : undefined}>{busy === "publish" ? "Publishing…" : "Publish to live"}</Button>
-      </Card>
+      <PageHeader
+        title="Event page"
+        status={<>
+          <Badge tone={st.tone}>{st.label}</Badge>
+          {dirty && <Badge tone="warn">Not saved</Badge>}
+        </>}
+        description={`${form.name || ev.name} · ${path}. Save your changes, send them to staging, check them there, then publish to the live website.`}
+        actions={<>
+          <Button variant="secondary" onClick={onSave} disabled={disabled || !dirty}>{busy === "save" ? "Saving…" : "Save"}</Button>
+          <Button variant="secondary" icon={Send} onClick={onStage} disabled={disabled || (!dirty && !ev.hasDraft)}>{busy === "stage" ? "Sending…" : "Send to staging"}</Button>
+          <Button variant="secondary" icon={Eye} onClick={onOpenStaging} disabled={!ev.staged}>Open on staging</Button>
+          <Button variant="primary" icon={Upload} onClick={onPublish} disabled={disabled || !ev.staged}
+            title={ev.hasDraft || dirty ? "Publishes the version on staging. Newer changes need to go to staging first." : undefined}>{busy === "publish" ? "Publishing…" : "Publish to live"}</Button>
+        </>}
+      />
 
       <Card className="grid gap-4">
         <h3 className="font-semibold">Basics</h3>
@@ -280,64 +281,46 @@ export default function EventPages() {
   const readOnly = configured === false;
   const { data, error, loading, reload, setData } = useApi("/cms/event?drafts=1");
   // From the global search or a link: ?edit=<event id> opens that event.
-  const [selected, setSelected] = useState(() => new URLSearchParams(window.location.search).get("edit") || "");
-  const [creating, setCreating] = useState(false);
+  // ?edit=<id> (search, links) wins; otherwise the event chosen in the top bar. Picking one here chooses it there too.
+  const { current: chosenEvent, setCurrent: chooseEvent, refresh: refreshEvents } = useAdminEvent();
+  const [fromUrl] = useState(() => new URLSearchParams(window.location.search).get("edit") || "");
+  const [picked, setPicked] = useState("");
+  const selected = picked || fromUrl || chosenEvent?._id || "";
+  const setSelected = (id) => { setPicked(id); if (id) chooseEvent(id); };
+  // "+ New event" in the switcher opens the new-event form (?new=1).
+  const [creating, setCreating] = useState(() => new URLSearchParams(window.location.search).get("new") === "1");
   const events = useMemo(() => (data || []).filter((e) => e && e.name), [data]);
   const current = events.find((e) => e._id === selected) || null;
 
   return (
     <>
-      <PageHeader
-        eyebrow="Website content"
-        title="Event pages"
-        description="Each event's page on the website. Save your changes, send them to staging, check them on the staging site, then publish them to the live website."
-        actions={<Button variant="primary" icon={Plus} onClick={() => setCreating(true)} disabled={readOnly}>New event</Button>}
-      />
-      <div className="mb-4 max-w-3xl"><WorkflowBanner /></div>
-      {readOnly && <Banner tone="warn" icon={Lock} className="mb-4 max-w-2xl" title="Read-only for now">Editing needs SANITY_WRITE_TOKEN on the server.</Banner>}
+      {/* The approved design (board 17): the event is the one chosen in the top bar; no list here. */}
+      {(!current || creating) && (
+        <PageHeader
+          title="Event page"
+          description="This event's page on the website. Choose the event in the top bar, or start a new one."
+          actions={<Button variant="primary" icon={Plus} onClick={() => setCreating(true)} disabled={readOnly}>New event</Button>}
+        />
+      )}
+      {readOnly && <Banner tone="warn" icon={Lock} className="mb-4" title="Read-only for now">Editing needs SANITY_WRITE_TOKEN on the server.</Banner>}
       {creating && (
         <NewEvent
           onCancel={() => setCreating(false)}
-          onCreated={(ev) => { setCreating(false); setData((d) => [...(d || []), ev]); setSelected(ev._id); }}
+          onCreated={(ev) => { setCreating(false); setData((d) => [...(d || []), ev]); setSelected(ev._id); refreshEvents(); }}
         />
       )}
       {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !events.length ? (
         <EmptyState title="No events yet" body="Create the first event with New event." />
-      ) : (
-        <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-          {/* Not a <nav>: the public site styles every <nav> as its sticky 80px header bar. */}
-          <div role="navigation" aria-label="Events" className="grid content-start gap-2">
-            {events.map((ev) => {
-              const st = stateOf(ev);
-              return (
-                <button
-                  key={ev._id}
-                  type="button"
-                  onClick={() => setSelected(ev._id)}
-                  aria-current={selected === ev._id ? "true" : undefined}
-                  className={`rounded-xl border px-4 py-3 text-left transition ${selected === ev._id ? "border-ttfc-pink bg-ttfc-pink/5" : "border-ttfc-line hover:border-ttfc-muted"}`}
-                >
-                  <div className="font-semibold">{ev.name}</div>
-                  <div className="mt-0.5 text-xs text-ttfc-muted">{ev.startDate ? formatDateRange(ev) : ev.statusNote || ev.year}</div>
-                  <div className="mt-2"><Badge tone={st.tone}>{st.label}</Badge></div>
-                </button>
-              );
-            })}
-          </div>
-          <div>
-            {current ? (
-              <Editor
-                key={current._id}
-                ev={current}
-                readOnly={readOnly}
-                onSaved={(next) => (next ? setData((d) => d.map((e) => (e._id === next._id ? { ...e, ...next } : e))) : reload())}
-                onGone={(id) => { setData((d) => d.filter((e) => e._id !== id)); setSelected(""); }}
-              />
-            ) : (
-              <EmptyState title="Pick an event" body="Choose an event on the left to edit its page, or create a new one." />
-            )}
-          </div>
-        </div>
+      ) : current && !creating ? (
+        <Editor
+          key={current._id}
+          ev={current}
+          readOnly={readOnly}
+          onSaved={(next) => (next ? setData((d) => d.map((e) => (e._id === next._id ? { ...e, ...next } : e))) : reload())}
+          onGone={(id) => { setData((d) => d.filter((e) => e._id !== id)); setSelected(""); refreshEvents(); }}
+        />
+      ) : !creating && (
+        <EmptyState title="Choose an event" body="Pick the event in the top bar, or create a new one." />
       )}
     </>
   );

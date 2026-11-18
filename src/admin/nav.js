@@ -3,7 +3,7 @@ import { MapPinned,
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
-import { Boxes, CalendarRange, FileSignature } from "lucide-react";
+import { Boxes, CalendarRange, FileSignature, Percent } from "lucide-react";
 import { CircleHelp, ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
@@ -79,6 +79,10 @@ export const WORKSPACES = [
     { title: "Social", items: [
       { to: "calendar", label: "Social media calendar", icon: CalendarRange },
       { to: "social", label: "Social posts", icon: Megaphone },
+    ] },
+    // Nov 18 2026: staff add codes; big discounts wait for a manager.
+    { title: "Offers", items: [
+      { to: "promo-codes", label: "Promo codes", icon: Percent },
     ] },
     { title: "Leads", items: [
       { to: "form-submissions", label: "Form submissions", icon: Inbox },

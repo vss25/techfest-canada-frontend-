@@ -20,6 +20,8 @@ import { fetchTicketTypes, multiCheckout } from "../../lib/ticketsApi";
    - the six events' dates, themes and photos come from the event records in the admin panel;
    - each event's agenda comes from Admin › Agenda ("announced soon" until it has sessions);
    - the Partners page's logos come from Admin › Partners & sponsors, in their rows;
+   - the Toronto 2026 page shows the 2026 speakers (featured first, with photos), partner logos
+     (Featured Partners first) and the festival's own photos;
    - ticket types and prices come from the backend, and "Pay" places a real order (Stripe);
    - every form posts to the backend (forms inbox, brochure, waitlist), sign-in uses the
      real account API. Anything the board shows as sample content stays as approved. */
@@ -138,6 +140,12 @@ class LiveSite extends ApprovedSite {
     const at = (e) => (e && e.currentTarget) || null;
     // The Partners page's count: the partner records shown (the design's own wording until they load).
     if (this.props.ptCount) v.ptCountText = `${this.props.ptCount} partners and supporters · 2026`;
+    const past = this.props.past2026;
+    if (past) {
+      if (past.speakers.length) v.starSpeakers = past.speakers.map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));
+      if (past.partners.length) v.pastPartners = past.partners;
+      v.photos = PAST_PHOTOS;
+    }
     const n = (v.sessions || []).length;
     const maxSlide = Math.max(0, n - 3);
     const slide = Math.min(s.slide || 0, maxSlide);
@@ -258,6 +266,51 @@ function usePhone() {
   return phone;
 }
 
+/* Toronto 2026 in pictures: the festival's own photography (also the old site's gallery strip). */
+const PAST_PHOTOS = [
+  ["/ft-conference.jpg", "Keynote presentation at The Tech Festival Canada"],
+  ["/ft-expo.jpg", "The expo and networking floor"],
+  ["/ft-gala.jpg", "Gala dinner and networking reception"],
+  ["/ft-awards.jpg", "The Catalyst Awards ceremony"],
+  ["/ft-breakfast.jpg", "CxO breakfast with senior leaders"],
+  ["/ft-audience.webp", "The audience at The Tech Festival Canada"],
+  ["/ft-panel.webp", "A panel discussion"],
+  ["/ft-clinic.jpg", "Inside a clinic session"],
+].map(([src, alt], i) => ({ n: i + 1, src, alt }));
+
+/** The 2026 speakers and partners for the Toronto 2026 page (null until loaded or when unreadable). */
+function usePast2026(on) {
+  const [past, setPast] = useState(null);
+  useEffect(() => {
+    if (!on || past) return undefined;
+    let live = true;
+    const ev = "event-ttfc-2026-main";
+    const scoped = `(!defined(events) || count(events) == 0 || $ev in events[]._ref)`;
+    Promise.all([
+      client.fetch(`*[_type == "speaker" && !(_id in path("drafts.**")) && defined(image.asset) && ${scoped}] | order(featured desc, order asc)[0...4]{ name, title, company, speakerType, image }`, { ev }),
+      client.fetch(`*[_type == "partner" && active != false && showOnWebsite != false && defined(logo.asset) && ${scoped}] | order(order asc){ _id, name, logo, matrixGroup, logoScale }`, { ev }),
+    ]).then(([spk, ptn]) => {
+      if (!live) return;
+      const kinds = { keynote: "Keynote", panelist: "Panel", moderator: "Moderator", fireside: "Fireside chat" };
+      const speakers = (spk || []).map((x) => ({
+        name: x.name,
+        role: [x.title, x.company].map((v) => String(v || "").trim()).filter(Boolean).join(", "),
+        kind: kinds[x.speakerType] || "Speaker",
+        img: urlFor(x.image).width(480).height(600).fit("crop").auto("format").url(),
+      }));
+      const sorted = [...(ptn || [])].sort((a, b) => (matrixGroupOf(b) === "featured") - (matrixGroupOf(a) === "featured"));
+      const partners = sorted.slice(0, 6).map((p) => ({
+        name: <img src={urlFor(p.logo).height(120).fit("max").auto("format").url()} alt={p.name} title={p.name} loading="lazy"
+          style={{ display: "block", maxHeight: 48, maxWidth: "75%", objectFit: "contain", margin: "0 auto" }} />,
+        tier: matrixGroupOf(p) === "featured" ? "Featured partner" : "Partner",
+      }));
+      setPast({ speakers, partners });
+    }).catch(() => { if (live) setPast(null); });
+    return () => { live = false; };
+  }, [on, past]);
+  return past;
+}
+
 export default function ApprovedRoute({ fallback = null }) {
   const location = useLocation();
   const phone = usePhone();
@@ -305,6 +358,7 @@ export default function ApprovedRoute({ fallback = null }) {
       .catch(() => { if (live) setPartners([]); });
     return () => { live = false; };
   }, [onPartners, partners]);
+  const past2026 = usePast2026(!!(route && route.screen === "past"));
   const partnerRows = useMemo(() => {
     if (!partners || !partners.length) return null;
     const rows = {};
@@ -376,6 +430,7 @@ export default function ApprovedRoute({ fallback = null }) {
       navigate={navigate}
       data={data}
       ptCount={partners && partners.length ? partners.length : 0}
+      past2026={past2026}
       eventKey={evKey}
       loaderMs={0}
     />

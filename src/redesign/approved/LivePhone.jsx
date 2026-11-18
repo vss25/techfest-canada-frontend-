@@ -112,6 +112,12 @@ export default class LivePhone extends ApprovedPhone {
     // The agenda from Admin › Agenda (LiveSite's ApprovedRoute passes it for both designs).
     const rows = this.props.data && this.props.data.sessionsData;
     if (rows) v.sessions = rows;
+    // Toronto 2026: real speakers (with photos) and partner logos (LiveSite.jsx usePast2026).
+    const past = this.props.past2026;
+    if (past) {
+      if (past.speakers.length) v.starSpeakers = past.speakers;
+      if (past.partners.length) v.sixLogos = past.partners.map((p) => ({ n: p.name }));
+    }
     const at = (e) => (e && e.currentTarget) || null;
     v.goSpeakers = (e) => { if (e && e.preventDefault) e.preventDefault(); this.props.navigate("/speakers"); };
     v.soon = (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ menu: false }); this.props.navigate(PAGE_PATH.contact); };

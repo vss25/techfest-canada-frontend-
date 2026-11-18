@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   enterPreview, exitPreview, formatStagingUntil, isPreview, isStagingSite, previewFailure, stagingUntil, wantsPreview,
 } from "../lib/preview";
@@ -33,7 +34,11 @@ export default function PreviewBar() {
     const t = setInterval(() => setNow(Date.now()), 60000);
     return () => { window.removeEventListener("ttfc:preview-failed", f); clearInterval(t); };
   }, []);
-  const shown = staging || asked;
+  // Not on the admin pages: staff use the admin on the live site (Nov 17 2026), so the staging
+  // copy's admin needs no "this is staging" bar.
+  const { pathname } = useLocation();
+  const adminPage = /^\/admin(-login)?(\/|$)/.test(pathname);
+  const shown = (staging || asked) && !adminPage;
   // Room at the bottom of the page for the bar, so it never hides the footer.
   useEffect(() => {
     if (!shown || !ref.current || typeof ResizeObserver === "undefined") return undefined;

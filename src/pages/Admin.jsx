@@ -50,6 +50,7 @@ import EmailTracking from "../admin/staff/EmailTracking";
 import MyAccount from "../admin/staff/MyAccount";
 import BrochureDownloads from "../admin/leads/BrochureDownloads";
 import Waitlist2027 from "../admin/leads/Waitlist2027";
+import Videos from "../admin/cms/Videos";
 import Contracts from "../admin/sales/Contracts";
 import ContractEditor from "../admin/sales/ContractEditor";
 import Offerings from "../admin/sales/Offerings";
@@ -242,6 +243,7 @@ function AdminPanel() {
             <Route path="speaker-passes" element={<SpeakerPasses />} />
             <Route path="purchase-email" element={<PurchaseEmail />} />
             <Route path="waitlist-2027" element={<Waitlist2027 />} />
+            <Route path="content/videos" element={<Videos />} />
             <Route path="contracts" element={<Contracts />} />
             <Route path="contracts/:id" element={<ContractEditor />} />
             <Route path="offerings" element={<Offerings />} />

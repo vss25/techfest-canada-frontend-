@@ -162,6 +162,12 @@ export const HELP = {
     tips: ["They still get passes, tickets, sign-in codes and receipts.", "Resubscribing someone is for management."],
   },
 
+  "content/videos": {
+    what: "TTFC's YouTube and Vimeo videos on the website. Only the link is saved, so they cost nothing to host.",
+    steps: ["Upload the video to TTFC's YouTube channel or Vimeo.", "Press Add a video and paste its link: the title and picture fill in.", "Pick where it shows: home page, Media page, event pages, speakers.", "Save, then send it to staging and publish from Website changes."],
+    tips: ["On the website the player loads only when someone presses play, so pages stay fast.", "Switch “Shown on the website” off to hide a video without deleting it."],
+  },
+
   /* ---------- Sales ---------- */
   contracts: {
     what: "Sponsor and exhibitor contracts for the chosen event, built from the offerings catalogue.",

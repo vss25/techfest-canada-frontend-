@@ -169,7 +169,8 @@ class LiveSite extends ApprovedSite {
       const firstName = pick(f, "first") || nm.firstName;
       const lastName = pick(f, "last") || nm.lastName || "-";
       this.run("Sending the report", async () => {
-        await post("/brochure/submit", { firstName, lastName, email: f.email, company: pick(f, "company"), page: window.location.pathname, _hp: "" });
+        // The post-show report, not the 2026 sponsorship brochure (services/brochureDownloads.js "report2026").
+        await post("/brochure/submit", { brochure: "report2026", firstName, lastName, email: f.email, company: pick(f, "company"), page: window.location.pathname, _hp: "" });
         this.setState({ dlSent: true });
       });
     };
@@ -319,7 +320,7 @@ export default function ApprovedRoute({ fallback = null }) {
   // goSec from another screen lands on the event page with the section to scroll to.
   const route = base && location.state && location.state.sec ? { ...base, sec: location.state.sec } : base;
   const { events } = useEvents();
-  const [types, setTypes] = useState(null);
+  const [typesFor, setTypesFor] = useState({ key: "", list: null });
   // The countdown moves on every minute.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(t); }, []);
@@ -330,16 +331,21 @@ export default function ApprovedRoute({ fallback = null }) {
     return out;
   }, [events]);
   const van = byCity.van;
-  const evKey = van && van.eventKey;
+  // The event this page is about (Vancouver, the next event, on pages that aren't an event's):
+  // its tickets, its agenda, its checkout. Each event sells its own tickets (Nov 17 2026: every
+  // page used to load Vancouver's).
+  const ev = route && route.city ? byCity[route.city] : null;
+  const evKey = (ev || van) && (ev || van).eventKey;
 
   useEffect(() => {
     let live = true;
-    if (evKey) fetchTicketTypes(evKey).then((list) => { if (live) setTypes(list && list.length ? list : null); });
+    if (evKey) fetchTicketTypes(evKey).then((list) => { if (live) setTypesFor({ key: evKey, list: list && list.length ? list : null }); });
     return () => { live = false; };
   }, [evKey]);
+  // Only this event's list: never another event's while this one loads.
+  const types = typesFor.key === evKey ? typesFor.list : null;
 
-  // The agenda: the sessions of the event this page is about (Vancouver on the home page).
-  const ev = route && route.city ? byCity[route.city] : null;
+  // The agenda: the sessions of the event this page is about.
   const content = useEventContent(ev || van);
   const sessionsData = useMemo(() => {
     if (content.loading) return undefined;   // the design's own rows until the first answer (no flash of "soon")

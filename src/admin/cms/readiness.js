@@ -1,10 +1,12 @@
-/* Ready to go live (Nov 17 2026): "show percentage complete on the content page for an event
-   … so staff know when they can actually publish content to live".
+/* Ready to go live (Nov 17 2026). Publish to live turns on when an event has the bare minimum
+   it needs to go live; everything else is shown as "recommended" and never holds it back
+   ("Don't do this to 100%… keep it to bare minimum required to go live").
 
-   One checklist per event, from what's in the panel now (saved, on staging or live). The
-   percentage counts the required items; "nice to have" items are shown but don't hold it back.
-   Upcoming events need what the new event page shows; a past event (TTFC 2026) needs what its
-   archive page shows. Pure: no fetching, so it's tested on its own. */
+   Minimum, upcoming event: when it is (the date, or the date line while the day isn't fixed),
+   ticket types to sell, and its changes sent to staging (what goes live is what was reviewed).
+   The new event page has its own wording and photo for everything else.
+   Minimum, past event: its dates and its changes sent to staging.
+   Pure: no fetching, so it's tested on its own. */
 
 const filled = (v) => String(v ?? "").trim().length > 0;
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -34,22 +36,23 @@ export function readinessFor(ev, { sessions = [], speakers = [], partners = [], 
   const photo = filled(ev?.citySkyline) || filled(ev?.citySkylineUrl);
   const items = past ? [
     { key: "dates", label: "Dates", ok: filled(ev?.startDate), to: "", required: true },
-    { key: "venue", label: "Venue", ok: filled(ev?.venueName), to: "", required: true },
-    { key: "about", label: "About this event", ok: filled(ev?.description), to: "", required: true },
-    { key: "agenda", label: "Agenda", ok: sessions.length > 0, detail: plural(sessions.length, "session"), to: "/admin/content/agenda", required: true },
-    { key: "speakers", label: "Speakers with photos", ok: withPhoto.length > 0, detail: `${withPhoto.length} of ${plural(speakers.length, "speaker")}`, to: "/admin/content/speakers", required: true },
-    { key: "partners", label: "Partner logos", ok: withLogo.length > 0, detail: plural(withLogo.length, "logo"), to: "/admin/content/partners", required: true },
+    { key: "venue", label: "Venue", ok: filled(ev?.venueName), to: "", required: false },
+    { key: "about", label: "About this event", ok: filled(ev?.description), to: "", required: false },
+    { key: "agenda", label: "Agenda", ok: sessions.length > 0, detail: plural(sessions.length, "session"), to: "/admin/content/agenda", required: false },
+    { key: "speakers", label: "Speakers with photos", ok: withPhoto.length > 0, detail: `${withPhoto.length} of ${plural(speakers.length, "speaker")}`, to: "/admin/content/speakers", required: false },
+    { key: "partners", label: "Partner logos", ok: withLogo.length > 0, detail: plural(withLogo.length, "logo"), to: "/admin/content/partners", required: false },
     { key: "photo", label: "City photo", ok: photo, to: "", required: false },
   ] : [
-    { key: "dates", label: "Date", ok: filled(ev?.startDate), detail: filled(ev?.startDate) ? "" : "Shows the month until it's set", to: "", required: true },
-    { key: "theme", label: "Theme", ok: filled(ev?.theme), to: "", required: true },
-    { key: "tagline", label: "One line under the name", ok: filled(ev?.tagline), to: "", required: true },
-    { key: "about", label: "About this event", ok: filled(ev?.description), to: "", required: true },
-    { key: "photo", label: "City photo", ok: photo, to: "", required: true },
-    { key: "credit", label: "Photo credit", ok: !photo || filled(ev?.photoCredit), detail: photo ? "" : "Once there's a photo", to: "", required: true },
-    { key: "format", label: "Format", ok: filled(ev?.formatLine), to: "", required: true },
-    { key: "audience", label: "Who's in the room", ok: filled(ev?.audience), to: "", required: true },
-    { key: "agenda", label: "Agenda", ok: sessions.length > 0, detail: plural(sessions.length, "session"), to: "/admin/content/agenda", required: true },
+    { key: "dates", label: "Date", ok: filled(ev?.startDate) || filled(ev?.statusNote),
+      detail: filled(ev?.startDate) ? "" : filled(ev?.statusNote) ? "Date line set; add the day when it's fixed" : "The day, or the date line", to: "", required: true },
+    { key: "theme", label: "Theme", ok: filled(ev?.theme), to: "", required: false },
+    { key: "tagline", label: "One line under the name", ok: filled(ev?.tagline), to: "", required: false },
+    { key: "about", label: "About this event", ok: filled(ev?.description), to: "", required: false },
+    { key: "photo", label: "City photo", ok: photo, to: "", required: false },
+    { key: "credit", label: "Photo credit", ok: !photo || filled(ev?.photoCredit), detail: photo ? "" : "Once there's a photo", to: "", required: false },
+    { key: "format", label: "Format", ok: filled(ev?.formatLine), to: "", required: false },
+    { key: "audience", label: "Who's in the room", ok: filled(ev?.audience), to: "", required: false },
+    { key: "agenda", label: "Agenda", ok: sessions.length > 0, detail: plural(sessions.length, "session"), to: "/admin/content/agenda", required: false },
     { key: "tickets", label: "Tickets & prices", ok: Array.isArray(ticketTypes) && ticketTypes.length > 0,
       detail: ticketTypes == null ? "Couldn't check" : plural(ticketTypes.length, "ticket type"), to: "/admin/inventory", required: true },
     { key: "venue", label: "Venue", ok: filled(ev?.venueName), detail: filled(ev?.venueName) ? "" : "Shows “announced with tickets”", to: "", required: false },

@@ -45,6 +45,7 @@ import IssuedPasses, { ExhibitorPasses } from "../admin/tickets/IssuedPasses";
 import PurchaseEmail from "../admin/tickets/PurchaseEmail";
 import SalesAnalytics from "../admin/tickets/SalesAnalytics";
 import Inventory from "../admin/tickets/Inventory";
+import EventTickets from "../admin/tickets/EventTickets";
 import EmailTracking from "../admin/staff/EmailTracking";
 import MyAccount from "../admin/staff/MyAccount";
 import BrochureDownloads from "../admin/leads/BrochureDownloads";
@@ -241,6 +242,7 @@ function AdminPanel() {
             <Route path="issued-passes" element={<IssuedPasses />} />
             <Route path="exhibitor-passes" element={<ExhibitorPasses />} />
             <Route path="inventory" element={<Inventory />} />
+            <Route path="content/tickets" element={<EventTickets />} />
             <Route path="check-in" element={<Legacy eyebrow={EVENT_DAY} title="Check-in" description="Point the camera at a ticket's QR code to check the attendee in. Allow camera access when your browser asks. The check-in desk app (lobby, pass desk, meals, media, AV, exhibitors) is below."><CheckIn /><div className="mt-6"><DeskAppCard /><DeskSettings /></div></Legacy>} />
             <Route path="analytics" element={<ManagementOnly><SalesAnalytics /></ManagementOnly>} />
 

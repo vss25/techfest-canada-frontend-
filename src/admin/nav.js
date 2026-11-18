@@ -53,7 +53,7 @@ export const WORKSPACES = [
       // The approved design: one page, two tabs (Partners · Featured partners).
       { to: "content/partners", label: "Partners & sponsors", icon: Handshake },
       { to: "content/sponsors", label: "Featured partners", icon: Gem, hidden: true, parent: "content/partners" },
-      { to: "inventory", label: "Tickets & prices", icon: Package },
+      { to: "content/tickets", label: "Tickets & prices", icon: Ticket },
     ] },
     { title: "Site-wide", items: [
       { to: "content/settings", label: "Website switches", icon: Settings2 },
@@ -97,6 +97,8 @@ export const WORKSPACES = [
     ] },
     { title: "Revenue", items: [
       { to: "analytics", label: "Revenue", icon: BarChart3, management: true },
+      // TTFC 2026's passes and booths (sold and left, prices); each 2027 event's tickets are in Content › Tickets & prices.
+      { to: "inventory", label: "2026 pass inventory", icon: Package },
     ] },
   ] },
   { id: "ops", scoped: true, label: "Operations", rail: RAIL.ops, job: "Running the event: settings, venue, vendors, food, print and logistics.", groups: [

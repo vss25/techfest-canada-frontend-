@@ -1,11 +1,15 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ImageOff, Minus, Moon, Plus, RotateCcw, Search, Sun, Trash2, Pencil, ExternalLink, Globe, Smartphone, Star } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import {
-  Badge, Button, ConfirmDialog, Drawer, EmptyState, ErrorState, Field, Input, PageHeader, Select, SkeletonGrid, Switch, Textarea, focusRing,
+  Badge, Button, Card, ConfirmDialog, Drawer, EditPanel, EmptyState, ErrorState, Field, Input, PageHeader, Select, SkeletonGrid, Switch,
+  TableWrap, Tabs, Textarea, focusRing,
 } from "../ui";
+import { changeState } from "./workflowState";
+import { useAdminEvent } from "../eventContext";
 import { CmsBanners, ImagePicker } from "./CmsParts";
 import { ChangeBadge } from "./workflow";
 import { PARTNER_CATEGORIES, LIVE_NOTE } from "./cmsMeta";
@@ -165,11 +169,12 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
     }
   };
 
+  const Panel = withVisibility ? EditPanel : Drawer;
   return (
-    <Drawer
+    <Panel
       open
       onClose={onClose}
-      title={creating ? `Add a ${singular}` : doc?.name || `Edit ${singular}`}
+      title={creating ? `Add a ${singular}` : withVisibility ? `Edit ${singular}: ${doc?.name || ""}` : doc?.name || `Edit ${singular}`}
       description={readOnly ? "Read-only until editing is switched on." : "Fields marked * are required."}
       footer={
         <>
@@ -283,7 +288,7 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
           </a>
         )}
       </form>
-    </Drawer>
+    </Panel>
   );
 }
 
@@ -307,7 +312,13 @@ export default function LogoCollection({ type, title, singular, description, wit
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
-  const list = useMemo(() => (data || []).filter((d) => !sponsorsOnly || isSponsor(d)), [data, sponsorsOnly]);
+  const navigate = useNavigate();
+  const { current: chosenEvent } = useAdminEvent();
+  const [allEvents, setAllEvents] = useState(false);
+  const onEvent = withVisibility && !allEvents && !!chosenEvent;
+  const evIds = (d) => (d.events || []).map((r) => r?._ref).filter(Boolean);
+  const list = useMemo(() => (data || []).filter((d) => (!sponsorsOnly || isSponsor(d))
+    && (!onEvent || !evIds(d).length || evIds(d).includes(chosenEvent._id))), [data, sponsorsOnly, onEvent, chosenEvent]);
   // From the global search: ?edit=<id> opens that logo / partner.
   useEditFromUrl(list, (doc) => setEditing({ doc, creating: false, key: doc._id }));
   const shown = useMemo(() => {
@@ -375,14 +386,19 @@ export default function LogoCollection({ type, title, singular, description, wit
   return (
     <>
       <PageHeader
-        eyebrow={eyebrow}
-        title={title}
+        eyebrow={withVisibility ? undefined : eyebrow}
+        title={withVisibility ? "Partners & sponsors" : title}
         description={description}
         actions={<Button variant="primary" icon={Plus} disabled={readOnly} onClick={openNew}>Add {singular}</Button>}
       />
       <CmsBanners configured={configured} />
+      {withVisibility && (
+        <Tabs label="Partners" value={sponsorsOnly ? "featured" : "all"}
+          onChange={(k) => navigate(k === "featured" ? "/admin/content/sponsors" : "/admin/content/partners")}
+          tabs={[{ key: "all", label: "Partners" }, { key: "featured", label: "Featured partners" }]} />
+      )}
 
-      <div className="mb-5 flex flex-col gap-3 rounded-[18px] border border-ttfc-line bg-ttfc-panel p-3 md:flex-row md:items-center">
+      <div className="mb-3.5 flex flex-col gap-3 rounded-xl border border-[#E3E0EE] bg-white p-3 md:flex-row md:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
           <Input type="search" placeholder={`Search ${title.toLowerCase()}`} value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" aria-label={`Search ${title}`} />
@@ -400,9 +416,11 @@ export default function LogoCollection({ type, title, singular, description, wit
           {withVisibility && <option value="noWebsite">Not on the website</option>}
           {withVisibility && <option value="noApp">Not in the app</option>}
         </Select>
-        <Button size="md" icon={light ? Moon : Sun} onClick={() => setLight((v) => !v)} aria-pressed={!light}>
-          {light ? "Dark preview" : "Light preview"}
-        </Button>
+        {!withVisibility && (
+          <Button size="md" icon={light ? Moon : Sun} onClick={() => setLight((v) => !v)} aria-pressed={!light}>
+            {light ? "Dark preview" : "Light preview"}
+          </Button>
+        )}
       </div>
 
       {loading ? (
@@ -416,6 +434,53 @@ export default function LogoCollection({ type, title, singular, description, wit
           action={!readOnly && <Button variant="primary" icon={Plus} onClick={openNew}>Add {singular}</Button>} />
       ) : !shown.length ? (
         <EmptyState icon={Search} title="Nothing matches" body="Try a different search or filter." />
+      ) : withVisibility ? (
+        <Card className="flex flex-col gap-3.5">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h2 className="text-base font-bold text-[#151035]">
+              {(sponsorsOnly ? "Featured partners" : "Partners & sponsors") + (onEvent ? ` on ${chosenEvent.name}` : "")}
+            </h2>
+            <span className="text-xs text-[#6B6688]">
+              {shown.length} shown{hiddenCount ? ` · ${hiddenCount} hidden everywhere` : ""} · click a row to edit it
+            </span>
+            {chosenEvent && (
+              <button type="button" onClick={() => setAllEvents((v) => !v)} className={`ml-auto text-[13px] font-semibold text-[#D6308C] hover:underline ${focusRing}`}>
+                {onEvent ? "Show all partners" : `Only ${chosenEvent.name}`}
+              </button>
+            )}
+          </div>
+          <TableWrap>
+            <thead><tr><th>Name</th><th>Row on the Partners page</th><th>Category</th><th>Website</th><th>App</th></tr></thead>
+            <tbody>
+              {groups.flatMap((g) => g.items).map((d) => {
+                const active = d.active !== false;
+                const row = MATRIX_OPTIONS.find((x) => x.key === (d.matrixGroup || matrixGroupOf({ _id: d._id })));
+                const open = () => setEditing({ doc: d, creating: false, key: d._id });
+                const place = (on) => (active && on ? <Badge tone="good">Shown</Badge> : <Badge>Hidden</Badge>);
+                return (
+                  <tr key={d._id} className="is-clickable" tabIndex={0} onClick={open} onKeyDown={(e) => { if (e.key === "Enter") open(); }}
+                    style={editing?.doc?._id === d._id ? { background: "#FBE9F3", boxShadow: "inset 3px 0 0 #D6308C" } : undefined}>
+                    <td className="font-semibold">
+                      <span className="flex items-center gap-2.5">
+                        <span className="flex h-8 w-14 shrink-0 items-center justify-center rounded-md border border-[#F0EEF6] bg-white">
+                          {d.logoUrl ? <img src={`${d.logoUrl}?h=64&fit=max&auto=format`} alt="" className="max-h-6 max-w-12 object-contain" loading="lazy" /> : <ImageOff className="h-4 w-4 text-[#8A86A0]" aria-hidden="true" />}
+                        </span>
+                        <span className="flex flex-col gap-0.5">
+                          {d.name}
+                          {changeState(d) && <ChangeBadge doc={d} />}
+                        </span>
+                      </span>
+                    </td>
+                    <td>{d.matrixGroup ? row?.title : `${row?.title || "Ecosystem & Media"} (automatic)`}</td>
+                    <td className="text-[#4A4566]">{PARTNER_CATEGORIES.find((c) => c.value === d.category)?.label || "—"}</td>
+                    <td>{place(onWebsite(d))}</td>
+                    <td>{place(inApp(d))}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </TableWrap>
+        </Card>
       ) : (
         <div className="space-y-8">
           <p className="text-sm text-ttfc-muted">

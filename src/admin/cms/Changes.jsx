@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, GitPullRequestArrow, RefreshCw, Send, Trash2, Upload } from "lucide-react";
+import { ExternalLink, GitPullRequestArrow, PauseCircle, RefreshCw, Send, Trash2, Upload } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, ConfirmDialog, EmptyState, ErrorState, LoadingState, PageHeader } from "../ui";
 import { stagingUrl } from "./workflowState";
+import { useAdmin } from "../adminContext";
 
 /* =========================================================
    Admin › Website & app › Changes (Nov 2026): every website
@@ -78,6 +79,22 @@ export default function Changes() {
   const items = useMemo(() => data?.items || [], [data]);
   // Any staff member publishes what's on staging (Nov 17 2026); the server says so in canPublish.
   const canPublish = data?.canPublish !== false;
+  // Publishing paused until the new website launches (Nov 17 2026): the live site keeps its content.
+  const paused = data?.publishingPaused === true;
+  const { isManagement } = useAdmin();
+  const setPaused = (next) => setConfirm({
+    title: next ? "Pause publishing to the live website?" : "Turn publishing on?",
+    body: next
+      ? "Nobody can publish to the live website until a manager turns it on again. Saving and sending to staging keep working."
+      : "Staff can publish what's on staging to the live website again. Do this when the new website goes live.",
+    label: next ? "Pause publishing" : "Turn publishing on",
+    tone: next ? "danger" : "primary",
+    go: async () => {
+      await api.put("/cms/publishing", { paused: next });
+      toast.success(next ? "Publishing is paused." : "Publishing is on.");
+      reload();
+    },
+  });
   const unsent = items.filter((i) => i.unsent);
   const staged = items.filter((i) => i.staged);
   // Sanity drafts nobody sent from here (left in Sanity Studio or by an old script): never published from this page.
@@ -135,6 +152,12 @@ export default function Changes() {
           </>
         )}
       />
+      {paused && (
+        <Banner tone="warn" icon={PauseCircle} className="mb-4 max-w-3xl" title="Publishing to the live website is paused"
+          action={isManagement && <Button variant="secondary" onClick={() => setPaused(false)}>Turn publishing on</Button>}>
+          The live website keeps its current content until the new website launches. Keep saving and sending changes to staging: everything on staging is published together at launch.
+        </Banner>
+      )}
       <Banner tone="info" icon={GitPullRequestArrow} className="mb-4 max-w-3xl">
         The staging site shows staged content to staff who are signed in there: sign in once on the staging site with your staff email and password, then use Open staging site.
       </Banner>
@@ -163,7 +186,9 @@ export default function Changes() {
                 <h2 className="font-semibold">On staging</h2>
                 <p className="text-xs text-ttfc-muted">{staged.length ? `${staged.length} on the staging site, not on the live website yet.` : "Nothing on staging."}</p>
               </div>
-              {canPublish ? (
+              {paused ? (
+                staged.length > 0 && <span className="text-xs text-ttfc-muted">Published together when the new website launches</span>
+              ) : canPublish ? (
                 <Button
                   variant="primary"
                   icon={Upload}

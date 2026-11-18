@@ -19,6 +19,7 @@ import {
   AUTO_HINTS, BADGE_LABELS, FEATURE_LABELS, LIVE_FEATURES, LIVE_MODES, MODE_LABELS, autoReason, globalSwitches, liveMode,
 } from "./sessionLive";
 import { SESSIONS, DAYS, buildSpeakerIndex, matchSpeaker, formatTime12, getDuration } from "../../data/agenda";
+import { approvedAgendaFor } from "../../data/approvedAgendas";
 import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS, SESSION_TYPE_SUGGESTIONS } from "../../data/sessionFormats";
 import { useEditFromUrl } from "../search/deepLink";
 import { useAdminEvent } from "../eventContext";
@@ -139,6 +140,15 @@ function LiveModeControl({ feature, value, onChange, reason, globalOff, readOnly
 /* "Day 1 · Feb 3": the day's date from the event's start date (Nov 2026: the built-in DAYS are
    Toronto 2026's, Oct 26–27, which is wrong for every 2027 event). No event, or one without a
    start date: the built-in label for 2026, else just "Day 1". */
+/** How many days the event runs: its dates when set, else 1 for a Briefing and 2 for the Main Event (and with no event). */
+function eventDays(ev) {
+  if (ev?.startDate && ev?.endDate) {
+    const n = Math.round((Date.parse(`${ev.endDate}T12:00:00Z`) - Date.parse(`${ev.startDate}T12:00:00Z`)) / 86400000) + 1;
+    if (n >= 1) return Math.min(n, 2);
+  }
+  return ev?.type === "briefing" ? 1 : 2;
+}
+
 function dayLabel(d, ev) {
   if (ev?.startDate) {
     const t = new Date(`${ev.startDate}T12:00:00Z`);
@@ -218,7 +228,7 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
           <Field label="Day">{(id) => (
             <Select id={id} value={String(form.day)} onChange={(e) => set("day")(Number(e.target.value))} disabled={readOnly}>
               <option value="1">{dayLabel(1, dayEvent)}</option>
-              <option value="2">{dayLabel(2, dayEvent)}</option>
+              {(eventDays(dayEvent) > 1 || Number(form.day) === 2) && <option value="2">{dayLabel(2, dayEvent)}</option>}
             </Select>
           )}</Field>
           <Field label="Starts" required error={errors.time}>{(id) => <Input id={id} type="time" step={300} value={form.time} onChange={set("time")} disabled={readOnly} />}</Field>
@@ -347,7 +357,7 @@ function SessionRow({ s, speakerIndex, selected, onEdit }) {
           {s.title}
         </span>
       </td>
-      <td>{FORMAT_MAP[s.format]?.label || s.type || "—"}</td>
+      <td>{s.type || FORMAT_MAP[s.format]?.label || "—"}</td>
       <td className="whitespace-nowrap text-[#4A4566]" title={people.map((p) => p.name).join(", ") || undefined}>
         {s.isBreak ? "—" : people.length ? `${named} of ${people.length} named` : "None yet"}
       </td>
@@ -516,13 +526,41 @@ export default function Agenda() {
   const speakerIndex = useMemo(() => buildSpeakerIndex(speakers.data || []), [speakers.data]);
   const globalLive = useMemo(() => globalSwitches(appContent.data), [appContent.data]);
   const speakerNames = useMemo(() => (speakers.data || []).map((d) => d.name).filter(Boolean).sort(), [speakers.data]);
-  const dayList = list.filter((s) => Number(s.day) === day && s.time);
   // Sessions made elsewhere (e.g. Sanity Studio) without a day or time don't show on the site.
   const unscheduled = list.filter((s) => !(Number(s.day) === 1 || Number(s.day) === 2) || !s.time);
   // The built-in agenda is Toronto 2026's: compare it with every session, whatever event is picked.
   const imported = new Set(allSessions.map((s) => s.sessionId).filter(Boolean));
   const missing = SESSIONS.filter((s) => !imported.has(s.id)).length;
   const counts = { 1: list.filter((s) => Number(s.day) === 1).length, 2: list.filter((s) => Number(s.day) === 2).length };
+  // A one-day Briefing has no Day 2 tab (unless a session was put on day 2 anyway, so it can be found and fixed).
+  const tabEvent = eventList.find((e) => e._id === eventId);
+  const dayKeys = eventDays(tabEvent) > 1 || counts[2] > 0 ? [1, 2] : [1];
+  const shownDay = dayKeys.includes(day) ? day : 1;
+  const dayList = list.filter((s) => Number(s.day) === shownDay && s.time);
+
+  // The approved design's agenda for this event (Vancouver): copied in as saved changes, never straight to the website.
+  const chosenRecord = eventList.find((e) => e._id === eventId);
+  const approved = eventId ? approvedAgendaFor(chosenRecord || chosenEvent) : null;
+  const ownTitles = new Set(allSessions.filter((x) => refIds(x).includes(eventId)).map((x) => x.title));
+  const approvedMissing = approved ? approved.filter((a) => !ownTitles.has(a.title)) : [];
+  const [copying, setCopying] = useState(false);
+  const copyApproved = async () => {
+    setCopying(true);
+    const made = [];
+    try {
+      for (const a of approvedMissing) {
+        const body = toBody({ ...blank(1), ...a, events: [eventId] }, null);
+        body.sessionId = uniqueSessionId(1, [...allSessions, ...made]);
+        const saved = await api.post("/cms/session?draft=1", body);
+        made.push({ ...body, ...(saved || {}) });
+      }
+      toast.success(`${plural(made.length, "session")} copied from the approved design. They're saved here, not on the website: send them to staging from Website changes.`);
+    } catch (err) { toast.error(err); } finally {
+      if (made.length) setData((xs) => [...(xs || []), ...made]);
+      setDay(1);
+      setCopying(false);
+    }
+  };
 
   const importAgenda = async () => {
     setImporting(true);
@@ -584,6 +622,12 @@ export default function Agenda() {
         description="Every session on the website's Agenda page and in the app: titles, times, formats, speakers and moderators."
         actions={(
           <div className="flex flex-wrap gap-2">
+            {approvedMissing.length > 0 && (
+              <Button icon={Download} loading={copying} disabled={readOnly} onClick={copyApproved}
+                title="Adds the sessions written into the approved website design as saved changes for this event. Nothing goes to the website until you send it to staging and publish.">
+                Copy the approved design's agenda ({approvedMissing.length})
+              </Button>
+            )}
             {missing > 0 && !eventId && (
               <Button icon={Download} loading={importing} disabled={readOnly} onClick={importAgenda}
                 title="Adds the built-in Toronto 2026 sessions that aren't in the CMS yet. Never changes sessions you've edited.">
@@ -625,8 +669,10 @@ export default function Agenda() {
                 </button>
               )}
             </div>
-            <Tabs value={day} onChange={setDay} label="Day"
-              tabs={[1, 2].map((d) => ({ key: d, label: dayLabel(d, eventList.find((e) => e._id === eventId)), count: counts[d] }))} />
+            {dayKeys.length > 1 ? (
+              <Tabs value={shownDay} onChange={setDay} label="Day"
+                tabs={dayKeys.map((d) => ({ key: d, label: dayLabel(d, tabEvent), count: counts[d] }))} />
+            ) : tabEvent && <p className="-mt-1 text-[13px] text-[#6B6688]">{dayLabel(1, tabEvent)} · one-day event</p>}
             {dayList.length ? (
               <TableWrap>
                 <thead><tr><th style={{ width: 90 }}>Time</th><th>Session</th><th>Format</th><th>Speakers</th><th>Status</th></tr></thead>
@@ -638,7 +684,7 @@ export default function Agenda() {
                 </tbody>
               </TableWrap>
             ) : (
-              <EmptyState icon={CalendarDays} title={`Nothing on day ${day} yet`}
+              <EmptyState icon={CalendarDays} title={dayKeys.length > 1 ? `Nothing on day ${shownDay} yet` : "No sessions yet"}
                 action={!readOnly && <Button variant="primary" icon={Plus} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add session</Button>} />
             )}
           </Card>

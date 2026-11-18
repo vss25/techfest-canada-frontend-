@@ -24,6 +24,7 @@ const Resources = lazy(() => import("./pages/Resources"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Contact = lazy(() => import("./pages/Contact"));
 import PreviewBar from "./components/PreviewBar";
+import NextEventTickets from "./components/NextEventTickets";
 import BrandHome from "./redesign/BrandHome";
 const ApprovedSite = lazy(() => import("./redesign/approved/ApprovedSite"));
 // The approved design, live: every screen of board 12 at its own address (redesign step 2).
@@ -149,7 +150,8 @@ function App() {
         <Route path="/speakers" element={live(null)} />
         <Route path="/speakers/:slug" element={<SpeakerProfile />} />
         <Route path="/sponsors" element={<Sponsors />} />
-        <Route path="/tickets" element={<Tickets />} />
+        {/* The next event's tickets in the new design (the old page sold TTFC 2026 passes). */}
+        <Route path="/tickets" element={<NextEventTickets />} />
         <Route path="/tickets/checkout" element={<Checkout />} />
         <Route path="/first-timers" element={<Navigate to="/" replace />} />
         {/* Briefings page hidden (Oct 2026); src/pages/Briefings.jsx kept for later */}

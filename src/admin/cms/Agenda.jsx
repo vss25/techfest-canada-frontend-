@@ -140,6 +140,15 @@ function LiveModeControl({ feature, value, onChange, reason, globalOff, readOnly
 /* "Day 1 · Feb 3": the day's date from the event's start date (Nov 2026: the built-in DAYS are
    Toronto 2026's, Oct 26–27, which is wrong for every 2027 event). No event, or one without a
    start date: the built-in label for 2026, else just "Day 1". */
+/** How many days the event runs: its dates when set, else 1 for a Briefing and 2 for the Main Event (and with no event). */
+function eventDays(ev) {
+  if (ev?.startDate && ev?.endDate) {
+    const n = Math.round((Date.parse(`${ev.endDate}T12:00:00Z`) - Date.parse(`${ev.startDate}T12:00:00Z`)) / 86400000) + 1;
+    if (n >= 1) return Math.min(n, 2);
+  }
+  return ev?.type === "briefing" ? 1 : 2;
+}
+
 function dayLabel(d, ev) {
   if (ev?.startDate) {
     const t = new Date(`${ev.startDate}T12:00:00Z`);
@@ -219,7 +228,7 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
           <Field label="Day">{(id) => (
             <Select id={id} value={String(form.day)} onChange={(e) => set("day")(Number(e.target.value))} disabled={readOnly}>
               <option value="1">{dayLabel(1, dayEvent)}</option>
-              <option value="2">{dayLabel(2, dayEvent)}</option>
+              {(eventDays(dayEvent) > 1 || Number(form.day) === 2) && <option value="2">{dayLabel(2, dayEvent)}</option>}
             </Select>
           )}</Field>
           <Field label="Starts" required error={errors.time}>{(id) => <Input id={id} type="time" step={300} value={form.time} onChange={set("time")} disabled={readOnly} />}</Field>
@@ -517,13 +526,17 @@ export default function Agenda() {
   const speakerIndex = useMemo(() => buildSpeakerIndex(speakers.data || []), [speakers.data]);
   const globalLive = useMemo(() => globalSwitches(appContent.data), [appContent.data]);
   const speakerNames = useMemo(() => (speakers.data || []).map((d) => d.name).filter(Boolean).sort(), [speakers.data]);
-  const dayList = list.filter((s) => Number(s.day) === day && s.time);
   // Sessions made elsewhere (e.g. Sanity Studio) without a day or time don't show on the site.
   const unscheduled = list.filter((s) => !(Number(s.day) === 1 || Number(s.day) === 2) || !s.time);
   // The built-in agenda is Toronto 2026's: compare it with every session, whatever event is picked.
   const imported = new Set(allSessions.map((s) => s.sessionId).filter(Boolean));
   const missing = SESSIONS.filter((s) => !imported.has(s.id)).length;
   const counts = { 1: list.filter((s) => Number(s.day) === 1).length, 2: list.filter((s) => Number(s.day) === 2).length };
+  // A one-day Briefing has no Day 2 tab (unless a session was put on day 2 anyway, so it can be found and fixed).
+  const tabEvent = eventList.find((e) => e._id === eventId);
+  const dayKeys = eventDays(tabEvent) > 1 || counts[2] > 0 ? [1, 2] : [1];
+  const shownDay = dayKeys.includes(day) ? day : 1;
+  const dayList = list.filter((s) => Number(s.day) === shownDay && s.time);
 
   // The approved design's agenda for this event (Vancouver): copied in as saved changes, never straight to the website.
   const chosenRecord = eventList.find((e) => e._id === eventId);
@@ -656,8 +669,10 @@ export default function Agenda() {
                 </button>
               )}
             </div>
-            <Tabs value={day} onChange={setDay} label="Day"
-              tabs={[1, 2].map((d) => ({ key: d, label: dayLabel(d, eventList.find((e) => e._id === eventId)), count: counts[d] }))} />
+            {dayKeys.length > 1 ? (
+              <Tabs value={shownDay} onChange={setDay} label="Day"
+                tabs={dayKeys.map((d) => ({ key: d, label: dayLabel(d, tabEvent), count: counts[d] }))} />
+            ) : tabEvent && <p className="-mt-1 text-[13px] text-[#6B6688]">{dayLabel(1, tabEvent)} · one-day event</p>}
             {dayList.length ? (
               <TableWrap>
                 <thead><tr><th style={{ width: 90 }}>Time</th><th>Session</th><th>Format</th><th>Speakers</th><th>Status</th></tr></thead>
@@ -669,7 +684,7 @@ export default function Agenda() {
                 </tbody>
               </TableWrap>
             ) : (
-              <EmptyState icon={CalendarDays} title={`Nothing on day ${day} yet`}
+              <EmptyState icon={CalendarDays} title={dayKeys.length > 1 ? `Nothing on day ${shownDay} yet` : "No sessions yet"}
                 action={!readOnly && <Button variant="primary" icon={Plus} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add session</Button>} />
             )}
           </Card>

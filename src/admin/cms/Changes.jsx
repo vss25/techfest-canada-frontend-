@@ -176,7 +176,7 @@ export default function Changes() {
                 <p className="text-xs text-ttfc-muted">{staged.length ? `${staged.length} on the staging site, not on the live website yet.` : "Nothing on staging."}</p>
                 {waitingCount > 0 && (
                   <p className="mt-1 text-xs text-[#B45309]">
-                    {waitingCount} {waitingCount === 1 ? "waits" : "wait"} for {waitingCount === 1 ? "its" : "their"} event to be ready. Review them on staging; Publish to live turns on when the event page is 100% ready.
+                    {waitingCount} {waitingCount === 1 ? "waits" : "wait"} for {waitingCount === 1 ? "its" : "their"} event to be ready. Review them on staging; Publish to live turns on once the event has what's required to go live (see its Event page).
                   </p>
                 )}
               </div>

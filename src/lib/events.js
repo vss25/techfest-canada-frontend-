@@ -209,7 +209,7 @@ export function fetchEventContent(eventId) {
     { eventId }
   );
   const partners = client.fetch(
-    `*[_type == "partner" && active != false && showOnWebsite != false && ${SCOPED}]{ _id, name, category, logo, url, logoScale } | order(order asc)`,
+    `*[_type == "partner" && active != false && showOnWebsite != false && ${SCOPED}]{ _id, name, category, logo, url, logoScale, matrixGroup, eventRows } | order(order asc)`,
     { eventId }
   );
   return Promise.all([sessions, speakers, partners]).then(([s, sp, p]) => ({

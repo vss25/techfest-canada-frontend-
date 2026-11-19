@@ -18,7 +18,7 @@ import { ChangeBadge } from "./workflow";
 import { PARTNER_CATEGORIES, LIVE_NOTE } from "./cmsMeta";
 import { buildBody, nextOrder } from "./fields";
 import useCmsStatus from "./useCmsStatus";
-import { FEATURED_GROUP, PILLAR_GROUPS, SECTOR_GROUPS, ECOSYSTEM_GROUP, matrixGroupOf } from "../../data/partnerMatrix";
+import { FEATURED_GROUP, PILLAR_GROUPS, SECTOR_GROUPS, ECOSYSTEM_GROUP, matrixGroupOf, eventRowOf } from "../../data/partnerMatrix";
 import { SPONSOR_DESCRIPTION_MAX, inApp, isSponsor, onWebsite } from "../../data/sponsors";
 import { useEditFromUrl, useInitialQuery } from "../search/deepLink";
 
@@ -31,6 +31,13 @@ const automaticLabel = (doc) => {
 };
 /** Partners have separate website / app switches; the other logo strips are website-only. */
 const VISIBILITY_HINT = "The website and the apps read this same record, so each switch only changes its own place. Changes show within about a minute.";
+
+/* Partners per event (Nov 18 2026): which events a partner shows on (none = every event) and its
+   row on the Partners page for each event (an event without its own row uses the usual row). */
+const refIdsOf = (d) => (d?.events || []).map((r) => r?._ref || r).filter(Boolean).sort();
+const rowsOf = (d) => Object.fromEntries((d?.eventRows || []).map((r) => [r?.event?._ref || r?.event, r?.row]).filter(([e, r]) => e && r));
+const rowsBody = (rows) => Object.entries(rows).filter(([, r]) => r).sort(([a], [b]) => a.localeCompare(b)).map(([event, row]) => ({ event, row }));
+const rowTitle = (key) => MATRIX_OPTIONS.find((x) => x.key === key)?.title || "Ecosystem & Media";
 
 const scaleOf = (d) => (Number.isFinite(Number(d?.logoScale)) && d?.logoScale !== null && d?.logoScale !== "" ? Number(d.logoScale) : 100);
 const clampScale = (n) => Math.min(250, Math.max(30, Math.round(n)));
@@ -118,7 +125,7 @@ function LogoTile({ doc, readOnly, light, withVisibility, showSponsor, onEdit, o
   );
 }
 
-function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly, doc, creating, defaultOrder, readOnly, onClose, onSaved, onAutoSaved, onDelete }) {
+function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly, doc, creating, defaultOrder, readOnly, onClose, onSaved, onAutoSaved, onDelete, events = [], chosenEvent = null }) {
   const toast = useToast();
   const visibilityKeys = withVisibility ? ["description", "showOnWebsite", "showInApp"] : [];
   const keys = ["name", "url", "order", "active", "logoScale", ...(withCategory ? ["category", "matrixGroup"] : []), ...visibilityKeys];
@@ -134,6 +141,9 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
     description: doc?.description || "",
     showOnWebsite: doc ? doc.showOnWebsite !== false : true,
     showInApp: doc ? doc.showInApp !== false : true,
+    // A new partner added while an event is chosen shows on that event.
+    events: doc ? refIdsOf(doc) : creating && withVisibility && chosenEvent ? [chosenEvent._id] : [],
+    eventRows: rowsOf(doc),
   }));
   const [logo, setLogo] = useState({ assetId: null, url: doc?.logoUrl || "" });
   const [errors, setErrors] = useState({});
@@ -162,6 +172,14 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
     const body = buildBody({ form, original, keys, numberKeys: ["order", "logoScale"], boolKeys, creating });
     if (creating) for (const k of boolKeys) body[k] = !!form[k];
     if (logo.assetId) body.logo = logo.assetId;
+    if (withVisibility) {
+      const evs = [...form.events].sort();
+      if (creating ? evs.length : JSON.stringify(evs) !== JSON.stringify(refIdsOf(doc))) body.events = evs;
+      const rows = rowsBody(form.eventRows);
+      if (creating ? rows.length : JSON.stringify(rows) !== JSON.stringify(rowsBody(rowsOf(doc)))) body.eventRows = rows;
+    }
+    const local = (merged) => (withVisibility ? { ...merged, events: form.events.map((id) => ({ _ref: id })),
+      eventRows: rowsBody(form.eventRows).map((r) => ({ event: { _ref: r.event }, row: r.row })) } : merged);
     if (isAuto) {
       // Autosave: saved as a draft, quietly, and the editor stays open.
       if (!creating && !Object.keys(body).length) return false;
@@ -169,7 +187,7 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
       const merged = { ...(doc || {}), ...saved, logoUrl: logo.url, hasDraft: true };
       for (const [k, v] of Object.entries(body)) if (v === null) delete merged[k];
       setLogo((l) => ({ ...l, assetId: null }));
-      onAutoSaved(merged);
+      onAutoSaved(local(merged));
       return true;
     }
     if (!creating && !Object.keys(body).length) { auto.cancel(); toast.info("Nothing changed"); onClose(); return; }
@@ -180,7 +198,7 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
       toast.success(creating ? `${form.name} added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
       const merged = { ...(doc || {}), ...saved, logoUrl: logo.url };
       for (const [k, v] of Object.entries(body)) if (v === null) delete merged[k];   // cleared fields
-      onSaved(merged);
+      onSaved(local(merged));
     } catch (err) {
       toast.error(err);
     } finally {
@@ -245,8 +263,19 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
             )}
           </Field>
         )}
+        {withVisibility && chosenEvent && (
+          <Field label="Row on the Partners page" hint={`For ${chosenEvent.name}. Change the event in the top bar to set its row for another event.`}>
+            {(id) => (
+              <Select id={id} value={form.eventRows[chosenEvent._id] || ""} disabled={readOnly}
+                onChange={(e) => { const v = e.target.value; setForm((f) => ({ ...f, eventRows: { ...f.eventRows, [chosenEvent._id]: v } })); }}>
+                <option value="">{`Same as the usual row (${rowTitle(form.matrixGroup || matrixGroupOf({ _id: doc?._id }))})`}</option>
+                {MATRIX_OPTIONS.map((g) => <option key={g.key} value={g.key}>{g.title}</option>)}
+              </Select>
+            )}
+          </Field>
+        )}
         {withCategory && (
-          <Field label="Partners page row" hint={sponsorsOnly
+          <Field label={withVisibility && chosenEvent ? "Usual row (events without their own)" : "Row on the Partners page"} hint={sponsorsOnly
             ? "Featured Partners = a paid partner (shown first in the apps' Organisations). Pick another row to make it a regular partner."
             : "Which tech pillar or applied sector row the logo sits in on the Partners page. Featured Partners are the paid partners. Automatic uses the built-in list; new logos default to Ecosystem & Media."}>
             {(id) => (
@@ -256,6 +285,21 @@ function LogoDrawer({ type, singular, withCategory, withVisibility, sponsorsOnly
               </Select>
             )}
           </Field>
+        )}
+        {withVisibility && events.length > 0 && (
+          <fieldset className="rounded-2xl border border-ttfc-line p-4">
+            <legend className="px-1 text-xs font-bold uppercase tracking-[0.12em] text-ttfc-dim">Events</legend>
+            <p className="mb-3 text-xs text-ttfc-dim">The events this partner shows on. None ticked = every event.</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {events.map((ev) => (
+                <label key={ev._id} className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" className="h-4 w-4 accent-ttfc-pink" disabled={readOnly} checked={form.events.includes(ev._id)}
+                    onChange={(e) => { const on = e.target.checked; setForm((f) => ({ ...f, events: on ? [...f.events, ev._id] : f.events.filter((x) => x !== ev._id) })); }} />
+                  {ev.name}
+                </label>
+              ))}
+            </div>
+          </fieldset>
         )}
         <Field label="Website link" hint="Optional. Where the logo goes when clicked.">
           {(id) => <Input id={id} type="url" placeholder="example.com" value={form.url} onChange={set("url")} disabled={readOnly} />}
@@ -336,11 +380,13 @@ export default function LogoCollection({ type, title, singular, description, wit
   const [deleting, setDeleting] = useState(null);
 
   const navigate = useNavigate();
-  const { current: chosenEvent } = useAdminEvent();
+  const { current: chosenEvent, events: adminEvents } = useAdminEvent();
+  const allEventList = useMemo(() => (adminEvents || []).filter((e) => e?._id && e?.name), [adminEvents]);
   const [allEvents, setAllEvents] = useState(false);
   const onEvent = withVisibility && !allEvents && !!chosenEvent;
   const evIds = (d) => (d.events || []).map((r) => r?._ref).filter(Boolean);
-  const list = useMemo(() => (data || []).filter((d) => (!sponsorsOnly || isSponsor(d))
+  // With an event chosen, the Featured partners tab lists that event's featured row.
+  const list = useMemo(() => (data || []).filter((d) => (!sponsorsOnly || (onEvent ? eventRowOf(d, chosenEvent._id) === FEATURED_GROUP.key : isSponsor(d)))
     && (!onEvent || !evIds(d).length || evIds(d).includes(chosenEvent._id))), [data, sponsorsOnly, onEvent, chosenEvent]);
   // From the global search: ?edit=<id> opens that logo / partner.
   useEditFromUrl(list, (doc) => setEditing({ doc, creating: false, key: doc._id }));
@@ -486,7 +532,8 @@ export default function LogoCollection({ type, title, singular, description, wit
             <tbody>
               {groups.flatMap((g) => g.items).map((d) => {
                 const active = d.active !== false;
-                const row = MATRIX_OPTIONS.find((x) => x.key === (d.matrixGroup || matrixGroupOf({ _id: d._id })));
+                const ownRow = onEvent && rowsOf(d)[chosenEvent._id];
+                const row = MATRIX_OPTIONS.find((x) => x.key === (onEvent ? eventRowOf(d, chosenEvent._id) : (d.matrixGroup || matrixGroupOf({ _id: d._id }))));
                 const open = () => setEditing({ doc: d, creating: false, key: d._id });
                 const place = (on) => (active && on ? <Badge tone="good">Shown</Badge> : <Badge>Hidden</Badge>);
                 return (
@@ -503,7 +550,7 @@ export default function LogoCollection({ type, title, singular, description, wit
                         </span>
                       </span>
                     </td>
-                    <td>{d.matrixGroup ? row?.title : `${row?.title || "Ecosystem & Media"} (automatic)`}</td>
+                    <td>{ownRow || d.matrixGroup ? row?.title : `${row?.title || "Ecosystem & Media"} (automatic)`}</td>
                     <td className="text-[#4A4566]">{PARTNER_CATEGORIES.find((c) => c.value === d.category)?.label || "—"}</td>
                     <td>{place(onWebsite(d))}</td>
                     <td>{place(inApp(d))}</td>
@@ -541,6 +588,8 @@ export default function LogoCollection({ type, title, singular, description, wit
       {editing && (
         <LogoDrawer
           key={editing.key}
+          events={withVisibility ? allEventList : []}
+          chosenEvent={withVisibility ? chosenEvent : null}
           type={type}
           singular={singular}
           withCategory={withCategory}

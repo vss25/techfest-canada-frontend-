@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useAutosave } from "./useAutosave";
+import { AutosaveNote } from "./AutosaveNote";
 import { ExternalLink, Pencil, Play, Plus, Trash2, Video } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
@@ -36,9 +38,11 @@ function Thumb({ url, provider, className = "" }) {
   );
 }
 
-function Editor({ doc, speakers, onClose, onSaved, readOnly }) {
+function Editor({ doc: opened, speakers, onClose, onSaved, onAutoSaved, readOnly }) {
   const toast = useToast();
   const { events } = useAdminEvent();
+  // After an autosave a new video is an edit of the saved one.
+  const [doc, setDoc] = useState(opened);
   const creating = !doc?._id;
   const [form, setForm] = useState(formOf(doc));
   const [looking, setLooking] = useState(false);
@@ -57,24 +61,47 @@ function Editor({ doc, speakers, onClose, onSaved, readOnly }) {
     } catch (err) { toast.error(err); } finally { setLooking(false); }
   };
 
+  const bodyOf = () => {
+    const body = {};
+    const orig = formOf(doc);
+    for (const k of KEYS) {
+      let v = form[k];
+      if (k === "order") v = v === "" ? "" : Number(v);
+      if (typeof v === "string") v = v.trim();
+      if (!creating && JSON.stringify(v) === JSON.stringify(orig[k])) continue;
+      if (creating && (v === "" || (Array.isArray(v) && !v.length))) continue;
+      body[k] = v === "" ? null : v;
+    }
+    return body;
+  };
+  const merged = (saved) => ({ ...(doc || {}), ...form, ...saved, hasDraft: true, events: form.events.map((id) => ({ _ref: id })), speakers: form.speakers.map((id) => ({ _ref: id })) });
+
+  // 30 seconds after the last change, or on closing: saved as a draft, even half filled in
+  // (the link and title are checked when it's sent to staging).
+  const auto = useAutosave({
+    value: form, enabled: !readOnly,
+    save: async () => {
+      if (saving || looking) return "Waiting for the current save to finish.";
+      const body = bodyOf();
+      if (!Object.keys(body).length) return false;
+      const saved = creating ? await api.post("/cms/video?draft=1", body) : await api.patch(`/cms/video/${doc._id}?draft=1`, body);
+      const next = merged(saved);
+      setDoc(next);
+      onAutoSaved(next);
+      return true;
+    },
+  });
+
   const save = async () => {
     if (!form.url) { toast.error("Paste the YouTube or Vimeo link."); return; }
     if (!form.title.trim()) { toast.error("Give the video a title."); return; }
     setSaving(true);
     try {
-      const body = {};
-      const orig = formOf(doc);
-      for (const k of KEYS) {
-        let v = form[k];
-        if (k === "order") v = v === "" ? "" : Number(v);
-        if (typeof v === "string") v = v.trim();
-        if (!creating && JSON.stringify(v) === JSON.stringify(orig[k])) continue;
-        if (creating && (v === "" || (Array.isArray(v) && !v.length))) continue;
-        body[k] = v === "" ? null : v;
-      }
+      const body = bodyOf();
       const saved = creating ? await api.post("/cms/video?draft=1", body) : await api.patch(`/cms/video/${doc._id}?draft=1`, body);
+      auto.markSaved();
       toast.success(creating ? "Video added. Send it to staging from Website changes." : "Saved");
-      onSaved({ ...(doc || {}), ...form, ...saved, hasDraft: true, events: form.events.map((id) => ({ _ref: id })), speakers: form.speakers.map((id) => ({ _ref: id })) });
+      onSaved(merged(saved));
     } catch (err) { toast.error(err); } finally { setSaving(false); }
   };
 
@@ -82,7 +109,7 @@ function Editor({ doc, speakers, onClose, onSaved, readOnly }) {
 
   return (
     <Drawer open onClose={onClose} title={creating ? "Add a video" : form.title || "Video"} description="YouTube or Vimeo plays it, so it costs nothing to host. Only the link is saved."
-      footer={readOnly ? <Button onClick={onClose}>Close</Button> : <><Button onClick={onClose}>Cancel</Button><Button variant="primary" loading={saving} onClick={save}>Save</Button></>}>
+      footer={readOnly ? <Button onClick={onClose}>Close</Button> : <><AutosaveNote auto={auto} className="mr-auto self-center" /><Button onClick={() => { auto.cancel(); onClose(); }}>Cancel</Button><Button variant="primary" loading={saving} onClick={save}>Save</Button></>}>
       <div className="flex flex-col gap-4">
         <Field label="YouTube or Vimeo link" required hint="Paste the link from the address bar or the Share button. Unlisted videos work too.">{(id) => (
           <div className="flex gap-2">
@@ -141,6 +168,7 @@ export default function Videos() {
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
   const rows = Array.isArray(data) ? data : [];
+  const autoSaved = (d) => setData((xs) => (xs || []).some((x) => x._id === d._id) ? xs.map((x) => (x._id === d._id ? d : x)) : [...(xs || []), d]);
   const saved = (d) => { setData((xs) => (xs || []).some((x) => x._id === d._id) ? xs.map((x) => (x._id === d._id ? d : x)) : [...(xs || []), d]); setEditing(null); };
 
   return (
@@ -175,7 +203,7 @@ export default function Videos() {
           })}
         </div>
       )}
-      {editing && <Editor doc={editing._id ? editing : null} speakers={Array.isArray(spk.data) ? spk.data : []} readOnly={readOnly} onClose={() => setEditing(null)} onSaved={saved} />}
+      {editing && <Editor doc={editing._id ? editing : null} speakers={Array.isArray(spk.data) ? spk.data : []} readOnly={readOnly} onClose={() => setEditing(null)} onSaved={saved} onAutoSaved={autoSaved} />}
       <ConfirmDialog open={!!deleting} onClose={() => setDeleting(null)} title={`Delete “${deleting?.title || ""}”?`}
         body="It comes off the website once the change is published. The video itself stays on YouTube or Vimeo." confirmLabel="Delete"
         onConfirm={async () => { await api.del(`/cms/video/${deleting._id}`); toast.success("Deleted"); reload(); }} />

@@ -127,7 +127,7 @@ export default function ContractEditor() {
   };
 
   const auto = useAutosave({
-    value, enabled: !isNew && editable && !!form,
+    value, enabled: editable && !!form, // a new contract is created by its first autosave
     save: async () => (dirty && !saving ? saveDraft({ quiet: true }) : false),
   });
 

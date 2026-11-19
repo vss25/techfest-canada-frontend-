@@ -53,6 +53,9 @@ function Row({ item, checked, onCheck, onDiscard, busy, waiting = [] }) {
           {item.unsent && <Badge tone="warn">Saved, not sent</Badge>}
           {item.staged && <Badge tone="purple">On staging</Badge>}
         </div>
+        {item.unsent && item.missing?.length > 0 && (
+          <p className="mt-1 text-xs text-[#B45309]">Still to add before it can go to staging: {item.missing.join(", ")}</p>
+        )}
         {waiting.length > 0 && (
           <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[#B45309]">
             <Lock className="h-3.5 w-3.5" aria-hidden="true" />
@@ -109,6 +112,7 @@ export default function Changes() {
   const sendToStaging = () => run("stage", async () => {
     const out = await api.post("/cms/changes/stage", { ids: toStage.map((i) => i.id) });
     toast.success(`${out.staged.length} ${out.staged.length === 1 ? "change is" : "changes are"} on staging. Open the staging site to check.`);
+    if (out.skipped?.length) toast.error(`Not sent yet: ${out.skipped.map((s) => s.note).join(" ")}`);
   });
   const publish = async () => {
     const out = await api.post("/cms/changes/publish", { ids: toPublish.map((i) => i.id) });

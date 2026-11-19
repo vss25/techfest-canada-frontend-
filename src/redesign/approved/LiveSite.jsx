@@ -5,7 +5,7 @@ import VideoFacade from "./VideoFacade";
 import LivePhone from "./LivePhone";
 import useSeo from "../../hooks/useSeo";
 import { client, urlFor } from "../../utils/sanity";
-import { matrixGroupOf } from "../../data/partnerMatrix";
+import { ECOSYSTEM_GROUP, FEATURED_GROUP, PILLAR_GROUPS, SECTOR_GROUPS, eventRowOf, matrixGroupOf, partnerOnEvent } from "../../data/partnerMatrix";
 import { findEvent, useEventContent, useEvents } from "../../lib/events";
 import { AGENDA_SOON, toDesignSessions } from "../../data/approvedAgendas";
 import {
@@ -36,7 +36,24 @@ function downloadReport() {
      (Featured Partners first) and the festival's own photos;
    - ticket types and prices come from the backend, and "Pay" places a real order (Stripe);
    - every form posts to the backend (forms inbox, brochure, waitlist), sign-in uses the
-     real account API. Anything the board shows as sample content stays as approved. */
+     real account API. Anything the board shows as sample content stays as approved.
+   - Nov 18 2026: each event page's speakers and partners (that event's own, with their row for
+     it), the Speakers page, the Exhibitors page and the Partners page's 2027 tab use real
+     records when there are any and the board's "announced soon" cards when there aren't
+     (ApprovedSite reads sp.name / sp.img / sp.role, ex.sub, v.evPartners, v.pt2027Groups,
+     v.spkIntro and the ptDefaultYear prop for that, falling back to the board's own text).
+     The Partners page opens on the most recently completed year, or on the current season
+     when Website switches › Open on this year's partners is on. */
+
+const PAST_EVENT = "event-ttfc-2026-main";
+const ROW_TITLES = Object.fromEntries([FEATURED_GROUP, ...PILLAR_GROUPS, ...SECTOR_GROUPS, ECOSYSTEM_GROUP].map((g) => [g.key, g.title]));
+const SPEAKER_KINDS = { keynote: "Keynote", panelist: "Panel", moderator: "Moderator", fireside: "Fireside chat" };
+/** An event's year: its first day, else the year in its record id or name. */
+const yearOf = (ev) => Number(String((ev && ev.startDate) || "").slice(0, 4)) || Number((String((ev && ev._id) || "") + " " + String((ev && ev.name) || "")).match(/20\d\d/)?.[0]) || 0;
+const logoImg = (p, h) => (p.logo && p.logo.asset
+  ? <img src={urlFor(p.logo).height(h * 2).fit("max").auto("format").url()} alt={p.name} loading="lazy"
+      style={{ display: "block", maxHeight: Math.round(h * Math.min(2.5, Math.max(0.3, (Number(p.logoScale) || 100) / 100))), maxWidth: "80%", width: "auto", height: "auto", objectFit: "contain", margin: "0 auto" }} />
+  : p.name);
 
 class LiveSite extends ApprovedSite {
   static getDerivedStateFromProps(props, state) {
@@ -152,6 +169,30 @@ class LiveSite extends ApprovedSite {
     const at = (e) => (e && e.currentTarget) || null;
     // The Partners page's count: the partner records shown (the design's own wording until they load).
     if (this.props.ptCount) v.ptCountText = `${this.props.ptCount} partners and supporters · 2026`;
+    // Real speakers, partners and the Partners page's 2027 rows where there are any; the board's
+    // "announced soon" cards (and honest wording) where there aren't.
+    const spk = this.props.evSpeakers;
+    const goSpk = this.go("speakers", { spkF: "All" }, "Loading speakers");
+    const f = s.spkF || "All";
+    if (spk) {
+      // Real speakers first, then the board's "to be announced" cards, so the row keeps its shape.
+      v.speakers = [...spk.slice(0, 8), ...Array.from({ length: Math.max(0, 8 - spk.length) }, () => ({}))].map((x, i) => ({ ...x, n: i + 1, open: goSpk }));
+      const shown = spk.filter((x) => f === "All" || x.kind === f);
+      v.spkList = shown.map((x, i) => ({ ...x, n: i + 1, open: () => {} }));
+      v.spkCount = `Showing ${shown.length} of ${spk.length}`;
+      v.spkIntro = `${spk.length} ${spk.length === 1 ? "speaker" : "speakers"} confirmed so far. More are announced as the programme fills.`;
+    } else {
+      v.spkIntro = "Speakers are being confirmed now. The first names are announced in December 2026.";
+      v.spkCount = "Line-up announced soon";
+    }
+    // The event's partners, then "Announcing soon" tiles up to the board's six.
+    const evp = this.props.evPartners;
+    v.evPartners = evp ? [...evp, ...(v.partnerTiles || []).slice(evp.length).map((t) => ({ tier: t.tier,
+      logo: <span style={{ fontSize: "13px", color: "#52525B" }}>Announcing soon</span> }))] : null;
+    v.pt2027Groups = this.props.pt2027Groups || null;
+    // Exhibitors: no booth is sold yet, so no sample booth numbers or topic filters.
+    v.exFilters = [];
+    v.exList = Array.from({ length: 8 }, (_, i) => ({ n: i + 1, sub: "Booths are being booked now" }));
     const past = this.props.past2026;
     if (past) {
       if (past.speakers.length) v.starSpeakers = past.speakers.map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));
@@ -380,17 +421,73 @@ export default function ApprovedRoute({ fallback = null }) {
   useEffect(() => {
     if (!onPartners || partners) return undefined;
     let live = true;
-    client.fetch(`*[_type == "partner" && active != false && showOnWebsite != false]{ _id, name, logo, matrixGroup, logoScale } | order(order asc)`)
+    client.fetch(`*[_type == "partner" && active != false && showOnWebsite != false]{ _id, name, logo, matrixGroup, logoScale, events, eventRows } | order(order asc)`)
       .then((list) => { if (live) setPartners(list || []); })
       .catch(() => { if (live) setPartners([]); });
     return () => { live = false; };
   }, [onPartners, partners]);
-  const past2026 = usePast2026(!!(route && route.screen === "past"));
-  const partnerRows = useMemo(() => {
+  // The Partners page's 2027 tab: each 2027 event's own partners (Featured first), when any are set.
+  const pt2027Groups = useMemo(() => {
     if (!partners || !partners.length) return null;
+    const groups = (events || []).filter((e) => e && e.name && yearOf(e) === 2027)
+      .sort((a, b) => String(a.startDate || "9").localeCompare(String(b.startDate || "9")))
+      .map((e) => {
+        const mine = partners.filter((p) => (p.events || []).some((r) => r && r._ref === e._id))
+          .sort((a, b) => (eventRowOf(b, e._id) === "featured") - (eventRowOf(a, e._id) === "featured"));
+        return { kind: e.startDate ? monthShort(e.startDate) : "2027", title: e.name, count: mine.length + (mine.length === 1 ? " partner" : " partners"),
+          cols: 6, h: 76, fs: 14, items: mine.map((p) => ({ n: logoImg(p, 40) })) };
+      })
+      .filter((g) => g.items.length);
+    return groups.length ? groups : null;
+  }, [partners, events]);
+
+  // Which year the Partners page opens on: the most recently completed year's (tab 0 = 2026),
+  // or the current season's when Website switches › Open on this year's partners is on.
+  const [showCurrentYear, setShowCurrentYear] = useState(false);
+  useEffect(() => {
+    if (!onPartners) return undefined;
+    let live = true;
+    client.fetch(`*[_type == "siteSettings"][0].partnersShowCurrentYear`).then((v) => { if (live) setShowCurrentYear(v === true); }).catch(() => {});
+    return () => { live = false; };
+  }, [onPartners]);
+  const ptDefaultYear = useMemo(() => {
+    const today = new Date(now).toISOString().slice(0, 10);
+    const years = (events || []).filter((e) => e && yearOf(e));
+    const done = years.filter((e) => (e.endDate || e.startDate) && (e.endDate || e.startDate) < today).map(yearOf);
+    const next = years.filter((e) => !(e.endDate || e.startDate) || (e.endDate || e.startDate) >= today).map(yearOf);
+    const year = showCurrentYear ? (next.length ? Math.min(...next) : 2027) : (done.length ? Math.max(...done) : 2026);
+    return Math.min(1, Math.max(0, year - 2026));   // the board's tabs: 2026, 2027
+  }, [events, now, showCurrentYear]);
+
+  // The event page: that event's own partners (in their row for it, Featured first) and speakers.
+  const evId = (ev || van) && (ev || van)._id;
+  const evPartners = useMemo(() => {
+    const list = (content.partners || []).filter((p) => p && p.name)
+      .sort((a, b) => (eventRowOf(b, evId) === "featured") - (eventRowOf(a, evId) === "featured"));
+    if (!list.length) return null;
+    return list.slice(0, 12).map((p) => {
+      const row = eventRowOf(p, evId);
+      return { name: p.name, logo: logoImg(p, 44), tier: row === "featured" ? "Featured partner" : ROW_TITLES[row] || "Partner" };
+    });
+  }, [content.partners, evId]);
+  const evSpeakers = useMemo(() => {
+    const list = (content.speakers || []).filter((x) => x && x.name);
+    if (!list.length) return null;
+    return list.map((x) => ({
+      name: x.name,
+      role: [x.title, x.company].map((v) => String(v || "").trim()).filter(Boolean).join(", "),
+      kind: SPEAKER_KINDS[x.speakerType] || "Speaker",
+      img: x.image && x.image.asset ? urlFor(x.image).width(480).height(600).fit("crop").auto("format").url() : "",
+    }));
+  }, [content.speakers]);
+
+  const past2026 = usePast2026(!!(route && route.screen === "past"));
+  const partners2026 = useMemo(() => (partners ? partners.filter((p) => partnerOnEvent(p, PAST_EVENT)) : null), [partners]);
+  const partnerRows = useMemo(() => {
+    if (!partners2026 || !partners2026.length) return null;
     const rows = {};
-    partners.forEach((p) => {
-      const k = matrixGroupOf(p);
+    partners2026.forEach((p) => {
+      const k = eventRowOf(p, PAST_EVENT);
       const scale = Math.min(2.5, Math.max(0.3, (Number(p.logoScale) || 100) / 100));
       const tile = p.logo && p.logo.asset
         ? <img src={urlFor(p.logo).height(160).fit("max").auto("format").url()} alt={p.name} title={p.name} loading="lazy"
@@ -399,7 +496,7 @@ export default function ApprovedRoute({ fallback = null }) {
       (rows[k] = rows[k] || []).push(tile);
     });
     return rows;
-  }, [partners]);
+  }, [partners2026]);
 
   const data = useMemo(() => ({
     CITIES: (base) => {
@@ -456,7 +553,11 @@ export default function ApprovedRoute({ fallback = null }) {
       routeKey={location.pathname + "|" + location.key}
       navigate={navigate}
       data={data}
-      ptCount={partners && partners.length ? partners.length : 0}
+      ptCount={partners2026 && partners2026.length ? partners2026.length : 0}
+      ptDefaultYear={ptDefaultYear}
+      pt2027Groups={pt2027Groups}
+      evPartners={evPartners}
+      evSpeakers={evSpeakers}
       past2026={past2026}
       eventKey={evKey}
       loaderMs={0}

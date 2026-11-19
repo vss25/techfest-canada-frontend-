@@ -113,6 +113,27 @@ export default class LivePhone extends ApprovedPhone {
     // The agenda from Admin › Agenda (LiveSite's ApprovedRoute passes it for both designs).
     const rows = this.props.data && this.props.data.sessionsData;
     if (rows) v.sessions = rows;
+    // Nov 18 2026: the event's own speakers and partners when there are any, else the board's
+    // "announced soon" cards; no sample booths or counts (LiveSite.jsx passes the same props).
+    const spk = this.props.evSpeakers;
+    if (spk) {
+      v.four = [...spk.slice(0, 4), ...Array.from({ length: Math.max(0, 4 - spk.length) }, () => ({}))];
+      const f = s.spkF || "All";
+      const shown = spk.filter((x) => f === "All" || x.kind === f);
+      v.spkList = shown.map((x, i) => ({ ...x, n: i + 1, open: () => {} }));
+      v.spkCount = `Showing ${shown.length} of ${spk.length}`;
+      v.spkIntro = `${spk.length} ${spk.length === 1 ? "speaker" : "speakers"} confirmed so far. More are announced as the programme fills.`;
+    } else {
+      v.spkIntro = "Speakers are being confirmed now. The first names are announced in December 2026.";
+      v.spkCount = "Line-up announced soon";
+    }
+    const soon = ["Presenting Partner", "AI pillar", "CleanTech pillar", "Cyber pillar"].map((tier) => ({ tier }));
+    const evp = this.props.evPartners;
+    // Two to a row: an odd number gets one "Announcing soon" tile to finish the row.
+    v.phPartners = evp ? (evp.length % 2 ? [...evp, { tier: "More soon" }] : evp) : soon;
+    v.goPartnersAll = (e) => { if (e && e.preventDefault) e.preventDefault(); this.props.navigate(SCREEN_PATH.partners || "/partners"); };
+    v.exFilters = [];
+    v.exList = Array.from({ length: 6 }, (_, i) => ({ n: i + 1, sub: "Booths are being booked now" }));
     // Toronto 2026: real speakers (with photos) and partner logos (LiveSite.jsx usePast2026).
     const past = this.props.past2026;
     if (past) {

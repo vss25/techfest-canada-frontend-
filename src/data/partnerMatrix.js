@@ -118,3 +118,21 @@ export function matrixGroupOf(partner) {
   if (g && MATRIX_GROUP_KEYS.indexOf(g) !== -1) return g;
   return DEFAULT_GROUPS[partner && partner._id] || ECOSYSTEM_GROUP.key;
 }
+
+/* A partner's row for one event (Nov 18 2026): its own row for that event when one is set
+   in the admin panel (eventRows), else its usual row (matrixGroupOf). */
+export function eventRowOf(partner, eventId) {
+  var rows = (partner && partner.eventRows) || [];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var ev = r && r.event && (r.event._ref || r.event);
+    if (eventId && ev === eventId && MATRIX_GROUP_KEYS.indexOf(r.row) !== -1) return r.row;
+  }
+  return matrixGroupOf(partner);
+}
+
+/** Whether a partner shows on an event: an empty events list means every event. */
+export function partnerOnEvent(partner, eventId) {
+  var ids = ((partner && partner.events) || []).map(function (r) { return r && (r._ref || r); }).filter(Boolean);
+  return !ids.length || !eventId || ids.indexOf(eventId) !== -1;
+}

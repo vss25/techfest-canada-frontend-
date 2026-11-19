@@ -52,7 +52,7 @@ export const HELP = {
   "content/partners": {
     what: "Partner logos on the Partners page and in the apps' Organisations, grouped by category.",
     steps: ["Click Add partner: name, logo, category and website link.", "Use the switches to choose whether it shows on the website, in the apps, or both. Active off hides it everywhere without deleting it.", "Use − and + under a logo to make it smaller or bigger.", "Save, then send to staging and publish from Home › Website changes."],
-    tips: [FLOW, "Paid partners go in the Featured Partners row; they also show on Featured Partners.", "Dark preview shows how logos look on the dark parts of the site."],
+    tips: [FLOW, "Paid partners go in the Featured Partners row; they also show on Featured Partners.", "A partner can sit in a different row for each event: choose the event in the top bar, then set Row on the Partners page. Events without their own row use the usual row.", "Tick the events a partner shows on; none ticked = every event. Each event page shows its own partners.", "Dark preview shows how logos look on the dark parts of the site."],
   },
   "content/sponsors": {
     what: "The paid partners: the Featured Partners row on the Partners page and the first section of the apps' Organisations.",
@@ -72,7 +72,7 @@ export const HELP = {
   "content/settings": {
     what: "Switch parts of the website on or off and edit site-wide text.",
     steps: ["Find the section or setting.", "Flip the switch or change the text; each one saves on its own."],
-    tips: ["Homepage section switches and the About page numbers go through staging: send them from Home › Website changes.", NOW("The other switches and texts on this page"), "Selling switches are for management only."],
+    tips: ["Homepage section switches, the Partners page year and the About page numbers go through staging: send them from Home › Website changes.", "The Partners page opens on the most recently completed year (2026) unless Open on this year's partners is on.", NOW("The other switches and texts on this page"), "Selling switches are for management only."],
   },
   "content/alumni-logos": {
     what: "The “Our team includes alumni from” logo strip on the Home and Sponsors pages. Not the paid partners.",
@@ -379,6 +379,8 @@ const PARTNER_FIELDS = {
   ...LOGO_FIELDS,
   Category: "The group the logo sits in on the Partners page, e.g. Government Partners or Industry Associates.",
   "Partners page row": "Featured Partners is the row for paid partners: they also appear first in the apps. Pick a pillar or sector row for everyone else.",
+  "Row on the Partners page": "This partner's row for the event chosen in the top bar. Same as the usual row unless you pick one, e.g. Featured in Vancouver and AI in Toronto.",
+  "Usual row (events without their own)": "The row used for every event that has no row of its own, and in the apps.",
   Description: "One or two sentences about the partner. Shown when someone hovers the logo on the website and on the apps' Sponsors cards.",
 };
 

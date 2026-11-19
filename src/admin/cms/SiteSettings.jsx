@@ -82,6 +82,26 @@ export default function SiteSettings() {
         )}
       </section>
 
+      {/* Nov 18 2026: which year the Partners page opens on (the owner's manual override). */}
+      <section aria-labelledby="partners-year-h" className="mb-10">
+        <h2 id="partners-year-h" className="mb-1 text-base font-semibold">Partners page</h2>
+        <p className="mb-4 text-sm text-ttfc-muted">Visitors can switch years on the page; this picks the year it opens on.</p>
+        {!loading && !(error && !data) && (
+          <Card className="max-w-2xl p-5 sm:p-6">
+            <div data-highlight="partnersShowCurrentYear">
+              <Switch
+                size="lg"
+                label="Open on this year's partners"
+                description="Off (the usual): the Partners page opens on the most recently completed year, such as 2026. On: it opens on the current season's partners."
+                checked={!!doc?.partnersShowCurrentYear}
+                disabled={readOnly || busy === "partnersShowCurrentYear"}
+                onChange={(v) => toggle("partnersShowCurrentYear", v)}
+              />
+            </div>
+          </Card>
+        )}
+      </section>
+
       <AboutNumbers readOnly={readOnly} />
 
       <LargeSiteFiles />

@@ -6,6 +6,7 @@ import {
 import { useApi, useDebounced } from "../hooks";
 import { ADMIN_API, getToken } from "../api";
 import { useAdmin } from "../adminContext";
+import { useAdminEvent } from "../eventContext";
 import { useToast } from "../toastContext";
 import { Badge, Banner, Button, EmptyState, ErrorState, Input, LoadingState, PageHeader, Select, StatTile, TableWrap } from "../ui";
 import { when } from "../format";
@@ -190,7 +191,13 @@ export default function PeopleDirectory() {
   const dir = params.get("dir") === "desc" ? "desc" : "asc";
   const f = Object.fromEntries(FILTERS.filter((k) => k !== "q").map((k) => [k, params.get(k) || ""]));
 
+  // Nov 20 2026: the list follows the event chosen in the top bar (only that event's pass holders),
+  // so Vancouver doesn't list Toronto 2026's people. "Show everyone" (?all=1) lists every event's.
+  const { current: chosenEvent } = useAdminEvent();
+  const eventKey = chosenEvent?.eventKey?.current || chosenEvent?.eventKey || "";
+  const everyone = params.get("all") === "1" || !eventKey;
   const view = new URLSearchParams();
+  if (!everyone) view.set("event", eventKey);
   if (dq) view.set("q", dq);
   for (const [k, v] of Object.entries(f)) if (v) view.set(k, v);
   if (sort !== "name") view.set("sort", sort);
@@ -251,6 +258,17 @@ export default function PeopleDirectory() {
         )}
       />
 
+      {eventKey && (
+        <p className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[10px] border border-[#E3E0EE] bg-[#F6F5FA] px-3 py-2.5 text-[13px] text-[#4A4566]">
+          {everyone
+            ? <span>Showing people from <strong className="text-[#151035]">every event</strong>.</span>
+            : <span>Showing people with a pass for <strong className="text-[#151035]">{chosenEvent.name}</strong>. Someone who attends two events shows under both.</span>}
+          <button type="button" className="font-semibold text-[#9D1D63] hover:underline"
+            onClick={() => { const p = new URLSearchParams(params); if (everyone) p.delete("all"); else p.set("all", "1"); p.delete("page"); setParams(p, { replace: true }); }}>
+            {everyone ? `Only ${chosenEvent.name}` : "Show everyone"}
+          </button>
+        </p>
+      )}
       {c && (
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           <StatTile label="People" value={c.total.toLocaleString()} icon={Users} tone="purple" to="?"
@@ -307,7 +325,8 @@ export default function PeopleDirectory() {
       </div>
 
       {loading ? <LoadingState label="Loading people…" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !rows.length ? (
-        <EmptyState icon={Users} title={filtered ? "No one matches" : "No one yet"} body={filtered ? "Try a different search or filter." : undefined} />
+        <EmptyState icon={Users} title={filtered ? "No one matches" : everyone ? "No one yet" : `No one has a pass for ${chosenEvent.name} yet`}
+          body={filtered ? "Try a different search or filter." : everyone ? undefined : "People appear here as tickets are sold or passes are given for this event. Use Show everyone to see people from every event."} />
       ) : (
         <>
           <TableWrap>

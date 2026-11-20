@@ -26,7 +26,8 @@ const checker =
  * Pick → downscale → upload. Calls onUploaded({ assetId, url, preview }).
  * Shows the whole image (no cropping) so staff see exactly what was uploaded.
  */
-export function ImagePicker({ label, kind = "photo", url, onUploaded, disabled, required, error, aspect = "aspect-[4/3]" }) {
+/* onFile (Nov 19 2026): hand the chosen file to the caller instead of uploading it (the speaker photo studio). */
+export function ImagePicker({ label, kind = "photo", url, onUploaded, onFile, disabled, required, error, aspect = "aspect-[4/3]" }) {
   const inputId = useId();
   const inputRef = useRef(null);
   const toast = useToast();
@@ -36,11 +37,13 @@ export function ImagePicker({ label, kind = "photo", url, onUploaded, disabled, 
 
   const handle = async (file) => {
     if (!file || disabled) return;
+    if (onFile) { onFile(file); if (inputRef.current) inputRef.current.value = ""; return; }
     setBusy(true); setLocalErr("");
     try {
-      const out = await uploadImage(file, { kind });
+      const out = await uploadImage(file, { kind, standard: kind === "logo" });
       onUploaded(out);
-      toast.success(kind === "logo" ? "Logo uploaded — remember to save" : "Photo uploaded — remember to save");
+      if (out.warning) toast.info(out.warning);
+      else toast.success(kind === "logo" ? "Logo tidied and uploaded: it's centred and sized like the others. Remember to save." : "Photo uploaded — remember to save");
     } catch (err) {
       setLocalErr(err.message);
       toast.error(err);

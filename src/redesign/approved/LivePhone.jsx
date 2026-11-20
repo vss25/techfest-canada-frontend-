@@ -115,6 +115,11 @@ export default class LivePhone extends ApprovedPhone {
     if (rows) v.sessions = rows;
     // Nov 18 2026: the event's own speakers and partners when there are any, else the board's
     // "announced soon" cards; no sample booths or counts (LiveSite.jsx passes the same props).
+    // Nov 20 2026: no sample prices while this event has no tickets on sale; the real lowest price once it has.
+    const tt = this.props.data && this.props.data.types;
+    if (this.props.ticketsSoon) { v.tickets = []; v.hint = "Tickets for this event aren't on sale yet. Leave your email on this page and we'll tell you the moment they open."; v.fromPrice = "Tickets on sale soon"; }
+    else if (tt && tt.length) v.fromPrice = "From $" + Math.round(Math.min(...tt.map((t) => Number(t.cents) || 0)) / 100);
+    if (v.c && v.c.mapsUrl) { v.mapsUrl = v.c.mapsUrl; v.mapNote = v.c.venueLine + ". Open it in Maps for directions."; }
     const spk = this.props.evSpeakers;
     if (spk) {
       v.four = [...spk.slice(0, 4), ...Array.from({ length: Math.max(0, 4 - spk.length) }, () => ({}))];

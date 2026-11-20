@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useApi } from "../hooks";
 import { Button, Card, ErrorState, LoadingState, PageHeader } from "../ui";
 import { CHANNELS, STATUS, channelOfPromise } from "./socialShared";
+import { ItemModal, PlanTable, UploadModal } from "./CalendarItems";
+import { ITEM_STATUS } from "./calendarShared";
 
 /* =========================================================
    Admin › Marketing › Social media calendar (Nov 18 2026), the approved design's month plan:
@@ -25,6 +27,12 @@ export default function SocialCalendar() {
   const first = month;
   const last = useMemo(() => new Date(month.getFullYear(), month.getMonth() + 1, 0), [month]);
   const { data, error, loading, reload } = useApi(`/console/social/calendar?from=${ymd(first)}&to=${ymd(last)}`);
+  // Nov 20 2026: calendar items (added by hand or from a spreadsheet; marked done by hand).
+  const plan = useApi(`/console/content-calendar?from=${ymd(first)}&to=${ymd(last)}`);
+  const [modal, setModal] = useState(null); // { kind: "item", item?, date? } | { kind: "upload" }
+  const planItems = plan.data?.items || [];
+  const planKpis = plan.data?.kpis || { planned: 0, done: 0, late: 0, missed: 0, ahead: 0 };
+  const closeAndReload = () => { setModal(null); plan.reload(); };
 
   const cells = useMemo(() => {
     const lead = (first.getDay() + 6) % 7;
@@ -50,17 +58,24 @@ export default function SocialCalendar() {
   const shift = (n) => setMonth((m) => new Date(m.getFullYear(), m.getMonth() + n, 1));
   const monthName = (d) => d.toLocaleDateString("en-CA", { month: "long" });
 
+  // The four numbers count social posts and calendar items together.
+  const due = k.due + planKpis.done + planKpis.late + planKpis.missed;
+  const onTime = k.onTime + planKpis.done;
   const kpis = [
-    ["Planned this month", String(k.planned), "posts, including contract promises", "#151035"],
-    ["Out on time", `${k.onTime} of ${k.due}`, k.due ? `so far · ${Math.round((k.onTime / k.due) * 100)}%` : "nothing due yet", "#166534"],
-    ["Late or missed", String(k.lateOrMissed), `${k.late} late, ${k.missed} missed`, "#B91C1C"],
-    ["Coming up", String(k.upcoming), `${k.scheduled} scheduled · ${k.review} in review · ${k.planned2} planned`, "#5B21B6"],
+    ["Planned this month", String(k.planned + planKpis.planned), "posts, calendar items and contract promises", "#151035"],
+    ["Out on time", `${onTime} of ${due}`, due ? `so far · ${Math.round((onTime / due) * 100)}%` : "nothing due yet", "#166534"],
+    ["Late or missed", String(k.lateOrMissed + planKpis.late + planKpis.missed), `${k.late + planKpis.late} late, ${k.missed + planKpis.missed} missed`, "#B91C1C"],
+    ["Coming up", String(k.upcoming + planKpis.ahead), `${k.scheduled} scheduled · ${k.review} in review · ${k.planned2 + planKpis.ahead} planned`, "#5B21B6"],
   ];
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="Social media calendar" description="Everything planned for the month across LinkedIn, Instagram and X, the posts promised in partner contracts, and whether each went out on time."
-        actions={<Button variant="primary" icon={Plus} onClick={() => navigate("/admin/social?new=1")}>New post</Button>} />
+      <PageHeader title="Social media calendar" description="Everything planned for the month: TTFC's posts, emails, what partners will post about us and the posts promised in contracts, and whether each went out on time."
+        actions={<>
+          <Button icon={Upload} onClick={() => setModal({ kind: "upload" })}>Upload a spreadsheet</Button>
+          <Button onClick={() => navigate("/admin/social?new=1")}>Write a post</Button>
+          <Button variant="primary" icon={Plus} onClick={() => setModal({ kind: "item" })}>Add to calendar</Button>
+        </>} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {kpis.map(([l, v, s, c]) => (
           <div key={l} className="flex flex-col gap-0.5 rounded-xl border border-[#E3E0EE] bg-white px-4 py-3.5">
@@ -90,12 +105,18 @@ export default function SocialCalendar() {
               <div key={key} className="group flex min-h-[84px] flex-col gap-1 rounded-lg border p-1.5" style={{ borderColor: isToday ? "#D6308C" : "#F0EEF6", background: isToday ? "#FFFBFD" : "#fff" }}>
                 <div className="flex items-center">
                   <span className="text-[11px] font-bold" style={{ color: isToday ? "#D6308C" : "#4A4566" }}>{d.getDate()}</span>
-                  <button type="button" aria-label={`Plan a post for ${d.toDateString()}`} onClick={() => navigate(`/admin/social?new=1&date=${key}`)} className="ml-auto hidden h-4 w-4 items-center justify-center rounded text-[#D6308C] group-hover:flex focus:flex"><Plus className="h-3 w-3" /></button>
+                  <button type="button" aria-label={`Add something on ${d.toDateString()}`} title="Add to this day" onClick={() => setModal({ kind: "item", date: key })} className="ml-auto flex h-5 w-5 items-center justify-center rounded text-[#D6308C] hover:bg-[#FDF2F8]"><Plus className="h-3.5 w-3.5" /></button>
                 </div>
                 {posts.map((p) => (
                   <button key={p.id} type="button" title={`${p.title || p.text.slice(0, 60)} · ${STATUS[p.status][2]}`} onClick={() => navigate(`/admin/social?id=${p.id}`)}
                     className="truncate rounded px-1.5 py-[3px] text-left text-[10px] leading-[13px] text-[#151035]" style={{ borderLeft: `3px solid ${STATUS[p.status][0]}`, background: STATUS[p.status][1] }}>
                     {CHANNELS.filter((c) => p.channels?.[c.key]).map((c) => c.short).join(" ")} {p.title || p.text.split("\n")[0] || "Untitled"}
+                  </button>
+                ))}
+                {planItems.filter((it) => it.date === key).map((it) => (
+                  <button key={it.id} type="button" title={`${it.title} · ${it.by || "TTFC"} · ${ITEM_STATUS[it.status][2]}`} onClick={() => setModal({ kind: "item", item: it })}
+                    className="truncate rounded px-1.5 py-[3px] text-left text-[10px] leading-[13px] text-[#151035]" style={{ borderLeft: `3px solid ${ITEM_STATUS[it.status][0]}`, background: ITEM_STATUS[it.status][1] }}>
+                    {it.channel === "Other" ? "" : `${it.channel} · `}{it.title}
                   </button>
                 ))}
                 {promises.map((p) => (
@@ -106,8 +127,11 @@ export default function SocialCalendar() {
             );
           })}
         </div>
-        <span className="text-xs text-[#6B6688]">Click an item to open it, or a day's + to plan a post. Each item's edge colour is its status.</span>
+        <span className="text-xs text-[#6B6688]">Click a day's + to add something, or an item to open it and mark it done. Each item's edge colour is its status.</span>
       </Card>
+      <PlanTable items={planItems} kpis={planKpis} onOpen={(it) => setModal({ kind: "item", item: it })} />
+      {modal?.kind === "item" && <ItemModal item={modal.item} date={modal.date} channels={plan.data?.channels} onClose={() => setModal(null)} onSaved={closeAndReload} />}
+      {modal?.kind === "upload" && <UploadModal onClose={() => setModal(null)} onDone={closeAndReload} />}
       {(promisedUndated.length > 0 || data.unscheduled.length > 0) && (
         <div className="grid gap-4 lg:grid-cols-2">
           {promisedUndated.length > 0 && (

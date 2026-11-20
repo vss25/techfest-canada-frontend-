@@ -34,6 +34,7 @@ const formOf = (c) => ({
   contact: { name: c.contact?.name || "", title: c.contact?.title || "", email: c.contact?.email || "", phone: c.contact?.phone || "" },
   lines: (c.lines || []).map((l) => ({ ...l, unitPrice: dollars(l.unitPrice), qty: String(l.qty) })),
   taxRate: c.taxRate, paymentTerms: c.paymentTerms || "", terms: c.terms || "", notes: c.notes || "",
+  signatoryId: c.signatoryId || "",
 });
 
 const bodyOf = (f) => ({ ...f, lines: f.lines.map((l) => ({ offeringId: l.offeringId, qty: Number(l.qty), unitPrice: l.unitPrice })) });
@@ -95,7 +96,8 @@ export default function ContractEditor() {
     if (!isNew && contract) { const f = formOf(contract); setForm(f); setBase(JSON.stringify(f)); }
     if (isNew && cat.data) {
       const s = cat.data.settings;
-      const f = formOf({ taxRate: s.taxRate, paymentTerms: s.paymentTerms, terms: "" });
+      // A new contract starts with the first signing authority; the person drafting it can pick another.
+      const f = formOf({ taxRate: s.taxRate, paymentTerms: s.paymentTerms, terms: "", signatoryId: (s.signatories || []).find((x) => x.name)?.id || "" });
       setForm(f); setBase(JSON.stringify(f));
     }
   }, [isNew, contract, cat.data, form]);
@@ -104,6 +106,7 @@ export default function ContractEditor() {
   const dirty = !!form && value !== base;
   const editable = isNew || contract?.status === "draft";
   const settings = cat.data?.settings;
+  const signers = (settings?.signatories || []).filter((x) => x.name);
   const offerings = useMemo(() => (cat.data?.offerings || []).filter((o) => o.active && (!o.eventKeys?.length || o.eventKeys.includes(catKey))), [cat.data, catKey]);
 
   const setContract = (c) => {
@@ -279,6 +282,12 @@ export default function ContractEditor() {
       <Card className="mt-4">
         <SectionTitle>Terms</SectionTitle>
         <div className="flex flex-col gap-3">
+          <Field label="Who signs for TTFC" hint={signers.length ? "Their name, title and signature print on this contract. The list is kept by an admin in Catalogue › Contract settings." : "No signing authority has been added yet. Ask an admin to add one in Catalogue › Contract settings."}>{(fid) => (
+            <Select id={fid} value={form.signatoryId} disabled={!editable || !signers.length} onChange={(e) => set("signatoryId", e.target.value)}>
+              <option value="">{signers.length ? "Choose who signs" : "None added yet"}</option>
+              {signers.map((x) => <option key={x.id} value={x.id}>{[x.name, x.title].filter(Boolean).join(", ")}</option>)}
+            </Select>
+          )}</Field>
           <Field label="Payment terms">{(fid) => <Textarea id={fid} rows={2} value={form.paymentTerms} disabled={!editable} onChange={(e) => set("paymentTerms", e.target.value)} />}</Field>
           <Field label="Special terms for this contract" hint="Anything agreed only with this partner. The standard terms and conditions (indemnity, liability, governing law…) come from Contract settings and print after these.">{(fid) => <Textarea id={fid} rows={6} value={form.terms} disabled={!editable} onChange={(e) => set("terms", e.target.value)} />}</Field>
           <Field label="Internal notes" hint="For the team only. Never printed.">{(fid) => <Textarea id={fid} rows={2} value={form.notes} disabled={!editable} onChange={(e) => set("notes", e.target.value)} />}</Field>

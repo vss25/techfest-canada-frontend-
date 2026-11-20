@@ -192,7 +192,7 @@ function SettingsTab({ data, onSaved }) {
         </div>
       </Section>
 
-      <Section title="Who signs for TTFC" hint="One or two directors. A signature image prints only on contracts that are sent or signed, never on drafts.">
+      <Section title="Who can sign for TTFC" hint="The people allowed to sign contracts for TTFC. Whoever drafts a contract picks one of them, and only that person's name and signature print on it. A signature image prints only on contracts that are sent or signed, never on drafts.">
         {form.signatories.map((sg, i) => (
           <div key={i} className="flex flex-col gap-2 rounded-[10px] border border-[#F0EEF6] p-3">
             <div className="grid gap-3 sm:grid-cols-2">
@@ -211,11 +211,11 @@ function SettingsTab({ data, onSaved }) {
                 </label>
               )}
               {can && sg.signature && <Button size="sm" variant="ghost" onClick={() => setSig(i, "signature", "")}>Remove image</Button>}
-              {can && form.signatories.length > 1 && <Button size="sm" variant="ghost" icon={X} onClick={() => set("signatories", form.signatories.filter((_, j) => j !== i))}>Remove signer</Button>}
+              {can && form.signatories.length > 1 && <Button size="sm" variant="ghost" icon={X} onClick={() => set("signatories", form.signatories.filter((_, j) => j !== i))}>Remove this person</Button>}
             </div>
           </div>
         ))}
-        {can && form.signatories.length < 2 && <Button size="sm" icon={Plus} className="self-start" onClick={() => set("signatories", [...form.signatories, { name: "", title: "Director", signature: "" }])}>Add a second director</Button>}
+        {can && form.signatories.length < 8 && <Button size="sm" icon={Plus} className="self-start" onClick={() => set("signatories", [...form.signatories, { name: "", title: "Director", signature: "" }])}>Add a person who can sign</Button>}
       </Section>
 
       <Section title="Contract numbers" hint={`The next contract will be ${preview}. The two digits after the prefix are the event's year.`}>

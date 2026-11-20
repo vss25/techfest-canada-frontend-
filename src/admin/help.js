@@ -47,7 +47,7 @@ export const HELP = {
   "content/speakers": {
     what: "Everyone on the website's Speakers pages and in the app.",
     steps: ["Click Add speaker. Add a photo (required), name, job title and company.", "Choose which events they speak at, so they appear on those event pages.", "Click a photo to edit a speaker; click the star to feature them; change the number to set the order.", "Save, then send to staging and publish from Home › Website changes."],
-    tips: [FLOW, "Use a clear head-and-shoulders photo; you can set the framing after uploading.", "Delete takes a speaker off the live website at once."],
+    tips: [FLOW, "Every speaker photo comes out the same: choose a photo and the photo studio removes the background, puts the person on the TTFC light purple and suggests a head-and-shoulders crop. Drag or zoom to adjust it, or keep the photo's own background if the cut-out looks wrong.", "Adjust photo reopens the studio from the original upload.", "Delete takes a speaker off the live website at once."],
   },
   "content/partners": {
     what: "Partner logos on the Partners page and in the apps' Organisations, grouped by category.",
@@ -367,7 +367,7 @@ export const START_HERE = [
    new person could go wrong; a label with no entry shows no ⓘ. */
 const LOGO_FIELDS = {
   Name: "The organisation's name as people know it, e.g. “Deloitte”. Used for the logo's alt text and search.",
-  Logo: "Upload the logo image. A PNG with a transparent background works best; check how it looks with Dark preview.",
+  Logo: "Upload the logo image. It is tidied automatically: a plain white background removed, empty margins trimmed and centred like every other logo. An SVG or large PNG looks sharpest; check it with Dark preview.",
   "Website link": "Where the logo goes when someone clicks it: the organisation's own website, starting with https://.",
   "Display order": "Lower numbers show first. Leave gaps (10, 20, 30) so you can slot logos in later without renumbering.",
   "Logo size": "Makes this logo bigger or smaller than the others (100% is normal). Use it to balance wide and square logos.",
@@ -425,7 +425,7 @@ export const FIELD_HELP = {
     "Moderator organisation": "The moderator's company, shown next to their name.",
   },
   "content/speakers": {
-    "Profile photo": "Required. A clear head-and-shoulders photo, ideally square. After uploading you can set the framing.",
+    "Profile photo": "Required. Any clear photo of the person: the studio cuts out the background, adds the light purple and suggests the crop (4:5, like the speaker cards). The original is kept.",
     "Full name": "As the speaker wants it shown, e.g. “Dr. Jane Smith”.",
     "Job title": "Their role, e.g. “Chief Technology Officer”.",
     Company: "Their organisation. It's also added to the apps' Organisations.",

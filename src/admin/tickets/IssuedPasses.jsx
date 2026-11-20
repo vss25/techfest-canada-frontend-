@@ -3,6 +3,8 @@ import { BookOpen, CalendarCheck, Camera, Check, Copy, Eye, FileText, Hand, Mail
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useAdmin } from "../adminContext";
+import { Link } from "react-router-dom";
+import { useAdminEvent } from "../eventContext";
 import { useToast } from "../toastContext";
 import { useInitialQuery } from "../search/deepLink";
 import {
@@ -375,7 +377,12 @@ function PassesPage({ kindName }) {
   const BASE = kind.base;
   const toast = useToast();
   const { isManagement } = useAdmin();
-  const { data, error, loading, reload, setData } = useApi(BASE);
+  // Exhibitor passes (under Sales) follow the event chosen in the top bar (Nov 20 2026), so a 2027
+  // event doesn't list TTFC 2026's exhibitors as its own. Passes made here are TTFC 2026 passes for now.
+  const { current: chosenEvent } = useAdminEvent();
+  const chosenKey = chosenEvent?.eventKey?.current || chosenEvent?.eventKey || "";
+  const otherEvent = kindName === "exhibitor" && !!chosenKey && chosenKey !== "ttfc-2026-main";
+  const { data, error, loading, reload, setData } = useApi(kindName === "exhibitor" && chosenKey ? `${BASE}?event=${chosenKey}` : BASE);
   const tiersApi = useApi(`${BASE}/tiers`);
   const tiers = tiersApi.data?.tiers || [];
   const initialQ = useInitialQuery(); // a pass from the global search (?q=<ticket ID>)
@@ -405,6 +412,11 @@ function PassesPage({ kindName }) {
 
   return (
     <>
+      {otherEvent && (
+        <Banner tone="info" className="mb-4" title={`No exhibitor passes for ${chosenEvent.name} yet`}>
+          Exhibitor passes are set up for TTFC 2026 only so far, so new ones can't be made for this event here. To see who exhibited before and invite them back, open <Link to="/admin/past-participants" className="font-semibold text-[#9D1D63] hover:underline">Past participants</Link>.
+        </Banner>
+      )}
       <PageHeader
         eyebrow="People & passes"
         title={kind.title}
@@ -413,7 +425,7 @@ function PassesPage({ kindName }) {
           <div className="flex flex-wrap gap-2">
             {kind.booth && <Button icon={BookOpen} onClick={() => setManualOpen(true)}>{isManagement ? "Edit manual" : "Manual"}</Button>}
             <Button icon={Mail} onClick={() => setEmailOpen(true)}>{isManagement ? "Edit email" : "Email wording"}</Button>
-            {canIssue && <Button variant="primary" icon={TicketPlus} disabled={!tiers.length} onClick={() => setEditing({ row: null })}>{kind.create}</Button>}
+            {canIssue && !otherEvent && <Button variant="primary" icon={TicketPlus} disabled={!tiers.length} onClick={() => setEditing({ row: null })}>{kind.create}</Button>}
           </div>
         )}
       />
@@ -446,7 +458,7 @@ function PassesPage({ kindName }) {
       {loading ? <LoadingState label="Loading passes…" /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !rows.length ? (
         <EmptyState icon={TicketPlus} title={`No ${kind.who}es issued yet`}
           body={canIssue ? `Click ${kind.create} to create one.` : "A manager can issue passes here."}
-          action={canIssue && tiers.length > 0 && <Button variant="primary" icon={TicketPlus} onClick={() => setEditing({ row: null })}>{kind.create}</Button>} />
+          action={canIssue && !otherEvent && tiers.length > 0 && <Button variant="primary" icon={TicketPlus} onClick={() => setEditing({ row: null })}>{kind.create}</Button>} />
       ) : !shown.length ? (
         <EmptyState icon={Search} title="No passes match" body="Try another name, email or ticket ID." />
       ) : (

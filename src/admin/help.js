@@ -44,6 +44,11 @@ export const HELP = {
     steps: ["Pick the event at the top (for example Vancouver Briefing 2027).", "Choose Day 1 or Day 2, then click Add session and fill it in. New sessions are tied to the event you picked.", "Use Edit or Duplicate on a session to change or copy it.", "Save, then send it to staging and publish from Home › Website changes."],
     tips: [FLOW, "The clock button (Running late) moves times on the live agenda straight away: it's for event day.", "Delete takes a session off the live website at once.", "Import Toronto 2026 agenda only appears under All events and is only for the 2026 sessions."],
   },
+  "past-participants": {
+    what: "People and organisations who took part in an earlier event and aren't part of the event chosen at the top yet. Nothing here is a sale for this event: it's who to invite back.",
+    steps: ["Choose the event at the top.", "Filter by what they were: sponsor, partner, exhibitor, speaker, media or delegate.", "Email them, then click “I've reached out”. Your name is recorded and a follow-up task is added to My work.", "Change where it stands: We reached out, Interested in this event, or Not this time."],
+    tips: ["Once someone buys a ticket or becomes a partner of this event, they leave this list.", "Staff and volunteers are never listed."],
+  },
   "hot-leads": {
     what: "People who replied with real interest to our outreach emails (sent by Explee). They arrive here by themselves.",
     steps: ["Read what they wrote.", "Choose who is handling it. The task “Reply to hot lead” in My work moves to that person.", "Reply to them by email or LinkedIn.", "Change where it stands as it moves: We replied, Meeting booked, Won or Not going ahead."],

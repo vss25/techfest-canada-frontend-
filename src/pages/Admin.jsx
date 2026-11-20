@@ -25,6 +25,8 @@ import EventPages from "../admin/cms/EventPages";
 import Changes from "../admin/cms/Changes";
 import MyWork from "../admin/work/MyWork";
 import HotLeads from "../admin/sales/HotLeads";
+import PastParticipants from "../admin/sales/PastParticipants";
+import EventRevenue from "../admin/sales/EventRevenue";
 import WorkspaceHub from "../admin/WorkspaceHub";
 import HelpGuide from "../admin/HelpGuide";
 import LogoCollection from "../admin/cms/LogoCollection";
@@ -260,7 +262,7 @@ function AdminPanel() {
             <Route path="inventory" element={<Inventory />} />
             <Route path="content/tickets" element={<EventTickets />} />
             <Route path="check-in" element={<Legacy eyebrow={EVENT_DAY} title="Check-in" description="Point the camera at a ticket's QR code to check the attendee in. Allow camera access when your browser asks. The check-in desk app (lobby, pass desk, meals, media, AV, exhibitors) is below."><CheckIn /><div className="mt-6"><DeskAppCard /><DeskSettings /></div></Legacy>} />
-            <Route path="analytics" element={<ManagementOnly><SalesAnalytics /></ManagementOnly>} />
+            <Route path="analytics" element={<ManagementOnly><EventRevenue /></ManagementOnly>} />
 
             <Route path="content" element={<Navigate to="/admin/content/speakers" replace />} />
             {/* A workspace's pages as cards: the phone's bottom tabs open these (approved admin design). */}
@@ -268,6 +270,7 @@ function AdminPanel() {
             <Route path="help" element={<HelpGuide />} />
             <Route path="work" element={<MyWork />} />
             <Route path="hot-leads" element={<HotLeads />} />
+            <Route path="past-participants" element={<PastParticipants />} />
             <Route path="content/changes" element={<Changes />} />
             <Route path="content/events" element={<EventPages />} />
             <Route path="content/agenda" element={<AgendaAdmin />} />

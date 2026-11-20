@@ -30,13 +30,18 @@ export default function Overview() {
   const { me, isManagement } = useAdmin();
   const stats = useApi("/console/stats");
   // Money is management-only; staff see the ticket count from the ticket list instead.
-  const sales = useApi(isManagement ? "/console/sales?range=week" : null);
+  /* Nov 20 2026: the numbers follow the event chosen at the top. TTFC 2026 keeps its Stripe figures;
+     any other event shows only its own paid orders, so Vancouver never shows Toronto's revenue. */
+  const { attention, current: ev } = useAdminEvent();
+  const eventKey = ev?.eventKey?.current || ev?.eventKey || "";
+  const other = !!eventKey && eventKey !== "ttfc-2026-main";
+  const sales = useApi(isManagement && !other ? "/console/sales?range=week" : null);
+  const own = useApi(isManagement && other ? `/console/sales-event/summary?event=${eventKey}` : null);
   const ticketList = useApi(isManagement ? null : "/console/tickets?show=visible");
   const cms = useApi("/cms/status");
   const s = stats.data || {};
   const totals = sales.data?.totals || {};
   const first = (me?.name || "").split(" ")[0];
-  const { attention } = useAdminEvent();
   // Needs attention: real counts, each with where to go and what to do.
   const todo = [
     attention.changes > 0 && { t: `${num(attention.changes)} website change${attention.changes === 1 ? "" : "s"} waiting to publish`, where: "Home  ›  Website changes", cta: "Review", to: "/admin/content/changes", c: "#5B21B6" },
@@ -60,12 +65,19 @@ export default function Overview() {
 
       {/* The approved design's Home (board 17): four number cards, then Needs attention beside Quick actions. */}
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+        {isManagement && other ? (
+          <>
+            <StatTile label={`Tickets sold · ${ev.name}`} value={own.error ? "—" : own.data ? num(own.data.tickets) : undefined} tone={own.data?.tickets ? "good" : "neutral"} hint={own.data && !own.data.tickets ? "none sold yet" : "paid orders for this event"} to="/admin/analytics" />
+            <StatTile label={`Ticket revenue · ${ev.name}`} value={own.error ? "—" : own.data ? `$${num(Math.round(own.data.subtotalCents / 100))}` : undefined} tone="neutral" hint={own.data && !own.data.orders ? "nothing sold yet" : "before tax · this event only"} to="/admin/analytics" />
+          </>
+        ) : (<>
         {isManagement
-          ? <StatTile label="Tickets sold" value={sales.error ? "—" : num(totals.totalTickets)} tone="good" hint="all events · this week's report" to="/admin/analytics" />
+          ? <StatTile label="Tickets sold" value={sales.error ? "—" : num(totals.totalTickets)} tone="good" hint="TTFC 2026 · this week's report" to="/admin/analytics" />
           : <StatTile label="Tickets" value={ticketList.error ? "—" : num(ticketList.data?.total)} tone="neutral" hint="ticket records" to="/admin/attendees" />}
         {isManagement
-          ? <StatTile label="Ticket revenue · all events" value={sales.error || (sales.data && totals.totalRevenue == null) ? "—" : totals.totalRevenue != null ? `$${num(Math.round(totals.totalRevenue))}` : undefined} tone="neutral" hint={sales.data && totals.totalRevenue == null ? "Stripe unavailable" : "from Stripe · click for the breakdown"} to="/admin/analytics" />
+          ? <StatTile label="Ticket revenue · TTFC 2026" value={sales.error || (sales.data && totals.totalRevenue == null) ? "—" : totals.totalRevenue != null ? `$${num(Math.round(totals.totalRevenue))}` : undefined} tone="neutral" hint={sales.data && totals.totalRevenue == null ? "Stripe unavailable" : "from Stripe · click for the breakdown"} to="/admin/analytics" />
           : <StatTile label="App users active today" value={stats.error ? "—" : num(s.activeToday)} tone="neutral" hint={s.activeWeek != null ? `${num(s.activeWeek)} this week` : undefined} to="/admin/app" />}
+        </>)}
         <StatTile label="Website changes to publish" value={num(attention.changes)} tone={attention.changes ? "purple" : "neutral"} hint={attention.changes ? "saved or on staging" : "nothing waiting"} to="/admin/content/changes" />
         <StatTile label="Open reports" value={stats.error ? "—" : num(s.openReports)} tone={s.openReports ? "orange" : "good"} hint={s.openReports ? "needs a look" : "all clear"} to="/admin/app/moderation" />
       </div>

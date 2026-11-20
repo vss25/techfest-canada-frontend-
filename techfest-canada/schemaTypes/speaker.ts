@@ -81,6 +81,13 @@ export default defineType({
             ],
         }),
         defineField({
+            name: "imageOriginal",
+            title: "Original photo (as uploaded)",
+            type: "image",
+            description: "Kept by the TTFC admin panel's photo studio so the speaker photo can be redone. Not shown on the website.",
+            readOnly: true,
+        }),
+        defineField({
             name: "image",
             title: "Profile Photo",
             type: "image",

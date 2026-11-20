@@ -1,4 +1,5 @@
 import { api } from "../api";
+import { LOGO_OUT, clearEdgeWhite, logoPlacement, logoWarning, opaqueBox } from "./photoMath";
 
 const MAX = 1600;
 
@@ -13,10 +14,11 @@ function loadImage(file) {
 }
 
 /**
- * Downscale an image in the browser to at most 1600 px on the longest side.
- * Logos keep PNG (transparency) unless the source is a JPEG; photos become JPEG at 0.85.
+ * Downscale an image in the browser to at most 1600 px on the longest side; photos become JPEG at 0.85.
+ * Logos (Nov 19 2026) all come out the same: a plain white background made transparent, empty
+ * margins trimmed, centred in one 800 × 400 frame with the same padding, as PNG.
  */
-export async function prepareImage(file, { kind = "photo" } = {}) {
+export async function prepareImage(file, { kind = "photo", standard = false } = {}) {
   if (!file || !/^image\//.test(file.type)) throw new Error("Choose an image file (JPG, PNG, WebP or SVG).");
   if (file.size > 25 * 1024 * 1024) throw new Error("That image is too big (over 25 MB).");
   const { img, url } = await loadImage(file);
@@ -32,10 +34,12 @@ export async function prepareImage(file, { kind = "photo" } = {}) {
     const canvas = document.createElement("canvas");
     canvas.width = cw; canvas.height = ch;
     const ctx = canvas.getContext("2d");
-    const png = kind === "logo" && file.type !== "image/jpeg";
+    // standard: the website's logo lists (partners, sponsors, logo strips); other logos as before.
+    const png = kind === "logo" && (standard || file.type !== "image/jpeg");
     if (!png) { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, cw, ch); }
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(img, 0, 0, cw, ch);
+    if (png && standard) return { ...standardLogo(canvas, file), width: LOGO_OUT.width, height: LOGO_OUT.height };
     const dataUrl = png ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.85);
     const base = (file.name || "image").replace(/\.[^.]+$/, "").replace(/[^\w.-]+/g, "_").slice(0, 60) || "image";
     return { dataUrl, filename: `${base}.${png ? "png" : "jpg"}`, width: cw, height: ch };
@@ -44,10 +48,29 @@ export async function prepareImage(file, { kind = "photo" } = {}) {
   }
 }
 
-/** Downscale + upload → { assetId, url, preview } */
+function standardLogo(canvas, file) {
+  const ctx = canvas.getContext("2d");
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  clearEdgeWhite(data.data, canvas.width, canvas.height);
+  ctx.putImageData(data, 0, 0);
+  const box = opaqueBox(data.data, canvas.width, canvas.height);
+  const warning = logoWarning(box);
+  const out = document.createElement("canvas");
+  out.width = LOGO_OUT.width; out.height = LOGO_OUT.height;
+  if (box) {
+    const at = logoPlacement(box.width, box.height);
+    const octx = out.getContext("2d");
+    octx.imageSmoothingQuality = "high";
+    octx.drawImage(canvas, box.x, box.y, box.width, box.height, at.x, at.y, at.width, at.height);
+  }
+  const base = (file.name || "logo").replace(/\.[^.]+$/, "").replace(/[^\w.-]+/g, "_").slice(0, 60) || "logo";
+  return { dataUrl: out.toDataURL("image/png"), filename: `${base}.png`, warning };
+}
+
+/** Downscale + upload → { assetId, url, preview, warning? } */
 export async function uploadImage(file, opts) {
-  const { dataUrl, filename } = await prepareImage(file, opts);
+  const { dataUrl, filename, warning } = await prepareImage(file, opts);
   const out = await api.post("/cms/upload", { data: dataUrl, filename });
   if (!out?.assetId) throw new Error("Upload didn't return an image id. Try again.");
-  return { assetId: out.assetId, url: out.url, preview: dataUrl };
+  return { assetId: out.assetId, url: out.url, preview: dataUrl, warning: warning || "" };
 }

@@ -16,7 +16,8 @@ import { useAdminEvent } from "../eventContext";
 import { SECTORS, SPEAKER_TYPES, TECH_PILLARS, labelOf, LIVE_NOTE } from "./cmsMeta";
 import { buildBody, nextOrder } from "./fields";
 import useCmsStatus from "./useCmsStatus";
-import PhotoFramer, { FramedPreview } from "./PhotoFramer";
+import { FramedPreview } from "./PhotoFramer";
+import PhotoStudio from "./PhotoStudio";
 import { dimsFromAssetId } from "./framing";
 import { useEditFromUrl, useInitialQuery } from "../search/deepLink";
 
@@ -45,7 +46,9 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
   // Framing ("Adjust photo"): Sanity crop + hotspot. `framingChanged` = needs saving.
   const [framing, setFraming] = useState(() => (doc?.image?.crop || doc?.image?.hotspot ? { crop: doc.image.crop, hotspot: doc.image.hotspot } : null));
   const [framingChanged, setFramingChanged] = useState(false);
-  const [framerOpen, setFramerOpen] = useState(false);
+  // The photo studio (Nov 19 2026): a new photo, or redoing the current one from its original.
+  const [studio, setStudio] = useState(null);
+  const [original, setOriginal] = useState({ assetId: null, url: doc?.imageOriginalUrl || "" });
   const assetId = image.assetId || doc?.image?.asset?._ref || null;
   const dims = dimsFromAssetId(assetId) || doc?.imageDims || null;
   const [errors, setErrors] = useState({});
@@ -72,6 +75,7 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
     }
 
     const body = buildBody({ form, original: doc, keys: KEYS, numberKeys: NUMBER_KEYS, boolKeys: ["featured"], creating });
+    if (original.assetId) body.imageOriginal = original.assetId;
     if (assetId && (image.assetId || framingChanged)) {
       body.image = framing ? { asset: assetId, crop: framing.crop, hotspot: framing.hotspot } : assetId;
     }
@@ -82,6 +86,7 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
       if (!creating && !Object.keys(body).length) return false;
       const saved = creating ? await api.post("/cms/speaker?draft=1", body) : await api.patch(`/cms/speaker/${doc._id}?draft=1`, body);
       setImage((i) => ({ ...i, assetId: null }));
+      setOriginal((o) => ({ ...o, assetId: null }));
       setFramingChanged(false);
       onAutoSaved({ ...(doc || {}), ...saved, hasDraft: true, events: evSorted.map((id) => ({ _ref: id })), imageUrl: image.url, image: assetId ? { asset: { _ref: assetId }, ...(framing || {}) } : doc?.image });
       return true;
@@ -101,7 +106,7 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
   };
 
   // 30 seconds after the last change, or on closing the panel: saved as a draft (useAutosave.js).
-  const auto = useAutosave({ value: JSON.stringify([form, image.url, framing, evs]), enabled: !readOnly, save: () => save(null, { auto: true }) });
+  const auto = useAutosave({ value: JSON.stringify([form, image.url, framing, evs, original.url]), enabled: !readOnly, save: () => save(null, { auto: true }) });
 
   const opt = (list) => [<option key="" value="">Not set</option>, ...list.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)];
 
@@ -134,10 +139,8 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
           url={image.url}
           disabled={readOnly}
           error={errors.image}
-          onUploaded={({ assetId: id, url, preview }) => {
-            setImage({ assetId: id, url: url || preview }); setFraming(null); setFramingChanged(false);
-            setErrors((x) => ({ ...x, image: undefined }));
-          }}
+          onFile={(file) => setStudio({ source: file })}
+          onUploaded={() => {}}
         />
         {assetId && dims && (
           <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-ttfc-line bg-ttfc-ink/40 p-3">
@@ -145,20 +148,29 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
             <FramedPreview assetId={assetId} framing={framing} size={40} round />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold">How it appears on the website</p>
-              <p className="text-xs text-ttfc-muted">{framingChanged ? "New framing — save to publish it." : framing ? "Custom framing." : "Centred automatically."}</p>
+              <p className="text-xs text-ttfc-muted">{original.url ? "Made in the photo studio: light purple, 4:5." : "Added before the photo studio. Adjust it to match the others."}</p>
             </div>
-            <Button size="sm" icon={Crop} onClick={() => setFramerOpen(true)} disabled={readOnly}>Adjust photo</Button>
+            <Button size="sm" icon={Crop} disabled={readOnly}
+              onClick={() => setStudio({ source: { url: original.url || image.url, originalAssetId: original.url ? (original.assetId || doc?.imageOriginal?.asset?._ref || null) : assetId } })}>
+              Adjust photo
+            </Button>
           </div>
         )}
-        {framerOpen && (
-          <PhotoFramer
+        {studio && (
+          <PhotoStudio
             open
-            onClose={() => setFramerOpen(false)}
-            assetId={assetId}
-            imageUrl={image.url}
-            dims={dims}
-            image={framing}
-            onApply={(f) => { setFraming(f); setFramingChanged(true); setFramerOpen(false); toast.info("Framing set — save the speaker to publish it"); }}
+            source={studio.source}
+            onClose={() => setStudio(null)}
+            onDone={({ assetId: id, url, originalAssetId }) => {
+              setImage({ assetId: id, url });
+              setFraming(null); setFramingChanged(false);
+              // A redo of a photo without an original keeps the old photo as the original.
+              if (originalAssetId) setOriginal((o) => ({ assetId: originalAssetId === doc?.imageOriginal?.asset?._ref ? null : originalAssetId,
+                url: studio.source instanceof File ? URL.createObjectURL(studio.source) : (o.url || studio.source.url) }));
+              setErrors((x) => ({ ...x, image: undefined }));
+              setStudio(null);
+              toast.success("Photo ready. It saves with the speaker.");
+            }}
           />
         )}
         <div className="grid gap-4 sm:grid-cols-2">

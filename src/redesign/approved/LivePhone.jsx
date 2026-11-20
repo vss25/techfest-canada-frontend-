@@ -129,20 +129,34 @@ export default class LivePhone extends ApprovedPhone {
       v.spkCount = `Showing ${shown.length} of ${spk.length}`;
       v.spkIntro = `${spk.length} ${spk.length === 1 ? "speaker" : "speakers"} confirmed so far. More are announced as the programme fills.`;
     } else {
-      v.spkIntro = "Speakers are being confirmed now. The first names are announced in December 2026.";
-      v.spkCount = "Line-up announced soon";
+      // One "to be announced" note, with Toronto 2026's speakers meanwhile (LiveSite.jsx has the same rule).
+      const was = (this.props.past2026 && this.props.past2026.speakers) || [];
+      v.spkSoon = { title: "Speakers to be announced", text: was.length
+        ? "This event's speakers are being confirmed. In the meantime, here's who took the stage at Toronto 2026."
+        : "This event's speakers are being confirmed. Check back soon." };
+      v.four = was.slice(0, 4).map((x) => ({ ...x, role: x.role ? x.role + " · Toronto 2026" : "Toronto 2026" }));
+      v.spkList = was.map((x, i) => ({ ...x, role: x.role ? x.role + " · Toronto 2026" : "Toronto 2026", n: i + 1, open: () => {} }));
+      v.spkIntro = "This event's speakers are announced soon. Until then, these are speakers from Toronto 2026.";
+      v.spkCount = was.length ? "Speakers from Toronto 2026" : "";
     }
-    const soon = ["Presenting Partner", "AI pillar", "CleanTech pillar", "Cyber pillar"].map((tier) => ({ tier }));
     const evp = this.props.evPartners;
     // Two to a row: an odd number gets one "Announcing soon" tile to finish the row.
-    v.phPartners = evp ? (evp.length % 2 ? [...evp, { tier: "More soon" }] : evp) : soon;
+    if (evp) v.phPartners = evp;
+    else {
+      const wasP = (this.props.past2026 && this.props.past2026.partners) || [];
+      v.ptSoon = { title: "Partners to be announced", text: wasP.length
+        ? "This event's partners are being confirmed. In the meantime, these organisations partnered with us at Toronto 2026."
+        : "This event's partners are being confirmed. Check back soon." };
+      v.phPartners = wasP.slice(0, 6).map((p) => ({ name: p.title || "", logo: p.name, tier: "Toronto 2026" }));
+    }
     v.goPartnersAll = (e) => { if (e && e.preventDefault) e.preventDefault(); this.props.navigate(SCREEN_PATH.partners || "/partners"); };
     v.exFilters = [];
-    v.exList = Array.from({ length: 6 }, (_, i) => ({ n: i + 1, sub: "Booths are being booked now" }));
+    v.exList = [];
+    v.exSoon = { title: "Exhibitors to be announced", text: "Booths are being booked now. Exhibitors are listed here as they are confirmed." };
     // Toronto 2026: real speakers (with photos) and partner logos (LiveSite.jsx usePast2026).
     const past = this.props.past2026;
     if (past) {
-      if (past.speakers.length) v.starSpeakers = past.speakers;
+      if (past.speakers.length) v.starSpeakers = past.speakers.slice(0, 4);
       if (past.partners.length) v.sixLogos = past.partners.map((p) => ({ n: p.name }));
       if (past.photos) v.galleryFour = past.photos.slice(0, 4);
       if (past.recap) v.recapPlayer = <VideoFacade video={past.recap} radius={12} />;

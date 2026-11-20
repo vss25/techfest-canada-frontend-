@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Flame, Linkedin, Mail, RefreshCw } from "lucide-react";
+import { Eye, EyeOff, Flame, Linkedin, Mail, RefreshCw } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
@@ -22,12 +22,13 @@ function LeadCard({ lead, data, onChange }) {
   };
   const label = data.statuses.find((s) => s.key === lead.status)?.label.split(":")[0] || lead.status;
   return (
-    <Card className="flex flex-col gap-3">
+    <Card className={`flex flex-col gap-3 ${lead.hidden ? "opacity-80" : ""}`}>
       <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-bold text-[#151035]">{lead.name}</h2>
           <p className="text-[13px] text-[#6B6688]">{[lead.jobTitle, lead.company, lead.country].filter(Boolean).join(" · ") || "No details yet"}</p>
         </div>
+        {lead.hidden && <Badge tone="neutral" icon={EyeOff}>Hidden from staff</Badge>}
         <Badge tone={TONE[lead.status] || "neutral"}>{label}</Badge>
       </div>
       <blockquote className="whitespace-pre-wrap rounded-[10px] bg-[#F6F5FA] px-3.5 py-3 text-[14px] leading-[21px] text-[#151035]">
@@ -52,6 +53,15 @@ function LeadCard({ lead, data, onChange }) {
           </Select>
         </label>
       </div>
+      {data.canSync && (
+        <div className="flex flex-wrap items-center gap-2 border-t border-[#F0EEF6] pt-3">
+          <Button size="sm" variant="ghost" icon={lead.hidden ? Eye : EyeOff} disabled={busy}
+            onClick={() => save({ hidden: !lead.hidden }, lead.hidden ? "Staff can see this lead again." : "Hidden. Only managers can see this lead now.")}>
+            {lead.hidden ? "Show to staff" : "Hide from staff"}
+          </Button>
+          <span className="text-xs text-[#6B6688]">{lead.hidden ? "Only managers can see this lead." : "All staff can see this lead."}</span>
+        </div>
+      )}
     </Card>
   );
 }

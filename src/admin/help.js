@@ -47,7 +47,7 @@ export const HELP = {
   "hot-leads": {
     what: "People who replied with real interest to our outreach emails (sent by Explee). They arrive here by themselves.",
     steps: ["Read what they wrote.", "Choose who is handling it. The task “Reply to hot lead” in My work moves to that person.", "Reply to them by email or LinkedIn.", "Change where it stands as it moves: We replied, Meeting booked, Won or Not going ahead."],
-    tips: ["New leads are checked for every 10 minutes; a manager can press Check now.", "The sales inbox gets an email when a new hot lead arrives.", "If someone replies again, their card updates and counts the extra reply."],
+    tips: ["New leads are checked for every 10 minutes; a manager can press Check now.", "The sales inbox gets an email when a new hot lead arrives.", "If someone replies again, their card updates and counts the extra reply.", "Managers can hide a lead from staff with Hide from staff, and show it again later."],
   },
   work: {
     what: "Your own list of what you've promised to do and when it's due. Only you and the managers can see it.",

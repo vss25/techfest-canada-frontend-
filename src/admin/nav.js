@@ -17,6 +17,7 @@ import { CircleHelp, ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, 
      volunteer: true   also for volunteer accounts (People only, read
                        only; access.js)
      hidden: true      not in the menu, the address still works
+     onlyEvent: key    in the menu only while that event is the one chosen in the top bar
    Pages the design adds that don't exist yet (Approvals, Site pages,
    Files, contracts, operations…) come with their own steps.
    No kill switch (the organiser, Oct 23 2026: "Its risky").
@@ -111,7 +112,8 @@ export const WORKSPACES = [
       { to: "hot-leads", label: "Hot leads", icon: Flame },
       // "Stay updated" (Oct 23 2026): who joined the TTFC 2027 waitlist, and the page's wording.
       { to: "waitlist-2027", label: "Waitlist", icon: ListPlus },
-      { to: "india-pavilion", label: "India Pavilion", icon: Landmark },
+      // Nov 20 2026: only TTFC 2026 had an India Pavilion (onlyEvent: shown in the menu for that event alone).
+      { to: "india-pavilion", label: "India Pavilion", icon: Landmark, onlyEvent: "ttfc-2026-main" },
     ] },
     { title: "Exhibitors", items: [
       { to: "exhibitor-passes", label: "Exhibitor passes", icon: Store },
@@ -119,7 +121,7 @@ export const WORKSPACES = [
     { title: "Revenue", items: [
       { to: "analytics", label: "Revenue", icon: BarChart3, management: true },
       // TTFC 2026's passes and booths (sold and left, prices); each 2027 event's tickets are in Content › Tickets & prices.
-      { to: "inventory", label: "2026 pass inventory", icon: Package },
+      { to: "inventory", label: "2026 pass inventory", icon: Package, onlyEvent: "ttfc-2026-main" },
     ] },
   ] },
   { id: "ops", scoped: true, label: "Operations", rail: RAIL.ops, job: "Running the event: settings, venue, vendors, food, print and logistics.", groups: [

@@ -44,6 +44,11 @@ export const HELP = {
     steps: ["Pick the event at the top (for example Vancouver Briefing 2027).", "Choose Day 1 or Day 2, then click Add session and fill it in. New sessions are tied to the event you picked.", "Use Edit or Duplicate on a session to change or copy it.", "Save, then send it to staging and publish from Home › Website changes."],
     tips: [FLOW, "The clock button (Running late) moves times on the live agenda straight away: it's for event day.", "Delete takes a session off the live website at once.", "Import Toronto 2026 agenda only appears under All events and is only for the 2026 sessions."],
   },
+  "hot-leads": {
+    what: "People who replied with real interest to our outreach emails (sent by Explee). They arrive here by themselves.",
+    steps: ["Read what they wrote.", "Choose who is handling it. The task “Reply to hot lead” in My work moves to that person.", "Reply to them by email or LinkedIn.", "Change where it stands as it moves: We replied, Meeting booked, Won or Not going ahead."],
+    tips: ["New leads are checked for every 10 minutes; a manager can press Check now.", "The sales inbox gets an email when a new hot lead arrives.", "If someone replies again, their card updates and counts the extra reply.", "Managers can hide a lead from staff with Hide from staff, and show it again later."],
+  },
   work: {
     what: "Your own list of what you've promised to do and when it's due. Only you and the managers can see it.",
     steps: ["When someone agrees to do something, type it under Add a task, pick who will do it and by when, and click Add task.", "Tick the circle when it's done.", "Given to others shows tasks you gave to someone, so you can see when they're done. Managers see Everyone's.", "If something is stuck or going wrong, click Raise a flag and say what's wrong. Your managers are emailed straight away."],

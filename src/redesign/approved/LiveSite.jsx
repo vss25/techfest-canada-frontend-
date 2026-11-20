@@ -194,20 +194,37 @@ class LiveSite extends ApprovedSite {
       v.spkCount = shown.length ? `Showing ${shown.length} of ${spk.length}` : "No speakers match that search";
       v.spkIntro = `${spk.length} ${spk.length === 1 ? "speaker" : "speakers"} confirmed so far. More are announced as the programme fills.`;
     } else {
-      v.spkIntro = "Speakers are being confirmed now. The first names are announced in December 2026.";
-      v.spkCount = "Line-up announced soon";
+      // Nov 20 2026 (the owner): say "to be announced" ONCE, and show who spoke at Toronto 2026 meanwhile,
+      // instead of a row of identical "Speaker to be announced" cards.
+      const was = (this.props.past2026 && this.props.past2026.speakers) || [];
+      v.spkSoon = { title: "Speakers to be announced", text: was.length
+        ? "This event's speakers are being confirmed. In the meantime, here's who took the stage at Toronto 2026."
+        : "This event's speakers are being confirmed. Check back soon." };
+      v.speakers = was.slice(0, 4).map((x, i) => ({ ...x, role: x.role ? x.role + " · Toronto 2026" : "Toronto 2026", n: i + 1, open: v.goPast }));
+      v.spkList = was.map((x, i) => ({ ...x, role: x.role ? x.role + " · Toronto 2026" : "Toronto 2026", n: i + 1, open: v.goPast }));
+      v.spkFilters = [];
+      v.spkIntro = "This event's speakers are announced soon. Until then, these are speakers from Toronto 2026.";
+      v.spkCount = was.length ? "Speakers from Toronto 2026" : "";
     }
     // The event's partners, then "Announcing soon" tiles up to the board's six.
+    // The event's own partners; with none yet, ONE "to be announced" note and Toronto 2026's partners meanwhile.
     const evp = this.props.evPartners;
-    v.evPartners = evp ? [...evp, ...(v.partnerTiles || []).slice(evp.length).map((t) => ({ tier: t.tier,
-      logo: <span style={{ fontSize: "13px", color: "#52525B" }}>Announcing soon</span> }))] : null;
+    if (evp) v.evPartners = evp;
+    else {
+      const wasP = (this.props.past2026 && this.props.past2026.partners) || [];
+      v.ptSoon = { title: "Partners to be announced", text: wasP.length
+        ? "This event's partners are being confirmed. In the meantime, these organisations partnered with us at Toronto 2026."
+        : "This event's partners are being confirmed. Check back soon." };
+      v.evPartners = wasP.map((p) => ({ name: p.title || "", logo: p.name, tier: "Toronto 2026" }));
+    }
     v.pt2027Groups = this.props.pt2027Groups || null;
     // Exhibitors: no booth is sold yet, so no sample booth numbers or topic filters.
     v.exFilters = [];
-    v.exList = Array.from({ length: 8 }, (_, i) => ({ n: i + 1, sub: "Booths are being booked now" }));
+    v.exList = [];
+    v.exSoon = { title: "Exhibitors to be announced", text: "Booths are being booked now. Exhibitors are listed here as they are confirmed." };
     const past = this.props.past2026;
     if (past) {
-      if (past.speakers.length) v.starSpeakers = past.speakers.map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));
+      if (past.speakers.length) v.starSpeakers = past.speakers.slice(0, 4).map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));
       if (past.partners.length) v.pastPartners = past.partners;
       v.photos = PAST_PHOTOS;
       if (past.recap) {
@@ -360,7 +377,7 @@ function usePast2026(on) {
     const ev = "event-ttfc-2026-main";
     const scoped = `(!defined(events) || count(events) == 0 || $ev in events[]._ref)`;
     Promise.all([
-      client.fetch(`*[_type == "speaker" && !(_id in path("drafts.**")) && defined(image.asset) && ${scoped}] | order(featured desc, order asc)[0...4]{ name, title, company, speakerType, image }`, { ev }),
+      client.fetch(`*[_type == "speaker" && !(_id in path("drafts.**")) && defined(image.asset) && ${scoped}] | order(featured desc, order asc)[0...12]{ name, title, company, speakerType, image }`, { ev }),
       client.fetch(`*[_type == "partner" && active != false && showOnWebsite != false && defined(logo.asset) && ${scoped}] | order(order asc){ _id, name, logo, matrixGroup, logoScale }`, { ev }),
       // The recap box: a YouTube / Vimeo video from Admin › Content › Videos (2026's first, else one marked for the home page).
       client.fetch(`*[_type == "video" && active != false && defined(videoId) && ($ev in events[]._ref || showOnHome == true)] | order(($ev in events[]._ref) desc, coalesce(order, 9999) asc, recordedOn desc)[0]{ title, provider, videoId, thumbnailUrl, url }`, { ev }).catch(() => null),
@@ -377,7 +394,7 @@ function usePast2026(on) {
       const partners = sorted.slice(0, 6).map((p) => ({
         name: <img src={urlFor(p.logo).height(120).fit("max").auto("format").url()} alt={p.name} title={p.name} loading="lazy"
           style={{ display: "block", maxHeight: 48, maxWidth: "75%", objectFit: "contain", margin: "0 auto" }} />,
-        tier: matrixGroupOf(p) === "featured" ? "Featured partner" : "Partner",
+        tier: matrixGroupOf(p) === "featured" ? "Featured partner" : "Partner", title: p.name,
       }));
       setPast({ speakers, partners, photos: PAST_PHOTOS, recap: recap || null });
     }).catch(() => { if (live) setPast(null); });
@@ -493,7 +510,7 @@ export default function ApprovedRoute({ fallback = null }) {
     }));
   }, [content.speakers]);
 
-  const past2026 = usePast2026(!!(route && route.screen === "past"));
+  const past2026 = usePast2026(!!route);
   const partners2026 = useMemo(() => (partners ? partners.filter((p) => partnerOnEvent(p, PAST_EVENT)) : null), [partners]);
   const partnerRows = useMemo(() => {
     if (!partners2026 || !partners2026.length) return null;

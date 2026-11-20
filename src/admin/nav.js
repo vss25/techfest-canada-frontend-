@@ -39,6 +39,8 @@ export const WORKSPACES = [
   { id: "home", label: "Home", rail: RAIL.home, job: "What needs doing today.", groups: [
     { title: "", items: [
       { to: "", label: "Overview", icon: LayoutDashboard, end: true },
+      // Nov 20 2026: tasks with an owner and a due date, and flags when something is wrong.
+      { to: "work", label: "My work", icon: ListChecks },
       // Nov 2026: website content goes save → staging → live from here.
       { to: "content/changes", label: "Website changes", icon: GitPullRequestArrow },
       // Nov 2026: how the panel works and every page's guide (help.js); each page's ⓘ shows its own.

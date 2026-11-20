@@ -12,7 +12,7 @@ export const EVENT_KEY = "ttfc.admin.event";
 
 export const AdminEventContext = createContext({
   events: [], current: null, setCurrent: () => {}, open: false, setOpen: () => {}, loading: true,
-  attention: { changes: 0, sos: 0, total: 0 }, refresh: () => {},
+  attention: { changes: 0, sos: 0, flags: 0, overdue: 0, total: 0 }, refresh: () => {},
 });
 export const useAdminEvent = () => useContext(AdminEventContext);
 

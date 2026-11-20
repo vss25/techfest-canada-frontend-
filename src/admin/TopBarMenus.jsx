@@ -31,6 +31,8 @@ export function AlertsBell() {
   const { attention } = useAdminEvent();
   const { open, setOpen, ref } = useMenu();
   const items = [
+    { n: attention.flags, label: "Flags raised: someone needs help", to: "/admin/work?tab=flags" },
+    { n: attention.overdue, label: "Your overdue tasks", to: "/admin/work" },
     { n: attention.changes, label: "Website changes waiting", to: "/admin/content/changes" },
     { n: attention.sos, label: "SOS requests open", to: "/admin/app/sos" },
   ].filter((i) => i.n > 0);

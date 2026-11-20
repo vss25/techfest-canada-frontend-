@@ -38,6 +38,7 @@
     "react-quill-new": "^3.8.3",
     "react-router-dom": "^7.13.1",
     "react-use-measure": "^2.1.7",
+    "read-excel-file": "^9.3.20",
     "recharts": "^3.8.0",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7"

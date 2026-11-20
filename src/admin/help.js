@@ -45,8 +45,8 @@ export const HELP = {
     tips: [FLOW, "The clock button (Running late) moves times on the live agenda straight away: it's for event day.", "Delete takes a session off the live website at once.", "Import Toronto 2026 agenda only appears under All events and is only for the 2026 sessions."],
   },
   work: {
-    what: "Everything the team has promised to do: who is doing it and when it's due. Nobody has to ask.",
-    steps: ["When someone agrees to do something, type it under Add a task, pick who will do it and by when, and click Add task.", "Tick the circle when it's done.", "Open Everyone's to see what the rest of the team is working on.", "If something is stuck or going wrong, click Raise a flag and say what's wrong. Your managers are emailed straight away."],
+    what: "Your own list of what you've promised to do and when it's due. Only you and the managers can see it.",
+    steps: ["When someone agrees to do something, type it under Add a task, pick who will do it and by when, and click Add task.", "Tick the circle when it's done.", "Given to others shows tasks you gave to someone, so you can see when they're done. Managers see Everyone's.", "If something is stuck or going wrong, click Raise a flag and say what's wrong. Your managers are emailed straight away."],
     tips: ["The person doing a task gets an email a week before it's due, the day before, on the day, and if it becomes overdue.", "Giving a task to someone else emails them.", "A flag stays under Flags until someone resolves it with a note.", "The bell at the top shows flags and your overdue tasks."],
   },
   "content/speakers": {

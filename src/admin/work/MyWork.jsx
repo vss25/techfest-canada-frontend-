@@ -187,7 +187,8 @@ export default function MyWork() {
   const toast = useToast();
   const { current: chosenEvent, events } = useAdminEvent();
   const [tab, setTab] = useState(() => (new URLSearchParams(window.location.search).get("tab") === "flags" ? "flags" : "mine"));
-  const query = tab === "done" ? "scope=all&status=done" : tab === "mine" ? "scope=mine&status=open" : "scope=all&status=open";
+  // Private: staff see their own tasks, the ones they gave to someone and flags they raised; managers see everyone's.
+  const query = tab === "done" ? "scope=all&status=done" : tab === "mine" ? "scope=mine&status=open" : tab === "given" ? "scope=given&status=open" : "scope=all&status=open";
   const { data, error, loading, reload, setData } = useApi(`/console/commitments?${query}`);
   const eventList = useMemo(() => (events || []).filter((e) => e?._id && e?.name), [events]);
   const blank = () => ({ title: "", ownerId: data?.me || "", dueDate: "", about: "", area: "other", eventKey: eventKeyOf(chosenEvent), notes: "" });
@@ -224,7 +225,7 @@ export default function MyWork() {
     <>
       <PageHeader
         title="My work"
-        description="Everything that's been promised, who is doing it and when it's due. When someone agrees to do something, add it here so it isn't forgotten."
+        description="Your own list: what you've promised to do and when it's due. When someone agrees to do something, add it here so it isn't forgotten. Only you and the managers can see your list."
         actions={<Button icon={Flag} onClick={() => setModal({ kind: "flag" })}>Raise a flag</Button>}
       />
 
@@ -267,7 +268,7 @@ export default function MyWork() {
 
       <Tabs label="Which tasks" value={tab} onChange={setTab} tabs={[
         { key: "mine", label: `Mine${c.mine ? ` (${c.mine})` : ""}` },
-        { key: "all", label: "Everyone's" },
+        data?.canSeeAll ? { key: "all", label: "Everyone's" } : { key: "given", label: "Given to others" },
         { key: "flags", label: `Flags${c.flags ? ` (${c.flags})` : ""}` },
         { key: "done", label: "Done" },
       ]} />
@@ -275,7 +276,7 @@ export default function MyWork() {
       {loading && !data ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !items.length ? (
         <EmptyState
           title={tab === "mine" ? "Nothing on your list" : tab === "flags" ? "No flags raised" : tab === "done" ? "Nothing finished yet" : "No tasks yet"}
-          body={tab === "mine" ? "Add your first task above: what needs doing, who will do it and by when." : tab === "flags" ? "When someone needs help, their flag shows here until it's resolved." : "Tasks show here as the team adds them."}
+          body={tab === "mine" ? "Add your first task above: what needs doing, who will do it and by when." : tab === "flags" ? (data?.canSeeAll ? "When someone needs help, their flag shows here until it's resolved." : "Flags you raise show here until a manager resolves them.") : tab === "given" ? "Tasks you give to someone else show here, so you can see when they're done." : "Tasks show here as the team adds them."}
         />
       ) : (
         <div className="space-y-5">

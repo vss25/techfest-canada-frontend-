@@ -23,6 +23,8 @@ export function AdminEventProvider({ children, enabled = true }) {
   // What needs attention (the bell and the gold badges): website changes waiting and open SOS requests.
   const changes = useApi(enabled ? "/cms/changes" : null, { interval: 60000 });
   const sos = useApi(enabled ? "/console/sos?status=open" : null, { interval: 60000 });
+  // Nov 20 2026: flags the team raised and this person's overdue tasks (Home › My work).
+  const work = useApi(enabled ? "/console/commitments?scope=mine&status=open" : null, { interval: 60000 });
   const [chosen, setChosen] = useState(read);
   const [open, setOpen] = useState(false);
   const value = useMemo(() => {
@@ -33,12 +35,13 @@ export function AdminEventProvider({ children, enabled = true }) {
     const waiting = (changes.data?.counts?.unsent || 0) + (changes.data?.counts?.staged || 0);
     const sosOpen = sos.data?.counts?.open || 0;
     return {
-      attention: { changes: waiting, sos: sosOpen, total: waiting + sosOpen },
+      attention: { changes: waiting, sos: sosOpen, flags: work.data?.counts?.flags || 0, overdue: work.data?.counts?.overdue || 0,
+        total: waiting + sosOpen + (work.data?.counts?.flags || 0) + (work.data?.counts?.overdue || 0) },
       events: withConfig, current, open, setOpen, loading: events.loading,
       refresh: () => { reloadEvents(); reloadConfigs(); },
       setCurrent: (id) => { save(id); setChosen(id); },
     };
-  }, [events.data, events.loading, configs.data, changes.data, sos.data, chosen, open, reloadEvents, reloadConfigs]);
+  }, [events.data, events.loading, configs.data, changes.data, sos.data, work.data, chosen, open, reloadEvents, reloadConfigs]);
   return <AdminEventContext.Provider value={value}>{children}</AdminEventContext.Provider>;
 }
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useAutosave } from "./useAutosave";
 import { AutosaveNote } from "./AutosaveNote";
-import { Crop, Mic2, Plus, Search, Star, Trash2, Pencil, X as XIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, Bold, Crop, Italic, List, GripVertical, Mic2, Plus, Search, Star, Trash2, Pencil, X as XIcon } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
@@ -18,15 +18,16 @@ import { buildBody, nextOrder } from "./fields";
 import useCmsStatus from "./useCmsStatus";
 import { FramedPreview } from "./PhotoFramer";
 import PhotoStudio from "./PhotoStudio";
+import { FormattedText } from "../../lib/simpleFormat";
 import { dimsFromAssetId } from "./framing";
 import { useEditFromUrl, useInitialQuery } from "../search/deepLink";
 
-const KEYS = ["name", "title", "company", "bio", "order", "rowPosition", "featured", "speakerType", "techPillar", "sector",
+const KEYS = ["name", "title", "company", "bio", "order", "featured", "speakerType", "techPillar", "sector",
   "linkedin", "twitter", "github", "website"];
-const NUMBER_KEYS = ["order", "rowPosition"];
+const NUMBER_KEYS = ["order"];
 
 const blank = (order) => ({
-  name: "", title: "", company: "", bio: "", order: String(order), rowPosition: "", featured: false,
+  name: "", title: "", company: "", bio: "", order: String(order), featured: false,
   speakerType: "", techPillar: "", sector: "", linkedin: "", twitter: "", github: "", website: "",
 });
 
@@ -34,12 +35,11 @@ const toForm = (d) => ({
   ...blank(d.order ?? ""),
   ...Object.fromEntries(KEYS.map((k) => [k, d[k] ?? (k === "featured" ? false : "")])),
   order: d.order != null ? String(d.order) : "",
-  rowPosition: d.rowPosition != null ? String(d.rowPosition) : "",
 });
 
 const refIds = (d) => (d?.events || []).map((r) => r?._ref).filter(Boolean).sort();
 
-function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, onSaved, onAutoSaved, onDelete, eventList = [] }) {
+function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, onSaved, onAutoSaved, onDelete, eventList = [], chosenEvent = null }) {
   const toast = useToast();
   const [form, setForm] = useState(() => (doc ? toForm(doc) : blank(defaultOrder)));
   const [image, setImage] = useState({ assetId: null, url: doc?.imageUrl || "" });
@@ -55,7 +55,29 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
   const [saving, setSaving] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e }));
   // Which event pages the speaker appears on (redesign step 1). None = every event.
-  const [evs, setEvs] = useState(() => refIds(doc));
+  /* Bio formatting: the buttons put simple marks around the selected words (src/lib/simpleFormat.jsx). */
+  const editBio = (id, fn) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const { selectionStart: a, selectionEnd: b, value } = el;
+    const [next, selA, selB] = fn(value, a, b);
+    if (next.length > 2000) return;
+    setForm((f) => ({ ...f, bio: next }));
+    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(selA, selB); });
+  };
+  const wrapBio = (id, mark) => editBio(id, (v, a, b) => {
+    const sel = v.slice(a, b) || "words";
+    return [v.slice(0, a) + mark + sel + mark + v.slice(b), a + mark.length, a + mark.length + sel.length];
+  });
+  const bulletBio = (id) => editBio(id, (v, a, b) => {
+    const start = v.lastIndexOf("\n", a - 1) + 1;
+    const endAt = v.indexOf("\n", b); const end = endAt < 0 ? v.length : endAt;
+    const lines = v.slice(start, end).split("\n").map((l) => (/^[-•]\s/.test(l) || !l.trim() ? l : "- " + l)).join("\n") || "- ";
+    return [v.slice(0, start) + lines + v.slice(end), start + lines.length, start + lines.length];
+  });
+  const [evs, setEvs] = useState(() => (doc ? refIds(doc) : chosenEvent ? [chosenEvent._id] : []));
+  // The other events' tick boxes stay folded away unless this speaker is already on another event.
+  const [moreEvents, setMoreEvents] = useState(() => !chosenEvent || refIds(doc).some((id) => id !== chosenEvent._id) || (!!doc && !refIds(doc).includes(chosenEvent._id)));
 
   const save = async (e, { auto: isAuto = false } = {}) => {
     e?.preventDefault();
@@ -64,11 +86,10 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
     if (!form.title.trim()) errs.title = "Job title is required";
     if (!form.company.trim()) errs.company = "Company is required";
     if (form.order === "" || !Number.isFinite(Number(form.order))) errs.order = "Enter a number (lower shows first)";
-    if (form.rowPosition !== "" && !Number.isFinite(Number(form.rowPosition))) errs.rowPosition = "Enter a whole number";
     if (!image.url) errs.image = "A profile photo is required";
     // Autosave keeps an incomplete draft (empty fields are checked when it's sent to staging);
     // it waits only for a value it can't store.
-    if (isAuto) { const bad = [errs.order && form.order !== "" && errs.order, errs.rowPosition].filter(Boolean); if (bad.length) return `${bad[0]}.`; }
+    if (isAuto) { const bad = [errs.order && form.order !== "" && errs.order].filter(Boolean); if (bad.length) return `${bad[0]}.`; }
     if (!isAuto) {
       setErrors(errs);
       if (Object.keys(errs).length) { toast.error("Please fix the highlighted fields"); return; }
@@ -135,7 +156,7 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
           label="Profile photo"
           required
           kind="photo"
-          aspect="aspect-[4/3]"
+          aspect={image.url ? "aspect-[4/5] max-w-[170px]" : "aspect-[5/2]"}
           url={image.url}
           disabled={readOnly}
           error={errors.image}
@@ -186,6 +207,12 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
           {eventList.length > 0 && (
             <fieldset className="sm:col-span-2">
               <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">Events</legend>
+              {!moreEvents ? (
+                <p className="text-sm text-ttfc-text/90">
+                  This speaker is on <strong>{chosenEvent.name}</strong>, the event chosen at the top.{" "}
+                  <button type="button" className="font-semibold text-ttfc-pink hover:underline" onClick={() => setMoreEvents(true)}>Also on another event?</button>
+                </p>
+              ) : (<>
               <p className="mb-2 text-xs text-ttfc-dim">The event pages this speaker appears on. None ticked = every event.</p>
               <div className="flex flex-wrap gap-2">
                 {eventList.map((ev) => {
@@ -199,23 +226,35 @@ function SpeakerDrawer({ open, doc, creating, defaultOrder, readOnly, onClose, o
                   );
                 })}
               </div>
+              </>)}
             </fieldset>
           )}
-          <Field label="Bio" hint={`${form.bio.length}/2000 characters`} className="sm:col-span-2">
-            {(id) => <Textarea id={id} rows={6} value={form.bio} onChange={set("bio")} maxLength={2000} disabled={readOnly} />}
+          <Field label="Bio" hint={`${form.bio.length}/2000 characters. Leave a blank line between paragraphs.`} className="sm:col-span-2">
+            {(id) => (
+              <div className="flex flex-col gap-2">
+                {!readOnly && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Button size="sm" icon={Bold} onClick={() => wrapBio(id, "**")}>Bold</Button>
+                    <Button size="sm" icon={Italic} onClick={() => wrapBio(id, "*")}>Italic</Button>
+                    <Button size="sm" icon={List} onClick={() => bulletBio(id)}>Bullet points</Button>
+                    <span className="text-xs text-ttfc-dim">Select some words first, then choose a style.</span>
+                  </div>
+                )}
+                <Textarea id={id} rows={6} value={form.bio} onChange={set("bio")} maxLength={2000} disabled={readOnly} />
+                {/[*]|^[-•]\s/m.test(form.bio) && (
+                  <div className="rounded-xl border border-ttfc-line bg-ttfc-ink/40 p-3">
+                    <p className="mb-1 text-xs font-semibold text-ttfc-dim">How it will read</p>
+                    <div className="space-y-2 text-sm leading-relaxed"><FormattedText text={form.bio} /></div>
+                  </div>
+                )}
+              </div>
+            )}
           </Field>
         </div>
 
         <fieldset className="space-y-4 rounded-2xl border border-ttfc-line p-4">
           <legend className="px-1 text-xs font-bold uppercase tracking-[0.12em] text-ttfc-dim">Placement</legend>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Display order" required error={errors.order} hint="Lower numbers appear first.">
-              {(id) => <Input id={id} type="number" inputMode="numeric" value={form.order} onChange={set("order")} disabled={readOnly} />}
-            </Field>
-            <Field label="Position in row" error={errors.rowPosition} hint="Optional fine-tuning within a row.">
-              {(id) => <Input id={id} type="number" inputMode="numeric" value={form.rowPosition} onChange={set("rowPosition")} disabled={readOnly} />}
-            </Field>
-          </div>
+          <p className="text-xs text-ttfc-dim">The order speakers appear in is set on the Speakers list: drag a speaker, or use its arrows.</p>
           <Switch
             label="Featured speaker"
             description="Featured speakers are pinned to the top of the grid regardless of order."
@@ -272,9 +311,37 @@ export default function Speakers() {
     return list.filter((s) => (!onEvent || !evIds(s).length || evIds(s).includes(chosenEvent._id)) &&
       (!needle || [s.name, s.title, s.company].some((x) => (x || "").toLowerCase().includes(needle))) &&
       (!type || s.speakerType === type) && (!pillar || s.techPillar === pillar) && (!sector || s.sector === sector) &&
-      (!featuredOnly || s.featured));
+      (!featuredOnly || s.featured))
+      .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999) || (a.name || "").localeCompare(b.name || ""));
   }, [list, q, type, pillar, sector, featuredOnly, onEvent, chosenEvent]);
   const filtered = q || type || pillar || sector || featuredOnly;
+
+  /* Reordering (Nov 20 2026): drag a row, or use its arrows. The whole list shown is renumbered
+     1, 2, 3… and only the speakers whose number changed are saved (as drafts, like any edit). */
+  const [dragId, setDragId] = useState(null);
+  const [overId, setOverId] = useState(null);
+  const [reordering, setReordering] = useState(false);
+  const canReorder = !readOnly && !filtered && !reordering;
+  const move = async (fromId, toIndex) => {
+    const ids = shown.map((s) => s._id);
+    const from = ids.indexOf(fromId);
+    if (from < 0 || toIndex < 0 || toIndex >= ids.length || from === toIndex) return;
+    ids.splice(toIndex, 0, ids.splice(from, 1)[0]);
+    const changed = ids.map((id, i) => ({ id, order: i + 1 })).filter((x) => (list.find((s) => s._id === x.id)?.order ?? null) !== x.order);
+    if (!changed.length) return;
+    const before = data;
+    const newOrder = new Map(changed.map((x) => [x.id, x.order]));
+    setData((xs) => (xs || []).map((x) => (newOrder.has(x._id) ? { ...x, order: newOrder.get(x._id), hasDraft: true } : x)));
+    setReordering(true);
+    try {
+      for (const x of changed) await api.patch(`/cms/speaker/${x.id}?draft=1`, { order: x.order });
+      toast.success(`Order saved. ${LIVE_NOTE}`);
+    } catch (err) {
+      setData(before);
+      toast.error(err);
+      reload();
+    } finally { setReordering(false); }
+  };
 
 
 
@@ -301,7 +368,7 @@ export default function Speakers() {
       <PageHeader
         eyebrow="Website & app"
         title="Speakers"
-        description="Everyone shown on the Speakers page and in the app. Click a photo to edit; star to feature; change the number to reorder."
+        description="Everyone shown on the Speakers page and in the app. Click a speaker to edit them. Drag a speaker up or down (or use the arrows) to change the order."
         actions={<Button variant="primary" icon={Plus} disabled={readOnly} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add speaker</Button>}
       />
       <CmsBanners configured={configured} />
@@ -352,7 +419,7 @@ export default function Speakers() {
             <Card className="flex flex-col gap-3.5">
               <div className="flex flex-wrap items-baseline gap-2.5">
                 <h2 className="text-base font-bold text-[#151035]">{onEvent && chosenEvent ? `Speakers on ${chosenEvent.name}` : "All speakers"}</h2>
-                <span className="text-xs text-[#6B6688]">Click a row to edit it</span>
+                <span className="text-xs text-[#6B6688]">{filtered ? "Clear the filters to change the order" : reordering ? "Saving the order…" : "Drag to reorder · click a row to edit it"}</span>
                 {chosenEvent && (
                   <button type="button" onClick={() => setAllEvents((v) => !v)} className={`ml-auto text-[13px] font-semibold text-[#D6308C] hover:underline ${focusRing}`}>
                     {onEvent ? "Show all speakers" : `Only ${chosenEvent.name}`}
@@ -360,13 +427,29 @@ export default function Speakers() {
                 )}
               </div>
               <TableWrap>
-                <thead><tr><th>Name</th><th>Title, organisation</th><th>Type</th><th>Order</th><th>Status</th></tr></thead>
+                <thead><tr><th className="w-[92px]">Order</th><th>Name</th><th>Title, organisation</th><th>Type</th><th>Status</th></tr></thead>
                 <tbody>
-                  {shown.map((s) => (
+                  {shown.map((s, i) => (
                     <tr key={s._id} className="is-clickable" tabIndex={0}
+                      draggable={canReorder}
+                      onDragStart={(e) => { setDragId(s._id); e.dataTransfer.effectAllowed = "move"; }}
+                      onDragOver={(e) => { if (dragId && canReorder) { e.preventDefault(); if (overId !== s._id) setOverId(s._id); } }}
+                      onDrop={(e) => { e.preventDefault(); const id = dragId; setDragId(null); setOverId(null); if (id) move(id, i); }}
+                      onDragEnd={() => { setDragId(null); setOverId(null); }}
                       onClick={() => setEditing({ doc: s, creating: false, key: s._id })}
-                      onKeyDown={(e) => { if (e.key === "Enter") setEditing({ doc: s, creating: false, key: s._id }); }}
-                      style={editing?.doc?._id === s._id ? { background: "#FBE9F3", boxShadow: "inset 3px 0 0 #D6308C" } : undefined}>
+                      onKeyDown={(e) => { if (e.key === "Enter" && e.target === e.currentTarget) setEditing({ doc: s, creating: false, key: s._id }); }}
+                      style={overId === s._id && dragId !== s._id ? { boxShadow: "inset 0 3px 0 #D6308C" } : dragId === s._id ? { opacity: 0.5 }
+                        : editing?.doc?._id === s._id ? { background: "#FBE9F3", boxShadow: "inset 3px 0 0 #D6308C" } : undefined}>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <span className="flex items-center gap-0.5 text-[#8A86A0]">
+                          <GripVertical className={`h-4 w-4 ${canReorder ? "cursor-grab" : "opacity-30"}`} aria-hidden="true" />
+                          <span className="w-5 text-center text-xs font-semibold tabular-nums text-[#4A4566]">{i + 1}</span>
+                          <button type="button" aria-label={`Move ${s.name} up`} disabled={!canReorder || i === 0} onClick={() => move(s._id, i - 1)}
+                            className={`flex h-6 w-6 items-center justify-center rounded hover:bg-[#F1F0F5] disabled:opacity-30 ${focusRing}`}><ArrowUp className="h-3.5 w-3.5" /></button>
+                          <button type="button" aria-label={`Move ${s.name} down`} disabled={!canReorder || i === shown.length - 1} onClick={() => move(s._id, i + 1)}
+                            className={`flex h-6 w-6 items-center justify-center rounded hover:bg-[#F1F0F5] disabled:opacity-30 ${focusRing}`}><ArrowDown className="h-3.5 w-3.5" /></button>
+                        </span>
+                      </td>
                       <td className="font-semibold">
                         <span className="flex items-center gap-2.5">
                           {s.imageUrl ? <img src={`${s.imageUrl}?w=64&h=64&fit=crop`} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" loading="lazy" /> : <span className="h-8 w-8 shrink-0 rounded-full bg-[#F1F0F5]" aria-hidden="true" />}
@@ -375,7 +458,6 @@ export default function Speakers() {
                       </td>
                       <td className="text-[#4A4566]">{[s.title, s.company].filter(Boolean).join(", ")}</td>
                       <td>{labelOf(SPEAKER_TYPES, s.speakerType) || "Speaker"}</td>
-                      <td className="tabular-nums text-[#4A4566]">{s.order ?? "—"}</td>
                       <td>
                         <span className="flex flex-wrap items-center gap-1.5">
                           {changeState(s) ? <ChangeBadge doc={s} /> : <Badge tone="good">Live</Badge>}
@@ -396,6 +478,7 @@ export default function Speakers() {
       {editing && (
         <SpeakerDrawer
           eventList={eventList}
+          chosenEvent={chosenEvent}
           key={editing.key}
           open
           doc={editing.doc}

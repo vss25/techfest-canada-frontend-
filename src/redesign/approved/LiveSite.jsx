@@ -171,15 +171,27 @@ class LiveSite extends ApprovedSite {
     if (this.props.ptCount) v.ptCountText = `${this.props.ptCount} partners and supporters · 2026`;
     // Real speakers, partners and the Partners page's 2027 rows where there are any; the board's
     // "announced soon" cards (and honest wording) where there aren't.
+    // Nov 20 2026, "graceful when information isn't available": no sample prices while an event has no
+    // tickets on sale, a Maps link and map note only once the venue is named, a working speaker search.
+    if (this.props.ticketsSoon) {
+      v.tickets = [];
+      v.discountHint = "Tickets for this event aren't on sale yet. Leave your email on this page and we'll tell you the moment they open.";
+    }
+    if (v.c && v.c.mapsUrl) { v.mapsUrl = v.c.mapsUrl; v.mapNote = v.c.venueLine + ". Open it in Maps for directions."; }
+    v.spkSearch = (e) => this.setState({ spkQ: e.target.value });
     const spk = this.props.evSpeakers;
     const goSpk = this.go("speakers", { spkF: "All" }, "Loading speakers");
     const f = s.spkF || "All";
     if (spk) {
       // Real speakers first, then the board's "to be announced" cards, so the row keeps its shape.
       v.speakers = [...spk.slice(0, 8), ...Array.from({ length: Math.max(0, 8 - spk.length) }, () => ({}))].map((x, i) => ({ ...x, n: i + 1, open: goSpk }));
-      const shown = spk.filter((x) => f === "All" || x.kind === f);
+      // Filters are the kinds these speakers really have (the board's fixed list missed Speaker and Moderator).
+      const kinds = ["All", ...new Set(spk.map((x) => x.kind))];
+      v.spkFilters = kinds.map((label) => { const on = f === label; return { label, on, bg: on ? "#151035" : "#FFFFFF", color: on ? "#FFFFFF" : "#151035", border: on ? "#151035" : "#D4D4D8", pick: () => this.setState({ spkF: label }) }; });
+      const q = String(s.spkQ || "").trim().toLowerCase();
+      const shown = spk.filter((x) => (f === "All" || x.kind === f) && (!q || (x.name + " " + x.role).toLowerCase().includes(q)));
       v.spkList = shown.map((x, i) => ({ ...x, n: i + 1, open: () => {} }));
-      v.spkCount = `Showing ${shown.length} of ${spk.length}`;
+      v.spkCount = shown.length ? `Showing ${shown.length} of ${spk.length}` : "No speakers match that search";
       v.spkIntro = `${spk.length} ${spk.length === 1 ? "speaker" : "speakers"} confirmed so far. More are announced as the programme fills.`;
     } else {
       v.spkIntro = "Speakers are being confirmed now. The first names are announced in December 2026.";
@@ -507,7 +519,12 @@ export default function ApprovedRoute({ fallback = null }) {
         out[id] = { venue: "Venue announced with tickets", venueArea: `Downtown ${out[id].name}`, audience: "150 senior delegates", ...out[id] };
         if (!ev) return;
         const c = { ...out[id] };
-        if (ev.venueName) c.venue = ev.venueName;
+        if (ev.venueName) {
+          c.venue = ev.venueName;
+          // Nov 20 2026: a named venue replaces "venue announced soon" everywhere and gets a real Maps link.
+          c.venueLine = [ev.venueName, ev.venueAddress].filter(Boolean).join(" · ");
+          c.mapsUrl = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent([ev.venueName, ev.venueAddress].filter(Boolean).join(", "));
+        }
         if (ev.venueAddress) c.venueArea = ev.venueAddress;
         if (ev.audience) c.audience = ev.audience;
         // A fixed date shows in full, with a countdown to it; without one, the month (and no countdown).
@@ -555,6 +572,7 @@ export default function ApprovedRoute({ fallback = null }) {
       data={data}
       ptCount={partners2026 && partners2026.length ? partners2026.length : 0}
       ptDefaultYear={ptDefaultYear}
+      ticketsSoon={!types && typesFor.key === (evKey || "")}
       pt2027Groups={pt2027Groups}
       evPartners={evPartners}
       evSpeakers={evSpeakers}

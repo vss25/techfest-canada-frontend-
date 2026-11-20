@@ -178,9 +178,9 @@ export const HELP = {
     tips: ["Drafts save automatically 30 seconds after a change.", "A post for a contract's promised post ticks that task when it's marked posted.", "Settings: hashtags, voice, words to avoid and the monthly writing limit (management)."],
   },
   calendar: {
-    what: "The month's social posts and contract promises, coloured by whether they went out on time.",
-    steps: ["Click a post to open it.", "Click a day's + to plan a post for it.", "Click a dashed ◇ item to plan a post a partner bought."],
-    tips: ["Missed = its time passed two hours ago and a channel wasn't marked posted."],
+    what: "Everything planned for the month and whether it went out: TTFC's posts, emails, partners' posts about us and contract promises.",
+    steps: ["Click Add to calendar (or a day's +) and say what it is, the day, where it goes and who posts it.", "To add many at once, click Upload a spreadsheet and choose your Excel or CSV file. It shows what it will add before adding anything.", "When something has gone out (also a partner's post or email), click it, set the day it went out, paste its link and click Mark as done.", "Planned vs done at the bottom lists the month: planned day beside the day it went out."],
+    tips: ["A spreadsheet needs a Date column and a Title column; Download an example in the upload window shows the layout.", "Write a post opens the composer where Claude writes the X and Instagram versions.", "Click a dashed ◇ item to plan a post a partner bought.", "Not done = its day has passed and nobody marked it done."],
   },
   "promo-codes": {
     what: "Discount codes buyers enter at checkout.",

@@ -93,6 +93,10 @@ export function WorkspaceMenu({ onNavigate }) {
   const hit = navItemFor(pathname)?.item;
   const active = hit?.parent || hit?.to;
   const badges = useBadges();
+  // Pages that belong to one event only (India Pavilion: TTFC 2026) show while that event is chosen.
+  const { current: chosenEvent } = useAdminEvent();
+  const chosenKey = chosenEvent?.eventKey?.current || chosenEvent?.eventKey || "";
+  const forEvent = (it) => !it.onlyEvent || it.onlyEvent === chosenKey;
   if (!ws) return null;
   return (
     <aside aria-label={`${ws.label} pages`} className="flex h-full w-[252px] flex-col gap-3.5 overflow-y-auto border-r border-[#E3E0EE] bg-white px-3.5 py-5">
@@ -101,7 +105,7 @@ export function WorkspaceMenu({ onNavigate }) {
         <span className="text-xs leading-[18px] text-[#6B6688]">{isVolunteer ? "Look someone up. Read only." : ws.job}</span>
       </div>
       {ws.scoped && !isVolunteer && <EventChip />}
-      {ws.groups.map((g, gi) => (
+      {ws.groups.map((g) => ({ ...g, items: g.items.filter(forEvent) })).filter((g) => g.items.length).map((g, gi) => (
         <div key={gi} className="flex flex-col gap-0.5">
           {g.title && <span className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8A86A0]">{g.title}</span>}
           {g.scoped && ws.id === "content" && !isVolunteer && <ReadinessStrip compact />}
@@ -161,6 +165,7 @@ function TabButton({ to, label, d, on, onClick }) {
 
 export function PhoneTabs({ onSignOut }) {
   const { isManagement, isVolunteer } = useAdmin();
+  const { current: chosenEvent } = useAdminEvent();
   const { pathname } = useLocation();
   // The sheet is open for the page it was opened on, so following one of its links closes it.
   const [moreFor, setMoreFor] = useState(null);
@@ -191,7 +196,7 @@ export function PhoneTabs({ onSignOut }) {
             <div key={w.id} className="flex flex-col gap-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8A86A0]">{w.label}</span>
               <div className="flex flex-wrap gap-1.5">
-                {w.groups.flatMap((g) => g.items).map((it) => (
+                {w.groups.flatMap((g) => g.items).filter((it) => !it.onlyEvent || it.onlyEvent === (chosenEvent?.eventKey?.current || chosenEvent?.eventKey || "")).map((it) => (
                   <Link key={it.to} to={pathOf(it.to)} className={cx("rounded-full bg-[#F6F5FA] px-[11px] py-[7px] text-[13px] font-semibold text-[#151035]", RING)}>{it.label}</Link>
                 ))}
               </div>

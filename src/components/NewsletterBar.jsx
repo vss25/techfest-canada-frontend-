@@ -9,8 +9,8 @@ export default function NewsletterBar({ dark }) {
   var s3 = useState(false); var submitted = s3[0]; var setSubmitted = s3[1];
   var s4 = useState(""); var error = s4[0]; var setError = s4[1];
 
-  var bg     = dark ? "linear-gradient(135deg, rgba(122,63,209,0.18), rgba(245,166,35,0.10))" : "linear-gradient(135deg, #7a3fd1, #c4607a, #f5a623)";
-  var border = dark ? "rgba(155,135,245,0.20)" : "transparent";
+  var bg     = dark ? "linear-gradient(135deg, rgba(214,48,140,0.18), rgba(245,166,35,0.10))" : "linear-gradient(135deg, #D6308C, #c4607a, #f5a623)";
+  var border = dark ? "rgba(240,106,176,0.20)" : "transparent";
 
   
   async function handleSubmit(e) {
@@ -43,7 +43,7 @@ export default function NewsletterBar({ dark }) {
   }
 
   return (
-    <section style={{ background: dark ? "#06020f" : "#faf9ff", padding: "0 5% 5rem" }}>
+    <section style={{ background: dark ? "#151035" : "#faf9ff", padding: "0 5% 5rem" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto", background: bg, border: "1px solid " + border, borderRadius: 24, padding: "clamp(1.8rem,4vw,2.8rem) clamp(1.5rem,5vw,3.5rem)", display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 32, flexWrap: "wrap" }}>
 
         {/* Left text */}
@@ -71,7 +71,7 @@ export default function NewsletterBar({ dark }) {
                   style={{ flex: 1, minWidth: 180, padding: "12px 18px", borderRadius: 10, border: "1.5px solid rgba(255,255,255,0.30)", background: "rgba(255,255,255,0.15)", color: "#ffffff", fontSize: "0.88rem", outline: "none", backdropFilter: "blur(8px)", fontFamily: "inherit" }}
                 />
                 <motion.button type="submit" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                  style={{ padding: "12px 24px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", fontSize: "0.68rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", background: "#ffffff", color: "#7a3fd1", whiteSpace: "nowrap", flexShrink: 0 }}
+                  style={{ padding: "12px 24px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", fontSize: "0.68rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", background: "#ffffff", color: "#D6308C", whiteSpace: "nowrap", flexShrink: 0 }}
                 >
                   Notify Me
                 </motion.button>

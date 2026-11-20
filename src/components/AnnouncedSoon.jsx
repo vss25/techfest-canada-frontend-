@@ -19,9 +19,9 @@ const SU_VARS = {
   "--su-mid": "rgba(225,215,255,0.82)",
   "--su-dim": "rgba(200,185,255,0.6)",
   "--su-card": "rgba(255,255,255,0.045)",
-  "--su-line": "rgba(155,135,245,0.25)",
-  "--su-accent": "#c4adff",
-  "--su-chip": "rgba(155,135,245,0.16)",
+  "--su-line": "rgba(240,106,176,0.25)",
+  "--su-accent": "#F06AB0",
+  "--su-chip": "rgba(240,106,176,0.16)",
   "--su-input": "rgba(255,255,255,0.06)",
   "--su-err": "#ff9b9b",
 };
@@ -31,7 +31,7 @@ export default function AnnouncedSoon({ eventKey, source, title, message }) {
   const copy = stayFrom(settings);
   const tag = source || (eventKey ? `event:${eventKey}` : "website");
   return (
-    <div style={{ ...SU_VARS, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(155,135,245,0.22)", borderRadius: 24, padding: "clamp(22px, 4vw, 40px)" }}>
+    <div style={{ ...SU_VARS, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(240,106,176,0.22)", borderRadius: 24, padding: "clamp(22px, 4vw, 40px)" }}>
       <h3 style={{ margin: 0, fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.15rem, 2.6vw, 1.5rem)", fontWeight: 800, color: "#fff" }}>
         {title || "Pricing announced soon"}
       </h3>

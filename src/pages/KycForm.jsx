@@ -40,7 +40,7 @@ function FormInput({ num, label, required, dark, error, ...props }) {
   var textMain = dark ? "#ffffff" : "#0d0520";
   var inputBg = dark ? "rgba(255,255,255,0.04)" : "#ffffff";
   var inputBorder = error ? "#ff4d4d" : (dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)");
-  var focusBorder = dark ? "rgba(255,255,255,0.3)" : "rgba(122,63,209,0.5)";
+  var focusBorder = dark ? "rgba(255,255,255,0.3)" : "rgba(214,48,140,0.5)";
   return (
     <div style={{ marginBottom: "40px", background: dark ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.01)", padding: "24px", borderRadius: "16px", border: "1px solid " + (dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)") }}>
       <QuestionLabel num={num} label={label} required={required} dark={dark} />
@@ -57,7 +57,7 @@ function FormInput({ num, label, required, dark, error, ...props }) {
 function FormRadio({ num, label, required, name, options, value, onChange, dark, error }) {
   var textMain = dark ? "#ffffff" : "#0d0520";
   var inputBg = dark ? "rgba(255,255,255,0.04)" : "#ffffff";
-  var activeBg = dark ? "rgba(122,63,209,0.2)" : "rgba(122,63,209,0.08)";
+  var activeBg = dark ? "rgba(214,48,140,0.2)" : "rgba(214,48,140,0.08)";
   var inputBorder = dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
   return (
     <div style={{ marginBottom: "40px", padding: "24px", background: dark ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.01)", borderRadius: "16px", border: error ? "2px solid #ff4d4d" : "1px solid " + (dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)") }}>
@@ -65,8 +65,8 @@ function FormRadio({ num, label, required, name, options, value, onChange, dark,
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
         {options.map(function (opt) {
           return (
-            <label key={opt} style={{ display: "flex", alignItems: "center", gap: "12px", background: value === opt ? activeBg : inputBg, border: value === opt ? "2px solid #7a3fd1" : "2px solid " + inputBorder, padding: "16px 20px", borderRadius: "12px", cursor: "pointer", transition: "all 0.2s ease" }}>
-              <input type="radio" name={name} value={opt} checked={value === opt} onChange={onChange} style={{ transform: "scale(1.2)", accentColor: "#7a3fd1" }} />
+            <label key={opt} style={{ display: "flex", alignItems: "center", gap: "12px", background: value === opt ? activeBg : inputBg, border: value === opt ? "2px solid #D6308C" : "2px solid " + inputBorder, padding: "16px 20px", borderRadius: "12px", cursor: "pointer", transition: "all 0.2s ease" }}>
+              <input type="radio" name={name} value={opt} checked={value === opt} onChange={onChange} style={{ transform: "scale(1.2)", accentColor: "#D6308C" }} />
               <span style={{ fontSize: "1.05rem", color: textMain }}>{opt}</span>
             </label>
           );
@@ -83,7 +83,7 @@ function CustomDropdown({ num, label, required, name, options, value, onChange, 
   var inputBg = dark ? "rgba(255,255,255,0.04)" : "#ffffff";
   var menuBg = dark ? "#1a122e" : "#ffffff";
   var inputBorder = error ? "#ff4d4d" : (dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)");
-  var hoverBg = dark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.08)";
+  var hoverBg = dark ? "rgba(255,255,255,0.08)" : "rgba(214,48,140,0.08)";
 
   useEffect(function () {
     var handler = function (e) { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setIsOpen(false); };
@@ -112,7 +112,7 @@ function CustomDropdown({ num, label, required, name, options, value, onChange, 
       <QuestionLabel num={num} label={label} required={required} dark={dark} />
       <div style={{ position: "relative" }}>
         <div onClick={function () { setIsOpen(!isOpen); }}
-          style={{ width: "100%", background: inputBg, border: "2px solid " + (isOpen ? (dark ? "rgba(255,255,255,0.3)" : "rgba(122,63,209,0.5)") : inputBorder), color: (value && value.length > 0) ? textMain : (dark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"), padding: "18px 20px", borderRadius: "12px", fontSize: "1.05rem", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", transition: "all 0.2s" }}>
+          style={{ width: "100%", background: inputBg, border: "2px solid " + (isOpen ? (dark ? "rgba(255,255,255,0.3)" : "rgba(214,48,140,0.5)") : inputBorder), color: (value && value.length > 0) ? textMain : (dark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"), padding: "18px 20px", borderRadius: "12px", fontSize: "1.05rem", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", transition: "all 0.2s" }}>
           <span>{display}</span>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
@@ -126,7 +126,7 @@ function CustomDropdown({ num, label, required, name, options, value, onChange, 
                   onMouseEnter={function (e) { e.currentTarget.style.background = hoverBg; }}
                   onMouseLeave={function (e) { e.currentTarget.style.background = sel ? hoverBg : "transparent"; }}>
                   {multi && (
-                    <div style={{ width: "20px", height: "20px", border: "2px solid " + (sel ? "#7a3fd1" : (dark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)")), borderRadius: "4px", background: sel ? "#7a3fd1" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: "20px", height: "20px", border: "2px solid " + (sel ? "#D6308C" : (dark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)")), borderRadius: "4px", background: sel ? "#D6308C" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {sel && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                     </div>
                   )}
@@ -222,7 +222,7 @@ export default function KYCForm() {
     }
   };
 
-  var bg = dark ? "#06020f" : "#fdfbfa";
+  var bg = dark ? "#151035" : "#fdfbfa";
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.6)" : "rgba(13,5,32,0.6)";
 
@@ -315,7 +315,7 @@ export default function KYCForm() {
         {/* ═══ SUBMIT ═══ */}
         <div style={{ paddingTop: "40px", borderTop: "1px solid " + (dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)") }}>
           <button onClick={handleSubmit}
-            style={{ width: "100%", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "#fff", padding: "24px", borderRadius: "16px", border: "none", fontWeight: 800, fontSize: "1.1rem", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", letterSpacing: "1px", textTransform: "uppercase", boxShadow: "0 10px 30px rgba(122,63,209,0.25)", transition: "transform 0.2s" }}
+            style={{ width: "100%", background: "#D6308C", color: "#fff", padding: "24px", borderRadius: "16px", border: "none", fontWeight: 800, fontSize: "1.1rem", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", letterSpacing: "1px", textTransform: "uppercase", boxShadow: "0 10px 30px rgba(214,48,140,0.25)", transition: "transform 0.2s" }}
             onMouseEnter={function (e) { e.currentTarget.style.transform = "translateY(-2px)"; }}
             onMouseLeave={function (e) { e.currentTarget.style.transform = "translateY(0)"; }}
           >Submit Application</button>
@@ -326,7 +326,7 @@ export default function KYCForm() {
       {isSubmitted && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: dark ? "rgba(6,2,15,0.95)" : "rgba(253,251,250,0.95)", backdropFilter: "blur(20px)", padding: "20px" }}>
           <div style={{ textAlign: "center", maxWidth: "600px", background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", padding: "60px 40px", borderRadius: "30px", border: "1px solid " + (dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"), boxShadow: "0 20px 50px rgba(0,0,0,0.2)" }}>
-            <div style={{ background: "linear-gradient(135deg, #7a3fd1, #f5a623)", width: "100px", height: "100px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 30px" }}>
+            <div style={{ background: "#D6308C", width: "100px", height: "100px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 30px" }}>
               <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </div>
             <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "3rem", fontWeight: 900, marginBottom: "20px", color: textMain }}>Application Sent!</h2>

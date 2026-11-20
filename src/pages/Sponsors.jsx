@@ -3,9 +3,17 @@ import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import SponsorMarquee from "../components/SponsorMarquee";
+import EventScopeBar, { ScopedEmptyState, useEventScope } from "../components/EventScopeBar";
 
 export default function Sponsors() {
   const [isDark, setIsDark] = useState(false);
+  // Event scope: the shared pill selection (default: the most recent
+  // event). Null — All events chosen — is this page exactly as before.
+  const scope = useEventScope();
+  const scopedEvent = scope.scopedEvent;
+  const [scopedCount, setScopedCount] = useState(null);
+
+  useEffect(() => { setScopedCount(null); }, [scopedEvent?._id]);
 
   useEffect(() => {
     setIsDark(document.body.classList.contains("dark-mode"));
@@ -19,7 +27,7 @@ export default function Sponsors() {
     return () => obs.disconnect();
   }, []);
 
-  const bg = isDark ? "#06020f" : "#f4f0ff";
+  const bg = isDark ? "#151035" : "#f4f0ff";
   const textMain = isDark ? "#ffffff" : "#0f0520";
   const textMuted = isDark ? "rgba(200,180,255,0.8)" : "rgba(60,30,110,0.85)";
 
@@ -34,6 +42,12 @@ export default function Sponsors() {
       }}
     >
       <Navbar />
+
+      {scope.events.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "center", padding: "96px 5% 0" }}>
+          <EventScopeBar events={scope.events} scopedEvent={scopedEvent} onSelect={scope.select} />
+        </div>
+      )}
 
       <main
         style={{
@@ -59,7 +73,7 @@ export default function Sponsors() {
               fontWeight: 800,
               letterSpacing: "3px",
               textTransform: "uppercase",
-              color: isDark ? "#b99eff" : "#7a3fd1",
+              color: isDark ? "#F06AB0" : "#D6308C",
               marginBottom: "1.2rem",
             }}
           >
@@ -86,7 +100,7 @@ export default function Sponsors() {
               fontSize: "clamp(3.5rem, 8vw, 6.5rem)",
               fontWeight: 900,
               marginBottom: "2rem",
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -111,7 +125,13 @@ export default function Sponsors() {
         </motion.div>
       </main>
 
-      <SponsorMarquee dark={isDark} />
+      {scopedEvent && scopedCount === 0 ? (
+        <ScopedEmptyState event={scopedEvent} noun="sponsors" />
+      ) : (
+        <SponsorMarquee dark={isDark}
+          eventId={scopedEvent ? scopedEvent._id : null}
+          onCount={scopedEvent ? setScopedCount : undefined} />
+      )}
 
       <Footer />
     </div>

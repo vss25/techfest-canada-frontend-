@@ -1,4 +1,5 @@
 import React, { lazy, Suspense, useEffect, useState, useRef } from "react";
+import BrandHeader from "../redesign/BrandHeader";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,7 +32,8 @@ const MORE_DROPDOWN = [
 ];
 
 
-export default function Navbar() {
+/* Kept for reference until every page is moved to the brand design (redesign step 2). */
+export function LegacyNavbar() {
   const [authOpen, setAuthOpen] = useState(false);
   const [theme, setTheme] = useState("light");
   const isDark = theme === "dark";
@@ -97,13 +99,13 @@ export default function Navbar() {
 
   const dark = theme === "dark";
   const bg = dark ? "rgba(6,2,15,0.92)" : "rgba(255,255,255,0.94)";
-  const border = dark ? "rgba(155,135,245,0.12)" : "rgba(122,63,209,0.10)";
+  const border = dark ? "rgba(240,106,176,0.12)" : "rgba(214,48,140,0.10)";
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(200,185,255,0.70)" : "rgba(13,5,32,0.60)";
-  const pillBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.06)";
-  const pillBorder = dark ? "rgba(155,135,245,0.18)" : "rgba(122,63,209,0.18)";
+  const pillBg = dark ? "rgba(255,255,255,0.06)" : "rgba(214,48,140,0.06)";
+  const pillBorder = dark ? "rgba(240,106,176,0.18)" : "rgba(214,48,140,0.18)";
   const dropBg = dark ? "#0e0820" : "#ffffff";
-  const dropBorder = dark ? "rgba(155,135,245,0.18)" : "rgba(122,63,209,0.14)";
+  const dropBorder = dark ? "rgba(240,106,176,0.18)" : "rgba(214,48,140,0.14)";
   const mobileBg = dark ? "rgba(10,5,24,0.95)" : "rgba(255,255,255,0.95)";
 
   // Monochrome theme toggle colors
@@ -147,13 +149,13 @@ export default function Navbar() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 8, scale: 0.96 }}
           transition={{ duration: 0.18 }}
-          style={{ position: "absolute", top: "calc(100% + 12px)", left: "50%", transform: "translateX(-50%)", background: dropBg, border: "1px solid " + dropBorder, borderRadius: 16, padding: "8px", minWidth: 180, boxShadow: dark ? "0 8px 32px rgba(0,0,0,0.5)" : "0 8px 32px rgba(122,63,209,0.12)", zIndex: 200 }}
+          style={{ position: "absolute", top: "calc(100% + 12px)", left: "50%", transform: "translateX(-50%)", background: dropBg, border: "1px solid " + dropBorder, borderRadius: 16, padding: "8px", minWidth: 180, boxShadow: dark ? "0 8px 32px rgba(0,0,0,0.5)" : "0 8px 32px rgba(214,48,140,0.12)", zIndex: 200 }}
         >
           {items.map((d) => (
             <Link key={d.path} to={d.path} onClick={() => setOpen(false)}
-              style={{ display: "block", padding: "10px 16px", borderRadius: 10, fontFamily: "'Orbitron', sans-serif", fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", color: location.pathname === d.path ? "#7a3fd1" : textMain, textDecoration: "none", background: location.pathname === d.path ? "rgba(122,63,209,0.08)" : "transparent", transition: "background 0.15s ease" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(122,63,209,0.08)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = location.pathname === d.path ? "rgba(122,63,209,0.08)" : "transparent"; }}
+              style={{ display: "block", padding: "10px 16px", borderRadius: 10, fontFamily: "'Orbitron', sans-serif", fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", color: location.pathname === d.path ? "#D6308C" : textMain, textDecoration: "none", background: location.pathname === d.path ? "rgba(214,48,140,0.08)" : "transparent", transition: "background 0.15s ease" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(214,48,140,0.08)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = location.pathname === d.path ? "rgba(214,48,140,0.08)" : "transparent"; }}
             >{d.label}</Link>
           ))}
         </motion.div>
@@ -255,11 +257,11 @@ export default function Navbar() {
         }
 
         .tfc-nav-link { font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 11px; border-radius: 999px; text-decoration: none; transition: background 0.2s ease, color 0.2s ease; white-space: nowrap; line-height: 1; display: flex; align-items: center; height: 32px; }
-        .tfc-nav-link:hover { background: rgba(122,63,209,0.10); }
-        .tfc-nav-link.active { background: rgba(122,63,209,0.14); }
+        .tfc-nav-link:hover { background: rgba(214,48,140,0.10); }
+        .tfc-nav-link.active { background: rgba(214,48,140,0.14); }
         .tfc-drop-btn { font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 11px; border-radius: 999px; white-space: nowrap; display: flex; align-items: center; gap: 5px; background: none; border: none; cursor: pointer; transition: background 0.2s ease; line-height: 1; height: 32px; margin: 0; }
-        .tfc-drop-btn:hover { background: rgba(122,63,209,0.10); }
-        .tfc-drop-btn.active { background: rgba(122,63,209,0.14); }
+        .tfc-drop-btn:hover { background: rgba(214,48,140,0.10); }
+        .tfc-drop-btn.active { background: rgba(214,48,140,0.14); }
 
         /* ── HAMBURGER ── */
         .tfc-hamburger { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; width: 40px; height: 40px; border-radius: 12px; padding: 0; flex-shrink: 0; }
@@ -333,7 +335,7 @@ export default function Navbar() {
         .tfc-m-label { font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin: 26px 4px 10px; }
         .tfc-m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .tfc-m-tile { display: flex; align-items: center; min-height: 52px; padding: 0 14px; border-radius: 14px; font-family: 'Orbitron', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; text-decoration: none; border: 1px solid ${pillBorder}; transition: background 0.15s ease; }
-        .tfc-m-tile:active { background: rgba(122,63,209,0.14) !important; }
+        .tfc-m-tile:active { background: rgba(214,48,140,0.14) !important; }
       `}</style>
 
       <nav ref={navRef} className="tfc-navbar-wrap" style={{ background: bg, borderBottom: "1px solid " + border }}>
@@ -436,8 +438,8 @@ export default function Navbar() {
                       track("pwa_guide_open", { where: "drawer" });
                     }}
                     style={{ display: "flex", alignItems: "center", gap: 12, margin: "8px 0 6px", padding: "12px 14px", borderRadius: 16, textDecoration: "none", color: textMain,
-                      background: dark ? "linear-gradient(135deg, rgba(122,63,209,0.28), rgba(245,166,35,0.12))" : "linear-gradient(135deg, rgba(122,63,209,0.10), rgba(245,166,35,0.08))",
-                      border: "1px solid " + (dark ? "rgba(155,135,245,0.35)" : "rgba(122,63,209,0.25)") }}
+                      background: dark ? "linear-gradient(135deg, rgba(214,48,140,0.28), rgba(245,166,35,0.12))" : "linear-gradient(135deg, rgba(214,48,140,0.10), rgba(245,166,35,0.08))",
+                      border: "1px solid " + (dark ? "rgba(240,106,176,0.35)" : "rgba(214,48,140,0.25)") }}
                   >
                     <img src="/app/icons/icon-96.png" alt="" width={44} height={44} style={{ borderRadius: 11, flexShrink: 0 }} />
                     <span style={{ flex: 1, minWidth: 0 }}>
@@ -454,7 +456,7 @@ export default function Navbar() {
                     <motion.div key={item.path} variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
                       <Link to={item.path} onClick={() => setMobileOpen(false)}
                         className={"tfc-m-row" + (active ? " active" : "")}
-                        style={{ color: active ? "#7a3fd1" : textMain }}
+                        style={{ color: active ? "#D6308C" : textMain }}
                       >
                         {item.label}
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -471,7 +473,7 @@ export default function Navbar() {
                         const active = location.pathname === d.path;
                         return (
                           <Link key={d.path} to={d.path} onClick={() => setMobileOpen(false)} className="tfc-m-tile"
-                            style={{ color: active ? "#7a3fd1" : textMain, background: active ? "rgba(122,63,209,0.10)" : pillBg }}
+                            style={{ color: active ? "#D6308C" : textMain, background: active ? "rgba(214,48,140,0.10)" : pillBg }}
                           >{d.label}</Link>
                         );
                       })}
@@ -505,4 +507,9 @@ export default function Navbar() {
       )}
     </>
   );
+}
+
+/* Redesign step 2: the older pages get the approved navy header too (fixed, as they expect). */
+export default function Navbar() {
+  return <div className="tb" style={{ background: "transparent" }}><BrandHeader fixed /></div>;
 }

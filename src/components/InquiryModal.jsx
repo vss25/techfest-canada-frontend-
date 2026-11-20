@@ -46,16 +46,16 @@ export default function InquiryModal({ isOpen, onClose }) {
           position: relative;
           width: 100%; max-width: 520px;
           background: rgba(16,8,36,0.97);
-          border: 1px solid rgba(122,63,209,0.35);
+          border: 1px solid rgba(214,48,140,0.35);
           border-radius: 24px;
           padding: 40px;
-          box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 60px rgba(122,63,209,0.12);
+          box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 60px rgba(214,48,140,0.12);
           animation: inqSlideUp 0.3s ease;
           overflow: hidden;
         }
         body:not(.dark-mode) .inq-modal {
           background: rgba(255,255,255,0.98);
-          border-color: rgba(122,63,209,0.20);
+          border-color: rgba(214,48,140,0.20);
           box-shadow: 0 30px 80px rgba(0,0,0,0.15);
         }
         @keyframes inqSlideUp { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:translateY(0) } }
@@ -64,28 +64,28 @@ export default function InquiryModal({ isOpen, onClose }) {
           content: '';
           position: absolute; top: -80px; right: -80px;
           width: 240px; height: 240px; border-radius: 50%;
-          background: radial-gradient(circle, rgba(122,63,209,0.18) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(214,48,140,0.18) 0%, transparent 70%);
           pointer-events: none;
         }
 
         .inq-close {
           position: absolute; top: 16px; right: 16px;
           width: 36px; height: 36px; border-radius: 50%;
-          background: rgba(122,63,209,0.12); border: 1px solid rgba(122,63,209,0.25);
+          background: rgba(214,48,140,0.12); border: 1px solid rgba(214,48,140,0.25);
           display: flex; align-items: center; justify-content: center;
-          cursor: pointer; color: #b99eff; transition: background 0.2s;
+          cursor: pointer; color: #F06AB0; transition: background 0.2s;
         }
-        .inq-close:hover { background: rgba(122,63,209,0.28); }
-        body:not(.dark-mode) .inq-close { color: #7a3fd1; }
+        .inq-close:hover { background: rgba(214,48,140,0.28); }
+        body:not(.dark-mode) .inq-close { color: #D6308C; }
 
         .inq-eyebrow {
           display: inline-flex; align-items: center; gap: 6px;
-          background: rgba(122,63,209,0.12); border: 1px solid rgba(122,63,209,0.28);
+          background: rgba(214,48,140,0.12); border: 1px solid rgba(214,48,140,0.28);
           border-radius: 999px; padding: 4px 12px;
           font-size: 0.68rem; font-weight: 700; letter-spacing: 1.2px;
-          text-transform: uppercase; color: #b99eff; margin-bottom: 14px;
+          text-transform: uppercase; color: #F06AB0; margin-bottom: 14px;
         }
-        body:not(.dark-mode) .inq-eyebrow { color: #7a3fd1; }
+        body:not(.dark-mode) .inq-eyebrow { color: #D6308C; }
         .inq-eyebrow-dot {
           width: 5px; height: 5px; border-radius: 50%;
           background: #f5a623; box-shadow: 0 0 5px #f5a623;
@@ -115,8 +115,8 @@ export default function InquiryModal({ isOpen, onClose }) {
         body:not(.dark-mode) .inq-label { color: #6a5a8a; }
 
         .inq-input, .inq-textarea {
-          background: rgba(122,63,209,0.07);
-          border: 1px solid rgba(122,63,209,0.22);
+          background: rgba(214,48,140,0.07);
+          border: 1px solid rgba(214,48,140,0.22);
           border-radius: 10px; padding: 11px 14px;
           color: #fff; font-size: 0.88rem;
           outline: none; transition: border-color 0.2s, background 0.2s;
@@ -125,20 +125,20 @@ export default function InquiryModal({ isOpen, onClose }) {
         }
         body:not(.dark-mode) .inq-input,
         body:not(.dark-mode) .inq-textarea {
-          background: rgba(122,63,209,0.04);
-          border-color: rgba(122,63,209,0.18);
+          background: rgba(214,48,140,0.04);
+          border-color: rgba(214,48,140,0.18);
           color: #2d1060;
         }
         .inq-input::placeholder, .inq-textarea::placeholder { color: rgba(160,140,200,0.45); }
         .inq-input:focus, .inq-textarea:focus {
-          border-color: rgba(122,63,209,0.55);
-          background: rgba(122,63,209,0.12);
+          border-color: rgba(214,48,140,0.55);
+          background: rgba(214,48,140,0.12);
         }
         .inq-textarea { min-height: 100px; }
 
         .inq-btn {
           width: 100%; padding: 14px;
-          background: linear-gradient(135deg, #7a3fd1, #f5a623);
+          background: #D6308C;
           border: none; border-radius: 12px;
           color: white; font-weight: 800; font-size: 0.88rem;
           letter-spacing: 0.5px; cursor: pointer;

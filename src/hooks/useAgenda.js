@@ -13,7 +13,8 @@ import { SESSIONS } from "../data/agenda";
 
 const QUERY = `*[_type == "session" && !(_id in path("drafts.**"))] | order(day asc, time asc) {
   _id, sessionId, day, time, endTime, title, type, format, featured, isBreak,
-  pillar, sector, speakers[]{ name, org, tentative }, moderator{ name, org }, stage, description
+  pillar, sector, speakers[]{ name, org, tentative }, moderator{ name, org }, stage, description,
+  "eventIds": events[]._ref
 }`;
 
 const clean = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== ""));
@@ -38,6 +39,9 @@ export function toSession(d) {
     moderator: person(d.moderator) || undefined,
     stage: d.stage,
     description: d.description,
+    // Which events this session belongs to (Sanity `events` refs); used by
+    // the listing pages' event scope. Other consumers ignore the field.
+    eventIds: Array.isArray(d.eventIds) ? d.eventIds : undefined,
   });
 }
 

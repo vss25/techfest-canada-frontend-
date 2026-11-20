@@ -70,8 +70,21 @@ export const ticketsOpen = (ev, now = new Date()) => ["coming-up", "live"].inclu
 const EVENT_FIELDS = `
   _id, name, "eventKey": eventKey.current, city, type, year, startDate, endDate,
   venueName, venueAddress, heroImage, heroVideoUrl, citySkyline, description,
-  statusNote, pricingAnnounced, gallery, "brochureUrl": brochure.asset->url
+  statusNote, pricingAnnounced, gallery, "brochureUrl": brochure.asset->url,
+  photoCredit, theme, tagline, formatLine, audience, pageMode, knownSoFar, comingNext,
+  notifyHeading, showReport
 `;
+
+/* Which version of the event page shows (redesign step 1). Staff choose on the event in
+   Admin › Website content › Event pages: "full", "coming-soon", or "auto" (the default):
+   the full page once the event has sessions of its own, else the coming-soon page.
+   A past event always gets the full page (its highlights). */
+export function eventPageMode(ev, ownSessions = [], now = new Date()) {
+  if (!ev) return "coming-soon";
+  if (ev.pageMode === "full" || ev.pageMode === "coming-soon") return ev.pageMode;
+  if (lifecycleOf(ev, now) === "past") return "full";
+  return (ownSessions || []).length ? "full" : "coming-soon";
+}
 
 let eventsPromise = null;
 export function fetchEvents() {
@@ -188,15 +201,15 @@ const SCOPED = `(!defined(events) || count(events) == 0 || $eventId in events[].
 
 export function fetchEventContent(eventId) {
   const sessions = client.fetch(
-    `*[_type == "session" && ${SCOPED}]{ _id, title, day, time, endTime, type, format, featured, isBreak, stage, description, speakers, moderator } | order(day asc, time asc)`,
+    `*[_type == "session" && ${SCOPED}]{ _id, title, day, time, endTime, type, format, featured, isBreak, stage, description, speakers, moderator, "eventIds": events[]._ref } | order(day asc, time asc)`,
     { eventId }
   );
   const speakers = client.fetch(
-    `*[_type == "speaker" && ${SCOPED}]{ _id, name, title, company, bio, shortBio, fullBio, image, bannerImage, featured, speakerType, linkedin, twitter, website } | order(featured desc, order asc)`,
+    `*[_type == "speaker" && ${SCOPED}]{ _id, name, title, company, bio, shortBio, fullBio, image, bannerImage, featured, speakerType, linkedin, twitter, website, "eventIds": events[]._ref } | order(featured desc, order asc)`,
     { eventId }
   );
   const partners = client.fetch(
-    `*[_type == "partner" && active != false && showOnWebsite != false && ${SCOPED}]{ _id, name, category, logo, url, logoScale } | order(order asc)`,
+    `*[_type == "partner" && active != false && showOnWebsite != false && ${SCOPED}]{ _id, name, category, logo, url, logoScale, matrixGroup, eventRows } | order(order asc)`,
     { eventId }
   );
   return Promise.all([sessions, speakers, partners]).then(([s, sp, p]) => ({

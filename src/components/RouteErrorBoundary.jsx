@@ -35,7 +35,7 @@ class Boundary extends Component {
         <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700 }}>This page didn’t load.</p>
         <p style={{ margin: 0, opacity: 0.75 }}>Check your connection, then reload the page.</p>
         <button type="button" onClick={() => window.location.reload()}
-          style={{ marginTop: 6, padding: "12px 28px", borderRadius: 999, border: 0, cursor: "pointer", color: "#fff", fontFamily: "'Orbitron', sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", background: "linear-gradient(135deg, #7a3fd1, #f5a623)" }}>
+          style={{ marginTop: 6, padding: "12px 28px", borderRadius: 999, border: 0, cursor: "pointer", color: "#fff", fontFamily: "'Orbitron', sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", background: "#D6308C" }}>
           Reload
         </button>
       </div>

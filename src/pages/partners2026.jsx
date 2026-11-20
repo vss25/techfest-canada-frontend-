@@ -70,8 +70,8 @@ function ContactModal({ open, onClose, dark, accent, orange }) {
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.65)" : "rgba(13,5,32,0.65)";
   var modalBg = dark ? "#0e0820" : "#ffffff";
-  var inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)";
-  var inputBorder = dark ? "rgba(255,255,255,0.12)" : "rgba(122,63,209,0.18)";
+  var inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(214,48,140,0.04)";
+  var inputBorder = dark ? "rgba(255,255,255,0.12)" : "rgba(214,48,140,0.18)";
 
   // Reset when modal closes
   useEffect(function () {
@@ -162,8 +162,8 @@ function ContactModal({ open, onClose, dark, accent, orange }) {
               maxHeight: "92vh", overflow: "auto",
               background: modalBg,
               borderRadius: 24,
-              border: dark ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(122,63,209,0.14)",
-              boxShadow: dark ? "0 28px 80px rgba(0,0,0,0.6)" : "0 28px 80px rgba(122,63,209,0.15)",
+              border: dark ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(214,48,140,0.14)",
+              boxShadow: dark ? "0 28px 80px rgba(0,0,0,0.6)" : "0 28px 80px rgba(214,48,140,0.15)",
               position: "relative",
             }}
           >
@@ -316,7 +316,7 @@ function ContactModal({ open, onClose, dark, accent, orange }) {
                       letterSpacing: "1.5px",
                       textTransform: "uppercase",
                       cursor: status === "sending" ? "wait" : "pointer",
-                      boxShadow: "0 8px 24px rgba(122,63,209,0.35)",
+                      boxShadow: "0 8px 24px rgba(214,48,140,0.35)",
                       opacity: status === "sending" ? 0.7 : 1,
                       transition: "transform 0.2s, opacity 0.2s",
                       marginTop: 4,
@@ -364,12 +364,12 @@ export default function Partners2026() {
   var heroY = useTransform(scrollData.scrollYProgress, [0, 1], ["0%", "30%"]);
   var heroOpacity = useTransform(scrollData.scrollYProgress, [0, 0.7], [1, 0]);
 
-  var bg = dark ? "#06020f" : "#ffffff";
+  var bg = dark ? "#151035" : "#ffffff";
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMuted = dark ? "rgba(255,255,255,0.62)" : "rgba(13,5,32,0.62)";
-  var accent = dark ? "#b99eff" : "#7a3fd1";
+  var accent = dark ? "#F06AB0" : "#D6308C";
   var orange = dark ? "#f5a623" : "#d98a14";
-  var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.10)";
+  var borderCol = dark ? "rgba(255,255,255,0.08)" : "rgba(214,48,140,0.10)";
 
   var brandGradient = "linear-gradient(135deg, " + accent + ", " + orange + ")";
 
@@ -411,8 +411,8 @@ export default function Partners2026() {
           pointer-events: none; opacity: 0.5;
         }
         :root {
-          --aurora-white: #ffffff; --aurora-black: #06020f; --aurora-transparent: transparent;
-          --aurora-purple: #7a3fd1; --aurora-violet: #9b57e8; --aurora-lilac: #c4a0f5;
+          --aurora-white: #ffffff; --aurora-black: #151035; --aurora-transparent: transparent;
+          --aurora-purple: #D6308C; --aurora-violet: #9b57e8; --aurora-lilac: #c4a0f5;
           --aurora-orange: #f5a623; --aurora-amber: #f7c15e;
         }
         @keyframes tfc-aurora { from { background-position: 50% 50%, 50% 50%; } to { background-position: 350% 50%, 350% 50%; } }
@@ -468,9 +468,9 @@ export default function Partners2026() {
             : "linear-gradient(180deg, #0d0520 0%, rgba(13,5,32,0.55) 100%)",
           ["--tfc-silver-filter"]: dark
             ? "drop-shadow(0px 8px 18px rgba(185,158,255,0.15)) drop-shadow(0px 2px 4px rgba(0,0,0,0.4))"
-            : "drop-shadow(0px 8px 18px rgba(122,63,209,0.12)) drop-shadow(0px 2px 4px rgba(122,63,209,0.06))",
+            : "drop-shadow(0px 8px 18px rgba(214,48,140,0.12)) drop-shadow(0px 2px 4px rgba(214,48,140,0.06))",
           ["--tfc-grid-line"]: dark ? "rgba(255,255,255,0.05)" : "rgba(13,5,32,0.05)",
-          ["--tfc-divider-color"]: dark ? "rgba(185,158,255,0.35)" : "rgba(122,63,209,0.35)",
+          ["--tfc-divider-color"]: dark ? "rgba(185,158,255,0.35)" : "rgba(214,48,140,0.35)",
         }}
       >
 
@@ -483,8 +483,8 @@ export default function Partners2026() {
             padding: "clamp(120px, 16vw, 160px) 5% clamp(32px, 4vw, 48px)",
             overflow: "hidden",
             background: dark
-              ? "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.14) 0%, transparent 70%)"
-              : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.07) 0%, transparent 70%)",
+              ? "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(214,48,140,0.14) 0%, transparent 70%)"
+              : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(214,48,140,0.07) 0%, transparent 70%)",
           }}
         >
           <div className="tfc-grid-backdrop" />
@@ -494,7 +494,7 @@ export default function Partners2026() {
           <div style={{
             position: "absolute", inset: 0, pointerEvents: "none",
             background: dark
-              ? "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 30%, #06020f 100%)"
+              ? "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 30%, #151035 100%)"
               : "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 30%, #ffffff 100%)",
           }} />
           <div className="tfc-film-grain" />
@@ -533,12 +533,12 @@ export default function Partners2026() {
                 padding: "clamp(40px, 6vw, 64px)",
                 borderRadius: 24,
                 background: dark
-                  ? "linear-gradient(135deg, rgba(122,63,209,0.12), rgba(245,166,35,0.06))"
-                  : "linear-gradient(135deg, rgba(122,63,209,0.07), rgba(245,166,35,0.04))",
+                  ? "linear-gradient(135deg, rgba(214,48,140,0.12), rgba(245,166,35,0.06))"
+                  : "linear-gradient(135deg, rgba(214,48,140,0.07), rgba(245,166,35,0.04))",
                 border: "1px solid " + borderCol,
                 boxShadow: dark
                   ? "0 30px 80px -20px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.05)"
-                  : "0 30px 80px -20px rgba(122,63,209,0.18), inset 0 1px 1px rgba(255,255,255,0.8)",
+                  : "0 30px 80px -20px rgba(214,48,140,0.18), inset 0 1px 1px rgba(255,255,255,0.8)",
               }}
             >
               <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "3px", textTransform: "uppercase", color: orange, marginBottom: 18 }}>
@@ -561,7 +561,7 @@ export default function Partners2026() {
                     background: brandGradient, color: "#fff",
                     fontFamily: "'Orbitron', sans-serif", fontSize: "0.7rem", fontWeight: 800,
                     letterSpacing: "1.5px", textTransform: "uppercase", textDecoration: "none",
-                    boxShadow: "0 12px 28px rgba(122,63,209,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
+                    boxShadow: "0 12px 28px rgba(214,48,140,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
                   }}
                 >View Partnerships</motion.a>
 

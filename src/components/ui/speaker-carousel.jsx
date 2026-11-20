@@ -27,7 +27,7 @@ export function SpeakerCarousel({ speakers = [] }) {
             borderRadius: 28,
             overflow: "hidden",
             flexShrink: 0,
-            boxShadow: "0 0 0 1px rgba(122,63,209,0.3), 0 25px 60px rgba(0,0,0,0.5), 0 0 60px rgba(122,63,209,0.15)",
+            boxShadow: "0 0 0 1px rgba(214,48,140,0.3), 0 25px 60px rgba(0,0,0,0.5), 0 0 60px rgba(214,48,140,0.15)",
             position: "relative",
           }}
         >
@@ -61,23 +61,23 @@ export function SpeakerCarousel({ speakers = [] }) {
             transition={{ duration: 0.4, ease: "easeInOut" }}
             style={{
               background: "rgba(22,12,45,0.92)",
-              border: "1px solid rgba(122,63,209,0.30)",
+              border: "1px solid rgba(214,48,140,0.30)",
               borderRadius: 24,
               padding: "40px 40px 36px",
               marginLeft: -64,
               zIndex: 10,
               flex: 1,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.45), 0 0 40px rgba(122,63,209,0.08)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.45), 0 0 40px rgba(214,48,140,0.08)",
               backdropFilter: "blur(16px)",
             }}
           >
             {/* Badge */}
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 6,
-              background: "rgba(122,63,209,0.15)", border: "1px solid rgba(122,63,209,0.30)",
+              background: "rgba(214,48,140,0.15)", border: "1px solid rgba(214,48,140,0.30)",
               borderRadius: 999, padding: "4px 14px", marginBottom: 20,
               fontSize: "0.7rem", fontWeight: 700, letterSpacing: "1.2px",
-              textTransform: "uppercase", color: "#b99eff",
+              textTransform: "uppercase", color: "#F06AB0",
             }}>
               <span style={{ width:6, height:6, borderRadius:"50%", background:"#f5a623", boxShadow:"0 0 5px #f5a623" }} />
               Featured Speaker
@@ -94,7 +94,7 @@ export function SpeakerCarousel({ speakers = [] }) {
             </p>
 
             {/* Divider */}
-            <div style={{ width: 40, height: 2, background: "linear-gradient(90deg,#7a3fd1,#f5a623)", borderRadius: 2, marginBottom: 20 }} />
+            <div style={{ width: 40, height: 2, background: "#D6308C", borderRadius: 2, marginBottom: 20 }} />
 
             {/* Bio */}
             {current.bio && (
@@ -108,7 +108,7 @@ export function SpeakerCarousel({ speakers = [] }) {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 28 }}>
                 {current.topics.map((topic, i) => (
                   <span key={i} style={{
-                    background: "rgba(122,63,209,0.12)", border: "1px solid rgba(122,63,209,0.25)",
+                    background: "rgba(214,48,140,0.12)", border: "1px solid rgba(214,48,140,0.25)",
                     borderRadius: 999, padding: "3px 12px", fontSize: "0.72rem",
                     fontWeight: 600, color: "#c4a8ff", letterSpacing: "0.4px",
                   }}>
@@ -122,27 +122,27 @@ export function SpeakerCarousel({ speakers = [] }) {
             <div style={{ display: "flex", gap: 10 }}>
               {current.linkedinUrl && (
                 <a href={current.linkedinUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ width:40, height:40, borderRadius:"50%", background:"rgba(122,63,209,0.2)", border:"1px solid rgba(122,63,209,0.4)", display:"flex", alignItems:"center", justifyContent:"center", color:"#c4a8ff", transition:"all 0.2s" }}
-                  onMouseEnter={e => e.currentTarget.style.background="rgba(122,63,209,0.45)"}
-                  onMouseLeave={e => e.currentTarget.style.background="rgba(122,63,209,0.2)"}
+                  style={{ width:40, height:40, borderRadius:"50%", background:"rgba(214,48,140,0.2)", border:"1px solid rgba(214,48,140,0.4)", display:"flex", alignItems:"center", justifyContent:"center", color:"#c4a8ff", transition:"all 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.background="rgba(214,48,140,0.45)"}
+                  onMouseLeave={e => e.currentTarget.style.background="rgba(214,48,140,0.2)"}
                 >
                   <Linkedin size={16} />
                 </a>
               )}
               {current.twitterUrl && (
                 <a href={current.twitterUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ width:40, height:40, borderRadius:"50%", background:"rgba(122,63,209,0.2)", border:"1px solid rgba(122,63,209,0.4)", display:"flex", alignItems:"center", justifyContent:"center", color:"#c4a8ff", transition:"all 0.2s" }}
-                  onMouseEnter={e => e.currentTarget.style.background="rgba(122,63,209,0.45)"}
-                  onMouseLeave={e => e.currentTarget.style.background="rgba(122,63,209,0.2)"}
+                  style={{ width:40, height:40, borderRadius:"50%", background:"rgba(214,48,140,0.2)", border:"1px solid rgba(214,48,140,0.4)", display:"flex", alignItems:"center", justifyContent:"center", color:"#c4a8ff", transition:"all 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.background="rgba(214,48,140,0.45)"}
+                  onMouseLeave={e => e.currentTarget.style.background="rgba(214,48,140,0.2)"}
                 >
                   <Twitter size={16} />
                 </a>
               )}
               {current.websiteUrl && (
                 <a href={current.websiteUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ width:40, height:40, borderRadius:"50%", background:"rgba(122,63,209,0.2)", border:"1px solid rgba(122,63,209,0.4)", display:"flex", alignItems:"center", justifyContent:"center", color:"#c4a8ff", transition:"all 0.2s" }}
-                  onMouseEnter={e => e.currentTarget.style.background="rgba(122,63,209,0.45)"}
-                  onMouseLeave={e => e.currentTarget.style.background="rgba(122,63,209,0.2)"}
+                  style={{ width:40, height:40, borderRadius:"50%", background:"rgba(214,48,140,0.2)", border:"1px solid rgba(214,48,140,0.4)", display:"flex", alignItems:"center", justifyContent:"center", color:"#c4a8ff", transition:"all 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.background="rgba(214,48,140,0.45)"}
+                  onMouseLeave={e => e.currentTarget.style.background="rgba(214,48,140,0.2)"}
                 >
                   <Globe size={16} />
                 </a>
@@ -181,9 +181,9 @@ export function SpeakerCarousel({ speakers = [] }) {
       {/* ── NAV DOTS ── */}
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 16, marginTop: 32 }}>
         <button onClick={handlePrev} aria-label="Previous"
-          style={{ width:44, height:44, borderRadius:"50%", background:"rgba(122,63,209,0.15)", border:"1px solid rgba(122,63,209,0.35)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"#c4a8ff" }}
-          onMouseEnter={e => e.currentTarget.style.background="rgba(122,63,209,0.35)"}
-          onMouseLeave={e => e.currentTarget.style.background="rgba(122,63,209,0.15)"}
+          style={{ width:44, height:44, borderRadius:"50%", background:"rgba(214,48,140,0.15)", border:"1px solid rgba(214,48,140,0.35)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"#c4a8ff" }}
+          onMouseEnter={e => e.currentTarget.style.background="rgba(214,48,140,0.35)"}
+          onMouseLeave={e => e.currentTarget.style.background="rgba(214,48,140,0.15)"}
         >
           <ChevronLeft size={20} />
         </button>
@@ -191,15 +191,15 @@ export function SpeakerCarousel({ speakers = [] }) {
         <div style={{ display:"flex", gap:8 }}>
           {speakers.map((_, i) => (
             <button key={i} onClick={() => setCurrentIndex(i)} aria-label={`Speaker ${i+1}`}
-              style={{ width: i === currentIndex ? 24 : 10, height:10, borderRadius:999, border:"none", cursor:"pointer", transition:"all 0.3s", background: i === currentIndex ? "#f5a623" : "rgba(122,63,209,0.4)" }}
+              style={{ width: i === currentIndex ? 24 : 10, height:10, borderRadius:999, border:"none", cursor:"pointer", transition:"all 0.3s", background: i === currentIndex ? "#f5a623" : "rgba(214,48,140,0.4)" }}
             />
           ))}
         </div>
 
         <button onClick={handleNext} aria-label="Next"
-          style={{ width:44, height:44, borderRadius:"50%", background:"rgba(122,63,209,0.15)", border:"1px solid rgba(122,63,209,0.35)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"#c4a8ff" }}
-          onMouseEnter={e => e.currentTarget.style.background="rgba(122,63,209,0.35)"}
-          onMouseLeave={e => e.currentTarget.style.background="rgba(122,63,209,0.15)"}
+          style={{ width:44, height:44, borderRadius:"50%", background:"rgba(214,48,140,0.15)", border:"1px solid rgba(214,48,140,0.35)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"#c4a8ff" }}
+          onMouseEnter={e => e.currentTarget.style.background="rgba(214,48,140,0.35)"}
+          onMouseLeave={e => e.currentTarget.style.background="rgba(214,48,140,0.15)"}
         >
           <ChevronRight size={20} />
         </button>

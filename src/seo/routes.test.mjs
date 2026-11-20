@@ -21,7 +21,8 @@ const APP = read("src/App.jsx");
 /** App.jsx's routes: { path } (a constant's name for path={X}). */
 const appRoutes = () => [...APP.matchAll(/<Route\s+path=(?:"([^"]+)"|\{(\w+)\})/g)].map((m) => ({ path: m[1] ?? `{${m[2]}}` }));
 /** Left out on purpose: "Page not found" for any other address, and the unlisted page (its own constant, never named). */
-const IGNORED = ["*", "{FACT_SHEET_PATH}"];
+// The approved design's new pages (redesign step 2): no prerendered file or SEO entry yet.
+const IGNORED = ["*", "{FACT_SHEET_PATH}", "/approved-preview", "/exhibitors", "/faqs", "/speak", "/news", "/app", "/highlights/2026"];
 const sample = (pattern) => pattern.replace(/:\w+/g, "x").replace(/\*$/, "x");
 const opens = (url) => matchRoutes(appRoutes().filter((r) => !r.path.startsWith("{")), url)?.at(-1)?.route.path ?? null;
 

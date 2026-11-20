@@ -55,7 +55,7 @@ export function GradientRule({ style }) {
         width: 84,
         height: 3,
         borderRadius: 2,
-        background: "linear-gradient(90deg, #7a3fd1, var(--brand-orange, #f5a623))",
+        background: "linear-gradient(90deg, #D6308C, var(--brand-orange, #f5a623))",
         transformOrigin: "left center",
         ...style,
       }}

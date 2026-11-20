@@ -1,3 +1,4 @@
+import BrandHeader from "../redesign/BrandHeader";
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { track } from "../lib/pwaEvents";
@@ -68,7 +69,8 @@ function useDarkMode() {
   return dark;
 }
 
-export default function SiteHeader({ homeEvent = null } = {}) {
+/* Kept for reference until every page is moved to the brand design (redesign step 2). */
+export function LegacySiteHeader({ homeEvent = null } = {}) {
   const location = useLocation();
   const { events } = useEvents();
   const dark = useDarkMode();
@@ -159,11 +161,11 @@ export default function SiteHeader({ homeEvent = null } = {}) {
   }, []);
 
   const bg = dark ? "rgba(6,2,15,0.92)" : "rgba(255,255,255,0.94)";
-  const border = dark ? "rgba(155,135,245,0.14)" : "rgba(122,63,209,0.10)";
+  const border = dark ? "rgba(240,106,176,0.14)" : "rgba(214,48,140,0.10)";
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(200,185,255,0.72)" : "rgba(13,5,32,0.62)";
   const dropBg = dark ? "#0e0820" : "#ffffff";
-  const pillBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.06)";
+  const pillBg = dark ? "rgba(255,255,255,0.06)" : "rgba(214,48,140,0.06)";
 
   // The ONE gold button: contextual Tickets. It follows the pill's event —
   // the page's own event in context, else the selected/defaulted next event —
@@ -221,9 +223,9 @@ export default function SiteHeader({ homeEvent = null } = {}) {
           box-shadow: 0 18px 48px rgba(10,2,30,0.35); }
         .sh-drop-label { font-family: 'Orbitron', sans-serif; font-size: 0.58rem; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; margin: 10px 8px 6px; }
         .sh-drop-row { display: flex; flex-direction: column; gap: 2px; padding: 9px 10px; border-radius: 12px; text-decoration: none; }
-        .sh-drop-row:hover { background: rgba(122,63,209,0.09); }
+        .sh-drop-row:hover { background: rgba(214,48,140,0.09); }
         .sh-city-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 12px; text-decoration: none; font-weight: 700; }
-        .sh-city-row:hover { background: rgba(122,63,209,0.09); }
+        .sh-city-row:hover { background: rgba(214,48,140,0.09); }
         /* The middle group must sit INLINE in the bar. src/styles.css carries a legacy
            global rule, nav:not(.tfc-nav), that restyles any bare <nav> as a full-width
            sticky bar (background: var(--bg-nav) — near-white in light mode — height: 80px,
@@ -237,8 +239,8 @@ export default function SiteHeader({ homeEvent = null } = {}) {
         .sh-mid ul { display: flex; align-items: center; gap: 2px; list-style: none; margin: 0; padding: 4px 5px; border-radius: 999px;
           min-width: 0; flex-wrap: nowrap; overflow: hidden; }
         .sh-link { font-family: 'Orbitron', sans-serif; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 12px; border-radius: 999px; text-decoration: none; white-space: nowrap; }
-        .sh-link:hover { background: rgba(122,63,209,0.10); }
-        .sh-link.active { background: rgba(122,63,209,0.15); }
+        .sh-link:hover { background: rgba(214,48,140,0.10); }
+        .sh-link.active { background: rgba(214,48,140,0.15); }
         .sh-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
         .sh-gold { display: inline-flex; align-items: center; padding: 10px 20px; border-radius: 999px; border: none; cursor: pointer; text-decoration: none;
           background: linear-gradient(135deg, #f7b733 0%, #f5a623 55%, #e8890c 100%); color: #1d1204;
@@ -246,7 +248,7 @@ export default function SiteHeader({ homeEvent = null } = {}) {
           box-shadow: 0 6px 18px rgba(245,166,35,0.35); }
         .sh-login { background: none; border: none; cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: 0.64rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 6px; }
         .sh-avatar { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;
-          background: linear-gradient(135deg, #7a3fd1, #f5a623); color: #fff; }
+          background: #D6308C; color: #fff; }
         .sh-burger { display: none; width: 40px; height: 40px; border-radius: 12px; align-items: center; justify-content: center; cursor: pointer; }
         .sh-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9998; overflow-y: auto; padding: 10px 20px 28px; }
         .sh-sheet a { display: block; padding: 13px 4px; text-decoration: none; font-family: 'Orbitron', sans-serif; font-size: 0.82rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
@@ -400,3 +402,9 @@ export default function SiteHeader({ homeEvent = null } = {}) {
   );
 }
 
+
+/* Redesign step 2: every page gets the approved navy header. It stays fixed at the top
+   because the older page bodies leave room for a fixed header. */
+export default function SiteHeader({ homeEvent = null } = {}) {
+  return <div className="tb" style={{ background: "transparent" }}><BrandHeader ev={homeEvent} fixed /></div>;
+}

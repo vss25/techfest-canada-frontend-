@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { STAY_UPDATED_PATH, eventOver } from "../lib/eventOver";
+import { routeFor } from "../redesign/approved/liveShared";
 
 export default function TicketBar() {
   const location = useLocation();
@@ -9,6 +10,8 @@ export default function TicketBar() {
   const path = location.pathname.replace(/\/+$/, "").toLowerCase() || "/";
   // A Catalyst Awards winner's page (/awards/winners/<id>) is a focused page like /share/linkedin: no bar.
   if (path.startsWith("/awards/winners/")) return null;
+  // The approved design's pages have their own ticket buttons (redesign step 2).
+  if (path === "/approved-preview" || routeFor(path)) return null;
   if (path === "/tickets" || path === "/complete-profile" || path === "/app-login" || path === "/rsvp" || path === "/attending" || path === "/share/linkedin" || path === "/survey" || path === "/rate") {
     return null;
   }

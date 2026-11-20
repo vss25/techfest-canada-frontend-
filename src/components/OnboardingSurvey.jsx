@@ -58,7 +58,7 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
   `;
 
   const cardBg   = isDark ? "#160c2c"               : "#f8f6ff";
-  const border   = isDark ? "rgba(122,63,209,0.30)"  : "rgba(122,63,209,0.20)";
+  const border   = isDark ? "rgba(214,48,140,0.30)"  : "rgba(214,48,140,0.20)";
   const text     = isDark ? "#ffffff"                : "#1a0a40";
   const muted    = isDark ? "rgba(190,165,240,0.75)" : "rgba(90,60,150,0.65)";
   const inputBg  = isDark ? "#1e1040"                : "#ede8ff";
@@ -75,7 +75,7 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
 
   const btnStyle = {
     width: "100%", padding: "14px",
-    background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+    background: "#D6308C",
     border: "none", borderRadius: 12, color: "white",
     fontWeight: 800, fontSize: "0.88rem",
     fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.4px",
@@ -129,7 +129,7 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
               width: "100%", maxWidth: 480,
               background: cardBg, border: `1.5px solid ${border}`,
               borderRadius: 24, padding: "36px 32px",
-              boxShadow: isDark ? "0 30px 80px rgba(0,0,0,0.7)" : "0 20px 60px rgba(122,63,209,0.15)",
+              boxShadow: isDark ? "0 30px 80px rgba(0,0,0,0.7)" : "0 20px 60px rgba(214,48,140,0.15)",
               position: "relative", overflow: "visible",
             }}
           >
@@ -138,18 +138,18 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
               <motion.div
                 animate={{ width: field && linkedin ? "100%" : field || linkedin ? "55%" : "10%" }}
                 transition={{ duration: 0.5 }}
-                style={{ height: "100%", background: "linear-gradient(90deg, #7a3fd1, #f5a623)" }}
+                style={{ height: "100%", background: "#D6308C" }}
               />
             </div>
 
             {/* Eyebrow */}
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 6,
-              background: isDark ? "rgba(122,63,209,0.15)" : "rgba(122,63,209,0.10)",
+              background: isDark ? "rgba(214,48,140,0.15)" : "rgba(214,48,140,0.10)",
               border: `1px solid ${border}`, borderRadius: 999,
               padding: "4px 14px", fontSize: "0.65rem", fontWeight: 700,
               letterSpacing: "1.2px", textTransform: "uppercase",
-              color: isDark ? "#c4a8ff" : "#7a3fd1", marginBottom: 16,
+              color: isDark ? "#c4a8ff" : "#D6308C", marginBottom: 16,
             }}>
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#f5a623", boxShadow: "0 0 5px #f5a623", display: "inline-block" }} />
               Quick Setup · 1 min
@@ -187,7 +187,7 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
                   ...inputStyle,
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   cursor: "pointer", textAlign: "left",
-                  border: `1.5px solid ${fieldOpen ? "rgba(122,63,209,0.6)" : border}`,
+                  border: `1.5px solid ${fieldOpen ? "rgba(214,48,140,0.6)" : border}`,
                 }}
               >
                 <span style={{ color: field ? text : muted }}>{field || "Select your field..."}</span>
@@ -206,7 +206,7 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
                       background: dropBg, border: `1.5px solid ${border}`,
                       borderRadius: 14, overflow: "hidden auto",
                       maxHeight: 240, zIndex: 100,
-                      boxShadow: isDark ? "0 16px 40px rgba(0,0,0,0.5)" : "0 12px 32px rgba(122,63,209,0.12)",
+                      boxShadow: isDark ? "0 16px 40px rgba(0,0,0,0.5)" : "0 12px 32px rgba(214,48,140,0.12)",
                     }}
                   >
                     {FIELDS.map(f => (
@@ -217,10 +217,10 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
                           display: "block", width: "100%", textAlign: "left",
                           padding: "10px 16px",
                           background: field === f
-                            ? isDark ? "rgba(122,63,209,0.25)" : "rgba(122,63,209,0.12)"
+                            ? isDark ? "rgba(214,48,140,0.25)" : "rgba(214,48,140,0.12)"
                             : "transparent",
                           border: "none",
-                          color: field === f ? (isDark ? "#c4a8ff" : "#7a3fd1") : text,
+                          color: field === f ? (isDark ? "#c4a8ff" : "#D6308C") : text,
                           fontSize: "0.83rem", cursor: "pointer",
                           fontFamily: "inherit", fontWeight: field === f ? 700 : 400,
                         }}
@@ -261,11 +261,11 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
               width: "100%", maxWidth: 480,
               background: cardBg, border: `1.5px solid ${border}`,
               borderRadius: 24, padding: "48px 36px",
-              boxShadow: isDark ? "0 30px 80px rgba(0,0,0,0.7)" : "0 20px 60px rgba(122,63,209,0.15)",
+              boxShadow: isDark ? "0 30px 80px rgba(0,0,0,0.7)" : "0 20px 60px rgba(214,48,140,0.15)",
               textAlign: "center", position: "relative", overflow: "hidden",
             }}
           >
-            <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(122,63,209,0.18), transparent)" }} />
+            <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(214,48,140,0.18), transparent)" }} />
 
             {/* Confetti dots */}
             {[...Array(12)].map((_, i) => (
@@ -277,7 +277,7 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
                 style={{
                   position: "absolute", top: "50%", left: "50%",
                   width: 6, height: 6, borderRadius: "50%",
-                  background: i%2===0 ? "#7a3fd1" : "#f5a623",
+                  background: i%2===0 ? "#D6308C" : "#f5a623",
                   pointerEvents: "none",
                 }}
               />
@@ -291,21 +291,21 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
               style={{
                 width: 80, height: 80, borderRadius: "50%",
                 margin: "0 auto 24px",
-                background: "linear-gradient(135deg, rgba(122,63,209,0.25), rgba(245,166,35,0.20))",
+                background: "linear-gradient(135deg, rgba(214,48,140,0.25), rgba(245,166,35,0.20))",
                 border: `2px solid ${border}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "2rem",
               }}
             >🎉</motion.div>
 
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: isDark ? "rgba(122,63,209,0.15)" : "rgba(122,63,209,0.10)", border: `1px solid ${border}`, borderRadius: 999, padding: "4px 14px", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "1.2px", textTransform: "uppercase", color: isDark ? "#c4a8ff" : "#7a3fd1", marginBottom: 20 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: isDark ? "rgba(214,48,140,0.15)" : "rgba(214,48,140,0.10)", border: `1px solid ${border}`, borderRadius: 999, padding: "4px 14px", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "1.2px", textTransform: "uppercase", color: isDark ? "#c4a8ff" : "#D6308C", marginBottom: 20 }}>
               <span style={{ width:5, height:5, borderRadius:"50%", background:"#f5a623", boxShadow:"0 0 5px #f5a623", display:"inline-block" }} />
               Welcome to the family
             </div>
 
             <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "1.5rem", fontWeight: 900, color: text, marginBottom: 12, lineHeight: 1.2 }}>
               Welcome to the{" "}
-              <span style={{ background: "linear-gradient(135deg, #7a3fd1, #f5a623)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              <span style={{ background: "#D6308C", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
                 TFC Family
               </span>!
             </h2>
@@ -321,7 +321,7 @@ export default function OnboardingSurvey({ isOpen, onClose, userName = "" }) {
             ].map(p => (
               <div key={p.text} style={{
                 display: "flex", alignItems: "center", gap: 12, textAlign: "left",
-                background: isDark ? "rgba(122,63,209,0.08)" : "rgba(122,63,209,0.05)",
+                background: isDark ? "rgba(214,48,140,0.08)" : "rgba(214,48,140,0.05)",
                 border: `1px solid ${border}`, borderRadius: 12,
                 padding: "10px 16px", marginBottom: 10,
               }}>

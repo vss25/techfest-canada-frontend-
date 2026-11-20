@@ -34,7 +34,7 @@ export function CityList({ events }) {
       <style>{`
         .ev-city-card { transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease; }
         @media (hover: hover) and (pointer: fine) {
-          .ev-city-card:hover { transform: translateY(-5px); box-shadow: 0 22px 48px rgba(2,0,10,0.5); border-color: rgba(155,135,245,0.45); }
+          .ev-city-card:hover { transform: translateY(-5px); box-shadow: 0 22px 48px rgba(2,0,10,0.5); border-color: rgba(240,106,176,0.45); }
           .ev-city-card:hover .ev-city-media img { transform: scale(1.06); }
         }
         .ev-city-media img { transition: transform .6s ease; }
@@ -60,7 +60,7 @@ export function CityList({ events }) {
                 <Link to={`/${c.slug}`} className="ev-city-card"
                   style={{ display: "block", height: "100%", borderRadius: 18, overflow: "hidden", textDecoration: "none", color: "inherit",
                     border: "1px solid rgba(127,90,240,0.25)", background: "rgba(127,90,240,0.06)" }}>
-                  <div className="ev-city-media" style={{ position: "relative", height: 96, overflow: "hidden", background: "linear-gradient(150deg, #2a1160 0%, #7a3fd1 60%, #e8458b 135%)" }}>
+                  <div className="ev-city-media" style={{ position: "relative", height: 96, overflow: "hidden", background: "linear-gradient(150deg, #2a1160 0%, #D6308C 60%, #e8458b 135%)" }}>
                     {photo ? (
                       <img src={photo} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                     ) : (

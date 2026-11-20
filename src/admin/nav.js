@@ -3,7 +3,7 @@ import { MapPinned,
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
-import { Boxes, CalendarRange, Clapperboard, FileSignature, Percent } from "lucide-react";
+import { Boxes, CalendarRange, Clapperboard, FileSignature, Flame, Percent } from "lucide-react";
 import { CircleHelp, ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
@@ -107,6 +107,8 @@ export const WORKSPACES = [
       { to: "offerings", label: "Offerings", icon: Boxes },
     ] },
     { title: "Enquiries", items: [
+      // Nov 20 2026: people who replied with interest to our Explee outreach, synced by themselves.
+      { to: "hot-leads", label: "Hot leads", icon: Flame },
       // "Stay updated" (Oct 23 2026): who joined the TTFC 2027 waitlist, and the page's wording.
       { to: "waitlist-2027", label: "Waitlist", icon: ListPlus },
       { to: "india-pavilion", label: "India Pavilion", icon: Landmark },

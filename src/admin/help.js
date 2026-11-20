@@ -56,7 +56,7 @@ export const HELP = {
   },
   "content/speakers": {
     what: "Everyone on the website's Speakers pages and in the app.",
-    steps: ["Click Add speaker. Add a photo (required), name, job title and company.", "Choose which events they speak at, so they appear on those event pages.", "Click a photo to edit a speaker; click the star to feature them; change the number to set the order.", "Save, then send to staging and publish from Home › Website changes."],
+    steps: ["Click Add speaker. Add a photo (required), name, job title and company.", "A new speaker is added to the event chosen at the top. Use “Also on another event?” if they speak at more than one.", "Click a speaker to edit them. To change the order, drag a speaker up or down in the list, or use the arrows beside them.", "Save, then send to staging and publish from Home › Website changes."],
     tips: [FLOW, "Every speaker photo comes out the same: choose a photo and the photo studio removes the background, puts the person on the TTFC light purple and suggests a head-and-shoulders crop. Drag or zoom to adjust it, or keep the photo's own background if the cut-out looks wrong.", "Adjust photo reopens the studio from the original upload.", "Delete takes a speaker off the live website at once."],
   },
   "content/partners": {

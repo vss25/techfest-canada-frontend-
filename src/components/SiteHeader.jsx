@@ -178,6 +178,9 @@ export default function SiteHeader({ homeEvent = null } = {}) {
   }
 
   const pillLabel = namedEvent ? eventPillLabel(namedEvent) : (displayCity ? displayCity.name : "Choose a city · All Events");
+  // Phones get the short form — city + year only ("Vancouver 2027") — via
+  // the ≤640px rules in the header stylesheet; wider screens never see it.
+  const pillLabelShort = namedEvent && namedEvent.city && namedEvent.year ? `${namedEvent.city} ${namedEvent.year}` : pillLabel;
   const byLifecycle = (want) => events.filter((e) => want.includes(lifecycleOf(e)));
 
   const eventRow = (ev) => (
@@ -252,6 +255,29 @@ export default function SiteHeader({ homeEvent = null } = {}) {
         .sh-sheet a { display: block; padding: 13px 4px; text-decoration: none; font-family: 'Orbitron', sans-serif; font-size: 0.82rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
         @media (max-width: 1100px) { .sh-mid { display: none; } .sh-burger { display: inline-flex; } }
         @media (max-width: 560px) { .sh-logo { height: 42px; max-width: 132px; } .sh-pill-btn { max-width: 168px; font-size: 0.58rem; padding: 8px 10px; } .sh-gold { padding: 9px 13px; font-size: 0.58rem; } .sh-login { display: none; } .sh-2027 { display: none !important; } }
+        /* Mobile pass (≤1100px): 44px tap targets for the bar's controls. */
+        @media (max-width: 1100px) {
+          .sh-pill-btn, .sh-gold, .sh-login, .sh-avatar { min-height: 44px; }
+          .sh-avatar { min-width: 44px; }
+        }
+        .sh-pill-label-short, .sh-gold-short { display: none; }
+        /* Mobile pass (≤640px): the bar must fit a phone. The theme toggle
+           leaves the bar (it lives in the phone sheet instead), the pill
+           takes the remaining space with a short city + year label, the
+           gold button is capped, and the pill dropdown is centred under
+           the header so it can never run off the right edge. */
+        @media (max-width: 640px) {
+          .sh-theme { display: none !important; }
+          .sh-pill { flex: 1 1 auto; }
+          .sh-pill-btn { max-width: 100%; }
+          .sh-pill-label-full { display: none; }
+          .sh-pill-label-short { display: inline; }
+          .sh-drop { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); width: min(380px, 92vw); }
+          .sh-gold { max-width: 36vw; overflow: hidden; }
+          .sh-gold-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          .sh-gold.notify .sh-gold-label { display: none; }
+          .sh-gold.notify .sh-gold-short { display: inline; }
+        }
       `}</style>
 
       <header className="sh-wrap" style={{ background: bg, borderBottom: `1px solid ${border}` }}>
@@ -265,7 +291,8 @@ export default function SiteHeader({ homeEvent = null } = {}) {
             <button type="button" className="sh-pill-btn" aria-haspopup="true" aria-expanded={pillOpen}
               onClick={() => setPillOpen((o) => !o)}
               style={{ background: pillBg, border: `1px solid ${border}`, color: textMain }}>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{pillLabel}</span>
+              <span className="sh-pill-label-full" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{pillLabel}</span>
+              <span className="sh-pill-label-short" aria-hidden="true" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{pillLabelShort}</span>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ transform: pillOpen ? "rotate(180deg)" : "none", transition: "transform .2s", flexShrink: 0 }}><path d="M6 9l6 6 6-6" /></svg>
             </button>
             {pillOpen && (
@@ -326,7 +353,7 @@ export default function SiteHeader({ homeEvent = null } = {}) {
               style={{ padding: "0 16px", height: 38, borderRadius: 999, background: "transparent", border: `2px solid ${border}`, color: textMain, fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.62rem", letterSpacing: "0.8px", textDecoration: "none", display: "flex", alignItems: "center", textTransform: "uppercase" }}>
               2027
             </Link>
-            <button type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            <button type="button" className="sh-theme" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               style={{ width: 38, height: 38, borderRadius: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: pillBg, border: `1px solid ${border}`, color: textMain }}>
               {theme === "dark" ? (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
@@ -341,8 +368,9 @@ export default function SiteHeader({ homeEvent = null } = {}) {
             ) : (
               <button type="button" className="sh-login" style={{ color: textMain }} onClick={() => setAuthOpen(true)}>Log in</button>
             )}
-            <Link to={ticketsTo} className="sh-gold" aria-label={ticketsNotify ? ticketsLabel : `Tickets${ticketEvent ? ` for ${ticketEvent.name || eventPillLabel(ticketEvent)}` : ""}`}>
-              {ticketsLabel}
+            <Link to={ticketsTo} className={"sh-gold" + (ticketsNotify ? " notify" : "")} aria-label={ticketsNotify ? ticketsLabel : `Tickets${ticketEvent ? ` for ${ticketEvent.name || eventPillLabel(ticketEvent)}` : ""}`}>
+              <span className="sh-gold-label">{ticketsLabel}</span>
+              {ticketsNotify && <span className="sh-gold-short" aria-hidden="true">Notify me</span>}
             </Link>
             <button type="button" className="sh-burger" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen}
               onClick={() => setMenuOpen((o) => !o)}
@@ -376,6 +404,12 @@ export default function SiteHeader({ homeEvent = null } = {}) {
               </a>
             )}
             <Link to="/stay-updated" style={{ color: textMain, borderBottom: `1px solid ${border}` }}>Stay updated for 2027</Link>
+            {/* The theme toggle's phone home: at ≤640px it leaves the bar
+                (see .sh-theme) and lives here in the sheet instead. */}
+            <button type="button" onClick={toggleTheme}
+              style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderBottom: `1px solid ${border}`, padding: "13px 4px", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", fontSize: "0.82rem", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: textMain }}>
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </button>
             {!user && (
               <button type="button" onClick={() => { setMenuOpen(false); setAuthOpen(true); }}
                 style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "13px 4px", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", fontSize: "0.82rem", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: textMain }}>

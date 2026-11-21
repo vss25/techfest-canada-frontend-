@@ -12,7 +12,7 @@ import Skyline, { SkylineSvg } from "./Skyline";
    date · venue, one sentence. No buttons, no app badges, no
    QR (the one-button rule: Tickets lives in the header).
    The video is a short silent loop; the hero image is its
-   poster, the fallback for small screens and reduced-motion
+   poster and the fallback for reduced-motion
    visitors, and gets a slow Ken Burns drift when it stands
    alone. An event with no media yet still opens on a rich
    aurora-gradient sky over its skyline — never a black box.
@@ -35,7 +35,7 @@ const HERO_CSS = `
      oversized type, depth shadow and spacing come from the stylesheet. */
   .ev-hero h1, .ev-hero h2 {
     margin-top: 20px !important;
-    font-size: clamp(2.6rem, 8vw, 6.1rem) !important;
+    font-size: clamp(2rem, 11vw, 6.1rem) !important;
     line-height: 0.99 !important;
     letter-spacing: -0.01em;
     max-width: 1020px !important;
@@ -51,6 +51,13 @@ const HERO_CSS = `
     .ev-rise-1 { animation-delay: .14s; }
     .ev-rise-2 { animation-delay: .30s; }
     @keyframes ev-rise { from { opacity: 0; transform: translateY(28px); filter: blur(10px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+  }
+  /* Mobile pass (≤640px): the skyline layers shrink so the city stays a
+     base band on a phone instead of eating a third of the screen. The
+     z-index stack and the silhouette's drop-shadow are untouched. */
+  @media (max-width: 640px) {
+    .ev-hero-backlight { height: 18vh !important; }
+    .ev-hero-skyline { height: 14vh !important; }
   }
 `;
 
@@ -76,7 +83,9 @@ export default function EventHero({ ev, headingAs = "h1" }) {
   useEffect(() => {
     if (!video) { setShowVideo(false); return; }
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setShowVideo(!reduced && window.innerWidth >= 640);
+    // Mobile pass: no width gate — the hero film is a ~4MB compressed
+    // loop now, so phones get the film too. Reduced-motion still opts out.
+    setShowVideo(!reduced);
   }, [video]);
 
   if (!ev) return null;
@@ -121,10 +130,10 @@ export default function EventHero({ ev, headingAs = "h1" }) {
           stays visible over bright or dark footage alike (a flat
           near-black shape over the near-black base shade is
           camouflaged without it). */}
-      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 2, height: "min(32vh, 300px)", color: "rgba(127,90,240,0.52)", filter: "blur(5px)", pointerEvents: "none" }}>
+      <div aria-hidden="true" className="ev-hero-backlight" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 2, height: "min(32vh, 300px)", color: "rgba(127,90,240,0.52)", filter: "blur(5px)", pointerEvents: "none" }}>
         <SkylineSvg citySlug={citySlug} />
       </div>
-      <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 3, height: "min(26vh, 240px)", color: "rgba(4,1,10,0.97)", filter: "drop-shadow(0 -4px 16px rgba(127,90,240,0.45))", pointerEvents: "none" }}>
+      <div aria-hidden="true" className="ev-hero-skyline" style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 3, height: "min(26vh, 240px)", color: "rgba(4,1,10,0.97)", filter: "drop-shadow(0 -4px 16px rgba(127,90,240,0.45))", pointerEvents: "none" }}>
         <Skyline ev={ev} citySlug={citySlug} />
       </div>
 
@@ -133,7 +142,7 @@ export default function EventHero({ ev, headingAs = "h1" }) {
           <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", flexShrink: 0 }} />
           {where}
         </p>
-        <Heading style={{ margin: "14px 0 0", fontFamily: "'Orbitron', sans-serif", fontWeight: 900, lineHeight: 1.04, fontSize: "clamp(2.2rem, 6.5vw, 4.4rem)", maxWidth: 900 }}>
+        <Heading style={{ margin: "14px 0 0", fontFamily: "'Orbitron', sans-serif", fontWeight: 900, lineHeight: 1.04, maxWidth: 900 }}>
           {ev.name}
         </Heading>
         {sentence && (

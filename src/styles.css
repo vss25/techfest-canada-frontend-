@@ -169,7 +169,7 @@ nav:not(.tfc-nav) {
 }
 .section-title { font-size: 3rem; color: var(--brand-purple); margin-bottom: 3rem; text-align: center; }
 body.dark-mode .section-title { color: var(--brand-white); }
-.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 2rem; }
 .card { background: var(--bg-card); border: 1px solid var(--border-main); border-radius: 16px; padding: 2.5rem; box-shadow: var(--shadow-main); transition: 0.3s; display: flex; flex-direction: column; }
 .card:hover { transform: translateY(-5px); border-color: var(--brand-orange); }
 
@@ -188,7 +188,7 @@ body.dark-mode .hero-text h1 { color: var(--brand-white); }
 .slideshow-image.active { opacity: 1; z-index: 2; }
 
 /* --- TICKETS & PRICING (RESTORED!!!) --- */
-.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; align-items: center; margin-top: 2rem; }
+.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 2rem; align-items: center; margin-top: 2rem; }
 .ticket-card { background: var(--bg-card); border: 1px solid var(--border-main); border-radius: 16px; padding: 3rem 2rem; text-align: left; position: relative; box-shadow: var(--shadow-main); transition: 0.3s; }
 .ticket-card.popular { border: 2px solid var(--brand-orange); transform: scale(1.05); z-index: 2; }
 .ticket-card h3 { font-size: 1.4rem; margin-bottom: 1rem; color: var(--text-main); font-family: 'Orbitron', sans-serif; }
@@ -347,7 +347,7 @@ footer { padding: 4rem 5%; background: var(--bg-card); border-top: 1px solid var
 
 .tickets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: 18px;
 }
 

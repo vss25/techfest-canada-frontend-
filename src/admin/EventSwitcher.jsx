@@ -90,11 +90,18 @@ function EventMenu({ onPick, className = "" }) {
   );
 }
 
-/** Closes on a click outside or Escape. */
+/** Closes on a click outside or Escape. The desktop switcher and the phone chip share one
+    "open" flag and both stay mounted (one hidden by CSS), so only the one on screen may close
+    it: otherwise the hidden one closed the menu on mousedown, before a pick could land
+    (Nov 22 2026: the switcher only worked on Home, the one page without the phone chip). */
 function useDismiss(open, setOpen, ref) {
   useEffect(() => {
     if (!open) return undefined;
-    const down = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const down = (e) => {
+      const el = ref.current;
+      if (!el || !el.getClientRects().length) return; // hidden (display: none): not ours to close
+      if (!el.contains(e.target)) setOpen(false);
+    };
     const esc = (e) => { if (e.key === "Escape") setOpen(false); };
     document.addEventListener("mousedown", down);
     document.addEventListener("keydown", esc);

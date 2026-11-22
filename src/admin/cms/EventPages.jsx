@@ -19,6 +19,7 @@ import { ReadinessCard } from "./ReadinessCard";
 import { useReadiness } from "./useReadiness";
 import { useAutosave } from "./useAutosave";
 import { AutosaveNote } from "./AutosaveNote";
+import StandIns from "./StandIns";
 
 /* =========================================================
    Admin › Website content › Event pages (redesign step 1).
@@ -32,7 +33,12 @@ import { AutosaveNote } from "./AutosaveNote";
 const TEXT_FIELDS = [
   "name", "city", "type", "year", "startDate", "endDate", "statusNote", "venueName", "venueAddress",
   "description", "photoCredit", "theme", "tagline", "formatLine", "audience", "pageMode", "notifyHeading",
+  "standInSpeakersHeading", "standInSpeakersText", "standInPartnersHeading", "standInPartnersText",
 ];
+// The stand-ins (StandIns.jsx): the event they come from ("" = Toronto 2026) and the ones picked.
+const REF_FIELDS = ["standInSpeakersFrom", "standInPartnersFrom"];
+const REFS_FIELDS = ["standInSpeakers", "standInPartners"];
+const refId = (r) => (typeof r === "string" ? r : r?._ref || "");
 const PAGE_MODES = [
   { value: "auto", label: "Automatic: coming-soon page until the event has its own sessions" },
   { value: "coming-soon", label: "Always the coming-soon page" },
@@ -54,6 +60,8 @@ function toForm(ev) {
   // "City photo" on the approved design: its own field, so the previous design's photo stays as it was.
   f.citySkyline = ev?.citySkyline?.asset?._ref || "";
   f.citySkylineUrl = ev?.citySkylineUrl || "";
+  for (const k of REF_FIELDS) f[k] = refId(ev?.[k]);
+  for (const k of REFS_FIELDS) f[k] = (ev?.[k] || []).map(refId).filter(Boolean);
   return f;
 }
 
@@ -65,6 +73,8 @@ function diff(form, base) {
   if (JSON.stringify(form.knownSoFar) !== JSON.stringify(base.knownSoFar)) out.knownSoFar = form.knownSoFar;
   if (JSON.stringify(form.comingNext) !== JSON.stringify(base.comingNext)) out.comingNext = form.comingNext;
   if (form.citySkyline !== base.citySkyline) out.citySkyline = form.citySkyline || "";
+  for (const k of REF_FIELDS) if (form[k] !== base[k]) out[k] = form[k] || "";
+  for (const k of REFS_FIELDS) if (JSON.stringify(form[k]) !== JSON.stringify(base[k])) out[k] = form[k];
   return out;
 }
 
@@ -134,7 +144,7 @@ function Rows({ label, hint, rows, onChange, kind }) {
   );
 }
 
-function Editor({ ev, readOnly, onSaved, onGone }) {
+function Editor({ ev, events, readOnly, onSaved, onGone }) {
   const toast = useToast();
   const { isManagement } = useAdmin();
   const base = useMemo(() => toForm(ev), [ev]);
@@ -286,6 +296,8 @@ function Editor({ ev, readOnly, onSaved, onGone }) {
         <p className="text-sm text-ttfc-muted">Sessions and speakers appear on the full page when they're tied to this event in Agenda and Speakers. Tickets come from Prices &amp; stock.</p>
       </Card>
 
+      <StandIns form={form} setForm={setForm} events={events} current={ev} disabled={readOnly} />
+
       <Card className="flex flex-wrap items-center gap-3">
         {ev.hasDraft && (
           <Button variant="secondary" onClick={() => onDiscard("unsent")} disabled={disabled}>
@@ -345,6 +357,7 @@ export default function EventPages() {
         <Editor
           key={current._id}
           ev={current}
+          events={events}
           readOnly={readOnly}
           onSaved={(next) => (next ? setData((d) => d.map((e) => (e._id === next._id ? { ...e, ...next } : e))) : reload())}
           onGone={(id) => { setData((d) => d.filter((e) => e._id !== id)); setSelected(""); refreshEvents(); }}

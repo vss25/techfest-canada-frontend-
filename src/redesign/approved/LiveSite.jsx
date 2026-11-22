@@ -8,6 +8,7 @@ import { client, urlFor } from "../../utils/sanity";
 import { ECOSYSTEM_GROUP, FEATURED_GROUP, PILLAR_GROUPS, SECTOR_GROUPS, eventRowOf, matrixGroupOf, partnerOnEvent } from "../../data/partnerMatrix";
 import { findEvent, useEventContent, useEvents } from "../../lib/events";
 import { AGENDA_SOON, toDesignSessions } from "../../data/approvedAgendas";
+import { STAND_IN_DEFAULT_FROM, standInLabel, standInWords } from "../../lib/standIns";
 import {
   CITY_EVENT, EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, countdownTo, fieldsNear, fullDate, monthShort, pick, post, routeFor, sendForm, splitName,
 } from "./liveShared";
@@ -196,26 +197,25 @@ class LiveSite extends ApprovedSite {
     } else {
       // Nov 20 2026 (the owner): say "to be announced" ONCE, and show who spoke at Toronto 2026 meanwhile,
       // instead of a row of identical "Speaker to be announced" cards.
-      const was = (this.props.past2026 && this.props.past2026.speakers) || [];
-      v.spkSoon = { title: "Speakers to be announced", text: was.length
-        ? "This event's speakers are being confirmed. In the meantime, here's who took the stage at Toronto 2026."
-        : "This event's speakers are being confirmed. Check back soon." };
-      v.speakers = was.slice(0, 4).map((x, i) => ({ ...x, role: x.role ? x.role + " · Toronto 2026" : "Toronto 2026", n: i + 1, open: v.goPast }));
-      v.spkList = was.map((x, i) => ({ ...x, role: x.role ? x.role + " · Toronto 2026" : "Toronto 2026", n: i + 1, open: v.goPast }));
+      const si = this.props.standIns || {};
+      const was = si.speakers || [];
+      const tag = (r) => (r ? r + " · " + si.spkLabel : si.spkLabel);
+      v.spkSoon = si.spk ? { title: si.spk.heading, text: was.length ? si.spk.text : si.spk.none } : { title: "Speakers to be announced", text: "" };
+      v.speakers = was.slice(0, 4).map((x, i) => ({ ...x, role: tag(x.role), n: i + 1, open: v.goPast }));
+      v.spkList = was.map((x, i) => ({ ...x, role: tag(x.role), n: i + 1, open: v.goPast }));
       v.spkFilters = [];
-      v.spkIntro = "This event's speakers are announced soon. Until then, these are speakers from Toronto 2026.";
-      v.spkCount = was.length ? "Speakers from Toronto 2026" : "";
+      v.spkIntro = `This event's speakers are announced soon. Until then, these are speakers from ${si.spkLabel || "an earlier event"}.`;
+      v.spkCount = was.length ? `Speakers from ${si.spkLabel}` : "";
     }
     // The event's partners, then "Announcing soon" tiles up to the board's six.
     // The event's own partners; with none yet, ONE "to be announced" note and Toronto 2026's partners meanwhile.
     const evp = this.props.evPartners;
     if (evp) v.evPartners = evp;
     else {
-      const wasP = (this.props.past2026 && this.props.past2026.partners) || [];
-      v.ptSoon = { title: "Partners to be announced", text: wasP.length
-        ? "This event's partners are being confirmed. In the meantime, these organisations partnered with us at Toronto 2026."
-        : "This event's partners are being confirmed. Check back soon." };
-      v.evPartners = wasP.map((p) => ({ name: p.title || "", logo: p.name, tier: "Toronto 2026" }));
+      const si = this.props.standIns || {};
+      const wasP = si.partners || [];
+      v.ptSoon = si.ptn ? { title: si.ptn.heading, text: wasP.length ? si.ptn.text : si.ptn.none } : { title: "Partners to be announced", text: "" };
+      v.evPartners = wasP.map((p) => ({ name: p.title || "", logo: p.name, tier: si.ptnLabel }));
     }
     v.pt2027Groups = this.props.pt2027Groups || null;
     // Exhibitors: no booth is sold yet, so no sample booth numbers or topic filters.
@@ -403,6 +403,63 @@ function usePast2026(on) {
   return past;
 }
 
+/* While an event has no speakers / partners of its own, its page shows another event's (Nov 22 2026,
+   the owner: chosen per event in Admin › Content › Event page; default Toronto 2026, featured first).
+   → { label, speakers, partners, spk: {heading, text, none}, ptn: {…} }, null until loaded. */
+function useStandIns(ev, events) {
+  const [out, setOut] = useState(null);
+  const refId = (r) => (typeof r === "string" ? r : (r && r._ref) || "");
+  const spkFrom = refId(ev && ev.standInSpeakersFrom) || STAND_IN_DEFAULT_FROM;
+  const ptnFrom = refId(ev && ev.standInPartnersFrom) || STAND_IN_DEFAULT_FROM;
+  const spkIds = ((ev && ev.standInSpeakers) || []).map(refId).filter(Boolean);
+  const ptnIds = ((ev && ev.standInPartners) || []).map(refId).filter(Boolean);
+  const key = [ev && ev._id, spkFrom, ptnFrom, spkIds.join(","), ptnIds.join(",")].join("|");
+  const evById = (id) => (events || []).find((e) => e._id === id);
+  const spkLabel = standInLabel(evById(spkFrom));
+  const ptnLabel = standInLabel(evById(ptnFrom));
+  useEffect(() => {
+    if (!ev) { setOut(null); return undefined; }
+    let live = true;
+    const scoped = (v) => `(!defined(events) || count(events) == 0 || ${v} in events[]._ref)`;
+    const byPick = (ids) => (a, b) => ids.indexOf(a._id) - ids.indexOf(b._id);
+    const pub = `!(_id in path("drafts.**"))`;
+    Promise.all([
+      spkIds.length
+        ? client.fetch(`*[_type == "speaker" && ${pub} && _id in $ids && defined(image.asset)]{ _id, name, title, company, speakerType, image }`, { ids: spkIds }).then((l) => (l || []).sort(byPick(spkIds)))
+        : client.fetch(`*[_type == "speaker" && ${pub} && defined(image.asset) && ${scoped("$ev")}] | order(featured desc, order asc)[0...12]{ _id, name, title, company, speakerType, image }`, { ev: spkFrom }),
+      ptnIds.length
+        ? client.fetch(`*[_type == "partner" && ${pub} && _id in $ids && defined(logo.asset)]{ _id, name, logo, matrixGroup, eventRows }`, { ids: ptnIds }).then((l) => (l || []).sort(byPick(ptnIds)))
+        : client.fetch(`*[_type == "partner" && ${pub} && active != false && showOnWebsite != false && defined(logo.asset) && ${scoped("$ev")}] | order(order asc){ _id, name, logo, matrixGroup, eventRows }`, { ev: ptnFrom })
+          .then((l) => [...(l || [])].sort((a, b) => (matrixGroupOf(b) === "featured") - (matrixGroupOf(a) === "featured")).slice(0, 6)),
+    ]).then(([spk, ptn]) => {
+      if (!live) return;
+      const kinds = { keynote: "Keynote", panelist: "Panel", moderator: "Moderator", fireside: "Fireside chat" };
+      setOut({
+        speakers: (spk || []).map((x) => ({
+          name: x.name,
+          role: [x.title, x.company].map((v) => String(v || "").trim()).filter(Boolean).join(", "),
+          kind: kinds[x.speakerType] || "Speaker",
+          img: urlFor(x.image).width(480).height(600).fit("crop").auto("format").url(),
+        })),
+        partners: (ptn || []).map((p) => ({
+          name: <img src={urlFor(p.logo).height(120).fit("max").auto("format").url()} alt={p.name} title={p.name} loading="lazy"
+            style={{ display: "block", maxHeight: 48, maxWidth: "75%", objectFit: "contain", margin: "0 auto" }} />,
+          title: p.name,
+        })),
+      });
+    }).catch(() => { if (live) setOut({ speakers: [], partners: [] }); });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  if (!out) return null;
+  return {
+    ...out,
+    spkLabel, ptnLabel,
+    spk: standInWords("speakers", spkLabel, ev && ev.standInSpeakersHeading, ev && ev.standInSpeakersText),
+    ptn: standInWords("partners", ptnLabel, ev && ev.standInPartnersHeading, ev && ev.standInPartnersText),
+  };
+}
+
 export default function ApprovedRoute({ fallback = null }) {
   const location = useLocation();
   const phone = usePhone();
@@ -511,6 +568,7 @@ export default function ApprovedRoute({ fallback = null }) {
   }, [content.speakers]);
 
   const past2026 = usePast2026(!!route);
+  const standIns = useStandIns(ev || van, events);
   const partners2026 = useMemo(() => (partners ? partners.filter((p) => partnerOnEvent(p, PAST_EVENT)) : null), [partners]);
   const partnerRows = useMemo(() => {
     if (!partners2026 || !partners2026.length) return null;
@@ -594,6 +652,7 @@ export default function ApprovedRoute({ fallback = null }) {
       evPartners={evPartners}
       evSpeakers={evSpeakers}
       past2026={past2026}
+      standIns={standIns}
       eventKey={evKey}
       loaderMs={0}
     />

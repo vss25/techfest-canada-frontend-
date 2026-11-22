@@ -130,24 +130,23 @@ export default class LivePhone extends ApprovedPhone {
       v.spkIntro = `${spk.length} ${spk.length === 1 ? "speaker" : "speakers"} confirmed so far. More are announced as the programme fills.`;
     } else {
       // One "to be announced" note, with Toronto 2026's speakers meanwhile (LiveSite.jsx has the same rule).
-      const was = (this.props.past2026 && this.props.past2026.speakers) || [];
-      v.spkSoon = { title: "Speakers to be announced", text: was.length
-        ? "This event's speakers are being confirmed. In the meantime, here's who took the stage at Toronto 2026."
-        : "This event's speakers are being confirmed. Check back soon." };
-      v.four = was.slice(0, 4).map((x) => ({ ...x, role: x.role ? x.role + " · Toronto 2026" : "Toronto 2026" }));
-      v.spkList = was.map((x, i) => ({ ...x, role: x.role ? x.role + " · Toronto 2026" : "Toronto 2026", n: i + 1, open: () => {} }));
-      v.spkIntro = "This event's speakers are announced soon. Until then, these are speakers from Toronto 2026.";
-      v.spkCount = was.length ? "Speakers from Toronto 2026" : "";
+      const si = this.props.standIns || {};
+      const was = si.speakers || [];
+      const tag = (r) => (r ? r + " · " + si.spkLabel : si.spkLabel);
+      v.spkSoon = si.spk ? { title: si.spk.heading, text: was.length ? si.spk.text : si.spk.none } : { title: "Speakers to be announced", text: "" };
+      v.four = was.slice(0, 4).map((x) => ({ ...x, role: tag(x.role) }));
+      v.spkList = was.map((x, i) => ({ ...x, role: tag(x.role), n: i + 1, open: () => {} }));
+      v.spkIntro = `This event's speakers are announced soon. Until then, these are speakers from ${si.spkLabel || "an earlier event"}.`;
+      v.spkCount = was.length ? `Speakers from ${si.spkLabel}` : "";
     }
     const evp = this.props.evPartners;
     // Two to a row: an odd number gets one "Announcing soon" tile to finish the row.
     if (evp) v.phPartners = evp;
     else {
-      const wasP = (this.props.past2026 && this.props.past2026.partners) || [];
-      v.ptSoon = { title: "Partners to be announced", text: wasP.length
-        ? "This event's partners are being confirmed. In the meantime, these organisations partnered with us at Toronto 2026."
-        : "This event's partners are being confirmed. Check back soon." };
-      v.phPartners = wasP.slice(0, 6).map((p) => ({ name: p.title || "", logo: p.name, tier: "Toronto 2026" }));
+      const si = this.props.standIns || {};
+      const wasP = si.partners || [];
+      v.ptSoon = si.ptn ? { title: si.ptn.heading, text: wasP.length ? si.ptn.text : si.ptn.none } : { title: "Partners to be announced", text: "" };
+      v.phPartners = wasP.slice(0, 6).map((p) => ({ name: p.title || "", logo: p.name, tier: si.ptnLabel }));
     }
     v.goPartnersAll = (e) => { if (e && e.preventDefault) e.preventDefault(); this.props.navigate(SCREEN_PATH.partners || "/partners"); };
     v.exFilters = [];

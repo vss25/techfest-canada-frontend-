@@ -72,7 +72,9 @@ const EVENT_FIELDS = `
   venueName, venueAddress, heroImage, heroVideoUrl, citySkyline, description,
   statusNote, pricingAnnounced, gallery, "brochureUrl": brochure.asset->url,
   photoCredit, theme, tagline, formatLine, audience, pageMode, knownSoFar, comingNext,
-  notifyHeading, showReport
+  notifyHeading, showReport,
+  standInSpeakersFrom, standInSpeakers, standInSpeakersHeading, standInSpeakersText,
+  standInPartnersFrom, standInPartners, standInPartnersHeading, standInPartnersText
 `;
 
 /* Which version of the event page shows (redesign step 1). Staff choose on the event in

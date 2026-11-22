@@ -8,6 +8,26 @@ import { Banner, Card, PageHeader, StatTile, focusRing } from "../ui";
 import { num } from "../format";
 import { useAdminEvent } from "../eventContext";
 
+/* Sold vs target for the chosen event (Nov 22 2026): targets come from Operations › Event settings. */
+function TargetBar({ label, done, target, to, unit }) {
+  const pct = target ? Math.min(100, Math.round(((done || 0) / target) * 100)) : 0;
+  return (
+    <Link to={to} className={`flex flex-col gap-1.5 rounded-[10px] border border-[#E3E0EE] bg-white p-3 hover:bg-[#F6F5FA] ${focusRing}`}>
+      <span className="flex items-baseline gap-2">
+        <b className="text-sm text-[#151035]">{label}</b>
+        <span className="ml-auto text-sm text-[#4A4566]">
+          {done == null ? "…" : target ? <><b className="text-[#151035]">{num(done)}</b> of {num(target)} {unit} · {pct}%</> : <>{num(done)} {unit} · no target set</>}
+        </span>
+      </span>
+      {target > 0 && (
+        <span className="h-2 overflow-hidden rounded-full bg-[#EEECF5]" role="progressbar" aria-label={`${label}: ${pct}% of target`} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+          <span className="block h-full rounded-full bg-[#D6308C]" style={{ width: `${pct}%` }} />
+        </span>
+      )}
+    </Link>
+  );
+}
+
 const greeting = () => {
   const h = new Date().getHours();
   return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
@@ -38,6 +58,11 @@ export default function Overview() {
   const sales = useApi(isManagement && !other ? "/console/sales?range=week" : null);
   const own = useApi(isManagement && other ? `/console/sales-event/summary?event=${eventKey}` : null);
   const ticketList = useApi(isManagement ? null : "/console/tickets?show=visible");
+  // Targets (management): this event's settings and its exhibitor passes (exhibitors = companies).
+  const evConfigs = useApi(isManagement && other ? "/admin/events" : null);
+  const exPasses = useApi(isManagement && other ? `/console/exhibitor-passes?event=${eventKey}` : null);
+  const targets = (evConfigs.data?.events || []).find((e) => e.eventKey === eventKey)?.settings?.targets || {};
+  const exhibitorsSoFar = exPasses.data ? new Set((exPasses.data.rows || []).map((r) => String(r.company || r.name || "").trim().toLowerCase()).filter(Boolean)).size : null;
   const cms = useApi("/cms/status");
   const s = stats.data || {};
   const totals = sales.data?.totals || {};
@@ -81,6 +106,19 @@ export default function Overview() {
         <StatTile label="Website changes to publish" value={num(attention.changes)} tone={attention.changes ? "purple" : "neutral"} hint={attention.changes ? "saved or on staging" : "nothing waiting"} to="/admin/content/changes" />
         <StatTile label="Open reports" value={stats.error ? "—" : num(s.openReports)} tone={s.openReports ? "orange" : "good"} hint={s.openReports ? "needs a look" : "all clear"} to="/admin/app/moderation" />
       </div>
+
+      {isManagement && other && (
+        <Card className="mt-3.5 flex flex-col gap-2.5">
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-base font-bold text-[#151035]">Targets · {ev.name}</h2>
+            <Link to="/admin/events" className="ml-auto text-[13px] font-semibold text-[#D6308C] hover:underline">{targets.delegates || targets.exhibitors ? "Change targets" : "Set targets"} →</Link>
+          </div>
+          <div className="grid gap-2.5 md:grid-cols-2">
+            <TargetBar label="Delegates" unit="tickets" done={own.data ? own.data.tickets : own.error ? 0 : null} target={targets.delegates} to="/admin/analytics" />
+            <TargetBar label="Exhibitors" unit="companies" done={exhibitorsSoFar ?? (exPasses.error ? 0 : null)} target={targets.exhibitors} to="/admin/exhibitor-passes" />
+          </div>
+        </Card>
+      )}
 
       <div className="mt-3.5 grid gap-3.5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Card className="flex flex-col gap-2.5">

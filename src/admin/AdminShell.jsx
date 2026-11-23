@@ -117,7 +117,7 @@ export default function AdminShell({ me, onSignOut, children }) {
                 className={cx("flex h-9 items-center rounded-[9px] border border-[#E3E0EE] px-3 text-[13px] font-semibold text-[#151035] hover:bg-[#F6F5FA]", focusRing)}>
                 View site
               </a>
-              {!isVolunteer && <AlertsBell />}
+              {!isVolunteer && <AlertsBell me={me} />}
               <AccountMenu me={me} role={isVolunteer ? "Volunteer" : isManagement ? "Management" : "Staff"} onSignOut={onSignOut} volunteer={isVolunteer} />
             </div>
           </div>

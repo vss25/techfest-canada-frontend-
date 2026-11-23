@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { initials } from "./format";
 import { useAdminEvent } from "./eventContext";
+import { KINDS, countsOf, lowerSeen, readSeen, seenKey, unseenCount, writeSeen } from "./bellSeen";
 
 /* The right end of the desktop top bar (approved admin design, board 17): the alerts bell with a
    gold count, and you (initials and level). Both open a small menu. */
@@ -27,9 +28,30 @@ const Count = ({ n }) => (
   <span className="ml-auto min-w-[20px] rounded-full bg-[#F5A623] px-1.5 text-center text-[11px] font-bold leading-5 text-[#151035]">{n}</span>
 );
 
-export function AlertsBell() {
+/* "Seen" (Nov 23 2026, the owner): opening the bell clears its gold number until something new
+   arrives. We keep, per person and per browser, how many of each kind there were when they last
+   opened it; the number is only what has gone up since. The list inside always shows everything
+   still open, so nothing is hidden. When a count drops (work done), "seen" drops with it, so the
+   next new one shows again. */
+export function AlertsBell({ me }) {
   const { attention } = useAdminEvent();
   const { open, setOpen, ref } = useMenu();
+  const key = seenKey(me);
+  const [seen, setSeen] = useState(() => readSeen(key));
+  useEffect(() => { setSeen(readSeen(key)); }, [key]);
+  // Work done since: bring "seen" down with it.
+  useEffect(() => {
+    if (!seen || !attention.ready) return;
+    const low = lowerSeen(attention, seen);
+    if (KINDS.some((k) => low[k] !== (Number(seen[k]) || 0))) { setSeen(low); writeSeen(key, low); }
+  }, [attention, seen, key]);
+  // Opening the bell (and while it's open) marks everything in it as seen.
+  useEffect(() => {
+    if (!open || !attention.ready) return;
+    const now = countsOf(attention);
+    if (!seen || KINDS.some((k) => now[k] !== (Number(seen[k]) || 0))) { setSeen(now); writeSeen(key, now); }
+  }, [open, attention, seen, key]);
+  const fresh = attention.ready ? unseenCount(attention, seen) : 0;
   const items = [
     { n: attention.flags, label: "Flags raised: someone needs help", to: "/admin/work?tab=flags" },
     { n: attention.overdue, label: "Your overdue tasks", to: "/admin/work" },
@@ -39,11 +61,11 @@ export function AlertsBell() {
   return (
     <div className="relative" ref={ref}>
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu"
-        aria-label={attention.total ? `${attention.total} things need attention` : "Nothing needs attention"}
+        aria-label={attention.total ? `${attention.total} things need attention${fresh ? `, ${fresh} new` : ""}` : "Nothing needs attention"}
         className="relative flex h-9 w-9 items-center justify-center rounded-[9px] border border-[#E3E0EE] bg-white hover:bg-[#F6F5FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D6308C]">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#151035" strokeWidth="1.9" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0" /></svg>
-        {attention.total > 0 && (
-          <span className="absolute -right-[5px] -top-[5px] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#F5A623] px-1 text-[10px] font-bold text-[#151035]">{attention.total}</span>
+        {fresh > 0 && (
+          <span className="absolute -right-[5px] -top-[5px] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#F5A623] px-1 text-[10px] font-bold text-[#151035]" aria-hidden="true">{fresh}</span>
         )}
       </button>
       {open && (

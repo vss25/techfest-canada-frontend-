@@ -7,7 +7,10 @@ import StoreBadges from "../components/StoreBadges";
 import { compareEvents, eventPath, useEvents } from "../lib/events";
 
 /* The approved footer (redesign step 2): navy, four columns, the 2027 events listed from
-   the event records, contact inboxes, social links from Website switches. */
+   the event records, contact inboxes, social links from Website switches.
+   The link columns are <div role="navigation">, not <nav>: the old global stylesheet turns
+   every bare <nav> into an 80px sticky bar, which stacked the columns on top of each other
+   on phones and iPads (mobile audit, Nov 23 2026). */
 
 const DEFAULT_SOCIAL = {
   linkedin: "https://www.linkedin.com/company/thetechfestival/",
@@ -37,7 +40,7 @@ export default function BrandFooter() {
   const head = { fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#F5A623", margin: 0 };
   const link = { color: "rgba(255,255,255,0.82)", textDecoration: "none", fontSize: 14 };
   return (
-    <footer className="tb" style={{ background: "#151035", color: "#fff" }}>
+    <footer className="tb" style={{ background: "#151035", color: "#fff", textAlign: "left" }}>
       <div className="tb-wrap" style={{ paddingBlock: "48px 28px", display: "grid", gap: 36 }}>
         <div className="tb-foot-grid">
           <div style={col}>
@@ -47,18 +50,18 @@ export default function BrandFooter() {
             </p>
             <StoreBadges where="footer" size="sm" />
           </div>
-          <nav aria-label="2027 events" style={col}>
+          <div role="navigation" aria-label="2027 events" style={col}>
             <p style={head}>2027 events</p>
             {upcoming.map((e) => <Link key={e._id} to={eventPath(e)} style={link}>{e.name}</Link>)}
-          </nav>
-          <nav aria-label="Get involved" style={col}>
+          </div>
+          <div role="navigation" aria-label="Get involved" style={col}>
             <p style={head}>Get involved</p>
             {GET_INVOLVED.map(([l, to]) => <Link key={to} to={to} style={link}>{l}</Link>)}
-          </nav>
-          <nav aria-label="About" style={col}>
+          </div>
+          <div role="navigation" aria-label="About" style={col}>
             <p style={head}>About</p>
             {ABOUT.map(([l, to]) => <Link key={to} to={to} style={link}>{l}</Link>)}
-          </nav>
+          </div>
           <div style={col}>
             <p style={head}>Contact</p>
             <span style={{ fontSize: 14, color: "rgba(255,255,255,0.82)" }}>General: <b style={{ color: "#fff", fontWeight: 600 }}>enquire@thetechfestival.com</b></span>

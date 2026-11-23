@@ -71,8 +71,9 @@ export default function BrandHeader({ ev, fixed = false }) {
           </button>
         </div>
       </div>
+      {/* A div, not <nav>: the old global stylesheet turns a bare <nav> into an 80px sticky bar. */}
       {phoneOpen && (
-        <nav className="tb-phone-nav" aria-label="Main">
+        <div role="navigation" className="tb-phone-nav" aria-label="Main">
           <b>Events</b>
           {eventItems.map(([l, to]) => <Link key={to} to={to}>{l}</Link>)}
           <b>Explore</b>
@@ -81,7 +82,7 @@ export default function BrandHeader({ ev, fixed = false }) {
           <Link to="/awards">Awards</Link>
           {MORE.map(([l, to]) => <Link key={to} to={to}>{l}</Link>)}
           <Link to="/app-login">Log in</Link>
-        </nav>
+        </div>
       )}
     </header>
   );

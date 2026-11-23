@@ -332,12 +332,34 @@ class LiveSite extends ApprovedSite {
 
   render() {
     return (
-      <div style={{ display: "contents" }} ref={(el) => { this.rootEl = el; }}>
+      <div className="ap-desk" style={{ display: "contents" }} ref={(el) => { this.rootEl = el; }}>
+        <style>{NARROW}</style>
         {super.render()}
       </div>
     );
   }
 }
+
+/* The desktop board on phones and tablets (mobile audit, Nov 23 2026). The phone board has no
+   Partners or Awards screen, and iPads from 821px get the desktop board, so its fixed 3-6 column grids
+   squeezed award winners and partner logos into slivers ("Validgri", "Transient" cut off). Below
+   1000px those grids drop to two columns, and below 560px three-column ones to one. Grids that already
+   wrap (auto-fit / auto-fill) are untouched. The board's inline styles need !important to override. */
+const NARROW = `@media (max-width: 1000px) {
+  .ap-desk .ap-root [style*="grid-template-columns: repeat(3,"],
+  .ap-desk .ap-root [style*="grid-template-columns: repeat(4,"],
+  .ap-desk .ap-root [style*="grid-template-columns: repeat(6,"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+@media (max-width: 560px) {
+  .ap-desk .ap-root [style*="grid-template-columns: repeat(3,"],
+  .ap-desk .ap-root [style*="grid-template-columns: 1fr 1fr"],
+  .ap-desk .ap-root [style*="grid-template-columns: minmax(0px, 1fr) minmax(0px, 1fr)"],
+  .ap-desk .ap-root [style*="grid-template-columns: minmax(0px, 1.2fr) minmax(0px, 1fr)"] { grid-template-columns: minmax(0, 1fr) !important; }
+  /* Awards › how winners are chosen: dot, criterion, weight, then the description on its own line. */
+  .ap-desk .ap-root [style*="grid-template-columns: 14px 160px 48px"] { grid-template-columns: 14px minmax(0, 1fr) 48px !important; }
+  .ap-desk .ap-root [style*="grid-template-columns: 14px 160px 48px"] > :nth-child(4) { grid-column: 1 / -1; }
+}`;
+/* The browser writes minmax(0, 1fr) back as minmax(0px, 1fr) in the style attribute: match that. */
 
 /** One route element for every screen of the approved design. `fallback` renders for
     addresses that look like event pages but aren't one of the six 2027 events. */

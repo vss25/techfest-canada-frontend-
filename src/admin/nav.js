@@ -4,7 +4,7 @@ import { MapPinned,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
 import { Boxes, PenLine, CalendarRange, Clapperboard, FileSignature, Flame, History, Percent } from "lucide-react";
-import { CircleHelp, ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
+import { CircleHelp, ClipboardList, ListTodo, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
    The panel's structure (Nov 2026, the approved admin design,
@@ -108,6 +108,9 @@ export const WORKSPACES = [
     { title: "Contracts", items: [
       { to: "contracts", label: "Contracts", icon: FileSignature },
       { to: "offerings", label: "Offerings", icon: Boxes },
+      // Nov 23 2026: MOUs with community, media and ecosystem partners, from their own catalogue.
+      { to: "mous", label: "MOUs", icon: Handshake },
+      { to: "mou-items", label: "MOU catalogue", icon: ListTodo },
     ] },
     { title: "Enquiries", items: [
       // Nov 20 2026: people who replied with interest to our Explee outreach, synced by themselves.

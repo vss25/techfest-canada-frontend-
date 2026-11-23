@@ -254,6 +254,7 @@ function Page() {
       const r = await adminFetch(`${API}/write`, { method: "POST", body: {} });
       me.setData((d) => ({ ...d, run: r.run, rounds: r.rounds }));
       setPoll(true);
+      if (data?.writingVia === "muse") toast.success("Requested. Muse writes these for free and checks 3 times a day. Your drafts will appear here.");
     } catch (err) { toast.error(err); } finally { setWriting(false); }
   };
   const replace = (draft) => me.setData((d) => ({ ...d, drafts: d.drafts.map((x) => (x.id === draft.id ? draft : x)) }));
@@ -262,7 +263,8 @@ function Page() {
   const open = data.drafts.filter((d) => d.status !== "posted");
   const done = data.drafts.filter((d) => d.status === "posted");
   const working = state === "working";
-  const cantWrite = !data.writing || working || data.rounds.left <= 0 || data.budget.left <= 0;
+  const muse = data.writingVia === "muse";   // the free Muse bridge: no Anthropic key, no writing budget
+  const cantWrite = !data.writing || working || data.rounds.left <= 0 || (!muse && data.budget.left <= 0);
 
   return (
     <div className="mx-auto flex max-w-[860px] flex-col gap-4">
@@ -276,21 +278,26 @@ function Page() {
       />
 
       {!data.writing && <Banner tone="warn" title="Writing isn't set up yet">The server needs its Anthropic API key. Ask the developers.</Banner>}
-      {data.writing && data.budget.left <= 0 && <Banner tone="warn" title="This month's writing limit is used up">It can be raised in Marketing › Social posts › Settings.</Banner>}
+      {muse && !working && <Banner tone="info" title="Drafts are written by Muse for free">They are checked 3 times a day, so new drafts take a while to appear.</Banner>}
+      {data.writing && !muse && data.budget.left <= 0 && <Banner tone="warn" title="This month's writing limit is used up">It can be raised in Marketing › Social posts › Settings.</Banner>}
       {data.writing && data.rounds.left <= 0 && !working && <Banner tone="info" title="That's all for today">You can write new drafts {data.rounds.max} times a day. Try again tomorrow.</Banner>}
       {!data.saved && !working && (
         <Banner tone="info" icon={PenLine} title="Make them sound like you" action={<Button size="sm" onClick={() => setSettingsOpen(true)}>Set it up</Button>}>
           Add a few lines about yourself and pick your voice and topics. It takes a minute and makes your posts different from everyone else's.
         </Banner>
       )}
-      {working && (
+      {working && (muse ? (
+        <Banner tone="info" title="Muse is writing these">
+          You can leave this page; the drafts will be here when they are ready.
+        </Banner>
+      ) : (
         <Banner tone="info" title="Claude is researching and checking your drafts">
           This takes 2 to 4 minutes. You can leave this page; your drafts will be waiting here.
         </Banner>
-      )}
+      ))}
       {state === "done" && data.run.made > 0 && (
         <Banner tone="good" title={`${data.run.made} new ${data.run.made === 1 ? "draft" : "drafts"} ready`}>
-          {data.run.dropped.length > 0 && <>Claude left out {data.run.dropped.length} that couldn't be fully sourced, didn't pass the check or were too close to a colleague's post.</>}
+          {data.run.dropped.length > 0 && <>{muse ? "Muse" : "Claude"} left out {data.run.dropped.length} that couldn't be fully sourced, didn't pass the check or were too close to a colleague's post.</>}
         </Banner>
       )}
       {(state === "failed" || (state === "done" && data.run.made === 0)) && data.run.error && (
@@ -298,7 +305,7 @@ function Page() {
       )}
 
       {open.length === 0 && !working ? (
-        <EmptyState icon={Sparkles} title="No drafts yet" body="Press Write new drafts. Claude will have a few ready in a couple of minutes."
+        <EmptyState icon={Sparkles} title="No drafts yet" body={muse ? "Press Write new drafts. Muse writes these for free and checks 3 times a day, so they take a while to appear." : "Press Write new drafts. Claude will have a few ready in a couple of minutes."}
           action={data.writing ? <Button variant="primary" icon={Sparkles} loading={writing} disabled={cantWrite} onClick={write}>Write new drafts</Button> : null} />
       ) : (
         open.map((d) => <DraftCard key={d.id} draft={d} linkedin={data.linkedin} postMax={data.postMax} onChange={replace} onRemoved={removed} />)

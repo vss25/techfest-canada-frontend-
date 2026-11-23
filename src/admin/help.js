@@ -37,7 +37,7 @@ export const HELP = {
   "content/events": {
     what: "Each event's page on the website: its name, dates, venue, theme, photo and the coming-soon details.",
     steps: ["Pick an event on the left, or click New event to start one (it isn't on the website until it's published).", "Change the fields and click Save.", "Click Send to staging, then Open on staging to see the page as visitors will.", "Click Publish to live when it's right."],
-    tips: ["Set First day and Last day once the date is fixed: the page then shows the full date and a countdown. Until then, Date line shows something like “February 2027 · One day”.", "Leave Venue empty to show “Venue announced with tickets”.", "Sessions and speakers appear on the page when they're tied to this event in Agenda and Speakers. Ticket prices come from Tickets & prices.", "Deleting an event is for management only and takes it off the website."],
+    tips: ["Set First day and Last day once the date is fixed: the page then shows the full date and a countdown. Until then, Date line shows something like “February 2027 · One day”.", "Leave Venue empty to show “Venue announced with tickets”.", "Until the event has its own speakers or partners, the page shows another event's. Choose which event, pick the people or logos (or leave them unpicked for featured first) and change the wording under While speakers and partners are being confirmed.", "Sessions and speakers appear on the page when they're tied to this event in Agenda and Speakers. Ticket prices come from Tickets & prices.", "Deleting an event is for management only and takes it off the website."],
   },
   "content/agenda": {
     what: "Every session on the website's agenda and in the app: titles, times, formats, speakers and moderators.",
@@ -232,9 +232,9 @@ export const HELP = {
 
   /* ---------- Operations ---------- */
   events: {
-    what: "Each event's settings: who can see its attendees, how long it stays “just ended”, and whether its pricing is announced.",
+    what: "Each event's settings: who can see its attendees, how long it stays “just ended”, whether its pricing is announced, and its targets.",
     steps: ["Pick the event.", "Change the setting and save."],
-    tips: [NOW("These settings"), "Changing events is for management."],
+    tips: [NOW("These settings"), "Changing events is for management.", "Targets (delegates and exhibitors) are private: Home shows tickets sold and exhibiting companies against them for the event chosen in the top bar. The website never shows them."],
   },
 
   /* ---------- People ---------- */

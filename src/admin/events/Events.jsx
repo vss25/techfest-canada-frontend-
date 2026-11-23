@@ -3,6 +3,7 @@ import { Info, Save } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
+import { useAdminEvent } from "../eventContext";
 import {
   Badge, Banner, Button, Card, ErrorState, Field, Input, LoadingState,
   PageHeader, Select, Switch, TableWrap, Tabs,
@@ -40,12 +41,15 @@ export default function Events() {
   const matrixApi = useApi("/admin/events/visibility-matrix");
   const [tab, setTab] = useState("events");
   const [selectedKey, setSelectedKey] = useState(null);
+  // Until a row is clicked: the event chosen in the top bar (so Home's "Set targets" opens the right one).
+  const { current: chosen } = useAdminEvent();
+  const chosenKey = chosen?.eventKey?.current || chosen?.eventKey || "";
 
   if (eventsApi.loading) return <LoadingState label="Loading events…" />;
   if (eventsApi.error && !eventsApi.data) return <ErrorState error={eventsApi.error} onRetry={eventsApi.reload} />;
 
   const events = eventsApi.data?.events || [];
-  const selected = events.find((e) => e.eventKey === selectedKey) || events[0] || null;
+  const selected = events.find((e) => e.eventKey === (selectedKey || chosenKey)) || events[0] || null;
   const reloadAll = () => { eventsApi.reload(); matrixApi.reload(); };
 
   return (
@@ -137,6 +141,9 @@ function EventEditor({ event, events, onSaved }) {
   const [sharedWith, setSharedWith] = useState(event.attendeeVisibility?.sharedWith || []);
   const [graceDays, setGraceDays] = useState(String(event.settings?.lifecycleGraceDays ?? 7));
   const [pricingAnnounced, setPricingAnnounced] = useState(!!event.settings?.pricingAnnounced);
+  // Private sales goals (Nov 22 2026): the dashboard shows sold vs these. Never on the website.
+  const [targetDelegates, setTargetDelegates] = useState(event.settings?.targets?.delegates ?? "");
+  const [targetExhibitors, setTargetExhibitors] = useState(event.settings?.targets?.exhibitors ?? "");
   const [saving, setSaving] = useState(false);
 
   const others = events.filter((e) => e.eventKey !== event.eventKey);
@@ -146,11 +153,14 @@ function EventEditor({ event, events, onSaved }) {
   const save = async () => {
     const days = Number(graceDays);
     if (!Number.isFinite(days) || days < 0) { toast.error("Grace days must be a number of 0 or more."); return; }
+    const target = (v) => (String(v).trim() === "" ? null : Number(v));
+    const targets = { delegates: target(targetDelegates), exhibitors: target(targetExhibitors) };
+    if (Object.values(targets).some((n) => n !== null && (!Number.isInteger(n) || n < 0))) { toast.error("Targets must be whole numbers, or empty for no target."); return; }
     setSaving(true);
     try {
       await api.patch(`/admin/events/${encodeURIComponent(event.eventKey)}`, {
         attendeeVisibility: { mode, audience, sharedWith },
-        settings: { lifecycleGraceDays: days, pricingAnnounced },
+        settings: { lifecycleGraceDays: days, pricingAnnounced, targets },
       });
       toast.success(`${eventName(event)} saved.`);
       onSaved();
@@ -217,6 +227,19 @@ function EventEditor({ event, events, onSaved }) {
               ? "This event's prices can be shown and sold."
               : "No prices anywhere for this event — pages show “to be announced” and checkout stays closed."}
           />
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <p className="text-[13px] font-semibold text-ttfc-text/90">Targets for this event</p>
+        <p className="mt-0.5 text-xs text-ttfc-dim">What you're aiming for. Private: the dashboard shows sold against these; the website never shows them. Leave empty for no target.</p>
+        <div className="mt-2 grid gap-5 sm:grid-cols-2">
+          <Field label="Delegates" hint="People with a ticket or pass for this event.">
+            {(id) => <Input id={id} type="number" min="0" step="1" value={targetDelegates} onChange={(e) => setTargetDelegates(e.target.value)} placeholder="e.g. 150" />}
+          </Field>
+          <Field label="Exhibitors" hint="Companies exhibiting at this event.">
+            {(id) => <Input id={id} type="number" min="0" step="1" value={targetExhibitors} onChange={(e) => setTargetExhibitors(e.target.value)} placeholder="e.g. 20" />}
+          </Field>
         </div>
       </div>
 

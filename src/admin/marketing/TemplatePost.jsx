@@ -4,9 +4,11 @@ import { useApi } from "../hooks";
 import { adminFetch } from "../api";
 import { useToast } from "../toastContext";
 import { useAdminEvent } from "../eventContext";
-import { Banner, Button, Field, Modal, Select, Spinner } from "../ui";
+import { Link } from "react-router-dom";
+import { Banner, Button, Field, Modal, Select, Spinner, Switch } from "../ui";
 import { TEMPLATES, buildPost, templateOf } from "./postTemplates";
 import { designsFor, loadArtAssets, loadImg, renderPost, sizeFor } from "./postArt";
+import { rulesProblems } from "./templateLayout";
 
 /* =========================================================
    Social posts › "Create from a template" (Nov 23 2026). One click makes a finished post for LinkedIn, X and
@@ -198,6 +200,7 @@ export default function TemplatePost({ open, onClose, onCreated, writing }) {
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState("");       // the channel open in the large editor
   const [step, setStep] = useState("");
+  const [allEvents, setAllEvents] = useState(false);  // also list speakers / sessions / partners from other events
   const fileRefs = useRef({});
 
   const t = templateOf(template);
@@ -205,31 +208,54 @@ export default function TemplatePost({ open, onClose, onCreated, writing }) {
   const speakers = useApi(open && t && (t.source === "speaker" || t.source === "session") ? "/cms/speaker?drafts=1" : null);
   const sessions = useApi(open && t && (t.source === "speaker" || t.source === "session") ? "/cms/session?drafts=1" : null);
   const partners = useApi(open && t?.source === "partner" ? "/cms/partner?drafts=1" : null);
+  const uploaded = useApi(open ? "/console/post-templates" : null);   // ready ones join the design library
 
   const evList = useMemo(() => (Array.isArray(events.data) ? events.data : []).filter((e) => String(e.name || "").trim()).sort((a, b) => String(a.startDate || "9").localeCompare(String(b.startDate || "9"))), [events.data]);
   useEffect(() => { if (!eventId && evList.length) setEventId(idOf(evList.find((e) => idOf(e) === idOf(current)) || evList.find((e) => e.startDate && e.startDate >= new Date().toISOString().slice(0, 10)) || evList[0])); }, [evList, eventId, current]);
   const event = evList.find((e) => idOf(e) === eventId) || null;
 
   const list = (d) => (Array.isArray(d) ? d : []);
-  const items = !t ? [] : t.source === "speaker" ? list(speakers.data).filter((x) => String(x.name || "").trim()).sort(byName)
+  // What can be announced, then what belongs to the chosen event: a record's events (none = every event), and for
+  // partners also the event rows of the Partners page. Switched-off partners never show (they're off the website too).
+  const usable = !t ? [] : t.source === "speaker" ? list(speakers.data).filter((x) => String(x.name || "").trim()).sort(byName)
     : t.source === "session" ? list(sessions.data).filter((s) => !s.isBreak && (s.speakers || []).length).sort((a, b) => `${a.day}${a.time}`.localeCompare(`${b.day}${b.time}`))
       : t.source === "partner" ? list(partners.data).filter((p) => p.active !== false && String(p.name || "").trim()).sort(byName)
         : evList;
+  const onEvent = (x) => {
+    const refs = [...(x.events || []), ...(x.eventRows || []).map((r) => r?.event)].map((e) => e?._ref || e?._id || e).filter(Boolean);
+    return !refs.length || refs.includes(eventId);
+  };
+  const forEvent = t?.source === "event" ? usable : usable.filter(onEvent);
+  const items = allEvents ? usable : forEvent;
+  const switchedOff = t?.source === "partner" ? list(partners.data).filter((p) => p.active === false).length : 0;
   const item = t?.source === "event" ? event : items.find((x) => idOf(x) === itemId) || null;
   const built = useMemo(() => (t ? buildPost({ template, item, event, speakers: list(speakers.data), sessions: list(sessions.data) }) : null),
     [t, template, item, event, speakers.data, sessions.data]);
   const kind = built?.spec?.kind || "";
-  const designs = useMemo(() => (kind ? designsFor(kind) : []), [kind]);
+  const custom = useMemo(() => (uploaded.data?.templates || []).filter((x) => x.status === "ready" && x.kind === kind), [uploaded.data, kind]);
+  const designs = useMemo(() => (kind ? [
+    ...designsFor(kind),
+    ...custom.map((x) => ({ key: `tpl:${x.id}`, label: x.name, hint: x.notes || "Uploaded in Post templates", template: x })),
+  ] : []), [kind, custom]);
+  const chosenTemplate = designs.find((d) => d.key === design)?.template || null;
+  // An uploaded template's blank designs, loaded once each.
+  const [backgrounds, setBackgrounds] = useState({});
+  useEffect(() => {
+    if (!chosenTemplate) { setBackgrounds({}); return undefined; }
+    let alive = true;
+    Promise.all(CH.map(async (c) => {
+      const url = chosenTemplate.channels?.[c]?.background?.url;
+      return [c, url ? await loadImg(`${url.split("?")[0]}?w=${sizeFor(kind, c)[0]}&fm=png`).catch(() => null) : null];
+    })).then((pairs) => { if (alive) setBackgrounds(Object.fromEntries(pairs)); });
+    return () => { alive = false; };
+  }, [chosenTemplate, kind]);
 
   // Reset what depends on the template / the item.
   useEffect(() => { setItemId(""); setPhotos({}); setNotes({}); setAdjust({}); setDesign(""); }, [template]);
   useEffect(() => { setPhotos({}); setNotes({}); setAdjust({}); }, [itemId]);
   useEffect(() => { if (kind && !designs.some((d) => d.key === design)) setDesign(designs[0].key); }, [kind, designs, design]);
-  // A speaker, session or partner that belongs to one event announces that event by default.
-  useEffect(() => {
-    const ref = item && t?.source !== "event" ? (item.events || []).map((e) => e?._ref || e?._id || e).find((r) => evList.some((x) => idOf(x) === r)) : "";
-    if (ref) setEventId(ref);
-  }, [item, t, evList]);
+  // A new event: pick again from its own list.
+  useEffect(() => { setItemId(""); }, [eventId]);
 
   // Load what the images need (photos cut out, logos, the city photo). Drawing itself is quick and happens on every change.
   useEffect(() => {
@@ -252,7 +278,12 @@ export default function TemplatePost({ open, onClose, onCreated, writing }) {
     return () => { alive = false; };
   }, [open, built, photos, kind, toast]);
 
-  const spec = useMemo(() => (built && loaded && design ? { ...built.spec, design, people: loaded.people, logo: loaded.logo, photo: loaded.scene } : null), [built, loaded, design]);
+  const spec = useMemo(() => (built && loaded && design ? {
+    ...built.spec, design, people: loaded.people, logo: loaded.logo, photo: loaded.scene,
+    template: chosenTemplate, backgrounds: chosenTemplate ? backgrounds : null,
+  } : null), [built, loaded, design, chosenTemplate, backgrounds]);
+  // What this post breaks of the chosen template's rules (only uploaded templates carry rules).
+  const ruleIssues = useMemo(() => (spec && chosenTemplate ? rulesProblems(spec, chosenTemplate.channels?.linkedin) : []), [spec, chosenTemplate]);
   const previews = useMemo(() => {
     if (!spec) return null;
     return Object.fromEntries(CH.map((c) => { const canvas = renderPost({ ...spec, adjust: adjust[c] || {} }, c, loaded.assets); return [c, { canvas, url: canvas.toDataURL("image/jpeg", 0.85) }]; }));
@@ -327,20 +358,35 @@ export default function TemplatePost({ open, onClose, onCreated, writing }) {
           </div>
 
           {t && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {t.source !== "event" && (
-                <Field label={{ speaker: "Speaker", session: "Session", partner: "Partner" }[t.source]}>{(id) => (
-                  <Select id={id} value={itemId} disabled={listLoading || busy} onChange={(e) => setItemId(e.target.value)}>
-                    <option value="">{listLoading ? "Loading…" : "Choose…"}</option>
-                    {items.map((x) => <option key={idOf(x)} value={idOf(x)}>{itemText(x)}</option>)}
+            <div className="flex flex-col gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Event" hint={t.source === "event" ? undefined : `Pick the event first: the list shows its ${{ speaker: "speakers", session: "sessions", partner: "partners" }[t.source]}.`}>{(id) => (
+                  <Select id={id} value={eventId} disabled={events.loading || busy} onChange={(e) => setEventId(e.target.value)}>
+                    {evList.map((e) => <option key={idOf(e)} value={idOf(e)}>{[e.name, e.startDate].filter(Boolean).join(" · ")}</option>)}
                   </Select>
                 )}</Field>
+                {t.source !== "event" && (
+                  <Field label={{ speaker: "Speaker", session: "Session", partner: "Partner" }[t.source]}
+                    hint={listLoading ? undefined : `${items.length} ${allEvents ? "in all" : "for this event"}`}>{(id) => (
+                    <Select id={id} value={itemId} disabled={listLoading || busy || !items.length} onChange={(e) => setItemId(e.target.value)}>
+                      <option value="">{listLoading ? "Loading…" : items.length ? "Choose…" : "None yet"}</option>
+                      {items.map((x) => <option key={idOf(x)} value={idOf(x)}>{itemText(x)}{allEvents && !onEvent(x) ? " (another event)" : ""}</option>)}
+                    </Select>
+                  )}</Field>
+                )}
+              </div>
+              {t.source !== "event" && !listLoading && (
+                <Switch label="Also show other events" checked={allEvents} onChange={setAllEvents}
+                  description="For someone returning from an earlier event, or a partner that isn't tagged to this one yet." />
               )}
-              <Field label="Event">{(id) => (
-                <Select id={id} value={eventId} disabled={events.loading || busy} onChange={(e) => setEventId(e.target.value)}>
-                  {evList.map((e) => <option key={idOf(e)} value={idOf(e)}>{[e.name, e.startDate].filter(Boolean).join(" · ")}</option>)}
-                </Select>
-              )}</Field>
+              {t.source !== "event" && !listLoading && !forEvent.length && (
+                <Banner tone="info" title={`No ${{ speaker: "speakers", session: "sessions", partner: "partners" }[t.source]} for ${event?.name || "this event"} yet`}>
+                  {t.source === "session"
+                    ? <>Sessions show up once they're on this event's agenda with their speakers: <Link className="font-semibold underline" to="/admin/content/agenda">Content › Agenda</Link>.</>
+                    : <>To make one appear here, open it in <Link className="font-semibold underline" to={t.source === "partner" ? "/admin/content/partners" : "/admin/content/speakers"}>{t.source === "partner" ? "Content › Partners & sponsors" : "Content › Speakers"}</Link>, tick {event?.name || "this event"} under Events (or leave Events empty for every event){t.source === "partner" ? ", make sure it's switched on (Active) and has a logo" : " and make sure it has a photo"}, then send it to staging. Or switch on “Also show other events”.</>}
+                </Banner>
+              )}
+              {switchedOff > 0 && !listLoading && <p className="text-xs text-[#6B6688]">{switchedOff} partners are switched off in Content › Partners & sponsors, so they aren't listed.</p>}
             </div>
           )}
 
@@ -351,7 +397,7 @@ export default function TemplatePost({ open, onClose, onCreated, writing }) {
                 {designs.map((d) => (
                   <button key={d.key} type="button" aria-pressed={design === d.key} onClick={() => { setDesign(d.key); setAdjust({}); }}
                     className="flex flex-col gap-0.5 rounded-[10px] border p-2.5 text-left" style={chip(design === d.key)}>
-                    <b className="text-[12.5px] text-[#151035]">{d.label}</b>
+                    <b className="text-[12.5px] text-[#151035]">{d.label}{d.template ? <span className="ml-1 rounded bg-[#EDE9FE] px-1 text-[10px] font-semibold text-[#5B21B6]">Yours</span> : null}</b>
                     <span className="text-[11px] text-[#6B6688]">{d.hint}</span>
                   </button>
                 ))}
@@ -381,6 +427,10 @@ export default function TemplatePost({ open, onClose, onCreated, writing }) {
 
           {built?.problems?.length > 0 && t && (item || t.source === "event") && <Banner tone="warn">{built.problems.join(" ")}</Banner>}
 
+          {ruleIssues.length > 0 && <Banner tone="warn" title="Check against the template's rules">{ruleIssues.join(" ")}</Banner>}
+          {chosenTemplate && CH.some((c) => !chosenTemplate.channels?.[c]?.background) && (
+            <p className="text-xs text-[#6B6688]">{CH.filter((c) => !chosenTemplate.channels?.[c]?.background).map((c) => CH_LABEL[c]).join(" and ")} use{CH.filter((c) => !chosenTemplate.channels?.[c]?.background).length === 1 ? "s" : ""} the built-in design: this template has no design for {CH.filter((c) => !chosenTemplate.channels?.[c]?.background).length === 1 ? "it" : "them"}.</p>
+          )}
           {previews ? (
             <div className="flex flex-col gap-2">
               <p className="text-[13px] font-semibold text-[#151035]">The images {loading && <span className="ml-1 inline-flex items-center gap-1 text-xs font-normal text-[#6B6688]"><Spinner className="h-3.5 w-3.5" /> updating…</span>}</p>

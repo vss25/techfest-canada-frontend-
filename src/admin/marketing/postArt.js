@@ -29,6 +29,7 @@ import "@fontsource/poppins/500.css";
 import "@fontsource/poppins/500-italic.css";
 import "@fontsource/poppins/600.css";
 import "@fontsource/poppins/700.css";
+import { placePeople } from "./templateLayout";
 
 const LIGHT = {
   bg: "#FFFFFF", ink: "#141414", sub: "#3A3A3A", accent: "#7B3B9E", card: "#6D3A97", tag: "#E6E6EA", tagInk: "#141414",
@@ -562,6 +563,124 @@ function drawEventWhite(ctx, spec, a, W, H) {
   ctx.restore();
 }
 
+/* ---------- an uploaded template: the blank design, then each box by its rules ---------- */
+
+/** Text in a box: shrinks between size and minSize to fit maxLines, cut to maxChars, aligned in the box. */
+function boxText(ctx, b, value, W, H, { accent = "", } = {}) {
+  if (!b?.on || !value) return;
+  let text = String(value);
+  if (b.upper) text = text.toUpperCase();
+  if (b.maxChars && text.length > b.maxChars) text = `${text.slice(0, Math.max(1, b.maxChars - 1)).trim()}…`;
+  const x = b.x * W, y = b.y * H, w = b.w * W, h = b.h * H;
+  const padX = b.fill ? b.size * 0.6 : 0;
+  const f = fit(ctx, text, { width: Math.max(10, w - padX * 2), size: b.size, min: Math.min(b.minSize, b.size), maxLines: b.maxLines, weight: b.weight, italic: b.italic });
+  const lead = f.size * 1.2;
+  const blockH = f.lines.length * lead;
+  const top = b.valign === "bottom" ? y + h - blockH : b.valign === "middle" ? y + (h - blockH) / 2 : y;
+  font(ctx, b.weight, f.size, b.italic);
+  const widths = f.lines.map((l) => ctx.measureText(l).width);
+  if (b.fill) {
+    const bw = Math.max(...widths) + padX * 2, bh = blockH + f.size * 0.5;
+    const bx = b.align === "right" ? x + w - bw : b.align === "center" ? x + (w - bw) / 2 : x;
+    ctx.fillStyle = b.fill;
+    roundRect(ctx, bx, top - f.size * 0.25, bw, bh, Math.min(bh * 0.3, f.size * 0.5));
+    ctx.fill();
+  }
+  // Two colours (the title): the accent words first, then the rest.
+  const accentWords = accent ? accent.split(/\s+/).filter(Boolean).length : 0;
+  let word = 0;
+  ctx.textBaseline = "top";
+  f.lines.forEach((line, i) => {
+    const lw = widths[i];
+    let cx = b.align === "right" ? x + w - padX - lw : b.align === "center" ? x + (w - lw) / 2 : x + padX;
+    const parts = line.split(" ");
+    parts.forEach((p, pi) => {
+      const t = pi < parts.length - 1 ? `${p} ` : p;
+      ctx.fillStyle = b.twoTone && word < accentWords ? b.accent : b.color;
+      ctx.fillText(t, cx, top + i * lead);
+      cx += ctx.measureText(t).width;
+      word += 1;
+    });
+  });
+  ctx.textBaseline = "alphabetic";
+}
+
+function drawUploaded(ctx, spec, a, W, H, layout) {
+  ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+  if (spec.background) drawImage(ctx, spec.background, 0, 0, W, H, { mode: "cover", focusY: 0.5 });
+  const B = layout.boxes || {};
+  const u = Math.min(W, H);
+  // Images first, words on top.
+  const photoBox = B.photo;
+  if (photoBox?.on && spec.photo) {
+    const x = photoBox.x * W, y = photoBox.y * H, w = photoBox.w * W, h = photoBox.h * H;
+    ctx.save(); roundRect(ctx, x, y, w, h, photoBox.radius * Math.min(w, h)); ctx.clip();
+    const b = place(ctx, spec, "photo", x, y, w, h, { x, y, w, h });
+    drawImage(ctx, spec.photo, b.x, b.y, b.w, b.h, { mode: photoBox.fit, focusY: 0.55 });
+    ctx.restore();
+  }
+  const logoBox = B.logo;
+  if (logoBox?.on) {
+    const x = logoBox.x * W, y = logoBox.y * H, w = logoBox.w * W, h = logoBox.h * H;
+    if (logoBox.card) { ctx.fillStyle = logoBox.card; roundRect(ctx, x, y, w, h, logoBox.radius * Math.min(w, h)); ctx.fill(); }
+    ctx.save(); roundRect(ctx, x, y, w, h, logoBox.radius * Math.min(w, h)); ctx.clip();
+    const pad = logoBox.card ? Math.min(w, h) * 0.12 : 0;
+    const b = place(ctx, spec, "logo", x + pad, y + pad, w - pad * 2, h - pad * 2, { x, y, w, h });
+    drawImage(ctx, spec.logo, b.x, b.y, b.w, b.h, { mode: logoBox.fit, alignX: logoBox.align === "left" ? 0 : logoBox.align === "right" ? 1 : 0.5 });
+    ctx.restore();
+  }
+  const brandBox = B.brand;
+  if (brandBox?.on) {
+    const h = brandBox.h * H;
+    logo(ctx, spec, a, brandBox.variant || "dark", brandBox.x * W, brandBox.y * H, h);
+  }
+  const pb = B.people;
+  const people = spec.people || [];
+  if (pb?.on && people.length) {
+    const labelH = pb.labels ? u * 0.2 : 0;   // room for the role, a two-line name, the title and the organisation
+    const spots = placePeople(people.length, pb, W, H, { labelH });
+    people.forEach((p, i) => {
+      const s = spots[i];
+      ctx.save();
+      if (pb.card !== "cutout") { roundRect(ctx, s.x, s.y, s.w, s.h, pb.radius * s.w); ctx.clip(); }
+      if (pb.card === "card") { ctx.fillStyle = pb.cardColor; ctx.fillRect(s.x, s.y, s.w, s.h); }
+      const hit = { x: s.x, y: s.y, w: s.w, h: s.h };
+      const inner = pb.card === "card" && p.cutout ? { x: s.x, y: s.y + s.h * 0.08, w: s.w, h: s.h * 0.92 } : hit;
+      const b = place(ctx, spec, `person${i}`, inner.x, inner.y, inner.w, inner.h, hit);
+      if (p.img) {
+        if (pb.card === "cutout") drawImage(ctx, p.img, b.x, b.y, b.w, b.h, { mode: "contain", alignY: 1 });
+        else drawImage(ctx, p.img, b.x, b.y, b.w, b.h, { mode: "cover", focusY: p.cutout ? 0 : 0.2 });
+      } else {
+        if (pb.card === "cutout") { ctx.fillStyle = pb.cardColor; roundRect(ctx, s.x, s.y, s.w, s.h, pb.radius * s.w); ctx.fill(); }
+        initials(ctx, p.name, s.x, s.y, s.w, s.h);
+      }
+      ctx.restore();
+      if (pb.labels) {
+        const tw = s.w + (pb.gap * W) * 0.6;
+        let ty = s.labelY + u * 0.02;
+        font(ctx, 600, Math.round(u * 0.015)); ctx.fillStyle = pb.labelColor; ctx.textBaseline = "top";
+        ctx.fillText(String(p.role || "Speaker").toUpperCase(), s.x, ty);
+        ty += u * 0.03;
+        const small = people.length > 4;
+        ty = lines(ctx, fit(ctx, p.name, { width: tw, size: Math.round(u * (small ? 0.022 : 0.026)), min: Math.round(u * 0.016), maxLines: 2, weight: 600 }), s.x, ty, pb.nameColor, { weight: 600, lead: 1.15 }) + u * 0.005;
+        if (p.title) ty = lines(ctx, fit(ctx, p.title, { width: tw, size: Math.round(u * (small ? 0.017 : 0.019)), min: Math.round(u * 0.013), maxLines: 2, weight: 600 }), s.x, ty, pb.labelColor, { weight: 600, lead: 1.25 });
+        if (p.org) lines(ctx, fit(ctx, p.org, { width: tw, size: Math.round(u * (small ? 0.017 : 0.019)), min: Math.round(u * 0.013), maxLines: 1, weight: 500, italic: true }), s.x, ty, pb.labelColor, { weight: 500, italic: true });
+      }
+    });
+  }
+  const t = spec.title;
+  boxText(ctx, B.title, t ? `${t.accent || ""} ${t.rest || ""}`.trim() : spec.headline, W, H, { accent: t?.accent || "" });
+  boxText(ctx, B.tag, spec.tag, W, H);
+  boxText(ctx, B.when, spec.header?.when, W, H);
+  boxText(ctx, B.venue, spec.header?.venue, W, H);
+  boxText(ctx, B.footer, spec.footer || "thetechfestival.com", W, H);
+  const p0 = people[0];
+  if (p0) {
+    boxText(ctx, B.name, p0.name, W, H);
+    boxText(ctx, B.role, [p0.title, p0.org].filter(Boolean).join(", "), W, H);
+  }
+}
+
 const DRAW = {
   "keynote-light": (ctx, s, a, W, H) => drawKeynote(ctx, s, a, W, H, LIGHT),
   "keynote-night": (ctx, s, a, W, H) => drawKeynote(ctx, s, a, W, H, NIGHT),
@@ -580,6 +699,17 @@ const DRAW = {
  * [{ key, x, y, w, h }] in canvas pixels, the last drawn on top.
  */
 export function renderPost(spec, channel, a = {}) {
+  // An uploaded template (spec.template) with a design for this channel; a channel it has no design for uses the
+  // kind's first built-in design.
+  const layout = spec.template?.channels?.[channel];
+  if (layout?.background) {
+    const [W, H] = sizeFor(spec.kind, channel);
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    c.boxes = [];
+    drawUploaded(c.getContext("2d"), { ...spec, background: spec.backgrounds?.[channel] }, a, W, H, layout);
+    return c;
+  }
   const design = DRAW[spec.design] && designsFor(spec.kind).some((d) => d.key === spec.design) ? spec.design : designsFor(spec.kind)[0].key;
   const [W, H] = sizeFor(spec.kind, channel, design);
   const c = document.createElement("canvas");

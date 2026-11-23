@@ -75,9 +75,9 @@ export const HELP = {
     tips: ["These are the same records as on Partners: editing one here edits it there too.", FLOW],
   },
   "content/tickets": {
-    what: "The tickets the chosen event sells on the website: name, price, how many and when they're on sale.",
-    steps: ["Choose the event in the top bar.", "A Briefing shows the default Briefing tickets: edit them for every Briefing, or Customise for this event to give it its own.", "Click a ticket to change it, or Add ticket. Management only.", "When it's time to sell, turn on Pricing announced in Operations › Event settings."],
-    tips: [NOW("Ticket changes"), "The Toronto Main Event always has its own tickets.", "Use the default tickets puts a customised Briefing back on the defaults, unless someone has already ordered its own."],
+    what: "The tickets the chosen event sells on the website: name, price, how many have sold and when they're on sale, plus the multi-event passes that cover it.",
+    steps: ["Choose the event in the top bar.", "Click a ticket to change its price for this event only, or Add ticket. Management only.", "Add pass: one price for this city and the Toronto Main Event; tick more cities for a multi-city pass.", "When it's time to sell, turn on Pricing announced in Operations › Event settings."],
+    tips: [NOW("Ticket changes"), "Every event has its own tickets and prices. A new Briefing starts with a copy of Defaults for new Briefings.", "Sold counts paid orders only, so it stays 0 until the first sale.", "A pass shows on every event it covers and buyers get a pass for each; it counts towards each event's delegates.", "A ticket or pass someone has bought can't be deleted: switch it off instead."],
   },
   inventory: {
     what: "TTFC 2026's passes and booths: prices and how many are left.",
@@ -179,8 +179,18 @@ export const HELP = {
 
   social: {
     what: "Social posts for LinkedIn, Instagram and X: write once, let Claude write each channel's version, preview, schedule, approve, post.",
-    steps: ["Press New post. Write the main (LinkedIn) post, or use ✦ Write about… to draft it from a speaker, session, partner or event page.", "Press ✦ Write X and Instagram versions. Edit them, or Suggest another; the arrows flip between versions.", "Add a photo: it's cropped for each channel. Pick a date and time.", "Submit for approval. A manager approves it.", "When it's time, copy each channel's text, download its photo, post it, then Mark posted with the link."],
+    steps: ["Fastest: press Create from a template, pick a template (speaker, panel, partner, call for speakers, call for sponsors, tickets), pick the speaker, session, partner or event, pick a design, change anyone's photo if the website's isn't right, click an image to see it large and drag or resize the photos and logos, then press Create post. The copy for each channel and the images in each size are made for you.", "Or press New post. Write the main (LinkedIn) post, or use ✦ Write about… to draft it from a speaker, session, partner or event page.", "Press ✦ Write X and Instagram versions. Edit them, or Suggest another; the arrows flip between versions.", "Add a photo: it's cropped for each channel. Pick a date and time.", "Submit for approval. A manager approves it.", "When it's time, copy each channel's text, download its photo, post it, then Mark posted with the link."],
     tips: ["Drafts save automatically 30 seconds after a change.", "A post for a contract's promised post ticks that task when it's marked posted.", "Settings: hashtags, voice, words to avoid and the monthly writing limit (management)."],
+  },
+  "linkedin-posts": {
+    what: "Posts for your own LinkedIn profile: Claude finds current news on Canadian tech, policy and world events, writes in your voice with sources, and fact-checks every post.",
+    steps: ["Press My voice and topics. Add a few lines about yourself, pick a voice and what to write about, then Save.", "Press Write new drafts. In 2 to 4 minutes your drafts appear here.", "Read each draft and its sources. Change anything you like: your edits save when you click away.", "Press Post to my LinkedIn (you sign in to LinkedIn and it's posted as you), or Copy and paste it into LinkedIn yourself."],
+    tips: ["Only you see your drafts. Your colleagues get different posts.", "Drafts that can't be backed by a real source are left out.", "Each post invites sponsors, speakers or exhibitors in one light line, never a sales pitch.", "Used Copy? Press I posted it myself so it moves to Posted."],
+  },
+  "post-templates": {
+    what: "Your own blank designs for Social posts › Create from a template, and the rules for where everything goes on them.",
+    steps: ["Press New template, name it and pick what it's for: one speaker, a panel, a partner or an event.", "Upload the blank LinkedIn design (no words or photos on it; export it from Canva or Figma). Do the same for X and Instagram, or leave them on the built-in design.", "Drag each box (title, photos, logo, date, venue…) where it belongs; drag the pink corner to resize it. Set its rules on the right: alignment, colours, sizes, lines and character limits; for photos the gap, card and how many in a row.", "Save, then Mark ready. It now appears as a design in Create from a template."],
+    tips: ["The rules box under the preview lists the guidelines the template enforces, in plain words.", "Use LinkedIn's box positions copies them to X or Instagram as a start.", "Posts that break a rule (a title too long, a blurry logo, a missing photo) show a warning before they're created."],
   },
   calendar: {
     what: "Everything planned for the month and whether it went out: TTFC's posts, emails, partners' posts about us and contract promises.",
@@ -208,6 +218,16 @@ export const HELP = {
     what: "The catalogue contracts are built from: offerings, packages and the contract settings (TTFC's details, signatories, numbering, terms and conditions).",
     steps: ["Add an offering: its category, price, unit and what a signed contract tracks.", "Bundle offerings into a package at one price.", "Set TTFC's details, who signs, numbering and the clauses in Contract settings."],
     tips: ["Only the super admin changes the catalogue and settings; everyone can use them on contracts.", "Retire an offering instead of deleting it once it's on a contract."],
+  },
+  mous: {
+    what: "Memoranda of understanding with community, media and ecosystem partners for the chosen event: what TTFC offers, what the partner delivers, and the terms.",
+    steps: ["Press New MOU and enter the partner and their contact.", "Under What TTFC offers, tick each item and set how many, when and any code. Tick Only once ticket sales reach to make it a reward for a sales milestone.", "Under What the partner delivers, tick what you want from them and set the details. Tick Write this MOU's own wording to change a sentence just for this partner.", "Set the terms: binding or not, money or not, dates and the standard clauses. Tick who signs on both sides.", "Open the Review tab, fix anything in red, then press Send to review.", "Read it through, then Export PDF or Export Word. Back to draft lets you change it and export again."],
+    tips: ["Drafts save by themselves 30 seconds after a change.", "Draft PDF gives a copy marked DRAFT at any time; signatures print only on an exported PDF.", "Who signs for TTFC comes from Offerings › Contract settings.", "MOUs stay private: they are never on the website."],
+  },
+  "mou-items": {
+    what: "The general items MOUs are built from: what TTFC offers partners and what partners deliver, with their usual wording.",
+    steps: ["Start with Add the usual items, or press New item.", "Pick its side, name and category, and tick what an MOU asks for: how many, when, a code or a detail.", "Write its wording with the placeholders, like {partner} and {qty}. The example shows how it reads.", "Switch off Available for new MOUs to retire it."],
+    tips: ["Only the super admin changes the catalogue; everyone can use it on MOUs.", "An item on an MOU can't be deleted: retire it instead. MOUs that have it keep their own copy."],
   },
   "waitlist-2027": {
     what: "People who joined the 2027 waitlist, what they're interested in, and the wording and 2027 journey on that page.",

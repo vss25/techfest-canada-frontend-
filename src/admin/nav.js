@@ -3,8 +3,8 @@ import { MapPinned,
   Handshake, House, IdCard, Inbox, KeyRound, Landmark, LayoutDashboard, MailCheck, MailOpen, Megaphone, Mic2, Package, ScanLine,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
-import { Boxes, CalendarRange, Clapperboard, FileSignature, Flame, History, Percent } from "lucide-react";
-import { CircleHelp, ClipboardList, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
+import { Boxes, LayoutTemplate, PenLine, CalendarRange, Clapperboard, FileSignature, Flame, History, Percent } from "lucide-react";
+import { CircleHelp, ClipboardList, ListTodo, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
    The panel's structure (Nov 2026, the approved admin design,
@@ -84,6 +84,10 @@ export const WORKSPACES = [
     { title: "Social", items: [
       { to: "calendar", label: "Social media calendar", icon: CalendarRange },
       { to: "social", label: "Social posts", icon: Megaphone },
+      // Nov 23 2026: uploaded blank designs and their layout rules, used by Social posts › Create from a template.
+      { to: "post-templates", label: "Post templates", icon: LayoutTemplate },
+      // Nov 22 2026: drafts management post on their own LinkedIn profiles (researched, sourced, fact-checked).
+      { to: "linkedin-posts", label: "LinkedIn posts for my profile", icon: PenLine, management: true },
     ] },
     // Nov 18 2026: staff add codes; big discounts wait for a manager.
     { title: "Offers", items: [
@@ -106,6 +110,9 @@ export const WORKSPACES = [
     { title: "Contracts", items: [
       { to: "contracts", label: "Contracts", icon: FileSignature },
       { to: "offerings", label: "Offerings", icon: Boxes },
+      // Nov 23 2026: MOUs with community, media and ecosystem partners, from their own catalogue.
+      { to: "mous", label: "MOUs", icon: Handshake },
+      { to: "mou-items", label: "MOU catalogue", icon: ListTodo },
     ] },
     { title: "Enquiries", items: [
       // Nov 20 2026: people who replied with interest to our Explee outreach, synced by themselves.

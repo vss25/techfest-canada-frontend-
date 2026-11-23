@@ -97,13 +97,15 @@ export function PageHeader({ eyebrow, title, description, actions, status }) {
   return (
     <header className="mb-6 flex flex-col gap-1">
       {crumbs && <p className="whitespace-pre text-xs text-[#6B6688]">{crumbs}</p>}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <h1 className="text-[26px] font-bold leading-[34px] tracking-[-0.01em] text-ttfc-text">{title}</h1>
+      {/* The title keeps its width (it only wraps when it alone is wider than the page); when the buttons don't
+          fit beside it they move to the next line together, instead of squeezing the title onto two lines. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 max-w-full shrink-0 flex-wrap items-center gap-2.5">
+          <h1 className="min-w-0 text-[26px] font-bold leading-[34px] tracking-[-0.01em] text-ttfc-text">{title}</h1>
           {hit && <HelpButton to={hit.item.to} title={hit.item.label} />}
           {status && <span className="flex flex-wrap items-center gap-1.5">{status}</span>}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        {actions && <div className="flex min-w-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>
       {description && <p className="max-w-[760px] text-sm leading-relaxed text-ttfc-muted">{description}</p>}
     </header>
@@ -477,7 +479,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
   const descId = useId();
   useOverlay(open, onClose, panelRef);
   if (!open) return null;
-  const width = size === "lg" ? "max-w-2xl" : size === "sm" ? "max-w-sm" : "max-w-md";
+  const width = size === "xl" ? "max-w-5xl" : size === "lg" ? "max-w-2xl" : size === "sm" ? "max-w-sm" : "max-w-md";
   return createPortal(
     <div className="ttfc-admin-portal fixed inset-0 z-[99990] flex items-end justify-center p-0 sm:items-center sm:p-6">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in" onClick={onClose} aria-hidden="true" />

@@ -62,6 +62,7 @@ import MouEditor from "../admin/sales/MouEditor";
 import MouCatalogue from "../admin/sales/MouCatalogue";
 import Offerings from "../admin/sales/Offerings";
 import SocialPosts from "../admin/marketing/SocialPosts";
+import PostTemplateLibrary from "../admin/marketing/PostTemplateLibrary";
 import LinkedinPosts from "../admin/marketing/LinkedinPosts";
 import SocialCalendar from "../admin/marketing/SocialCalendar";
 import PromoCodesPage from "../admin/marketing/PromoCodesPage";
@@ -262,6 +263,7 @@ function AdminPanel() {
             <Route path="mous/:id" element={<MouEditor />} />
             <Route path="mou-items" element={<MouCatalogue />} />
             <Route path="social" element={<SocialPosts />} />
+            <Route path="post-templates" element={<PostTemplateLibrary />} />
             <Route path="linkedin-posts" element={<LinkedinPosts />} />
             <Route path="calendar" element={<SocialCalendar />} />
             <Route path="promo-codes" element={<PromoCodesPage />} />

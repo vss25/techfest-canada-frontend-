@@ -182,6 +182,11 @@ export const HELP = {
     steps: ["Press New post. Write the main (LinkedIn) post, or use ✦ Write about… to draft it from a speaker, session, partner or event page.", "Press ✦ Write X and Instagram versions. Edit them, or Suggest another; the arrows flip between versions.", "Add a photo: it's cropped for each channel. Pick a date and time.", "Submit for approval. A manager approves it.", "When it's time, copy each channel's text, download its photo, post it, then Mark posted with the link."],
     tips: ["Drafts save automatically 30 seconds after a change.", "A post for a contract's promised post ticks that task when it's marked posted.", "Settings: hashtags, voice, words to avoid and the monthly writing limit (management)."],
   },
+  "linkedin-posts": {
+    what: "Posts for your own LinkedIn profile: Claude finds current news on Canadian tech, policy and world events, writes in your voice with sources, and fact-checks every post.",
+    steps: ["Press My voice and topics. Add a few lines about yourself, pick a voice and what to write about, then Save.", "Press Write new drafts. In 2 to 4 minutes your drafts appear here.", "Read each draft and its sources. Change anything you like: your edits save when you click away.", "Press Post to my LinkedIn (you sign in to LinkedIn and it's posted as you), or Copy and paste it into LinkedIn yourself."],
+    tips: ["Only you see your drafts. Your colleagues get different posts.", "Drafts that can't be backed by a real source are left out.", "Each post invites sponsors, speakers or exhibitors in one light line, never a sales pitch.", "Used Copy? Press I posted it myself so it moves to Posted."],
+  },
   calendar: {
     what: "Everything planned for the month and whether it went out: TTFC's posts, emails, partners' posts about us and contract promises.",
     steps: ["Click Add to calendar (or a day's +) and say what it is, the day, where it goes and who posts it.", "To add many at once, click Upload a spreadsheet and choose your Excel or CSV file. It shows what it will add before adding anything.", "When something has gone out (also a partner's post or email), click it, set the day it went out, paste its link and click Mark as done.", "Planned vs done at the bottom lists the month: planned day beside the day it went out."],

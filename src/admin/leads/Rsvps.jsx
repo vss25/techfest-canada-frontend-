@@ -14,6 +14,7 @@ import {
 import { when } from "../format";
 import { personPath } from "../people/peopleMeta";
 import CodeLabel from "../people/CodeLabel";
+import { adminEventKey, useAdminEvent } from "../eventContext";
 
 /* Admin → Leads → RSVPs
    TTFC 2026 RSVPs from the unlinked website page /rsvp (POST /api/rsvp).
@@ -368,6 +369,10 @@ export default function Rsvps() {
   if (option) view.set("option", option);
   if (verified) view.set("verified", verified);
   if (review) view.set("review", review);
+  // Nov 23 2026: the chosen event's RSVPs only.
+  const { current: chosenEvent } = useAdminEvent();
+  const chosenKey = adminEventKey(chosenEvent);
+  if (chosenKey) view.set("eventKey", chosenKey);
   const qs = new URLSearchParams(view);
   qs.set("page", String(page));
   const { data, error, loading, reload, refreshing } = useApi(`/console/rsvps?${qs}`);

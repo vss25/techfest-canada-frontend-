@@ -16,6 +16,14 @@ export const AdminEventContext = createContext({
 });
 export const useAdminEvent = () => useContext(AdminEventContext);
 
+/** The chosen event's key for API calls (`?eventKey=` / `?event=`), or "" when none is chosen. */
+export const adminEventKey = (ev) => (ev ? ev.eventKey?.current || ev.eventKey || "" : "");
+/** `path` with the chosen event added as `param` (Nov 23 2026: pages about one event show only its data). */
+export const withEvent = (path, ev, param = "eventKey") => {
+  const k = adminEventKey(ev);
+  return k ? `${path}${path.includes("?") ? "&" : "?"}${param}=${encodeURIComponent(k)}` : path;
+};
+
 const DAY = 86400000;
 const daysSince = (iso, now) => Math.floor((now - new Date(`${iso}T12:00:00`).getTime()) / DAY);
 

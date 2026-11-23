@@ -381,8 +381,9 @@ function PassesPage({ kindName }) {
   // event doesn't list TTFC 2026's exhibitors as its own. Passes made here are TTFC 2026 passes for now.
   const { current: chosenEvent } = useAdminEvent();
   const chosenKey = chosenEvent?.eventKey?.current || chosenEvent?.eventKey || "";
-  const otherEvent = kindName === "exhibitor" && !!chosenKey && chosenKey !== "ttfc-2026-main";
-  const { data, error, loading, reload, setData } = useApi(kindName === "exhibitor" && chosenKey ? `${BASE}?event=${chosenKey}` : BASE);
+  // Nov 23 2026: Give a pass follows the chosen event too (it listed every event's passes).
+  const otherEvent = !!chosenKey && chosenKey !== "ttfc-2026-main";
+  const { data, error, loading, reload, setData } = useApi(chosenKey ? `${BASE}?event=${encodeURIComponent(chosenKey)}` : BASE);
   const tiersApi = useApi(`${BASE}/tiers`);
   const tiers = tiersApi.data?.tiers || [];
   const initialQ = useInitialQuery(); // a pass from the global search (?q=<ticket ID>)
@@ -412,7 +413,12 @@ function PassesPage({ kindName }) {
 
   return (
     <>
-      {otherEvent && (
+      {otherEvent && kindName !== "exhibitor" && (
+        <Banner tone="info" className="mb-4" title={`Passes for ${chosenEvent.name} aren't made here yet`}>
+          Passes given here are TTFC 2026 passes so far, so this list shows only {chosenEvent.name}'s and new ones can't be made for it here yet.
+        </Banner>
+      )}
+      {otherEvent && kindName === "exhibitor" && (
         <Banner tone="info" className="mb-4" title={`No exhibitor passes for ${chosenEvent.name} yet`}>
           Exhibitor passes are set up for TTFC 2026 only so far, so new ones can't be made for this event here. To see who exhibited before and invite them back, open <Link to="/admin/past-participants" className="font-semibold text-[#9D1D63] hover:underline">Past participants</Link>.
         </Banner>

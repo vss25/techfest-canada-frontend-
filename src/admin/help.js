@@ -214,6 +214,16 @@ export const HELP = {
     steps: ["Add an offering: its category, price, unit and what a signed contract tracks.", "Bundle offerings into a package at one price.", "Set TTFC's details, who signs, numbering and the clauses in Contract settings."],
     tips: ["Only the super admin changes the catalogue and settings; everyone can use them on contracts.", "Retire an offering instead of deleting it once it's on a contract."],
   },
+  mous: {
+    what: "Memoranda of understanding with community, media and ecosystem partners for the chosen event: what TTFC offers, what the partner delivers, and the terms.",
+    steps: ["Press New MOU and enter the partner and their contact.", "Under What TTFC offers, tick each item and set how many, when and any code. Tick Only once ticket sales reach to make it a reward for a sales milestone.", "Under What the partner delivers, tick what you want from them and set the details. Tick Write this MOU's own wording to change a sentence just for this partner.", "Set the terms: binding or not, money or not, dates and the standard clauses. Tick who signs on both sides.", "Open the Review tab, fix anything in red, then press Send to review.", "Read it through, then Export PDF or Export Word. Back to draft lets you change it and export again."],
+    tips: ["Drafts save by themselves 30 seconds after a change.", "Draft PDF gives a copy marked DRAFT at any time; signatures print only on an exported PDF.", "Who signs for TTFC comes from Offerings › Contract settings.", "MOUs stay private: they are never on the website."],
+  },
+  "mou-items": {
+    what: "The general items MOUs are built from: what TTFC offers partners and what partners deliver, with their usual wording.",
+    steps: ["Start with Add the usual items, or press New item.", "Pick its side, name and category, and tick what an MOU asks for: how many, when, a code or a detail.", "Write its wording with the placeholders, like {partner} and {qty}. The example shows how it reads.", "Switch off Available for new MOUs to retire it."],
+    tips: ["Only the super admin changes the catalogue; everyone can use it on MOUs.", "An item on an MOU can't be deleted: retire it instead. MOUs that have it keep their own copy."],
+  },
   "waitlist-2027": {
     what: "People who joined the 2027 waitlist, what they're interested in, and the wording and 2027 journey on that page.",
     steps: ["Filter by interest (delegate, exhibitor, sponsorship, delegation) to find the right people.", "Open someone to see their details and follow up.", "Use the Wording and 2027 journey tabs to change the page."],

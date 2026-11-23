@@ -377,7 +377,7 @@ function usePast2026(on) {
     const ev = "event-ttfc-2026-main";
     const scoped = `(!defined(events) || count(events) == 0 || $ev in events[]._ref)`;
     Promise.all([
-      client.fetch(`*[_type == "speaker" && !(_id in path("drafts.**")) && defined(image.asset) && ${scoped}] | order(featured desc, order asc)[0...12]{ name, title, company, speakerType, image }`, { ev }),
+      client.fetch(`*[_type == "speaker" && !(_id in path("drafts.**")) && defined(image.asset) && ${scoped}] | order(coalesce(featured, false) desc, order asc)[0...12]{ name, title, company, speakerType, image }`, { ev }),
       client.fetch(`*[_type == "partner" && active != false && showOnWebsite != false && defined(logo.asset) && ${scoped}] | order(order asc){ _id, name, logo, matrixGroup, logoScale }`, { ev }),
       // The recap box: a YouTube / Vimeo video from Admin › Content › Videos (2026's first, else one marked for the home page).
       client.fetch(`*[_type == "video" && active != false && defined(videoId) && ($ev in events[]._ref || showOnHome == true)] | order(($ev in events[]._ref) desc, coalesce(order, 9999) asc, recordedOn desc)[0]{ title, provider, videoId, thumbnailUrl, url }`, { ev }).catch(() => null),
@@ -426,7 +426,7 @@ function useStandIns(ev, events) {
     Promise.all([
       spkIds.length
         ? client.fetch(`*[_type == "speaker" && ${pub} && _id in $ids && defined(image.asset)]{ _id, name, title, company, speakerType, image }`, { ids: spkIds }).then((l) => (l || []).sort(byPick(spkIds)))
-        : client.fetch(`*[_type == "speaker" && ${pub} && defined(image.asset) && ${scoped("$ev")}] | order(featured desc, order asc)[0...12]{ _id, name, title, company, speakerType, image }`, { ev: spkFrom }),
+        : client.fetch(`*[_type == "speaker" && ${pub} && defined(image.asset) && ${scoped("$ev")}] | order(coalesce(featured, false) desc, order asc)[0...12]{ _id, name, title, company, speakerType, image }`, { ev: spkFrom }),
       ptnIds.length
         ? client.fetch(`*[_type == "partner" && ${pub} && _id in $ids && defined(logo.asset)]{ _id, name, logo, matrixGroup, eventRows }`, { ids: ptnIds }).then((l) => (l || []).sort(byPick(ptnIds)))
         : client.fetch(`*[_type == "partner" && ${pub} && active != false && showOnWebsite != false && defined(logo.asset) && ${scoped("$ev")}] | order(order asc){ _id, name, logo, matrixGroup, eventRows }`, { ev: ptnFrom })

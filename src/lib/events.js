@@ -207,7 +207,7 @@ export function fetchEventContent(eventId) {
     { eventId }
   );
   const speakers = client.fetch(
-    `*[_type == "speaker" && ${SCOPED}]{ _id, name, title, company, bio, shortBio, fullBio, image, bannerImage, featured, speakerType, linkedin, twitter, website, "eventIds": events[]._ref } | order(featured desc, order asc)`,
+    `*[_type == "speaker" && ${SCOPED}]{ _id, name, title, company, bio, shortBio, fullBio, image, bannerImage, featured, speakerType, linkedin, twitter, website, "eventIds": events[]._ref } | order(coalesce(featured, false) desc, order asc)`,
     { eventId }
   );
   const partners = client.fetch(

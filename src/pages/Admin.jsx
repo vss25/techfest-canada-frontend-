@@ -57,8 +57,13 @@ import Waitlist2027 from "../admin/leads/Waitlist2027";
 import Videos from "../admin/cms/Videos";
 import Contracts from "../admin/sales/Contracts";
 import ContractEditor from "../admin/sales/ContractEditor";
+import Mous from "../admin/sales/Mous";
+import MouEditor from "../admin/sales/MouEditor";
+import MouCatalogue from "../admin/sales/MouCatalogue";
 import Offerings from "../admin/sales/Offerings";
 import SocialPosts from "../admin/marketing/SocialPosts";
+import PostTemplateLibrary from "../admin/marketing/PostTemplateLibrary";
+import LinkedinPosts from "../admin/marketing/LinkedinPosts";
 import SocialCalendar from "../admin/marketing/SocialCalendar";
 import PromoCodesPage from "../admin/marketing/PromoCodesPage";
 import IndiaPavilion from "../admin/leads/IndiaPavilion";
@@ -254,7 +259,12 @@ function AdminPanel() {
             <Route path="contracts" element={<Contracts />} />
             <Route path="contracts/:id" element={<ContractEditor />} />
             <Route path="offerings" element={<Offerings />} />
+            <Route path="mous" element={<Mous />} />
+            <Route path="mous/:id" element={<MouEditor />} />
+            <Route path="mou-items" element={<MouCatalogue />} />
             <Route path="social" element={<SocialPosts />} />
+            <Route path="post-templates" element={<PostTemplateLibrary />} />
+            <Route path="linkedin-posts" element={<LinkedinPosts />} />
             <Route path="calendar" element={<SocialCalendar />} />
             <Route path="promo-codes" element={<PromoCodesPage />} />
             <Route path="issued-passes" element={<IssuedPasses />} />

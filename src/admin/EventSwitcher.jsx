@@ -36,7 +36,9 @@ export function AdminEventProvider({ children, enabled = true }) {
     const sosOpen = sos.data?.counts?.open || 0;
     return {
       attention: { changes: waiting, sos: sosOpen, flags: work.data?.counts?.flags || 0, overdue: work.data?.counts?.overdue || 0,
-        total: waiting + sosOpen + (work.data?.counts?.flags || 0) + (work.data?.counts?.overdue || 0) },
+        total: waiting + sosOpen + (work.data?.counts?.flags || 0) + (work.data?.counts?.overdue || 0),
+        // All three counts have arrived (the bell's "seen" waits for this, so loading zeros don't reset it).
+        ready: !!(changes.data && sos.data && work.data) },
       events: withConfig, current, open, setOpen, loading: events.loading,
       refresh: () => { reloadEvents(); reloadConfigs(); },
       setCurrent: (id) => { save(id); setChosen(id); },

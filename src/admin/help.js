@@ -75,9 +75,9 @@ export const HELP = {
     tips: ["These are the same records as on Partners: editing one here edits it there too.", FLOW],
   },
   "content/tickets": {
-    what: "The tickets the chosen event sells on the website: name, price, how many and when they're on sale.",
-    steps: ["Choose the event in the top bar.", "A Briefing shows the default Briefing tickets: edit them for every Briefing, or Customise for this event to give it its own.", "Click a ticket to change it, or Add ticket. Management only.", "When it's time to sell, turn on Pricing announced in Operations › Event settings."],
-    tips: [NOW("Ticket changes"), "The Toronto Main Event always has its own tickets.", "Use the default tickets puts a customised Briefing back on the defaults, unless someone has already ordered its own."],
+    what: "The tickets the chosen event sells on the website: name, price, how many have sold and when they're on sale, plus the multi-event passes that cover it.",
+    steps: ["Choose the event in the top bar.", "Click a ticket to change its price for this event only, or Add ticket. Management only.", "Add pass: one price for this city and the Toronto Main Event; tick more cities for a multi-city pass.", "When it's time to sell, turn on Pricing announced in Operations › Event settings."],
+    tips: [NOW("Ticket changes"), "Every event has its own tickets and prices. A new Briefing starts with a copy of Defaults for new Briefings.", "Sold counts paid orders only, so it stays 0 until the first sale.", "A pass shows on every event it covers and buyers get a pass for each; it counts towards each event's delegates.", "A ticket or pass someone has bought can't be deleted: switch it off instead."],
   },
   inventory: {
     what: "TTFC 2026's passes and booths: prices and how many are left.",

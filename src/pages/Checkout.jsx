@@ -322,7 +322,7 @@ function CheckoutInner() {
           <div className="checkout-grid" style={{ display:"grid", gridTemplateColumns:"minmax(0, 1fr) 340px", gap:32, alignItems:"start" }}>
             <style>{`
               @media (max-width: 880px) {
-                .checkout-grid { grid-template-columns: 1fr !important; }
+                .checkout-grid { grid-template-columns: minmax(0, 1fr) !important; }
                 .checkout-summary { position: static !important; order: -1; margin-bottom: 20px; }
               }
             `}</style>
@@ -338,7 +338,7 @@ function CheckoutInner() {
                     <CustomDropdown options={SALUTATIONS} value={form.salutation} onChange={v => set("salutation",v)} placeholder="Select…" dark={dark} />
                   </div>
 
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"minmax(0, 1fr) minmax(0, 1fr)", gap:12 }}>
                     <div style={fieldStyle}>
                       <label style={labelStyle}>First Name *</label>
                       <input ref={firstInputRef} value={form.firstName} onChange={e => set("firstName",e.target.value)} placeholder="Jane" autoComplete="given-name" style={inputStyle(errors.firstName)} />

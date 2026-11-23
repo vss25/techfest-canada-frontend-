@@ -9,7 +9,10 @@ import { EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, fieldsNear, pick
    checkout, forms and sign-in. The board's 390 × 844 frame fills the phone's screen. */
 
 const FILL = `.ap-phone > .ap-root > div:first-child { width: 100% !important; height: 100dvh !important; }
-.ap-phone { position: fixed; inset: 0; z-index: 50; background: #FFFFFF; }`;
+.ap-phone { position: fixed; inset: 0; z-index: 50; background: #FFFFFF; }
+.ap-phone .ap-root span[style*="bottom: 8px"][style*="z-index: 2"][style*="0.55)"] { display: none; }`;
+/* That last rule: the board's event hero has a second photo credit with Vancouver's photographer typed
+   in, under the real one ("Photo: {credit}" at the top). Every city showed Vancouver's credit too. */
 
 export default class LivePhone extends ApprovedPhone {
   static getDerivedStateFromProps(props, state) {

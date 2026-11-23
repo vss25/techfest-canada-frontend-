@@ -58,7 +58,9 @@
 .tb-phone-nav { display: grid; gap: 2px; padding: 8px max(20px, env(safe-area-inset-left, 0px)) 16px; background: #151035; border-top: 1px solid rgba(255,255,255,0.12); }
 .tb-phone-nav b { color: #F5A623; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 10px; }
 .tb-phone-nav a { color: #fff; text-decoration: none; padding: 8px 0; font-size: 15px; }
-@media (max-width: 860px) { .tb-burger { display: inline-flex; align-items: center; justify-content: center; } .tb-hide-sm { display: none; } }
+/* .tb-btn (below) sets display, so the hide needs the extra class to win: without it "Log in" stayed
+   on phones and pushed the header 32px past a 320px screen (mobile audit, Nov 23 2026). It is in the menu. */
+@media (max-width: 860px) { .tb-burger { display: inline-flex; align-items: center; justify-content: center; } .tb-hide-sm, .tb-btn.tb-hide-sm { display: none; } }
 .tb-event-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
 .tb-event-card { display: grid; border: 1px solid var(--tb-line); border-radius: 12px; overflow: hidden; text-decoration: none; background: #fff; transition: border-color .15s ease, transform .15s ease; }
 .tb-event-card:hover { border-color: var(--tb-navy); transform: translateY(-2px); }

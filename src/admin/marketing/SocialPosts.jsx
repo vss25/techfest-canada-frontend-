@@ -12,6 +12,7 @@ import {
   Badge, Banner, Button, Card, ConfirmDialog, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, Select, Tabs, Textarea,
 } from "../ui";
 import { CHANNELS, STATUS, TIMEZONES, isoToZoned, lengthFor, textFor, whenLabel, zonedToIso } from "./socialShared";
+import TemplatePost from "./TemplatePost";
 
 /* =========================================================
    Admin › Marketing › Social posts (Nov 18 2026), the approved design's composer:
@@ -34,10 +35,15 @@ const formOf = (p) => ({
   title: p.title || "", text: p.text || "", channels: { ...BLANK.channels, ...(p.channels || {}) },
   versions: { x: { ...BLANK.versions.x, ...(p.versions?.x || {}) }, instagram: { ...BLANK.versions.instagram, ...(p.versions?.instagram || {}) } },
   image: p.image?.url ? { url: p.image.url, alt: p.image.alt || "" } : null, scheduledAt: p.scheduledAt || null,
+  images: Object.fromEntries(["linkedin", "instagram", "x"].filter((c) => p.images?.[c]?.url).map((c) => [c, { url: p.images[c].url, alt: p.images[c].alt || "" }])),
+  template: p.template || "",
   timezone: p.timezone || "America/Toronto", source: p.source?.kind ? p.source : null, contractRef: p.contractRef?.contractId ? p.contractRef : null,
   eventKey: p.eventKey || "", eventName: p.eventName || "",
 });
 
+/* A templated post has its own designed image per channel (Nov 23 2026); others crop the one photo. */
+const imageOf = (form, ch) => (form.images?.[ch]?.url ? form.images[ch].url.split("?")[0] : form.image ? cropUrl(form.image.url, ch) : "");
+const hasImage = (form) => !!form.image || Object.keys(form.images || {}).length > 0;
 const cropUrl = (url, ch) => {
   const size = { linkedin: [1200, 627], instagram: [1080, 1350], x: [1600, 900] }[ch];
   return url ? `${String(url).split("?")[0]}?w=${size[0]}&h=${size[1]}&fit=crop&crop=entropy&auto=format&q=85` : "";
@@ -303,7 +309,12 @@ function Composer({ id, settings, onSaved, onDeleted }) {
             </div>
           )}
           <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
-            {form.image ? (
+            {Object.keys(form.images || {}).length > 0 ? (
+              <div className="flex items-center gap-2">
+                {["linkedin", "x", "instagram"].filter((c) => form.images[c]).map((c) => <img key={c} src={`${imageOf(form, c)}?w=240`} alt="" className={`h-[76px] rounded-lg object-cover ${c === "instagram" ? "w-[61px]" : "w-[120px]"}`} />)}
+                <span className="text-[11px] font-bold text-[#B45309]">MADE FOR EACH CHANNEL</span>
+              </div>
+            ) : form.image ? (
               <div className="flex items-center gap-2">
                 <img src={cropUrl(form.image.url, "linkedin")} alt="" className="h-[76px] w-[120px] rounded-lg object-cover" />
                 <div className="flex flex-col gap-1 text-[11px]">
@@ -312,7 +323,7 @@ function Composer({ id, settings, onSaved, onDeleted }) {
                 </div>
               </div>
             ) : null}
-            {editable && <>
+            {editable && !Object.keys(form.images || {}).length && <>
               <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) upload(f); }} />
               <button type="button" onClick={() => fileRef.current?.click()} className="flex h-[76px] w-[76px] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-[#C9C3DE] bg-[#FBFAFE] text-[11px] font-semibold text-[#D6308C]">
                 <ImagePlus className="h-5 w-5" aria-hidden="true" />{form.image ? "Replace" : "Photo"}
@@ -374,7 +385,7 @@ function Composer({ id, settings, onSaved, onDeleted }) {
                         ) : (
                           <>
                             <Button size="sm" icon={Copy} onClick={() => navigator.clipboard.writeText(text(c.key)).then(() => toast.success(`${c.label} text copied`), () => toast.error("Couldn't copy"))}>Copy text</Button>
-                            {form.image && <a className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-ttfc-line px-3 text-xs font-semibold" href={`${cropUrl(form.image.url, c.key)}&dl=ttfc-${c.key}.jpg`}><Download className="h-4 w-4" aria-hidden="true" /> Photo {c.size}</a>}
+                            {hasImage(form) && <a className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-ttfc-line px-3 text-xs font-semibold" href={`${imageOf(form, c.key)}${imageOf(form, c.key).includes("?") ? "&" : "?"}dl=ttfc-${c.key}.jpg`}><Download className="h-4 w-4" aria-hidden="true" /> Image {c.size}</a>}
                             <Input className="h-8 min-h-0 w-56 flex-1 py-0 text-xs" aria-label={`${c.label} post link`} placeholder="Link to the post (https://…)" value={postLinks[c.key] || ""} onChange={(e) => setPostLinks((l) => ({ ...l, [c.key]: e.target.value }))} />
                             <Button size="sm" variant="primary" onClick={() => act("/posted", { channel: c.key, url: postLinks[c.key] || "" }, `${c.label} marked posted`)}>Mark posted</Button>
                           </>
@@ -416,10 +427,10 @@ function Composer({ id, settings, onSaved, onDeleted }) {
             <p className="whitespace-pre-wrap px-3.5 pb-2.5 text-[13px] leading-5">
               {pv === "linkedin" && pvText.length > 210 ? <>{pvText.slice(0, 210)}… <span className="text-[#6B6688]">see more</span></> : pvText || <span className="text-[#8A86A0]">Nothing written yet</span>}
             </p>
-            {form.image && (
-              <div className="relative w-full overflow-hidden bg-[#151035]" style={{ aspectRatio: CHANNELS.find((c) => c.key === pv).ratio, maxHeight: 340 }}>
-                <img src={cropUrl(form.image.url, pv)} alt={form.image.alt || ""} className="h-full w-full object-cover" />
-                <span className="absolute left-2 top-2 rounded-full bg-[#151035]/85 px-2 py-0.5 text-[10px] font-bold text-[#F5A623]">AUTO-RESIZED {CHANNELS.find((c) => c.key === pv).size}</span>
+            {hasImage(form) && (
+              <div className="relative w-full overflow-hidden bg-[#151035]" style={{ aspectRatio: CHANNELS.find((c) => c.key === pv).ratio, maxHeight: form.images?.[pv] ? 460 : 340 }}>
+                <img src={imageOf(form, pv)} alt={form.images?.[pv]?.alt || form.image?.alt || ""} className={`h-full w-full ${form.images?.[pv] ? "object-contain" : "object-cover"}`} />
+                {!form.images?.[pv] && <span className="absolute left-2 top-2 rounded-full bg-[#151035]/85 px-2 py-0.5 text-[10px] font-bold text-[#F5A623]">AUTO-RESIZED {CHANNELS.find((c) => c.key === pv).size}</span>}
               </div>
             )}
             {!form.channels[pv] && <p className="border-t border-[#F0EEF6] px-3.5 py-2 text-xs text-[#B45309]">{CHANNELS.find((c) => c.key === pv).label} is switched off for this post.</p>}
@@ -518,6 +529,7 @@ export default function SocialPosts() {
   const id = params.get("id") || (params.get("new") ? "new" : "");
   const [tab, setTab] = useState(params.get("tab") || "posts");
   const [filter, setFilter] = useState("all");
+  const [fromTemplate, setFromTemplate] = useState(false);
   const list = useApi("/console/social/posts");
   const cfg = useApi("/console/social/settings");
   const posts = list.data?.posts || [];
@@ -532,11 +544,14 @@ export default function SocialPosts() {
 
   return (
     <div>
-      <PageHeader title="Social posts" description="Write once, then let Claude write the X and Instagram versions. Preview each channel, schedule it, get it approved, then post it and keep the link."
+      <PageHeader title="Social posts" description="Create a finished post from a template in one click, or write once and let Claude write the X and Instagram versions. Preview each channel, schedule it, get it approved, then post it and keep the link."
         actions={<>
           <Button onClick={() => navigate("/admin/calendar")}>Calendar</Button>
-          <Button variant="primary" icon={Plus} onClick={() => { setTab("posts"); setParams({ new: "1" }); }}>New post</Button>
+          <Button icon={Plus} onClick={() => { setTab("posts"); setParams({ new: "1" }); }}>New post</Button>
+          <Button variant="primary" icon={Sparkles} onClick={() => setFromTemplate(true)}>Create from a template</Button>
         </>} />
+      {fromTemplate && <TemplatePost open={fromTemplate} writing={!!cfg.data.writing} onClose={() => setFromTemplate(false)}
+        onCreated={(p) => { setFromTemplate(false); upsert(p); setTab("posts"); setParams({ id: p.id }); }} />}
       {!id && <Tabs value={tab} onChange={setTab} tabs={[{ key: "posts", label: "Posts", count: posts.length }, { key: "settings", label: "Settings" }]} />}
       {!cfg.data.writing && tab === "posts" && <Banner tone="warn" className="mb-4" title="Writing with Claude isn't switched on yet">Posts can be planned and written by hand; the ✦ buttons work once the server has an Anthropic API key.</Banner>}
       {id ? (

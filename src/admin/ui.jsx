@@ -477,7 +477,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
   const descId = useId();
   useOverlay(open, onClose, panelRef);
   if (!open) return null;
-  const width = size === "lg" ? "max-w-2xl" : size === "sm" ? "max-w-sm" : "max-w-md";
+  const width = size === "xl" ? "max-w-5xl" : size === "lg" ? "max-w-2xl" : size === "sm" ? "max-w-sm" : "max-w-md";
   return createPortal(
     <div className="ttfc-admin-portal fixed inset-0 z-[99990] flex items-end justify-center p-0 sm:items-center sm:p-6">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in" onClick={onClose} aria-hidden="true" />

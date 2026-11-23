@@ -18,6 +18,7 @@ import { tidyCopy, useSpeakerWording } from "./passEmailHooks";
 import { listText, useLivePreview } from "./speakerEmailHooks";
 import { useInitialQuery } from "../search/deepLink";
 import { MediaMark } from "../people/MediaBadges";
+import { useAdminEvent, withEvent } from "../eventContext";
 
 /* =========================================================
    Admin → Tickets & attendees → Speaker passes
@@ -461,7 +462,9 @@ function SendAllDialog({ rows, mode = "all", onClose, onDone }) {
 export default function SpeakerPasses() {
   const toast = useToast();
   const { isManagement } = useAdmin();
-  const { data, error, loading, reload, refreshing, setData } = useApi(BASE);
+  // Nov 23 2026: the chosen event's speaker passes only.
+  const { current: chosenEvent } = useAdminEvent();
+  const { data, error, loading, reload, refreshing, setData } = useApi(withEvent(BASE, chosenEvent));
   const initialQ = useInitialQuery(); // a speaker's pass from the global search (?q=<ticket ID>)
   const [q, setQ] = useState(initialQ);
   const [syncing, setSyncing] = useState(false);

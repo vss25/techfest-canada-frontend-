@@ -6,6 +6,7 @@ import { useToast } from "../toastContext";
 import { Badge, Banner, Button, EmptyState, ErrorState, Field, Input, LoadingState, Modal, PageHeader, Select, TableWrap } from "../ui";
 import LogoPicker, { CompanyMark } from "../people/LogoPicker";
 import { orgsApi, orgsFrom } from "./orgsApi";
+import { useAdminEvent, withEvent } from "../eventContext";
 
 /* =========================================================
    Attending organisations (Oct 21 2026): the one list the apps
@@ -85,7 +86,9 @@ function MergeDialog({ from, items, onClose, onDone }) {
 export default function AttendingOrgs() {
   const toast = useToast();
   const [fresh, setFresh] = useState(0); // Refresh: the server builds the list again now
-  const { data, error, loading, refreshing, reload } = useApi(fresh ? `${orgsApi.listPath(true)}&n=${fresh}` : orgsApi.listPath(false));
+  // Nov 23 2026: the chosen event's organisations only (its passes, partners and speakers).
+  const { current } = useAdminEvent();
+  const { data, error, loading, refreshing, reload } = useApi(withEvent(fresh ? `${orgsApi.listPath(true)}&n=${fresh}` : orgsApi.listPath(false), current));
   const [q, setQ] = useState("");
   const [show, setShow] = useState("all");
   const [logoFor, setLogoFor] = useState(null);
@@ -152,7 +155,7 @@ export default function AttendingOrgs() {
   return (
     <div>
       <PageHeader eyebrow="Website & app" title="Attending organisations"
-        description="Everyone the apps show under Organisations: the website's partners, the speakers' organisations and the organisation of everyone with a pass, one entry per organisation. New ones appear on their own as people join. Featured Partners come first, in their own order (Website & app › Featured Partners). Changes show in the apps within a minute."
+        description={`The organisations at ${current?.name || "the event chosen in the top bar"}: its partners, its speakers' organisations and the organisation of everyone with a pass to it, one entry per organisation. New ones appear on their own as people join. Featured Partners come first, in their own order (Website & app › Featured Partners). Changes show in the apps within a minute.`}
         actions={<Button icon={RefreshCw} loading={refreshing && !loading} onClick={() => setFresh((n) => n + 1)}>Refresh</Button>} />
       {data && !cmsOk && (
         <Banner tone="warn" className="mb-4" title="The website's partner list didn't load this time">

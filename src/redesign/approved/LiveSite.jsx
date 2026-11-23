@@ -69,8 +69,24 @@ class LiveSite extends ApprovedSite {
   componentDidMount() {
     if (this.props.data?.types) this.setState({ q: this.props.data.types.map(() => 0) });
     this.afterRoute();
+    this.fixSpeakerDrawer();
+  }
+  /* Nov 23 2026 (event data audit): the speaker drawer only opens from Toronto 2026's speakers (the home and
+     2026 pages' "star speakers"), but the board's text says "<kind> · Vancouver Briefing 2027" and "Also spoke at
+     Toronto 2026". Name the event they spoke at and drop the second line. Text nodes the board fixes, so React
+     leaves them as set here. */
+  fixSpeakerDrawer() {
+    const root = this.rootEl;
+    if (!root) return;
+    const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      if (!n.parentElement?.closest("aside")) continue;
+      if (n.nodeValue === " · Vancouver Briefing 2027") n.nodeValue = " · Toronto 2026";
+      else if (n.nodeValue === "Also spoke at Toronto 2026") n.parentElement.style.display = "none";
+    }
   }
   componentDidUpdate(prev) {
+    this.fixSpeakerDrawer();
     if (prev.routeKey !== this.props.routeKey) this.afterRoute();
     if (prev.data?.types !== this.props.data?.types && this.props.data?.types) {
       this.setState({ q: this.props.data.types.map(() => 0), step: 1, done: false });

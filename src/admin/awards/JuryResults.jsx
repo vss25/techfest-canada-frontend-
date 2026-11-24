@@ -11,6 +11,8 @@ import { ago, when } from "../format";
 import { groupByCategory } from "../../jury/juryLib";
 import { EYEBROW, JURY, downloadCsv, fmtScore, plural, progressText } from "./juryShared";
 import { ProgressBar, StateBadge, StatusBadge } from "./juryBadges";
+import EventOnly from "../EventOnly";
+import { useAdminEvent, withEvent } from "../eventContext";
 
 /* =========================================================
    Admin › Catalyst Awards › Jury results (Oct 2026, management)
@@ -107,9 +109,10 @@ function ResultDrawer({ row, criteria, onClose, onStatus }) {
   );
 }
 
-export default function JuryResults() {
+function JuryResultsForEvent() {
   const toast = useToast();
-  const { data, error, loading, reload, refreshing } = useApi(`${JURY}/results`);
+  const { current } = useAdminEvent();
+  const { data, error, loading, reload, refreshing } = useApi(withEvent(`${JURY}/results`, current));
   const [view, setView] = useState("nominations");
   const [cat, setCat] = useState("");
   const [q, setQ] = useState("");
@@ -127,7 +130,7 @@ export default function JuryResults() {
 
   const exportCsv = async () => {
     setExporting(true);
-    try { await downloadCsv(`${JURY}/results.csv`, `ttfc-catalyst-jury-results-${new Date().toISOString().slice(0, 10)}.csv`); }
+    try { await downloadCsv(withEvent(`${JURY}/results.csv`, current), `ttfc-catalyst-jury-results-${new Date().toISOString().slice(0, 10)}.csv`); }
     catch (err) { toast.error(err); } finally { setExporting(false); }
   };
   const setStatus = async (row, status) => {
@@ -220,4 +223,8 @@ export default function JuryResults() {
         onConfirm={async () => { const r = await api.post(`${JURY}/jurors/${reminding.id}/remind`); toast.success(`Reminder sent to ${r.email}`); reload(); }} />
     </>
   );
+}
+
+export default function JuryResults() {
+  return <EventOnly title="Jury results" eyebrow="Catalyst Awards" what="Catalyst Awards records" because="The Catalyst Awards nominations, jury and results here are The Tech Festival Canada 2026's. Next year's awards will have their own once they open."><JuryResultsForEvent /></EventOnly>;
 }

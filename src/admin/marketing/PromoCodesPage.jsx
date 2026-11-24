@@ -2,6 +2,7 @@ import { useApi } from "../hooks";
 import { useAdmin } from "../adminContext";
 import { ErrorState, LoadingState, PageHeader } from "../ui";
 import { PromoCodes } from "../tickets/Inventory";
+import EventOnly from "../EventOnly";
 
 /* =========================================================
    Admin › Marketing › Promo codes (Nov 18 2026; the approved design puts promo codes in Marketing).
@@ -10,7 +11,7 @@ import { PromoCodes } from "../tickets/Inventory";
    discount given stay management only. The codes panel itself lives in tickets/Inventory.jsx.
 ========================================================= */
 
-export default function PromoCodesPage() {
+function PromoCodesPageForEvent() {
   const { isManagement } = useAdmin();
   const { data, error, loading, reload } = useApi("/admin/inventory");
   const passes = Array.isArray(data) ? data.filter((t) => !t.archived && !String(t.tier).startsWith("booth-")).sort((a, b) => (a.price || 0) - (b.price || 0)).map((t) => t.tier) : [];
@@ -23,4 +24,8 @@ export default function PromoCodesPage() {
       {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : <PromoCodes passes={passes} heading={false} />}
     </>
   );
+}
+
+export default function PromoCodesPage() {
+  return <EventOnly title="Promo codes" what="promo codes" because="The promo codes here are for The Tech Festival Canada 2026's passes and booths. Codes for this event come with its own ticket types."><PromoCodesPageForEvent /></EventOnly>;
 }

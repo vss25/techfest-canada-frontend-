@@ -14,6 +14,8 @@ import {
   categoryDirty, categoryFilterOptions, categoryOptions, categoryPayload, changedLine, focusDirty, focusPayload, focusSectorChoices,
   formProblem, overrideForm, restoreWhat,
 } from "../../lib/catalystCategories.js";
+import EventOnly from "../EventOnly";
+import { useAdminEvent, withEvent } from "../eventContext";
 
 /* Admin → Catalyst Awards → Nominations (the jury: Jury, Allocation, Scoring rubric, Jury results)
    Every nomination from thetechfestival.com/awards/nominations. Saved by the
@@ -360,11 +362,12 @@ function NominationDrawer({ id, canManage, onClose, onSaved, onDeleted }) {
   );
 }
 
-export default function CatalystNominations() {
+function CatalystNominationsForEvent() {
   const { isManagement } = useAdmin();
   const toast = useToast();
   const [params, setParams] = useSearchParams();
-  const { data, error, loading, reload, setData } = useApi(BASE);
+  const { current } = useAdminEvent();
+  const { data, error, loading, reload, setData } = useApi(withEvent(BASE, current));
   const [q, setQ] = useState(params.get("q") || "");
   const dq = useDebounced(q.trim().toLowerCase(), 200);
   const [category, setCategory] = useState("");
@@ -405,7 +408,7 @@ export default function CatalystNominations() {
   const exportCsv = async () => {
     setExporting(true);
     try {
-      const res = await fetch(`${ADMIN_API}${BASE}/export`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const res = await fetch(`${ADMIN_API}${withEvent(`${BASE}/export`, current)}`, { headers: { Authorization: `Bearer ${getToken()}` } });
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || `Export failed (${res.status})`);
       const url = URL.createObjectURL(await res.blob());
       const a = document.createElement("a");
@@ -518,4 +521,8 @@ export default function CatalystNominations() {
       <NominationDrawer id={openId} canManage={isManagement} onClose={() => setParam("id", "")} onSaved={onSaved} onDeleted={onDeleted} />
     </>
   );
+}
+
+export default function CatalystNominations() {
+  return <EventOnly title="Nominations" eyebrow="Catalyst Awards" what="Catalyst Awards records" because="The Catalyst Awards nominations, jury and results here are The Tech Festival Canada 2026's. Next year's awards will have their own once they open."><CatalystNominationsForEvent /></EventOnly>;
 }

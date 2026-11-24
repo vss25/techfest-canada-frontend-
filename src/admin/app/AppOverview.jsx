@@ -2,11 +2,15 @@ import {
   Users, Ticket, UserX, Activity, CalendarCheck, MousePointerClick, Newspaper, MessageSquare, UsersRound, MessagesSquare, Flag, RefreshCw,
 } from "lucide-react";
 import { useApi } from "../hooks";
-import { Bars, Button, Card, ErrorState, PageHeader, SkeletonGrid, StatTile } from "../ui";
+import { useAdminEvent, withEvent } from "../eventContext";
+import { Banner, Bars, Button, Card, ErrorState, PageHeader, SkeletonGrid, StatTile } from "../ui";
 import { num } from "../format";
 
 export default function AppOverview() {
-  const { data: s, error, loading, reload, refreshing } = useApi("/console/stats");
+  // Nov 23 2026: accounts, passes and activity for the chosen event. Posts, chats, groups and discussions aren't
+  // tied to an event, so with another event they're left out (socialScoped false); open reports are always the app's.
+  const { current } = useAdminEvent();
+  const { data: s, error, loading, reload, refreshing } = useApi(withEvent("/console/stats", current));
   const tiles = s ? [
     ["Accounts", s.users, Users, "purple", "/admin/app/people"],
     ["Ticket holders on the app", s.ticketHolders, Ticket, "pink"],
@@ -19,7 +23,7 @@ export default function AppOverview() {
     ["Groups", s.groups, UsersRound, "neutral"],
     ["Discussions", s.discussions, MessagesSquare, "neutral"],
     ["Open reports", s.openReports, Flag, s.openReports ? "bad" : "good", "/admin/app/moderation"],
-  ] : [];
+  ].filter(([, value]) => value !== null) : [];
   return (
     <>
       <PageHeader
@@ -30,6 +34,11 @@ export default function AppOverview() {
       />
       {loading ? <SkeletonGrid count={8} className="h-28" /> : error && !s ? <ErrorState error={error} onRetry={reload} /> : (
         <>
+          {s?.socialScoped === false && (
+            <Banner tone="info" className="mb-4" title={`Showing ${current?.name || "this event"}`}>
+              Accounts, passes and activity are this event's. Posts, messages, groups and discussions belong to the whole app, so they're shown under The Tech Festival Canada 2026.
+            </Banner>
+          )}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
             {tiles.map(([label, value, icon, tone, to]) => (
               <StatTile key={label} label={label} value={num(value)} icon={icon} tone={tone} to={to} />

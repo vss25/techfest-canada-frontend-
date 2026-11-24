@@ -15,6 +15,8 @@ import { ago, day, when } from "../format";
 import JuryEmails from "./JuryEmails";
 import { EYEBROW, JURY, PORTAL_URL, plural, progressText } from "./juryShared";
 import { ProgressBar, StateBadge, StatusBadge } from "./juryBadges";
+import EventOnly from "../EventOnly";
+import { useAdminEvent, withEvent } from "../eventContext";
 
 /* =========================================================
    Admin › Catalyst Awards › Jury (Oct 2026)
@@ -118,10 +120,11 @@ function JurorDrawer({ id, onClose }) {
   );
 }
 
-export default function JuryJurors() {
+function JuryJurorsForEvent() {
   const { isManagement } = useAdmin();
   const toast = useToast();
-  const { data, error, loading, reload } = useApi(`${JURY}/overview`);
+  const { current } = useAdminEvent();
+  const { data, error, loading, reload } = useApi(withEvent(`${JURY}/overview`, current));
   const [q, setQ] = useState("");
   const [form, setForm] = useState(null); // {} = new, row = edit
   const [removing, setRemoving] = useState(null);
@@ -268,4 +271,8 @@ export default function JuryJurors() {
       />
     </>
   );
+}
+
+export default function JuryJurors() {
+  return <EventOnly title="Jury" eyebrow="Catalyst Awards" what="Catalyst Awards records" because="The Catalyst Awards nominations, jury and results here are The Tech Festival Canada 2026's. Next year's awards will have their own once they open."><JuryJurorsForEvent /></EventOnly>;
 }

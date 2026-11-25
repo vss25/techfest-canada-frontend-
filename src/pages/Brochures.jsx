@@ -22,7 +22,7 @@ function DownloadPdf(props) {
     <motion.a href={props.href} download={BROCHURE_FILENAME}
       whileHover={{ scale:1.04, y:-2 }} whileTap={{ scale:0.97 }}
       style={{ display:"inline-flex", alignItems:"center", gap:12, padding:"18px 52px", borderRadius:16, background:rest.background, color:rest.color, fontFamily:"'Orbitron',sans-serif", fontSize:"0.78rem", fontWeight:900, letterSpacing:"1px", textTransform:"uppercase", textDecoration:"none", boxShadow:rest.boxShadow, transition:"background 0.3s,color 0.3s,box-shadow 0.3s" }}
-      onMouseEnter={function(e){e.currentTarget.style.background="linear-gradient(135deg,#7a3fd1,#f5a623)";e.currentTarget.style.color="#fff";e.currentTarget.style.boxShadow="0 8px 40px rgba(122,63,209,0.35)";}}
+      onMouseEnter={function(e){e.currentTarget.style.background="#D6308C";e.currentTarget.style.color="#fff";e.currentTarget.style.boxShadow="0 8px 40px rgba(214,48,140,0.35)";}}
       onMouseLeave={function(e){e.currentTarget.style.background=rest.background;e.currentTarget.style.color=rest.color;e.currentTarget.style.boxShadow=rest.boxShadow;}}
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -56,14 +56,14 @@ export default function Brochures() {
     return function () { obs.disconnect(); };
   }, []);
 
-  var bg        = dark ? "#06020f" : "#ffffff";
+  var bg        = dark ? "#151035" : "#ffffff";
   var textMain  = dark ? "#ffffff" : "#0d0520";
   var textMid   = dark ? "rgba(200,185,255,0.70)" : "rgba(13,5,32,0.60)";
-  var cardBg    = dark ? "rgba(255,255,255,0.04)" : "rgba(122,63,209,0.03)";
-  var cardBdr   = dark ? "rgba(155,135,245,0.15)" : "rgba(122,63,209,0.15)";
-  var inputBg   = dark ? "rgba(255,255,255,0.05)" : "rgba(122,63,209,0.04)";
-  var inputBdr  = dark ? "rgba(155,135,245,0.20)" : "rgba(122,63,209,0.18)";
-  var inputFocus= dark ? "rgba(155,135,245,0.50)" : "rgba(122,63,209,0.45)";
+  var cardBg    = dark ? "rgba(255,255,255,0.04)" : "rgba(214,48,140,0.03)";
+  var cardBdr   = dark ? "rgba(240,106,176,0.15)" : "rgba(214,48,140,0.15)";
+  var inputBg   = dark ? "rgba(255,255,255,0.05)" : "rgba(214,48,140,0.04)";
+  var inputBdr  = dark ? "rgba(240,106,176,0.20)" : "rgba(214,48,140,0.18)";
+  var inputFocus= dark ? "rgba(240,106,176,0.50)" : "rgba(214,48,140,0.45)";
 
   function validate() {
     var e = {};
@@ -141,7 +141,7 @@ export default function Brochures() {
         }
         .pdf-container::-webkit-scrollbar { width:6px; }
         .pdf-container::-webkit-scrollbar-track { background:rgba(0,0,0,0.2); border-radius:3px; }
-        .pdf-container::-webkit-scrollbar-thumb { background:rgba(122,63,209,0.5); border-radius:3px; }
+        .pdf-container::-webkit-scrollbar-thumb { background:rgba(214,48,140,0.5); border-radius:3px; }
         @media (max-width:640px) { .form-grid { grid-template-columns:1fr !important; } }
       `}</style>
 
@@ -158,7 +158,7 @@ export default function Brochures() {
           >
             <h1 style={{ fontFamily:"'Orbitron',sans-serif", fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, letterSpacing:"-0.02em", lineHeight:1.1, marginBottom:"1rem", color:textMain }}>
               DOWNLOAD THE{" "}
-              <span style={{ background:"linear-gradient(90deg,#7a3fd1,#f5a623)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>
+              <span style={{ background:"#D6308C", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>
                 BROCHURE
               </span>
             </h1>
@@ -174,17 +174,17 @@ export default function Brochures() {
             transition={{ duration:0.7, delay:0.15 }}
             style={{ background:cardBg, border:"1px solid "+cardBdr, borderRadius:28, padding:"clamp(1.5rem,5vw,3rem)", position:"relative", overflow:"hidden" }}
           >
-            <div style={{ position:"absolute", top:-60, left:"50%", transform:"translateX(-50%)", width:400, height:120, background:"radial-gradient(ellipse, rgba(122,63,209,0.18) 0%, transparent 70%)", pointerEvents:"none" }} />
+            <div style={{ position:"absolute", top:-60, left:"50%", transform:"translateX(-50%)", width:400, height:120, background:"radial-gradient(ellipse, rgba(214,48,140,0.18) 0%, transparent 70%)", pointerEvents:"none" }} />
 
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:"2rem" }}>
-              <div style={{ width:40, height:40, borderRadius:12, background:submitted?"linear-gradient(135deg,#7a3fd1,#f5a623)":"rgba(122,63,209,0.12)", border:"1px solid rgba(122,63,209,0.30)", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.5s ease", flexShrink:0 }}>
+              <div style={{ width:40, height:40, borderRadius:12, background:submitted?"#D6308C":"rgba(214,48,140,0.12)", border:"1px solid rgba(214,48,140,0.30)", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.5s ease", flexShrink:0 }}>
                 {submitted
                   ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                  : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b99eff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                  : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F06AB0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                 }
               </div>
               <div>
-                <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:"0.7rem", fontWeight:800, letterSpacing:"1px", textTransform:"uppercase", color:submitted?"#f5a623":"#b99eff", marginBottom:2 }}>
+                <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:"0.7rem", fontWeight:800, letterSpacing:"1px", textTransform:"uppercase", color:submitted?"#f5a623":"#F06AB0", marginBottom:2 }}>
                   {submitted ? "Access Granted" : "Request Access"}
                 </div>
                 <div style={{ fontSize:"0.78rem", color:textMid }}>{submitted?"Your brochure is ready to view below. We\u2019re also emailing you a copy.":"Fill in your details to unlock the full brochure"}</div>
@@ -206,7 +206,7 @@ export default function Brochures() {
                       </label>
                       <input className="brochure-input" type={f.type||"text"} placeholder={f.placeholder} value={form[f.key]} maxLength={f.maxLength}
                         onChange={function(e){handleChange(f.key,e.target.value);}} disabled={submitted}
-                        style={{ background:submitted?(dark?"rgba(255,255,255,0.03)":"rgba(122,63,209,0.02)"):inputBg, border:"1px solid "+(errors[f.key]?"#ff6b6b":inputBdr), color:textMain, opacity:submitted?0.6:1, cursor:submitted?"not-allowed":"text" }}
+                        style={{ background:submitted?(dark?"rgba(255,255,255,0.03)":"rgba(214,48,140,0.02)"):inputBg, border:"1px solid "+(errors[f.key]?"#ff6b6b":inputBdr), color:textMain, opacity:submitted?0.6:1, cursor:submitted?"not-allowed":"text" }}
                       />
                       {errors[f.key]&&<div style={{ fontSize:"0.65rem", color:"#ff6b6b", marginTop:4, fontFamily:"'Orbitron',sans-serif", letterSpacing:"0.5px" }}>{errors[f.key]}</div>}
                     </div>
@@ -218,7 +218,7 @@ export default function Brochures() {
                 <label style={{ display:"block", fontFamily:"'Orbitron',sans-serif", fontSize:"0.6rem", fontWeight:700, letterSpacing:"1px", textTransform:"uppercase", color:textMid, marginBottom:7 }}>Industry</label>
                 <select className="brochure-input brochure-select" value={form.industry}
                   onChange={function(e){handleChange("industry",e.target.value);}} disabled={submitted}
-                  style={{ background:submitted?(dark?"rgba(255,255,255,0.03)":"rgba(122,63,209,0.02)"):inputBg, border:"1px solid "+inputBdr, color:form.industry?textMain:textMid, width:"100%", boxSizing:"border-box", opacity:submitted?0.6:1, cursor:submitted?"not-allowed":"pointer" }}
+                  style={{ background:submitted?(dark?"rgba(255,255,255,0.03)":"rgba(214,48,140,0.02)"):inputBg, border:"1px solid "+inputBdr, color:form.industry?textMain:textMid, width:"100%", boxSizing:"border-box", opacity:submitted?0.6:1, cursor:submitted?"not-allowed":"pointer" }}
                 >
                   <option value="" disabled>Select your industry…</option>
                   {INDUSTRIES.map(function(ind){return <option key={ind} value={ind} style={{ background:dark?"#0e0820":"#ffffff", color:textMain }}>{ind}</option>;})}
@@ -235,7 +235,7 @@ export default function Brochures() {
                       </label>
                       <input className="brochure-input" type={f.type||"text"} placeholder={f.placeholder} value={form[f.key]} maxLength={f.maxLength}
                         onChange={function(e){handleChange(f.key,e.target.value);}} disabled={submitted}
-                        style={{ background:submitted?(dark?"rgba(255,255,255,0.03)":"rgba(122,63,209,0.02)"):inputBg, border:"1px solid "+(errors[f.key]?"#ff6b6b":inputBdr), color:textMain, opacity:submitted?0.6:1, cursor:submitted?"not-allowed":"text" }}
+                        style={{ background:submitted?(dark?"rgba(255,255,255,0.03)":"rgba(214,48,140,0.02)"):inputBg, border:"1px solid "+(errors[f.key]?"#ff6b6b":inputBdr), color:textMain, opacity:submitted?0.6:1, cursor:submitted?"not-allowed":"text" }}
                       />
                       {errors[f.key]&&<div style={{ fontSize:"0.65rem", color:"#ff6b6b", marginTop:4, fontFamily:"'Orbitron',sans-serif", letterSpacing:"0.5px" }}>{errors[f.key]}</div>}
                     </div>
@@ -245,16 +245,16 @@ export default function Brochures() {
 
               {!submitted ? (
                 <motion.button type="submit" whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
-                  style={{ width:"100%", padding:"16px", borderRadius:14, border:"none", cursor:"pointer", fontFamily:"'Orbitron',sans-serif", fontSize:"0.78rem", fontWeight:800, letterSpacing:"1.2px", textTransform:"uppercase", background:"linear-gradient(135deg,#7a3fd1,#f5a623)", color:"#ffffff", boxShadow:"0 6px 28px rgba(122,63,209,0.28)", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}
+                  style={{ width:"100%", padding:"16px", borderRadius:14, border:"none", cursor:"pointer", fontFamily:"'Orbitron',sans-serif", fontSize:"0.78rem", fontWeight:800, letterSpacing:"1.2px", textTransform:"uppercase", background:"#D6308C", color:"#ffffff", boxShadow:"0 6px 28px rgba(214,48,140,0.28)", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                   Unlock Brochure
                 </motion.button>
               ) : (
                 <div style={{ display:"flex", gap:12, alignItems:"center" }}>
-                  <div style={{ flex:1, height:1, background:"linear-gradient(90deg,transparent,rgba(122,63,209,0.30),transparent)" }} />
-                  <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:"0.6rem", color:"#b99eff", letterSpacing:"1px" }}>ACCESS GRANTED</div>
-                  <div style={{ flex:1, height:1, background:"linear-gradient(90deg,transparent,rgba(122,63,209,0.30),transparent)" }} />
+                  <div style={{ flex:1, height:1, background:"linear-gradient(90deg,transparent,rgba(214,48,140,0.30),transparent)" }} />
+                  <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:"0.6rem", color:"#F06AB0", letterSpacing:"1px" }}>ACCESS GRANTED</div>
+                  <div style={{ flex:1, height:1, background:"linear-gradient(90deg,transparent,rgba(214,48,140,0.30),transparent)" }} />
                 </div>
               )}
             </form>
@@ -267,16 +267,16 @@ export default function Brochures() {
                 <p style={{ color:textMid, fontSize:"0.82rem", marginBottom:"1.5rem", fontFamily:"'Orbitron',sans-serif", letterSpacing:"0.5px" }}>Your brochure is ready →</p>
                 <motion.button type="button" onClick={openBrochure} aria-label="View brochure"
                   whileHover={{ y:-4 }} whileTap={{ scale:0.98 }}
-                  style={{ display:"block", width:"min(100%, 340px)", padding:0, marginBottom:"2rem", border:"1px solid "+cardBdr, borderRadius:18, overflow:"hidden", cursor:"pointer", background:dark?"#0a0518":"#f5f3ff", boxShadow:dark?"0 24px 60px rgba(0,0,0,0.55)":"0 24px 60px rgba(122,63,209,0.16)" }}
+                  style={{ display:"block", width:"min(100%, 340px)", padding:0, marginBottom:"2rem", border:"1px solid "+cardBdr, borderRadius:18, overflow:"hidden", cursor:"pointer", background:dark?"#0a0518":"#f5f3ff", boxShadow:dark?"0 24px 60px rgba(0,0,0,0.55)":"0 24px 60px rgba(214,48,140,0.16)" }}
                 >
                   <img src={BROCHURE_COVER} alt="Cover of the TTFC 2026 sponsorship brochure" width={595} height={842} style={{ display:"block", width:"100%", height:"auto" }} />
                 </motion.button>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:12, justifyContent:"center", alignItems:"center" }}>
                   <motion.button type="button" onClick={openBrochure}
-                    animate={btnPulsing?{boxShadow:["0 0 0 0 rgba(122,63,209,0.6)","0 0 0 24px rgba(122,63,209,0)","0 0 0 0 rgba(122,63,209,0)"]}:{}}
+                    animate={btnPulsing?{boxShadow:["0 0 0 0 rgba(214,48,140,0.6)","0 0 0 24px rgba(214,48,140,0)","0 0 0 0 rgba(214,48,140,0)"]}:{}}
                     transition={{ repeat:Infinity, duration:1.8 }}
                     whileHover={{ scale:1.04, y:-2 }} whileTap={{ scale:0.97 }}
-                    style={{ padding:"18px 40px", borderRadius:16, border:"none", cursor:"pointer", fontFamily:"'Orbitron',sans-serif", fontSize:"0.78rem", fontWeight:900, letterSpacing:"1.2px", textTransform:"uppercase", background:"linear-gradient(135deg,#7a3fd1 0%,#c4607a 50%,#f5a623 100%)", color:"#ffffff", display:"inline-flex", alignItems:"center", gap:12, boxShadow:"0 8px 40px rgba(122,63,209,0.35)", position:"relative", overflow:"hidden" }}
+                    style={{ padding:"18px 40px", borderRadius:16, border:"none", cursor:"pointer", fontFamily:"'Orbitron',sans-serif", fontSize:"0.78rem", fontWeight:900, letterSpacing:"1.2px", textTransform:"uppercase", background:"linear-gradient(135deg,#D6308C 0%,#c4607a 50%,#f5a623 100%)", color:"#ffffff", display:"inline-flex", alignItems:"center", gap:12, boxShadow:"0 8px 40px rgba(214,48,140,0.35)", position:"relative", overflow:"hidden" }}
                   >
                     <motion.div animate={{ x:["-100%","200%"] }} transition={{ repeat:Infinity, duration:2.2, ease:"easeInOut" }}
                       style={{ position:"absolute", inset:0, background:"linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.18) 50%,transparent 60%)", pointerEvents:"none" }} />
@@ -300,29 +300,29 @@ export default function Brochures() {
                   style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1rem", padding:"0 4px" }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                     <div style={{ width:8, height:8, borderRadius:"50%", background:"#f5a623", boxShadow:"0 0 8px #f5a623", animation:"shimmer 2s ease-in-out infinite" }} />
-                    <span style={{ fontFamily:"'Orbitron',sans-serif", fontSize:"0.62rem", fontWeight:700, letterSpacing:"1.5px", textTransform:"uppercase", color:"#b99eff" }}>TFC 2026 · OFFICIAL SPONSORSHIP BROCHURE</span>
+                    <span style={{ fontFamily:"'Orbitron',sans-serif", fontSize:"0.62rem", fontWeight:700, letterSpacing:"1.5px", textTransform:"uppercase", color:"#F06AB0" }}>TFC 2026 · OFFICIAL SPONSORSHIP BROCHURE</span>
                   </div>
                   <span style={{ fontFamily:"'Orbitron',sans-serif", fontSize:"0.6rem", color:textMid, letterSpacing:"0.5px" }}>14 PAGES</span>
                 </motion.div>
 
                 <motion.div initial={{ scale:0.94, opacity:0 }} animate={{ scale:1, opacity:1 }} transition={{ delay:0.25, duration:0.65, ease:[0.215,0.61,0.355,1] }}
-                  style={{ borderRadius:24, overflow:"hidden", border:"1px solid "+cardBdr, boxShadow:dark?"0 24px 80px rgba(0,0,0,0.6)":"0 24px 80px rgba(122,63,209,0.12)", position:"relative" }}>
-                  <div style={{ height:4, background:"linear-gradient(90deg,#7a3fd1,#c4607a,#f5a623)", width:"100%" }} />
+                  style={{ borderRadius:24, overflow:"hidden", border:"1px solid "+cardBdr, boxShadow:dark?"0 24px 80px rgba(0,0,0,0.6)":"0 24px 80px rgba(214,48,140,0.12)", position:"relative" }}>
+                  <div style={{ height:4, background:"linear-gradient(90deg,#D6308C,#c4607a,#f5a623)", width:"100%" }} />
                   <div className="pdf-container" style={{ background:dark?"#0a0518":"#f5f3ff", overflowY:"auto", maxHeight:"82vh" }}>
                     <iframe src={pdfUrl + "#toolbar=0&navpanes=0&scrollbar=0"} title="Tech Festival Canada 2026 Brochure" style={{ width:"100%", height:"85vh", border:"none", display:"block" }} />
                   </div>
-                  <div style={{ height:4, background:"linear-gradient(90deg,#f5a623,#c4607a,#7a3fd1)", width:"100%" }} />
+                  <div style={{ height:4, background:"linear-gradient(90deg,#f5a623,#c4607a,#D6308C)", width:"100%" }} />
                 </motion.div>
 
                 <motion.div initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.6, duration:0.5 }}
                   style={{ marginTop:"2rem", display:"flex", flexDirection:"column", alignItems:"center", gap:12, paddingBottom:"2rem" }}>
                   <div style={{ display:"flex", gap:6, marginBottom:4 }}>
-                    {[0,1,2].map(function(i){ return <motion.div key={i} animate={{ y:[0,-5,0] }} transition={{ delay:i*0.15, repeat:Infinity, duration:1.2 }} style={{ width:4, height:4, borderRadius:"50%", background:i===1?"#f5a623":"#7a3fd1", opacity:0.8 }} />; })}
+                    {[0,1,2].map(function(i){ return <motion.div key={i} animate={{ y:[0,-5,0] }} transition={{ delay:i*0.15, repeat:Infinity, duration:1.2 }} style={{ width:4, height:4, borderRadius:"50%", background:i===1?"#f5a623":"#D6308C", opacity:0.8 }} />; })}
                   </div>
                   <DownloadPdf href={pdfDownload} dark={dark} />
                   <p style={{ color:textMid, fontSize:"0.68rem", fontFamily:"'Orbitron',sans-serif", letterSpacing:"0.5px", margin:0 }}>
                     PDF · 14 pages · For sponsorship enquiries:{" "}
-                    <a href="mailto:sales@thetechfestival.com" style={{ color:"#b99eff", textDecoration:"none" }}>sales@thetechfestival.com</a>
+                    <a href="mailto:sales@thetechfestival.com" style={{ color:"#F06AB0", textDecoration:"none" }}>sales@thetechfestival.com</a>
                   </p>
                 </motion.div>
               </motion.div>

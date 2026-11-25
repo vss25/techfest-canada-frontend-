@@ -191,9 +191,9 @@ function SeeYouIn2027() {
         to={STAY_UPDATED_PATH}
         style={{
           display: "inline-flex", alignItems: "center", gap: 8, marginTop: 2, padding: "10px 20px", borderRadius: 999,
-          background: "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "#ffffff", textDecoration: "none",
+          background: "#D6308C", color: "#ffffff", textDecoration: "none",
           fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.7rem", letterSpacing: "1.1px", textTransform: "uppercase",
-          boxShadow: "0 8px 24px rgba(122,63,209,0.4)", maxWidth: "100%",
+          boxShadow: "0 8px 24px rgba(214,48,140,0.4)", maxWidth: "100%",
         }}
       >
         Stay updated for 2027
@@ -237,7 +237,7 @@ function RegisterWidget() {
           width: 40,
           height: 40,
           borderRadius: "50%",
-          background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+          background: "#D6308C",
           flexShrink: 0,
         }}
       >
@@ -265,7 +265,7 @@ function RegisterWidget() {
   );
 }
 
-export default function Home() {
+export default function Home(props) {
   var s1 = useState(false); var inquiryOpen = s1[0];        var setInquiryOpen = s1[1];
   var s2 = useState(false); var surveyOpen = s2[0];         var setSurveyOpen = s2[1];
   var s3 = useState("");    var surveyName = s3[0];         var setSurveyName = s3[1];
@@ -292,11 +292,17 @@ export default function Home() {
     return function () { window.removeEventListener("purchaseComplete", h); };
   }, []);
 
-  var bg       = dark ? "#06020f"                : "#ffffff";
+  var bg       = dark ? "#151035"                : "#ffffff";
   var textMain = dark ? "#ffffff"                : "#0d0520";
   var textMid  = dark ? "rgba(255,255,255,0.75)" : "rgba(13,5,32,0.78)";
-  var accent   = dark ? "#b99eff"                : "#7a3fd1";
+  var accent   = dark ? "#F06AB0"                : "#D6308C";
   var over     = eventOver();   // TTFC 2026 is over: the "See you in 2027" note in the hero
+
+  // Composition slots (additive — used only by pages/HomeFeatured.jsx, the seasonal
+  // featured-event homepage): a caller may supply the header and one block to render
+  // above the hero. With neither prop this page renders exactly as it always has.
+  var header = props && props.header ? props.header : <Navbar />;
+  var before = props && props.before ? props.before : null;
 
   return (
     <div style={{ background: bg, minHeight: "100vh", color: textMain, overflowX: "hidden", width: "100%", position: "relative" }}>
@@ -323,10 +329,11 @@ export default function Home() {
         }
       `}</style>
 
-      <Navbar />
+      {header}
+      {before}
 
       {/* HERO UPPER — always dark regardless of theme */}
-      <section style={{ position: "relative", overflow: "hidden", background: "#06020f", minHeight: "76vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(100px, 15vh, 150px) 0 clamp(70px, 10vh, 110px)" }}>
+      <section style={{ position: "relative", overflow: "hidden", background: "#151035", minHeight: "76vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(100px, 15vh, 150px) 0 clamp(70px, 10vh, 110px)" }}>
         <HeroBackground />
         <motion.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ position: "relative", zIndex: 5, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "0 6%", maxWidth: 660, width: "100%" }}
@@ -341,7 +348,7 @@ export default function Home() {
                 alt="The Tech Festival Canada"
                 width={1500}
                 height={938}
-                style={{ width: "100%", maxWidth: over ? 460 : 620, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 50px rgba(155,135,245,0.22))" }}
+                style={{ width: "100%", maxWidth: over ? 460 : 620, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 50px rgba(240,106,176,0.22))" }}
               />
             </h1>
           </motion.div>
@@ -380,7 +387,7 @@ export default function Home() {
       </div>
 
       <SponsorMarquee dark={dark} />
-      <div style={{ height: "4rem", background: dark ? "#06020f" : "#ffffff" }} />
+      <div style={{ height: "4rem", background: dark ? "#151035" : "#ffffff" }} />
       <NewsletterBar dark={dark} />
       <Footer />
 

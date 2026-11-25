@@ -1,6 +1,18 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { currentEventPath } from "./lib/events";
 import { lazy, Suspense, useEffect } from "react";
 import Home from "./pages/Home";
+/* Phase 4 (IA build-out) pages. NOTE: "/" is the COMPOSED homepage (src/pages/HomeFeatured.jsx):
+   the seasonal featured-event home on top of the full existing homepage — every section of
+   src/pages/Home.jsx still renders, in its original order, under the featured block, and
+   Home.jsx itself is untouched in behaviour (it gained two optional slots: header / before).
+   src/pages/FeaturedHome.jsx stays the standalone featured-only page (unrouted); its
+   CityList is reused by the composition. Nothing live is removed or displaced. */
+const CityHub = lazy(() => import("./pages/CityHub"));
+const EventLanding = lazy(() => import("./pages/EventLanding"));
+const Highlights = lazy(() => import("./pages/Highlights"));
+const NationalPartners = lazy(() => import("./pages/NationalPartners"));
+const AwardsYear = lazy(() => import("./pages/AwardsYear"));
 /* Every other page is its own chunk, fetched when it opens (Oct 31 2026): the script every visit starts with went
    from 941 kB to 414 kB. The <Suspense> around <Routes> covers them; moving between pages keeps the current one on
    screen until the next has loaded (React Router navigates in a transition). AboutUs stays: the homepage shows it. */
@@ -12,6 +24,14 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const Resources = lazy(() => import("./pages/Resources"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Contact = lazy(() => import("./pages/Contact"));
+import PreviewBar from "./components/PreviewBar";
+import NextEventTickets from "./components/NextEventTickets";
+import BrandHome from "./redesign/BrandHome";
+const ApprovedSite = lazy(() => import("./redesign/approved/ApprovedSite"));
+// The approved design, live: every screen of board 12 at its own address (redesign step 2).
+const ApprovedRoute = lazy(() => import("./redesign/approved/LiveSite"));
+const live = (fallback) => <Suspense fallback={<div style={{ minHeight: "100vh", background: "#151035" }} aria-busy="true" />}><ApprovedRoute fallback={fallback} /></Suspense>;
+import "./redesign/skin.css";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AboutUs from "./components/AboutUs";
 const AuthSuccess = lazy(() => import("./pages/AuthSuccess"));
@@ -80,6 +100,12 @@ const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const isJuryPath = (p) => /^\/awards\/jury-admin(\/|$)/i.test(p);
 // A Catalyst Awards winner inside the /awards page's dialog (?embed=1): just the winner, none of the site's bars.
 const isEmbeddedWinner = (p, q) => /^\/awards\/winners\//i.test(p) && new URLSearchParams(q).get("embed") === "1";
+/* /:city/:year/main-event… → /:city/:year/national-festival… (the same page, sub-page, query and #anchor). */
+function OldEventAddress() {
+  const loc = useLocation();
+  return <Navigate to={currentEventPath(loc.pathname) + loc.search + loc.hash} replace />;
+}
+
 function OffJury({ children }) {
   const { pathname, search } = useLocation();
   return isJuryPath(pathname) || isFactSheetPath(pathname) || isEmbeddedWinner(pathname, search) ? null : children;
@@ -103,9 +129,8 @@ function AdminLoading() {
 
 /* ================= SYSTEM THEME DETECTOR ================= */
 function applySystemTheme() {
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const theme = prefersDark ? "dark" : "light";
-  document.documentElement.setAttribute("data-theme", theme);
+  // Redesign (Nov 2026): the approved design has one light look and no dark mode.
+  document.documentElement.setAttribute("data-theme", "light");
 }
 
 function App() {
@@ -122,15 +147,18 @@ function App() {
       <ScrollToTop />
       <RouteSeo />
       <OffJury><AnnouncementBar /></OffJury>
+      <PreviewBar />
       <RouteErrorBoundary>
       <Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={live(null)} />
+        <Route path="/approved-preview" element={<Suspense fallback={null}><ApprovedSite /></Suspense>} />
         <Route path="/programme" element={<AgendaGate><Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Programme /></Suspense></AgendaGate>} />
-        <Route path="/speakers" element={<Speakers />} />
-        <Route path="/speakers/:slug" element={<SpeakerProfile />} />
+        <Route path="/speakers" element={live(null)} />
+        <Route path="/speakers/:slug" element={live(<SpeakerProfile />)} />
         <Route path="/sponsors" element={<Sponsors />} />
-        <Route path="/tickets" element={<Tickets />} />
+        {/* The next event's tickets in the new design (the old page sold TTFC 2026 passes). */}
+        <Route path="/tickets" element={<NextEventTickets />} />
         <Route path="/tickets/checkout" element={<Checkout />} />
         <Route path="/first-timers" element={<Navigate to="/" replace />} />
         {/* Briefings page hidden (Oct 2026); src/pages/Briefings.jsx kept for later */}
@@ -140,8 +168,8 @@ function App() {
         {/* The attendee dashboard was retired (the app replaces it); keep old links working. */}
         <Route path="/dashboard" element={<Navigate to="/" replace />} />
         <Route path="/privacy" element={<Privacy />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/about" element={<AboutUs />} />
+        <Route path="/contact" element={live(null)} />
+        <Route path="/about" element={live(null)} />
         <Route path="/agenda" element={<AgendaGate><Agenda /></AgendaGate>} />
         <Route
           path="/admin-login"
@@ -162,24 +190,29 @@ function App() {
           }
         />
         <Route path="/auth-success" element={<AuthSuccess />} />
-        <Route path="/sponsor" element={<Sponsor />} />
-        <Route path="/exhibit" element={<Exhibit />} />
+        <Route path="/sponsor" element={live(null)} />
+        <Route path="/exhibit" element={live(null)} />
+        <Route path="/exhibitors" element={live(null)} />
+        <Route path="/faqs" element={live(null)} />
+        <Route path="/speak" element={live(null)} />
+        <Route path="/news" element={live(null)} />
+        <Route path="/app" element={live(null)} />
         <Route path="/exhibit/india-pavilion" element={<IndiaPavilion />} />
         <Route path="/exhibit/india-pavilion/pay" element={<PavilionPayment />} />
         <Route path="/brochures" element={<Brochures />} />
-        <Route path="/venue" element={<Venue />} />
+        <Route path="/venue" element={live(null)} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/awards" element={<Awards />} />
+        <Route path="/awards" element={live(null)} />
         <Route path="/awards/nominations" element={<Awards />} />
         <Route path="/awards/winners/:id" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><AwardWinner /></Suspense>} />
         <Route path="/awards/jury-admin/*" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#f6f4fa" }} aria-busy="true" />}><JuryPortal /></Suspense>} />
         {/* KYC form hidden (13 Oct 2026); the page is kept in src/pages/KycForm.jsx */}
         <Route path="/kyc" element={<Navigate to="/" replace />} />
-        <Route path="/volunteer" element={<Volunteer />} />
+        <Route path="/volunteer" element={live(null)} />
         <Route path="/partners2026" element={<Partners2026 />} />
         <Route path="/organizers" element={<Organizers />} />
         <Route path="/linkedin" element={<LinkedinLanding />} />
-        <Route path="/media" element={<Media />} />
+        <Route path="/media" element={live(null)} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
         <Route path="/app-login" element={<AppLogin />} />
         <Route path="/rsvp" element={<Suspense fallback={<div style={{ minHeight: "100vh", background: "#06020f" }} aria-busy="true" />}><Rsvp /></Suspense>} />
@@ -190,6 +223,34 @@ function App() {
         <Route path="/rate" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Rate /></Suspense>} />
         <Route path="/survey" element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Survey /></Suspense>} />
         <Route path={FACT_SHEET_PATH} caseSensitive element={<Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><FactSheet /></Suspense>} />
+        {/* ===== Phase 4: city + event route layer (city before year, no country segment) =====
+            The flat 2026 routes above stay live: they ARE the 2026 edition's pages. The new
+            layer is additive — /:city hubs and /:city/:year/(briefing|main-event) event pages
+            with agenda / speakers / tickets underneath the event, never under the city. */}
+        <Route path="/toronto2027" element={<Navigate to="/toronto/2027/national-festival" replace />} />
+        <Route path="/toronto-briefing" element={<Navigate to="/toronto/2027/briefing" replace />} />
+        <Route path="/highlights" element={<Highlights />} />
+        <Route path="/highlights/2026" element={live(<Highlights />)} />
+        <Route path="/highlights/:year" element={<Highlights />} />
+        <Route path="/partners" element={live(null)} />
+        <Route path="/partners/:year" element={<NationalPartners />} />
+        <Route path="/awards/:year" element={<AwardsYear />} />
+        <Route path="/:city" element={<CityHub />} />
+        {/* The event type is spelled out (not :eventType) so these never catch the admin panel's
+            three-part addresses (/admin/content/speakers ranked higher than /admin/* and showed "Page not found"). */}
+        <Route path="/:city/:year/briefing" element={live(<EventLanding section="overview" type="briefing" />)} />
+        <Route path="/:city/:year/briefing/agenda" element={live(<EventLanding section="agenda" type="briefing" />)} />
+        <Route path="/:city/:year/briefing/speakers" element={live(<EventLanding section="speakers" type="briefing" />)} />
+        <Route path="/:city/:year/briefing/speakers/:speakerSlug" element={<EventLanding section="speaker" type="briefing" />} />
+        <Route path="/:city/:year/briefing/tickets" element={live(<EventLanding section="tickets" type="briefing" />)} />
+        <Route path="/:city/:year/national-festival" element={live(<EventLanding section="overview" type="main-event" />)} />
+        <Route path="/:city/:year/national-festival/agenda" element={live(<EventLanding section="agenda" type="main-event" />)} />
+        <Route path="/:city/:year/national-festival/speakers" element={live(<EventLanding section="speakers" type="main-event" />)} />
+        <Route path="/:city/:year/national-festival/speakers/:speakerSlug" element={<EventLanding section="speaker" type="main-event" />} />
+        <Route path="/:city/:year/national-festival/tickets" element={live(<EventLanding section="tickets" type="main-event" />)} />
+        {/* The National Festival's page (Nov 25 2026: it was /main-event). The old address still opens: it moves on to
+            the new one, with whatever came after it (agenda, speakers, tickets). */}
+        <Route path="/:city/:year/main-event/*" element={<OldEventAddress />} />
         {/* Any other address: "Page not found", noindex (src/pages/NotFound.jsx). */}
         <Route path="*" element={<NotFound />} />
       </Routes>

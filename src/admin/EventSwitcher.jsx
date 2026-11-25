@@ -77,6 +77,15 @@ function EventMenu({ onPick, className = "" }) {
   };
   return (
     <div role="menu" aria-label="Choose an event" className={`z-30 w-[320px] rounded-xl border border-[#E3E0EE] bg-white p-1.5 shadow-[0_14px_34px_rgba(21,16,53,.14)] ${className}`}>
+      {/* The home page isn't an event, but it is edited like one (Nov 25 2026, the owner): straight to its editor. */}
+      <Link to="/admin/content/home" role="menuitem" onClick={() => { setOpen(false); onPick?.(); }}
+        className="mb-1 flex w-full items-center gap-2.5 rounded-lg border-b border-[#E3E0EE] bg-white px-2.5 py-[9px] text-left hover:bg-[#F6F5FA]">
+        <span className="flex min-w-0 flex-col gap-px">
+          <b className="truncate text-sm text-[#151035]">Home page</b>
+          <span className="truncate text-xs text-[#6B6688]">Headline, picture, video, speakers, sections</span>
+        </span>
+        <span className="ml-auto shrink-0 rounded-full bg-[#F1F0F5] px-2 py-0.5 text-[11px] font-semibold text-[#151035]">Edit</span>
+      </Link>
       {upcoming.map((ev) => <Row key={ev._id} ev={ev} />)}
       {shownPast.length > 0 && <span className="block px-2.5 pb-1 pt-2 text-[11px] font-semibold tracking-[.08em] text-[#8A86A0]">PAST EVENTS · READ ONLY AFTER 7 DAYS</span>}
       {shownPast.map((ev) => <Row key={ev._id} ev={ev} />)}

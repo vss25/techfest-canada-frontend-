@@ -56,6 +56,7 @@ export function toDesignSessions(sessions = []) {
         time: (multiDay ? `Day ${Number(s.day) || 1} · ` : "") + shortTime(s.time),
         title: s.title,
         desc: s.description || "",
+        image: s.image || null, mediaUrl: s.mediaUrl || "",   // the card's picture and GIF / video (Admin › Agenda)
         who: s.isBreak ? "" : [mod && `Moderator: ${mod}`, people.length ? people.join(", ") : ""].filter(Boolean).join(" · ") || "Speakers to be announced",
         more: "",
       };

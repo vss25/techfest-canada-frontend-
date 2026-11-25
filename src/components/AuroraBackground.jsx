@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
    Full-screen aurora / mesh-gradient background (WebGL, no libraries)
    ---------------------------------------------------------
    A small fragment shader: domain-warped noise in the TTFC colours
-   (purple #7a3fd1, magenta #e8458b, orange #f5a623 on #06020f) that
+   (purple #D6308C, magenta #e8458b, orange #f5a623 on #151035) that
    drifts slowly and leans gently toward the pointer.
    - prefers-reduced-motion: one still frame, no pointer response.
    - Tab hidden: the animation loop stops until it's visible again.
@@ -98,10 +98,10 @@ void main() {
 `;
 
 const FALLBACK =
-  "radial-gradient(ellipse 80% 60% at 20% 20%, rgba(122,63,209,0.55) 0%, transparent 60%)," +
+  "radial-gradient(ellipse 80% 60% at 20% 20%, rgba(214,48,140,0.55) 0%, transparent 60%)," +
   "radial-gradient(ellipse 70% 55% at 85% 75%, rgba(232,69,139,0.38) 0%, transparent 60%)," +
   "radial-gradient(ellipse 60% 45% at 60% 105%, rgba(245,166,35,0.22) 0%, transparent 60%)," +
-  "#06020f";
+  "#151035";
 
 function compile(gl, type, src) {
   const sh = gl.createShader(type);

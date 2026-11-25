@@ -252,7 +252,7 @@ export default function SpeakersCarousel({
                 {/* Position badge */}
                 <div style={{
                     display: "inline-block",
-                    background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                    background: "#D6308C",
                     color: "#fff",
                     fontSize: "0.72rem",
                     fontWeight: 700,
@@ -333,7 +333,7 @@ export default function SpeakersCarousel({
                         onClick={handlePrevious}
                         aria-label="Previous person"
                         style={S.navBtn}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "linear-gradient(135deg,#7a3fd1,#f5a623)"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "transparent"; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#D6308C"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "transparent"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-card)"; e.currentTarget.style.color = "var(--text-main)"; e.currentTarget.style.borderColor = "var(--border-main)"; }}
                     >
                         <ChevronLeft size={22} />
@@ -354,7 +354,7 @@ export default function SpeakersCarousel({
                         onClick={handleNext}
                         aria-label="Next person"
                         style={S.navBtn}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "linear-gradient(135deg,#7a3fd1,#f5a623)"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "transparent"; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#D6308C"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "transparent"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-card)"; e.currentTarget.style.color = "var(--text-main)"; e.currentTarget.style.borderColor = "var(--border-main)"; }}
                     >
                         <ChevronRight size={22} />

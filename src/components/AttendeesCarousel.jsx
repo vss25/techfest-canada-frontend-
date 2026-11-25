@@ -119,7 +119,7 @@ export default function AttendeesCarousel() {
               fontFamily: "'Orbitron', sans-serif",
               fontSize: "clamp(2rem, 5vw, 3.5rem)",
               fontWeight: 900,
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",

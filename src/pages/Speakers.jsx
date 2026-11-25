@@ -13,6 +13,8 @@ import { submitForm, useFormGuard, FORMS_FALLBACK_EMAIL } from "../lib/forms";
 import { client, speakerPhotoUrl } from "../utils/sanity";
 import useAgenda from "../hooks/useAgenda";
 import SpeakerMarquee from "../components/SpeakerMarquee";
+import EventScopeBar, { ScopedEmptyState, matchesEventScope, useEventScope } from "../components/EventScopeBar";
+import { eventPillLabel } from "../lib/events";
 import { sessionsForSpeaker, buildSpeakerCategoryMap, slugifyName, formatTime12, DAYS } from "../data/agenda";
 
 // ─── Protection ──────────────────────────────────────────────────
@@ -44,11 +46,11 @@ const STATS = [
 // the Agenda page. A speaker belongs to a pillar/sector when any session
 // they speak at or moderate is tagged with it — see categoriesForSpeaker.
 const PILLAR_MAP = {
-  ai:            { label: "AI / ML",       icon: Sparkles, color: "#b99eff", light: "#7a3fd1" },
+  ai:            { label: "AI / ML",       icon: Sparkles, color: "#F06AB0", light: "#D6308C" },
   quantum:       { label: "Quantum",       icon: Zap,      color: "#56b3f5", light: "#1878c2" },
   cybersecurity: { label: "Cybersecurity", icon: Shield,   color: "#f57eb3", light: "#c2287a" },
   robotics:      { label: "Robotics",      icon: Cpu,      color: "#f5a623", light: "#c4780a" },
-  climate:       { label: "Climate Tech",  icon: Leaf,     color: "#3fd19c", light: "#1a9e70" },
+  climate:       { label: "Clean Tech",    icon: Leaf,     color: "#3fd19c", light: "#1a9e70" },
 };
 
 const SECTOR_MAP = {
@@ -193,7 +195,7 @@ function SpeakerCard({ speaker, dark, i }) {
   var mySessions = useMemo(function () { return sessionsForSpeaker(speaker.name, agenda); }, [speaker.name, agenda]);
   var firstSession = mySessions[0] || null;
 
-  var accent = dark ? "#b99eff" : "#7a3fd1";
+  var accent = dark ? "#F06AB0" : "#D6308C";
 
   var primaryText = dark ? "#ffffff" : "#0d0520";
   var secondaryText = dark ? "rgba(255,255,255,0.75)" : "rgba(13,5,32,0.65)";
@@ -395,6 +397,10 @@ export default function Speakers() {
   var s4 = useState(""); var search = s4[0]; var setSearch = s4[1];
   var s5 = useState(null); var activePillar = s5[0]; var setActivePillar = s5[1];
   var s6 = useState(null); var activeSector = s6[0]; var setActiveSector = s6[1];
+  // Event scope: the shared pill selection (default: the most recent
+  // event). Null — All events chosen — is this page exactly as before.
+  var scope = useEventScope();
+  var scopedEvent = scope.scopedEvent;
 
   useEffect(function () {
     var check = function () { setDark(document.body.classList.contains("dark-mode")); };
@@ -412,15 +418,15 @@ export default function Speakers() {
   useEffect(function () {
     client
       .fetch(
-        '*[_type == "speaker"] | order(order asc, coalesce(rowPosition, 9999) asc) { _id, name, title, company, bio, linkedin, image, rowPosition }'
+        '*[_type == "speaker"] | order(order asc, coalesce(rowPosition, 9999) asc) { _id, name, title, company, bio, linkedin, image, rowPosition, "eventIds": events[]._ref }'
       )
       .then(function (data) { setSpeakers(data); setLoading(false); })
       .catch(function () { setLoading(false); });
   }, []);
 
-  var bg = dark ? "#06020f" : "#f8f7fc";
+  var bg = dark ? "#151035" : "#f8f7fc";
   var text = dark ? "#ffffff" : "#0d0520";
-  var accent = dark ? "#b99eff" : "#7a3fd1";
+  var accent = dark ? "#F06AB0" : "#D6308C";
   var border = dark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.10)";
   var inactiveText = dark ? "rgba(255,255,255,0.70)" : "rgba(13,5,32,0.55)";
   var mutedText = dark ? "rgba(255,255,255,0.48)" : "rgba(13,5,32,0.42)";
@@ -446,8 +452,16 @@ export default function Speakers() {
     }
   }, [loading, agendaState.loaded, agendaState.source, speakers, categoryMap]);
 
+  // The roster under the active event scope: with no scope this is the
+  // speakers list itself; with a scope, only speakers tagged with it.
+  var scopedSpeakers = useMemo(function () {
+    if (!scopedEvent) return speakers;
+    return speakers.filter(function (s) { return matchesEventScope(s, scopedEvent._id); });
+  }, [speakers, scopedEvent]);
+  var scopeEmpty = !!scopedEvent && !loading && scopedSpeakers.length === 0;
+
   var filtered = useMemo(function () {
-    return speakers.filter(function (s) {
+    return scopedSpeakers.filter(function (s) {
       if (search.trim()) {
         var q = search.toLowerCase();
         var textMatch =
@@ -462,7 +476,7 @@ export default function Speakers() {
       if (activeSector && !(cats && cats.sectors.has(activeSector))) return false;
       return true;
     });
-  }, [speakers, search, activePillar, activeSector, categoryMap]);
+  }, [scopedSpeakers, search, activePillar, activeSector, categoryMap]);
 
   var hasFilters = !!(activePillar || activeSector || search.trim());
   var fp = { dark: dark, accent: accent, border: border, inactiveText: inactiveText };
@@ -526,7 +540,7 @@ export default function Speakers() {
     <>
       <style>{"\
         .speakers-gradient-text {\
-          background: linear-gradient(135deg, var(--grad-start, #b99eff), #f5a623);\
+          background: linear-gradient(135deg, var(--grad-start, #F06AB0), #f5a623);\
           -webkit-background-clip: text;\
           -webkit-text-fill-color: transparent;\
           background-clip: text;\
@@ -537,7 +551,7 @@ export default function Speakers() {
           font-family: 'Orbitron', sans-serif;\
           font-size: clamp(1.4rem, 2.4vw, 2rem);\
           font-weight: 900;\
-          background: linear-gradient(135deg, var(--grad-start, #b99eff), #f5a623);\
+          background: linear-gradient(135deg, var(--grad-start, #F06AB0), #f5a623);\
           -webkit-background-clip: text;\
           -webkit-text-fill-color: transparent;\
           background-clip: text;\
@@ -570,8 +584,8 @@ export default function Speakers() {
           position: "relative",
           padding: "clamp(120px, 18vw, 180px) 5% clamp(60px, 8vw, 100px)",
           background: dark
-            ? "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.14) 0%, transparent 70%)"
-            : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,63,209,0.07) 0%, transparent 70%)",
+            ? "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(214,48,140,0.14) 0%, transparent 70%)"
+            : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(214,48,140,0.07) 0%, transparent 70%)",
         }}>
           <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }}>
@@ -618,6 +632,13 @@ export default function Speakers() {
             </motion.div>
           </div>
         </section>
+
+        {/* EVENT SCOPE — the pill's selection as a filter for this page */}
+        {scope.events.length > 0 && (
+          <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "2rem 1.5rem 0" }}>
+            <EventScopeBar events={scope.events} scopedEvent={scopedEvent} onSelect={scope.select} />
+          </div>
+        )}
 
         <SpeakerMarquee dark={dark} title="Where our speakers work at" />
 
@@ -671,10 +692,12 @@ export default function Speakers() {
             }}>
               {loading
                 ? "Loading speakers..."
-                : filtered.length + " speaker" + (filtered.length !== 1 ? "s" : "") + " · TTFC 2026"}
+                : filtered.length + " speaker" + (filtered.length !== 1 ? "s" : "") + " · " + (scopedEvent ? eventPillLabel(scopedEvent) : "TTFC 2026")}
             </p>
             {loading ? (
               <div style={{ textAlign: "center", color: mutedText, padding: 80 }}>Loading speakers...</div>
+            ) : scopeEmpty ? (
+              <ScopedEmptyState event={scopedEvent} noun="speakers" />
             ) : filtered.length === 0 ? (
               <div style={{
                 display: "flex", flexDirection: "column", alignItems: "center",
@@ -711,13 +734,13 @@ export default function Speakers() {
                 })}
               </div>
             )}
-            {!loading && (
+            {!loading && !scopeEmpty && (
               <div style={{
                 marginTop: "3.5rem", padding: "2.2rem 2rem", borderRadius: "10px",
                 border: "1px solid " + border,
                 background: dark
                   ? "linear-gradient(135deg, rgba(185,158,255,0.10) 0%, rgba(245,166,35,0.05) 100%)"
-                  : "linear-gradient(135deg, rgba(122,63,209,0.08) 0%, rgba(245,166,35,0.04) 100%)",
+                  : "linear-gradient(135deg, rgba(214,48,140,0.08) 0%, rgba(245,166,35,0.04) 100%)",
                 textAlign: "center", position: "relative", overflow: "hidden",
               }}>
                 <div style={{ fontSize: "1.6rem", marginBottom: 10 }}>🎤</div>
@@ -770,14 +793,14 @@ function ApplyToSpeak({ dark, border, accent, text, secondary, mutedText }) {
     });
   };
 
-  var inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)";
+  var inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(214,48,140,0.04)";
 
   return (
     <section style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem 5rem" }}>
       <div style={{
         padding: "2.8rem 2.4rem", borderRadius: "10px",
         border: "1px solid " + border,
-        background: dark ? "rgba(185,158,255,0.06)" : "rgba(122,63,209,0.04)",
+        background: dark ? "rgba(185,158,255,0.06)" : "rgba(214,48,140,0.04)",
         textAlign: "center",
       }}>
         <h2 style={{

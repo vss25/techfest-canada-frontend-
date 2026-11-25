@@ -40,7 +40,7 @@ export const SURVEY_QUESTION_CSS = `
   .sv-nps { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 6px; }
   .sv-nps-btn { display: grid; place-items: center; min-height: 46px; border-radius: 12px; border: 1.5px solid var(--sv-line); background: var(--sv-input);
     font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; position: relative; color: var(--sv-text); }
-  .sv-nps-btn.is-on { background: linear-gradient(135deg, #7a3fd1 0%, #b14fc9 100%); border-color: transparent; color: #fff; }
+  .sv-nps-btn.is-on { background: linear-gradient(135deg, #D6308C 0%, #b14fc9 100%); border-color: transparent; color: #fff; }
   .sv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .sv-chip { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 16px; border-radius: 999px;
     border: 1.5px solid var(--sv-line); background: var(--sv-input); cursor: pointer; font-size: 15px; font-weight: 600; color: var(--sv-text); user-select: none; }
@@ -56,7 +56,7 @@ export const SURVEY_QUESTION_CSS = `
   .sv-input[aria-invalid="true"] { border-color: var(--sv-err); }
   .sv-count { margin: -4px 0 0; font-size: 12.5px; color: var(--sv-dim); text-align: right; font-variant-numeric: tabular-nums; }
   .sv-consent { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--sv-line); background: var(--sv-input); cursor: pointer; }
-  .sv-consent input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: #7a3fd1; cursor: pointer; }
+  .sv-consent input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: #D6308C; cursor: pointer; }
   .sv-consent span { font-size: 16px; font-weight: 600; line-height: 1.45; color: var(--sv-text); }
   .sv-chip--na { border-style: dashed; color: var(--sv-mid); }
   .sv-chip--na.is-on { border-style: solid; color: var(--sv-accent); }

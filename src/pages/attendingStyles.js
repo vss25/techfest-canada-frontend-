@@ -3,7 +3,7 @@
    by each page with <style>, so none of it reaches the rest of the site. */
 
 export const ATT_CSS = `
-body.att-open { background: #06020f !important; padding-bottom: 0 !important; }
+body.att-open { background: #151035 !important; padding-bottom: 0 !important; }
 .att-root {
   position: relative; min-height: 100vh; min-height: 100dvh; color: #fff; overflow-x: hidden;
   font-family: 'DM Sans', system-ui, Helvetica, Arial, sans-serif;
@@ -35,7 +35,7 @@ body.att-open { background: #06020f !important; padding-bottom: 0 !important; }
 }
 .att-card::before {
   content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
-  background: linear-gradient(130deg, #7a3fd1, #e8458b 45%, #f5a623 90%);
+  background: linear-gradient(130deg, #D6308C, #e8458b 45%, #f5a623 90%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor; mask-composite: exclude; opacity: .35; transition: opacity .35s ease;
 }
@@ -46,14 +46,14 @@ body.att-open { background: #06020f !important; padding-bottom: 0 !important; }
 .att-seg-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 99px; border: 0; cursor: pointer;
   font: inherit; font-size: 13.5px; font-weight: 700; color: rgba(255,255,255,0.75); background: transparent; transition: background .2s, color .2s, box-shadow .2s; }
 .att-seg-btn:hover { color: #fff; }
-.att-seg-btn[data-on] { color: #fff; background: linear-gradient(120deg, rgba(122,63,209,0.75), rgba(232,69,139,0.6)); box-shadow: 0 6px 20px rgba(232,69,139,0.3); }
+.att-seg-btn[data-on] { color: #fff; background: linear-gradient(120deg, rgba(214,48,140,0.75), rgba(232,69,139,0.6)); box-shadow: 0 6px 20px rgba(232,69,139,0.3); }
 .att-seg-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .att-shape { display: inline-block; border: 1.5px solid currentColor; border-radius: 3px; opacity: .9; }
 .att-shape-square { width: 12px; height: 12px; }
 .att-shape-landscape { width: 16px; height: 9px; }
 .att-dims { font-family: 'Orbitron', sans-serif; font-size: 10.5px; letter-spacing: 1.2px; color: rgba(255,255,255,0.6); font-variant-numeric: tabular-nums; }
 
-.att-canvas-wrap { position: relative; width: 100%; border-radius: 18px; overflow: hidden; background: #06020f;
+.att-canvas-wrap { position: relative; width: 100%; border-radius: 18px; overflow: hidden; background: #151035;
   box-shadow: 0 24px 60px rgba(3,0,12,0.6), 0 0 0 1px rgba(255,255,255,0.08); }
 .att-canvas { display: block; width: 100%; height: 100%; outline: none; }
 .att-canvas[data-photo] { cursor: grab; touch-action: none; }
@@ -69,9 +69,9 @@ body.att-open { background: #06020f !important; padding-bottom: 0 !important; }
 .att-icon-btn:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.1); }
 .att-icon-btn:focus-visible { outline: 2px solid #e8458b; outline-offset: 2px; }
 .att-range { flex: 1; min-width: 0; height: 38px; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
-.att-range::-webkit-slider-runnable-track { height: 6px; border-radius: 99px; background: linear-gradient(90deg, #7a3fd1, #e8458b var(--fill), rgba(255,255,255,0.14) var(--fill)); }
+.att-range::-webkit-slider-runnable-track { height: 6px; border-radius: 99px; background: linear-gradient(90deg, #D6308C, #e8458b var(--fill), rgba(255,255,255,0.14) var(--fill)); }
 .att-range::-moz-range-track { height: 6px; border-radius: 99px; background: rgba(255,255,255,0.14); }
-.att-range::-moz-range-progress { height: 6px; border-radius: 99px; background: linear-gradient(90deg, #7a3fd1, #e8458b); }
+.att-range::-moz-range-progress { height: 6px; border-radius: 99px; background: linear-gradient(90deg, #D6308C, #e8458b); }
 .att-range::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8px; border-radius: 99px; background: #fff; border: 0; box-shadow: 0 0 0 4px rgba(232,69,139,0.45), 0 4px 14px rgba(0,0,0,0.4); }
 .att-range::-moz-range-thumb { width: 22px; height: 22px; border-radius: 99px; background: #fff; border: 0; box-shadow: 0 0 0 4px rgba(232,69,139,0.45), 0 4px 14px rgba(0,0,0,0.4); }
 .att-range:focus-visible { outline: none; }
@@ -84,7 +84,7 @@ body.att-open { background: #06020f !important; padding-bottom: 0 !important; }
 .att-step + .att-step { margin-top: 24px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,0.08); }
 .att-step-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .att-step-n { flex: none; width: 30px; height: 30px; border-radius: 99px; display: grid; place-items: center; font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 800;
-  background: linear-gradient(135deg, #7a3fd1, #e8458b); box-shadow: 0 0 16px rgba(232,69,139,0.45); }
+  background: linear-gradient(135deg, #D6308C, #e8458b); box-shadow: 0 0 16px rgba(232,69,139,0.45); }
 .att-step-title { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.6px; margin: 0; flex: 1; }
 .att-step-aside { margin: 0 !important; }
 
@@ -95,7 +95,7 @@ body.att-open { background: #06020f !important; padding-bottom: 0 !important; }
 .att-btn-li { background: linear-gradient(120deg, #0a66c2, #2b7fd6); box-shadow: 0 10px 28px rgba(10,102,194,0.35), inset 0 1px 0 rgba(255,255,255,0.25); }
 .att-btn-li:hover { box-shadow: 0 12px 34px rgba(10,102,194,0.5), inset 0 1px 0 rgba(255,255,255,0.25); }
 .att-btn-soft { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16); }
-.att-btn-soft:hover { border-color: rgba(255,255,255,0.36); background: rgba(255,255,255,0.1); box-shadow: 0 0 22px rgba(122,63,209,0.28); }
+.att-btn-soft:hover { border-color: rgba(255,255,255,0.36); background: rgba(255,255,255,0.1); box-shadow: 0 0 22px rgba(214,48,140,0.28); }
 .att-btn-soft:focus-within, .att-btn-li:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 .att-btn-li:active, .att-btn-soft:active { transform: scale(0.985); }
 .att-file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0 0 0 0); }
@@ -118,7 +118,7 @@ body.att-open { background: #06020f !important; padding-bottom: 0 !important; }
 .att-actions { margin-top: 22px; }
 .att-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 58px; padding: 0 22px; border-radius: 99px; border: 0; cursor: pointer;
   font: inherit; font-size: 17px; font-weight: 700; color: #fff; letter-spacing: 0.2px;
-  background: linear-gradient(90deg, #7a3fd1, #e8458b, #f5a623, #e8458b, #7a3fd1); background-size: 300% 100%; background-position: 0% 0;
+  background: linear-gradient(90deg, #D6308C, #e8458b, #f5a623, #e8458b, #D6308C); background-size: 300% 100%; background-position: 0% 0;
   box-shadow: 0 12px 34px rgba(232,69,139,0.38), inset 0 1px 0 rgba(255,255,255,0.3); transition: background-position .6s ease, transform .15s ease, box-shadow .25s; }
 .att-btn:hover:not(:disabled) { background-position: 60% 0; box-shadow: 0 14px 44px rgba(232,69,139,0.5), inset 0 1px 0 rgba(255,255,255,0.3); }
 .att-btn:active:not(:disabled) { transform: scale(0.985); }
@@ -145,21 +145,21 @@ body.att-open { background: #06020f !important; padding-bottom: 0 !important; }
 .att-posted-sub { margin: 0 0 8px; font-size: 14.5px; line-height: 1.55; color: rgba(233,255,242,0.86); }
 .att-post-error > div { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .att-back-app { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 8px; padding: 0 18px; border-radius: 99px;
-  font-weight: 700; font-size: 14.5px; color: #06020f; background: #c9f7dc; text-decoration: none; }
+  font-weight: 700; font-size: 14.5px; color: #151035; background: #c9f7dc; text-decoration: none; }
 .att-back-app:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 .att-points-note { color: rgba(255,255,255,0.86); text-align: center; }
 .att-points-note b { color: #ffd9a0; }
 .att-share-instead { display: flex; margin: 10px auto 0; }
 .att-done { display: flex; align-items: center; gap: 8px; margin: 16px 0 0; padding: 12px 14px; border-radius: 14px; font-size: 14px; color: #c9f7dc; background: rgba(60,200,130,0.12); border: 1px solid rgba(120,230,170,0.35); }
 
-.att-guide { margin-top: 18px; padding: 16px 16px 12px; border-radius: 18px; background: linear-gradient(120deg, rgba(122,63,209,0.26), rgba(232,69,139,0.18)); border: 1px solid rgba(255,255,255,0.18); }
+.att-guide { margin-top: 18px; padding: 16px 16px 12px; border-radius: 18px; background: linear-gradient(120deg, rgba(214,48,140,0.26), rgba(232,69,139,0.18)); border: 1px solid rgba(255,255,255,0.18); }
 .att-guide-title { margin: 0 0 12px; font-weight: 700; font-size: 15px; color: #ffd9a0; }
 .att-guide-steps { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 10px; }
 .att-guide-steps li { display: flex; gap: 11px; align-items: flex-start; font-size: 13.5px; line-height: 1.5; color: rgba(255,255,255,0.88); }
 .att-guide-steps b { color: #fff; }
 .att-guide-n { flex: none; width: 24px; height: 24px; border-radius: 99px; display: grid; place-items: center; font-size: 12px; font-weight: 800; margin-top: 1px;
   border: 1.5px solid rgba(255,255,255,0.4); }
-.att-guide-steps li[data-done] .att-guide-n { border-color: transparent; background: linear-gradient(135deg, #7a3fd1, #e8458b); box-shadow: 0 0 12px rgba(232,69,139,0.5); }
+.att-guide-steps li[data-done] .att-guide-n { border-color: transparent; background: linear-gradient(135deg, #D6308C, #e8458b); box-shadow: 0 0 12px rgba(232,69,139,0.5); }
 .att-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; overflow-wrap: anywhere; }
 
 .att-foot { position: relative; z-index: 1; margin: 24px 0 0; padding: 0; background: none; border: 0; font-size: 13px; color: rgba(255,255,255,0.72); text-align: center; line-height: 1.7; }

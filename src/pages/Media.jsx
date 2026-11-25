@@ -13,7 +13,7 @@ const COVERAGE_AREAS = [
   "Artificial Intelligence & Machine Learning",
   "Quantum Computing",
   "Cybersecurity & Digital Trust",
-  "Climate Tech / CleanTech",
+  "Clean Tech",
   "Robotics & Automation",
   "Enterprise Technology",
   "FinTech",
@@ -76,12 +76,12 @@ export default function Media() {
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(255,255,255,0.66)" : "rgba(13,5,32,0.68)";
   const textDim = dark ? "rgba(255,255,255,0.42)" : "rgba(13,5,32,0.45)";
-  const pageBg = dark ? "#06020f" : "#ffffff";
-  const cardBg = dark ? "rgba(255,255,255,0.035)" : "rgba(122,63,209,0.025)";
-  const cardBorder = dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(122,63,209,0.12)";
-  const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)";
-  const inputBorder = dark ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(122,63,209,0.16)";
-  const accent = dark ? "#c8a8ff" : "#7a3fd1";
+  const pageBg = dark ? "#151035" : "#ffffff";
+  const cardBg = dark ? "rgba(255,255,255,0.035)" : "rgba(214,48,140,0.025)";
+  const cardBorder = dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(214,48,140,0.12)";
+  const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(214,48,140,0.04)";
+  const inputBorder = dark ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(214,48,140,0.16)";
+  const accent = dark ? "#c8a8ff" : "#D6308C";
 
   const set = (k, v) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -192,8 +192,8 @@ export default function Media() {
         placeholder={placeholder}
         onChange={(e) => set(id, e.target.value)}
         style={inputStyle(!!errors[id])}
-        onFocus={(e) => { if (!errors[id]) e.currentTarget.style.borderColor = dark ? "rgba(160,100,255,0.6)" : "#7a3fd1"; }}
-        onBlur={(e) => { if (!errors[id]) e.currentTarget.style.borderColor = dark ? "rgba(255,255,255,0.12)" : "rgba(122,63,209,0.16)"; }}
+        onFocus={(e) => { if (!errors[id]) e.currentTarget.style.borderColor = dark ? "rgba(160,100,255,0.6)" : "#D6308C"; }}
+        onBlur={(e) => { if (!errors[id]) e.currentTarget.style.borderColor = dark ? "rgba(255,255,255,0.12)" : "rgba(214,48,140,0.16)"; }}
       />
       {errors[id] ? (
         <span style={{ display: "block", fontSize: "0.7rem", color: "#e05555", fontWeight: 700, marginTop: 6 }}>{errors[id]}</span>
@@ -209,7 +209,7 @@ export default function Media() {
       <div style={{ background: pageBg, minHeight: "100vh", fontFamily: "'Archivo', sans-serif" }}>
         <Navbar />
         <div style={{ maxWidth: 620, margin: "0 auto", padding: "120px 22px 140px", textAlign: "center" }}>
-          <div style={{ width: 74, height: 74, borderRadius: 999, margin: "0 auto 26px", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 30px rgba(122,63,209,0.35)" }}>
+          <div style={{ width: 74, height: 74, borderRadius: 999, margin: "0 auto 26px", background: "#D6308C", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 30px rgba(214,48,140,0.35)" }}>
             <BigTick />
           </div>
           <h1 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.5rem, 5vw, 2.2rem)", fontWeight: 900, color: textMain, letterSpacing: "-0.5px", margin: "0 0 14px" }}>
@@ -235,7 +235,7 @@ export default function Media() {
 
       {/* ---------- hero ---------- */}
       <div style={{ padding: "110px 22px 0", maxWidth: 780, margin: "0 auto", textAlign: "center" }}>
-        <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.62rem", fontWeight: 800, letterSpacing: "3px", textTransform: "uppercase", color: dark ? "rgba(160,100,255,0.85)" : "#7a3fd1", marginBottom: 14 }}>
+        <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.62rem", fontWeight: 800, letterSpacing: "3px", textTransform: "uppercase", color: dark ? "rgba(160,100,255,0.85)" : "#D6308C", marginBottom: 14 }}>
           Press &amp; Media
         </div>
         <h1 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.8rem, 6vw, 3rem)", fontWeight: 900, color: textMain, letterSpacing: "-1px", lineHeight: 1.1, margin: "0 0 16px" }}>
@@ -298,9 +298,9 @@ export default function Media() {
                       padding: "11px 13px",
                       borderRadius: 11,
                       cursor: "pointer",
-                      background: on ? (dark ? "rgba(122,63,209,0.18)" : "rgba(122,63,209,0.07)") : inputBg,
+                      background: on ? (dark ? "rgba(214,48,140,0.18)" : "rgba(214,48,140,0.07)") : inputBg,
                       border: on
-                        ? "1px solid " + (dark ? "rgba(160,100,255,0.55)" : "rgba(122,63,209,0.42)")
+                        ? "1px solid " + (dark ? "rgba(160,100,255,0.55)" : "rgba(214,48,140,0.42)")
                         : inputBorder,
                       color: on ? textMain : textMuted,
                       fontFamily: "'Archivo', sans-serif",
@@ -313,7 +313,7 @@ export default function Media() {
                     <span style={{
                       width: 19, height: 19, flexShrink: 0, borderRadius: 6,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      background: on ? "linear-gradient(135deg, #7a3fd1, #f5a623)" : "transparent",
+                      background: on ? "#D6308C" : "transparent",
                       border: on ? "none" : "1.5px solid " + (dark ? "rgba(255,255,255,0.22)" : "rgba(13,5,32,0.2)"),
                     }}>
                       {on && <Tick />}
@@ -367,8 +367,8 @@ export default function Media() {
               letterSpacing: "1.2px",
               textTransform: "uppercase",
               color: "#fff",
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
-              boxShadow: submitting ? "none" : "0 6px 24px rgba(122,63,209,0.35)",
+              background: "#D6308C",
+              boxShadow: submitting ? "none" : "0 6px 24px rgba(214,48,140,0.35)",
               opacity: submitting ? 0.65 : 1,
               transition: "all 0.2s",
             }}

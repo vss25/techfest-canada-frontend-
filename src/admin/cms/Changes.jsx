@@ -29,6 +29,7 @@ const EDITOR = {
   siteSettings: () => "/admin/content/settings",
   aboutContent: () => "/admin/content/settings",
   siteCopy: () => "/admin/content/site-copy",
+  homePage: () => "/admin/content/home",
 };
 
 const when = (iso) => (iso ? new Date(iso).toLocaleString("en-CA", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "");

@@ -202,8 +202,8 @@ export default function Exhibit() {
   const bg        = isDark ? "#07030f"                : "#f4f0ff";
   const textMain  = isDark ? "#ffffff"                : "#0f0520";
   const textMuted = isDark ? "rgba(200,180,255,0.8)"  : "rgba(60,30,110,0.85)";
-  const cardBg    = isDark ? "rgba(255,255,255,0.03)" : "rgba(122,63,209,0.04)";
-  const border    = isDark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.18)";
+  const cardBg    = isDark ? "rgba(255,255,255,0.03)" : "rgba(214,48,140,0.04)";
+  const border    = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,48,140,0.18)";
 
   return (
     <div style={{ background: bg, minHeight: "100vh", color: textMain, overflowX: "hidden" }}>
@@ -220,9 +220,9 @@ export default function Exhibit() {
         }
         :root {
           --aurora-white: #ffffff;
-          --aurora-black: #06020f;
+          --aurora-black: #151035;
           --aurora-transparent: transparent;
-          --aurora-purple: #7a3fd1;
+          --aurora-purple: #D6308C;
           --aurora-violet: #9b57e8;
           --aurora-lilac: #c4a0f5;
           --aurora-orange: #f5a623;
@@ -259,7 +259,7 @@ export default function Exhibit() {
       {/* ═══════════ HERO ═══════════ */}
       <section style={{
         position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
-        overflow: "hidden", background: isDark ? "#06020f" : "#f4f0ff",
+        overflow: "hidden", background: isDark ? "#151035" : "#f4f0ff",
         paddingTop: "clamp(120px, 15vw, 160px)", paddingBottom: "20px"
       }}>
         {/* No /exhibit-hero-bg.png <img> here any more (Oct 31 2026): the file was never in public/, so every visit
@@ -270,7 +270,7 @@ export default function Exhibit() {
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none", zIndex: 2,
           background: isDark
-            ? "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 20%, #06020f 100%)"
+            ? "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 20%, #151035 100%)"
             : "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 20%, #f4f0ff 100%)",
         }} />
         <motion.div
@@ -283,7 +283,7 @@ export default function Exhibit() {
           }}>
             Exhibit{" "}
             <span style={{
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             }}>With Us</span>
           </h1>
@@ -354,9 +354,9 @@ export default function Exhibit() {
             <img
               src="/Tech_Festival_Canada_Logo_Dark_Transparent.webp"
               alt="The Tech Festival Canada"
-              style={{ width: "65%", maxWidth: 300, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 40px rgba(122,63,209,0.25))" }}
+              style={{ width: "65%", maxWidth: 300, height: "auto", objectFit: "contain", filter: "drop-shadow(0 0 40px rgba(214,48,140,0.25))" }}
             />
-            <div style={{ position: "absolute", width: "70%", height: "70%", borderRadius: "50%", background: "radial-gradient(circle, rgba(122,63,209,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", width: "70%", height: "70%", borderRadius: "50%", background: "radial-gradient(circle, rgba(214,48,140,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
           </div>
           <div style={{ padding: "clamp(40px, 6vw, 64px)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
             <h2 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.6rem, 3vw, 2.4rem)", fontWeight: 900, lineHeight: 1.2, marginBottom: 20, color: textMain }}>
@@ -414,7 +414,7 @@ function BoothRow({ tier, isDark, textMain, textMuted, border, cardBg, index, on
   return (
     <section style={{
       padding: "clamp(60px, 8vw, 100px) 5%",
-      background: hasBg ? (isDark ? "rgba(122,63,209,0.03)" : "rgba(122,63,209,0.02)") : "transparent",
+      background: hasBg ? (isDark ? "rgba(214,48,140,0.03)" : "rgba(214,48,140,0.02)") : "transparent",
       borderTop: hasBg ? "1px solid " + border : "none",
       borderBottom: hasBg ? "1px solid " + border : "none",
     }}>
@@ -480,7 +480,7 @@ function BoothRow({ tier, isDark, textMain, textMuted, border, cardBg, index, on
             onClick={onOpenModal}
             className="btn-outline"
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            style={{ display: "inline-block", textAlign: "center", marginTop: 12, padding: "14px 32px", borderRadius: 12, background: "transparent", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.82rem", letterSpacing: "1px", textTransform: "uppercase", border: "1.5px solid " + (isDark ? "rgba(155,135,245,0.25)" : "rgba(122,63,209,0.20)"), color: isDark ? "rgba(185,158,255,0.75)" : "#7a3fd1", transition: "all 0.2s ease" }}
+            style={{ display: "inline-block", textAlign: "center", marginTop: 12, padding: "14px 32px", borderRadius: 12, background: "transparent", cursor: "pointer", fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.82rem", letterSpacing: "1px", textTransform: "uppercase", border: "1.5px solid " + (isDark ? "rgba(240,106,176,0.25)" : "rgba(214,48,140,0.20)"), color: isDark ? "rgba(185,158,255,0.75)" : "#D6308C", transition: "all 0.2s ease" }}
           >
             Enquire Now
           </motion.button>
@@ -636,7 +636,7 @@ function CheckoutModal({ booth, onClose, onCheckout, isDark, textMain, textMuted
             <button
               onClick={applyCode}
               disabled={checking}
-              style={{ padding: "12px 22px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "#fff", fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.72rem", letterSpacing: "0.5px", textTransform: "uppercase", cursor: checking ? "not-allowed" : "pointer", opacity: checking ? 0.6 : 1, whiteSpace: "nowrap" }}
+              style={{ padding: "12px 22px", borderRadius: 10, border: "none", background: "#D6308C", color: "#fff", fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.72rem", letterSpacing: "0.5px", textTransform: "uppercase", cursor: checking ? "not-allowed" : "pointer", opacity: checking ? 0.6 : 1, whiteSpace: "nowrap" }}
             >{checking ? "Checking…" : "Apply"}</button>
           )}
         </div>
@@ -675,11 +675,11 @@ function CheckoutModal({ booth, onClose, onCheckout, isDark, textMain, textMuted
           disabled={paying}
           style={{
             width: "100%", marginTop: 22, padding: "15px", borderRadius: 12, border: "none",
-            background: "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "#fff",
+            background: "#D6308C", color: "#fff",
             fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.85rem",
             letterSpacing: "1px", textTransform: "uppercase",
             cursor: paying ? "not-allowed" : "pointer", opacity: paying ? 0.7 : 1,
-            boxShadow: "0 4px 16px rgba(122,63,209,0.3)",
+            boxShadow: "0 4px 16px rgba(214,48,140,0.3)",
           }}
         >
           {paying ? "Redirecting…" : "Continue to Payment"}
@@ -776,7 +776,7 @@ function EnquireModal({ booth, onClose, isDark, textMain, border }) {
               cursor: status === "Sending..." ? "not-allowed" : "pointer",
               fontFamily: "'Orbitron', sans-serif", fontWeight: 700, fontSize: "0.9rem",
               textTransform: "uppercase", letterSpacing: "1px",
-              background: status === "Success! We will be in touch shortly." ? "#2e9e54" : "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: status === "Success! We will be in touch shortly." ? "#2e9e54" : "#D6308C",
               color: "#ffffff", opacity: status === "Sending..." ? 0.7 : 1,
             }}
           >
@@ -796,7 +796,7 @@ function EnquireModal({ booth, onClose, isDark, textMain, border }) {
 function GradientSpan({ children }) {
   return (
     <span style={{
-      background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+      background: "#D6308C",
       WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
     }}>{children}</span>
   );

@@ -1,0 +1,24 @@
+// The website's dark preview switch. Run: node --test src/lib/siteDarkPreview.test.mjs
+import test from "node:test";
+import assert from "node:assert/strict";
+import { SITE_THEME_KEY, previewTheme } from "./siteDarkPreview.js";
+
+const mem = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v), removeItem: (k) => m.delete(k) }; };
+
+test("dark unless ?theme=light; light stays for the tab; ?theme=dark goes back", () => {
+  const s = mem();
+  assert.equal(previewTheme("", s), "dark");
+  assert.equal(previewTheme("?theme=light", s), "");
+  assert.equal(s.getItem(SITE_THEME_KEY), "light");
+  assert.equal(previewTheme("?utm=x", s), "", "remembered while browsing");
+  assert.equal(previewTheme("?theme=dark", s), "dark");
+  assert.equal(previewTheme("", s), "dark");
+  assert.equal(previewTheme("?theme=purple", mem()), "dark");
+});
+
+test("works without storage", () => {
+  assert.equal(previewTheme("?theme=light", null), "");
+  const broken = { getItem: () => { throw new Error("off"); }, setItem: () => { throw new Error("off"); }, removeItem: () => {} };
+  assert.equal(previewTheme("?theme=light", broken), "");
+  assert.equal(previewTheme("", broken), "dark");
+});

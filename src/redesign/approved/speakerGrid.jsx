@@ -3,7 +3,7 @@ import React from "react";
 /* Nov 25 2026 (the owner): an event's Speakers section shows a "coming soon" note with a link to the last
    event's speakers until at least SPK_MIN are confirmed; then the real speakers only (3 shows 3, 4 shows 4),
    at most two rows, and when more are confirmed than fit, the last tile of row two is "See all speakers". */
-const SPK_MIN = 3;
+export const SPK_MIN = 3;
 export const speakerGrid = (spk, slots, open) => {
   const n = spk ? spk.length : 0;
   if (n < SPK_MIN) return null;

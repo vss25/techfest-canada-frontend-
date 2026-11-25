@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* The new look's sections and pages (Nov 25 2026, the owner approved the preview and asked for "all of them"):
    the home page's Next up / Who's on stage / Last year in numbers / Partners, the hero buttons, the event page's
@@ -13,12 +13,22 @@ export function More({ onClick, children }) {
   return <a href="#" className="nx-more" onClick={act(onClick)}>{children} <Arrow /></a>;
 }
 
+/** A title with one word in the accent gradient: the last word, or the first with first = true. */
+function Fancy({ text, first }) {
+  const words = String(text || "").trim().split(/\s+/);
+  if (words.length < 2) return text || null;
+  return first
+    ? <><em>{words[0]}</em> {words.slice(1).join(" ")}</>
+    : <>{words.slice(0, -1).join(" ")} <em>{words[words.length - 1]}</em></>;
+}
+
 function Head({ label, title, lead, more, onMore, children }) {
   return (
     <div className="nx-head">
+      <span className="nx-ghost-word" aria-hidden="true">{String(title || "").split(/\s+/).pop()}</span>
       <div>
         {label ? <span className="nx-label">{label}</span> : null}
-        <h2 className="nx-h2">{title}</h2>
+        <h2 className="nx-h2"><Fancy text={title} /></h2>
         {lead ? <p className="nx-lead">{lead}</p> : null}
       </div>
       {more ? <More onClick={onMore}>{more}</More> : null}
@@ -38,19 +48,22 @@ export function HeroCtas({ onTickets, onExplore, city, ticketsLabel = "Get ticke
 }
 
 /** Home: the next event, with its photo. */
-export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, ticketsLabel = "Get tickets" }) {
+export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, stub, ticketsLabel = "Get tickets" }) {
   return (
-    <section className="nx-s"><div className="nx-wrap nx-two">
+    <section className="nx-s nx-stage"><div className="nx-wrap nx-two">
       <div>
         <span className="nx-label">{label}</span>
-        <h2 className="nx-h2">{title}</h2>
+        <h2 className="nx-h2 nx-big"><Fancy text={title} first /></h2>
         {lead ? <p className="nx-lead">{lead}</p> : null}
         <div className="nx-row" style={{ marginTop: 24 }}>
           {onTickets ? <a href="#" className="nx-btn nx-buy" onClick={act(onTickets)}>{ticketsLabel}</a> : null}
           <More onClick={onEvent}>See the event</More>
         </div>
       </div>
-      <div className="nx-media">{img ? <img src={img} alt={alt || ""} loading="lazy" /> : null}</div>
+      <div className="nx-frame">
+        <div className="nx-media">{img ? <img src={img} alt={alt || ""} loading="lazy" /> : null}</div>
+        {stub ? <div className="nx-float">{stub}</div> : null}
+      </div>
     </div></section>
   );
 }
@@ -59,10 +72,12 @@ export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, ticke
 export function SpeakerCard({ sp, onOpen }) {
   return (
     <a href="#" className="nx-card nx-sp" onClick={act(onOpen)} aria-label={`${sp.name}: open profile`}>
-      <span className="nx-halo"><span style={sp.img ? { backgroundImage: `url(${sp.img})` } : undefined} /></span>
-      <b>{sp.name}</b>
-      {sp.role ? <span className="nx-muted">{sp.role}</span> : null}
-      {sp.kind ? <span className="nx-chip">{sp.kind}</span> : null}
+      <span className="nx-sp-ph" style={sp.img ? { backgroundImage: `url(${sp.img})` } : undefined} />
+      <span className="nx-sp-in">
+        {sp.kind ? <span className="nx-chip">{sp.kind}</span> : null}
+        <b>{sp.name}</b>
+        {sp.role ? <span className="nx-muted">{sp.role}</span> : null}
+      </span>
     </a>
   );
 }
@@ -80,12 +95,44 @@ export function OnStage({ label = "Speakers", title = "Who's on stage", lead, sp
 
 const LAST_YEAR = [["1,000+", "Attendees"], ["95", "Speakers"], ["130+", "Partners and exhibitors"], ["50", "Sessions"]];
 
+/** A number that counts up the first time it scrolls into view ("1,000+" → 0 … 1,000+). */
+function CountUp({ value }) {
+  const m = /^([\d,]+)(.*)$/.exec(String(value));
+  const end = m ? Number(m[1].replace(/,/g, "")) : 0;
+  const tail = m ? m[2] : "";
+  const el = useRef(null);
+  const [n, setN] = useState(end);
+  useEffect(() => {
+    const node = el.current;
+    const still = typeof window === "undefined" || !window.IntersectionObserver || !window.requestAnimationFrame
+      || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    if (!node || still || !end) return undefined;
+    let raf = 0;
+    const io = new IntersectionObserver((entries) => {
+      if (!entries.some((x) => x.isIntersecting)) return;
+      io.disconnect();
+      const t0 = performance.now();
+      const step = (t) => {
+        const k = Math.min(1, (t - t0) / 1400);
+        setN(Math.round(end * (1 - Math.pow(1 - k, 3))));
+        if (k < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    }, { threshold: 0.4 });
+    io.observe(node);
+    // If the frames stop coming (a background tab), the real number still shows.
+    const safety = setTimeout(() => setN(end), 6000);
+    return () => { io.disconnect(); cancelAnimationFrame(raf); clearTimeout(safety); };
+  }, [end]);
+  return <b ref={el}>{m ? n.toLocaleString("en-CA") + tail : value}</b>;
+}
+
 /** "Last year in numbers": the Toronto 2026 figures and five photos. photos = [{ src, alt }]. */
 export function LastYear({ photos, onGallery, alt }) {
   return (
-    <section className={`nx-s${alt ? " nx-alt" : ""}`}><div className="nx-wrap">
+    <section className={`nx-s nx-stage${alt ? " nx-alt" : ""}`}><div className="nx-wrap">
       <Head label="Toronto 2026" title="Last year in numbers" more="See the gallery" onMore={onGallery} />
-      <div className="nx-stats">{LAST_YEAR.map(([n, t]) => <div key={t}><b>{n}</b><span>{t}</span></div>)}</div>
+      <div className="nx-stats">{LAST_YEAR.map(([n, t]) => <div key={t}><CountUp value={n} /><span>{t}</span></div>)}</div>
       {photos && photos.length ? (
         <div className="nx-gal">{photos.slice(0, 5).map((p) => <img key={p.src} src={p.src} alt={p.alt || ""} loading="lazy" />)}</div>
       ) : null}
@@ -99,7 +146,9 @@ export function PartnersStrip({ label = "Partners", logos, onAll, alt }) {
   return (
     <section className={`nx-s${alt ? " nx-alt" : ""}`}><div className="nx-wrap">
       <Head label={label} title="In good company" more="All partners" onMore={onAll} />
-      <div className="nx-logos">{logos.slice(0, 6).map((p, i) => <div key={i} title={p.title || undefined}>{p.logo}</div>)}</div>
+      <div className="nx-logo-run"><div className="nx-logo-track">
+        {[...logos, ...logos, ...logos, ...logos].slice(0, Math.max(12, logos.length * 2)).map((p, i) => <div key={i} title={p.title || undefined}>{p.logo}</div>)}
+      </div></div>
     </div></section>
   );
 }
@@ -140,7 +189,7 @@ const perks = (note) => String(note || "").split(/\n|•|;|·/).map((x) => x.rep
 export function Passes({ types, onBuy, id = "ev-passes" }) {
   if (!types || !types.length) return null;
   return (
-    <section className="nx-s nx-alt" id={id}><div className="nx-wrap">
+    <section className="nx-s nx-stage" id={id}><div className="nx-wrap">
       <Head label="Tickets" title="Choose your pass" lead="Prices in CAD. Taxes are shown at payment." />
       <div className={`nx-passes n${Math.min(types.length, 4)}`}>
         {types.map((t) => (
@@ -150,6 +199,7 @@ export function Passes({ types, onBuy, id = "ev-passes" }) {
             <div className="nx-perf" />
             <ul>{perks(t.note).map((p) => <li key={p}>{p}</li>)}</ul>
             <a href="#" className="nx-btn nx-buy" onClick={act(onBuy)}>Get tickets</a>
+            <div className="nx-code" aria-hidden="true" />
           </div>
         ))}
       </div>
@@ -236,6 +286,40 @@ export function SpeakerPage({ sp, eventLabel, eventTitle, talks, others, onBack,
         </div></section>
       ) : null}
     </main>
+  );
+}
+
+/** The event hero's countdown, ticking every second: days, hours, min, sec. target = ms since 1970. */
+export function Countdown({ target }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  const left = Math.floor((target - now) / 1000);
+  if (!(left > 0)) return null;
+  const pad = (n) => String(n).padStart(2, "0");
+  const parts = [[String(Math.floor(left / 86400)), "Days"], [pad(Math.floor((left % 86400) / 3600)), "Hours"], [pad(Math.floor((left % 3600) / 60)), "Min"], [pad(left % 60), "Sec"]];
+  return (
+    <div className="nx-cd" role="timer" aria-label={`${parts[0][0]} days ${parts[1][0]} hours to go`}>
+      {parts.map(([n, t]) => <div key={t} className="nl-cd"><strong>{n}</strong><span>{t}</span></div>)}
+    </div>
+  );
+}
+
+/** The date as a ticket stub: FEB over 24. date = "YYYY-MM-DD". */
+export function DateStub({ date }) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date || ""));
+  if (!m) return null;
+  const mon = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][Number(m[2]) - 1];
+  return <span className="nx-stub" aria-hidden="true"><small>{mon}</small><b>{m[3]}</b></span>;
+}
+
+/** A tour-poster ticker of the season's cities, solid and outlined in turn. */
+export function Ticker({ items }) {
+  if (!items || items.length < 2) return null;
+  const run = [...items, ...items, ...items, ...items];
+  return (
+    <div className="nx-ticker" aria-hidden="true">
+      <div className="nx-track">{run.map((t, i) => <span key={i} className={i % 2 ? "o" : ""}>{t}</span>)}</div>
+    </div>
   );
 }
 

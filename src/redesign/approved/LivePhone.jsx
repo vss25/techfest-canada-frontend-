@@ -1,6 +1,7 @@
 import React from "react";
 import VideoFacade from "./VideoFacade";
 import ApprovedPhone from "./ApprovedPhone";
+import { speakerGrid, speakersSoon } from "./speakerGrid";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { HOME_HEIGHTS } from "../../lib/heroFrame";
 import { multiCheckout } from "../../lib/ticketsApi";
@@ -134,8 +135,11 @@ export default class LivePhone extends ApprovedPhone {
     else if (tt && tt.length) v.fromPrice = "From $" + Math.round(Math.min(...tt.map((t) => Number(t.cents) || 0)) / 100);
     if (v.c && v.c.mapsUrl) { v.mapsUrl = v.c.mapsUrl; v.mapNote = v.c.venueLine + ". Open it in Maps for directions."; }
     const spk = this.props.evSpeakers;
-    if (spk) {
-      v.four = [...spk.slice(0, 4), ...Array.from({ length: Math.max(0, 4 - spk.length) }, () => ({}))];
+    // Same rule as the desktop site (LiveSite.jsx): "coming soon" until SPK_MIN, then two rows of two at most.
+    const grid = speakerGrid(spk, 4, (e) => v.goSpeakers(e));
+    if (grid) {
+      v.four = grid.shown;
+      v.spkMore = grid.more;
       const f = s.spkF || "All";
       const shown = spk.filter((x) => f === "All" || x.kind === f);
       v.spkList = shown.map((x, i) => ({ ...x, n: i + 1, open: () => {} }));
@@ -146,8 +150,8 @@ export default class LivePhone extends ApprovedPhone {
       const si = this.props.standIns || {};
       const was = si.speakers || [];
       const tag = (r) => (r ? r + " · " + si.spkLabel : si.spkLabel);
-      v.spkSoon = si.spk ? { title: si.spk.heading, text: was.length ? si.spk.text : si.spk.none } : { title: "Speakers to be announced", text: "" };
-      v.four = was.slice(0, 4).map((x) => ({ ...x, role: tag(x.role) }));
+      v.spkSoon = speakersSoon((e) => v.goPast(e), true);
+      v.four = [];
       v.spkList = was.map((x, i) => ({ ...x, role: tag(x.role), n: i + 1, open: () => {} }));
       v.spkIntro = `This event's speakers are announced soon. Until then, these are speakers from ${si.spkLabel || "an earlier event"}.`;
       v.spkCount = was.length ? `Speakers from ${si.spkLabel}` : "";

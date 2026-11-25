@@ -159,7 +159,7 @@ function SessionRow({ s }) {
     <div className="nx-card nx-it">
       <time>{s.time || "Soon"}</time>
       <div>
-        <span className="nx-kind">{s.kind}</span>
+        <span className="nx-kind nx-kind-chip">{s.kind}</span>
         <h3>{s.title}</h3>
         {s.desc ? <p className="nx-muted">{s.desc}</p> : null}
         {s.who ? <p className="nx-who">{s.who}</p> : null}
@@ -313,11 +313,11 @@ export function DateStub({ date }) {
 }
 
 /** A tour-poster ticker of the season's cities, solid and outlined in turn. */
-export function Ticker({ items }) {
+export function Ticker({ items, big }) {
   if (!items || items.length < 2) return null;
   const run = [...items, ...items, ...items, ...items];
   return (
-    <div className="nx-ticker" aria-hidden="true">
+    <div className={`nx-ticker${big ? " nx-ticker-xl" : ""}`} aria-hidden="true">
       <div className="nx-track">{run.map((t, i) => <span key={i} className={i % 2 ? "o" : ""}>{t}</span>)}</div>
     </div>
   );

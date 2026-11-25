@@ -399,3 +399,34 @@ html[data-site-theme="dark"] .ap-root .nx-s.nx-alt:not(.nx-stage) { background: 
   .ap-root .nx-grid4 { gap: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .ap-root .nx-logo-track { animation: none; } .ap-root .nx-ghost-word { translate: none; } }
+
+/* ---- Further (Nov 25 2026): agenda rows with presence, arrows on ticket buttons, a closing ticker ---- */
+.ap-root .nx-it { position: relative; grid-template-columns: 150px 1fr; padding: 26px 28px 26px 34px; align-items: center; }
+.ap-root .nx-it::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: linear-gradient(180deg, #D6308C, #7F5AF0); transform: scaleY(0.25); transform-origin: 50% 50%; opacity: 0.5; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s; }
+.ap-root .nx-it:hover::after { transform: scaleY(1); opacity: 1; }
+.ap-root .nx-it:hover { transform: translateX(8px); border-color: var(--nl-line2); }
+.ap-root .nx-it { transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s, box-shadow 0.3s; }
+.ap-root .nx-it time { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; background: linear-gradient(90deg, #FF7AC0, #B79CFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+html:not([data-site-theme="dark"]) .ap-root .nx-s:not(.nx-stage) .nx-it time { background-image: linear-gradient(90deg, #D6308C, #7F5AF0); }
+.ap-root .nx-it h3 { font-size: 20px; margin-top: 8px; }
+.ap-root .nx-kind-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #FF9CD0; background: rgba(214, 48, 140, 0.16); border: 1px solid rgba(214, 48, 140, 0.4); }
+html:not([data-site-theme="dark"]) .ap-root .nx-s:not(.nx-stage) .nx-kind-chip { color: #B01E70; background: rgba(214, 48, 140, 0.08); }
+
+/* Ticket buttons carry an arrow that nudges on hover. */
+.ap-root .nx-buy::before, .ap-root :is(button, a).p-gold::before { content: "→"; order: 2; display: inline-block; margin-left: 8px; transition: transform 0.25s; }
+.ap-root :is(button, a).p-gold { display: inline-flex; align-items: center; justify-content: center; }
+.ap-root .nx-buy:hover::before, .ap-root .p-gold:hover::before { transform: translateX(5px); }
+
+/* The closing ticker: huge, outlined and solid in turn. */
+.ap-root .nx-ticker-xl { padding: 34px 0; background: #0A0719; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.ap-root .nx-ticker-xl .nx-track { font-size: clamp(44px, 8vw, 120px); line-height: 1; letter-spacing: -0.04em; gap: 48px; animation-duration: 60s; text-transform: uppercase; }
+.ap-root .nx-ticker-xl .nx-track span { gap: 48px; }
+.ap-root .nx-ticker-xl .nx-track span::after { font-size: 0.3em; }
+.ap-root .nx-ticker-xl .nx-track span:not(.o) { background: linear-gradient(90deg, #FFFFFF, #C9BDF5); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ap-root .nx-ticker-xl .nx-track span:not(.o)::after { color: #FF7AC0; -webkit-text-fill-color: #FF7AC0; }
+@media (max-width: 720px) {
+  .ap-root .nx-it { grid-template-columns: 1fr; padding: 20px 20px 20px 26px; }
+  .ap-root .nx-it time { font-size: 24px; }
+  .ap-root .nx-it h3 { font-size: 17px; }
+  .ap-root .nx-ticker-xl { padding: 22px 0; }
+}

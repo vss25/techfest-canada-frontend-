@@ -636,13 +636,28 @@ export default function ApprovedRoute({ fallback = null }) {
   const [homeDoc, setHomeDoc] = useState(null);
   useEffect(() => {
     let live = true;
-    client.fetch(`*[_id == "homePage"][0]{ "heroEvent": heroEvent._ref, sections[]{ key, on } }`)
+    client.fetch(`*[_id == "homePage"][0]{ "heroEvent": heroEvent._ref, sections[]{ key, on }, heroEyebrow, heroHeadline, heroText, heroImage, heroVideoUrl, "speakers": featuredSpeakers[]->{ _id, name, title, company, speakerType, image } }`)
       .then((d) => { if (live) setHomeDoc(d || {}); })
       .catch(() => { if (live) setHomeDoc({}); });
     return () => { live = false; };
   }, []);
   const homeCity = useMemo(() => homeCityFor(homeDoc && homeDoc.heroEvent, byCity, new Date(now).toISOString().slice(0, 10)), [homeDoc, byCity, now]);
   const homeSections = useMemo(() => homeOrder(homeDoc && homeDoc.sections), [homeDoc]);
+  // The home page's own words and media, and the speakers picked for Who's on stage (Admin › Content › Home page).
+  const homeOwn = useMemo(() => {
+    const d = homeDoc || {};
+    return {
+      eyebrow: String(d.heroEyebrow || "").trim(), title: String(d.heroHeadline || "").trim(), blurb: String(d.heroText || "").trim(),
+      img: d.heroImage && d.heroImage.asset ? urlFor(d.heroImage).width(2000).quality(78).auto("format").url() : "",
+      video: heroVideoSrc(d.heroVideoUrl),
+    };
+  }, [homeDoc]);
+  const homeSpeakers = useMemo(() => ((homeDoc && homeDoc.speakers) || []).filter((x) => x && x.name).map((x) => ({
+    name: x.name,
+    role: [x.title, x.company].map((t) => String(t || "").trim()).filter(Boolean).join(", "),
+    kind: SPEAKER_KINDS[x.speakerType] || "Speaker",
+    img: x.image && x.image.asset ? urlFor(x.image).width(480).height(600).fit("crop").auto("format").url() : "",
+  })), [homeDoc]);
   const seasonDay = new Date(now).toISOString().slice(0, 10);
   const season = useMemo(() => seasonStops(byCity, seasonDay), [byCity, seasonDay]);
   // The event this page is about (Vancouver, the next event, on pages that aren't an event's):
@@ -865,6 +880,8 @@ export default function ApprovedRoute({ fallback = null }) {
       season={season}
       speakerDoc={speakerDoc}
       homeAgendas={homeAgendas}
+      homeOwn={homeOwn}
+      homeSpeakers={homeSpeakers}
       loaderMs={0}
     />
   );

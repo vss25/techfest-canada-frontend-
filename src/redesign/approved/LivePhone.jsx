@@ -133,7 +133,7 @@ export default class LivePhone extends ApprovedPhone {
     if (v.c && v.c.name && v.c.date) v.cityBar = v.c.name + " · " + String(v.c.date).replace(/^([A-Z][a-z]{2})[a-z]*/, "$1");
     if (hs.screen === "home" && hs.city && v.c && v.goCity) {
       v.homeGo = v.goCity[hs.city] || v.goEvent;
-      if (hs.city !== "van") v.homeHero = { img: v.c.img, alt: v.c.title, eyebrow: homeEyebrow(v.c), title: v.c.title, blurb: v.c.blurb, credit: v.c.credit, posD: v.c.posD || "center", pos: v.c.pos || v.c.posD || "center" };
+      if (hs.city !== "van" || v.c.ownPhoto) v.homeHero = { img: v.c.img, alt: v.c.title, eyebrow: homeEyebrow(v.c), title: v.c.title, blurb: v.c.blurb, credit: v.c.credit, posD: v.c.posD || "center", pos: v.c.pos || v.c.posD || "center" };
     }
     if (v.c && v.c.video) {
       const playing = v.c.video;

@@ -294,7 +294,8 @@ class LiveSite extends ApprovedSite {
     v.onSale = !this.props.ticketsSoon && !!(this.props.data && this.props.data.types && this.props.data.types.length);
     if (s.screen === "home" && s.city && v.c && v.goCity) {
       v.homeGo = v.goCity[s.city] || v.goEvent;
-      if (s.city !== "van") v.homeHero = { img: v.c.img, alt: v.c.title, eyebrow: homeEyebrow(v.c), title: v.c.title, blurb: v.c.blurb, credit: v.c.credit, posD: v.c.posD || "center", pos: v.c.pos || v.c.posD || "center" };
+      // Vancouver too once it has its own photo (Nov 25 2026, the owner: no stock photo or its credit on the home page).
+      if (s.city !== "van" || v.c.ownPhoto) v.homeHero = { img: v.c.img, alt: v.c.title, eyebrow: homeEyebrow(v.c), title: v.c.title, blurb: v.c.blurb, credit: v.c.credit, posD: v.c.posD || "center", pos: v.c.pos || v.c.posD || "center" };
     }
     if (v.c && v.c.why) {
       v.whyEyebrow = v.c.why.eyebrow;
@@ -498,7 +499,12 @@ function usePast2026(on) {
           style={{ display: "block", maxHeight: 48, maxWidth: "75%", objectFit: "contain", margin: "0 auto" }} />,
         tier: matrixGroupOf(p) === "featured" ? "Featured partner" : "Partner", title: p.name,
       }));
-      setPast({ speakers, partners, photos: PAST_PHOTOS, recap: recap || null });
+      // Every 2026 partner logo, for the moving row under the home page's top section (Nov 25 2026).
+      const logos = sorted.map((p) => ({
+        title: p.name,
+        logo: <img src={urlFor(p.logo).height(120).fit("max").auto("format").url()} alt={p.name} title={p.name} loading="lazy" />,
+      }));
+      setPast({ speakers, partners, logos, photos: PAST_PHOTOS, recap: recap || null });
     }).catch(() => { if (live) setPast(null); });
     return () => { live = false; };
   }, [on, past]);
@@ -775,7 +781,7 @@ export default function ApprovedRoute({ fallback = null }) {
         if (ev.tagline) c.blurb = ev.tagline; // "One line under the name" (the older long descriptions belong to the previous design)
         // The city photo on the approved design: the event's "City skyline" photo when one is set
         // in the admin panel (the older hero photos belong to the previous design).
-        if (ev.citySkyline && ev.citySkyline.asset) { c.img = urlFor(ev.citySkyline).width(2000).quality(78).auto("format").url(); c.credit = ev.photoCredit || ""; }
+        if (ev.citySkyline && ev.citySkyline.asset) { c.img = urlFor(ev.citySkyline).width(2000).quality(78).auto("format").url(); c.credit = ev.photoCredit || ""; c.ownPhoto = true; }
         // Its background video (Nov 24 2026): only our own Sanity uploads (heroVideoSrc); the photo stays its first frame.
         // Photo or video, never both (Nov 25 2026): heroMedia, else the video when there is one.
         c.media = ev.heroMedia === "photo" || ev.heroMedia === "video" ? ev.heroMedia : (heroVideoSrc(ev.heroVideoUrl) ? "video" : "photo");

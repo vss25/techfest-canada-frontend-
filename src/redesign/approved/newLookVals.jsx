@@ -1,5 +1,5 @@
 import React from "react";
-import { AgendaPage, CardMedia, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, Ticker, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
+import { AgendaPage, CardMedia, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, LogoStrip, NextUp, Ticker, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
 import { cityPath, countdownTarget } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
 import { sessionCardMedia } from "../../lib/sessionMedia";
@@ -81,11 +81,12 @@ export function applyNewLook(v, self, { openTix, phone }) {
   // Home.
   if (s.screen === "home") {
     v.heroCtas = <HeroCtas onTickets={openTix} onExplore={goEvent} city={c.name} />;
-    const cities = [...new Set((p.season || []).filter((x) => x.id !== "past").map((x) => x.name))];
+    // Under the top section: a moving row of the 2026 partners' logos (the owner replaced the city ticker with it).
+    const logos2026 = (p.past2026 && p.past2026.logos) || [];
     v.homeNext = (
       <>
-        <Ticker items={[...cities, "Flagship Event"]} />
-        <NextUp label={`Next up · ${c.date || ""}`} title={c.title} lead={c.blurb} img={c.img} alt={c.title} onTickets={openTix} onEvent={goEvent}
+        <LogoStrip label="2026 partners" logos={logos2026} />
+        <NextUp matrix label={`Next up · ${c.date || ""}`} title={c.title} lead={c.blurb} img={c.img} alt={c.title} onTickets={openTix} onEvent={goEvent}
           stub={c.startDate ? <DateStub date={c.startDate} /> : null} />
       </>
     );

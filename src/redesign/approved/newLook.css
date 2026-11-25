@@ -490,3 +490,57 @@ html.nx-reveal .ap-root main > section > div[data-nx-r]:not(.nx-seen) { transfor
   .ap-root .nx-it.nx-it-media { grid-template-columns: 1fr; }
   .ap-root .nx-it-media > .nx-cardmedia-sm { order: -1; width: 100%; }
 }
+
+/* ---- The 2026 partners' logos, moving under the home page's top section (it replaced the city ticker) ---- */
+.ap-root .nx-logostrip { display: flex; align-items: center; gap: 22px; padding: 18px 0 18px 32px; background: #0A0719; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.ap-root .nx-logostrip-ttl { flex: none; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8780AC; white-space: nowrap; }
+.ap-root .nx-logostrip .nx-logo-run { flex: 1; min-width: 0; }
+.ap-root .nx-logostrip .nx-logo-track { gap: 14px; }
+.ap-root .nx-logostrip .nx-logo-track > div { flex: 0 0 168px; height: 76px; padding: 0 18px; border-radius: 12px; }
+.ap-root .nx-logostrip .nx-logo-track img { display: block; max-width: 100%; max-height: 40px !important; width: auto; height: auto; object-fit: contain; margin: 0 auto; }
+@media (max-width: 720px) {
+  .ap-root .nx-logostrip { padding: 12px 0 12px 16px; gap: 12px; }
+  .ap-root .nx-logostrip-ttl { display: none; }
+  .ap-root .nx-logostrip .nx-logo-track > div { flex-basis: 128px; height: 60px; padding: 0 12px; }
+  .ap-root .nx-logostrip .nx-logo-track img { max-height: 32px !important; }
+}
+
+/* ---- The season timeline, bigger (Nov 25 2026, the owner: "make this bigger") ---- */
+.ap-root .nl-rail-in { height: 112px; gap: 28px; }
+.ap-root .nl-rail-ttl { font-size: 14px; }
+.ap-root .nl-stops { min-width: 980px; }
+.ap-root .nl-stop { gap: 14px; padding: 12px 14px; border-radius: 14px; }
+.ap-root .nl-pt { width: 18px; height: 18px; border-width: 3px; }
+.ap-root .nl-stop b { font-size: 20px; line-height: 1.15; font-weight: 700; }
+.ap-root .nl-stop small { font-size: 14px; margin-top: 2px; }
+.ap-root .nl-stops::before { height: 2px; }
+.ap-root .nl-rail-phone .nl-rail-in { height: 88px; }
+.ap-root .nl-rail-phone .nl-stops { min-width: 860px; }
+.ap-root .nl-rail-phone .nl-stop b { font-size: 17px; }
+.ap-root .nl-rail-phone .nl-stop small { font-size: 13px; }
+.ap-root .nl-rail-phone .nl-pt { width: 16px; height: 16px; }
+
+/* ---- The 5 × 5 matrix beside Next up (the owner: in place of the photo) ---- */
+@keyframes nx-mx-pulse { 0%, 100% { opacity: 0.55; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1); } }
+.ap-root .nx-matrix { position: relative; display: grid; gap: 10px; padding: 22px; border-radius: 24px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4); }
+.ap-root .nx-mx-top, .ap-root .nx-mx-row { display: grid; grid-template-columns: minmax(150px, 1.5fr) repeat(5, minmax(0, 1fr)); gap: 10px; align-items: center; }
+.ap-root .nx-mx-corner b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; background: linear-gradient(90deg, #FF7AC0, #B79CFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ap-root .nx-mx-corner small { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #8780AC; }
+.ap-root .nx-mx-col { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; text-align: center; color: #B79CFF; }
+.ap-root .nx-mx-name { font-size: 14px; font-weight: 600; line-height: 1.25; color: #F4F2FA; padding-left: 12px; border-left: 3px solid #D6308C; }
+.ap-root .nx-mx-cell { display: block; aspect-ratio: 1; max-height: 56px; width: 100%; border-radius: 12px; background: radial-gradient(circle at 50% 50%, rgba(255, 122, 192, 0.9) 0 14%, rgba(127, 90, 240, 0.35) 15% 60%, rgba(255, 255, 255, 0.05) 61%); border: 1px solid rgba(255, 255, 255, 0.1); animation: nx-mx-pulse 3.2s ease-in-out infinite; transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s; }
+.ap-root .nx-mx-row:hover .nx-mx-name { color: #FF7AC0; }
+.ap-root .nx-mx-cell:hover { animation-play-state: paused; transform: scale(1.12); border-color: #FF7AC0; box-shadow: 0 0 24px rgba(214, 48, 140, 0.6); }
+@media (max-width: 720px) {
+  .ap-root .nx-matrix { padding: 14px; gap: 6px; }
+  .ap-root .nx-mx-top, .ap-root .nx-mx-row { grid-template-columns: minmax(96px, 1.3fr) repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .ap-root .nx-mx-name { font-size: 11px; padding-left: 8px; }
+  .ap-root .nx-mx-col { font-size: 8px; letter-spacing: 0; }
+  .ap-root .nx-mx-corner b { font-size: 18px; }
+  .ap-root .nx-mx-corner small { font-size: 8px; }
+  .ap-root .nx-mx-cell { border-radius: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { .ap-root .nx-mx-cell { animation: none; } }
+/* The logo rows fade in rather than slide: a sideways slide made the phone layout scroll sideways for a moment. */
+.ap-root .nx-logostrip { overflow: hidden; }
+html.nx-reveal .ap-root .nx-logo-run[data-nx-r]:not(.nx-seen) { transform: none; opacity: 0; }

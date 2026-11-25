@@ -150,7 +150,7 @@ function FramingPreview({ src, poster, shade, focus, height, focusId, heightId, 
         <Select id={heightId} value={h} onChange={(e) => onHeightChange(e.target.value)} disabled={disabled}>
           {HERO_HEIGHTS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
         </Select>
-        <p className="text-xs text-ttfc-dim">The picture always fills the area, so a taller area cuts less off a wide video. Full screen fills the whole first screen on phones and computers.</p>
+        <p className="text-xs text-ttfc-dim">The picture always fills the area, so a taller area cuts less off a wide video. Full screen (the default) fills the first screen below the header on computers, and on phones the space between the header and the ticket bar.</p>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import React from "react";
 import VideoFacade from "./VideoFacade";
 import ApprovedPhone from "./ApprovedPhone";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
+import { HOME_HEIGHTS } from "../../lib/heroFrame";
 import { multiCheckout } from "../../lib/ticketsApi";
 import { EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, fieldsNear, pick, post, sendForm, splitName } from "./liveShared";
 
@@ -115,6 +116,7 @@ export default class LivePhone extends ApprovedPhone {
     const v = super.renderVals();
     // The event's video on phones too, when staff chose "Video" (LiveSite sets c.video only then).
     if (v.c && v.c.heights) v.heroH = v.c.heights;
+    v.homeH = HOME_HEIGHTS.phone;   // the home page's hero: full screen (Nov 25 2026)
     if (v.c && v.c.video) {
       const playing = v.c.video;
       v.heroVideo = <HeroBackgroundVideo key={v.c.video} src={v.c.video} position={v.c.pos} anyDevice onPlaying={() => { if (this.state.heroPlaying !== playing) this.setState({ heroPlaying: playing }); }} />;

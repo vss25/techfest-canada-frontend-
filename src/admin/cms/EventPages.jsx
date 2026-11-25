@@ -33,7 +33,7 @@ import EventVideoField from "./EventVideoField";
 
 const TEXT_FIELDS = [
   "name", "city", "type", "year", "startDate", "endDate", "statusNote", "venueName", "venueAddress",
-  "description", "heroVideoUrl", "heroShade", "heroMedia", "photoCredit", "theme", "tagline", "formatLine", "audience", "pageMode", "notifyHeading",
+  "description", "heroVideoUrl", "heroShade", "heroMedia", "heroFocus", "heroHeight", "photoCredit", "theme", "tagline", "formatLine", "audience", "pageMode", "notifyHeading",
   "standInSpeakersHeading", "standInSpeakersText", "standInPartnersHeading", "standInPartnersText",
 ];
 // The stand-ins (StandIns.jsx): the event they come from ("" = Toronto 2026) and the ones picked.
@@ -69,7 +69,7 @@ function toForm(ev) {
 /** Only what changed, in the shape the backend takes ("" clears a field). */
 function diff(form, base) {
   const out = {};
-  for (const k of TEXT_FIELDS) if (String(form[k] ?? "") !== String(base[k] ?? "")) out[k] = k === "year" ? Number(form[k]) || "" : form[k];
+  for (const k of TEXT_FIELDS) if (String(form[k] ?? "") !== String(base[k] ?? "")) out[k] = k === "year" ? Number(form[k]) || "" : k === "heroFocus" ? (form[k] === "" ? "" : Number(form[k])) : form[k];
   if (form.showReport !== base.showReport) out.showReport = form.showReport;
   if (JSON.stringify(form.knownSoFar) !== JSON.stringify(base.knownSoFar)) out.knownSoFar = form.knownSoFar;
   if (JSON.stringify(form.comingNext) !== JSON.stringify(base.comingNext)) out.comingNext = form.comingNext;
@@ -272,7 +272,9 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
           <EventVideoField url={form.heroVideoUrl} posterUrl={form.citySkylineUrl} disabled={readOnly} canUpload={isManagement && !readOnly}
             onChange={(v) => setForm((f) => ({ ...f, heroVideoUrl: v }))}
             shade={form.heroShade} onShadeChange={(v) => setForm((f) => ({ ...f, heroShade: v }))}
-            media={form.heroMedia} onMediaChange={(v) => setForm((f) => ({ ...f, heroMedia: v }))} />
+            media={form.heroMedia} onMediaChange={(v) => setForm((f) => ({ ...f, heroMedia: v }))}
+            focus={form.heroFocus} onFocusChange={(v) => setForm((f) => ({ ...f, heroFocus: v }))}
+            height={form.heroHeight} onHeightChange={(v) => setForm((f) => ({ ...f, heroHeight: v }))} />
           </div>
           <div className="grid content-start gap-4">
             <Field label="Photo credit" hint="Shown on the photo. Required for Creative Commons photos."><Input value={form.photoCredit} onChange={set("photoCredit")} placeholder="e.g. Photo: Kyle Pearce, CC BY-SA 2.0" disabled={readOnly} /></Field>

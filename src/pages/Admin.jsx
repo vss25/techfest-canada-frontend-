@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, ShieldX } from "lucide-react";
 
 // The approved admin design's typeface (self-hosted; loaded with the panel only).
@@ -13,7 +13,8 @@ import Toaster from "../admin/Toaster";
 import { AdminContext } from "../admin/adminContext";
 import { VOLUNTEER_ACCESS, accountKind } from "../admin/access";
 import { AdminThemeContext, useAdminThemeRoot } from "../admin/theme";
-import { adminFetch, signOut, PASSWORD_REQUIRED } from "../admin/api";
+import { adminFetch, api, getToken, ADMIN_API, signOut, PASSWORD_REQUIRED } from "../admin/api";
+import { SIGNOUT_PATH, useStaffActivityTracker } from "../admin/app/staffActivityRules";
 import { Button, ErrorState, ManagementOnly, Spinner } from "../admin/ui";
 
 import Overview from "../admin/sections/Overview";
@@ -41,6 +42,7 @@ import AppText from "../admin/app/AppText";
 import AppRights from "../admin/app/AppRights";
 import Broadcast from "../admin/app/Broadcast";
 import AuditLog from "../admin/app/AuditLog";
+import StaffActivity from "../admin/app/StaffActivity";
 import PwaInstalls from "../admin/app/PwaInstalls";
 import StaffAccounts from "../admin/staff/StaffAccounts";
 import TicketManager from "../admin/tickets/TicketManager";
@@ -144,6 +146,13 @@ function AdminPanel() {
   const [staffAccess, setAccess] = useState(null); // { staffRole, isManagement }
 
   const handleSignOut = useCallback(() => {
+    // Staff activity: close this session first (keepalive, so leaving the page doesn't cancel it; never waits).
+    const token = getToken();
+    if (token) {
+      try {
+        fetch(`${ADMIN_API}${SIGNOUT_PATH}`, { method: "POST", keepalive: true, headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+      } catch { /* ignore */ }
+    }
     signOut();
     navigate("/admin-login", { replace: true });
   }, [navigate]);
@@ -165,7 +174,7 @@ function AdminPanel() {
     if (me?.role !== "admin") return undefined;
     let alive = true;
     adminFetch("/console/me").then(
-      (a) => { if (alive) setAccess({ staffRole: a.staffRole || (a.isManagement ? "management" : "staff"), isManagement: !!a.isManagement }); },
+      (a) => { if (alive) setAccess({ staffRole: a.staffRole || (a.isManagement ? "management" : "staff"), isManagement: !!a.isManagement, isSuperAdmin: !!a.isSuperAdmin }); },
       (err) => {
         // Signed in with an emailed code: the panel wants the password (handled below).
         if (!alive || err?.code === PASSWORD_REQUIRED) return;
@@ -198,7 +207,12 @@ function AdminPanel() {
   const isVolunteer = kind === "volunteer";
   const access = isVolunteer ? VOLUNTEER_ACCESS : staffAccess;
   const isManagement = !!access?.isManagement;
-  const ctx = useMemo(() => ({ me, access, isManagement, isVolunteer }), [me, access, isManagement, isVolunteer]);
+  const isSuperAdmin = !isVolunteer && !!access?.isSuperAdmin;
+  const ctx = useMemo(() => ({ me, access, isManagement, isSuperAdmin, isVolunteer }), [me, access, isManagement, isSuperAdmin, isVolunteer]);
+
+  // Staff activity (Settings › Staff activity): page views and the in-use heartbeat, staff accounts only.
+  const { pathname } = useLocation();
+  useStaffActivityTracker({ enabled: kind === "staff" && !!access, pathname, post: api.post });
 
   if (meError) {
     return (
@@ -338,6 +352,7 @@ function AdminPanel() {
             <Route path="app/rights" element={<AppRights />} />
             <Route path="app/broadcast" element={<Broadcast />} />
             <Route path="app/audit" element={<AuditLog />} />
+            <Route path="app/staff-activity" element={<StaffActivity />} />
             <Route path="app/pwa" element={<PwaInstalls />} />
 
             <Route path="staff" element={<ManagementOnly><StaffAccounts /></ManagementOnly>} />

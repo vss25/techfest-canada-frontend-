@@ -13,15 +13,15 @@ import { HelpContent } from "./HelpButton";
 const pathOf = (to) => (to ? `/admin/${to}` : "/admin");
 
 export default function HelpGuide() {
-  const { isManagement, isVolunteer } = useAdmin();
+  const { isManagement, isSuperAdmin, isVolunteer } = useAdmin();
   const [q, setQ] = useState("");
   const needle = q.trim().toLowerCase();
-  const workspaces = useMemo(() => workspacesFor({ isManagement, isVolunteer }).map((w) => ({
+  const workspaces = useMemo(() => workspacesFor({ isManagement, isSuperAdmin, isVolunteer }).map((w) => ({
     ...w,
     pages: w.groups.flatMap((g) => g.items).filter((it) => it.to !== "help")
       .map((it) => ({ ...it, guide: helpFor(it.to) })).filter((it) => it.guide)
       .filter((it) => !needle || [it.label, it.guide.what, ...it.guide.steps, ...it.guide.tips].join(" ").toLowerCase().includes(needle)),
-  })).filter((w) => w.pages.length), [isManagement, isVolunteer, needle]);
+  })).filter((w) => w.pages.length), [isManagement, isSuperAdmin, isVolunteer, needle]);
 
   return (
     <>

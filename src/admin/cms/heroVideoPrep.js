@@ -10,6 +10,8 @@
    Pure parts (planVideo, targetSize, describe) are tested in heroVideoPrep.test.mjs.
 ========================================================= */
 
+import { muxMp4 } from "./mp4Mux.js";
+
 export const VIDEO_LIMITS = Object.freeze({
   maxWidth: 1920,
   maxHeight: 1080,
@@ -131,6 +133,84 @@ export function probeVideo(source) {
   });
 }
 
+/* ---------- The smooth way (Nov 25 2026): WebCodecs + a plain MP4 (mp4Mux.js) ----------
+   Steps through the clip at exact times (start + i × speed / 30 s), draws each frame, encodes it with the
+   browser's own H.264 encoder (a keyframe every second) and writes a plain MP4 with its length and index up
+   front. The result loops without a hitch, moves evenly at any speed, and making it doesn't depend on the tab
+   being in front. Browsers without VideoEncoder (older Safari, Firefox) use the real-time recorder below. */
+
+export const LOOP_FPS = 30;
+
+/** True when this browser can make the smooth kind. */
+export function canEncodeSmooth() {
+  return typeof VideoEncoder !== "undefined" && typeof VideoFrame !== "undefined" && typeof VideoEncoder.isConfigSupported === "function";
+}
+
+/** The source time of each frame of the finished loop. Pure. */
+export function frameTimes(plan, fps = LOOP_FPS) {
+  const n = Math.max(1, Math.round(plan.outSeconds * fps));
+  const last = Math.max(plan.start, plan.end - 0.001);
+  return Array.from({ length: n }, (_, i) => Math.min(last, plan.start + (i * plan.speed) / fps));
+}
+
+async function pickH264(width, height, bitrate) {
+  for (const codec of ["avc1.640028", "avc1.4d0028", "avc1.42e028", "avc1.42001f"]) {
+    const config = { codec, width, height, bitrate, framerate: LOOP_FPS, avc: { format: "avc" }, latencyMode: "quality" };
+    try { if ((await VideoEncoder.isConfigSupported(config)).supported) return config; } catch { /* try the next */ }
+  }
+  return null;
+}
+
+const seekTo = (video, t) => new Promise((resolve, reject) => {
+  if (Math.abs(video.currentTime - t) < 0.0005 && video.readyState >= 2) { resolve(); return; }
+  const done = () => { clearTimeout(timer); video.removeEventListener("seeked", done); resolve(); };
+  const timer = setTimeout(() => { video.removeEventListener("seeked", done); reject(new Error("The video stopped responding while the loop was made. Try again.")); }, 8000);
+  video.addEventListener("seeked", done);
+  video.currentTime = t;
+});
+
+/** → Uint8Array (MP4) or null when this browser has no usable H.264 encoder. */
+async function encodeSmooth(video, plan, { width, height, bitrate, onProgress }) {
+  const config = await pickH264(width, height, bitrate);
+  if (!config) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { alpha: false });
+  ctx.imageSmoothingQuality = "high";
+  const samples = [];
+  let avcC = null;
+  let failure = null;
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => {
+      if (meta?.decoderConfig?.description && !avcC) avcC = new Uint8Array(meta.decoderConfig.description);
+      const data = new Uint8Array(chunk.byteLength);
+      chunk.copyTo(data);
+      samples.push({ data, key: chunk.type === "key" });
+    },
+    error: (e) => { failure = e; },
+  });
+  encoder.configure(config);
+  const times = frameTimes(plan);
+  try {
+    for (let i = 0; i < times.length; i += 1) {
+      if (failure) throw failure;
+      await seekTo(video, times[i]);
+      ctx.drawImage(video, 0, 0, width, height);
+      const frame = new VideoFrame(canvas, { timestamp: Math.round((i * 1e6) / LOOP_FPS), duration: Math.round(1e6 / LOOP_FPS) });
+      encoder.encode(frame, { keyFrame: i % LOOP_FPS === 0 });
+      frame.close();
+      while (encoder.encodeQueueSize > 6) await new Promise((r) => setTimeout(r, 4));
+      onProgress(i / times.length);
+    }
+    await encoder.flush();
+  } finally {
+    if (encoder.state !== "closed") encoder.close();
+  }
+  if (failure) throw failure;
+  return muxMp4({ width, height, fps: LOOP_FPS, avcC, samples });
+}
+
 /**
  * Re-encode in real time: play the video muted, draw each frame onto a canvas at the target size, record the
  * canvas as MP4. Takes as long as the clip (≤ 20 s). The tab has to stay open and visible meanwhile.
@@ -138,7 +218,7 @@ export function probeVideo(source) {
  */
 export async function shrinkVideo(source, { onProgress = () => {}, onWaiting = () => {}, limits = VIDEO_LIMITS, start = 0, end: endAt, speed = 1, quality = "1080", name: nameHint } = {}) {
   const type = recorderType();
-  if (!type) throw new Error("This browser can't shrink videos. Open this page in Chrome or Edge.");
+  if (!type && !canEncodeSmooth()) throw new Error("This browser can't shrink videos. Open this page in Chrome or Edge.");
   const probe = await probeVideo(source);
   const { video, release } = probe;
   try {
@@ -147,6 +227,16 @@ export async function shrinkVideo(source, { onProgress = () => {}, onWaiting = (
     if (plan.error) throw new Error(plan.error);
     const { width, height } = targetSize(probe.width, probe.height, { ...limits, maxWidth: q.maxWidth, maxHeight: q.maxHeight });
     const end = plan.end;
+    const base = String(nameHint || (typeof source === "string" ? "hero-video" : source.name) || "hero-video").replace(/\.[a-z0-9]{1,5}$/i, "");
+    if (canEncodeSmooth()) {
+      await new Promise((r) => { if (video.readyState >= 2) r(); else video.onloadeddata = () => r(); });
+      const mp4 = await encodeSmooth(video, plan, { width, height, bitrate: q.bitrate, onProgress });
+      if (mp4) {
+        onProgress(1);
+        const out = new File([mp4], `${base}-${plan.quality}p.mp4`, { type: "video/mp4" });
+        return Object.assign(out, { width, height, duration: plan.outSeconds });
+      }
+    }
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
@@ -218,7 +308,6 @@ export async function shrinkVideo(source, { onProgress = () => {}, onWaiting = (
       throw new Error("The loop came out empty. Keep this tab open and in front while it's made, then try again.");
     }
     onProgress(1);
-    const base = String(nameHint || (typeof source === "string" ? "hero-video" : source.name) || "hero-video").replace(/\.[a-z0-9]{1,5}$/i, "");
     const out = new File([blob], `${base}-${plan.quality}p.mp4`, { type: "video/mp4" });
     return Object.assign(out, { width, height, duration: plan.outSeconds });
   } finally {

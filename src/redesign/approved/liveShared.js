@@ -1,5 +1,5 @@
 import { PUBLIC_API } from "../../hooks/useSiteSettings";
-import { parseEventPath } from "../../lib/events";
+import { NATIONAL_SEGMENT, parseEventPath } from "../../lib/events";
 
 /* Shared by the live desktop (LiveSite.jsx) and phone (LivePhone.jsx) versions of the
    approved design: addresses for each screen, reading a form's fields, backend calls. */
@@ -14,7 +14,8 @@ export const CITY_EVENT = {
   ott: { city: "ottawa", year: 2027, type: "briefing" },
   tor: { city: "toronto", year: 2027, type: "main-event" },
 };
-export const cityPath = (id) => { const c = CITY_EVENT[id] || CITY_EVENT.van; return `/${c.city}/${c.year}/${c.type}`; };
+// The record's type is "main-event"; its address is /national-festival (src/lib/events.js).
+export const cityPath = (id) => { const c = CITY_EVENT[id] || CITY_EVENT.van; return `/${c.city}/${c.year}/${c.type === "main-event" ? NATIONAL_SEGMENT : c.type}`; };
 export const cityOfPath = (p) => Object.keys(CITY_EVENT).find((id) => {
   const c = CITY_EVENT[id];
   return p && p.city === c.city && p.year === c.year && p.type === c.type;
@@ -33,7 +34,7 @@ export function routeFor(pathname) {
   const path = String(pathname || "/").replace(/\/+$/, "") || "/";
   const screen = Object.keys(SCREEN_PATH).find((k) => SCREEN_PATH[k] === path);
   if (screen) return { screen, city: screen === "speakers" ? "van" : undefined };
-  if (path === "/toronto/2026/main-event") return { screen: "past" };
+  if (path === "/toronto/2026/main-event" || path === `/toronto/2026/${NATIONAL_SEGMENT}`) return { screen: "past" };
   // A speaker's page (the new look, Nov 25 2026): /speakers/<name-slug>.
   const spk = path.match(/^\/speakers\/([^/]+)$/);
   if (spk) return { screen: "speaker", city: "van", slug: decodeURIComponent(spk[1]) };

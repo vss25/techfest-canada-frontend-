@@ -7,6 +7,8 @@ import { heroVideoSrc } from "../../lib/siteFiles";
 import { heroShadeBackground } from "../../lib/heroShade";
 import { heroHeights, heroPosition } from "../../lib/heroFrame";
 import LivePhone from "./LivePhone";
+import "./siteDark.css"; // only applies with ?theme=dark (src/lib/siteDarkPreview.js)
+import { applySitePreviewTheme } from "../../lib/siteDarkPreview";
 import useSeo from "../../hooks/useSeo";
 import { client, urlFor } from "../../utils/sanity";
 import { ECOSYSTEM_GROUP, FEATURED_GROUP, PILLAR_GROUPS, SECTOR_GROUPS, eventRowOf, matrixGroupOf, partnerOnEvent } from "../../data/partnerMatrix";
@@ -515,6 +517,8 @@ function useStandIns(ev, events) {
 
 export default function ApprovedRoute({ fallback = null }) {
   const location = useLocation();
+  // Dark preview of the website (?theme=dark, this tab only): never on unless asked for (src/lib/siteDarkPreview.js).
+  useEffect(() => { applySitePreviewTheme(); }, [location.search]);
   const phone = usePhone();
   const navigate = useNavigate();
   const base = routeFor(location.pathname);

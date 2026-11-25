@@ -1,6 +1,7 @@
 import React from "react";
 import VideoFacade from "./VideoFacade";
 import ApprovedPhone from "./ApprovedPhone";
+import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { multiCheckout } from "../../lib/ticketsApi";
 import { EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, fieldsNear, pick, post, sendForm, splitName } from "./liveShared";
 
@@ -112,6 +113,8 @@ export default class LivePhone extends ApprovedPhone {
 
   renderVals() {
     const v = super.renderVals();
+    // The event's video on phones too, when staff chose "Video" (LiveSite sets c.video only then).
+    if (v.c && v.c.video) v.heroVideo = <HeroBackgroundVideo key={v.c.video} src={v.c.video} position={v.c.pos} anyDevice />;
     const s = this.state;
     // The agenda from Admin › Agenda (LiveSite's ApprovedRoute passes it for both designs).
     const rows = this.props.data && this.props.data.sessionsData;

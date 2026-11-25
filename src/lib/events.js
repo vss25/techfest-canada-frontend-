@@ -69,7 +69,7 @@ export const ticketsOpen = (ev, now = new Date()) => ["coming-up", "live"].inclu
 
 const EVENT_FIELDS = `
   _id, name, "eventKey": eventKey.current, city, type, year, startDate, endDate,
-  venueName, venueAddress, heroImage, heroVideoUrl, heroShade, citySkyline, description,
+  venueName, venueAddress, heroImage, heroVideoUrl, heroShade, heroMedia, citySkyline, description,
   statusNote, pricingAnnounced, gallery, "brochureUrl": brochure.asset->url,
   photoCredit, theme, tagline, formatLine, audience, pageMode, knownSoFar, comingNext,
   notifyHeading, showReport,

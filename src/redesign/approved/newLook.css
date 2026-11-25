@@ -430,3 +430,49 @@ html:not([data-site-theme="dark"]) .ap-root .nx-s:not(.nx-stage) .nx-kind-chip {
   .ap-root .nx-it h3 { font-size: 17px; }
   .ap-root .nx-ticker-xl { padding: 22px 0; }
 }
+
+/* =========================================================
+ Every page (Nov 25 2026, the owner: "keep building further all pages"): the older sections of the event,
+ speakers, awards, partners, past and information pages get the same treatment as the new ones.
+========================================================= */
+/* Section titles: a pink-to-violet rule above and a soft sheen on the words. */
+.ap-root main section h2:not(.nx-h2) { position: relative; padding-top: 18px; letter-spacing: -0.03em !important; }
+.ap-root main section h2:not(.nx-h2)::before { content: ""; position: absolute; left: 0; top: 0; width: 56px; height: 4px; border-radius: 4px; background: linear-gradient(90deg, #D6308C, #7F5AF0); }
+.ap-root main section [style*="text-align: center"] > h2:not(.nx-h2)::before, .ap-root main section h2[style*="text-align: center"]:not(.nx-h2)::before { left: 50%; margin-left: -28px; }
+html[data-site-theme="dark"] .ap-root main h2:not(.nx-h2), html[data-site-theme="dark"] .ap-root main h1 { background: linear-gradient(180deg, #FFFFFF 30%, #CFC6F2); -webkit-background-clip: text; background-clip: text; color: transparent !important; }
+
+/* Page banners (speakers, awards, partners, information pages): stage lights and glow, like the home banner. */
+.ap-root main > section[data-dark]:first-child:not([class]) { position: relative; overflow: hidden; isolation: isolate; }
+.ap-root main > section[data-dark]:first-child:not([class])::before, .ap-root main > section[data-dark]:first-child:not([class])::after {
+  content: ""; position: absolute; z-index: -1; top: -40%; width: 30%; height: 180%; pointer-events: none; transform-origin: top center; filter: blur(12px);
+}
+.ap-root main > section[data-dark]:first-child:not([class])::before { left: 22%; background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 70%); animation: nx-beam-a 9s ease-in-out infinite; }
+.ap-root main > section[data-dark]:first-child:not([class])::after { right: 8%; background: linear-gradient(180deg, rgba(214, 48, 140, 0.24), transparent 70%); animation: nx-beam-b 11s ease-in-out infinite; }
+
+/* Cards everywhere: a gradient edge that lights on hover, photos that zoom. */
+.ap-root main .p-card { transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s, border-color 0.3s !important; }
+.ap-root main .p-card:hover { transform: translateY(-6px); }
+html[data-site-theme="dark"] .ap-root main .p-card:not(:has(> img)):hover { box-shadow: inset 0 0 0 1px rgba(214, 48, 140, 0.55), 0 22px 50px rgba(214, 48, 140, 0.16) !important; }
+.ap-root main .p-card > span[style*="aspect-ratio"] { transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.4s; }
+.ap-root main .p-card:hover > span[style*="aspect-ratio"] { transform: scale(1.05); filter: saturate(1.15); }
+.ap-root main article.p-card::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, #D6308C, #7F5AF0); transform: scaleX(0); transform-origin: 0 50%; transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ap-root main article.p-card:hover::after { transform: scaleX(1); }
+
+/* Photos in the older sections: rounded, lifted, zooming a little on hover. */
+html[data-site-theme="dark"] .ap-root main section img[loading="lazy"][style*="border-radius"]:not([alt=""]) { box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); }
+.ap-root main section a.p-card > img { transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ap-root main section a.p-card:hover > img { transform: scale(1.06); }
+
+/* Phones: the older sections' cards become glass, their titles get the same rule. */
+html[data-site-theme="dark"] .ap-phone .ap-root main :is(article, li)[style*="border: 1px solid"] { background-color: rgba(255, 255, 255, 0.05) !important; border-color: rgba(255, 255, 255, 0.12) !important; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+
+/* Footer: a lit top edge. */
+.ap-root footer[data-dark] { position: relative; }
+.ap-root footer[data-dark]::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: linear-gradient(90deg, transparent, #D6308C 30%, #7F5AF0 70%, transparent); }
+
+/* The older sections' entrance (useNewLookEffects.js): the block rises as one, then its cards one by one. */
+html.nx-reveal .ap-root main > section > div[data-nx-r]:not(.nx-seen) { transform: translateY(60px); }
+@media (prefers-reduced-motion: reduce) {
+  .ap-root main > section[data-dark]:first-child:not([class])::before, .ap-root main > section[data-dark]:first-child:not([class])::after { animation: none; }
+  .ap-root main .p-card:hover { transform: none; }
+}

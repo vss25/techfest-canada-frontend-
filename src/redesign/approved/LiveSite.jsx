@@ -4,6 +4,7 @@ import ApprovedSite from "./ApprovedSite";
 import VideoFacade from "./VideoFacade";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { heroVideoSrc } from "../../lib/siteFiles";
+import { heroShadeBackground } from "../../lib/heroShade";
 import LivePhone from "./LivePhone";
 import useSeo from "../../hooks/useSeo";
 import { client, urlFor } from "../../utils/sanity";
@@ -241,6 +242,8 @@ class LiveSite extends ApprovedSite {
     v.exList = [];
     v.exSoon = { title: "Exhibitors to be announced", text: "Booths are being booked now. Exhibitors are listed here as they are confirmed." };
     // The event's background video (Admin › Event pages), over its city photo and sized like it; computers only.
+    // The shade over the photo / video (Admin › Event pages › Top of the page; "default" = the usual fade).
+    if (v.c) { v.shadeFull = { position: "absolute", inset: "0", background: heroShadeBackground(v.c.shade, "full") }; v.shadeSoon = { position: "absolute", inset: "0", background: heroShadeBackground(v.c.shade, "soon") }; }
     if (v.c && v.c.video) v.heroVideo = <HeroBackgroundVideo key={v.c.video} src={v.c.video} position={v.c.posD} />;
     const past = this.props.past2026;
     if (past) {
@@ -655,6 +658,7 @@ export default function ApprovedRoute({ fallback = null }) {
         if (ev.citySkyline && ev.citySkyline.asset) { c.img = urlFor(ev.citySkyline).width(2000).quality(78).auto("format").url(); c.credit = ev.photoCredit || ""; }
         // Its background video (Nov 24 2026): only our own Sanity uploads (heroVideoSrc); the photo stays its first frame.
         c.video = heroVideoSrc(ev.heroVideoUrl);
+        c.shade = ev.heroShade || "default";
         out[id] = c;
       });
       return out;

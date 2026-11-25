@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { VIDEO_LIMITS, describe, planVideo, targetSize } from "./heroVideoPrep.js";
+import { VIDEO_LIMITS, clipPlan, clock, defaultClip, describe, keepsOriginal, planVideo, targetSize } from "./heroVideoPrep.js";
 
 // Sizes: within 1920 × 1080, same shape, even.
 assert.deepEqual(targetSize(3840, 2160), { width: 1920, height: 1080 });
@@ -29,4 +29,29 @@ assert.equal(planVideo({ ...ok, duration: NaN }, { canShrink: true }).action, "r
 
 assert.equal(describe({ size: 5.8e6, width: 1920, height: 1080, duration: 19.6 }), "5.8 MB · 1920 × 1080 · 20 s");
 assert.equal(describe({ size: 0, width: 0, height: 0, duration: NaN }), "");
+// Trim and speed (Nov 25 2026).
+assert.deepEqual(defaultClip(45), { start: 0, end: 20, speed: 1, quality: "1080" });
+assert.deepEqual(defaultClip(8), { start: 0, end: 8, speed: 1, quality: "1080" });
+const p1 = clipPlan({ duration: 45, start: 5, end: 25, speed: 1 });
+assert.equal(p1.outSeconds, 20);
+assert.equal(p1.bytes, 6_250_000);
+// 40 s sped up 2× plays for 20 s: allowed. 30 s at 1×: too long, and the message says how to fix it.
+assert.equal(clipPlan({ duration: 60, start: 0, end: 40, speed: 2 }).outSeconds, 20);
+assert.match(clipPlan({ duration: 60, start: 0, end: 30, speed: 1 }).error, /trim it shorter or speed it up/);
+assert.match(clipPlan({ duration: 60, start: 0, end: 50, speed: 2 }).error, /trim it shorter\./);
+// Slow motion doubles the length.
+assert.equal(clipPlan({ duration: 20, start: 0, end: 10, speed: 0.5 }).outSeconds, 20);
+assert.match(clipPlan({ duration: 20, start: 3, end: 4, speed: 1 }).error, /at least 2 seconds/);
+assert.match(clipPlan({ duration: 20, speed: 3 }).error, /Pick a speed/);
+// Out-of-range handles are clamped to the clip.
+assert.deepEqual([clipPlan({ duration: 10, start: -4, end: 99 }).start, clipPlan({ duration: 10, start: -4, end: 99 }).end], [0, 10]);
+// 720p: about half the bytes.
+assert.equal(clipPlan({ duration: 20, end: 20, quality: "720" }).bytes, 3_250_000);
+// Untouched: only the whole clip at 1× in 1080p, and only when it was already fine.
+assert.equal(keepsOriginal({ action: "keep" }, defaultClip(15), 15), true);
+assert.equal(keepsOriginal({ action: "keep" }, { ...defaultClip(15), speed: 2 }, 15), false);
+assert.equal(keepsOriginal({ action: "keep" }, { ...defaultClip(15), start: 1 }, 15), false);
+assert.equal(keepsOriginal({ action: "shrink" }, defaultClip(15), 15), false);
+assert.equal(clock(7.5), "0:07.5");
+assert.equal(clock(75), "1:15.0");
 console.log("heroVideoPrep ok");

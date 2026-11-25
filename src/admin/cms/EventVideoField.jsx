@@ -1,66 +1,47 @@
 import { useId, useRef, useState } from "react";
-import { Film, Lock, Trash2, UploadCloud } from "lucide-react";
+import { Film, Lock, Scissors, Trash2, UploadCloud } from "lucide-react";
 import { useToast } from "../toastContext";
-import { Button } from "../ui";
+import { Button, Select } from "../ui";
 import { HelpLabel } from "../HelpButton";
 import { uploadRaw } from "./uploadFile";
-import { VIDEO_LIMITS, describe, mb, planVideo, probeVideo, recorderType, shrinkVideo } from "./heroVideoPrep";
+import { VIDEO_LIMITS, describe } from "./heroVideoPrep";
+import VideoEditor from "./VideoEditor";
+import { HERO_SHADES, heroShadeBackground, shadeKey } from "../../lib/heroShade";
 
 /* =========================================================
    Event pages › Top of the page › Background video (Nov 24 2026). One short silent loop per event, shown behind the
    top of that event's page on computers in place of the city photo (which stays its first frame and what phones,
-   data saver and reduced motion see). Shrunk here before upload (heroVideoPrep.js), uploaded with the Large site
-   files upload (management only), and saved in the event's heroVideoUrl like any other field: draft → staging →
-   publish.
+   data saver and reduced motion see). Every new video, and the uploaded one again, goes through VideoEditor (trim,
+   speed, size; made here with heroVideoPrep.js), is uploaded with the Large site files upload (management only), and
+   is saved in the event's heroVideoUrl like any other field: draft → staging → publish. The shade over the photo /
+   video (heroShade, src/lib/heroShade.js) is picked here too.
 ========================================================= */
 
-export default function EventVideoField({ url, posterUrl, onChange, disabled, canUpload }) {
+export default function EventVideoField({ url, posterUrl, onChange, disabled, canUpload, shade, onShadeChange }) {
   const id = useId();
+  const shadeId = useId();
   const inputRef = useRef(null);
   const toast = useToast();
-  const [phase, setPhase] = useState("");      // "" | "read" | "shrink" | "upload"
-  const [pct, setPct] = useState(0);
+  const [editing, setEditing] = useState(null);  // a File just picked, or the uploaded URL to edit again
   const [info, setInfo] = useState("");        // "5.8 MB · 1920 × 1080 · 20 s" of the file just uploaded
   const [err, setErr] = useState("");
-  const busy = !!phase;
-  const off = disabled || !canUpload || busy;
+  const off = disabled || !canUpload;
+  const level = shadeKey(shade);
 
-  const pick = async (file) => {
+  // Every new video opens the editor first: trim, speed and size, then it goes up (VideoEditor.jsx).
+  const pick = (file) => {
     if (!file || off) return;
     if (inputRef.current) inputRef.current.value = "";
-    setErr(""); setInfo(""); setPct(0);
+    setErr(""); setInfo("");
     if (!String(file.type).startsWith("video/")) { setErr("Choose a video file (MP4 works everywhere)."); return; }
-    try {
-      setPhase("read");
-      const probe = await probeVideo(file);
-      probe.release();
-      const plan = planVideo({ type: file.type, size: file.size, width: probe.width, height: probe.height, duration: probe.duration }, { canShrink: !!recorderType() });
-      if (plan.action === "refuse") throw new Error(plan.error);
-      let out = Object.assign(file, { width: probe.width, height: probe.height, duration: probe.duration });
-      if (plan.action === "shrink") {
-        setPhase("shrink");
-        const small = await shrinkVideo(file, { onProgress: setPct });
-        // A clip that was already fine except for its size: keep whichever is smaller.
-        const onlySize = plan.reasons.length === 1 && file.type === "video/mp4" && /MB$/.test(plan.reasons[0]);
-        out = onlySize && file.size <= small.size ? out : small;
-      }
-      if (out.size > VIDEO_LIMITS.maxUploadBytes) throw new Error(`The video is still ${mb(out.size)}. Use a shorter clip, at most ${VIDEO_LIMITS.maxSeconds} seconds.`);
-      setPhase("upload"); setPct(0);
-      const res = await uploadRaw(out, setPct);
-      onChange(res.url);
-      setInfo(describe(out));
-      toast.success("Video uploaded. Remember to save, then send it to staging.");
-    } catch (e) {
-      setErr(e.message);
-      toast.error(e);
-    } finally {
-      setPhase(""); setPct(0);
-    }
+    setEditing(file);
   };
-
-  const label = phase === "read" ? "Reading the video…"
-    : phase === "shrink" ? `Shrinking to 1080p… ${Math.round(pct * 100)}% (keep this tab open)`
-      : phase === "upload" ? `Uploading… ${Math.round(pct * 100)}%` : "";
+  const done = ({ url: next, file }) => {
+    setEditing(null);
+    onChange(next);
+    setInfo(describe(file));
+    toast.success("Video ready. Remember to save, then send it to staging.");
+  };
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -76,32 +57,35 @@ export default function EventVideoField({ url, posterUrl, onChange, disabled, ca
         ) : (
           <div className="flex flex-col items-center gap-2 px-6 text-center text-sm text-ttfc-muted">
             <Film className="h-8 w-8" aria-hidden="true" />
-            <span>{off && !busy ? "No video: the city photo shows" : "Drag a video here, or use the button below"}</span>
+            <span>{off ? "No video: the city photo shows" : "Drag a video here, or use the button below"}</span>
           </div>
         )}
-        {busy && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ttfc-ink/85 px-6 text-center text-sm text-ttfc-text" aria-live="polite">
-            <div className="h-2 w-full max-w-[220px] overflow-hidden rounded-full bg-ttfc-panel2" role="progressbar" aria-label={label}
-              aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct * 100)}>
-              <div className="h-full rounded-full bg-gradient-to-r from-ttfc-pink to-ttfc-purple transition-[width] duration-200" style={{ width: `${Math.round(pct * 100)}%` }} />
-            </div>
-            <span className="tabular-nums">{label}</span>
-          </div>
-        )}
+        {(url || posterUrl) && <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ background: heroShadeBackground(level, "full") }} />}
       </div>
       <input ref={inputRef} id={id} type="file" accept="video/mp4,video/quicktime,video/webm,video/*" className="sr-only" disabled={off}
         onChange={(e) => pick(e.target.files?.[0])} />
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" icon={UploadCloud} onClick={() => inputRef.current?.click()} disabled={off} loading={busy}>{url ? "Replace video" : "Upload video"}</Button>
-        {url && <Button size="sm" variant="ghost" icon={Trash2} onClick={() => { onChange(""); setInfo(""); }} disabled={disabled || busy}>Remove</Button>}
+        <Button size="sm" icon={UploadCloud} onClick={() => inputRef.current?.click()} disabled={off}>{url ? "Replace video" : "Upload video"}</Button>
+        {url && <Button size="sm" icon={Scissors} onClick={() => { setErr(""); setEditing(url); }} disabled={off}>Trim or speed up</Button>}
+        {url && <Button size="sm" variant="ghost" icon={Trash2} onClick={() => { onChange(""); setInfo(""); }} disabled={disabled}>Remove</Button>}
       </div>
       {info && <p className="text-xs text-ttfc-muted tabular-nums">Uploaded: {info}</p>}
       <p className="text-xs leading-relaxed text-ttfc-dim">
         Plays behind the top of this event&apos;s page on computers, filling the screen like the city photo. Phones, data saver and reduced motion show the photo instead.
-        We shrink it before upload: 1920 × 1080 at most, the first {VIDEO_LIMITS.maxSeconds} seconds, no sound (about 6 MB).
+        Before it goes up you pick the part to loop (up to {VIDEO_LIMITS.maxSeconds} seconds) and its speed; it always plays silently, on a loop. Trim or speed it up again later with the button above.
       </p>
       {!canUpload && !disabled && <p className="flex items-center gap-1.5 text-xs text-ttfc-muted"><Lock className="h-3 w-3" aria-hidden="true" /> Only management can upload videos.</p>}
       {err && <p role="alert" className="text-xs text-red-300">{err}</p>}
+      {onShadeChange && (
+        <div className="mt-2 grid gap-1.5">
+          <label htmlFor={shadeId} className="text-sm font-semibold">Shade over the photo or video</label>
+          <Select id={shadeId} value={level} onChange={(e) => onShadeChange(e.target.value)} disabled={disabled}>
+            {HERO_SHADES.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+          </Select>
+          <p className="text-xs text-ttfc-dim">{HERO_SHADES.find((o) => o.key === level)?.hint} The preview above shows it.</p>
+        </div>
+      )}
+      {editing && <VideoEditor source={editing} shade={level} name="event-hero" upload={uploadRaw} onDone={done} onClose={() => setEditing(null)} />}
     </div>
   );
 }

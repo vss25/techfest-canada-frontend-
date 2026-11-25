@@ -476,3 +476,17 @@ html.nx-reveal .ap-root main > section > div[data-nx-r]:not(.nx-seen) { transfor
   .ap-root main > section[data-dark]:first-child:not([class])::before, .ap-root main > section[data-dark]:first-child:not([class])::after { animation: none; }
   .ap-root main .p-card:hover { transform: none; }
 }
+
+/* ---- A session's picture, GIF or video on its card (Admin › Agenda › "On the session's card") ---- */
+.ap-root .nx-cardmedia { position: relative; flex: none; margin: -28px -28px 6px; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px 12px 0 0; background: var(--nl-card2); }
+.ap-phone .ap-root .nx-cardmedia { margin: -20px -20px 4px; }
+.ap-root .nx-cardmedia :is(img, video) { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ap-root article:hover > .nx-cardmedia :is(img, video), .ap-root .nx-it:hover .nx-cardmedia :is(img, video) { transform: scale(1.05); }
+.ap-root .nx-cardmedia::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(12, 9, 32, 0) 55%, rgba(12, 9, 32, 0.55)); }
+/* In the agenda lists the media sits at the end of the row. */
+.ap-root .nx-it.nx-it-media { grid-template-columns: 150px 1fr 220px; }
+.ap-root .nx-it-media > .nx-cardmedia-sm { order: 3; margin: 0; border-radius: 12px; width: 220px; }
+@media (max-width: 720px) {
+  .ap-root .nx-it.nx-it-media { grid-template-columns: 1fr; }
+  .ap-root .nx-it-media > .nx-cardmedia-sm { order: -1; width: 100%; }
+}

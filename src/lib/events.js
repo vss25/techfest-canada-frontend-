@@ -205,7 +205,7 @@ const SCOPED = `(!defined(events) || count(events) == 0 || $eventId in events[].
 
 export function fetchEventContent(eventId) {
   const sessions = client.fetch(
-    `*[_type == "session" && ${SCOPED}]{ _id, title, day, time, endTime, type, format, featured, isBreak, stage, description, speakers, moderator, "eventIds": events[]._ref } | order(day asc, time asc)`,
+    `*[_type == "session" && ${SCOPED}]{ _id, title, day, time, endTime, type, format, featured, isBreak, stage, description, speakers, moderator, image, mediaUrl, "eventIds": events[]._ref } | order(day asc, time asc)`,
     { eventId }
   );
   const speakers = client.fetch(

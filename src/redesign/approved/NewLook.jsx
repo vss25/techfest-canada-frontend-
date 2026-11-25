@@ -153,10 +153,23 @@ export function PartnersStrip({ label = "Partners", logos, onAll, alt }) {
   );
 }
 
+/** A session card's picture, GIF or video. media = sessionCardMedia() (src/lib/sessionMedia.js). */
+export function CardMedia({ media, title, small }) {
+  if (!media) return null;
+  return (
+    <div className={`nx-cardmedia${small ? " nx-cardmedia-sm" : ""}`}>
+      {media.kind === "video"
+        ? <video src={media.src} poster={media.poster || undefined} muted loop autoPlay playsInline preload="metadata" aria-label={title || undefined} />
+        : <img src={media.src} alt={title || ""} loading="lazy" />}
+    </div>
+  );
+}
+
 /** One agenda row: time, kind, title, what it is, who. s = toDesignSessions() row. */
 function SessionRow({ s }) {
   return (
-    <div className="nx-card nx-it">
+    <div className={`nx-card nx-it${s.media ? " nx-it-media" : ""}`}>
+      {s.media ? <CardMedia small media={s.media} title={s.title} /> : null}
       <time>{s.time || "Soon"}</time>
       <div>
         <span className="nx-kind nx-kind-chip">{s.kind}</span>

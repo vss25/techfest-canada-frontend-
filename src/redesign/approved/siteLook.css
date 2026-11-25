@@ -22,20 +22,21 @@
 @property --nl-a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 @keyframes nl-spin { to { --nl-a: 360deg; } }
 
-/* ---------- Compact type: one step smaller (headings get a tighter line) ---------- */
-.ap-root [style*="font-size: 64px"] { font-size: 54px !important; line-height: 1.08 !important; }
-.ap-root [style*="font-size: 60px"] { font-size: 50px !important; line-height: 1.08 !important; }
-.ap-root [style*="font-size: 56px"] { font-size: 48px !important; line-height: 1.1 !important; }
-.ap-root [style*="font-size: 52px"] { font-size: 44px !important; line-height: 1.1 !important; }
-.ap-root [style*="font-size: 48px"] { font-size: 40px !important; line-height: 1.1 !important; }
-.ap-root [style*="font-size: 40px"] { font-size: 34px !important; line-height: 1.12 !important; }
-.ap-root [style*="font-size: 38px"] { font-size: 34px !important; line-height: 1.12 !important; }
-.ap-root [style*="font-size: 36px"] { font-size: 32px !important; line-height: 1.12 !important; }
-.ap-root [style*="font-size: 34px"] { font-size: 30px !important; line-height: 1.12 !important; }
-.ap-root [style*="font-size: 32px"] { font-size: 28px !important; line-height: 1.15 !important; }
-.ap-root [style*="font-size: 30px"] { font-size: 26px !important; line-height: 1.15 !important; }
-.ap-root [style*="font-size: 28px"] { font-size: 24px !important; line-height: 1.18 !important; }
-.ap-root [style*="font-size: 26px"] { font-size: 23px !important; line-height: 1.2 !important; }
+/* ---------- Type: big event headlines (Nov 25 2026: the owner chose larger headlines over the compact scale);
+   body text stays one step smaller ---------- */
+.ap-root [style*="font-size: 64px"] { font-size: 72px !important; line-height: 1.04 !important; }
+.ap-root [style*="font-size: 60px"] { font-size: 68px !important; line-height: 1.04 !important; }
+.ap-root [style*="font-size: 56px"] { font-size: 60px !important; line-height: 1.06 !important; }
+.ap-root [style*="font-size: 52px"] { font-size: 56px !important; line-height: 1.06 !important; }
+.ap-root [style*="font-size: 48px"] { font-size: 54px !important; line-height: 1.06 !important; }
+.ap-root [style*="font-size: 40px"] { font-size: 46px !important; line-height: 1.1 !important; }
+.ap-root [style*="font-size: 38px"] { font-size: 40px !important; line-height: 1.1 !important; }
+.ap-root [style*="font-size: 36px"] { font-size: 40px !important; line-height: 1.1 !important; }
+.ap-root [style*="font-size: 34px"] { font-size: 36px !important; line-height: 1.1 !important; }
+.ap-root [style*="font-size: 32px"] { font-size: 36px !important; line-height: 1.12 !important; }
+.ap-root [style*="font-size: 30px"] { font-size: 32px !important; line-height: 1.12 !important; }
+.ap-root [style*="font-size: 28px"] { font-size: 30px !important; line-height: 1.15 !important; }
+.ap-root [style*="font-size: 26px"] { font-size: 26px !important; line-height: 1.2 !important; }
 .ap-root [style*="font-size: 24px"] { font-size: 21px !important; }
 .ap-root [style*="font-size: 22px"] { font-size: 20px !important; }
 .ap-root [style*="font-size: 20px"] { font-size: 18px !important; }

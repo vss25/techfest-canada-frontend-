@@ -601,8 +601,12 @@ function useStandIns(ev, events) {
 
 export default function ApprovedRoute({ fallback = null }) {
   const location = useLocation();
-  // Dark preview of the website (?theme=dark, this tab only): never on unless asked for (src/lib/siteDarkPreview.js).
-  useEffect(() => { applySitePreviewTheme(); }, [location.search]);
+  // The website is dark (src/lib/siteDarkPreview.js; ?theme=light previews the light version), on this design's pages only.
+  useEffect(() => {
+    if (routeFor(location.pathname)) applySitePreviewTheme(); else document.documentElement.removeAttribute("data-site-theme");
+  }, [location.search, location.pathname]);
+  // Dark belongs to this design's pages only: leaving them (the admin panel, older pages) takes it off again.
+  useEffect(() => () => { document.documentElement.removeAttribute("data-site-theme"); }, []);
   const phone = usePhone();
   const navigate = useNavigate();
   const base = routeFor(location.pathname);

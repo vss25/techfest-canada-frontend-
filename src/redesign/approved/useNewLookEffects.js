@@ -5,7 +5,8 @@ import { useEffect } from "react";
    - reveal: headings, cards, photos, numbers and logos come in one after another as they scroll into view
      (data-nx-r marks a piece waiting below the fold, .nx-seen brings it in; newLook.css has the moves);
    - drift: photos move a little slower than the page (the CSS `translate` property, so hover zooms still work);
-   - progress: a thin pink line along the top shows how far down the page you are.
+   - progress: a thin pink line along the top shows how far down the page you are;
+   - banners: their words ease away as they scroll off, and a giant outlined word slides behind each title.
    All decoration, and fail-safe: a piece is hidden only after the observer itself reports it below the fold, so
    a browser where the observer never runs shows everything. Nothing moves with "reduce motion". */
 const CARDS = ".nx-card, .nx-pass, .p-card, .nx-stats, .nx-logos";
@@ -13,6 +14,8 @@ const REVEAL = [
   ".nx-head", ".nx-two > div", ".nx-card", ".nx-pass", ".nx-stats > div", ".nx-logos > div", ".nx-gal img", ".nx-tabs",
   ".nl-panel", ".nx-prof > *", "main .p-card", "main section h2:not(.nx-h2)",
 ].map((s) => `.ap-root ${s}`).join(", ");
+const HERO = ".ap-root .nl-hero > .p-in, .ap-root .nl-hero > .m-in, .ap-root .nl-evhero > .p-in, .ap-root .nl-evhero > .m-in, .ap-root .nx-hero-in";
+const GHOST = ".ap-root .nx-ghost-word";
 const DRIFT = ".ap-root .nx-media img, .ap-root .nx-hero > img, .ap-root .nx-gal img";
 
 export default function useNewLookEffects(on) {
@@ -72,6 +75,18 @@ export default function useNewLookEffects(on) {
       const max = el.scrollHeight - el.clientHeight;
       bar.style.transform = `scaleX(${max > 0 ? Math.min(1, el.scrollTop / max) : 0})`;
       const vh = window.innerHeight;
+      // The banner's words ease away as it scrolls off; the giant words behind the titles slide sideways.
+      document.querySelectorAll(HERO).forEach((box) => {
+        const r = box.parentElement.getBoundingClientRect();
+        const gone = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height * 0.8)));
+        box.style.setProperty("--hy", `${(gone * 70).toFixed(1)}px`);
+        box.style.setProperty("--ho", (1 - gone).toFixed(2));
+      });
+      document.querySelectorAll(GHOST).forEach((w) => {
+        const r = w.parentElement.getBoundingClientRect();
+        if (r.bottom < -200 || r.top > vh + 200) return;
+        w.style.setProperty("--gx", `${(((vh - r.top) / vh) * 160 - 60).toFixed(1)}px`);
+      });
       document.querySelectorAll(DRIFT).forEach((img) => {
         const r = img.parentElement.getBoundingClientRect();
         if (r.bottom < -80 || r.top > vh + 80) return;

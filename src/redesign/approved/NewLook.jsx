@@ -25,6 +25,7 @@ function Fancy({ text, first }) {
 function Head({ label, title, lead, more, onMore, children }) {
   return (
     <div className="nx-head">
+      <span className="nx-ghost-word" aria-hidden="true">{String(title || "").split(/\s+/).pop()}</span>
       <div>
         {label ? <span className="nx-label">{label}</span> : null}
         <h2 className="nx-h2"><Fancy text={title} /></h2>
@@ -71,10 +72,12 @@ export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, stub,
 export function SpeakerCard({ sp, onOpen }) {
   return (
     <a href="#" className="nx-card nx-sp" onClick={act(onOpen)} aria-label={`${sp.name}: open profile`}>
-      <span className="nx-halo"><span style={sp.img ? { backgroundImage: `url(${sp.img})` } : undefined} /></span>
-      <b>{sp.name}</b>
-      {sp.role ? <span className="nx-muted">{sp.role}</span> : null}
-      {sp.kind ? <span className="nx-chip">{sp.kind}</span> : null}
+      <span className="nx-sp-ph" style={sp.img ? { backgroundImage: `url(${sp.img})` } : undefined} />
+      <span className="nx-sp-in">
+        {sp.kind ? <span className="nx-chip">{sp.kind}</span> : null}
+        <b>{sp.name}</b>
+        {sp.role ? <span className="nx-muted">{sp.role}</span> : null}
+      </span>
     </a>
   );
 }
@@ -143,7 +146,9 @@ export function PartnersStrip({ label = "Partners", logos, onAll, alt }) {
   return (
     <section className={`nx-s${alt ? " nx-alt" : ""}`}><div className="nx-wrap">
       <Head label={label} title="In good company" more="All partners" onMore={onAll} />
-      <div className="nx-logos">{logos.slice(0, 6).map((p, i) => <div key={i} title={p.title || undefined}>{p.logo}</div>)}</div>
+      <div className="nx-logo-run"><div className="nx-logo-track">
+        {[...logos, ...logos, ...logos, ...logos].slice(0, Math.max(12, logos.length * 2)).map((p, i) => <div key={i} title={p.title || undefined}>{p.logo}</div>)}
+      </div></div>
     </div></section>
   );
 }

@@ -2,6 +2,7 @@ import React from "react";
 import VideoFacade from "./VideoFacade";
 import ApprovedPhone from "./ApprovedPhone";
 import SeasonRail from "./SeasonRail";
+import { applyNewLook } from "./newLookVals";
 import { speakerGrid, speakersSoon } from "./speakerGrid";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { HOME_HEIGHTS } from "../../lib/heroFrame";
@@ -242,7 +243,7 @@ export default class LivePhone extends ApprovedPhone {
         toggle: () => { this.saveOpenAttendee(); this.setState({ openAtt: s.openAtt === idx ? -1 : idx }, () => this.restoreOpenAttendee()); },
       }));
     }
-    return v;
+    return applyNewLook(v, this, { openTix: v.openSheet, phone: true });
   }
 
   render() {

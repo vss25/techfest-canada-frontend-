@@ -148,7 +148,7 @@ function App() {
         <Route path="/approved-preview" element={<Suspense fallback={null}><ApprovedSite /></Suspense>} />
         <Route path="/programme" element={<AgendaGate><Suspense fallback={<div style={{ minHeight: "100vh" }} aria-busy="true" />}><Programme /></Suspense></AgendaGate>} />
         <Route path="/speakers" element={live(null)} />
-        <Route path="/speakers/:slug" element={<SpeakerProfile />} />
+        <Route path="/speakers/:slug" element={live(<SpeakerProfile />)} />
         <Route path="/sponsors" element={<Sponsors />} />
         {/* The next event's tickets in the new design (the old page sold TTFC 2026 passes). */}
         <Route path="/tickets" element={<NextEventTickets />} />

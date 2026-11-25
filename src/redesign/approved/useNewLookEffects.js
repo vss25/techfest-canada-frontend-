@@ -13,7 +13,9 @@ const CARDS = ".nx-card, .nx-pass, .p-card, .nx-stats, .nx-logos";
 const REVEAL = [
   ".nx-head", ".nx-two > div", ".nx-card", ".nx-pass", ".nx-stats > div", ".nx-logo-run", ".nx-gal img", ".nx-tabs", ".nx-it",
   ".nl-panel", ".nx-prof > *", "main .p-card", "main section h2:not(.nx-h2)",
-].map((s) => `.ap-root ${s}`).join(", ");
+  // The older sections (every page): their content blocks, and on phones each piece of a section.
+  "main > section:not([class]):not([data-dark]) > div", "main > section[data-dark]:not([class]):not(:first-child) > div",
+].map((s) => `.ap-root ${s}`).concat([".ap-phone .ap-root main > section:not([class]) > *"]).join(", ");
 const HERO = ".ap-root .nl-hero > .p-in, .ap-root .nl-hero > .m-in, .ap-root .nl-evhero > .p-in, .ap-root .nl-evhero > .m-in, .ap-root .nx-hero-in";
 const GHOST = ".ap-root .nx-ghost-word";
 const DRIFT = ".ap-root .nx-media img, .ap-root .nx-hero > img, .ap-root .nx-gal img";

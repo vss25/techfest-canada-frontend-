@@ -47,8 +47,30 @@ export function HeroCtas({ onTickets, onExplore, city, ticketsLabel = "Get ticke
   );
 }
 
-/** Home: the next event, with its photo. */
-export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, stub, ticketsLabel = "Get tickets" }) {
+// The festival's 5 × 5: five tech pillars across five applied sectors (the names on the production home page).
+const PILLARS = ["Artificial Intelligence", "Quantum Computing", "Cybersecurity", "Robotics & Automation", "Sustainability & CleanTech"];
+const SECTORS = [["Healthcare", "Healthcare & Lifesciences"], ["Finance", "Banking, Financial Services & Insurance"], ["Industry", "Supply Chain, Manufacturing & Infrastructure"], ["Defence", "Defence & Public Safety"], ["Energy", "Energy & Utilities"]];
+
+/** The 5 × 5 matrix: pillars down the side, sectors across the top, a lit cell where each pair meets. */
+export function PillarMatrix() {
+  return (
+    <div className="nx-matrix" role="img" aria-label={`Five tech pillars (${PILLARS.join(", ")}) across five applied sectors (${SECTORS.map((x) => x[1]).join(", ")})`}>
+      <div className="nx-mx-top" aria-hidden="true">
+        <span className="nx-mx-corner"><b>5 × 5</b><small>pillars × sectors</small></span>
+        {SECTORS.map(([short, full]) => <span key={short} className="nx-mx-col" title={full}>{short}</span>)}
+      </div>
+      {PILLARS.map((p, r) => (
+        <div key={p} className="nx-mx-row" aria-hidden="true">
+          <span className="nx-mx-name">{p}</span>
+          {SECTORS.map(([short, full], c) => <i key={short} className="nx-mx-cell" title={`${p} × ${full}`} style={{ animationDelay: `${((r * 5 + c) % 7) * 0.45}s` }} />)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Home: the next event, with its photo (or the 5 × 5 matrix in its place). */
+export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, stub, matrix, ticketsLabel = "Get tickets" }) {
   return (
     <section className="nx-s nx-stage"><div className="nx-wrap nx-two">
       <div>
@@ -60,10 +82,12 @@ export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, stub,
           <More onClick={onEvent}>See the event</More>
         </div>
       </div>
-      <div className="nx-frame">
-        <div className="nx-media">{img ? <img src={img} alt={alt || ""} loading="lazy" /> : null}</div>
-        {stub ? <div className="nx-float">{stub}</div> : null}
-      </div>
+      {matrix ? <PillarMatrix /> : (
+        <div className="nx-frame">
+          <div className="nx-media">{img ? <img src={img} alt={alt || ""} loading="lazy" /> : null}</div>
+          {stub ? <div className="nx-float">{stub}</div> : null}
+        </div>
+      )}
     </div></section>
   );
 }
@@ -178,6 +202,40 @@ function SessionRow({ s }) {
         {s.who ? <p className="nx-who">{s.who}</p> : null}
       </div>
     </div>
+  );
+}
+
+/** Home › Agenda highlights: pick an event that has an agenda, see its first six sessions (two rows of three),
+    then open that event's whole agenda. events = [{ id, label, rows }], rows from toDesignSessions(). */
+export function AgendaHighlights({ events, initial, onAll }) {
+  const [pick, setPick] = useState(null);
+  if (!events || !events.length) return null;
+  const cur = events.find((e) => e.id === pick) || events.find((e) => e.id === initial) || events[0];
+  const rows = cur.rows.slice(0, 6);
+  return (
+    <section className="nx-s nx-stage" id="p-agenda"><div className="nx-wrap">
+      <Head label="Agenda" title="Agenda highlights">
+        <div className="nx-tabs" role="group" aria-label="Choose an event">
+          {events.map((e) => <button key={e.id} type="button" aria-pressed={e.id === cur.id} className={e.id === cur.id ? "on" : ""} onClick={() => setPick(e.id)}>{e.label}</button>)}
+        </div>
+      </Head>
+      <div className="nx-grid3" key={cur.id}>
+        {rows.map((s, i) => (
+          <article key={i} className="nx-card nx-agcard">
+            {s.media ? <CardMedia media={s.media} title={s.title} /> : null}
+            <span className="nx-agtime">{s.time || "Soon"}</span>
+            <span className="nx-kind nx-kind-chip">{s.kind}</span>
+            <h3>{s.title}</h3>
+            {s.who ? <p className="nx-who">{s.who}</p> : null}
+          </article>
+        ))}
+      </div>
+      <div className="nx-agmore">
+        <a href="#" className="nx-btn nx-ghost" onClick={act(() => onAll(cur.id))}>
+          {cur.rows.length > rows.length ? `See all ${cur.rows.length} sessions · ${cur.label}` : `See the full agenda · ${cur.label}`} <Arrow />
+        </a>
+      </div>
+    </div></section>
   );
 }
 
@@ -332,6 +390,20 @@ export function Ticker({ items, big }) {
   return (
     <div className={`nx-ticker${big ? " nx-ticker-xl" : ""}`} aria-hidden="true">
       <div className="nx-track">{run.map((t, i) => <span key={i} className={i % 2 ? "o" : ""}>{t}</span>)}</div>
+    </div>
+  );
+}
+
+/** A moving strip of partner logos (under the home page's top section). logos = [{ title, logo }]. */
+export function LogoStrip({ label, logos }) {
+  if (!logos || logos.length < 3) return null;
+  const run = [...logos, ...logos];
+  return (
+    <div className="nx-logostrip" aria-label={label}>
+      {label ? <span className="nx-logostrip-ttl">{label}</span> : null}
+      <div className="nx-logo-run"><div className="nx-logo-track" style={{ animationDuration: `${Math.max(30, logos.length * 3)}s` }}>
+        {run.map((p, i) => <div key={i} title={p.title || undefined} aria-hidden={i >= logos.length ? "true" : undefined}>{p.logo}</div>)}
+      </div></div>
     </div>
   );
 }

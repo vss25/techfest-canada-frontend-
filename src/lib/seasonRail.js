@@ -32,7 +32,7 @@ export function seasonStops(byCity, today) {
   for (const s of stops) {
     let state = s.done ? "done" : "";
     if (!state && !nextSet) { state = "next"; nextSet = true; }
-    const when = state === "next" ? `${label(s.start, s.exact)} · Next` : label(s.start, false) + (s.main ? " · Main" : "");
+    const when = state === "next" ? `${label(s.start, s.exact)} · Next` : label(s.start, false) + (s.main ? " · Flagship" : "");
     out.push({ id: s.id, name: s.name, when, state });
   }
   return out;

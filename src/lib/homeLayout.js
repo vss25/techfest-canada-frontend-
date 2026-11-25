@@ -10,7 +10,8 @@
 
 /** The sections under the top of the page, in the design's order. Same keys as the backend's HOME_SECTIONS.
     Nov 25 2026, the new look (the owner: "all of them"): Next up, Who's on stage and Partners were added. */
-export const HOME_SECTIONS = ["season", "next", "speakers", "agenda", "highlights", "partners", "form"];
+// Partners sits right under the season timeline (the owner moved it up, Nov 25 2026).
+export const HOME_SECTIONS = ["season", "partners", "next", "speakers", "agenda", "highlights", "form"];
 
 export const HOME_SECTION_LABELS = {
   season: "The 2027 season",

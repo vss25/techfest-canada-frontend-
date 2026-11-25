@@ -19,6 +19,7 @@ import { applyNewLook } from "./newLookVals";
 import useNewLookEffects from "./useNewLookEffects";
 import { normalizeSpeakerSlug, speakerSlug } from "../../seo/slug";
 import { seasonStops } from "../../lib/seasonRail";
+import { eventWording } from "../../lib/eventWording";
 import { applySitePreviewTheme } from "../../lib/siteDarkPreview";
 import useSeo from "../../hooks/useSeo";
 import { client, urlFor } from "../../utils/sanity";
@@ -112,7 +113,7 @@ class LiveSite extends ApprovedSite {
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (let n = walk.nextNode(); n; n = walk.nextNode()) {
       if (!n.parentElement?.closest("aside")) continue;
-      if (n.nodeValue === " · Vancouver Briefing 2027") n.nodeValue = " · Toronto 2026";
+      if (n.nodeValue === " · Vancouver City Briefing 2027") n.nodeValue = " · Toronto 2026";
       else if (n.nodeValue === "Also spoke at Toronto 2026") n.parentElement.style.display = "none";
     }
   }
@@ -293,7 +294,8 @@ class LiveSite extends ApprovedSite {
     v.onSale = !this.props.ticketsSoon && !!(this.props.data && this.props.data.types && this.props.data.types.length);
     if (s.screen === "home" && s.city && v.c && v.goCity) {
       v.homeGo = v.goCity[s.city] || v.goEvent;
-      if (s.city !== "van") v.homeHero = { img: v.c.img, alt: v.c.title, eyebrow: homeEyebrow(v.c), title: v.c.title, blurb: v.c.blurb, credit: v.c.credit, posD: v.c.posD || "center", pos: v.c.pos || v.c.posD || "center" };
+      // Vancouver too once it has its own photo (Nov 25 2026, the owner: no stock photo or its credit on the home page).
+      if (s.city !== "van" || v.c.ownPhoto) v.homeHero = { img: v.c.img, alt: v.c.title, eyebrow: homeEyebrow(v.c), title: v.c.title, blurb: v.c.blurb, credit: v.c.credit, posD: v.c.posD || "center", pos: v.c.pos || v.c.posD || "center" };
     }
     if (v.c && v.c.why) {
       v.whyEyebrow = v.c.why.eyebrow;
@@ -497,7 +499,12 @@ function usePast2026(on) {
           style={{ display: "block", maxHeight: 48, maxWidth: "75%", objectFit: "contain", margin: "0 auto" }} />,
         tier: matrixGroupOf(p) === "featured" ? "Featured partner" : "Partner", title: p.name,
       }));
-      setPast({ speakers, partners, photos: PAST_PHOTOS, recap: recap || null });
+      // Every 2026 partner logo, for the moving row under the home page's top section (Nov 25 2026).
+      const logos = sorted.map((p) => ({
+        title: p.name,
+        logo: <img src={urlFor(p.logo).height(120).fit("max").auto("format").url()} alt={p.name} title={p.name} loading="lazy" />,
+      }));
+      setPast({ speakers, partners, logos, photos: PAST_PHOTOS, recap: recap || null });
     }).catch(() => { if (live) setPast(null); });
     return () => { live = false; };
   }, [on, past]);
@@ -539,7 +546,7 @@ function useSpeakerDoc(slug, events) {
   const doc = state.slug === slug ? state.doc : undefined;
   if (!doc) return doc;
   const ev = (events || []).find((e) => e._id === doc.evId);
-  return { ...doc, eventLabel: ev ? ev.name : "", eventTitle: ev ? ev.name : "" };
+  return { ...doc, eventLabel: ev ? eventWording(ev.name) : "", eventTitle: ev ? eventWording(ev.name) : "" };
 }
 
 /* While an event has no speakers / partners of its own, its page shows another event's (Nov 22 2026,
@@ -660,6 +667,28 @@ export default function ApprovedRoute({ fallback = null }) {
     return rows.length ? rows : AGENDA_SOON;
   }, [content]);
 
+  // Home › Agenda highlights (Nov 25 2026): every 2027 event's sessions, so visitors can pick an event that has an
+  // agenda. One query, read through the preview-aware client (staging shows staged agendas).
+  const [allSessions, setAllSessions] = useState(null);
+  const onHome = !!(route && route.screen === "home");
+  useEffect(() => {
+    if (!onHome || allSessions) return undefined;
+    let live = true;
+    client.fetch(`*[_type == "session" && count(events) > 0]{ _id, title, day, time, endTime, type, format, isBreak, description, speakers, moderator, image, mediaUrl, "eventIds": events[]._ref }`)
+      .then((list) => { if (live) setAllSessions(list || []); })
+      .catch(() => { if (live) setAllSessions([]); });
+    return () => { live = false; };
+  }, [onHome, allSessions]);
+  const homeAgendas = useMemo(() => {
+    const out = {};
+    if (!allSessions) return out;
+    Object.keys(byCity).forEach((id) => {
+      const evId = byCity[id] && byCity[id]._id;
+      if (evId) out[id] = toDesignSessions(allSessions.filter((x) => (x.eventIds || []).includes(evId) && !x.isBreak));
+    });
+    return out;
+  }, [allSessions, byCity]);
+
   // Partners page: the partner records (logo, row) from the admin panel, instead of the design's sample names.
   const [partners, setPartners] = useState(null);
   const onPartners = !!(route && route.screen === "partners");
@@ -679,7 +708,7 @@ export default function ApprovedRoute({ fallback = null }) {
       .map((e) => {
         const mine = partners.filter((p) => (p.events || []).some((r) => r && r._ref === e._id))
           .sort((a, b) => (eventRowOf(b, e._id) === "featured") - (eventRowOf(a, e._id) === "featured"));
-        return { kind: e.startDate ? monthShort(e.startDate) : "2027", title: e.name, count: mine.length + (mine.length === 1 ? " partner" : " partners"),
+        return { kind: e.startDate ? monthShort(e.startDate) : "2027", title: eventWording(e.name), count: mine.length + (mine.length === 1 ? " partner" : " partners"),
           cols: 6, h: 76, fs: 14, items: mine.map((p) => ({ n: logoImg(p, 40) })) };
       })
       .filter((g) => g.items.length);
@@ -774,7 +803,7 @@ export default function ApprovedRoute({ fallback = null }) {
         if (ev.tagline) c.blurb = ev.tagline; // "One line under the name" (the older long descriptions belong to the previous design)
         // The city photo on the approved design: the event's "City skyline" photo when one is set
         // in the admin panel (the older hero photos belong to the previous design).
-        if (ev.citySkyline && ev.citySkyline.asset) { c.img = urlFor(ev.citySkyline).width(2000).quality(78).auto("format").url(); c.credit = ev.photoCredit || ""; }
+        if (ev.citySkyline && ev.citySkyline.asset) { c.img = urlFor(ev.citySkyline).width(2000).quality(78).auto("format").url(); c.credit = ev.photoCredit || ""; c.ownPhoto = true; }
         // Its background video (Nov 24 2026): only our own Sanity uploads (heroVideoSrc); the photo stays its first frame.
         // Photo or video, never both (Nov 25 2026): heroMedia, else the video when there is one.
         c.media = ev.heroMedia === "photo" || ev.heroMedia === "video" ? ev.heroMedia : (heroVideoSrc(ev.heroVideoUrl) ? "video" : "photo");
@@ -807,8 +836,8 @@ export default function ApprovedRoute({ fallback = null }) {
 
   const seoEv = ev || van;
   useSeo(
-    route && route.screen === "event" && ev ? `${ev.name} · The Tech Festival Canada`
-      : route && route.screen === "agenda" && seoEv ? `Agenda · ${seoEv.name} · The Tech Festival Canada`
+    route && route.screen === "event" && ev ? `${eventWording(ev.name)} · The Tech Festival Canada`
+      : route && route.screen === "agenda" && seoEv ? `Agenda · ${eventWording(seoEv.name)} · The Tech Festival Canada`
       : route && route.screen === "speaker" && speakerDoc ? `${speakerDoc.name} · Speakers · The Tech Festival Canada` : undefined,
     route && route.screen === "event" && ev ? ev.theme || undefined
       : route && route.screen === "speaker" && speakerDoc ? speakerDoc.role || undefined : undefined,
@@ -835,6 +864,7 @@ export default function ApprovedRoute({ fallback = null }) {
       homeOrder={homeSections}
       season={season}
       speakerDoc={speakerDoc}
+      homeAgendas={homeAgendas}
       loaderMs={0}
     />
   );

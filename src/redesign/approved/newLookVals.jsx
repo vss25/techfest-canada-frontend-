@@ -1,5 +1,5 @@
 import React from "react";
-import { AgendaPage, CardMedia, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, Ticker, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
+import { AgendaHighlights, AgendaPage, CardMedia, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
 import { cityPath, countdownTarget } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
 import { sessionCardMedia } from "../../lib/sessionMedia";
@@ -26,6 +26,9 @@ const AWARD_DATES = [
   { t: "Jury review", d: "After nominations close" },
   { t: "Awards Night", d: "Oct 2027 · Toronto" },
 ];
+
+const AGENDA_IDS = ["van", "mtl", "cgy", "tob", "ott", "tor"];
+const AGENDA_NAMES = { van: "Vancouver", mtl: "Montreal", cgy: "Calgary", tob: "Toronto City Briefing", ott: "Ottawa", tor: "Toronto Flagship Event" };
 
 export const speakerPath = (name) => `/speakers/${speakerSlug(name)}`;
 
@@ -58,7 +61,18 @@ export function applyNewLook(v, self, { openTix, phone }) {
   const ptn = p.evPartners && p.evPartners.length
     ? p.evPartners.map((x) => ({ title: x.name, logo: x.logo }))
     : (si.partners || []).map((x) => ({ title: x.title || "", logo: x.name }));
-  const ptnLabel = p.evPartners && p.evPartners.length ? "Partners" : si.ptnLabel ? `Partners · ${si.ptnLabel}` : "Partners";
+
+  // The event menu (the pill in the header): Home, then City Briefings with the five cities under it, then the
+  // Flagship Event (Nov 25 2026, the owner). The boards list the six events in season order, Toronto's last.
+  const group = (list, labelKey) => {
+    if (!Array.isArray(list) || list.length < 6 || list.some((x) => x.head)) return list;
+    const plain = list.map((x) => ({ ...x, [labelKey]: String(x[labelKey]).split(" · ")[0], ...(s.screen === "home" ? { bg: "transparent", weight: 400, ...(x.tag ? { tag: String(x.tag).split(" · ")[0] } : {}) } : {}) }));
+    return [{ head: true, [labelKey]: "City Briefings" }, ...plain.slice(0, 5), { head: true, [labelKey]: "Flagship Event" }, ...plain.slice(5)];
+  };
+  if (v.menuItems) v.menuItems = group(v.menuItems, "label");
+  if (v.cities) v.cities = group(v.cities, "label");
+  // The pill reads "Home" on the home page.
+  if (s.screen === "home") { if (v.pillLabel !== undefined) v.pillLabel = "Home"; if (v.pill !== undefined) v.pill = "Home"; }
 
   // Header: the current page is underlined (pink); Speakers opens the Speakers page.
   v.nav = { ...(v.nav || {}), agenda: s.screen === "agenda" ? "on" : (v.nav && v.nav.agenda) || "",
@@ -69,17 +83,23 @@ export function applyNewLook(v, self, { openTix, phone }) {
   // Home.
   if (s.screen === "home") {
     v.heroCtas = <HeroCtas onTickets={openTix} onExplore={goEvent} city={c.name} />;
-    const cities = [...new Set((p.season || []).filter((x) => x.id !== "past").map((x) => x.name))];
+    // Agenda highlights: every event that has an agenda can be picked; six sessions show, then its full agenda.
+    const agendas = p.homeAgendas || {};
+    const withAgenda = AGENDA_IDS.filter((id) => (agendas[id] || []).length)
+      .map((id) => ({ id, label: AGENDA_NAMES[id], rows: agendas[id].map((r) => ({ ...r, media: mediaOf(r) })) }));
+    if (withAgenda.length) v.homeAgenda = <AgendaHighlights events={withAgenda} initial={city} onAll={(id) => p.navigate(cityPath(id) + "/agenda")} />;
     v.homeNext = (
       <>
-        <Ticker items={[...cities, "Main Event"]} />
-        <NextUp label={`Next up · ${c.date || ""}`} title={c.title} lead={c.blurb} img={c.img} alt={c.title} onTickets={openTix} onEvent={goEvent}
+        <NextUp matrix label={`Next up · ${c.date || ""}`} title={c.title} lead={c.blurb} img={c.img} alt={c.title} onTickets={openTix} onEvent={goEvent}
           stub={c.startDate ? <DateStub date={c.startDate} /> : null} />
       </>
     );
     v.homeSpeakers = spk ? <OnStage alt label={spkLabel} speakers={withOpen(spk.slice(0, 4))} onAll={goAllSpeakers} /> : null;
     v.homeLastYear = <LastYear photos={PHOTOS} onGallery={v.goPast} />;
-    v.homePartners = <PartnersStrip alt label={ptnLabel} logos={ptn} onAll={v.goPartners || v.goPartnersAll} />;
+    // In good company: the event's own partners, else every 2026 partner's logo (it sits right under the timeline).
+    const logos2026 = (p.past2026 && p.past2026.logos) || [];
+    const ownPtn = p.evPartners && p.evPartners.length;
+    v.homePartners = <PartnersStrip alt label={ownPtn ? "Partners" : "Partners · Toronto 2026"} logos={ownPtn || !logos2026.length ? ptn : logos2026} onAll={v.goPartners || v.goPartnersAll} />;
   }
 
   // Event page.
@@ -118,9 +138,6 @@ export function applyNewLook(v, self, { openTix, phone }) {
         onBack={goAllSpeakers} onAll={goAllSpeakers} onAgenda={goAgenda} onTickets={onSale ? openTix : null} />
     );
   }
-
-  // Above the footer on every page: a closing ticker for the event this page is about.
-  if (c.name) v.footTicker = <Ticker big items={[`See you in ${c.name}`, c.date || "2027", c.kind ? `${c.kind} 2027` : "2027", "The Tech Festival Canada"]} />;
 
   // Awards: the key dates under the season timeline.
   if (s.screen === "awards") v.awDates = <KeyDates items={AWARD_DATES} />;

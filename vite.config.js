@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { DESK_NAME, DESK_PATH, RETIRED_DESK_PATHS } from './src/checkin/deskPath.js'
 import { deskSwVersion } from './src/checkin/swVersion.js'
 import { prerenderSite } from './src/seo/prerender.mjs'
+import { collectBuiltinCopy } from './tools/builtinCopy.mjs'
 
 /* =========================================================
    Three pages from one build:
@@ -262,9 +263,27 @@ function ttfcPrerender() {
   }
 }
 
+/**
+ * "virtual:ttfc-builtin-copy" (Nov 25 2026): this build's list of the public site's built-in wording, as hashes
+ * (tools/builtinCopy.mjs). Only the staff panel's Website text & media page loads it, to tell built-in text (changed
+ * there) from text that comes from records. Made when first asked for; in dev, again after a restart.
+ */
+function ttfcBuiltinCopy() {
+  const ID = 'virtual:ttfc-builtin-copy'
+  return {
+    name: 'ttfc-builtin-copy',
+    resolveId(id) { return id === ID ? '\0' + ID : null },
+    load(id) {
+      if (id !== '\0' + ID) return null
+      const { hashes } = collectBuiltinCopy(join(root, 'src'))
+      return `export default ${JSON.stringify(hashes.map((h) => h.toString(36)).join(','))}`
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), ttfcAppPwa(), ttfcDeskPwa(), ttfcPrerender()],
+  plugins: [react(), ttfcAppPwa(), ttfcDeskPwa(), ttfcPrerender(), ttfcBuiltinCopy()],
   define: {
     __TTFC_APP_BUILD__: JSON.stringify(buildId()),
   },

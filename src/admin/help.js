@@ -202,6 +202,11 @@ export const HELP = {
     steps: ["Type a code or press Generate, pick the discount, the passes it's for, a usage limit and an end date.", "Press Create promo code.", "Switch a code off to pause it."],
     tips: ["Staff: a code over 50% off, free, or without a usage limit is saved switched off until a manager approves it.", "Used = paid orders with the code. Revenue and discount given are for management."],
   },
+  "content/site-copy": {
+    what: "Every piece of text, picture and video on the public website, with the real page beside it. Change the site's built-in wording and pictures here; things that come from records (event details, speakers, partners, prices) show where to change them.",
+    steps: ["Choose the page at the top of the preview.", "Click the piece you want to change, on the page or in the list. It is outlined in pink on the page.", "Type the new wording, or upload a new picture: the page changes as you type.", "Press Save, then Send to staging, check it on the staging site, and Publish to live."],
+    tips: ["Something inside a menu, a pop-up or the ticket panel? Switch to Browse, open it, then switch back to Click to edit.", "Phone and Computer show the two layouts; some wording is only on one of them.", "“Everywhere it appears” changes the same wording on every page; “Only on this page” leaves the other pages alone.", "Back to built-in undoes a change. All changes lists everything that has been changed, on any page."],
+  },
   "content/videos": {
     what: "TTFC's YouTube and Vimeo videos on the website. Only the link is saved, so they cost nothing to host.",
     steps: ["Upload the video to TTFC's YouTube channel or Vimeo.", "Press Add a video and paste its link: the title and picture fill in.", "Pick where it shows: home page, Media page, event pages, speakers.", "Save, then send it to staging and publish from Website changes."],

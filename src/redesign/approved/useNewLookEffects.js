@@ -11,7 +11,7 @@ import { useEffect } from "react";
    a browser where the observer never runs shows everything. Nothing moves with "reduce motion". */
 const CARDS = ".nx-card, .nx-pass, .p-card, .nx-stats, .nx-logos";
 const REVEAL = [
-  ".nx-head", ".nx-two > div", ".nx-card", ".nx-pass", ".nx-stats > div", ".nx-logos > div", ".nx-gal img", ".nx-tabs",
+  ".nx-head", ".nx-two > div", ".nx-card", ".nx-pass", ".nx-stats > div", ".nx-logo-run", ".nx-gal img", ".nx-tabs", ".nx-it",
   ".nl-panel", ".nx-prof > *", "main .p-card", "main section h2:not(.nx-h2)",
 ].map((s) => `.ap-root ${s}`).join(", ");
 const HERO = ".ap-root .nl-hero > .p-in, .ap-root .nl-hero > .m-in, .ap-root .nl-evhero > .p-in, .ap-root .nl-evhero > .m-in, .ap-root .nx-hero-in";
@@ -39,28 +39,48 @@ export default function useNewLookEffects(on) {
     const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); };
 
     // ---- reveal ----
+    // Every piece that starts below the fold is hidden straight away and brought in when it scrolls into view.
+    // Fail-safe: if the observer hasn't reported anything shortly after it was given work (a background tab, a
+    // crawler), everything is shown and the effect switches itself off.
+    let alive = false;      // the observer has called back at least once
+    let dead = false;       // switched off: show everything
+    const show = (el) => {
+      el.classList.add("nx-seen");
+      // Once it has arrived, hand its transitions back (hover lifts must not inherit the entrance delay).
+      later(() => { el.style.transitionDelay = ""; delete el.dataset.nxR; el.classList.remove("nx-seen"); }, 1700);
+    };
     const io = new IntersectionObserver((entries) => {
+      alive = true;
       entries.forEach((x) => {
-        const el = x.target;
-        if (x.isIntersecting) {
-          io.unobserve(el);
-          if (!el.dataset.nxR) return;            // it was on screen from the start: leave it alone
-          el.classList.add("nx-seen");
-          // Once it has arrived, hand its transitions back (hover lifts must not inherit the entrance delay).
-          later(() => { el.style.transitionDelay = ""; delete el.dataset.nxR; el.classList.remove("nx-seen"); }, 1400);
-        } else if (!el.dataset.nxR) {
-          // Pieces in a row come in one after another.
-          const i = el.parentElement ? Array.prototype.indexOf.call(el.parentElement.children, el) : 0;
-          el.style.transitionDelay = `${Math.min(i, 7) * 80}ms`;
-          el.dataset.nxR = "1";
-        }
+        if (!x.isIntersecting) return;
+        io.unobserve(x.target);
+        if (x.target.dataset.nxR) show(x.target);
       });
-    }, { rootMargin: "0px 0px -6% 0px" });
-    const scan = () => document.querySelectorAll(REVEAL).forEach((el) => {
-      if (el.dataset.nxO) return;
-      el.dataset.nxO = "1";
-      io.observe(el);
-    });
+    }, { rootMargin: "0px 0px -10% 0px" });
+    const scan = () => {
+      if (dead) return;
+      const vh = window.innerHeight;
+      let added = false;
+      document.querySelectorAll(REVEAL).forEach((el) => {
+        if (el.dataset.nxO) return;
+        el.dataset.nxO = "1";
+        const r = el.getBoundingClientRect();
+        if (r.top < vh * 0.92 || !r.height) return;       // on screen already (or not laid out): leave it alone
+        // Pieces in a row come in one after another.
+        const i = el.parentElement ? Array.prototype.indexOf.call(el.parentElement.children, el) : 0;
+        el.style.transitionDelay = `${Math.min(i, 7) * 90}ms`;
+        el.dataset.nxR = "1";
+        io.observe(el);
+        added = true;
+      });
+      if (added && !alive) {
+        later(() => {
+          if (alive) return;
+          dead = true;
+          document.querySelectorAll("[data-nx-r]").forEach((el) => { delete el.dataset.nxR; el.style.transitionDelay = ""; });
+        }, 2500);
+      }
+    };
 
     // ---- drift + progress ----
     const bar = document.createElement("div");

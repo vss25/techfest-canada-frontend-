@@ -307,18 +307,23 @@ html[data-site-theme="dark"] .ap-root section.nl-panel > div, html[data-site-the
 /* ---- Scroll progress ---- */
 .nx-progress { position: fixed; z-index: 60; left: 0; right: 0; top: 0; height: 3px; transform: scaleX(0); transform-origin: 0 50%; pointer-events: none; background: linear-gradient(90deg, #D6308C, #7F5AF0); }
 
-/* ---- Scroll reveals: each kind of piece has its own entrance ---- */
-html.nx-reveal .ap-root [data-nx-r] { transition: opacity 0.75s ease, transform 0.85s cubic-bezier(0.2, 0.8, 0.2, 1), clip-path 0.95s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.75s ease !important; }
-html.nx-reveal .ap-root [data-nx-r]:not(.nx-seen) { opacity: 0; transform: translateY(34px); }
-html.nx-reveal .ap-root :is(.nx-card, .nx-pass, .p-card)[data-nx-r]:not(.nx-seen) { transform: translateY(44px) scale(0.96); filter: blur(6px); }
-html.nx-reveal .ap-root .nx-two > div:first-child[data-nx-r]:not(.nx-seen) { transform: translateX(-48px); }
+/* ---- Scroll reveals: each kind of piece has its own, unmissable entrance ---- */
+html.nx-reveal .ap-root [data-nx-r] { transition: opacity 0.9s ease, transform 1.1s cubic-bezier(0.16, 1, 0.3, 1), clip-path 1.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.9s ease !important; }
+html.nx-reveal .ap-root [data-nx-r]:not(.nx-seen) { opacity: 0; transform: translateY(70px); }
+html.nx-reveal .ap-root :is(.nx-card, .nx-pass, .p-card)[data-nx-r]:not(.nx-seen) { transform: translateY(90px) scale(0.88) rotate(-2deg); filter: blur(10px); }
+html.nx-reveal .ap-root :is(.nx-card, .nx-pass, .p-card)[data-nx-r]:nth-child(even):not(.nx-seen) { transform: translateY(120px) scale(0.88) rotate(2deg); }
+html.nx-reveal .ap-root .nx-two > div:first-child[data-nx-r]:not(.nx-seen) { transform: translateX(-120px); }
+/* Photos unveil: a wipe across the picture (the owner liked this one on the Next up photo). */
 html.nx-reveal .ap-root .nx-two > div:last-child[data-nx-r]:not(.nx-seen) { opacity: 1; transform: none; clip-path: inset(0 0 0 100% round 20px); }
 html.nx-reveal .ap-root .nx-two > div:last-child[data-nx-r] { clip-path: inset(-40px -40px -40px -40px round 20px); }
 html.nx-reveal .ap-root .nx-gal img[data-nx-r]:not(.nx-seen) { opacity: 1; transform: none; clip-path: inset(100% 0 0 0 round 14px); }
 html.nx-reveal .ap-root .nx-gal img[data-nx-r] { clip-path: inset(0 0 0 0 round 14px); }
-html.nx-reveal .ap-root .nx-stats > div[data-nx-r]:not(.nx-seen) { transform: scale(0.8); }
-html.nx-reveal .ap-root .nx-logos > div[data-nx-r]:not(.nx-seen) { transform: translateY(18px) scale(0.92); }
-html.nx-reveal .ap-root :is(.nx-head, h2)[data-nx-r]:not(.nx-seen) { transform: translateY(26px); filter: blur(4px); }
+html.nx-reveal .ap-root .nx-prof > .nx-ph[data-nx-r]:not(.nx-seen) { opacity: 1; transform: none; clip-path: inset(0 100% 0 0 round 24px); }
+html.nx-reveal .ap-root .nx-prof > .nx-ph[data-nx-r] { clip-path: inset(0 0 0 0 round 24px); }
+html.nx-reveal .ap-root .nx-stats > div[data-nx-r]:not(.nx-seen) { transform: translateY(40px) scale(0.6); }
+html.nx-reveal .ap-root .nx-logo-run[data-nx-r]:not(.nx-seen) { transform: translateX(140px); }
+html.nx-reveal .ap-root :is(.nx-head, h2)[data-nx-r]:not(.nx-seen) { transform: translateY(60px); filter: blur(8px); }
+html.nx-reveal .ap-root .nl-panel[data-nx-r]:not(.nx-seen) { transform: translateY(80px) scale(0.94); }
 
 @media (max-width: 720px) {
   .ap-root .nx-track { font-size: 20px; gap: 24px; }

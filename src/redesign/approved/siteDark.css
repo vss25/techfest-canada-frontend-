@@ -42,3 +42,19 @@ html[data-site-theme="dark"] .ap-root header[data-dark] { background: rgba(12, 9
 html[data-site-theme="dark"] .ap-root [data-dark][style*="background: rgb(21, 16, 53)"]:not(header) { background-color: #110D29 !important; }
 html[data-site-theme="dark"] .ap-root .nl-buybar { background: rgba(12, 9, 32, 0.94) !important; border-top-color: rgba(255, 255, 255, 0.1) !important; color: #FFFFFF; }
 html[data-site-theme="dark"] .ap-root .p-card:hover { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35); }
+
+/* ---- Dark for everyone (Nov 25 2026): the pieces the colour remaps above don't reach ---- */
+/* Form fields: glass on dark, not white boxes. */
+html[data-site-theme="dark"] .ap-root :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+  background-color: rgba(255, 255, 255, 0.06) !important; border-color: rgba(255, 255, 255, 0.2) !important; color: #F4F2FA !important; color-scheme: dark;
+}
+html[data-site-theme="dark"] .ap-root :is(input, textarea, select):focus { outline: none; border-color: #FFFFFF !important; box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1); }
+/* Partner logos are drawn for white paper: their tiles stay white. */
+html[data-site-theme="dark"] .ap-root .p-card:has(> img), html[data-site-theme="dark"] .ap-root :is(div, span, a):has(> img[alt][style*="object-fit: contain"]) {
+  background-color: #FFFFFF !important; color: #151035 !important; box-shadow: none;
+}
+html[data-site-theme="dark"] .ap-root .p-card:has(> img) [style*="color"] { color: #5B5873 !important; }
+/* The older sections get depth: a soft glow from alternating corners instead of flat panels. */
+html[data-site-theme="dark"] .ap-root main > section:not([class]):not([data-dark]):nth-of-type(odd) { background-image: radial-gradient(70% 55% at 92% 0%, rgba(127, 90, 240, 0.13), transparent 62%); }
+html[data-site-theme="dark"] .ap-root main > section:not([class]):not([data-dark]):nth-of-type(even) { background-image: radial-gradient(70% 55% at 6% 100%, rgba(214, 48, 140, 0.11), transparent 62%); }
+html[data-site-theme="dark"] .ap-root section[data-dark]:not(.nl-evhero):not(.nl-hero) { background-image: radial-gradient(60% 80% at 100% 0%, rgba(214, 48, 140, 0.16), transparent 60%), radial-gradient(50% 70% at 0% 100%, rgba(127, 90, 240, 0.16), transparent 60%); }

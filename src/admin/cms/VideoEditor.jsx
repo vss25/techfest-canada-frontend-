@@ -3,7 +3,7 @@ import { Scissors } from "lucide-react";
 import { Button, Drawer, focusRing } from "../ui";
 import { heroShadeBackground } from "../../lib/heroShade";
 import {
-  QUALITIES, SPEEDS, VIDEO_LIMITS, clipPlan, clock, defaultClip, keepsOriginal, mb, planVideo, probeVideo, recorderType, shrinkVideo,
+  QUALITIES, SPEEDS, VIDEO_LIMITS, canEncodeSmooth, clipPlan, clock, defaultClip, keepsOriginal, mb, planVideo, probeVideo, recorderType, shrinkVideo,
 } from "./heroVideoPrep";
 
 /* =========================================================
@@ -51,7 +51,7 @@ export default function VideoEditor({ source: given, name, shade = "default", up
     probeVideo(source).then((p) => {
       p.release();
       if (!alive) return;
-      const plan = isUrl ? { action: "shrink", reasons: [] } : planVideo({ type: source.type, size: source.size, width: p.width, height: p.height, duration: p.duration }, { canShrink: !!recorderType() });
+      const plan = isUrl ? { action: "shrink", reasons: [] } : planVideo({ type: source.type, size: source.size, width: p.width, height: p.height, duration: p.duration }, { canShrink: !!recorderType() || canEncodeSmooth() });
       if (plan.action === "refuse") { setErr(plan.error); return; }
       setMeta({ width: p.width, height: p.height, duration: p.duration, plan });
       setClip(defaultClip(p.duration));
@@ -80,7 +80,7 @@ export default function VideoEditor({ source: given, name, shade = "default", up
 
   const plan = meta && clip ? clipPlan({ duration: meta.duration, ...clip }) : null;
   const untouched = !isUrl && meta && clip && keepsOriginal(meta.plan, clip, meta.duration);
-  const canShrink = !!recorderType();
+  const canShrink = !!recorderType() || canEncodeSmooth();
   const set = (k, v) => setClip((c) => {
     const next = { ...c, [k]: v };
     // Keep the handles in order, at least 2 seconds apart.

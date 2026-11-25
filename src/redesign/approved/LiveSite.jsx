@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import ApprovedSite from "./ApprovedSite";
 import VideoFacade from "./VideoFacade";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
+import WhyComeBox, { WhyComeBody } from "../../components/WhyComeBox";
+import { resolveWhy } from "../../lib/whyCome";
 import { heroVideoSrc } from "../../lib/siteFiles";
 import { heroShadeBackground } from "../../lib/heroShade";
 import { HOME_HEIGHTS, heroHeights, heroPosition } from "../../lib/heroFrame";
@@ -273,6 +275,12 @@ class LiveSite extends ApprovedSite {
     }
     if (v.c && v.c.heights) v.heroH = v.c.heights;
     v.homeH = HOME_HEIGHTS.desktop;   // the home page's hero: full screen (Nov 25 2026)
+    if (v.c && v.c.why) {
+      v.whyEyebrow = v.c.why.eyebrow;
+      v.whyHeading = v.c.why.heading;
+      v.whyBody = <WhyComeBody why={v.c.why} />;
+      v.whyBox = <WhyComeBox key={v.c.id} why={v.c.why} />;
+    }
     const past = this.props.past2026;
     if (past) {
       if (past.speakers.length) v.starSpeakers = past.speakers.slice(0, 4).map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));
@@ -667,6 +675,9 @@ export default function ApprovedRoute({ fallback = null }) {
         const ev = byCity[id];
         // Venue and audience: the event's own fields, else the approved design's wording (never "[Venue]").
         out[id] = { venue: "Venue announced with tickets", venueArea: `Downtown ${out[id].name}`, audience: "150 senior delegates", ...out[id] };
+        // "Why come" (Admin › Event pages, Nov 25 2026): the event's own words and media; without them the design's,
+        // with the BC paragraph only on Vancouver (src/lib/whyCome.js).
+        out[id].why = resolveWhy(ev || {}, { cityId: id, cityName: out[id].name });
         if (!ev) return;
         const c = { ...out[id] };
         if (ev.venueName) {

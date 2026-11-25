@@ -90,6 +90,25 @@ export default defineType({
             description: "Optional: a short, silent hero loop (YouTube/Vimeo or a hosted file). The hero image is the poster and the mobile fallback.",
         }),
         defineField({ name: "heroFocus", title: "Hero framing (0 = top, 100 = bottom)", type: "number", validation: (r) => r.min(0).max(100) }),
+        // "Why come" (Nov 25 2026): edited in the admin panel's Event pages (src/admin/cms/WhyComeEditor.jsx).
+        defineField({ name: "whyEyebrow", title: "Why come: small line", type: "string", validation: (r) => r.max(40) }),
+        defineField({ name: "whyHeading", title: "Why come: heading", type: "string", validation: (r) => r.max(160) }),
+        defineField({ name: "whyBody", title: "Why come: text", type: "text", rows: 5, validation: (r) => r.max(1500) }),
+        defineField({
+            name: "whyMedia", title: "Why come: in the box", type: "string",
+            options: { list: [{ title: "The design's photo", value: "default" }, { title: "Photo or GIF", value: "image" }, { title: "Video", value: "video" }] },
+        }),
+        defineField({ name: "whyImage", title: "Why come: photo or GIF", type: "image" }),
+        defineField({ name: "whyVideoUrl", title: "Why come: video (silent loop, Sanity file URL)", type: "url" }),
+        defineField({ name: "whyPoster", title: "Why come: video's first frame", type: "image" }),
+        defineField({
+            name: "whyHeight", title: "Why come: box size", type: "string",
+            options: { list: [{ title: "Small", value: "s" }, { title: "Medium", value: "m" }, { title: "Large", value: "l" }] },
+        }),
+        defineField({ name: "whyFit", title: "Why come: fit", type: "string", options: { list: [{ title: "Fill the box", value: "cover" }, { title: "Show it whole", value: "contain" }] } }),
+        defineField({ name: "whyFocusX", title: "Why come: framing across (0–100)", type: "number", validation: (r) => r.min(0).max(100) }),
+        defineField({ name: "whyFocusY", title: "Why come: framing down (0–100)", type: "number", validation: (r) => r.min(0).max(100) }),
+        defineField({ name: "whyLoop", title: "Why come: loop the video", type: "boolean", initialValue: true }),
         defineField({
             name: "heroHeight", title: "Hero height", type: "string",
             options: { list: [{ title: "Standard", value: "standard" }, { title: "Taller", value: "tall" }, { title: "Full screen", value: "full" }] },

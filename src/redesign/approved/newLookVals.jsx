@@ -60,6 +60,18 @@ export function applyNewLook(v, self, { openTix, phone }) {
     : (si.partners || []).map((x) => ({ title: x.title || "", logo: x.name }));
   const ptnLabel = p.evPartners && p.evPartners.length ? "Partners" : si.ptnLabel ? `Partners · ${si.ptnLabel}` : "Partners";
 
+  // The event menu (the pill in the header): Home, then City Briefings with the five cities under it, then the
+  // Flagship Event (Nov 25 2026, the owner). The boards list the six events in season order, Toronto's last.
+  const group = (list, labelKey) => {
+    if (!Array.isArray(list) || list.length < 6 || list.some((x) => x.head)) return list;
+    const plain = list.map((x) => ({ ...x, [labelKey]: String(x[labelKey]).split(" · ")[0], ...(s.screen === "home" ? { bg: "transparent", weight: 400, ...(x.tag ? { tag: String(x.tag).split(" · ")[0] } : {}) } : {}) }));
+    return [{ head: true, [labelKey]: "City Briefings" }, ...plain.slice(0, 5), { head: true, [labelKey]: "Flagship Event" }, ...plain.slice(5)];
+  };
+  if (v.menuItems) v.menuItems = group(v.menuItems, "label");
+  if (v.cities) v.cities = group(v.cities, "label");
+  // The pill reads "Home" on the home page.
+  if (s.screen === "home") { if (v.pillLabel !== undefined) v.pillLabel = "Home"; if (v.pill !== undefined) v.pill = "Home"; }
+
   // Header: the current page is underlined (pink); Speakers opens the Speakers page.
   v.nav = { ...(v.nav || {}), agenda: s.screen === "agenda" ? "on" : (v.nav && v.nav.agenda) || "",
     speakers: s.screen === "speakers" || s.screen === "speaker" ? "on" : (v.nav && v.nav.speakers) || "",
@@ -72,7 +84,7 @@ export function applyNewLook(v, self, { openTix, phone }) {
     const cities = [...new Set((p.season || []).filter((x) => x.id !== "past").map((x) => x.name))];
     v.homeNext = (
       <>
-        <Ticker items={[...cities, "Main Event"]} />
+        <Ticker items={[...cities, "Flagship Event"]} />
         <NextUp label={`Next up · ${c.date || ""}`} title={c.title} lead={c.blurb} img={c.img} alt={c.title} onTickets={openTix} onEvent={goEvent}
           stub={c.startDate ? <DateStub date={c.startDate} /> : null} />
       </>

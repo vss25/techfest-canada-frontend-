@@ -19,6 +19,7 @@ import { applyNewLook } from "./newLookVals";
 import useNewLookEffects from "./useNewLookEffects";
 import { normalizeSpeakerSlug, speakerSlug } from "../../seo/slug";
 import { seasonStops } from "../../lib/seasonRail";
+import { eventWording } from "../../lib/eventWording";
 import { applySitePreviewTheme } from "../../lib/siteDarkPreview";
 import useSeo from "../../hooks/useSeo";
 import { client, urlFor } from "../../utils/sanity";
@@ -112,7 +113,7 @@ class LiveSite extends ApprovedSite {
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (let n = walk.nextNode(); n; n = walk.nextNode()) {
       if (!n.parentElement?.closest("aside")) continue;
-      if (n.nodeValue === " · Vancouver Briefing 2027") n.nodeValue = " · Toronto 2026";
+      if (n.nodeValue === " · Vancouver City Briefing 2027") n.nodeValue = " · Toronto 2026";
       else if (n.nodeValue === "Also spoke at Toronto 2026") n.parentElement.style.display = "none";
     }
   }
@@ -539,7 +540,7 @@ function useSpeakerDoc(slug, events) {
   const doc = state.slug === slug ? state.doc : undefined;
   if (!doc) return doc;
   const ev = (events || []).find((e) => e._id === doc.evId);
-  return { ...doc, eventLabel: ev ? ev.name : "", eventTitle: ev ? ev.name : "" };
+  return { ...doc, eventLabel: ev ? eventWording(ev.name) : "", eventTitle: ev ? eventWording(ev.name) : "" };
 }
 
 /* While an event has no speakers / partners of its own, its page shows another event's (Nov 22 2026,
@@ -679,7 +680,7 @@ export default function ApprovedRoute({ fallback = null }) {
       .map((e) => {
         const mine = partners.filter((p) => (p.events || []).some((r) => r && r._ref === e._id))
           .sort((a, b) => (eventRowOf(b, e._id) === "featured") - (eventRowOf(a, e._id) === "featured"));
-        return { kind: e.startDate ? monthShort(e.startDate) : "2027", title: e.name, count: mine.length + (mine.length === 1 ? " partner" : " partners"),
+        return { kind: e.startDate ? monthShort(e.startDate) : "2027", title: eventWording(e.name), count: mine.length + (mine.length === 1 ? " partner" : " partners"),
           cols: 6, h: 76, fs: 14, items: mine.map((p) => ({ n: logoImg(p, 40) })) };
       })
       .filter((g) => g.items.length);
@@ -807,8 +808,8 @@ export default function ApprovedRoute({ fallback = null }) {
 
   const seoEv = ev || van;
   useSeo(
-    route && route.screen === "event" && ev ? `${ev.name} · The Tech Festival Canada`
-      : route && route.screen === "agenda" && seoEv ? `Agenda · ${seoEv.name} · The Tech Festival Canada`
+    route && route.screen === "event" && ev ? `${eventWording(ev.name)} · The Tech Festival Canada`
+      : route && route.screen === "agenda" && seoEv ? `Agenda · ${eventWording(seoEv.name)} · The Tech Festival Canada`
       : route && route.screen === "speaker" && speakerDoc ? `${speakerDoc.name} · Speakers · The Tech Festival Canada` : undefined,
     route && route.screen === "event" && ev ? ev.theme || undefined
       : route && route.screen === "speaker" && speakerDoc ? speakerDoc.role || undefined : undefined,

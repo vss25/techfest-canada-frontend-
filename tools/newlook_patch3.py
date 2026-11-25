@@ -67,3 +67,18 @@ A = '{(v.sessions || []).map((s, s__i) => (<React.Fragment key={s__i}><article s
 s = rep(s, A, A + MEDIA)
 lines[li] = s; open(f, 'w').write('\n'.join(lines))
 print('ok card media')
+
+# ---- The home banner plays the promoted event's video (Admin › Event pages › Background video) over its photo ----
+f = ROOT + '/ApprovedSite.jsx'
+lines, li = load(f); s = lines[li]
+A = '"objectFit": "cover", "objectPosition": v.homeHero ? v.homeHero.posD : "center 0%"}} />'
+s = rep(s, A, A + '{v.heroVideo}')
+A = '{v.homeHero ? (v.homeHero.credit ? "Photo: " + v.homeHero.credit : "") : "Photo: Kyle Pearce, CC BY-SA 2.0"}'
+s = rep(s, A, '{v.hideCredit ? "" : (v.homeHero ? (v.homeHero.credit ? "Photo: " + v.homeHero.credit : "") : "Photo: Kyle Pearce, CC BY-SA 2.0")}')
+lines[li] = s; open(f, 'w').write('\n'.join(lines))
+f = ROOT + '/ApprovedPhone.jsx'
+lines, li = load(f); s = lines[li]
+A = '"objectFit": "cover", "objectPosition": v.homeHero ? v.homeHero.pos : "62% 0%"}} />'
+s = rep(s, A, A + '{v.heroVideo}')
+lines[li] = s; open(f, 'w').write('\n'.join(lines))
+print('ok home video')

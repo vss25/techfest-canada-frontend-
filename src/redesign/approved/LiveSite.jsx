@@ -245,7 +245,12 @@ class LiveSite extends ApprovedSite {
     // OR video (heroMedia): "video" plays on every device (data saver and reduced motion keep the photo).
     // The shade over the photo / video (Admin › Event pages › Top of the page; "default" = the usual fade).
     if (v.c) { v.shadeFull = { position: "absolute", inset: "0", background: heroShadeBackground(v.c.shade, "full") }; v.shadeSoon = { position: "absolute", inset: "0", background: heroShadeBackground(v.c.shade, "soon") }; }
-    if (v.c && v.c.video) v.heroVideo = <HeroBackgroundVideo key={v.c.video} src={v.c.video} position={v.c.posD} anyDevice />;
+    // The photo credit is for the city photo: it hides once the event's own video is playing over it (Nov 25 2026).
+    if (v.c && v.c.video) {
+      const playing = v.c.video;
+      v.heroVideo = <HeroBackgroundVideo key={v.c.video} src={v.c.video} position={v.c.posD} anyDevice onPlaying={() => { if (this.state.heroPlaying !== playing) this.setState({ heroPlaying: playing }); }} />;
+      v.hideCredit = this.state.heroPlaying === v.c.video;
+    }
     const past = this.props.past2026;
     if (past) {
       if (past.speakers.length) v.starSpeakers = past.speakers.slice(0, 4).map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));

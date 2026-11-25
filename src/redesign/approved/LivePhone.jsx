@@ -1,6 +1,7 @@
 import React from "react";
 import VideoFacade from "./VideoFacade";
 import ApprovedPhone from "./ApprovedPhone";
+import SeasonRail from "./SeasonRail";
 import { speakerGrid, speakersSoon } from "./speakerGrid";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { HOME_HEIGHTS } from "../../lib/heroFrame";
@@ -124,6 +125,11 @@ export default class LivePhone extends ApprovedPhone {
     // next) and its sections in order. Vancouver keeps the design's own wording (editable in Website text & media).
     v.homeOrder = this.props.homeOrder;
     const hs = this.state;
+    // The new look (Nov 25 2026, LiveSite.jsx has the same): the season timeline under each hero, scrolled to the
+    // next event; "Tickets on sale" only while they are; the buy bar shows the event's date ("Vancouver · Feb 3, 2027").
+    v.seasonRail = <SeasonRail phone stops={this.props.season} go={v.goCity} goPast={v.goPast} here={hs.screen === "event" ? hs.city : null} />;
+    v.onSale = !this.props.ticketsSoon && !!(this.props.data && this.props.data.types && this.props.data.types.length);
+    if (v.c && v.c.name && v.c.date) v.cityBar = v.c.name + " · " + String(v.c.date).replace(/^([A-Z][a-z]{2})[a-z]*/, "$1");
     if (hs.screen === "home" && hs.city && v.c && v.goCity) {
       v.homeGo = v.goCity[hs.city] || v.goEvent;
       if (hs.city !== "van") v.homeHero = { img: v.c.img, alt: v.c.title, eyebrow: homeEyebrow(v.c), title: v.c.title, blurb: v.c.blurb, credit: v.c.credit, posD: v.c.posD || "center", pos: v.c.pos || v.c.posD || "center" };

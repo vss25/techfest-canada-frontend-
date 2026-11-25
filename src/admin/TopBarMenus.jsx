@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { initials } from "./format";
+import { THEME_OPTIONS, useAdminTheme } from "./theme";
 import { useAdminEvent } from "./eventContext";
 import { KINDS, countsOf, lowerSeen, readSeen, seenKey, unseenCount, writeSeen } from "./bellSeen";
 
@@ -93,9 +94,28 @@ export function AccountMenu({ me, role, onSignOut, volunteer }) {
         <div role="menu" aria-label="Your account" className={MENU}>
           <p className="px-2.5 pb-1.5 pt-1 text-xs text-[#6B6688]">{me?.name || "Signed in"}{me?.email ? ` · ${me.email}` : ""}</p>
           {!volunteer && <Link to="/admin/account" role="menuitem" onClick={() => setOpen(false)} className={ITEM}>My account</Link>}
+          <ThemeChoice />
           <button type="button" role="menuitem" onClick={onSignOut} className={ITEM}>Sign out</button>
         </div>
       )}
+    </div>
+  );
+}
+
+/* Light / Dark / Match my device for the staff panel (theme.js; saved in this browser). */
+function ThemeChoice() {
+  const { choice, setChoice } = useAdminTheme();
+  return (
+    <div className="mx-1 my-1 border-t border-[#F0EEF6] px-1.5 pt-2">
+      <p id="adm-theme-label" className="pb-1.5 text-xs text-[#6B6688]">Appearance</p>
+      <div role="radiogroup" aria-labelledby="adm-theme-label" className="grid grid-cols-3 gap-1 rounded-lg bg-[#F6F5FA] p-1">
+        {THEME_OPTIONS.map((o) => (
+          <button key={o.key} type="button" role="radio" aria-checked={choice === o.key} onClick={() => setChoice(o.key)}
+            className={`rounded-md px-1.5 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D6308C] ${choice === o.key ? "bg-white text-[#151035] shadow-sm" : "text-[#6B6688] hover:text-[#151035]"}`}>
+            {o.key === "system" ? "Device" : o.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

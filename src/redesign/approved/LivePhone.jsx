@@ -4,6 +4,7 @@ import ApprovedPhone from "./ApprovedPhone";
 import { speakerGrid, speakersSoon } from "./speakerGrid";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { HOME_HEIGHTS } from "../../lib/heroFrame";
+import { homeEyebrow } from "../../lib/homeLayout";
 import { multiCheckout } from "../../lib/ticketsApi";
 import { EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, fieldsNear, pick, post, sendForm, splitName } from "./liveShared";
 
@@ -19,10 +20,11 @@ const FILL = `.ap-phone > .ap-root > div:first-child { width: 100% !important; h
 
 export default class LivePhone extends ApprovedPhone {
   static getDerivedStateFromProps(props, state) {
-    if (props.routeKey === state.routeKey) return null;
+    const homeCity = props.homeCity || "van";
+    if (props.routeKey === state.routeKey) return state.screen === "home" && state.city !== homeCity ? { city: homeCity } : null;
     const r = props.route || { screen: "home" };
     return {
-      routeKey: props.routeKey, screen: r.screen, city: r.city || state.city || "van", page: r.page, faq: r.faq ?? state.faq,
+      routeKey: props.routeKey, screen: r.screen, city: r.city || (r.screen === "home" ? homeCity : state.city || "van"), page: r.page, faq: r.faq ?? state.faq,
       sec: r.sec ?? "", sheet: r.drawer ? "tix" : null, menu: false, ov: null,
     };
   }
@@ -59,7 +61,7 @@ export default class LivePhone extends ApprovedPhone {
         setTimeout(() => this.scrollEl?.querySelector("#m-" + id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
         return;
       }
-      this.props.navigate(cityPath("van"), { state: { sec: id } });
+      this.props.navigate(cityPath((this.state.screen === "home" && this.state.city) || "van"), { state: { sec: id } });
     };
   }
 
@@ -118,6 +120,14 @@ export default class LivePhone extends ApprovedPhone {
     // The event's video on phones too, when staff chose "Video" (LiveSite sets c.video only then).
     if (v.c && v.c.heights) v.heroH = v.c.heights;
     v.homeH = HOME_HEIGHTS.phone;   // the home page's hero: full screen (Nov 25 2026)
+    // The home page (Admin › Content › Home page, Nov 25 2026): the event its top promotes (the pinned one, else the
+    // next) and its sections in order. Vancouver keeps the design's own wording (editable in Website text & media).
+    v.homeOrder = this.props.homeOrder;
+    const hs = this.state;
+    if (hs.screen === "home" && hs.city && v.c && v.goCity) {
+      v.homeGo = v.goCity[hs.city] || v.goEvent;
+      if (hs.city !== "van") v.homeHero = { img: v.c.img, alt: v.c.title, eyebrow: homeEyebrow(v.c), title: v.c.title, blurb: v.c.blurb, credit: v.c.credit, posD: v.c.posD || "center", pos: v.c.pos || v.c.posD || "center" };
+    }
     if (v.c && v.c.video) {
       const playing = v.c.video;
       v.heroVideo = <HeroBackgroundVideo key={v.c.video} src={v.c.video} position={v.c.pos} anyDevice onPlaying={() => { if (this.state.heroPlaying !== playing) this.setState({ heroPlaying: playing }); }} />;

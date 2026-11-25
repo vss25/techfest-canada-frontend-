@@ -15,7 +15,7 @@ test("Toronto 2026 is done, the first event that hasn't ended is next", () => {
   assert.deepEqual(s[0], { id: "past", name: "Toronto", when: "Oct 2026", state: "done" });
   assert.deepEqual(s[1], { id: "van", name: "Vancouver", when: "Feb 3 · Next", state: "next" });
   assert.deepEqual(s[2], { id: "mtl", name: "Montreal", when: "Apr 2027", state: "" });
-  assert.equal(s[6].when, "Oct 2027 · Flagship");
+  assert.equal(s[6].when, "Oct 2027 · National");
   assert.equal(s.filter((x) => x.state === "next").length, 1);
 });
 

@@ -3,11 +3,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { eventWording } from "./eventWording.js";
 
-test("Briefing becomes City Briefing, Main Event becomes Flagship Event", () => {
+test("Briefing becomes City Briefing, Main Event becomes National Festival", () => {
   assert.equal(eventWording("Vancouver Briefing 2027"), "Vancouver City Briefing 2027");
-  assert.equal(eventWording("Toronto 2026 · Main Event"), "Toronto 2026 · Flagship Event");
-  assert.equal(eventWording("Toronto Main Event 2027"), "Toronto Flagship Event 2027");
-  assert.equal(eventWording("Five Briefings, then the Main Event"), "Five City Briefings, then the Flagship Event");
+  assert.equal(eventWording("Toronto 2026 · Main Event"), "Toronto 2026 · National Festival");
+  assert.equal(eventWording("Toronto Main Event 2027"), "Toronto National Festival 2027");
+  assert.equal(eventWording("Five Briefings, then the Main Event"), "Five City Briefings, then the National Festival");
 });
 
 test("already in the new wording, lower case prose and empty values are left alone", () => {

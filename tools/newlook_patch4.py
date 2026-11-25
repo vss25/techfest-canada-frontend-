@@ -1,6 +1,6 @@
-# Event naming and the Home entry in the event menu (Nov 25 2026, the owner): "City Briefing" / "Flagship Event"
+# Event naming and the Home entry in the event menu (Nov 25 2026, the owner): "City Briefing" / "National Festival"
 # everywhere on the boards, and the header's event menu becomes Home, then City Briefings (the five cities), then
-# Flagship Event (Toronto). Already applied. Re-run only on freshly regenerated boards, after patches 1 to 3:
+# National Festival (Toronto, November 2027). Already applied. Re-run only on freshly regenerated boards, after patches 1 to 3:
 #   python3 tools/newlook_patch4.py src/redesign/approved
 import re, sys
 ROOT = sys.argv[1]
@@ -11,7 +11,10 @@ def rep(s, old, new, count=1):
     return s.replace(old, new)
 
 def wording(s):
-    s = s.replace('Main Event', 'Flagship Event')
+    s = s.replace('Main Event', 'National Festival')
+    # Toronto 2027 is in November (the boards said October).
+    s = s.replace("month: 'Oct', date: 'October 2027'", "month: 'Nov', date: 'November 2027'").replace('Awards Night · Toronto, Oct 2027', 'Awards Night · Toronto, Nov 2027')
+    s = s.replace('Oct 2027 · National Festival', 'Nov 2027 · National Festival').replace('National Festival in October 2027.', 'National Festival in November 2027.').replace('</strong> · October 2027, Toronto<br />', '</strong> · November 2027, Toronto<br />')
     return re.sub(r'(?<!City )Briefing', 'City Briefing', s)
 
 HEAD = '{m.head ? <span style={{"marginTop": "4px", "padding": "10px 12px 4px", "fontSize": "11px", "fontWeight": "700", "letterSpacing": "0.1em", "textTransform": "uppercase", "color": "#52525B"}}>{m.label}</span> : '

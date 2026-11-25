@@ -61,7 +61,7 @@ export function planVideo({ type, size, width, height, duration }, { canShrink, 
 
 /* ---------- Trim, speed and size (Nov 25 2026, the owner: "Can I trim, speed up videos after upload?") ---------- */
 
-export const SPEEDS = Object.freeze([0.5, 1, 1.5, 2]);
+export const SPEEDS = Object.freeze([0.5, 1, 1.5, 2, 4, 8]);   // 4× and 8×: Nov 25 2026, the owner
 /** The finished loop's size: 1080p looks sharp full screen; 720p is about half the file (half the bandwidth). */
 export const QUALITIES = Object.freeze({
   "1080": { label: "Full HD (1080p)", maxWidth: 1920, maxHeight: 1080, bitrate: 2_500_000 },
@@ -76,14 +76,14 @@ export const MIN_CLIP_SECONDS = 2;
  */
 export function clipPlan({ duration, start = 0, end, speed = 1, quality = "1080" }, limits = VIDEO_LIMITS) {
   if (!Number.isFinite(duration) || duration <= 0) return { error: "This video's length can't be read." };
-  if (!SPEEDS.includes(speed)) return { error: "Pick a speed: 0.5×, 1×, 1.5× or 2×." };
+  if (!SPEEDS.includes(speed)) return { error: `Pick a speed: ${SPEEDS.map((x) => `${x}×`).join(", ")}.` };
   const q = QUALITIES[quality] || QUALITIES["1080"];
   const s = Math.max(0, Math.min(Number(start) || 0, duration));
   const e = Math.max(0, Math.min(end == null ? duration : Number(end), duration));
   if (e - s < MIN_CLIP_SECONDS - 0.01) return { error: `Keep at least ${MIN_CLIP_SECONDS} seconds.` };
   const outSeconds = (e - s) / speed;
   if (outSeconds > limits.maxSeconds + 0.5) {
-    return { error: `The loop would play for ${Math.round(outSeconds)} seconds. Keep it to ${limits.maxSeconds}: trim it shorter${speed < 2 ? " or speed it up" : ""}.` };
+    return { error: `The loop would play for ${Math.round(outSeconds)} seconds. Keep it to ${limits.maxSeconds}: trim it shorter${speed < SPEEDS[SPEEDS.length - 1] ? " or speed it up" : ""}.` };
   }
   return { start: s, end: e, speed, quality: q === QUALITIES["720"] ? "720" : "1080", outSeconds, bytes: Math.round((q.bitrate / 8) * outSeconds) };
 }

@@ -1,0 +1,31 @@
+/* =========================================================
+ Dark preview of the public website (Nov 25 2026). Only with <html data-site-theme="dark">, which
+ src/lib/siteDarkPreview.js sets for ?theme=dark. The approved pages set their colours inline, so each light
+ colour is matched in the style attribute (as the browser writes it: rgb(…)) and given a dark counterpart.
+ Navy sections, brand pink and gold, photos and videos stay as they are.
+========================================================= */
+html[data-site-theme="dark"] body { background: #100C26; }
+html[data-site-theme="dark"] .ap-root [style*="background: rgb(255, 255, 255)"], html[data-site-theme="dark"] .ap-root [style*="background-color: rgb(255, 255, 255)"] { background-color: #100C26 !important; }
+html[data-site-theme="dark"] .ap-root [style*="background: rgb(245, 243, 250)"], html[data-site-theme="dark"] .ap-root [style*="background-color: rgb(245, 243, 250)"] { background-color: #181333 !important; }
+html[data-site-theme="dark"] .ap-root [style*="background: rgb(232, 229, 241)"], html[data-site-theme="dark"] .ap-root [style*="background-color: rgb(232, 229, 241)"] { background-color: #241E48 !important; }
+html[data-site-theme="dark"] .ap-root [style*="background: rgb(212, 212, 216)"], html[data-site-theme="dark"] .ap-root [style*="background-color: rgb(212, 212, 216)"] { background-color: #2E2858 !important; }
+html[data-site-theme="dark"] .ap-root [style^="color: rgb(21, 16, 53)"], html[data-site-theme="dark"] .ap-root [style*=" color: rgb(21, 16, 53)"] { color: #F2F0FA !important; }
+html[data-site-theme="dark"] .ap-root [style^="color: rgb(31, 41, 55)"], html[data-site-theme="dark"] .ap-root [style*=" color: rgb(31, 41, 55)"] { color: #E5E7EB !important; }
+html[data-site-theme="dark"] .ap-root [style^="color: rgb(63, 63, 70)"], html[data-site-theme="dark"] .ap-root [style*=" color: rgb(63, 63, 70)"] { color: #D9D6E6 !important; }
+html[data-site-theme="dark"] .ap-root [style^="color: rgb(82, 82, 91)"], html[data-site-theme="dark"] .ap-root [style*=" color: rgb(82, 82, 91)"] { color: #C3BFD6 !important; }
+html[data-site-theme="dark"] .ap-root [style^="color: rgb(113, 113, 122)"], html[data-site-theme="dark"] .ap-root [style*=" color: rgb(113, 113, 122)"] { color: #A6A1BD !important; }
+html[data-site-theme="dark"] .ap-root [style^="color: rgb(161, 161, 170)"], html[data-site-theme="dark"] .ap-root [style*=" color: rgb(161, 161, 170)"] { color: #8F8AAD !important; }
+html[data-site-theme="dark"] .ap-root [style*="border: 1px solid rgb(232, 229, 241)"], html[data-site-theme="dark"] .ap-root [style*="border-top: 1px solid rgb(232, 229, 241)"], html[data-site-theme="dark"] .ap-root [style*="border-bottom: 1px solid rgb(232, 229, 241)"], html[data-site-theme="dark"] .ap-root [style*="border-color: rgb(232, 229, 241)"], html[data-site-theme="dark"] .ap-root [style*="border-left: 1px solid rgb(232, 229, 241)"], html[data-site-theme="dark"] .ap-root [style*="border-right: 1px solid rgb(232, 229, 241)"] { border-color: #2B2552 !important; }
+html[data-site-theme="dark"] .ap-root [style*="border: 1px solid rgb(212, 212, 216)"], html[data-site-theme="dark"] .ap-root [style*="border-top: 1px solid rgb(212, 212, 216)"], html[data-site-theme="dark"] .ap-root [style*="border-bottom: 1px solid rgb(212, 212, 216)"], html[data-site-theme="dark"] .ap-root [style*="border-color: rgb(212, 212, 216)"], html[data-site-theme="dark"] .ap-root [style*="border-left: 1px solid rgb(212, 212, 216)"], html[data-site-theme="dark"] .ap-root [style*="border-right: 1px solid rgb(212, 212, 216)"] { border-color: #3A3466 !important; }
+html[data-site-theme="dark"] .ap-root [style*="border: 1px solid rgb(201, 196, 217)"], html[data-site-theme="dark"] .ap-root [style*="border-top: 1px solid rgb(201, 196, 217)"], html[data-site-theme="dark"] .ap-root [style*="border-bottom: 1px solid rgb(201, 196, 217)"], html[data-site-theme="dark"] .ap-root [style*="border-color: rgb(201, 196, 217)"], html[data-site-theme="dark"] .ap-root [style*="border-left: 1px solid rgb(201, 196, 217)"], html[data-site-theme="dark"] .ap-root [style*="border-right: 1px solid rgb(201, 196, 217)"] { border-color: #463F78 !important; }
+html[data-site-theme="dark"] .ap-root a:not([style*="color"]) { color: #F2F0FA; }
+html[data-site-theme="dark"] .ap-root a:not([style*="color"]):hover { color: #F06AB0; }
+html[data-site-theme="dark"] .ap-root :is(input, select, textarea) { color: #F2F0FA; }
+html[data-site-theme="dark"] .ap-root :is(input, textarea)::placeholder { color: #8F8AAD; }
+/* The home page hero is a bright sky photo with dark words: in dark, a dark fade from the left so the light words read. */
+html[data-site-theme="dark"] .ap-root [style*="linear-gradient(rgba(255, 255, 255, 0.3) 0%"],
+html[data-site-theme="dark"] .ap-root [style*="linear-gradient(rgba(255, 255, 255, 0.45) 0%"] {
+  background: linear-gradient(90deg, rgba(16, 12, 38, 0.82) 0%, rgba(16, 12, 38, 0.5) 55%, rgba(16, 12, 38, 0.15) 100%) !important;
+}
+/* Dark-navy buttons would vanish on the dark page: a lighter violet keeps them visible. */
+html[data-site-theme="dark"] .ap-root :is(button, a)[style*="background: rgb(21, 16, 53)"] { background-color: #3B3274 !important; }

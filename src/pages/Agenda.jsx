@@ -39,7 +39,7 @@ const PILLAR_MAP = {
   quantum:       { label: "Quantum",        icon: Zap,      color: "#56b3f5", light: "#1878c2" },
   cybersecurity: { label: "Cybersecurity",  icon: Shield,   color: "#f57eb3", light: "#c2287a" },
   robotics:      { label: "Robotics",       icon: Cpu,      color: "#f5a623", light: "#c4780a" },
-  climate:       { label: "Climate Tech",   icon: Leaf,     color: "#3fd19c", light: "#1a9e70" },
+  climate:       { label: "Clean Tech",     icon: Leaf,     color: "#3fd19c", light: "#1a9e70" },
 };
 
 const SECTOR_MAP = {

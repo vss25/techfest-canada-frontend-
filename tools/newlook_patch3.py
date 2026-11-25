@@ -45,3 +45,11 @@ lines, li = load(f); s = lines[li]
 s = rep(s, 'k === "agenda" ? (<section style={{"background": "#F5F3FA"', 'k === "agenda" ? (<section className="nl-stage" style={{"background": "#F5F3FA"')
 lines[li] = s; open(f, 'w').write('\n'.join(lines))
 print('ok stage')
+
+# ---- A closing ticker above the footer on every page ("See you in Vancouver ✦ Feb 24, 2027 ✦ …") ----
+for name in ('/ApprovedSite.jsx', '/ApprovedPhone.jsx'):
+    f = ROOT + name
+    lines, li = load(f); s = lines[li]
+    s = rep(s, '<footer data-dark="1"', '{v.footTicker}<footer data-dark="1"')
+    lines[li] = s; open(f, 'w').write('\n'.join(lines))
+print('ok footer ticker')

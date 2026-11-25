@@ -113,6 +113,9 @@ export function applyNewLook(v, self, { openTix, phone }) {
     );
   }
 
+  // Above the footer on every page: a closing ticker for the event this page is about.
+  if (c.name) v.footTicker = <Ticker big items={[`See you in ${c.name}`, c.date || "2027", c.kind ? `${c.kind} 2027` : "2027", "The Tech Festival Canada"]} />;
+
   // Awards: the key dates under the season timeline.
   if (s.screen === "awards") v.awDates = <KeyDates items={AWARD_DATES} />;
   return v;

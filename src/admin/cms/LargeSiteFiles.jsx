@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, FileText, Film, HardDrive, Lock, RotateCcw, UploadCloud } from "lucide-react";
+import { ExternalLink, FileText, Film, HardDrive, Lock, RotateCcw, Scissors, UploadCloud } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { uploadRaw } from "./uploadFile";
@@ -8,6 +8,7 @@ import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, LoadingState, focusRing } from "../ui";
 import { SITE_FILES, isCdnFile } from "../../lib/siteFiles";
 import useCmsStatus from "./useCmsStatus";
+import VideoEditor from "./VideoEditor";
 
 /* =========================================================
    Site settings › Large site files: the home page video and the
@@ -16,15 +17,17 @@ import useCmsStatus from "./useCmsStatus";
    stores the same bytes on Sanity's CDN and returns { url }; the
    url is then saved in the app content key (site.hero_video_url /
    site.brochure_url) with the usual console content save. The
-   website switches to it within about a minute. Nothing is
-   re-encoded or compressed.
+   website switches to it within about a minute. The brochure goes
+   up as it is; the home page video opens the video editor first
+   (VideoEditor.jsx: trim, speed, size; silent loop, Nov 25 2026),
+   and the current one can be trimmed or sped up again.
 ========================================================= */
 
 const MAX_BYTES = 40 * 1024 * 1024;
 
 const FILES = [
   {
-    id: "heroVideo", icon: Film, type: "video/mp4", accept: "video/mp4,.mp4", kind: "MP4 video",
+    id: "heroVideo", icon: Film, type: "video/mp4", accept: "video/mp4,video/quicktime,video/webm,video/*", kind: "video",
     label: "Home page video",
     description: "The looping video behind the logo at the top of the homepage. Computers play it; phones and tablets show a still frame instead.",
   },
@@ -59,6 +62,8 @@ function FileRow({ file, value, canUpload, onSaved }) {
   const [phase, setPhase] = useState("");           // "" | "upload" | "save"
   const [justUploaded, setJustUploaded] = useState(null);   // { url, bytes }
   const [err, setErr] = useState("");
+  const [editing, setEditing] = useState(null);     // the home video: a File just picked, or the current URL
+  const isVideo = file.id === "heroVideo";
   const { fallback } = SITE_FILES[file.id];
   const current = value || fallback;
   const onCdn = isCdnFile(current);
@@ -72,6 +77,11 @@ function FileRow({ file, value, canUpload, onSaved }) {
     e.target.value = "";
     if (!f) return;
     setErr("");
+    if (isVideo) {
+      if (!String(f.type).startsWith("video/")) { setErr("Choose a video file (MP4 works everywhere)."); return; }
+      setEditing(f);
+      return;
+    }
     if (f.type !== file.type) { setErr(`Choose an ${file.kind} file.`); return; }
     if (f.size > MAX_BYTES) { setErr(`That file is ${mb(f.size)}. Files must be 40 MB or smaller.`); return; }
     setPhase("upload"); setProgress(0);
@@ -88,6 +98,19 @@ function FileRow({ file, value, canUpload, onSaved }) {
     } finally {
       setPhase(""); setProgress(null);
     }
+  };
+
+  // The video editor's upload: send the finished loop, then save it as the home page video.
+  const uploadVideo = async (f, onProgress) => {
+    const out = await uploadRaw(f, onProgress);
+    await api.put(`/console/app-content/${encodeURIComponent(SITE_FILES[file.id].key)}`, { value: out.url });
+    return out;
+  };
+  const videoDone = ({ url, file: f }) => {
+    setEditing(null);
+    setJustUploaded({ url, bytes: f.size });
+    onSaved(SITE_FILES[file.id].key, url);
+    toast.success(`${file.label} saved. The website uses it within about a minute.`);
   };
 
   const switchToBuiltIn = async () => {
@@ -145,6 +168,9 @@ function FileRow({ file, value, canUpload, onSaved }) {
           onClick={() => inputRef.current?.click()}>
           {onCdn ? "Upload a new copy" : "Upload"}
         </Button>
+        {isVideo && (
+          <Button size="sm" icon={Scissors} disabled={busy || !canUpload} onClick={() => { setErr(""); setEditing(current); }}>Trim or speed up</Button>
+        )}
         {onCdn && value && (
           <button type="button" onClick={switchToBuiltIn} disabled={busy || !canUpload}
             className={`inline-flex items-center gap-1 rounded-md text-xs font-semibold text-ttfc-muted hover:text-ttfc-text disabled:opacity-50 ${focusRing}`}>
@@ -152,6 +178,7 @@ function FileRow({ file, value, canUpload, onSaved }) {
           </button>
         )}
       </div>
+      {editing && <VideoEditor source={editing} name="home-hero" upload={uploadVideo} onDone={videoDone} onClose={() => setEditing(null)} />}
     </div>
   );
 }
@@ -169,7 +196,7 @@ export default function LargeSiteFiles() {
     <section aria-labelledby="large-files-h" className="mb-10">
       <h2 id="large-files-h" className="mb-1 text-base font-semibold">Large site files</h2>
       <p className="mb-4 max-w-2xl text-sm text-ttfc-muted">
-        Upload these once and they're served from Sanity's CDN instead of being copied into every website update. The file goes up exactly as it is (MP4 or PDF, up to 40 MB): nothing is compressed.
+        Upload these once and they're served from Sanity's CDN instead of being copied into every website update. The brochure goes up exactly as it is (PDF, up to 40 MB). The video first opens an editor: pick the part to loop and its speed, and it's made into a small silent loop.
       </p>
       {!isManagement && (
         <Banner tone="info" icon={Lock} className="mb-4 max-w-2xl">Only management can upload these files.</Banner>

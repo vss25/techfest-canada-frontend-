@@ -90,6 +90,17 @@ export default defineType({
             description: "Optional: a short, silent hero loop (YouTube/Vimeo or a hosted file). The hero image is the poster and the mobile fallback.",
         }),
         defineField({
+            name: "heroShade",
+            title: "Hero shade",
+            type: "string",
+            description: "The shade over the hero photo or video. Set in Admin › Event pages › Top of the page.",
+            options: { list: [
+                { title: "Standard", value: "default" }, { title: "Light", value: "light" }, { title: "Strong", value: "strong" },
+                { title: "TTFC tint", value: "brand" }, { title: "None", value: "none" },
+            ] },
+            initialValue: "default",
+        }),
+        defineField({
             name: "citySkyline",
             title: "City Skyline (hero overlay)",
             type: "image",

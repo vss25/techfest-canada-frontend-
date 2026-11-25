@@ -14,6 +14,9 @@ import { speakerGrid, speakersSoon } from "./speakerGrid";
 import "./siteLook.css"; // the new look (Nov 25 2026): light, compact type, the colour rules
 import "./siteDark.css"; // only applies with ?theme=dark (src/lib/siteDarkPreview.js)
 import SeasonRail from "./SeasonRail";
+import "./newLook.css";
+import { applyNewLook } from "./newLookVals";
+import { normalizeSpeakerSlug, speakerSlug } from "../../seo/slug";
 import { seasonStops } from "../../lib/seasonRail";
 import { applySitePreviewTheme } from "../../lib/siteDarkPreview";
 import useSeo from "../../hooks/useSeo";
@@ -396,7 +399,7 @@ class LiveSite extends ApprovedSite {
     }
     const toAtt = v.toAttendees;
     v.toAttendees = () => { if (!this.props.data?.types) { this.toast("Tickets go on sale soon"); return; } this.att = {}; toAtt(); };
-    return v;
+    return applyNewLook(v, this, { openTix: v.openDrawer });
   }
 
   finishAuth(token, name = "") {
@@ -440,7 +443,7 @@ const NARROW = `@media (max-width: 1000px) {
     addresses that look like event pages but aren't one of the six 2027 events. */
 const PHONE_QUERY = "(max-width: 820px)";
 // The phone design has no partners or awards screen; those two stay on the desktop design.
-const PHONE_SCREENS = ["home", "event", "page", "past", "speakers"];
+const PHONE_SCREENS = ["home", "event", "page", "past", "speakers", "agenda", "speaker"];
 function usePhone() {
   const [phone, setPhone] = useState(() => typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(PHONE_QUERY).matches);
   useEffect(() => {
@@ -498,6 +501,44 @@ function usePast2026(on) {
     return () => { live = false; };
   }, [on, past]);
   return past;
+}
+
+/* A speaker's page (the new look, Nov 25 2026): the speaker whose name makes this slug, the sessions they are in
+   and four more speakers from the same event. undefined while loading, null when nobody matches. */
+function useSpeakerDoc(slug, events) {
+  const [state, setState] = useState({ slug: "", doc: undefined });
+  useEffect(() => {
+    if (!slug) return undefined;
+    let live = true;
+    const wanted = normalizeSpeakerSlug(slug);
+    const pub = `!(_id in path("drafts.**"))`;
+    client.fetch(`*[_type == "speaker" && ${pub}] | order(coalesce(featured, false) desc, order asc){ _id, name, title, company, speakerType, image, shortBio, bio, linkedin, "eventIds": events[]._ref }`)
+      .then(async (list) => {
+        const all = (list || []).filter((x) => x && x.name);
+        const me = all.find((x) => speakerSlug(x.name) === wanted);
+        if (!me) { if (live) setState({ slug, doc: null }); return; }
+        const card = (x) => ({
+          name: x.name,
+          role: [x.title, x.company].map((t) => String(t || "").trim()).filter(Boolean).join(", "),
+          kind: SPEAKER_KINDS[x.speakerType] || "Speaker",
+          img: x.image && x.image.asset ? urlFor(x.image).width(600).height(750).fit("crop").auto("format").url() : "",
+        });
+        const evId = (me.eventIds || [])[0] || PAST_EVENT;
+        const sessions = await client.fetch(
+          `*[_type == "session" && ${pub} && (references($id) || $name in speakers[].name || moderator.name == $name)]{ title, day, time, type, format, description, speakers, moderator, isBreak }`,
+          { id: me._id, name: me.name },
+        ).catch(() => []);
+        const others = all.filter((x) => x._id !== me._id && x.image && x.image.asset && (!(x.eventIds || []).length || (x.eventIds || []).includes(evId))).slice(0, 4).map(card);
+        const bio = typeof me.shortBio === "string" && me.shortBio.trim() ? me.shortBio.trim() : typeof me.bio === "string" ? me.bio.trim() : "";
+        if (live) setState({ slug, doc: { ...card(me), bio, linkedin: /^https?:\/\//i.test(me.linkedin || "") ? me.linkedin : "", evId, talks: toDesignSessions(sessions || []), others } });
+      })
+      .catch(() => { if (live) setState({ slug, doc: null }); });
+    return () => { live = false; };
+  }, [slug]);
+  const doc = state.slug === slug ? state.doc : undefined;
+  if (!doc) return doc;
+  const ev = (events || []).find((e) => e._id === doc.evId);
+  return { ...doc, eventLabel: ev ? ev.name : "", eventTitle: ev ? ev.name : "" };
 }
 
 /* While an event has no speakers / partners of its own, its page shows another event's (Nov 22 2026,
@@ -681,6 +722,7 @@ export default function ApprovedRoute({ fallback = null }) {
   }, [content.speakers]);
 
   const past2026 = usePast2026(!!route);
+  const speakerDoc = useSpeakerDoc(route && route.screen === "speaker" ? route.slug : "", events);
   const standIns = useStandIns(ev || van, events);
   const partners2026 = useMemo(() => (partners ? partners.filter((p) => partnerOnEvent(p, PAST_EVENT)) : null), [partners]);
   const partnerRows = useMemo(() => {
@@ -757,9 +799,13 @@ export default function ApprovedRoute({ fallback = null }) {
     } : undefined,
   }), [byCity, types, now, sessionsData, partnerRows]);
 
+  const seoEv = ev || van;
   useSeo(
-    route && route.screen === "event" && ev ? `${ev.name} · The Tech Festival Canada` : undefined,
-    route && route.screen === "event" && ev ? ev.theme || undefined : undefined,
+    route && route.screen === "event" && ev ? `${ev.name} · The Tech Festival Canada`
+      : route && route.screen === "agenda" && seoEv ? `Agenda · ${seoEv.name} · The Tech Festival Canada`
+      : route && route.screen === "speaker" && speakerDoc ? `${speakerDoc.name} · Speakers · The Tech Festival Canada` : undefined,
+    route && route.screen === "event" && ev ? ev.theme || undefined
+      : route && route.screen === "speaker" && speakerDoc ? speakerDoc.role || undefined : undefined,
   );
 
   if (!route) return fallback;
@@ -782,6 +828,7 @@ export default function ApprovedRoute({ fallback = null }) {
       homeCity={homeCity}
       homeOrder={homeSections}
       season={season}
+      speakerDoc={speakerDoc}
       loaderMs={0}
     />
   );

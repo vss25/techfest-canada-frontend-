@@ -26,8 +26,11 @@ import { HOME_SECTION_LABELS, editorRows } from "../../lib/homeLayout";
 
 const HINTS = {
   season: "Every 2027 event on a timeline, the next one highlighted.",
+  next: "The next event: its photo, date and theme, with Get tickets.",
+  speakers: "Four speakers (the event's own, else Toronto 2026's), with See all speakers.",
   agenda: "Sessions from the event at the top of the page, with See the full agenda.",
   highlights: "Toronto 2026 in numbers and photos, with the post-show report.",
+  partners: "Partner logos (the event's own, else Toronto 2026's), with All partners.",
   form: "Name and email for the 2027 brochure and the Toronto 2026 report.",
 };
 const today = () => new Date().toISOString().slice(0, 10);

@@ -34,13 +34,18 @@ export function routeFor(pathname) {
   const screen = Object.keys(SCREEN_PATH).find((k) => SCREEN_PATH[k] === path);
   if (screen) return { screen, city: screen === "speakers" ? "van" : undefined };
   if (path === "/toronto/2026/main-event") return { screen: "past" };
+  // A speaker's page (the new look, Nov 25 2026): /speakers/<name-slug>.
+  const spk = path.match(/^\/speakers\/([^/]+)$/);
+  if (spk) return { screen: "speaker", city: "van", slug: decodeURIComponent(spk[1]) };
   const page = Object.keys(PAGE_PATH).find((k) => PAGE_PATH[k] === path);
   if (page) return { screen: "page", page, faq: 0 };
   const ev = parseEventPath(path);
   const city = cityOfPath(ev);
   if (!city) return null;
   if (ev.sub === "speakers") return { screen: "speakers", city };
-  return { screen: "event", city, sec: ev.sub === "agenda" ? "agenda" : "", drawer: ev.sub === "tickets" };
+  // …/agenda is the Agenda page (the new look, Nov 25 2026; it used to scroll the event page to its agenda).
+  if (ev.sub === "agenda") return { screen: "agenda", city };
+  return { screen: "event", city, sec: "", drawer: ev.sub === "tickets" };
 }
 
 export const monthYear = (d) => new Date(`${d}T12:00:00`).toLocaleDateString("en-CA", { month: "long", year: "numeric" });

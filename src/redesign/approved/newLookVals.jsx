@@ -1,0 +1,106 @@
+import React from "react";
+import { AgendaPage, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
+import { cityPath } from "./liveShared";
+import { speakerSlug } from "../../seo/slug";
+
+/* Fills the boards' new-look slots (tools/newlook_patch2.py) with live data. Shared by the desktop and phone
+   layouts: LiveSite.jsx and LivePhone.jsx call it at the end of renderVals().
+     self      the board component (state, props)
+     openTix   opens the ticket drawer (desktop) or sheet (phone); phone: the phone layout (its section ids)
+   Slots it sets: heroCtas, homeNext, homeSpeakers, homeLastYear, homePartners, dayGlance, evOnStage, passes,
+   spkHero, isAgenda / agendaPage, isSpeaker / speakerPage, awDates, nav, navSpeakers. A slot left unset keeps the
+   board's own section (e.g. "Speakers coming soon" while an event has no speakers). */
+
+const PHOTOS = [
+  { src: "/ft-conference.jpg", alt: "The main stage at The Tech Festival Canada 2026" },
+  { src: "/ft-expo.jpg", alt: "The expo and networking floor" },
+  { src: "/ft-gala.jpg", alt: "Gala dinner and networking reception" },
+  { src: "/ft-panel.webp", alt: "A panel discussion" },
+  { src: "/ft-breakfast.jpg", alt: "CxO breakfast with senior leaders" },
+];
+const AWARD_DATES = [
+  { t: "Nominations open", d: "Spring 2027 · Next", now: true },
+  { t: "Jury review", d: "After nominations close" },
+  { t: "Awards Night", d: "Oct 2027 · Toronto" },
+];
+
+export const speakerPath = (name) => `/speakers/${speakerSlug(name)}`;
+
+export function applyNewLook(v, self, { openTix, phone }) {
+  const p = self.props;
+  const s = self.state;
+  const c = v.c || {};
+  const city = s.city || "van";
+  const go = (path) => (e) => { if (e && e.preventDefault) e.preventDefault(); p.navigate(path); };
+  const goEvent = (v.goCity && v.goCity[city]) || v.goEvent;
+  const goAllSpeakers = go("/speakers");
+  const goAgenda = go(cityPath(city) + "/agenda");
+  const types = p.data && p.data.types;
+  const onSale = !p.ticketsSoon && !!(types && types.length);
+  const rows = (p.data && p.data.sessionsData) || v.sessions || [];
+  const hasAgenda = rows.some((r) => r && r.time);
+  const withOpen = (list) => list.map((x) => ({ ...x, open: go(speakerPath(x.name)) }));
+
+  // Speakers and partners: the event's own, else the stand-ins (another event's, labelled).
+  const si = p.standIns || {};
+  const own = p.evSpeakers && p.evSpeakers.length ? p.evSpeakers : null;
+  const spk = own || (si.speakers && si.speakers.length ? si.speakers : null);
+  const spkLabel = own ? "Speakers" : si.spkLabel ? `Speakers · ${si.spkLabel}` : "Speakers";
+  const ptn = p.evPartners && p.evPartners.length
+    ? p.evPartners.map((x) => ({ title: x.name, logo: x.logo }))
+    : (si.partners || []).map((x) => ({ title: x.title || "", logo: x.name }));
+  const ptnLabel = p.evPartners && p.evPartners.length ? "Partners" : si.ptnLabel ? `Partners · ${si.ptnLabel}` : "Partners";
+
+  // Header: the current page is underlined (pink); Speakers opens the Speakers page.
+  v.nav = { ...(v.nav || {}), agenda: s.screen === "agenda" ? "on" : (v.nav && v.nav.agenda) || "",
+    speakers: s.screen === "speakers" || s.screen === "speaker" ? "on" : (v.nav && v.nav.speakers) || "",
+    awards: s.screen === "awards" ? "on" : "", partners: s.screen === "partners" ? "on" : (v.nav && v.nav.partners) || "" };
+  v.navSpeakers = goAllSpeakers;
+
+  // Home.
+  if (s.screen === "home") {
+    v.heroCtas = <HeroCtas onTickets={openTix} onExplore={goEvent} city={c.name} />;
+    v.homeNext = <NextUp label={`Next up · ${c.date || ""}`} title={c.title} lead={c.blurb} img={c.img} alt={c.title} onTickets={openTix} onEvent={goEvent} />;
+    v.homeSpeakers = spk ? <OnStage alt label={spkLabel} speakers={withOpen(spk.slice(0, 4))} onAll={goAllSpeakers} /> : null;
+    v.homeLastYear = <LastYear photos={PHOTOS} onGallery={v.goPast} />;
+    v.homePartners = <PartnersStrip alt label={ptnLabel} logos={ptn} onAll={v.goPartners || v.goPartnersAll} />;
+  }
+
+  // Event page.
+  if (s.screen === "event") {
+    if (hasAgenda) v.dayGlance = <DayGlance alt sessions={rows} onFull={goAgenda} id={phone ? "m-agenda" : "ev-agenda"} />;
+    if (own) v.evOnStage = <OnStage speakers={withOpen(own.slice(0, 4))} onAll={goAllSpeakers} id={phone ? "m-speakers" : "ev-speakers"} />;
+    if (onSale) v.passes = <Passes types={types} onBuy={openTix} />;
+  }
+
+  // The Agenda page.
+  v.isAgenda = s.screen === "agenda";
+  if (v.isAgenda) {
+    v.agendaPage = (
+      <AgendaPage rail={v.seasonRail} sessions={rows} onTickets={onSale ? openTix : null}
+        hero={{ img: c.img, label: [c.name, c.date].filter(Boolean).join(" · "), title: "Agenda", line: c.blurb, back: c.title, onBack: goEvent }} />
+    );
+  }
+
+  // The Speakers page's banner.
+  if (s.screen === "speakers") {
+    v.spkHero = <PageHero img={c.img} label={[c.name, c.date].filter(Boolean).join(" · ")} title="Speakers" line={v.spkIntro} back={c.title} onBack={goEvent} />;
+    // Every speaker card opens that speaker's page.
+    if (v.spkList) v.spkList = v.spkList.map((x) => (x.name ? { ...x, open: go(speakerPath(x.name)) } : x));
+  }
+
+  // A speaker's page.
+  v.isSpeaker = s.screen === "speaker";
+  if (v.isSpeaker) {
+    const doc = p.speakerDoc;   // undefined while loading, null when nobody matches
+    v.speakerPage = doc === undefined ? <main className="nx-page" style={{ minHeight: "70vh" }} aria-busy="true" /> : (
+      <SpeakerPage sp={doc} rail={v.seasonRail} eventLabel={doc && doc.eventLabel} eventTitle={(doc && doc.eventTitle) || c.title}
+        talks={doc ? doc.talks : null} others={doc ? withOpen(doc.others || []) : null}
+        onBack={goAllSpeakers} onAll={goAllSpeakers} onAgenda={goAgenda} onTickets={onSale ? openTix : null} />
+    );
+  }
+
+  // Awards: the key dates under the season timeline.
+  if (s.screen === "awards") v.awDates = <KeyDates items={AWARD_DATES} />;
+  return v;
+}

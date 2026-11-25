@@ -21,6 +21,7 @@ import { useAutosave } from "./useAutosave";
 import { AutosaveNote } from "./AutosaveNote";
 import StandIns from "./StandIns";
 import EventVideoField from "./EventVideoField";
+import WhyComeEditor from "./WhyComeEditor";
 
 /* =========================================================
    Admin › Website content › Event pages (redesign step 1).
@@ -33,10 +34,12 @@ import EventVideoField from "./EventVideoField";
 
 const TEXT_FIELDS = [
   "name", "city", "type", "year", "startDate", "endDate", "statusNote", "venueName", "venueAddress",
-  "description", "heroVideoUrl", "heroShade", "heroMedia", "heroFocus", "heroHeight", "photoCredit", "theme", "tagline", "formatLine", "audience", "pageMode", "notifyHeading",
+  "description", "whyEyebrow", "whyHeading", "whyBody", "whyMedia", "whyVideoUrl", "whyHeight", "whyFit", "whyFocusX", "whyFocusY", "heroVideoUrl", "heroShade", "heroMedia", "heroFocus", "heroHeight", "photoCredit", "theme", "tagline", "formatLine", "audience", "pageMode", "notifyHeading",
   "standInSpeakersHeading", "standInSpeakersText", "standInPartnersHeading", "standInPartnersText",
 ];
 // The stand-ins (StandIns.jsx): the event they come from ("" = Toronto 2026) and the ones picked.
+// Numbers the form keeps as text ("" = unset).
+const NUMBER_FIELDS = new Set(["heroFocus", "whyFocusX", "whyFocusY"]);
 const REF_FIELDS = ["standInSpeakersFrom", "standInPartnersFrom"];
 const REFS_FIELDS = ["standInSpeakers", "standInPartners"];
 const refId = (r) => (typeof r === "string" ? r : r?._ref || "");
@@ -61,6 +64,12 @@ function toForm(ev) {
   // "City photo" on the approved design: its own field, so the previous design's photo stays as it was.
   f.citySkyline = ev?.citySkyline?.asset?._ref || "";
   f.citySkylineUrl = ev?.citySkylineUrl || "";
+  // "Why come" (Nov 25 2026): its photo / GIF and the video's first frame, and whether the video loops.
+  f.whyImage = ev?.whyImage?.asset?._ref || "";
+  f.whyImageUrl = ev?.whyImageUrl || "";
+  f.whyPoster = ev?.whyPoster?.asset?._ref || "";
+  f.whyPosterUrl = ev?.whyPosterUrl || "";
+  f.whyLoop = ev?.whyLoop !== false;
   for (const k of REF_FIELDS) f[k] = refId(ev?.[k]);
   for (const k of REFS_FIELDS) f[k] = (ev?.[k] || []).map(refId).filter(Boolean);
   return f;
@@ -69,11 +78,14 @@ function toForm(ev) {
 /** Only what changed, in the shape the backend takes ("" clears a field). */
 function diff(form, base) {
   const out = {};
-  for (const k of TEXT_FIELDS) if (String(form[k] ?? "") !== String(base[k] ?? "")) out[k] = k === "year" ? Number(form[k]) || "" : k === "heroFocus" ? (form[k] === "" ? "" : Number(form[k])) : form[k];
+  for (const k of TEXT_FIELDS) if (String(form[k] ?? "") !== String(base[k] ?? "")) out[k] = k === "year" ? Number(form[k]) || "" : NUMBER_FIELDS.has(k) ? (form[k] === "" ? "" : Number(form[k])) : form[k];
   if (form.showReport !== base.showReport) out.showReport = form.showReport;
   if (JSON.stringify(form.knownSoFar) !== JSON.stringify(base.knownSoFar)) out.knownSoFar = form.knownSoFar;
   if (JSON.stringify(form.comingNext) !== JSON.stringify(base.comingNext)) out.comingNext = form.comingNext;
   if (form.citySkyline !== base.citySkyline) out.citySkyline = form.citySkyline || "";
+  if (form.whyImage !== base.whyImage) out.whyImage = form.whyImage || "";
+  if (form.whyPoster !== base.whyPoster) out.whyPoster = form.whyPoster || "";
+  if (form.whyLoop !== base.whyLoop) out.whyLoop = form.whyLoop;
   for (const k of REF_FIELDS) if (form[k] !== base[k]) out[k] = form[k] || "";
   for (const k of REFS_FIELDS) if (JSON.stringify(form[k]) !== JSON.stringify(base[k])) out[k] = form[k];
   return out;
@@ -168,7 +180,7 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
     if (!dirty) return ev;
     sentRef.current = form;
     const saved = await api.patch(`/cms/event/${ev._id}?draft=1`, changes);
-    onSaved({ ...ev, ...saved, citySkylineUrl: form.citySkylineUrl, _id: ev._id, hasDraft: true });
+    onSaved({ ...ev, ...saved, citySkylineUrl: form.citySkylineUrl, whyImageUrl: form.whyImageUrl, whyPosterUrl: form.whyPosterUrl, _id: ev._id, hasDraft: true });
     return saved;
   };
   const run = (name, fn) => async () => {
@@ -191,13 +203,13 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
     await saveDraft();
     auto.markSaved();
     const out = await api.post(`/cms/event/${ev._id}/stage`);
-    onSaved({ ...ev, ...out, citySkylineUrl: form.citySkylineUrl, _id: ev._id });
+    onSaved({ ...ev, ...out, citySkylineUrl: form.citySkylineUrl, whyImageUrl: form.whyImageUrl, whyPosterUrl: form.whyPosterUrl, _id: ev._id });
     toast.success("On staging. Open it on staging to check it.");
   });
   const onOpenStaging = () => window.open(stagingUrl(path), "_blank", "noopener");
   const onPublish = run("publish", async () => {
     const out = await api.post(`/cms/event/${ev._id}/publish`);
-    onSaved({ ...ev, ...out, citySkylineUrl: form.citySkylineUrl, _id: ev._id });
+    onSaved({ ...ev, ...out, citySkylineUrl: form.citySkylineUrl, whyImageUrl: form.whyImageUrl, whyPosterUrl: form.whyPosterUrl, _id: ev._id });
     toast.success("Published. The page is live on the website within about a minute.");
   });
   const onDiscard = (which) => run("discard", async () => {
@@ -290,6 +302,8 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
           <Textarea rows={7} value={form.description} onChange={set("description")} disabled={readOnly} />
         </Field>
       </Card>
+
+      <WhyComeEditor form={form} setForm={setForm} cityName={form.city} cityId="" disabled={readOnly} canUploadVideo={isManagement && !readOnly} />
 
       <Card className="grid gap-5">
         <h3 className="font-semibold">Which page shows</h3>

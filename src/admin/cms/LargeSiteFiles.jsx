@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink, FileText, Film, HardDrive, Lock, RotateCcw, UploadCloud } from "lucide-react";
 import { useApi } from "../hooks";
-import { ADMIN_API, PASSWORD_REQUIRED, api, getToken } from "../api";
+import { api } from "../api";
+import { uploadRaw } from "./uploadFile";
 import { useAdmin } from "../adminContext";
 import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, LoadingState, focusRing } from "../ui";
@@ -49,28 +50,6 @@ function useFileSize(url) {
     return () => ctrl.abort();
   }, [url]);
   return url in sizes ? sizes[url] : undefined;   // undefined = still checking
-}
-
-/** POST the raw file with upload progress → { assetId, url }. */
-function uploadRaw(file, onProgress) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${ADMIN_API}/cms/upload-file?filename=${encodeURIComponent(file.name)}`);
-    xhr.setRequestHeader("Content-Type", file.type);
-    const token = getToken();
-    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-    xhr.responseType = "json";
-    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
-    xhr.onload = () => {
-      const data = xhr.response || {};
-      if (xhr.status === 401) window.dispatchEvent(new CustomEvent("ttfc:admin-unauthorized"));
-      if (data.code === PASSWORD_REQUIRED) window.dispatchEvent(new CustomEvent("ttfc:admin-password-required"));
-      if (xhr.status >= 200 && xhr.status < 300 && data.url) resolve(data);
-      else reject(new Error(data.error || `Upload failed (${xhr.status})`));
-    };
-    xhr.onerror = () => reject(new Error("Can't reach the server. Check your connection and try again."));
-    xhr.send(file);
-  });
 }
 
 function FileRow({ file, value, canUpload, onSaved }) {

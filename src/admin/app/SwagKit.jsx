@@ -13,6 +13,7 @@ import {
   torontoIso, torontoLocalInput,
 } from "../../lib/swag";
 import { swagApi } from "./swagApi";
+import EventOnly from "../EventOnly";
 
 /* =========================================================
    Admin › Website & app › Top networkers (batch 7 as the swag kit
@@ -75,7 +76,7 @@ function storedFrom(form) {
   };
 }
 
-export default function SwagKit() {
+function SwagKitForEvent() {
   const { isManagement } = useAdmin();
   const toast = useToast();
   const settings = useApi(swagApi.contentPath);
@@ -336,4 +337,8 @@ function AnnounceDialog({ winners: first, onClose, onDone }) {
       </div>
     </Modal>
   );
+}
+
+export default function SwagKit() {
+  return <EventOnly title="Top networkers" eyebrow="Website & app" what="top networkers" because="The top networkers are The Tech Festival Canada 2026's, from the app leaderboard at that event."><SwagKitForEvent /></EventOnly>;
 }

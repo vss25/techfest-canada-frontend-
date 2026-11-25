@@ -15,6 +15,7 @@ import { ProfileLinkPanel, ProfileRequestDialog } from "./ProfileRequests";
 import { CompTicketDrawer } from "./CompTicket";
 import { personPath } from "../people/peopleMeta";
 import CodeLabel from "../people/CodeLabel";
+import { adminEventKey, useAdminEvent } from "../eventContext";
 
 const PAGE = 100;
 const SAFE_NOTE = "This only hides tickets from staff lists and analytics. The owner's ticket stays valid in the app, on the website and at the door.";
@@ -189,9 +190,13 @@ export default function TicketManager() {
   const [compOpen, setCompOpen] = useState(false);
   const dq = useDebounced(q.trim(), 300);
 
+  // Nov 23 2026: the chosen event's tickets only.
+  const { current: chosenEvent } = useAdminEvent();
+  const chosenKey = adminEventKey(chosenEvent);
   const qs = new URLSearchParams({ show, page: String(page) });
   if (promo) qs.set("promo", promo);
   if (dq) qs.set("q", dq);
+  if (chosenKey) qs.set("eventKey", chosenKey);
   const { data, error, loading, reload, refreshing } = useApi(`/console/tickets?${qs}`);
   const rows = useMemo(() => data?.rows || [], [data]);
   const total = data?.total ?? 0;
@@ -223,6 +228,7 @@ export default function TicketManager() {
         const qp = new URLSearchParams({ show, page: String(p) });
         if (dq) qp.set("q", dq);
         if (promo) qp.set("promo", promo);
+        if (chosenKey) qp.set("eventKey", chosenKey);
         const d = await api.get(`/console/tickets?${qp}`);
         (d.rows || []).forEach((r) => keys.add(r.key));
       }

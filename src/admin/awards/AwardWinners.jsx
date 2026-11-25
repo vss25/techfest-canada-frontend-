@@ -7,6 +7,8 @@ import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, Switch, Textarea } from "../ui";
 import { when } from "../format";
 import { EYEBROW } from "./juryShared";
+import EventOnly from "../EventOnly";
+import { useAdminEvent, withEvent } from "../eventContext";
 
 /* =========================================================
    Admin › Catalyst Awards › Winners (Oct 31 2026)
@@ -95,10 +97,11 @@ function WinnerCard({ row, canEdit, onSaved }) {
   );
 }
 
-export default function AwardWinners() {
+function AwardWinnersForEvent() {
   const { isManagement } = useAdmin();
   const toast = useToast();
-  const { data, error, loading, reload, setData } = useApi(`${BASE}/winners`);
+  const { current } = useAdminEvent();
+  const { data, error, loading, reload, setData } = useApi(withEvent(`${BASE}/winners`, current));
   const [switching, setSwitching] = useState(false);
 
   const toggle = async (on) => {
@@ -138,4 +141,8 @@ export default function AwardWinners() {
       )}
     </div>
   );
+}
+
+export default function AwardWinners() {
+  return <EventOnly title="Winners" eyebrow="Catalyst Awards" what="Catalyst Awards records" because="The Catalyst Awards nominations, jury and results here are The Tech Festival Canada 2026's. Next year's awards will have their own once they open."><AwardWinnersForEvent /></EventOnly>;
 }

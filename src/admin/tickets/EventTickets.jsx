@@ -8,8 +8,10 @@ import { useAdmin } from "../adminContext";
 import { useAdminEvent } from "../eventContext";
 import {
   Badge, Banner, Button, Card, EditPanel, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, Switch,
-  TableWrap, Textarea, focusRing,
+  TableWrap, focusRing,
 } from "../ui";
+import BulletListEditor from "../BulletListEditor";
+import { finishList } from "../bulletList";
 import { ReadinessStrip } from "../cms/ReadinessCard";
 
 /* =========================================================
@@ -29,7 +31,6 @@ import { ReadinessStrip } from "../cms/ReadinessCard";
 const money = (cents) => (cents == null ? "—" : `$${(cents / 100).toLocaleString("en-CA", { minimumFractionDigits: cents % 100 ? 2 : 0 })}`);
 const day = (iso) => (iso ? new Date(iso).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" }) : "");
 const toInputDate = (iso) => (iso ? new Date(iso).toISOString().slice(0, 10) : "");
-const lines = (v) => String(v || "").split("\n").map((s) => s.trim()).filter(Boolean);
 
 /* The approved design's three Briefing tickets, as a starting point for the defaults. */
 const STARTER = [
@@ -85,7 +86,8 @@ function TicketForm({ type, eventKey, canEdit, onClose, onSaved, pass = null }) 
     name: type?.name || "", description: type?.description || "",
     price: type?.priceCents != null ? String(type.priceCents / 100) : "",
     capacity: type?.capacity != null ? String(type.capacity) : "",
-    inclusions: (type?.inclusions || []).join("\n"),
+    inclusions: type?.inclusions?.length ? [...type.inclusions] : [""],
+    exclusions: type?.exclusions?.length ? [...type.exclusions] : [""],
     salesStart: toInputDate(type?.salesStart), salesEnd: toInputDate(type?.salesEnd),
     active: type ? type.active !== false : true,
     covers: type?.covers || pass?.initial || [],
@@ -100,7 +102,8 @@ function TicketForm({ type, eventKey, canEdit, onClose, onSaved, pass = null }) 
     if (pass && f.covers.filter((k) => k !== pass.mainKey).length < 1) { toast.error("Tick at least one city"); return; }
     const body = {
       name: f.name.trim(), description: f.description.trim(), priceCents: Math.round(price * 100),
-      capacity: f.capacity === "" ? null : Number(f.capacity), inclusions: lines(f.inclusions),
+      capacity: f.capacity === "" ? null : Number(f.capacity),
+      inclusions: finishList(f.inclusions), exclusions: finishList(f.exclusions),
       salesStart: f.salesStart || null, salesEnd: f.salesEnd || null, active: !!f.active,
       ...(pass ? { covers: [...new Set([...f.covers, pass.mainKey])] } : {}),
     };
@@ -129,10 +132,32 @@ function TicketForm({ type, eventKey, canEdit, onClose, onSaved, pass = null }) 
         <Field label="How many can be sold" hint="Leave empty for no limit.">{(id) => <Input id={id} type="number" min="0" value={f.capacity} onChange={set("capacity")} disabled={off} />}</Field>
         <Field label="On sale from" hint="Empty: on sale now.">{(id) => <Input id={id} type="date" value={f.salesStart} onChange={set("salesStart")} disabled={off} />}</Field>
         <Field label="On sale until" hint="Empty: until the event.">{(id) => <Input id={id} type="date" value={f.salesEnd} onChange={set("salesEnd")} disabled={off} />}</Field>
-        <Field label="What's included" hint="One per line." className="sm:col-span-2">{(id) => <Textarea id={id} rows={4} value={f.inclusions} onChange={set("inclusions")} disabled={off} />}</Field>
+        <Field label="What's included" hint="Each point shows as a ✓ bullet on the website." className="sm:col-span-2">{(id) => (
+          <BulletListEditor id={id} value={f.inclusions} onChange={(v) => setF((x) => ({ ...x, inclusions: v }))} disabled={off}
+            itemLabel="Included point" placeholder="e.g. Both conference days" />
+        )}</Field>
+        <Field label="Not included" hint="Optional. Shows dimmed with a ✕, so buyers know what to expect." className="sm:col-span-2">{(id) => (
+          <BulletListEditor id={id} value={f.exclusions} onChange={(v) => setF((x) => ({ ...x, exclusions: v }))} disabled={off}
+            tone="exclude" itemLabel="Not included point" addLabel="Add a point" placeholder="e.g. Gala dinner" />
+        )}</Field>
         <div className="sm:col-span-2"><Switch label="On sale" description="Off hides it from the website without deleting it." checked={!!f.active} onChange={(v) => setF((x) => ({ ...x, active: v }))} disabled={off} /></div>
       </form>
     </EditPanel>
+  );
+}
+
+/** The first few "What's included" points under a ticket's name in the table, as bullets. */
+function Offer({ t }) {
+  const inc = t.inclusions || [];
+  const exc = t.exclusions || [];
+  if (!inc.length && !exc.length) return null;
+  const shown = inc.slice(0, 3);
+  const more = inc.length - shown.length + exc.length;
+  return (
+    <ul className="mt-1.5 grid gap-0.5 text-xs text-[#4A4566]">
+      {shown.map((x, i) => <li key={i} className="flex gap-1.5"><span aria-hidden="true" className="text-[#D6308C]">•</span>{x}</li>)}
+      {more > 0 && <li className="pl-3 text-[#8A86A0]">+ {more} more</li>}
+    </ul>
   );
 }
 
@@ -218,7 +243,7 @@ export default function EventTickets() {
                     return (
                       <tr key={t._id} className="is-clickable" tabIndex={0} onClick={open} onKeyDown={(e) => { if (e.key === "Enter") open(); }}
                         style={editing?.type?._id === t._id ? { background: "#FBE9F3", boxShadow: "inset 3px 0 0 #D6308C" } : undefined}>
-                        <td><b className="text-[#151035]">{t.name}</b>{t.description && <div className="text-xs text-[#6B6688]">{t.description}</div>}</td>
+                        <td><b className="text-[#151035]">{t.name}</b>{t.description && <div className="text-xs text-[#6B6688]">{t.description}</div>}<Offer t={t} /></td>
                         <td className="tabular-nums">{money(t.priceCents)} <span className="text-xs text-[#8A86A0]">+ HST</span></td>
                         {!defaults && <td className="tabular-nums">{soldLabel(t)}</td>}
                         {defaults && <td className="tabular-nums">{t.capacity ?? "No limit"}</td>}
@@ -256,7 +281,7 @@ export default function EventTickets() {
                       return (
                         <tr key={t._id} className="is-clickable" tabIndex={0} onClick={open} onKeyDown={(e) => { if (e.key === "Enter") open(); }}
                           style={editing?.type?._id === t._id ? { background: "#FBE9F3", boxShadow: "inset 3px 0 0 #D6308C" } : undefined}>
-                          <td><b className="text-[#151035]">{t.name}</b>{t.description && <div className="text-xs text-[#6B6688]">{t.description}</div>}</td>
+                          <td><b className="text-[#151035]">{t.name}</b>{t.description && <div className="text-xs text-[#6B6688]">{t.description}</div>}<Offer t={t} /></td>
                           <td className="text-[#4A4566]">{(t.covers || []).map((k) => eventName(events, k)).join(" + ")}</td>
                           <td className="tabular-nums">{money(t.priceCents)} <span className="text-xs text-[#8A86A0]">+ HST</span></td>
                           <td className="tabular-nums">{soldLabel(t)}</td>

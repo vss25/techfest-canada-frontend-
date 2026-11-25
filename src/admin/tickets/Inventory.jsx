@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import {
   AlertTriangle, Archive, ArchiveRestore, ArrowUpDown, ChevronDown, Package, Pencil, Percent, Plus, RefreshCw, Save, Sparkles, Store, Tag, Ticket, Trash2,
 } from "lucide-react";
+import { adminEventKey, useAdminEvent, withEvent } from "../eventContext";
 import { useApi } from "../hooks";
 import { api } from "../api";
 import { useToast } from "../toastContext";
@@ -249,7 +250,9 @@ function EditPromo({ promo, passes, onClose, onSaved }) {
 export function PromoCodes({ passes, heading = true }) {
   const toast = useToast();
   const { isManagement } = useAdmin();
-  const { data, error, loading, reload, setData } = useApi("/admin/promos");
+  // Nov 23 2026: the chosen event's codes (codes from before carry none: the 2026 main event's).
+  const { current } = useAdminEvent();
+  const { data, error, loading, reload, setData } = useApi(withEvent("/admin/promos", current));
   const [code, setCode] = useState("");
   const [discount, setDiscount] = useState("10");
   const [tiers, setTiers] = useState([]);
@@ -276,7 +279,7 @@ export function PromoCodes({ passes, heading = true }) {
     setErr(""); setBusy(true);
     try {
       const expiresAt = torontoLocalToIso(ends);
-      const out = await api.post("/admin/promos", { code: c, discount: d, tiers, maxUses: limitValue(maxUses), expiresAt });
+      const out = await api.post("/admin/promos", { code: c, discount: d, tiers, maxUses: limitValue(maxUses), expiresAt, eventKey: adminEventKey(current) || undefined });
       const lim = limitValue(maxUses);
       if (out.waiting) toast.success(out.notice || `Saved ${out.code}. A manager approves it before it works.`);
       else toast.success(`Created ${out.code || c}: ${out.discount ?? d}% off ${tiers.length ? tiers.map(label).join(", ") : "all passes"}${lim ? `, ${num(lim)} uses` : ""}${expiresAt ? `, ends ${endsLabel(expiresAt)}` : ""}`);

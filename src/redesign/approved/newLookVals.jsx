@@ -26,11 +26,11 @@ const PHOTOS = [
 const AWARD_DATES = [
   { t: "Nominations open", d: "Spring 2027 · Next", now: true },
   { t: "Jury review", d: "After nominations close" },
-  { t: "Awards Night", d: "Oct 2027 · Toronto" },
+  { t: "Awards Night", d: "Nov 2027 · Toronto" },
 ];
 
 const AGENDA_IDS = ["van", "mtl", "cgy", "tob", "ott", "tor"];
-const AGENDA_NAMES = { van: "Vancouver", mtl: "Montreal", cgy: "Calgary", tob: "Toronto City Briefing", ott: "Ottawa", tor: "Toronto Flagship Event" };
+const AGENDA_NAMES = { van: "Vancouver", mtl: "Montreal", cgy: "Calgary", tob: "Toronto City Briefing", ott: "Ottawa", tor: "Toronto National Festival" };
 
 export const speakerPath = (name) => `/speakers/${speakerSlug(name)}`;
 
@@ -65,11 +65,11 @@ export function applyNewLook(v, self, { openTix, phone }) {
     : (si.partners || []).map((x) => ({ title: x.title || "", logo: x.name }));
 
   // The event menu (the pill in the header): Home, then City Briefings with the five cities under it, then the
-  // Flagship Event (Nov 25 2026, the owner). The boards list the six events in season order, Toronto's last.
+  // National Festival (Nov 25 2026, the owner; first called Flagship Event). The boards list the six events in season order, Toronto's last.
   const group = (list, labelKey) => {
     if (!Array.isArray(list) || list.length < 6 || list.some((x) => x.head)) return list;
     const plain = list.map((x) => ({ ...x, [labelKey]: String(x[labelKey]).split(" · ")[0], ...(s.screen === "home" ? { bg: "transparent", weight: 400, ...(x.tag ? { tag: String(x.tag).split(" · ")[0] } : {}) } : {}) }));
-    return [{ head: true, [labelKey]: "City Briefings" }, ...plain.slice(0, 5), { head: true, [labelKey]: "Flagship Event" }, ...plain.slice(5)];
+    return [{ head: true, [labelKey]: "City Briefings" }, ...plain.slice(0, 5), { head: true, [labelKey]: "National Festival" }, ...plain.slice(5)];
   };
   if (v.menuItems) v.menuItems = group(v.menuItems, "label");
   if (v.cities) v.cities = group(v.cities, "label");

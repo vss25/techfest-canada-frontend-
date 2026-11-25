@@ -6,7 +6,7 @@ export const SEASON_IDS = ["van", "mtl", "cgy", "tob", "ott", "tor"];
 
 const NAMES = { van: "Vancouver", mtl: "Montreal", cgy: "Calgary", tob: "Toronto", ott: "Ottawa", tor: "Toronto" };
 // The design's months, used until an event record has a start date.
-const FALLBACK = { van: "2027-02", mtl: "2027-04", cgy: "2027-06", tob: "2027-06", ott: "2027-09", tor: "2027-10" };
+const FALLBACK = { van: "2027-02", mtl: "2027-04", cgy: "2027-06", tob: "2027-06", ott: "2027-09", tor: "2027-11" };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const ymd = (d) => String(d || "").slice(0, 10);
@@ -32,7 +32,7 @@ export function seasonStops(byCity, today) {
   for (const s of stops) {
     let state = s.done ? "done" : "";
     if (!state && !nextSet) { state = "next"; nextSet = true; }
-    const when = state === "next" ? `${label(s.start, s.exact)} · Next` : label(s.start, false) + (s.main ? " · Flagship" : "");
+    const when = state === "next" ? `${label(s.start, s.exact)} · Next` : label(s.start, false) + (s.main ? " · National" : "");
     out.push({ id: s.id, name: s.name, when, state });
   }
   return out;

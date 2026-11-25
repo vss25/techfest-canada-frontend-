@@ -101,6 +101,7 @@ export const ADMIN_INDEX = (() => {
   const out = [];
   for (const g of NAV) {
     for (const it of g.items) {
+      if (it.superAdmin) continue; // the super admin's pages (Staff activity) stay out of everyone's search
       out.push({
         id: `page:${it.to}`, type: "page", title: it.label, subtitle: g.title || "Staff panel", link: link(it.to), icon: it.icon,
         management: !!it.management, keywords: KEYWORDS[it.to] || [],

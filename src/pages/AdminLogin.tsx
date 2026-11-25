@@ -109,7 +109,8 @@ export default function AdminLogin() {
       const res = await fetch(`${ADMIN_API}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+        // panel: "admin" starts a staff activity session (Settings › Staff activity).
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password, panel: "admin" }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

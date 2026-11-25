@@ -14,8 +14,8 @@ const pathOf = (to) => (to ? `/admin/${to}` : "/admin");
 
 export default function WorkspaceHub() {
   const { id } = useParams();
-  const { isManagement, isVolunteer } = useAdmin();
-  const all = workspacesFor({ isManagement, isVolunteer });
+  const { isManagement, isSuperAdmin, isVolunteer } = useAdmin();
+  const all = workspacesFor({ isManagement, isSuperAdmin, isVolunteer });
   const ws = all.find((w) => w.id === id);
   if (!ws) return <Navigate to="/admin" replace />;
   return (

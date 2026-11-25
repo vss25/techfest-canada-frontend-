@@ -68,7 +68,7 @@ export default function PreviewBar() {
   }
 
   return (
-    <div role="region" aria-label="Staging environment" ref={ref} style={BAR}>
+    <div role="region" aria-label="Staging environment" data-nocopy="" ref={ref} style={BAR}>
       <span style={TAG}>{staging ? "Staging environment" : "Preview"}</span>
       <span style={{ flex: "1 1 320px" }}>
         {staging && (

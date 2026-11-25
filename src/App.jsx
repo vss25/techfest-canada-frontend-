@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { currentEventPath } from "./lib/events";
 import { lazy, Suspense, useEffect } from "react";
 import Home from "./pages/Home";
 /* Phase 4 (IA build-out) pages. NOTE: "/" is the COMPOSED homepage (src/pages/HomeFeatured.jsx):
@@ -99,6 +100,12 @@ const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const isJuryPath = (p) => /^\/awards\/jury-admin(\/|$)/i.test(p);
 // A Catalyst Awards winner inside the /awards page's dialog (?embed=1): just the winner, none of the site's bars.
 const isEmbeddedWinner = (p, q) => /^\/awards\/winners\//i.test(p) && new URLSearchParams(q).get("embed") === "1";
+/* /:city/:year/main-event… → /:city/:year/national-festival… (the same page, sub-page, query and #anchor). */
+function OldEventAddress() {
+  const loc = useLocation();
+  return <Navigate to={currentEventPath(loc.pathname) + loc.search + loc.hash} replace />;
+}
+
 function OffJury({ children }) {
   const { pathname, search } = useLocation();
   return isJuryPath(pathname) || isFactSheetPath(pathname) || isEmbeddedWinner(pathname, search) ? null : children;
@@ -220,7 +227,7 @@ function App() {
             The flat 2026 routes above stay live: they ARE the 2026 edition's pages. The new
             layer is additive — /:city hubs and /:city/:year/(briefing|main-event) event pages
             with agenda / speakers / tickets underneath the event, never under the city. */}
-        <Route path="/toronto2027" element={<Navigate to="/toronto/2027/main-event" replace />} />
+        <Route path="/toronto2027" element={<Navigate to="/toronto/2027/national-festival" replace />} />
         <Route path="/toronto-briefing" element={<Navigate to="/toronto/2027/briefing" replace />} />
         <Route path="/highlights" element={<Highlights />} />
         <Route path="/highlights/2026" element={live(<Highlights />)} />
@@ -236,11 +243,14 @@ function App() {
         <Route path="/:city/:year/briefing/speakers" element={live(<EventLanding section="speakers" type="briefing" />)} />
         <Route path="/:city/:year/briefing/speakers/:speakerSlug" element={<EventLanding section="speaker" type="briefing" />} />
         <Route path="/:city/:year/briefing/tickets" element={live(<EventLanding section="tickets" type="briefing" />)} />
-        <Route path="/:city/:year/main-event" element={live(<EventLanding section="overview" type="main-event" />)} />
-        <Route path="/:city/:year/main-event/agenda" element={live(<EventLanding section="agenda" type="main-event" />)} />
-        <Route path="/:city/:year/main-event/speakers" element={live(<EventLanding section="speakers" type="main-event" />)} />
-        <Route path="/:city/:year/main-event/speakers/:speakerSlug" element={<EventLanding section="speaker" type="main-event" />} />
-        <Route path="/:city/:year/main-event/tickets" element={live(<EventLanding section="tickets" type="main-event" />)} />
+        <Route path="/:city/:year/national-festival" element={live(<EventLanding section="overview" type="main-event" />)} />
+        <Route path="/:city/:year/national-festival/agenda" element={live(<EventLanding section="agenda" type="main-event" />)} />
+        <Route path="/:city/:year/national-festival/speakers" element={live(<EventLanding section="speakers" type="main-event" />)} />
+        <Route path="/:city/:year/national-festival/speakers/:speakerSlug" element={<EventLanding section="speaker" type="main-event" />} />
+        <Route path="/:city/:year/national-festival/tickets" element={live(<EventLanding section="tickets" type="main-event" />)} />
+        {/* The National Festival's page (Nov 25 2026: it was /main-event). The old address still opens: it moves on to
+            the new one, with whatever came after it (agenda, speakers, tickets). */}
+        <Route path="/:city/:year/main-event/*" element={<OldEventAddress />} />
         {/* Any other address: "Page not found", noindex (src/pages/NotFound.jsx). */}
         <Route path="*" element={<NotFound />} />
       </Routes>

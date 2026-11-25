@@ -49,7 +49,7 @@ export default function BrandHeader({ ev, fixed = false }) {
   const phoneOpen = phoneFor === pathname;
   const eventItems = (events || []).filter((e) => Number(e.year) >= 2027).sort(compareEvents)
     .map((e) => [e.name, eventPath(e), e.statusNote || ""]);
-  eventItems.push(["Toronto 2026 (past)", "/toronto/2026/main-event", "Oct 26–27, 2026"]);
+  eventItems.push(["Toronto 2026 (past)", "/toronto/2026/national-festival", "Oct 26–27, 2026"]);
   return (
     <header className={`tb-header${fixed ? " tb-header-fixed" : ""}`}>
       <div className="tb-wrap">

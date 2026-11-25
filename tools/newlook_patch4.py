@@ -37,3 +37,13 @@ NEW = ('<a href="#" className="m-press" onClick={v.goHome} style={css(`min-heigh
 s = rep(s, OLD, NEW)
 open(f, 'w').write(s)
 print('ok')
+
+# ---- Home › Agenda highlights: the new section with an event picker (boards keep theirs as the fallback) ----
+import io
+for name, old in (('/ApprovedSite.jsx', 'k === "agenda" ? (<section id="p-agenda" className="nl-stage" style='),
+                  ('/ApprovedPhone.jsx', 'k === "agenda" ? (<section className="nl-stage" style={{"background": "#F5F3FA"')):
+    f = ROOT + name
+    s = open(f).read()
+    s = rep(s, old, old.replace('k === "agenda" ? (', 'k === "agenda" ? (v.homeAgenda || '))
+    open(f, 'w').write(s)
+print('ok agenda')

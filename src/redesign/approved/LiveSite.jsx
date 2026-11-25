@@ -667,6 +667,28 @@ export default function ApprovedRoute({ fallback = null }) {
     return rows.length ? rows : AGENDA_SOON;
   }, [content]);
 
+  // Home › Agenda highlights (Nov 25 2026): every 2027 event's sessions, so visitors can pick an event that has an
+  // agenda. One query, read through the preview-aware client (staging shows staged agendas).
+  const [allSessions, setAllSessions] = useState(null);
+  const onHome = !!(route && route.screen === "home");
+  useEffect(() => {
+    if (!onHome || allSessions) return undefined;
+    let live = true;
+    client.fetch(`*[_type == "session" && count(events) > 0]{ _id, title, day, time, endTime, type, format, isBreak, description, speakers, moderator, image, mediaUrl, "eventIds": events[]._ref }`)
+      .then((list) => { if (live) setAllSessions(list || []); })
+      .catch(() => { if (live) setAllSessions([]); });
+    return () => { live = false; };
+  }, [onHome, allSessions]);
+  const homeAgendas = useMemo(() => {
+    const out = {};
+    if (!allSessions) return out;
+    Object.keys(byCity).forEach((id) => {
+      const evId = byCity[id] && byCity[id]._id;
+      if (evId) out[id] = toDesignSessions(allSessions.filter((x) => (x.eventIds || []).includes(evId) && !x.isBreak));
+    });
+    return out;
+  }, [allSessions, byCity]);
+
   // Partners page: the partner records (logo, row) from the admin panel, instead of the design's sample names.
   const [partners, setPartners] = useState(null);
   const onPartners = !!(route && route.screen === "partners");
@@ -842,6 +864,7 @@ export default function ApprovedRoute({ fallback = null }) {
       homeOrder={homeSections}
       season={season}
       speakerDoc={speakerDoc}
+      homeAgendas={homeAgendas}
       loaderMs={0}
     />
   );

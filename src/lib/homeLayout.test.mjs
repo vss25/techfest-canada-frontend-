@@ -9,21 +9,21 @@ test("nothing saved = the design's order, everything shown", () => {
 });
 
 test("saved order wins, hidden ones are left out, missing ones go last", () => {
-  assert.deepEqual(homeOrder([{ key: "highlights" }, { key: "season", on: false }, { key: "agenda" }]), ["highlights", "partners", "form", "next", "speakers", "agenda"]);
-  assert.deepEqual(homeOrder([{ key: "nope" }, { key: "form" }, { key: "form", on: false }]), ["season", "next", "speakers", "agenda", "highlights", "partners", "form"]);
+  assert.deepEqual(homeOrder([{ key: "highlights" }, { key: "season", on: false }, { key: "agenda" }]), ["highlights", "form", "partners", "next", "speakers", "agenda"]);
+  assert.deepEqual(homeOrder([{ key: "nope" }, { key: "form" }, { key: "form", on: false }]), ["season", "partners", "next", "speakers", "agenda", "highlights", "form"]);
 });
 
 test("a list saved before the new sections existed gets them in their place", () => {
   const old = [{ key: "season" }, { key: "agenda" }, { key: "highlights" }, { key: "form" }];
   assert.deepEqual(homeOrder(old), HOME_SECTIONS);
   assert.deepEqual(homeOrder([{ key: "form" }, { key: "season" }, { key: "agenda", on: false }, { key: "highlights" }]),
-    ["form", "season", "next", "speakers", "highlights", "partners"]);
+    ["form", "season", "partners", "next", "speakers", "highlights"]);
 });
 
 test("the editor lists every section once", () => {
   assert.deepEqual(editorRows([{ key: "form", on: false }]), [
-    { key: "season", on: true }, { key: "next", on: true }, { key: "speakers", on: true }, { key: "agenda", on: true },
-    { key: "highlights", on: true }, { key: "partners", on: true }, { key: "form", on: false },
+    { key: "season", on: true }, { key: "partners", on: true }, { key: "next", on: true }, { key: "speakers", on: true },
+    { key: "agenda", on: true }, { key: "highlights", on: true }, { key: "form", on: false },
   ]);
 });
 

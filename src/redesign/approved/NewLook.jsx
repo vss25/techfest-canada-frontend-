@@ -205,6 +205,40 @@ function SessionRow({ s }) {
   );
 }
 
+/** Home › Agenda highlights: pick an event that has an agenda, see its first six sessions (two rows of three),
+    then open that event's whole agenda. events = [{ id, label, rows }], rows from toDesignSessions(). */
+export function AgendaHighlights({ events, initial, onAll }) {
+  const [pick, setPick] = useState(null);
+  if (!events || !events.length) return null;
+  const cur = events.find((e) => e.id === pick) || events.find((e) => e.id === initial) || events[0];
+  const rows = cur.rows.slice(0, 6);
+  return (
+    <section className="nx-s nx-stage" id="p-agenda"><div className="nx-wrap">
+      <Head label="Agenda" title="Agenda highlights">
+        <div className="nx-tabs" role="group" aria-label="Choose an event">
+          {events.map((e) => <button key={e.id} type="button" aria-pressed={e.id === cur.id} className={e.id === cur.id ? "on" : ""} onClick={() => setPick(e.id)}>{e.label}</button>)}
+        </div>
+      </Head>
+      <div className="nx-grid3" key={cur.id}>
+        {rows.map((s, i) => (
+          <article key={i} className="nx-card nx-agcard">
+            {s.media ? <CardMedia media={s.media} title={s.title} /> : null}
+            <span className="nx-agtime">{s.time || "Soon"}</span>
+            <span className="nx-kind nx-kind-chip">{s.kind}</span>
+            <h3>{s.title}</h3>
+            {s.who ? <p className="nx-who">{s.who}</p> : null}
+          </article>
+        ))}
+      </div>
+      <div className="nx-agmore">
+        <a href="#" className="nx-btn nx-ghost" onClick={act(() => onAll(cur.id))}>
+          {cur.rows.length > rows.length ? `See all ${cur.rows.length} sessions · ${cur.label}` : `See the full agenda · ${cur.label}`} <Arrow />
+        </a>
+      </div>
+    </div></section>
+  );
+}
+
 /** Event page: the first few sessions, with See the full agenda. */
 export function DayGlance({ sessions, onFull, id = "ev-agenda", alt }) {
   const rows = (sessions || []).slice(0, 4);

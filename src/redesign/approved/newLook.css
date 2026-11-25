@@ -544,3 +544,21 @@ html.nx-reveal .ap-root main > section > div[data-nx-r]:not(.nx-seen) { transfor
 /* The logo rows fade in rather than slide: a sideways slide made the phone layout scroll sideways for a moment. */
 .ap-root .nx-logostrip { overflow: hidden; }
 html.nx-reveal .ap-root .nx-logo-run[data-nx-r]:not(.nx-seen) { transform: none; opacity: 0; }
+
+/* ---- Home › Agenda highlights: an event picker and six cards, two rows of three ---- */
+.ap-root .nx-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.ap-root .nx-agcard { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 28px; min-height: 190px; }
+.ap-root .nx-agcard > .nx-cardmedia { align-self: stretch; margin: -28px -28px 8px; border-radius: 16px 16px 0 0; }
+.ap-root .nx-agtime { font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; background: linear-gradient(90deg, #FF7AC0, #B79CFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ap-root .nx-agcard h3 { margin: 2px 0 0; font-size: 20px; line-height: 1.3; color: var(--nl-text); }
+.ap-root .nx-agcard .nx-who { margin: auto 0 0; padding-top: 8px; }
+.ap-root .nx-agmore { display: flex; justify-content: center; margin-top: 30px; }
+.ap-root .nx-head .nx-tabs { align-self: flex-end; }
+@media (max-width: 960px) { .ap-root .nx-grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) {
+  .ap-root .nx-grid3 { grid-template-columns: 1fr; gap: 12px; }
+  .ap-root .nx-agcard { padding: 20px; min-height: 0; }
+  .ap-root .nx-agcard > .nx-cardmedia { margin: -20px -20px 6px; }
+  .ap-root .nx-agtime { font-size: 24px; }
+  .ap-root .nx-agcard h3 { font-size: 17px; }
+}

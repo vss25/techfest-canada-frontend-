@@ -10,6 +10,7 @@ import { Badge, Banner, Button, Card, ErrorState, LoadingState, PageHeader, Sect
 import { personPath } from "../people/peopleMeta";
 import { csvFileName, dietChips, pctText, summaryCsv, torontoTime } from "./eventSummaryParts";
 import { OVERALL_LABEL, attendanceView } from "../../checkin/lib/attendance.js";
+import { useAdminEvent, withEvent } from "../eventContext";
 
 /* Admin › RSVPs & meals › Event summary (Oct 23 2026). The organiser: "Create an admin panel summary of
    registration, breakfast included, lunch, dinner, etc. pass types, day 1 and day 2". Read only: one call,
@@ -280,12 +281,15 @@ const MEAL_SHORT = { cxo_d1: "CxO D1", cxo_d2: "CxO D2", lunch_d1: "Lunch D1", l
 
 export default function EventSummary() {
   const toast = useToast();
-  const { data: s, error, loading, refreshing, setData } = useApi("/console/summary", { interval: 60000 });
+  // Nov 23 2026: the chosen event's people only.
+  const { current: chosenEvent } = useAdminEvent();
+  const summaryPath = withEvent("/console/summary", chosenEvent, "event");
+  const { data: s, error, loading, refreshing, setData } = useApi(summaryPath, { interval: 60000 });
   const [busy, setBusy] = useState(false);
 
   const refresh = async () => {
     setBusy(true);
-    try { setData(await api.get("/console/summary?refresh=1")); } catch (err) { toast.error(err); } finally { setBusy(false); }
+    try { setData(await api.get(`${summaryPath}${summaryPath.includes("?") ? "&" : "?"}refresh=1`)); } catch (err) { toast.error(err); } finally { setBusy(false); }
   };
   const download = () => {
     const url = URL.createObjectURL(new Blob([`\uFEFF${summaryCsv(s)}`], { type: "text/csv;charset=utf-8" }));

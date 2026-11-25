@@ -11,6 +11,8 @@ import {
 import { num } from "../format";
 import { EYEBROW, JURY, NOMINATION_STATUS, plural } from "./juryShared";
 import { StateBadge, StatusBadge } from "./juryBadges";
+import EventOnly from "../EventOnly";
+import { useAdminEvent, withEvent } from "../eventContext";
 
 /* =========================================================
    Admin › Catalyst Awards › Allocation (Oct 2026)
@@ -298,9 +300,10 @@ function NominationDrawer({ row, jurors, canManage, onClose, onChanged }) {
   );
 }
 
-export default function JuryAllocation() {
+function JuryAllocationForEvent() {
   const { isManagement } = useAdmin();
-  const { data, error, loading, reload } = useApi(`${JURY}/nominations`);
+  const { current } = useAdminEvent();
+  const { data, error, loading, reload } = useApi(withEvent(`${JURY}/nominations`, current));
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
   const [pillar, setPillar] = useState("");
@@ -459,4 +462,8 @@ export default function JuryAllocation() {
       {openRow && <NominationDrawer row={openRow} jurors={jurors} canManage={isManagement} onClose={() => setOpenId("")} onChanged={reload} />}
     </>
   );
+}
+
+export default function JuryAllocation() {
+  return <EventOnly title="Allocation" eyebrow="Catalyst Awards" what="Catalyst Awards records" because="The Catalyst Awards nominations, jury and results here are The Tech Festival Canada 2026's. Next year's awards will have their own once they open."><JuryAllocationForEvent /></EventOnly>;
 }

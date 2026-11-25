@@ -8,6 +8,7 @@ import { Badge, Banner, Button, Card, ErrorState, Field, IconButton, Input, Load
 import { when } from "../format";
 import { isoFromTorontoInput, torontoInputValue } from "../../jury/juryLib";
 import { EYEBROW, JURY, plural } from "./juryShared";
+import EventOnly from "../EventOnly";
 
 /* =========================================================
    Admin › Catalyst Awards › Scoring rubric (Oct 2026)
@@ -95,7 +96,7 @@ function CriterionEditor({ c, i, count, share, onChange, onMove, onRemove, disab
   );
 }
 
-export default function JuryRubric() {
+function JuryRubricForEvent() {
   const { isManagement } = useAdmin();
   const toast = useToast();
   const { data, error, loading, reload, setData } = useApi(`${JURY}/rubric`);
@@ -196,4 +197,8 @@ export default function JuryRubric() {
       </Card>
     </>
   );
+}
+
+export default function JuryRubric() {
+  return <EventOnly title="Scoring rubric" eyebrow="Catalyst Awards" what="Catalyst Awards records" because="The Catalyst Awards nominations, jury and results here are The Tech Festival Canada 2026's. Next year's awards will have their own once they open."><JuryRubricForEvent /></EventOnly>;
 }

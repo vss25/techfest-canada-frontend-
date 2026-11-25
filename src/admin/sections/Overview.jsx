@@ -6,7 +6,7 @@ import { useApi } from "../hooks";
 import { useAdmin } from "../adminContext";
 import { Banner, Card, PageHeader, StatTile, focusRing } from "../ui";
 import { num } from "../format";
-import { useAdminEvent } from "../eventContext";
+import { useAdminEvent, withEvent } from "../eventContext";
 
 /* Sold vs target for the chosen event (Nov 22 2026): targets come from Operations › Event settings. */
 function TargetBar({ label, done, target, to, unit }) {
@@ -48,13 +48,14 @@ const quickActions = (isManagement) => [
 
 export default function Overview() {
   const { me, isManagement } = useAdmin();
-  const stats = useApi("/console/stats");
   // Money is management-only; staff see the ticket count from the ticket list instead.
   /* Nov 20 2026: the numbers follow the event chosen at the top. TTFC 2026 keeps its Stripe figures;
      any other event shows only its own paid orders, so Vancouver never shows Toronto's revenue. */
   const { attention, current: ev } = useAdminEvent();
   const eventKey = ev?.eventKey?.current || ev?.eventKey || "";
   const other = !!eventKey && eventKey !== "ttfc-2026-main";
+  // Nov 23 2026: app numbers for the chosen event too (open reports stay the whole app's).
+  const stats = useApi(withEvent("/console/stats", ev));
   const sales = useApi(isManagement && !other ? "/console/sales?range=week" : null);
   const own = useApi(isManagement && other ? `/console/sales-event/summary?event=${eventKey}` : null);
   const ticketList = useApi(isManagement ? null : "/console/tickets?show=visible");

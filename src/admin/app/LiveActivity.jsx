@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Activity, Pause, Play } from "lucide-react";
 import { useApi } from "../hooks";
+import { adminEventKey, useAdminEvent, withEvent } from "../eventContext";
 import { Button, Card, EmptyState, ErrorState, LoadingState, PageHeader, Select } from "../ui";
 import { EventRow } from "./parts";
 
@@ -12,7 +13,10 @@ const KINDS = [
 export default function LiveActivity() {
   const [kind, setKind] = useState("");
   const [paused, setPaused] = useState(false);
-  const { data, error, loading, reload, refreshing } = useApi(`/console/events${kind ? `?name=${kind}` : ""}`, { interval: paused ? 0 : 10000 });
+  // Nov 23 2026: the chosen event's activity only (the app has been Toronto 2026's so far).
+  const { current } = useAdminEvent();
+  const other = !!adminEventKey(current) && adminEventKey(current) !== "ttfc-2026-main";
+  const { data, error, loading, reload, refreshing } = useApi(withEvent(`/console/events${kind ? `?name=${kind}` : ""}`, current), { interval: paused ? 0 : 10000 });
 
   return (
     <>
@@ -36,7 +40,8 @@ export default function LiveActivity() {
         </Select>
       </div>
       {loading ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !data?.length ? (
-        <EmptyState icon={Activity} title="No activity yet" body="It appears here as soon as people use the app." />
+        <EmptyState icon={Activity} title={other ? `No app activity for ${current?.name || "this event"} yet` : "No activity yet"}
+          body={other ? "The app's activity so far is The Tech Festival Canada 2026's. This event's appears here once the app is open for it." : "It appears here as soon as people use the app."} />
       ) : (
         <Card className="p-0 sm:p-0"><ul>{data.map((e, i) => <EventRow key={e._id || i} e={e} showUser />)}</ul></Card>
       )}

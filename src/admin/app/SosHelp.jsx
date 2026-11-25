@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckCheck, Eye, LifeBuoy, Mail, MapPin, Phone, RotateCcw, Send } from "lucide-react";
 import { useApi } from "../hooks";
+import { useAdminEvent, withEvent } from "../eventContext";
 import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, EmptyState, ErrorState, LoadingState, PageHeader, SectionTitle, Textarea } from "../ui";
@@ -38,7 +39,9 @@ export default function SosHelp() {
   const [picked, setPicked] = useState("");
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState("");
-  const list = useApi(`${BASE}?status=${filter}`, { interval: 15000 });
+  // Nov 23 2026: the chosen event's requests only (the top bar's bell still counts every event's open ones).
+  const { current } = useAdminEvent();
+  const list = useApi(withEvent(`${BASE}?status=${filter}`, current), { interval: 15000 });
   const detail = useApi(picked ? `${BASE}/${encodeURIComponent(picked)}` : null, { interval: 15000 });
 
   const requests = [...(list.data?.requests || [])].sort((a, b) => (rank[a.status] - rank[b.status])

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useApi, useDebounced } from "../hooks";
 import { useAdmin } from "../adminContext";
+import { adminEventKey, useAdminEvent } from "../eventContext";
 import { useToast } from "../toastContext";
 import { useAdminTheme } from "../theme";
 import {
@@ -90,7 +91,28 @@ function sendBlocker({ isManagement, phase, config, dirty }) {
   return null;
 }
 
+/* Nov 23 2026: the survey is about one event (the backend's SURVEY_EVENT_KEY, the 2026 main event). Any other
+   event chosen in the top bar shows that it has no survey yet, instead of Toronto 2026's questions and answers. */
+const SURVEY_EVENT_KEY = "ttfc-2026-main";
+
 export default function Survey() {
+  const { current, events, setCurrent } = useAdminEvent();
+  const key = adminEventKey(current);
+  if (key && key !== SURVEY_EVENT_KEY) {
+    const surveyEvent = (events || []).find((e) => adminEventKey(e) === SURVEY_EVENT_KEY);
+    return (
+      <div>
+        <PageHeader eyebrow="Website & app" title="Attendee survey" description={`The post-event survey for ${current?.name || "this event"}.`} />
+        <EmptyState icon={ClipboardList} title={`No survey for ${current?.name || "this event"} yet`}
+          body={`The attendee survey is set up for ${surveyEvent?.name || "The Tech Festival Canada 2026"}. Its questions and answers stay with that event.`}
+          action={surveyEvent ? <Button onClick={() => setCurrent(surveyEvent._id)}>Open {surveyEvent.name}'s survey</Button> : null} />
+      </div>
+    );
+  }
+  return <SurveyForEvent />;
+}
+
+function SurveyForEvent() {
   const { isManagement } = useAdmin();
   const toast = useToast();
   const { theme } = useAdminTheme();

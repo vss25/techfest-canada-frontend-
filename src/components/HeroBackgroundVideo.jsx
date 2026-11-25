@@ -11,7 +11,7 @@ import { heroStillOnly, heroVideoSrc } from "../lib/siteFiles";
    - One small file (≤ 1080p, ≤ 20 s, silent: admin cms/heroVideoPrep.js) from Sanity's CDN, cached by browsers.
 ========================================================= */
 
-export default function HeroBackgroundVideo({ src, position = "center", anyDevice = false }) {
+export default function HeroBackgroundVideo({ src, position = "center", anyDevice = false, onPlaying }) {
   const url = heroVideoSrc(src);
   const ref = useRef(null);
   const [ready, setReady] = useState(false);   // allowed and the page has loaded: render the <video>
@@ -67,7 +67,7 @@ export default function HeroBackgroundVideo({ src, position = "center", anyDevic
       preload="auto"
       aria-hidden="true"
       tabIndex={-1}
-      onPlaying={() => setPlaying(true)}
+      onPlaying={() => { setPlaying(true); onPlaying?.(); }}
       onError={() => setReady(false)}
       style={{
         position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: position,

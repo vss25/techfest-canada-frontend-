@@ -28,6 +28,7 @@ const EDITOR = {
   homeSponsor: (id) => `/admin/content/home-sponsors?edit=${id}`,
   siteSettings: () => "/admin/content/settings",
   aboutContent: () => "/admin/content/settings",
+  siteCopy: () => "/admin/content/site-copy",
 };
 
 const when = (iso) => (iso ? new Date(iso).toLocaleString("en-CA", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "");

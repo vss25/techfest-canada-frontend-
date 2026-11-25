@@ -12,6 +12,8 @@ import {
   Switch, TableWrap, Tabs, Textarea, focusRing,
 } from "../ui";
 import { CmsBanners } from "./CmsParts";
+import SessionMedia from "./SessionMedia";
+import { useAdmin } from "../adminContext";
 import { ReadinessStrip } from "./ReadinessCard";
 import { ChangeBadge } from "./workflow";
 import { changeState } from "./workflowState";
@@ -53,7 +55,7 @@ function FormatBadge({ format }) {
 const blank = (day) => ({
   title: "", day, time: "09:00", endTime: "09:30", type: "", format: "keynote", featured: false, isBreak: false,
   pillar: "", sector: "", stage: "", description: "", speakers: [], moderator: { name: "", org: "" },
-  polls: "auto", qa: "auto", events: [],
+  polls: "auto", qa: "auto", events: [], image: { assetId: null, url: "" }, mediaUrl: "",
 });
 
 const refIds = (d) => (d?.events || []).map((r) => r?._ref).filter(Boolean);
@@ -65,6 +67,8 @@ const toForm = (d) => ({
   speakers: (d.speakers || []).map((p) => ({ name: p.name || "", org: p.org || "", tentative: !!p.tentative })),
   moderator: { name: d.moderator?.name || "", org: d.moderator?.org || "" },
   polls: liveMode(d.polls), qa: liveMode(d.qa), events: refIds(d),
+  // The card's picture and GIF / video (SessionMedia.jsx). imageUrl comes with the list (image.asset->url).
+  image: { assetId: null, url: d.imageUrl || "" }, mediaUrl: d.mediaUrl || "",
 });
 
 /** Form → request body. Speakers/moderator are sent as plain objects (the server adds _key). */
@@ -78,6 +82,11 @@ function toBody(form, original) {
     pillar: form.pillar || null, sector: form.sector || null, stage: form.stage.trim() || null,
     description: form.description.trim() || null, speakers: people, moderator: mod,
   };
+  // The card's media: a newly uploaded picture, or null when it was removed; the GIF / video when it changed.
+  if (form.image.assetId) body.image = form.image.assetId;
+  else if (original && original.imageUrl && !form.image.url) body.image = null;
+  const media = (form.mediaUrl || "").trim();
+  if (original ? media !== (original.mediaUrl || "") : media) body.mediaUrl = media || null;
   if (!original) {
     // Creating: drop empty optional fields instead of "unsetting" them.
     for (const k of Object.keys(body)) if (body[k] === null) delete body[k];
@@ -170,6 +179,7 @@ function SessionDrawer({ types = [], onEditTypes, doc, creating, defaultDay, def
   const dayEvent = eventList.find((e) => e._id === (defaultEventId || refIds(doc)[0]));
   const listId = useId();
   const [form, setForm] = useState(() => (doc ? toForm(doc) : { ...blank(defaultDay), events: defaultEventId ? [defaultEventId] : [] }));
+  const { isManagement } = useAdmin();
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v?.target ? (v.target.type === "checkbox" ? v.target.checked : v.target.value) : v }));
@@ -200,7 +210,7 @@ function SessionDrawer({ types = [], onEditTypes, doc, creating, defaultDay, def
     if (isAuto) {
       // Autosave: saved as a draft, quietly, and the editor stays open.
       const saved = creating ? await api.post("/cms/session?draft=1", body) : await api.patch(`/cms/session/${doc._id}?draft=1`, body);
-      onAutoSaved({ ...(doc || {}), ...body, ...(saved || {}), hasDraft: true });
+      onAutoSaved({ ...(doc || {}), ...body, ...(saved || {}), hasDraft: true, imageUrl: form.image.url, mediaUrl: (form.mediaUrl || "").trim() });
       return true;
     }
     setSaving(true);
@@ -208,7 +218,7 @@ function SessionDrawer({ types = [], onEditTypes, doc, creating, defaultDay, def
       const saved = creating ? await api.post("/cms/session?draft=1", body) : await api.patch(`/cms/session/${doc._id}?draft=1`, body);
       auto.markSaved();
       toast.success(creating ? `Session added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
-      onSaved({ ...(doc || {}), ...body, ...(saved || {}) });
+      onSaved({ ...(doc || {}), ...body, ...(saved || {}), imageUrl: form.image.url, mediaUrl: (form.mediaUrl || "").trim() });
     } catch (err) { toast.error(err); } finally { setSaving(false); }
   };
 
@@ -365,6 +375,8 @@ function SessionDrawer({ types = [], onEditTypes, doc, creating, defaultDay, def
         <Field label="Description" hint={`${form.description.length}/1500 — optional.`}>
           {(id) => <Textarea id={id} rows={4} value={form.description} onChange={set("description")} maxLength={1500} disabled={readOnly} />}
         </Field>
+
+        <SessionMedia form={form} setForm={setForm} readOnly={readOnly} canUploadFile={isManagement && !readOnly} />
       </form>
     </EditPanel>
   );

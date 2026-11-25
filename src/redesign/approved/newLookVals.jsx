@@ -1,7 +1,9 @@
 import React from "react";
-import { AgendaPage, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, Ticker, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
+import { AgendaPage, CardMedia, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, Ticker, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
 import { cityPath, countdownTarget } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
+import { sessionCardMedia } from "../../lib/sessionMedia";
+import { urlFor } from "../../utils/sanity";
 import { SPK_MIN } from "./speakerGrid";
 
 /* Fills the boards' new-look slots (tools/newlook_patch2.py) with live data. Shared by the desktop and phone
@@ -38,7 +40,11 @@ export function applyNewLook(v, self, { openTix, phone }) {
   const goAgenda = go(cityPath(city) + "/agenda");
   const types = p.data && p.data.types;
   const onSale = !p.ticketsSoon && !!(types && types.length);
-  const rows = (p.data && p.data.sessionsData) || v.sessions || [];
+  // A session's picture, GIF or video (Admin › Agenda › "On the session's card"): on the home page's Agenda
+  // highlights cards (the boards call v.cardMedia) and beside each row of the agenda lists.
+  const mediaOf = (r) => sessionCardMedia(r && r.image && r.image.asset ? urlFor(r.image).width(900).height(506).fit("crop").auto("format").url() : "", r && r.mediaUrl);
+  v.cardMedia = (r) => <CardMedia media={mediaOf(r)} title={r && r.title} />;
+  const rows = ((p.data && p.data.sessionsData) || v.sessions || []).map((r) => ({ ...r, media: mediaOf(r) }));
   const hasAgenda = rows.some((r) => r && r.time);
   const withOpen = (list) => list.map((x) => ({ ...x, open: go(speakerPath(x.name)) }));
 

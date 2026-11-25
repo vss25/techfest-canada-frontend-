@@ -53,3 +53,17 @@ for name in ('/ApprovedSite.jsx', '/ApprovedPhone.jsx'):
     s = rep(s, '<footer data-dark="1"', '{v.footTicker}<footer data-dark="1"')
     lines[li] = s; open(f, 'w').write('\n'.join(lines))
 print('ok footer ticker')
+
+# ---- A picture, GIF or video at the top of each agenda card on the home page (Admin › Agenda sets it) ----
+MEDIA = '{v.cardMedia ? v.cardMedia(s) : null}'
+f = ROOT + '/ApprovedSite.jsx'
+lines, li = load(f); s = lines[li]
+A = '{(v.sessions || []).map((s, s__i) => (<React.Fragment key={s__i}><article className="p-card" style={{"flex": "0 0 389px", "boxSizing": "border-box", "background": "#FFFFFF", "borderRadius": "12px", "padding": "28px", "display": "flex", "flexDirection": "column", "gap": "12px"}}>'
+s = rep(s, A, A + MEDIA)
+lines[li] = s; open(f, 'w').write('\n'.join(lines))
+f = ROOT + '/ApprovedPhone.jsx'
+lines, li = load(f); s = lines[li]
+A = '{(v.sessions || []).map((s, s__i) => (<React.Fragment key={s__i}><article style={{"flex": "0 0 300px", "boxSizing": "border-box", "background": "#FFFFFF", "borderRadius": "12px", "padding": "20px", "display": "flex", "flexDirection": "column", "gap": "8px"}}>'
+s = rep(s, A, A + MEDIA)
+lines[li] = s; open(f, 'w').write('\n'.join(lines))
+print('ok card media')

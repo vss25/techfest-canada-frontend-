@@ -7,6 +7,7 @@ import { uploadRaw } from "./uploadFile";
 import { VIDEO_LIMITS, describe } from "./heroVideoPrep";
 import VideoEditor from "./VideoEditor";
 import { HERO_SHADES, heroShadeBackground, shadeKey } from "../../lib/heroShade";
+import { HERO_HEIGHTS, focusOf, heightKey, heroPosition, previewAspect } from "../../lib/heroFrame";
 
 /* =========================================================
    Event pages › Top of the page › Background video (Nov 24 2026). One short silent loop per event, shown behind the
@@ -17,10 +18,12 @@ import { HERO_SHADES, heroShadeBackground, shadeKey } from "../../lib/heroShade"
    video (heroShade, src/lib/heroShade.js) is picked here too.
 ========================================================= */
 
-export default function EventVideoField({ url, posterUrl, onChange, disabled, canUpload, shade, onShadeChange, media, onMediaChange }) {
+export default function EventVideoField({ url, posterUrl, onChange, disabled, canUpload, shade, onShadeChange, media, onMediaChange, focus, onFocusChange, height, onHeightChange }) {
   const id = useId();
   const shadeId = useId();
   const mediaId = useId();
+  const focusId = useId();
+  const heightId = useId();
   // Photo or video at the top of the page, never both (Nov 25 2026). Unset: the video when there is one.
   const shows = media === "photo" || media === "video" ? media : (url ? "video" : "photo");
   const inputRef = useRef(null);
@@ -93,6 +96,10 @@ export default function EventVideoField({ url, posterUrl, onChange, disabled, ca
           </p>
         </div>
       )}
+      {onFocusChange && (
+        <FramingPreview src={shows === "video" && url ? url : ""} poster={posterUrl} shade={level} focus={focus} height={height}
+          focusId={focusId} heightId={heightId} disabled={disabled} onFocusChange={onFocusChange} onHeightChange={onHeightChange} />
+      )}
       {onShadeChange && (
         <div className="mt-2 grid gap-1.5">
           <label htmlFor={shadeId} className="text-sm font-semibold">Shade over the photo or video</label>
@@ -103,6 +110,48 @@ export default function EventVideoField({ url, posterUrl, onChange, disabled, ca
         </div>
       )}
       {editing && <VideoEditor source={editing} shade={level} name="event-hero" upload={uploadRaw} onDone={done} onClose={() => setEditing(null)} />}
+    </div>
+  );
+}
+
+/* Framing and height of the top of the page, with what a computer (1280 px wide) and a phone (375 px) show
+   (Nov 25 2026, the owner: "The video is slightly cropped from bottom"). src/lib/heroFrame.js has the sizes. */
+function FramingPreview({ src, poster, shade, focus, height, focusId, heightId, disabled, onFocusChange, onHeightChange }) {
+  const f = focusOf(focus);
+  const h = heightKey(height);
+  const pos = heroPosition(f, "center");
+  const frame = (kind, cls) => (
+    <figure className={`grid gap-1 ${cls}`}>
+      <div className="relative w-full overflow-hidden rounded-lg bg-[#1F1847]" style={{ aspectRatio: String(previewAspect(h, kind)) }}>
+        {src ? <video src={src} poster={poster || undefined} muted loop autoPlay playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: pos }} />
+          : poster ? <img src={poster} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: pos }} /> : null}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ background: heroShadeBackground(shade, kind === "phone" ? "phoneFull" : "full") }} />
+      </div>
+      <figcaption className="text-[11px] text-ttfc-dim">{kind === "phone" ? "Phone" : "Computer"}</figcaption>
+    </figure>
+  );
+  return (
+    <div className="mt-2 grid gap-2">
+      <span className="text-sm font-semibold">Framing</span>
+      <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,1fr)] items-end gap-3">
+        {frame("desktop", "")}
+        {frame("phone", "")}
+      </div>
+      <label htmlFor={focusId} className="grid gap-1 text-xs text-ttfc-dim">
+        <span className="flex justify-between"><span>Show more of the top</span><span>{f === null ? "The design's framing" : `${f}%`}</span><span>the bottom</span></span>
+        <input id={focusId} type="range" min={0} max={100} step={1} value={f === null ? 50 : f} disabled={disabled}
+          onChange={(e) => onFocusChange(Number(e.target.value))} className="w-full accent-[#F5A623]" />
+      </label>
+      {f !== null && !disabled && (
+        <button type="button" className="justify-self-start text-xs font-semibold text-ttfc-muted underline" onClick={() => onFocusChange("")}>Back to the design's framing</button>
+      )}
+      <div className="grid gap-1.5">
+        <label htmlFor={heightId} className="text-sm font-semibold">Height of the top of the page</label>
+        <Select id={heightId} value={h} onChange={(e) => onHeightChange(e.target.value)} disabled={disabled}>
+          {HERO_HEIGHTS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+        </Select>
+        <p className="text-xs text-ttfc-dim">The picture always fills the area, so a taller area cuts less off a wide video. Full screen fills the whole first screen on phones and computers.</p>
+      </div>
     </div>
   );
 }

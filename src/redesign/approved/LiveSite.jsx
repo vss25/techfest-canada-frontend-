@@ -5,6 +5,7 @@ import VideoFacade from "./VideoFacade";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { heroVideoSrc } from "../../lib/siteFiles";
 import { heroShadeBackground } from "../../lib/heroShade";
+import { heroHeights, heroPosition } from "../../lib/heroFrame";
 import LivePhone from "./LivePhone";
 import useSeo from "../../hooks/useSeo";
 import { client, urlFor } from "../../utils/sanity";
@@ -251,6 +252,7 @@ class LiveSite extends ApprovedSite {
       v.heroVideo = <HeroBackgroundVideo key={v.c.video} src={v.c.video} position={v.c.posD} anyDevice onPlaying={() => { if (this.state.heroPlaying !== playing) this.setState({ heroPlaying: playing }); }} />;
       v.hideCredit = this.state.heroPlaying === v.c.video;
     }
+    if (v.c && v.c.heights) v.heroH = v.c.heights;
     const past = this.props.past2026;
     if (past) {
       if (past.speakers.length) v.starSpeakers = past.speakers.slice(0, 4).map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));
@@ -667,6 +669,10 @@ export default function ApprovedRoute({ fallback = null }) {
         c.media = ev.heroMedia === "photo" || ev.heroMedia === "video" ? ev.heroMedia : (heroVideoSrc(ev.heroVideoUrl) ? "video" : "photo");
         c.video = c.media === "video" ? heroVideoSrc(ev.heroVideoUrl) : "";
         c.shade = ev.heroShade || "default";
+        // Framing and height of the top of the page (Admin › Event pages, Nov 25 2026): unset = the design's.
+        c.posD = heroPosition(ev.heroFocus, c.posD || "center");
+        c.pos = heroPosition(ev.heroFocus, c.pos || "center");
+        c.heights = heroHeights(ev.heroHeight);
         out[id] = c;
       });
       return out;

@@ -114,6 +114,7 @@ export default class LivePhone extends ApprovedPhone {
   renderVals() {
     const v = super.renderVals();
     // The event's video on phones too, when staff chose "Video" (LiveSite sets c.video only then).
+    if (v.c && v.c.heights) v.heroH = v.c.heights;
     if (v.c && v.c.video) {
       const playing = v.c.video;
       v.heroVideo = <HeroBackgroundVideo key={v.c.video} src={v.c.video} position={v.c.pos} anyDevice onPlaying={() => { if (this.state.heroPlaying !== playing) this.setState({ heroPlaying: playing }); }} />;

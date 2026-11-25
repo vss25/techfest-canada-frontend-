@@ -90,6 +90,13 @@ export default defineType({
             description: "Optional: a short, silent hero loop (YouTube/Vimeo or a hosted file). The hero image is the poster and the mobile fallback.",
         }),
         defineField({
+            name: "heroMedia",
+            title: "Show at the top",
+            type: "string",
+            description: "Photo or video at the top of the event page (phones and computers). Empty: the video when there is one.",
+            options: { list: [{ title: "Photo", value: "photo" }, { title: "Video", value: "video" }] },
+        }),
+        defineField({
             name: "heroShade",
             title: "Hero shade",
             type: "string",

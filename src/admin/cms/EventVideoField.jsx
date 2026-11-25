@@ -17,9 +17,12 @@ import { HERO_SHADES, heroShadeBackground, shadeKey } from "../../lib/heroShade"
    video (heroShade, src/lib/heroShade.js) is picked here too.
 ========================================================= */
 
-export default function EventVideoField({ url, posterUrl, onChange, disabled, canUpload, shade, onShadeChange }) {
+export default function EventVideoField({ url, posterUrl, onChange, disabled, canUpload, shade, onShadeChange, media, onMediaChange }) {
   const id = useId();
   const shadeId = useId();
+  const mediaId = useId();
+  // Photo or video at the top of the page, never both (Nov 25 2026). Unset: the video when there is one.
+  const shows = media === "photo" || media === "video" ? media : (url ? "video" : "photo");
   const inputRef = useRef(null);
   const toast = useToast();
   const [editing, setEditing] = useState(null);  // a File just picked, or the uploaded URL to edit again
@@ -71,11 +74,25 @@ export default function EventVideoField({ url, posterUrl, onChange, disabled, ca
       </div>
       {info && <p className="text-xs text-ttfc-muted tabular-nums">Uploaded: {info}</p>}
       <p className="text-xs leading-relaxed text-ttfc-dim">
-        Plays behind the top of this event&apos;s page on computers, filling the screen like the city photo. Phones, data saver and reduced motion show the photo instead.
+        Fills the top of this event&apos;s page like the city photo, on phones and computers, when &quot;Show at the top&quot; is Video. Visitors with data saver or reduced motion turned on see the photo.
         Before it goes up you pick the part to loop (up to {VIDEO_LIMITS.maxSeconds} seconds) and its speed; it always plays silently, on a loop. Trim or speed it up again later with the button above.
       </p>
       {!canUpload && !disabled && <p className="flex items-center gap-1.5 text-xs text-ttfc-muted"><Lock className="h-3 w-3" aria-hidden="true" /> Only management can upload videos.</p>}
       {err && <p role="alert" className="text-xs text-red-300">{err}</p>}
+      {onMediaChange && (
+        <div className="mt-2 grid gap-1.5">
+          <label htmlFor={mediaId} className="text-sm font-semibold">Show at the top of the page</label>
+          <Select id={mediaId} value={shows} onChange={(e) => onMediaChange(e.target.value)} disabled={disabled}>
+            <option value="photo">Photo</option>
+            <option value="video" disabled={!url}>{url ? "Video" : "Video (upload one first)"}</option>
+          </Select>
+          <p className="text-xs text-ttfc-dim">
+            {shows === "video"
+              ? "The video plays on phones and computers, with the photo as its first frame while it loads. Phones download it too: the smaller 720p size keeps that light."
+              : url ? "Only the photo shows. The video stays saved: pick Video to show it again." : "Only the photo shows."}
+          </p>
+        </div>
+      )}
       {onShadeChange && (
         <div className="mt-2 grid gap-1.5">
           <label htmlFor={shadeId} className="text-sm font-semibold">Shade over the photo or video</label>

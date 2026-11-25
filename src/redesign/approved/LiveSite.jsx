@@ -241,10 +241,11 @@ class LiveSite extends ApprovedSite {
     v.exFilters = [];
     v.exList = [];
     v.exSoon = { title: "Exhibitors to be announced", text: "Booths are being booked now. Exhibitors are listed here as they are confirmed." };
-    // The event's background video (Admin › Event pages), over its city photo and sized like it; computers only.
+    // The event's background video (Admin › Event pages), over its city photo and sized like it. Staff choose photo
+    // OR video (heroMedia): "video" plays on every device (data saver and reduced motion keep the photo).
     // The shade over the photo / video (Admin › Event pages › Top of the page; "default" = the usual fade).
     if (v.c) { v.shadeFull = { position: "absolute", inset: "0", background: heroShadeBackground(v.c.shade, "full") }; v.shadeSoon = { position: "absolute", inset: "0", background: heroShadeBackground(v.c.shade, "soon") }; }
-    if (v.c && v.c.video) v.heroVideo = <HeroBackgroundVideo key={v.c.video} src={v.c.video} position={v.c.posD} />;
+    if (v.c && v.c.video) v.heroVideo = <HeroBackgroundVideo key={v.c.video} src={v.c.video} position={v.c.posD} anyDevice />;
     const past = this.props.past2026;
     if (past) {
       if (past.speakers.length) v.starSpeakers = past.speakers.slice(0, 4).map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));
@@ -657,7 +658,9 @@ export default function ApprovedRoute({ fallback = null }) {
         // in the admin panel (the older hero photos belong to the previous design).
         if (ev.citySkyline && ev.citySkyline.asset) { c.img = urlFor(ev.citySkyline).width(2000).quality(78).auto("format").url(); c.credit = ev.photoCredit || ""; }
         // Its background video (Nov 24 2026): only our own Sanity uploads (heroVideoSrc); the photo stays its first frame.
-        c.video = heroVideoSrc(ev.heroVideoUrl);
+        // Photo or video, never both (Nov 25 2026): heroMedia, else the video when there is one.
+        c.media = ev.heroMedia === "photo" || ev.heroMedia === "video" ? ev.heroMedia : (heroVideoSrc(ev.heroVideoUrl) ? "video" : "photo");
+        c.video = c.media === "video" ? heroVideoSrc(ev.heroVideoUrl) : "";
         c.shade = ev.heroShade || "default";
         out[id] = c;
       });

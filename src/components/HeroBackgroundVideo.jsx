@@ -4,13 +4,14 @@ import { heroStillOnly, heroVideoSrc } from "../lib/siteFiles";
 /* =========================================================
    An event's hero video (Nov 24 2026), laid over the city photo and sized exactly like it (absolute, inset 0,
    object-fit: cover, the photo's focal point), so it fills the hero at any screen size. Kept cheap:
-   - Phones and tablets, data saver and reduced motion never request it (heroStillOnly): they keep the photo.
+   - Data saver and reduced motion never request it (heroStillOnly): they keep the photo. Phones and tablets play
+     it only when staff chose "Video" for the event (anyDevice), otherwise they keep the photo too.
    - It's requested only after the page has loaded (the photo is the first paint), and fades in once it plays.
    - It pauses when scrolled away or the tab is hidden, and plays again when it's back.
    - One small file (≤ 1080p, ≤ 20 s, silent: admin cms/heroVideoPrep.js) from Sanity's CDN, cached by browsers.
 ========================================================= */
 
-export default function HeroBackgroundVideo({ src, position = "center" }) {
+export default function HeroBackgroundVideo({ src, position = "center", anyDevice = false }) {
   const url = heroVideoSrc(src);
   const ref = useRef(null);
   const [ready, setReady] = useState(false);   // allowed and the page has loaded: render the <video>
@@ -18,7 +19,7 @@ export default function HeroBackgroundVideo({ src, position = "center" }) {
 
   // Give it key={src}: a new video is a new component, so nothing here resets by hand.
   useEffect(() => {
-    if (!url || heroStillOnly()) return undefined;
+    if (!url || heroStillOnly({ anyDevice })) return undefined;
     let cancelled = false;
     let idle = 0;
     const go = () => {
@@ -34,7 +35,7 @@ export default function HeroBackgroundVideo({ src, position = "center" }) {
       if ("cancelIdleCallback" in window) window.cancelIdleCallback(idle);
       window.clearTimeout(idle);
     };
-  }, [url]);
+  }, [url, anyDevice]);
 
   // Pause off screen and in a hidden tab.
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React from "react";
-import { AgendaPage, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
+import { AgendaPage, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, Ticker, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
 import { cityPath, countdownTarget } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
 import { SPK_MIN } from "./speakerGrid";
@@ -63,7 +63,14 @@ export function applyNewLook(v, self, { openTix, phone }) {
   // Home.
   if (s.screen === "home") {
     v.heroCtas = <HeroCtas onTickets={openTix} onExplore={goEvent} city={c.name} />;
-    v.homeNext = <NextUp label={`Next up · ${c.date || ""}`} title={c.title} lead={c.blurb} img={c.img} alt={c.title} onTickets={openTix} onEvent={goEvent} />;
+    const cities = [...new Set((p.season || []).filter((x) => x.id !== "past").map((x) => x.name))];
+    v.homeNext = (
+      <>
+        <Ticker items={[...cities, "Main Event"]} />
+        <NextUp label={`Next up · ${c.date || ""}`} title={c.title} lead={c.blurb} img={c.img} alt={c.title} onTickets={openTix} onEvent={goEvent}
+          stub={c.startDate ? <DateStub date={c.startDate} /> : null} />
+      </>
+    );
     v.homeSpeakers = spk ? <OnStage alt label={spkLabel} speakers={withOpen(spk.slice(0, 4))} onAll={goAllSpeakers} /> : null;
     v.homeLastYear = <LastYear photos={PHOTOS} onGallery={v.goPast} />;
     v.homePartners = <PartnersStrip alt label={ptnLabel} logos={ptn} onAll={v.goPartners || v.goPartnersAll} />;

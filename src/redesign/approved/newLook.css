@@ -173,10 +173,6 @@ html[data-site-theme="dark"] .ap-root :is(.nx-card, .nx-pass, .p-card)::before {
 .ap-root :is(.nx-card, .nx-pass, .p-card):hover { box-shadow: 0 18px 44px rgba(21, 16, 53, 0.12); }
 .ap-root .p-card[style*="border-radius: 12px"], .ap-root .p-card[style*="border-radius: 14px"] { border-radius: 16px !important; }
 
-/* Sections rise in as they scroll into view. */
-html.nx-reveal .ap-root [data-nx-r] { transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
-html.nx-reveal .ap-root [data-nx-r]:not(.nx-seen) { opacity: 0; transform: translateY(22px); }
-
 /* Section labels: a short pink rule before the words. */
 .ap-root .nx-label:not(.nx-on-dark)::before,
 .ap-root p[style*="font-weight: 600"][style*="color: rgb(214, 48, 140)"]::before {
@@ -243,3 +239,95 @@ html[data-site-theme="dark"] .ap-root section.nl-panel > div, html[data-site-the
    overflow on its root, which made that box the scroller and stopped the sticky header (and the sticky bars under
    it) from sticking; "clip" hides the overflow without that side effect. */
 .ap-desk .ap-root > div { overflow-x: clip !important; }
+
+/* =========================================================
+ Bolder (Nov 25 2026, the owner: "need something better, and scroll animations"):
+ dark "stage" bands between the light sections, glass cards on them, one gradient word in each title, a city
+ ticker, photos in a lit frame, and the scroll moves (useNewLookEffects.js).
+========================================================= */
+@keyframes nx-drift-a { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(6%, 8%) scale(1.15); } }
+@keyframes nx-drift-b { 0%, 100% { transform: translate(0, 0) scale(1.1); } 50% { transform: translate(-8%, -6%) scale(1); } }
+@keyframes nx-ticker { to { transform: translateX(-50%); } }
+
+/* ---- Stage bands: the --nl-* colours flip to their dark values inside, so every piece follows ---- */
+.ap-root :is(.nx-stage, .nl-stage) {
+  --nl-bg: #0E0A24; --nl-bg2: #130E2C; --nl-card: rgba(255, 255, 255, 0.055); --nl-card2: rgba(255, 255, 255, 0.09);
+  --nl-line: rgba(255, 255, 255, 0.11); --nl-line2: rgba(255, 255, 255, 0.2); --nl-text: #F4F2FA; --nl-muted: #B9B3D6; --nl-dim: #8780AC;
+  --nl-glow: rgba(255, 255, 255, 0.07); --nl-solid: #FFFFFF; --nl-onsolid: #151035;
+  position: relative; overflow: hidden; isolation: isolate; background: #0E0A24 !important; color: #F4F2FA !important;
+}
+.ap-root :is(.nx-stage, .nl-stage)::before, .ap-root :is(.nx-stage, .nl-stage)::after {
+  content: ""; position: absolute; z-index: -1; width: 620px; height: 620px; border-radius: 50%; pointer-events: none; filter: blur(70px);
+}
+.ap-root :is(.nx-stage, .nl-stage)::before { left: -160px; top: -220px; background: radial-gradient(circle, rgba(214, 48, 140, 0.5), rgba(214, 48, 140, 0) 65%); animation: nx-drift-a 16s ease-in-out infinite; }
+.ap-root :is(.nx-stage, .nl-stage)::after { right: -180px; bottom: -260px; background: radial-gradient(circle, rgba(127, 90, 240, 0.5), rgba(127, 90, 240, 0) 65%); animation: nx-drift-b 19s ease-in-out infinite; }
+.ap-root .nx-stage .nx-card, .ap-root .nx-stage .nx-pass { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.ap-root .nx-stage .nx-stats { background: var(--nl-line); }
+.ap-root .nx-stage .nx-stats > div, .ap-root .nx-stage.nx-alt .nx-stats > div { background-color: rgba(14, 10, 36, 0.82); }
+.ap-root .nx-stage .nx-label, .ap-root .nx-stage .nx-more:hover { color: #FF7AC0 !important; }
+.ap-root .nx-stage .nx-label::before { background: #FF7AC0; }
+.ap-root .nx-stage .nx-stats b { background: linear-gradient(180deg, #FFFFFF, #C9BDF5); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ap-root .nx-stage .nx-pass:hover { box-shadow: 0 24px 60px rgba(214, 48, 140, 0.22); }
+
+/* The board's own "Agenda highlights" as a stage band: its inline colours, turned for the dark. */
+.ap-root .nl-stage h2, .ap-root .nl-stage h3 { color: #FFFFFF !important; }
+.ap-root .nl-stage :is(.p-card, article) { background: rgba(255, 255, 255, 0.06) !important; border: 1px solid rgba(255, 255, 255, 0.12) !important; color: #F4F2FA !important; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.ap-root .nl-stage [style*="color: rgb(82, 82, 91)"], .ap-root .nl-stage [style*="color: rgb(63, 63, 70)"], .ap-root .nl-stage [style*="color: rgb(113, 113, 122)"] { color: #B9B3D6 !important; }
+.ap-root .nl-stage a { color: #FFFFFF !important; }
+.ap-root .nl-stage a:hover { color: #FF7AC0 !important; }
+.ap-root .nl-stage button { background: rgba(255, 255, 255, 0.08) !important; border-color: rgba(255, 255, 255, 0.25) !important; color: #FFFFFF !important; }
+.ap-root .nl-stage button svg path { stroke: #FFFFFF; }
+
+/* ---- One gradient word in each title ---- */
+.ap-root .nx-h2 em, .ap-root .nx-hero h1 em { font-style: normal; background: linear-gradient(90deg, #D6308C, #7F5AF0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ap-root .nx-stage .nx-h2 em, html[data-site-theme="dark"] .ap-root .nx-h2 em { background-image: linear-gradient(90deg, #FF7AC0, #B79CFF); }
+.ap-root .nx-h2.nx-big { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.06; }
+
+/* ---- Next up: the photo in a lit, tilted frame with the date pinned on ---- */
+.ap-root .nx-frame { position: relative; }
+.ap-root .nx-frame::before { content: ""; position: absolute; inset: -14px; z-index: 0; border-radius: 30px; background: conic-gradient(from var(--nl-a), #D6308C, #7F5AF0, rgba(255, 255, 255, 0.15), #D6308C); filter: blur(22px); opacity: 0.55; animation: nl-spin 10s linear infinite; }
+.ap-root .nx-frame .nx-media { z-index: 1; transform: rotate(1.4deg); box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45); transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ap-root .nx-frame:hover .nx-media { transform: rotate(0deg) scale(1.01); }
+.ap-root .nx-float { position: absolute; z-index: 2; left: -14px; bottom: 26px; padding: 6px; border-radius: 16px; background: rgba(14, 10, 36, 0.7); border: 1px solid rgba(255, 255, 255, 0.2); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4); }
+.ap-root .nx-float .nx-stub { width: 58px; flex-basis: 58px; display: block; }
+.ap-root .nx-float .nx-stub b { font-size: 24px; }
+
+/* Photos sit a little oversized so they can drift with the scroll without showing an edge. */
+.ap-root .nx-media img, .ap-root .nx-hero > img { scale: 1.14; }
+.ap-root .nx-gal img { scale: 1; }
+
+/* ---- City ticker ---- */
+.ap-root .nx-ticker { overflow: hidden; background: #151035; color: #FFFFFF; padding: 16px 0; -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.ap-root .nx-track { display: flex; gap: 34px; width: max-content; white-space: nowrap; font-size: 26px; font-weight: 800; letter-spacing: -0.01em; animation: nx-ticker 38s linear infinite; }
+.ap-root .nx-track span { display: inline-flex; align-items: center; gap: 34px; }
+.ap-root .nx-track span::after { content: "✦"; font-size: 14px; color: #FF7AC0; -webkit-text-stroke: 0; }
+.ap-root .nx-track .o { color: transparent; -webkit-text-stroke: 1px rgba(255, 255, 255, 0.6); }
+.ap-root .nx-ticker:hover .nx-track { animation-play-state: paused; }
+
+/* ---- Scroll progress ---- */
+.nx-progress { position: fixed; z-index: 60; left: 0; right: 0; top: 0; height: 3px; transform: scaleX(0); transform-origin: 0 50%; pointer-events: none; background: linear-gradient(90deg, #D6308C, #7F5AF0); }
+
+/* ---- Scroll reveals: each kind of piece has its own entrance ---- */
+html.nx-reveal .ap-root [data-nx-r] { transition: opacity 0.75s ease, transform 0.85s cubic-bezier(0.2, 0.8, 0.2, 1), clip-path 0.95s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.75s ease !important; }
+html.nx-reveal .ap-root [data-nx-r]:not(.nx-seen) { opacity: 0; transform: translateY(34px); }
+html.nx-reveal .ap-root :is(.nx-card, .nx-pass, .p-card)[data-nx-r]:not(.nx-seen) { transform: translateY(44px) scale(0.96); filter: blur(6px); }
+html.nx-reveal .ap-root .nx-two > div:first-child[data-nx-r]:not(.nx-seen) { transform: translateX(-48px); }
+html.nx-reveal .ap-root .nx-two > div:last-child[data-nx-r]:not(.nx-seen) { opacity: 1; transform: none; clip-path: inset(0 0 0 100% round 20px); }
+html.nx-reveal .ap-root .nx-two > div:last-child[data-nx-r] { clip-path: inset(-40px -40px -40px -40px round 20px); }
+html.nx-reveal .ap-root .nx-gal img[data-nx-r]:not(.nx-seen) { opacity: 1; transform: none; clip-path: inset(100% 0 0 0 round 14px); }
+html.nx-reveal .ap-root .nx-gal img[data-nx-r] { clip-path: inset(0 0 0 0 round 14px); }
+html.nx-reveal .ap-root .nx-stats > div[data-nx-r]:not(.nx-seen) { transform: scale(0.8); }
+html.nx-reveal .ap-root .nx-logos > div[data-nx-r]:not(.nx-seen) { transform: translateY(18px) scale(0.92); }
+html.nx-reveal .ap-root :is(.nx-head, h2)[data-nx-r]:not(.nx-seen) { transform: translateY(26px); filter: blur(4px); }
+
+@media (max-width: 720px) {
+  .ap-root .nx-track { font-size: 20px; gap: 24px; }
+  .ap-root .nx-track span { gap: 24px; }
+  .ap-root .nx-frame .nx-media { transform: rotate(1deg); }
+  .ap-root .nx-float { left: 10px; bottom: 14px; }
+  .ap-root :is(.nx-stage, .nl-stage)::before, .ap-root :is(.nx-stage, .nl-stage)::after { width: 380px; height: 380px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-root :is(.nx-stage, .nl-stage)::before, .ap-root :is(.nx-stage, .nl-stage)::after, .ap-root .nx-track, .ap-root .nx-frame::before { animation: none; }
+  .nx-progress { display: none; }
+}

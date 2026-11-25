@@ -34,3 +34,14 @@ s = rep(s, 'k === "form" ? (<section style={{"background": "#F5F3FA", "padding":
 s = rep(s, CD_OLD, CD_NEW)
 lines[li] = s; open(f, 'w').write('\n'.join(lines))
 print('ok')
+
+# ---- Dark "stage" band for the home page's Agenda highlights (the owner: "this is too bland") ----
+f = ROOT + '/ApprovedSite.jsx'
+lines, li = load(f); s = lines[li]
+s = rep(s, 'k === "agenda" ? (<section id="p-agenda" style=', 'k === "agenda" ? (<section id="p-agenda" className="nl-stage" style=')
+lines[li] = s; open(f, 'w').write('\n'.join(lines))
+f = ROOT + '/ApprovedPhone.jsx'
+lines, li = load(f); s = lines[li]
+s = rep(s, 'k === "agenda" ? (<section style={{"background": "#F5F3FA"', 'k === "agenda" ? (<section className="nl-stage" style={{"background": "#F5F3FA"')
+lines[li] = s; open(f, 'w').write('\n'.join(lines))
+print('ok stage')

@@ -13,12 +13,21 @@ export function More({ onClick, children }) {
   return <a href="#" className="nx-more" onClick={act(onClick)}>{children} <Arrow /></a>;
 }
 
+/** A title with one word in the accent gradient: the last word, or the first with first = true. */
+function Fancy({ text, first }) {
+  const words = String(text || "").trim().split(/\s+/);
+  if (words.length < 2) return text || null;
+  return first
+    ? <><em>{words[0]}</em> {words.slice(1).join(" ")}</>
+    : <>{words.slice(0, -1).join(" ")} <em>{words[words.length - 1]}</em></>;
+}
+
 function Head({ label, title, lead, more, onMore, children }) {
   return (
     <div className="nx-head">
       <div>
         {label ? <span className="nx-label">{label}</span> : null}
-        <h2 className="nx-h2">{title}</h2>
+        <h2 className="nx-h2"><Fancy text={title} /></h2>
         {lead ? <p className="nx-lead">{lead}</p> : null}
       </div>
       {more ? <More onClick={onMore}>{more}</More> : null}
@@ -38,19 +47,22 @@ export function HeroCtas({ onTickets, onExplore, city, ticketsLabel = "Get ticke
 }
 
 /** Home: the next event, with its photo. */
-export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, ticketsLabel = "Get tickets" }) {
+export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, stub, ticketsLabel = "Get tickets" }) {
   return (
-    <section className="nx-s"><div className="nx-wrap nx-two">
+    <section className="nx-s nx-stage"><div className="nx-wrap nx-two">
       <div>
         <span className="nx-label">{label}</span>
-        <h2 className="nx-h2">{title}</h2>
+        <h2 className="nx-h2 nx-big"><Fancy text={title} first /></h2>
         {lead ? <p className="nx-lead">{lead}</p> : null}
         <div className="nx-row" style={{ marginTop: 24 }}>
           {onTickets ? <a href="#" className="nx-btn nx-buy" onClick={act(onTickets)}>{ticketsLabel}</a> : null}
           <More onClick={onEvent}>See the event</More>
         </div>
       </div>
-      <div className="nx-media">{img ? <img src={img} alt={alt || ""} loading="lazy" /> : null}</div>
+      <div className="nx-frame">
+        <div className="nx-media">{img ? <img src={img} alt={alt || ""} loading="lazy" /> : null}</div>
+        {stub ? <div className="nx-float">{stub}</div> : null}
+      </div>
     </div></section>
   );
 }
@@ -115,7 +127,7 @@ function CountUp({ value }) {
 /** "Last year in numbers": the Toronto 2026 figures and five photos. photos = [{ src, alt }]. */
 export function LastYear({ photos, onGallery, alt }) {
   return (
-    <section className={`nx-s${alt ? " nx-alt" : ""}`}><div className="nx-wrap">
+    <section className={`nx-s nx-stage${alt ? " nx-alt" : ""}`}><div className="nx-wrap">
       <Head label="Toronto 2026" title="Last year in numbers" more="See the gallery" onMore={onGallery} />
       <div className="nx-stats">{LAST_YEAR.map(([n, t]) => <div key={t}><CountUp value={n} /><span>{t}</span></div>)}</div>
       {photos && photos.length ? (
@@ -172,7 +184,7 @@ const perks = (note) => String(note || "").split(/\n|•|;|·/).map((x) => x.rep
 export function Passes({ types, onBuy, id = "ev-passes" }) {
   if (!types || !types.length) return null;
   return (
-    <section className="nx-s nx-alt" id={id}><div className="nx-wrap">
+    <section className="nx-s nx-stage" id={id}><div className="nx-wrap">
       <Head label="Tickets" title="Choose your pass" lead="Prices in CAD. Taxes are shown at payment." />
       <div className={`nx-passes n${Math.min(types.length, 4)}`}>
         {types.map((t) => (
@@ -293,6 +305,17 @@ export function DateStub({ date }) {
   if (!m) return null;
   const mon = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][Number(m[2]) - 1];
   return <span className="nx-stub" aria-hidden="true"><small>{mon}</small><b>{m[3]}</b></span>;
+}
+
+/** A tour-poster ticker of the season's cities, solid and outlined in turn. */
+export function Ticker({ items }) {
+  if (!items || items.length < 2) return null;
+  const run = [...items, ...items, ...items, ...items];
+  return (
+    <div className="nx-ticker" aria-hidden="true">
+      <div className="nx-track">{run.map((t, i) => <span key={i} className={i % 2 ? "o" : ""}>{t}</span>)}</div>
+    </div>
+  );
 }
 
 /** A row of key dates (the awards page). items = [{ t, d, now }]. */

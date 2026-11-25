@@ -38,11 +38,15 @@ assert.equal(p1.bytes, 6_250_000);
 // 40 s sped up 2× plays for 20 s: allowed. 30 s at 1×: too long, and the message says how to fix it.
 assert.equal(clipPlan({ duration: 60, start: 0, end: 40, speed: 2 }).outSeconds, 20);
 assert.match(clipPlan({ duration: 60, start: 0, end: 30, speed: 1 }).error, /trim it shorter or speed it up/);
-assert.match(clipPlan({ duration: 60, start: 0, end: 50, speed: 2 }).error, /trim it shorter\./);
+assert.match(clipPlan({ duration: 60, start: 0, end: 50, speed: 2 }).error, /trim it shorter or speed it up/);
+// 4× and 8×: a 2-minute clip at 8× plays for 15 s; 3 minutes at 8× is too long, and there's no faster speed.
+assert.equal(clipPlan({ duration: 200, start: 0, end: 120, speed: 8 }).outSeconds, 15);
+assert.equal(clipPlan({ duration: 200, start: 0, end: 80, speed: 4 }).outSeconds, 20);
+assert.match(clipPlan({ duration: 200, start: 0, end: 180, speed: 8 }).error, /trim it shorter\./);
 // Slow motion doubles the length.
 assert.equal(clipPlan({ duration: 20, start: 0, end: 10, speed: 0.5 }).outSeconds, 20);
 assert.match(clipPlan({ duration: 20, start: 3, end: 4, speed: 1 }).error, /at least 2 seconds/);
-assert.match(clipPlan({ duration: 20, speed: 3 }).error, /Pick a speed/);
+assert.match(clipPlan({ duration: 20, speed: 3 }).error, /Pick a speed: 0.5×, 1×, 1.5×, 2×, 4×, 8×/);
 // Out-of-range handles are clamped to the clip.
 assert.deepEqual([clipPlan({ duration: 10, start: -4, end: 99 }).start, clipPlan({ duration: 10, start: -4, end: 99 }).end], [0, 10]);
 // 720p: about half the bytes.

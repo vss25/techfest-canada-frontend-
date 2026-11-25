@@ -36,12 +36,21 @@ export const isVolunteerAccount = (me) => accountKind(me) === VOLUNTEER;
 /** The panel's access for a volunteer: never management, never asks GET /console/me (it would be refused). */
 export const VOLUNTEER_ACCESS = Object.freeze({ staffRole: VOLUNTEER, isManagement: false, isVolunteer: true });
 
+/** May this account see this menu item? Volunteers: their few items; staff: not management's unless management,
+ *  not the super admin's (superAdmin: true) unless the super admin. */
+export function mayOpenItem(it, { isManagement = false, isSuperAdmin = false, isVolunteer = false } = {}) {
+  if (!it || it.hidden) return false;
+  if (isVolunteer) return it.volunteer === true;
+  if (it.superAdmin && !isSuperAdmin) return false;
+  return isManagement || !it.management;
+}
+
 /** Sidebar groups for this account: volunteers get People only; staff everything but management items. */
-export function navFor({ isManagement = false, isVolunteer = false } = {}) {
+export function navFor({ isManagement = false, isSuperAdmin = false, isVolunteer = false } = {}) {
   const out = [];
   for (const g of NAV) {
     if (g.hidden) continue;
-    const items = g.items.filter((it) => !it.hidden && (isVolunteer ? it.volunteer === true : isManagement || !it.management));
+    const items = g.items.filter((it) => mayOpenItem(it, { isManagement, isSuperAdmin, isVolunteer }));
     if (items.length) out.push({ ...g, items, collapsible: isVolunteer ? false : g.collapsible });
   }
   return out;
@@ -49,8 +58,8 @@ export function navFor({ isManagement = false, isVolunteer = false } = {}) {
 
 /** The rail's workspaces for this account, each with only the pages it may open; empty ones are left out
  *  (volunteers: People › People only; staff: everything but management's pages). */
-export function workspacesFor({ isManagement = false, isVolunteer = false } = {}) {
-  const may = (it) => !it.hidden && (isVolunteer ? it.volunteer === true : isManagement || !it.management);
+export function workspacesFor({ isManagement = false, isSuperAdmin = false, isVolunteer = false } = {}) {
+  const may = (it) => mayOpenItem(it, { isManagement, isSuperAdmin, isVolunteer });
   return WORKSPACES
     .map((w) => ({ ...w, groups: w.groups.map((g) => ({ ...g, items: g.items.filter(may) })).filter((g) => g.items.length) }))
     .filter((w) => w.groups.length);

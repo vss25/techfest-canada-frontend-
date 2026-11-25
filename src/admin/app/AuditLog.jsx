@@ -3,6 +3,7 @@ import { RefreshCw, ScrollText, Search } from "lucide-react";
 import { useApi } from "../hooks";
 import { Badge, Button, EmptyState, ErrorState, Input, LoadingState, PageHeader, TableWrap } from "../ui";
 import { when } from "../format";
+import LogTabs from "./LogTabs";
 
 const tone = (a = "") =>
   a === "view_messages" || a === "list_threads" ? "warn"
@@ -24,6 +25,7 @@ export default function AuditLog() {
         description="Every change made by staff — including website edits and every time someone opened private messages (older entries include the retired kill switch). Latest 300."
         actions={<Button icon={RefreshCw} onClick={reload} loading={refreshing && !loading}>Refresh</Button>}
       />
+      <LogTabs value="changes" />
       <div className="relative mb-5 max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ttfc-dim" aria-hidden="true" />
         <Input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by staff, action or detail" className="pl-9" aria-label="Filter audit log" />

@@ -11,7 +11,10 @@ import { HOME_HEIGHTS, heroHeights, heroPosition } from "../../lib/heroFrame";
 import LivePhone from "./LivePhone";
 import { homeCityFor, homeEyebrow, homeOrder } from "../../lib/homeLayout";
 import { speakerGrid, speakersSoon } from "./speakerGrid";
+import "./siteLook.css"; // the new look (Nov 25 2026): light, compact type, the colour rules
 import "./siteDark.css"; // only applies with ?theme=dark (src/lib/siteDarkPreview.js)
+import SeasonRail from "./SeasonRail";
+import { seasonStops } from "../../lib/seasonRail";
 import { applySitePreviewTheme } from "../../lib/siteDarkPreview";
 import useSeo from "../../hooks/useSeo";
 import { client, urlFor } from "../../utils/sanity";
@@ -280,6 +283,10 @@ class LiveSite extends ApprovedSite {
     // The home page (Admin › Content › Home page, Nov 25 2026): the event its top promotes (the pinned one, else the
     // next) and its sections in order. Vancouver keeps the design's own wording (editable in Website text & media).
     v.homeOrder = this.props.homeOrder;
+    // The new look (Nov 25 2026): the season timeline under each page's hero, and "Tickets on sale" on the event's
+    // hero only while its tickets really are on sale.
+    v.seasonRail = <SeasonRail stops={this.props.season} go={v.goCity} goPast={v.goPast} here={s.screen === "event" ? s.city : null} />;
+    v.onSale = !this.props.ticketsSoon && !!(this.props.data && this.props.data.types && this.props.data.types.length);
     if (s.screen === "home" && s.city && v.c && v.goCity) {
       v.homeGo = v.goCity[s.city] || v.goEvent;
       if (s.city !== "van") v.homeHero = { img: v.c.img, alt: v.c.title, eyebrow: homeEyebrow(v.c), title: v.c.title, blurb: v.c.blurb, credit: v.c.credit, posD: v.c.posD || "center", pos: v.c.pos || v.c.posD || "center" };
@@ -583,6 +590,8 @@ export default function ApprovedRoute({ fallback = null }) {
   }, []);
   const homeCity = useMemo(() => homeCityFor(homeDoc && homeDoc.heroEvent, byCity, new Date(now).toISOString().slice(0, 10)), [homeDoc, byCity, now]);
   const homeSections = useMemo(() => homeOrder(homeDoc && homeDoc.sections), [homeDoc]);
+  const seasonDay = new Date(now).toISOString().slice(0, 10);
+  const season = useMemo(() => seasonStops(byCity, seasonDay), [byCity, seasonDay]);
   // The event this page is about (Vancouver, the next event, on pages that aren't an event's):
   // its tickets, its agenda, its checkout. Each event sells its own tickets (Nov 17 2026: every
   // page used to load Vancouver's).
@@ -772,6 +781,7 @@ export default function ApprovedRoute({ fallback = null }) {
       eventKey={evKey}
       homeCity={homeCity}
       homeOrder={homeSections}
+      season={season}
       loaderMs={0}
     />
   );

@@ -20,6 +20,7 @@ import { useReadiness } from "./useReadiness";
 import { useAutosave } from "./useAutosave";
 import { AutosaveNote } from "./AutosaveNote";
 import StandIns from "./StandIns";
+import EventVideoField from "./EventVideoField";
 
 /* =========================================================
    Admin › Website content › Event pages (redesign step 1).
@@ -32,7 +33,7 @@ import StandIns from "./StandIns";
 
 const TEXT_FIELDS = [
   "name", "city", "type", "year", "startDate", "endDate", "statusNote", "venueName", "venueAddress",
-  "description", "photoCredit", "theme", "tagline", "formatLine", "audience", "pageMode", "notifyHeading",
+  "description", "heroVideoUrl", "photoCredit", "theme", "tagline", "formatLine", "audience", "pageMode", "notifyHeading",
   "standInSpeakersHeading", "standInSpeakersText", "standInPartnersHeading", "standInPartnersText",
 ];
 // The stand-ins (StandIns.jsx): the event they come from ("" = Toronto 2026) and the ones picked.
@@ -260,6 +261,7 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
       <Card className="grid gap-4">
         <h3 className="font-semibold">Top of the page</h3>
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="grid content-start gap-5">
           <ImagePicker
             label="City photo"
             aspect="aspect-[16/9]"
@@ -267,6 +269,9 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
             disabled={readOnly}
             onUploaded={({ assetId, url, preview }) => setForm((f) => ({ ...f, citySkyline: assetId, citySkylineUrl: url || preview }))}
           />
+          <EventVideoField url={form.heroVideoUrl} posterUrl={form.citySkylineUrl} disabled={readOnly} canUpload={isManagement && !readOnly}
+            onChange={(v) => setForm((f) => ({ ...f, heroVideoUrl: v }))} />
+          </div>
           <div className="grid content-start gap-4">
             <Field label="Photo credit" hint="Shown on the photo. Required for Creative Commons photos."><Input value={form.photoCredit} onChange={set("photoCredit")} placeholder="e.g. Photo: Kyle Pearce, CC BY-SA 2.0" disabled={readOnly} /></Field>
             <Field label="Theme"><Input value={form.theme} onChange={set("theme")} placeholder="e.g. Energy & Critical Infrastructure" disabled={readOnly} /></Field>

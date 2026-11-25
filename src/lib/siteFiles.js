@@ -45,3 +45,10 @@ export function heroStillOnly() {
   } catch { /* old browser: go by the device */ }
   return isMobileDevice();
 }
+
+/** An event's hero video (Admin › Event pages › Background video): only our own uploads play, an https MP4 on
+    Sanity's file CDN; anything else is "" (the page keeps its photo). */
+export function heroVideoSrc(url) {
+  const u = String(url || "").trim();
+  return /^https:\/\/cdn\.sanity\.io\/files\/[\w-]+\/[\w-]+\/[\w.-]+\.mp4$/i.test(u) ? u : "";
+}

@@ -7,7 +7,7 @@ import { useToast } from "../toastContext";
 import { useAdmin } from "../adminContext";
 import { useAdminEvent } from "../eventContext";
 import {
-  Badge, Banner, Button, Card, EditPanel, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, Switch,
+  Badge, Banner, Button, Card, Drawer, EmptyState, ErrorState, Field, Input, LoadingState, PageHeader, Switch,
   TableWrap, focusRing,
 } from "../ui";
 import BulletListEditor from "../BulletListEditor";
@@ -93,7 +93,15 @@ function TicketForm({ type, eventKey, canEdit, onClose, onSaved, pass = null }) 
     covers: type?.covers || pass?.initial || [],
   }));
   const [busy, setBusy] = useState(false);
-  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e?.target ? e.target.value : e }));
+  const [dirty, setDirty] = useState(false);
+  const update = (fn) => { setDirty(true); setF(fn); };
+  const set = (k) => (e) => update((x) => ({ ...x, [k]: e?.target ? e.target.value : e }));
+  // Closing with Escape, the backdrop or Cancel never throws away typed details without asking.
+  const close = () => {
+    if (busy) return;
+    if (dirty && canEdit && !window.confirm("Discard your changes to this ticket?")) return;
+    onClose();
+  };
   const save = async (e) => {
     e.preventDefault();
     const price = Number(f.price);
@@ -117,32 +125,53 @@ function TicketForm({ type, eventKey, canEdit, onClose, onSaved, pass = null }) 
   };
   const off = !canEdit || busy;
   return (
-    <EditPanel open onClose={onClose} title={creating ? (pass ? "Add a multi-event pass" : "Add a ticket") : `Edit ${pass ? "pass" : "ticket"}: ${type.name}`}
+    <Drawer open onClose={close} width="max-w-2xl"
+      title={creating ? (pass ? "Add a multi-event pass" : "Add a ticket") : `Edit ${pass ? "pass" : "ticket"}: ${type.name}`}
       description={canEdit ? (pass ? "One price for several events. It shows on every event it covers, and buyers get a pass for each. Prices are before HST." : "Prices are before HST; Stripe adds HST at checkout.") : "Only management can change tickets."}
       footer={<>
         <span className="flex-1" />
-        <Button onClick={onClose} disabled={busy}>Cancel</Button>
+        <Button onClick={close} disabled={busy}>Cancel</Button>
         <Button variant="primary" type="submit" form="ticket-form" loading={busy} disabled={!canEdit}>{creating ? (pass ? "Add pass" : "Add ticket") : "Save changes"}</Button>
       </>}>
-      <form id="ticket-form" onSubmit={save} className="grid gap-4 sm:grid-cols-2" noValidate>
-        <Field label="Name" required className="sm:col-span-2">{(id) => <Input id={id} value={f.name} onChange={set("name")} disabled={off} placeholder={pass ? "e.g. Vancouver + Toronto all access" : "e.g. Buy-side delegate"} />}</Field>
-        {pass && <CoversPicker events={pass.events} mainKey={pass.mainKey} value={f.covers} onChange={(v) => setF((x) => ({ ...x, covers: v }))} disabled={off} />}
-        <Field label="Who it's for" className="sm:col-span-2">{(id) => <Input id={id} value={f.description} onChange={set("description")} disabled={off} placeholder="e.g. Asset owners and operators · Director level and above" />}</Field>
-        <Field label="Price (CAD, before HST)" required>{(id) => <Input id={id} type="number" min="0" step="1" value={f.price} onChange={set("price")} disabled={off} />}</Field>
-        <Field label="How many can be sold" hint="Leave empty for no limit.">{(id) => <Input id={id} type="number" min="0" value={f.capacity} onChange={set("capacity")} disabled={off} />}</Field>
-        <Field label="On sale from" hint="Empty: on sale now.">{(id) => <Input id={id} type="date" value={f.salesStart} onChange={set("salesStart")} disabled={off} />}</Field>
-        <Field label="On sale until" hint="Empty: until the event.">{(id) => <Input id={id} type="date" value={f.salesEnd} onChange={set("salesEnd")} disabled={off} />}</Field>
-        <Field label="What's included" hint="Each point shows as a ✓ bullet on the website." className="sm:col-span-2">{(id) => (
-          <BulletListEditor id={id} value={f.inclusions} onChange={(v) => setF((x) => ({ ...x, inclusions: v }))} disabled={off}
-            itemLabel="Included point" placeholder="e.g. Both conference days" />
-        )}</Field>
-        <Field label="Not included" hint="Optional. Shows dimmed with a ✕, so buyers know what to expect." className="sm:col-span-2">{(id) => (
-          <BulletListEditor id={id} value={f.exclusions} onChange={(v) => setF((x) => ({ ...x, exclusions: v }))} disabled={off}
+      <form id="ticket-form" onSubmit={save} className="grid gap-6" noValidate
+        onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); e.currentTarget.requestSubmit(); } }}>
+        <FormSection title="The ticket">
+          <Field label="Name" required>{(id) => <Input id={id} value={f.name} onChange={set("name")} disabled={off} placeholder={pass ? "e.g. Vancouver + Toronto all access" : "e.g. Buy-side delegate"} data-autofocus />}</Field>
+          {pass && <CoversPicker events={pass.events} mainKey={pass.mainKey} value={f.covers} onChange={(v) => update((x) => ({ ...x, covers: v }))} disabled={off} />}
+          <Field label="Who it's for">{(id) => <Input id={id} value={f.description} onChange={set("description")} disabled={off} placeholder="e.g. Asset owners and operators · Director level and above" />}</Field>
+        </FormSection>
+        <FormSection title="Price and availability">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Price (CAD, before HST)" required>{(id) => <Input id={id} type="number" inputMode="decimal" min="0" step="1" value={f.price} onChange={set("price")} disabled={off} />}</Field>
+            <Field label="How many can be sold" hint="Empty: no limit.">{(id) => <Input id={id} type="number" inputMode="numeric" min="0" value={f.capacity} onChange={set("capacity")} disabled={off} />}</Field>
+            <Field label="On sale from" hint="Empty: now.">{(id) => <Input id={id} type="date" value={f.salesStart} onChange={set("salesStart")} disabled={off} />}</Field>
+            <Field label="On sale until" hint="Empty: until the event.">{(id) => <Input id={id} type="date" value={f.salesEnd} onChange={set("salesEnd")} disabled={off} />}</Field>
+          </div>
+          <Switch label="On sale" description="Off hides it from the website without deleting it." checked={!!f.active} onChange={(v) => update((x) => ({ ...x, active: v }))} disabled={off} />
+        </FormSection>
+        <FormSection title="What's included" hint="One point per line; each shows as a ✓ bullet on the website. Enter adds the next point, and pasting a list adds one point per line.">
+          <BulletListEditor value={f.inclusions} onChange={(v) => update((x) => ({ ...x, inclusions: v }))} disabled={off}
+            itemLabel="Included point" addLabel="Add a point" placeholder="e.g. Both conference days" />
+        </FormSection>
+        <FormSection title="Not included" hint="Optional. Shows dimmed with a ✕, so buyers know what to expect.">
+          <BulletListEditor value={f.exclusions} onChange={(v) => update((x) => ({ ...x, exclusions: v }))} disabled={off}
             tone="exclude" itemLabel="Not included point" addLabel="Add a point" placeholder="e.g. Gala dinner" />
-        )}</Field>
-        <div className="sm:col-span-2"><Switch label="On sale" description="Off hides it from the website without deleting it." checked={!!f.active} onChange={(v) => setF((x) => ({ ...x, active: v }))} disabled={off} /></div>
+        </FormSection>
       </form>
-    </EditPanel>
+    </Drawer>
+  );
+}
+
+/** One block of the ticket form: a small heading, an optional line of help, then its fields. */
+function FormSection({ title, hint, children }) {
+  return (
+    <section className="grid gap-3">
+      <div>
+        <h3 className="text-[13px] font-bold uppercase tracking-wide text-[#6B6688]">{title}</h3>
+        {hint && <p className="mt-1 text-xs leading-relaxed text-[#6B6688]">{hint}</p>}
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -157,6 +186,28 @@ function Offer({ t }) {
     <ul className="mt-1.5 grid gap-0.5 text-xs text-[#4A4566]">
       {shown.map((x, i) => <li key={i} className="flex gap-1.5"><span aria-hidden="true" className="text-[#D6308C]">•</span>{x}</li>)}
       {more > 0 && <li className="pl-3 text-[#8A86A0]">+ {more} more</li>}
+    </ul>
+  );
+}
+
+/** Phones: the tickets as tappable cards (the table needs sideways scrolling there). */
+function TicketCards({ items, onOpen, selected, meta }) {
+  return (
+    <ul className="grid gap-2 sm:hidden">
+      {items.map((t) => (
+        <li key={t._id}>
+          <button type="button" onClick={() => onOpen(t)}
+            className={`w-full rounded-xl border p-3.5 text-left transition ${selected === t._id ? "border-[#D6308C] bg-[#FBE9F3]" : "border-[#E3E0EE] bg-white active:bg-[#F6F5FA]"} ${focusRing}`}>
+            <span className="flex items-start justify-between gap-2">
+              <b className="text-[15px] text-[#151035]">{t.name}</b>
+              {statusBadge(t)}
+            </span>
+            {t.description && <span className="mt-0.5 block text-xs text-[#6B6688]">{t.description}</span>}
+            <span className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs font-semibold tabular-nums text-[#4A4566]">{meta(t).filter(Boolean).map((m, i) => <span key={i}>{m}</span>)}</span>
+            <Offer t={t} />
+          </button>
+        </li>
+      ))}
     </ul>
   );
 }
@@ -223,19 +274,21 @@ export default function EventTickets() {
             </Banner>
           )}
           {!defaults && totals && (
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Card className="py-3"><div className="text-xs text-[#6B6688]">Tickets sold · {current.name}</div><div className="text-2xl font-bold tabular-nums text-[#151035]">{totals.own}</div></Card>
-              <Card className="py-3"><div className="text-xs text-[#6B6688]">Multi-event passes covering it</div><div className="text-2xl font-bold tabular-nums text-[#151035]">{totals.passes}</div></Card>
-              <Card className="py-3"><div className="text-xs text-[#6B6688]">Delegates in all</div><div className="text-2xl font-bold tabular-nums text-[#151035]">{totals.own + totals.passes}</div><div className="text-xs text-[#8A86A0]">paid orders only</div></Card>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <Card className="px-3 py-2.5 sm:px-4 sm:py-3"><div className="text-[11px] leading-tight text-[#6B6688] sm:text-xs">Tickets sold</div><div className="text-xl font-bold tabular-nums text-[#151035] sm:text-2xl">{totals.own}</div></Card>
+              <Card className="px-3 py-2.5 sm:px-4 sm:py-3"><div className="text-[11px] leading-tight text-[#6B6688] sm:text-xs">Multi-event passes</div><div className="text-xl font-bold tabular-nums text-[#151035] sm:text-2xl">{totals.passes}</div></Card>
+              <Card className="px-3 py-2.5 sm:px-4 sm:py-3"><div className="text-[11px] leading-tight text-[#6B6688] sm:text-xs">Delegates in all</div><div className="text-xl font-bold tabular-nums text-[#151035] sm:text-2xl">{totals.own + totals.passes}</div><div className="hidden text-xs text-[#8A86A0] sm:block">paid orders only</div></Card>
             </div>
           )}
           <Card className="flex flex-col gap-3.5">
             <div className="flex flex-wrap items-baseline gap-2.5">
               <h2 className="text-base font-bold text-[#151035]">{defaults ? "Default Briefing tickets" : `Tickets · ${current.name}`}</h2>
-              <span className="text-xs text-[#6B6688]">{isManagement ? "Click a row to edit it" : "Only management can change tickets"}</span>
+              <span className="text-xs text-[#6B6688]">{isManagement ? "Choose a ticket to edit it" : "Only management can change tickets"}</span>
             </div>
-            {types.length ? (
-              <TableWrap>
+            {types.length ? (<>
+              <TicketCards items={types} onOpen={(t) => setEditing({ type: t })} selected={editing?.type?._id}
+                meta={(t) => [`${money(t.priceCents)} + HST`, defaults ? (t.capacity ?? "No limit") + (t.capacity != null ? " max" : "") : `Sold ${soldLabel(t)}`]} />
+              <TableWrap className="hidden sm:block">
                 <thead><tr><th>Ticket</th><th>Price</th>{!defaults && <th>Sold</th>}{defaults && <th>How many</th>}<th>On sale</th><th>Status</th></tr></thead>
                 <tbody>
                   {types.map((t) => {
@@ -254,7 +307,7 @@ export default function EventTickets() {
                   })}
                 </tbody>
               </TableWrap>
-            ) : (
+            </>) : (
               <EmptyState icon={Ticket} title={defaults ? "No default Briefing tickets yet" : "No tickets yet"}
                 body={defaults ? "Add the tickets a new Briefing starts with. You can start from the approved design's three and change the prices." : "Add the tickets this event sells."}
                 action={isManagement && (
@@ -272,8 +325,10 @@ export default function EventTickets() {
                 <span className="text-xs text-[#6B6688]">One price for this event and others, always including {main?.name || "the Main Event"}. Counted on their own line.</span>
                 {isManagement && passProps && Array.isArray(own.data?.passes) && <Button className="ml-auto" icon={Plus} onClick={() => setEditing({ creating: true, pass: true })} disabled={busy}>Add pass</Button>}
               </div>
-              {passes.length ? (
-                <TableWrap>
+              {passes.length ? (<>
+                <TicketCards items={passes} onOpen={(t) => setEditing({ type: t, pass: true })} selected={editing?.type?._id}
+                  meta={(t) => [(t.covers || []).map((k) => eventName(events, k)).join(" + "), `${money(t.priceCents)} + HST`, `Sold ${soldLabel(t)}`]} />
+                <TableWrap className="hidden sm:block">
                   <thead><tr><th>Pass</th><th>Covers</th><th>Price</th><th>Sold</th><th>Status</th></tr></thead>
                   <tbody>
                     {passes.map((t) => {
@@ -291,7 +346,7 @@ export default function EventTickets() {
                     })}
                   </tbody>
                 </TableWrap>
-              ) : (
+              </>) : (
                 <EmptyState icon={Layers} title="No passes cover this event"
                   body={main ? `A pass for ${current.name} + ${main.name}, or several cities + ${main.name}. It shows on every event it covers.` : "Add the Main Event in Operations › Event settings first."} />
               )}

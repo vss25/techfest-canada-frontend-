@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
-import { Input, focusRing } from "./ui";
+import { focusRing } from "./ui";
 import { cleanItem, splitPasted } from "./bulletList";
 
 /* =========================================================
@@ -10,6 +10,27 @@ import { cleanItem, splitPasted } from "./bulletList";
    `value` is the list of strings; empty rows are kept while editing (save with finishList from ./bulletList).
      <BulletListEditor id={id} value={list} onChange={setList} placeholder="e.g. Both conference days" />
 ========================================================= */
+
+/* Each point is a one-row textarea that grows with its text, so a long point wraps instead of being cut off
+   (Nov 25 2026, the owner: "the spacing, scrolling is such that its not easily manageable"). */
+function PointInput({ inputRef, value, ...rest }) {
+  const el = useRef(null);
+  useLayoutEffect(() => {
+    const t = el.current;
+    if (!t) return;
+    t.style.height = "auto";
+    t.style.height = `${t.scrollHeight + 2}px`;
+  }, [value]);
+  return (
+    <textarea
+      ref={(node) => { el.current = node; inputRef(node); }}
+      rows={1}
+      value={value}
+      className="block min-h-[38px] w-full min-w-0 flex-1 resize-none overflow-hidden rounded-[9px] border border-[#E3E0EE] bg-white px-3 py-[8px] text-sm leading-[21px] text-[#151035] placeholder:text-[#8A86A0] transition focus:border-[#D6308C] focus:outline-none focus:ring-2 focus:ring-[#D6308C]/20 disabled:cursor-not-allowed disabled:bg-[#F6F5FA] disabled:text-[#6B6688]"
+      {...rest}
+    />
+  );
+}
 
 const iconBtn = `inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#6B6688] transition hover:bg-[#FDF2F8] hover:text-[#D6308C] disabled:pointer-events-none disabled:opacity-30 ${focusRing}`;
 
@@ -67,8 +88,9 @@ export default function BulletListEditor({ id, value, onChange, disabled, placeh
       commit([...items.slice(0, i - 1), prev + gap + el.value, ...items.slice(i + 1)], { index: i - 1, caret: prev.length + gap.length });
     } else if (e.key === "ArrowUp" && e.altKey) { e.preventDefault(); move(i, -1); }
     else if (e.key === "ArrowDown" && e.altKey) { e.preventDefault(); move(i, 1); }
-    else if (e.key === "ArrowUp" && i > 0) { e.preventDefault(); refs.current[i - 1]?.focus(); }
-    else if (e.key === "ArrowDown" && i < items.length - 1) { e.preventDefault(); refs.current[i + 1]?.focus(); }
+    // Plain arrows move between points only from the first / last character (a wrapped point keeps its own lines).
+    else if (e.key === "ArrowUp" && i > 0 && el.selectionStart === 0 && el.selectionEnd === 0) { e.preventDefault(); refs.current[i - 1]?.focus(); }
+    else if (e.key === "ArrowDown" && i < items.length - 1 && el.selectionStart === el.value.length) { e.preventDefault(); refs.current[i + 1]?.focus(); }
   };
 
   const onPaste = (i) => (e) => {
@@ -84,18 +106,18 @@ export default function BulletListEditor({ id, value, onChange, disabled, placeh
   };
 
   const mark = tone === "exclude"
-    ? <span aria-hidden="true" className="w-4 shrink-0 text-center text-sm font-bold text-[#8A86A0]">✕</span>
-    : <span aria-hidden="true" className="flex w-4 shrink-0 justify-center"><span className="h-[7px] w-[7px] rounded-full bg-[#D6308C]" /></span>;
+    ? <span aria-hidden="true" className="mt-[9px] w-4 shrink-0 text-center text-sm font-bold leading-5 text-[#8A86A0]">✕</span>
+    : <span aria-hidden="true" className="mt-[16px] flex w-4 shrink-0 justify-center"><span className="h-[7px] w-[7px] rounded-full bg-[#D6308C]" /></span>;
 
   return (
     <div className="grid gap-1.5">
       <ul className="grid gap-1.5" role="list">
         {items.map((text, i) => (
-          <li key={i} className="flex items-center gap-2">
+          <li key={i} className="group flex items-start gap-2">
             {mark}
-            <Input
+            <PointInput
               id={i === 0 ? id : undefined}
-              ref={(el) => { refs.current[i] = el; }}
+              inputRef={(el) => { refs.current[i] = el; }}
               value={text}
               onChange={(e) => setAt(i, e.target.value)}
               onKeyDown={onKeyDown(i)}
@@ -105,12 +127,12 @@ export default function BulletListEditor({ id, value, onChange, disabled, placeh
               placeholder={i === 0 ? placeholder : ""}
               aria-label={`${itemLabel} ${i + 1}`}
               maxLength={200}
-              className="w-auto min-w-0 flex-1"
             />
             {!disabled && (
-              <span className="flex shrink-0 items-center">
-                <button type="button" className={iconBtn} onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Move ${itemLabel.toLowerCase()} ${i + 1} up`} title="Move up (Alt+↑)"><ArrowUp size={15} /></button>
-                <button type="button" className={iconBtn} onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label={`Move ${itemLabel.toLowerCase()} ${i + 1} down`} title="Move down (Alt+↓)"><ArrowDown size={15} /></button>
+              <span className="mt-[3px] flex shrink-0 items-center">
+                {/* On a phone the move buttons show only on the point being edited, so the text gets the width. */}
+                <button type="button" className={`${iconBtn} hidden group-focus-within:inline-flex sm:inline-flex`} onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Move ${itemLabel.toLowerCase()} ${i + 1} up`} title="Move up (Alt+↑)"><ArrowUp size={15} /></button>
+                <button type="button" className={`${iconBtn} hidden group-focus-within:inline-flex sm:inline-flex`} onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label={`Move ${itemLabel.toLowerCase()} ${i + 1} down`} title="Move down (Alt+↓)"><ArrowDown size={15} /></button>
                 <button type="button" className={iconBtn} onClick={() => removeAt(i)} disabled={items.length === 1 && !text} aria-label={`Remove ${itemLabel.toLowerCase()} ${i + 1}`} title="Remove"><X size={15} /></button>
               </span>
             )}
@@ -118,12 +140,11 @@ export default function BulletListEditor({ id, value, onChange, disabled, placeh
         ))}
       </ul>
       {!disabled && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-6">
+        <div className="pl-6">
           <button type="button" onClick={() => insertAfter(items.length - 1)}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-sm font-semibold text-[#D6308C] hover:bg-[#FDF2F8] ${focusRing}`}>
+            className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-1.5 text-sm font-semibold text-[#D6308C] hover:bg-[#FDF2F8] ${focusRing}`}>
             <Plus size={15} /> {addLabel}
           </button>
-          <span className="text-xs text-[#6B6688]">Enter adds the next point. Paste a list to add several at once.</span>
         </div>
       )}
     </div>

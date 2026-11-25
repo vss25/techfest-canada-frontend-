@@ -53,17 +53,17 @@ function FlipUnit({ value, label, isDark }) {
           background: isDark
             ? "linear-gradient(160deg, rgba(40,20,80,0.95), rgba(20,10,45,0.98))"
             : "linear-gradient(160deg, rgba(240,235,255,0.98), rgba(255,255,255,0.95))",
-          border: `1px solid ${isDark ? "rgba(122,63,209,0.35)" : "rgba(122,63,209,0.20)"}`,
+          border: `1px solid ${isDark ? "rgba(214,48,140,0.35)" : "rgba(214,48,140,0.20)"}`,
           borderRadius: 14,
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: isDark
             ? "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)"
-            : "0 8px 24px rgba(122,63,209,0.12)",
+            : "0 8px 24px rgba(214,48,140,0.12)",
         }}>
           <span style={{
             fontFamily: "'Orbitron', monospace",
             fontSize: "2rem", fontWeight: 900,
-            background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+            background: "#D6308C",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
           }}>{display}</span>
@@ -81,9 +81,9 @@ function FlipUnit({ value, label, isDark }) {
               style={{
                 position: "absolute", inset: 0,
                 background: isDark
-                  ? "linear-gradient(160deg, rgba(122,63,209,0.4), rgba(40,20,80,0.98))"
-                  : "linear-gradient(160deg, rgba(122,63,209,0.15), rgba(255,255,255,0.98))",
-                border: `1px solid rgba(122,63,209,0.5)`,
+                  ? "linear-gradient(160deg, rgba(214,48,140,0.4), rgba(40,20,80,0.98))"
+                  : "linear-gradient(160deg, rgba(214,48,140,0.15), rgba(255,255,255,0.98))",
+                border: `1px solid rgba(214,48,140,0.5)`,
                 borderRadius: 14,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 zIndex: 2,
@@ -93,7 +93,7 @@ function FlipUnit({ value, label, isDark }) {
               <span style={{
                 fontFamily: "'Orbitron', monospace",
                 fontSize: "2rem", fontWeight: 900,
-                background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                background: "#D6308C",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
               }}>{display}</span>
@@ -104,7 +104,7 @@ function FlipUnit({ value, label, isDark }) {
         {/* Center line */}
         <div style={{
           position: "absolute", top: "50%", left: 8, right: 8,
-          height: 1, background: isDark ? "rgba(122,63,209,0.25)" : "rgba(122,63,209,0.15)",
+          height: 1, background: isDark ? "rgba(214,48,140,0.25)" : "rgba(214,48,140,0.15)",
           transform: "translateY(-50%)", zIndex: 3, pointerEvents: "none",
         }} />
       </div>
@@ -137,8 +137,8 @@ export function EventCountdown({ isDark = true }) {
     ? "rgba(14,7,32,0.92)"
     : "rgba(252,250,255,0.96)";
   const borderCol = isDark
-    ? "rgba(122,63,209,0.30)"
-    : "rgba(122,63,209,0.18)";
+    ? "rgba(214,48,140,0.30)"
+    : "rgba(214,48,140,0.18)";
   const textMain = isDark ? "#ffffff" : "#1a0a40";
   const textMuted = isDark ? "rgba(180,155,230,0.75)" : "rgba(100,70,160,0.75)";
 
@@ -156,14 +156,14 @@ export function EventCountdown({ isDark = true }) {
       <div className="ecd-outer" style={{
         position: "relative",
         background: isDark ? "rgba(10,5,25,0.35)" : "rgba(255,255,255,0.30)",
-        border: `1px solid ${isDark ? "rgba(122,63,209,0.18)" : "rgba(122,63,209,0.12)"}`,
+        border: `1px solid ${isDark ? "rgba(214,48,140,0.18)" : "rgba(214,48,140,0.12)"}`,
         borderRadius: 28,
         padding: "36px 36px 32px",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
         boxShadow: isDark
           ? "0 8px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)"
-          : "0 8px 32px rgba(122,63,209,0.07), inset 0 1px 0 rgba(255,255,255,0.6)",
+          : "0 8px 32px rgba(214,48,140,0.07), inset 0 1px 0 rgba(255,255,255,0.6)",
         transition: "transform 0.3s ease",
         transform: hovered ? "translateY(-4px)" : "translateY(0)",
         overflow: "hidden",
@@ -172,7 +172,7 @@ export function EventCountdown({ isDark = true }) {
         {/* Background grid */}
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
-          backgroundImage: `linear-gradient(${isDark ? "rgba(122,63,209,0.03)" : "rgba(122,63,209,0.02)"} 1px, transparent 1px), linear-gradient(90deg, ${isDark ? "rgba(122,63,209,0.03)" : "rgba(122,63,209,0.02)"} 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(${isDark ? "rgba(214,48,140,0.03)" : "rgba(214,48,140,0.02)"} 1px, transparent 1px), linear-gradient(90deg, ${isDark ? "rgba(214,48,140,0.03)" : "rgba(214,48,140,0.02)"} 1px, transparent 1px)`,
           backgroundSize: "32px 32px",
           borderRadius: 28,
         }} />
@@ -183,12 +183,12 @@ export function EventCountdown({ isDark = true }) {
           {/* Live badge */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 6,
-            background: isDark ? "rgba(122,63,209,0.15)" : "rgba(122,63,209,0.08)",
-            border: `1px solid ${isDark ? "rgba(122,63,209,0.35)" : "rgba(122,63,209,0.20)"}`,
+            background: isDark ? "rgba(214,48,140,0.15)" : "rgba(214,48,140,0.08)",
+            border: `1px solid ${isDark ? "rgba(214,48,140,0.35)" : "rgba(214,48,140,0.20)"}`,
             borderRadius: 999, padding: "5px 12px",
             fontSize: "0.65rem", fontWeight: 700,
             letterSpacing: "1.2px", textTransform: "uppercase",
-            color: isDark ? "#c4a8ff" : "#7a3fd1",
+            color: isDark ? "#c4a8ff" : "#D6308C",
             whiteSpace: "nowrap",
           }}>
             <span style={{
@@ -218,7 +218,7 @@ export function EventCountdown({ isDark = true }) {
                   display: "block",
                   fontFamily: "'Orbitron', monospace",
                   fontSize: "1.4rem", fontWeight: 900,
-                  background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                  background: "#D6308C",
                   WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
                   position: "absolute",
@@ -234,8 +234,8 @@ export function EventCountdown({ isDark = true }) {
         <div style={{
           height: 1, marginBottom: 14,
           background: isDark
-            ? "linear-gradient(90deg, transparent, rgba(122,63,209,0.4), rgba(245,166,35,0.2), transparent)"
-            : "linear-gradient(90deg, transparent, rgba(122,63,209,0.2), rgba(245,166,35,0.1), transparent)",
+            ? "linear-gradient(90deg, transparent, rgba(214,48,140,0.4), rgba(245,166,35,0.2), transparent)"
+            : "linear-gradient(90deg, transparent, rgba(214,48,140,0.2), rgba(245,166,35,0.1), transparent)",
         }} />
 
         {/* Countdown units */}
@@ -245,11 +245,11 @@ export function EventCountdown({ isDark = true }) {
           position: "relative",
         }}>
           <FlipUnit value={time.days}    label="Days"    isDark={isDark} />
-          <div style={{ display:"flex", alignItems:"center", paddingBottom:22, color: isDark?"rgba(122,63,209,0.6)":"rgba(122,63,209,0.4)", fontSize:"1.4rem", fontWeight:900 }}>:</div>
+          <div style={{ display:"flex", alignItems:"center", paddingBottom:22, color: isDark?"rgba(214,48,140,0.6)":"rgba(214,48,140,0.4)", fontSize:"1.4rem", fontWeight:900 }}>:</div>
           <FlipUnit value={time.hours}   label="Hours"   isDark={isDark} />
-          <div style={{ display:"flex", alignItems:"center", paddingBottom:22, color: isDark?"rgba(122,63,209,0.6)":"rgba(122,63,209,0.4)", fontSize:"1.4rem", fontWeight:900 }}>:</div>
+          <div style={{ display:"flex", alignItems:"center", paddingBottom:22, color: isDark?"rgba(214,48,140,0.6)":"rgba(214,48,140,0.4)", fontSize:"1.4rem", fontWeight:900 }}>:</div>
           <FlipUnit value={time.minutes} label="Minutes" isDark={isDark} />
-          <div style={{ display:"flex", alignItems:"center", paddingBottom:22, color: isDark?"rgba(122,63,209,0.6)":"rgba(122,63,209,0.4)", fontSize:"1.4rem", fontWeight:900 }}>:</div>
+          <div style={{ display:"flex", alignItems:"center", paddingBottom:22, color: isDark?"rgba(214,48,140,0.6)":"rgba(214,48,140,0.4)", fontSize:"1.4rem", fontWeight:900 }}>:</div>
           <FlipUnit value={time.seconds} label="Seconds" isDark={isDark} />
         </div>
 
@@ -260,16 +260,16 @@ export function EventCountdown({ isDark = true }) {
         }}>
           <div style={{
             flex: 1, minWidth: 160,
-            background: isDark ? "rgba(122,63,209,0.12)" : "rgba(122,63,209,0.06)",
-            border: `1px solid ${isDark ? "rgba(122,63,209,0.20)" : "rgba(122,63,209,0.12)"}`,
+            background: isDark ? "rgba(214,48,140,0.12)" : "rgba(214,48,140,0.06)",
+            border: `1px solid ${isDark ? "rgba(214,48,140,0.20)" : "rgba(214,48,140,0.12)"}`,
             borderRadius: 14, padding: "12px 16px",
             display: "flex", alignItems: "center", gap: 10,
           }}>
             <div style={{
               width: 34, height: 34, borderRadius: 10,
-              background: isDark ? "rgba(122,63,209,0.18)" : "rgba(122,63,209,0.10)",
+              background: isDark ? "rgba(214,48,140,0.18)" : "rgba(214,48,140,0.10)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: isDark ? "#c4a8ff" : "#7a3fd1", flexShrink: 0,
+              color: isDark ? "#c4a8ff" : "#D6308C", flexShrink: 0,
             }}>
               <Calendar size={15} />
             </div>
@@ -307,11 +307,11 @@ export function EventCountdown({ isDark = true }) {
             <span style={{ fontSize: "0.68rem", color: textMuted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.8px" }}>
               Tickets Sold
             </span>
-            <span style={{ fontSize: "0.68rem", color: isDark ? "#c4a8ff" : "#7a3fd1", fontWeight: 700 }}>68%</span>
+            <span style={{ fontSize: "0.68rem", color: isDark ? "#c4a8ff" : "#D6308C", fontWeight: 700 }}>68%</span>
           </div>
           <div style={{
             height: 6, borderRadius: 999,
-            background: isDark ? "rgba(122,63,209,0.15)" : "rgba(122,63,209,0.10)",
+            background: isDark ? "rgba(214,48,140,0.15)" : "rgba(214,48,140,0.10)",
             overflow: "hidden",
           }}>
             <motion.div
@@ -320,7 +320,7 @@ export function EventCountdown({ isDark = true }) {
               transition={{ duration: 1.4, ease: "easeOut", delay: 0.5 }}
               style={{
                 height: "100%", borderRadius: 999,
-                background: "linear-gradient(90deg, #7a3fd1, #f5a623)",
+                background: "#D6308C",
               }}
             />
           </div>
@@ -335,7 +335,7 @@ export function EventCountdown({ isDark = true }) {
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             width: "100%", padding: "14px 0",
-            background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+            background: "#D6308C",
             border: "none", borderRadius: 14,
             color: "white", fontWeight: 800, fontSize: "0.88rem",
             fontFamily: "'Orbitron', monospace",

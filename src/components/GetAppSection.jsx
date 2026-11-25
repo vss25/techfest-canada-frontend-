@@ -29,8 +29,8 @@ export default function GetAppSection({ dark }) {
   if (!names || fromStoreApp) return null;
 
   const c = dark
-    ? { bg: "#06020f", card: "linear-gradient(135deg, rgba(122,63,209,0.22), rgba(245,166,35,0.08))", edge: "rgba(155,135,245,0.32)", text: "#ffffff", mid: "rgba(225,215,255,0.78)", accent: "#c4adff" }
-    : { bg: "#ffffff", card: "linear-gradient(135deg, rgba(122,63,209,0.08), rgba(245,166,35,0.06))", edge: "rgba(122,63,209,0.22)", text: "#0d0520", mid: "rgba(13,5,32,0.68)", accent: "#6a2fc4" };
+    ? { bg: "#151035", card: "linear-gradient(135deg, rgba(214,48,140,0.22), rgba(245,166,35,0.08))", edge: "rgba(240,106,176,0.32)", text: "#ffffff", mid: "rgba(225,215,255,0.78)", accent: "#F06AB0" }
+    : { bg: "#ffffff", card: "linear-gradient(135deg, rgba(214,48,140,0.08), rgba(245,166,35,0.06))", edge: "rgba(214,48,140,0.22)", text: "#0d0520", mid: "rgba(13,5,32,0.68)", accent: "#B0246F" };
 
   return (
     <section id="get-the-app" aria-labelledby="get-app-title" style={{ background: c.bg, padding: "28px 16px 8px" }}>

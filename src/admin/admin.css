@@ -531,3 +531,57 @@ html[data-admin-theme="light"] .ttfc-admin .admin-table td {
 }
 html[data-admin-theme="light"] .ttfc-admin .adm-table tbody tr:hover td,
 html[data-admin-theme="light"] .ttfc-admin .admin-table tbody tr:hover td { background: #f6f5fa; }
+
+/* ===== Dark mode for the approved light design (Nov 25 2026, the owner: "Add dark mode option", admin only).
+   Generated from the fixed light colours the admin pages use (Tailwind classes like text-[#151035]); each gets a
+   dark counterpart. Brand magenta and gold stay as they are. Pick it in the account menu › Appearance. ===== */
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .active\:bg-\[\#F6F5FA\]:active { background-color: #241D4B; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#151035\] { background-color: #3B3274; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#DCFCE7\] { background-color: #14352A; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#E3E0EE\] { background-color: #3A3368; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#EDE9FE\] { background-color: #2E2463; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#F1F0F5\] { background-color: #2A2353; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#F6F5FA\] { background-color: #241D4B; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#FBE9F3\] { background-color: #43204A; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#FBFAFE\] { background-color: #1E1842; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#FDF2F8\] { background-color: #3A1D3F; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#FEF2F2\] { background-color: #3B1A24; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#FEF3C7\] { background-color: #3A2C14; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-\[\#FFF7E6\] { background-color: #3A2C14; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .bg-white { background-color: #1A1438; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .border-\[\#C9C4D9\] { border-color: #463E78; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .border-\[\#CFCBE0\] { border-color: #463E78; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .border-\[\#E3E0EE\] { border-color: #342D60; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .border-\[\#F0EEF6\] { border-color: #2B2453; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .border-\[\#F5E1B8\] { border-color: #5C4520; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .disabled\:bg-\[\#F6F5FA\]:disabled { background-color: #241D4B; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .disabled\:text-\[\#6B6688\]:disabled { color: #A7A1C3; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .divide-\[\#F0EEF6\] > * + * { border-color: #2B2453; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .hover\:bg-\[\#F1F0F5\]:hover { background-color: #2A2353; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .hover\:bg-\[\#F6F5FA\]:hover { background-color: #241D4B; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .hover\:bg-\[\#FDF2F8\]:hover { background-color: #3A1D3F; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .hover\:bg-white:hover { background-color: #1A1438; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .hover\:border-\[\#CFCBE0\]:hover { border-color: #463E78; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .hover\:text-\[\#151035\]:hover { color: #F2F0FA; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .hover\:text-\[\#166534\]:hover { color: #86EFAC; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#0d0520\] { color: #F2F0FA; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#151035\] { color: #F2F0FA; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#15803D\] { color: #86EFAC; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#166534\] { color: #86EFAC; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#2b1600\] { color: #FCD34D; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#4A4566\] { color: #CBC6E0; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#5B21B6\] { color: #C4B5FD; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#6B6688\] { color: #A7A1C3; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#7A4B00\] { color: #FCD34D; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#8A86A0\] { color: #8C86AA; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#92400E\] { color: #FCD34D; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#991B1B\] { color: #FCA5A5; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#9A3412\] { color: #FDBA74; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#9D1D63\] { color: #F48FC4; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#B45309\] { color: #FCD34D; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#B91C1C\] { color: #FCA5A5; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#C9C4E0\] { color: #5E5883; }
+html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#CFCBE0\] { color: #5E5883; }
+/* The two parts styled here with fixed light colours: the top bar's search box and its ⌘K chip. */
+html[data-admin-theme="dark"] .ttfc-admin .adm-desk-search > button.md\:flex { border-color: #342D60; background: #241D4B; color: #A7A1C3; }
+html[data-admin-theme="dark"] .ttfc-admin .adm-desk-search > button.md\:flex kbd { background: #1A1438; border-color: #342D60; color: #F2F0FA; }

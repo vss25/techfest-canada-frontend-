@@ -38,7 +38,12 @@ export async function fetchTicketTypes(eventKey) {
       .map((t) => ({
         id: String(t._id || t.id || ""),
         name: t.name || "Ticket",
-        description: t.description || "",
+        // A multi-event pass (Nov 22 2026) says which events it gets you into, in the ticket's own line.
+        description: t.pass && t.covers?.length
+          ? [t.description, `Includes ${t.covers.map((c) => c.name).join(" + ")}`].filter(Boolean).join(" · ")
+          : t.description || "",
+        pass: !!t.pass,
+        covers: t.pass ? (t.covers || []).map((c) => c.eventKey) : [],
         priceCents: Number(t.priceCents ?? t.price ?? 0),
         currency: t.currency || "CAD",
         inclusions: Array.isArray(t.inclusions) ? t.inclusions : [],

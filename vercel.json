@@ -210,7 +210,7 @@
       "destination": "/get-app/index.html"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!assets/).*)",
       "destination": "/spa.html"
     }
   ]

@@ -212,8 +212,11 @@
       (function () {
         try {
           if (!/^\/admin(-login)?(\/|$)/i.test(location.pathname)) return;
-          // The approved admin design (Nov 2026) has one light look.
-          document.documentElement.setAttribute("data-admin-theme", "light");
+          // Light unless Dark (or "Match my device" on a dark device) was picked in the panel's account menu.
+          var c = null;
+          try { c = localStorage.getItem("ttfc.admin.theme"); } catch (e2) { /* storage off */ }
+          var dark = c === "dark" || (c === "system" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-admin-theme", dark ? "dark" : "light");
         } catch (e) { /* the panel applies it itself once it loads */ }
       })();
     </script>
@@ -239,7 +242,10 @@
     </script>
 
     <!-- Google Sign-In loads only when the sign-in pop-up opens (src/components/AuthModal.jsx). -->
-  </head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>

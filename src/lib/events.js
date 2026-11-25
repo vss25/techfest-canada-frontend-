@@ -11,7 +11,7 @@ export { GRACE_DAYS, citySlugOf, compareEvents, compareEventsDesc, eventSortKey,
    URLs (city before year, no country segment):
      /:city                                  city hub
      /:city/:year/briefing                   a one-day Briefing
-     /:city/:year/main-event                 the Toronto Main Event
+     /:city/:year/national-festival          the Toronto National Festival (/main-event redirects to it)
      …/agenda · …/speakers · …/tickets       under the event, always
 
    Lifecycle (from the event's own dates + a 7-day grace):
@@ -33,10 +33,19 @@ export const CITIES = [
 
 export const cityBySlug = (slug) => CITIES.find((c) => c.slug === String(slug || "").toLowerCase()) || null;
 
-/** The event's public path, e.g. /toronto/2027/main-event. */
+/* The address word for each kind of event. The record's type stays "main-event"; its page is /national-festival
+   (Nov 25 2026, the owner renamed the Main Event to National Festival). /main-event still opens: it redirects. */
+export const NATIONAL_SEGMENT = "national-festival";
+export const OLD_NATIONAL_SEGMENT = "main-event";
+
+/** The event's public path, e.g. /toronto/2027/national-festival. */
 export function eventPath(ev) {
   if (!ev) return "/";
-  return `/${citySlugOf(ev.city)}/${ev.year}/${ev.type === "main-event" ? "main-event" : "briefing"}`;
+  return `/${citySlugOf(ev.city)}/${ev.year}/${ev.type === "main-event" ? NATIONAL_SEGMENT : "briefing"}`;
+}
+/** "/toronto/2027/main-event/agenda" → "/toronto/2027/national-festival/agenda"; any other path unchanged. */
+export function currentEventPath(pathname) {
+  return String(pathname || "").replace(/^(\/[a-z-]+\/\d{4}\/)main-event(?=\/|$)/i, `$1${NATIONAL_SEGMENT}`);
 }
 export const eventTicketsPath = (ev) => `${eventPath(ev)}/tickets`;
 export const eventAgendaPath = (ev) => `${eventPath(ev)}/agenda`;
@@ -44,9 +53,11 @@ export const eventSpeakersPath = (ev) => `${eventPath(ev)}/speakers`;
 
 /** Parse /:city/:year/:type (+ optional subpage) out of a pathname. */
 export function parseEventPath(pathname) {
-  const m = String(pathname || "").match(/^\/([a-z-]+)\/(\d{4})\/(briefing|main-event)(?:\/(agenda|speakers|tickets))?\/?$/i);
+  const m = String(pathname || "").match(/^\/([a-z-]+)\/(\d{4})\/(briefing|main-event|national-festival)(?:\/(agenda|speakers|tickets))?\/?$/i);
   if (!m) return null;
-  return { city: m[1].toLowerCase(), year: Number(m[2]), type: m[3].toLowerCase(), sub: m[4] ? m[4].toLowerCase() : null };
+  // The record's type is "main-event" under either address word.
+  const type = m[3].toLowerCase() === NATIONAL_SEGMENT ? "main-event" : m[3].toLowerCase();
+  return { city: m[1].toLowerCase(), year: Number(m[2]), type, sub: m[4] ? m[4].toLowerCase() : null };
 }
 
 export function findEvent(events, { city, year, type }) {
@@ -69,9 +80,26 @@ export const ticketsOpen = (ev, now = new Date()) => ["coming-up", "live"].inclu
 
 const EVENT_FIELDS = `
   _id, name, "eventKey": eventKey.current, city, type, year, startDate, endDate,
-  venueName, venueAddress, heroImage, heroVideoUrl, citySkyline, description,
-  statusNote, pricingAnnounced, gallery, "brochureUrl": brochure.asset->url
+  venueName, venueAddress, heroImage, heroVideoUrl, heroShade, heroMedia, heroFocus, heroHeight, citySkyline, description,
+  whyEyebrow, whyHeading, whyBody, whyMedia, whyVideoUrl, whyHeight, whyFit, whyFocusX, whyFocusY, whyLoop,
+  "whyImageUrl": whyImage.asset->url, "whyPosterUrl": whyPoster.asset->url,
+  statusNote, pricingAnnounced, gallery, "brochureUrl": brochure.asset->url,
+  photoCredit, theme, tagline, formatLine, audience, pageMode, knownSoFar, comingNext,
+  notifyHeading, showReport,
+  standInSpeakersFrom, standInSpeakers, standInSpeakersHeading, standInSpeakersText,
+  standInPartnersFrom, standInPartners, standInPartnersHeading, standInPartnersText
 `;
+
+/* Which version of the event page shows (redesign step 1). Staff choose on the event in
+   Admin › Website content › Event pages: "full", "coming-soon", or "auto" (the default):
+   the full page once the event has sessions of its own, else the coming-soon page.
+   A past event always gets the full page (its highlights). */
+export function eventPageMode(ev, ownSessions = [], now = new Date()) {
+  if (!ev) return "coming-soon";
+  if (ev.pageMode === "full" || ev.pageMode === "coming-soon") return ev.pageMode;
+  if (lifecycleOf(ev, now) === "past") return "full";
+  return (ownSessions || []).length ? "full" : "coming-soon";
+}
 
 let eventsPromise = null;
 export function fetchEvents() {
@@ -188,15 +216,15 @@ const SCOPED = `(!defined(events) || count(events) == 0 || $eventId in events[].
 
 export function fetchEventContent(eventId) {
   const sessions = client.fetch(
-    `*[_type == "session" && ${SCOPED}]{ _id, title, day, time, endTime, type, format, featured, isBreak, stage, description, speakers, moderator } | order(day asc, time asc)`,
+    `*[_type == "session" && ${SCOPED}]{ _id, title, day, time, endTime, type, format, featured, isBreak, stage, description, speakers, moderator, image, mediaUrl, "eventIds": events[]._ref } | order(day asc, time asc)`,
     { eventId }
   );
   const speakers = client.fetch(
-    `*[_type == "speaker" && ${SCOPED}]{ _id, name, title, company, bio, shortBio, fullBio, image, bannerImage, featured, speakerType, linkedin, twitter, website } | order(featured desc, order asc)`,
+    `*[_type == "speaker" && ${SCOPED}]{ _id, name, title, company, bio, shortBio, fullBio, image, bannerImage, featured, speakerType, linkedin, twitter, website, "eventIds": events[]._ref } | order(coalesce(featured, false) desc, order asc)`,
     { eventId }
   );
   const partners = client.fetch(
-    `*[_type == "partner" && active != false && showOnWebsite != false && ${SCOPED}]{ _id, name, category, logo, url, logoScale } | order(order asc)`,
+    `*[_type == "partner" && active != false && showOnWebsite != false && ${SCOPED}]{ _id, name, category, logo, url, logoScale, matrixGroup, eventRows } | order(order asc)`,
     { eventId }
   );
   return Promise.all([sessions, speakers, partners]).then(([s, sp, p]) => ({

@@ -19,7 +19,7 @@ import {
    ============================================================ */
 
 const ORBITRON = "'Orbitron', sans-serif";
-const GRADIENT = "linear-gradient(135deg, #7a3fd1, #f5a623)";
+const GRADIENT = "#D6308C";
 const SUPPORT_EMAIL = "enquire@thetechfestival.com";
 const TOKEN_KEY = "ttfc.appLoginToken";
 
@@ -100,23 +100,23 @@ export default function AppLogin() {
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(255,255,255,0.68)" : "rgba(13,5,32,0.68)";
   const textDim = dark ? "rgba(255,255,255,0.45)" : "rgba(13,5,32,0.48)";
-  const bg = dark ? "#06020f" : "#ffffff";
-  const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)";
-  const inputBorder = dark ? "rgba(255,255,255,0.14)" : "rgba(122,63,209,0.20)";
+  const bg = dark ? "#151035" : "#ffffff";
+  const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(214,48,140,0.04)";
+  const inputBorder = dark ? "rgba(255,255,255,0.14)" : "rgba(214,48,140,0.20)";
   const cardBg = dark ? "rgba(255,255,255,0.03)" : "#ffffff";
-  const cardBorder = dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(122,63,209,0.12)";
-  const accent = dark ? "#c8a8ff" : "#7a3fd1";
-  const divider = dark ? "rgba(255,255,255,0.07)" : "rgba(122,63,209,0.10)";
+  const cardBorder = dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(214,48,140,0.12)";
+  const accent = dark ? "#c8a8ff" : "#D6308C";
+  const divider = dark ? "rgba(255,255,255,0.07)" : "rgba(214,48,140,0.10)";
 
-  const card = { background: cardBg, border: cardBorder, borderRadius: 20, padding: "clamp(28px, 7vw, 44px) clamp(20px, 6vw, 40px)", backdropFilter: "blur(12px)", textAlign: "center", boxShadow: dark ? "none" : "0 20px 60px rgba(122,63,209,0.10)" };
+  const card = { background: cardBg, border: cardBorder, borderRadius: 20, padding: "clamp(28px, 7vw, 44px) clamp(20px, 6vw, 40px)", backdropFilter: "blur(12px)", textAlign: "center", boxShadow: dark ? "none" : "0 20px 60px rgba(214,48,140,0.10)" };
   const h1 = { fontFamily: ORBITRON, fontWeight: 900, fontSize: "clamp(1.25rem, 6vw, 1.7rem)", lineHeight: 1.3, margin: "0 0 12px", color: textMain };
   const lead = { margin: "0 auto", maxWidth: 400, color: textMuted, lineHeight: 1.6, fontSize: "1rem" };
   const btnBase = { display: "flex", alignItems: "center", justifyContent: "center", width: "100%", minHeight: 54, padding: "15px 18px", borderRadius: 14, fontFamily: ORBITRON, fontWeight: 800, fontSize: "0.72rem", letterSpacing: "1.2px", textTransform: "uppercase", textDecoration: "none", cursor: "pointer", boxSizing: "border-box" };
-  const primary = { ...btnBase, border: "none", background: GRADIENT, color: "#fff", boxShadow: "0 6px 24px rgba(122,63,209,0.35)" };
+  const primary = { ...btnBase, border: "none", background: GRADIENT, color: "#fff", boxShadow: "0 6px 24px rgba(214,48,140,0.35)" };
   const secondary = { ...btnBase, border: `1px solid ${inputBorder}`, background: "transparent", color: textMain };
-  const spinner = <div aria-hidden="true" style={{ width: 38, height: 38, margin: "0 auto 20px", borderRadius: 999, border: `3px solid ${divider}`, borderTopColor: "#7a3fd1", animation: "alSpin 0.8s linear infinite" }} />;
+  const spinner = <div aria-hidden="true" style={{ width: 38, height: 38, margin: "0 auto 20px", borderRadius: 999, border: `3px solid ${divider}`, borderTopColor: "#D6308C", animation: "alSpin 0.8s linear infinite" }} />;
   const badge = (
-    <div aria-hidden="true" style={{ width: 64, height: 64, margin: "0 auto 18px", borderRadius: 20, background: GRADIENT, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 30px rgba(122,63,209,0.35)" }}>
+    <div aria-hidden="true" style={{ width: 64, height: 64, margin: "0 auto 18px", borderRadius: 20, background: GRADIENT, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 30px rgba(214,48,140,0.35)" }}>
       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m4 7 8 6 8-6" /></svg>
     </div>
   );
@@ -196,8 +196,8 @@ export default function AppLogin() {
       <div style={{ minHeight: "100vh", background: bg, color: textMain, position: "relative" }}>
         <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
           background: dark
-            ? "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.12) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(245,166,35,0.07) 0%, transparent 70%)"
-            : "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.06) 0%, transparent 70%)" }} />
+            ? "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(214,48,140,0.12) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(245,166,35,0.07) 0%, transparent 70%)"
+            : "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(214,48,140,0.06) 0%, transparent 70%)" }} />
         <main style={{ position: "relative", zIndex: 1, maxWidth: 480, margin: "0 auto", padding: "clamp(96px, 16vw, 140px) 16px 64px" }}>
           <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
             <span style={{ fontFamily: ORBITRON, fontSize: "0.58rem", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase", color: "#f5a623", padding: "5px 12px", borderRadius: 999, background: "rgba(245,166,35,0.12)", border: "1px solid rgba(245,166,35,0.30)" }}>TTFC 2026</span>

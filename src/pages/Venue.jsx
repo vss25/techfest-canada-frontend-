@@ -72,12 +72,12 @@ export default function Venue() {
     return function () { clearInterval(t); };
   }, []);
 
-  var bg       = dark ? "#06020f" : "#faf9ff";
+  var bg       = dark ? "#151035" : "#faf9ff";
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMid  = dark ? "rgba(220,210,255,0.82)" : "rgba(13,5,32,0.65)";
   var cardBg   = dark ? "rgba(255,255,255,0.04)" : "#ffffff";
-  var cardBdr  = dark ? "rgba(155,135,245,0.15)" : "rgba(122,63,209,0.12)";
-  var accent   = dark ? "#b99eff" : "#7a3fd1";
+  var cardBdr  = dark ? "rgba(240,106,176,0.15)" : "rgba(214,48,140,0.12)";
+  var accent   = dark ? "#F06AB0" : "#D6308C";
 
   return (
     <div style={{ background: bg, color: textMain, minHeight: "100vh", overflowX: "hidden" }}>
@@ -90,7 +90,7 @@ export default function Venue() {
         .venue-bento-grid { display:grid; }
         .mobile-gallery-strip { display:none; }
         @keyframes venueSpin { to { transform: rotate(360deg); } }
-        .explore-3d:hover { transform:translateY(-4px); box-shadow:0 18px 48px rgba(122,63,209,0.35) !important; }
+        .explore-3d:hover { transform:translateY(-4px); box-shadow:0 18px 48px rgba(214,48,140,0.35) !important; }
         .explore-load:hover { filter:brightness(1.08); }
         .fp-embed { aspect-ratio:16/10; }
         @media(max-width:860px){ .explore-grid { grid-template-columns:1fr !important; } }
@@ -131,7 +131,7 @@ export default function Venue() {
             style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(3rem,7vw,5.5rem)", fontWeight: 900, lineHeight: 1.05, letterSpacing: "-1px", color: "#ffffff", marginBottom: 20, textShadow: "0 4px 40px rgba(0,0,0,0.4)", textAlign: "center" }}
           >
             The Westin<br />
-            <span style={{ background: "linear-gradient(90deg,#b99eff,#f5a623)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Harbour Castle</span>
+            <span style={{ background: "linear-gradient(90deg,#F06AB0,#f5a623)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Harbour Castle</span>
           </motion.h1>
 
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.8 }}
@@ -173,8 +173,8 @@ export default function Venue() {
       </section>
 
       {/* INTRO STRIP */}
-      <section style={{ background: dark ? "#06020f" : "#0d0520", padding: "3.5rem 6%", overflow: "hidden", position: "relative" }}>
-        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(122,63,209,0.25) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <section style={{ background: dark ? "#151035" : "#0d0520", padding: "3.5rem 6%", overflow: "hidden", position: "relative" }}>
+        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(214,48,140,0.25) 0%, transparent 70%)", pointerEvents: "none" }} />
         <FadeIn>
           <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
             <div>
@@ -184,14 +184,14 @@ export default function Venue() {
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <a href="https://maps.google.com/?q=Westin+Harbour+Castle+Toronto" target="_blank" rel="noreferrer"
                 style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 26px", borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#ffffff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", transition: "all 0.2s ease" }}
-                onMouseEnter={function (e) { e.currentTarget.style.background = "rgba(122,63,209,0.25)"; }}
+                onMouseEnter={function (e) { e.currentTarget.style.background = "rgba(214,48,140,0.25)"; }}
                 onMouseLeave={function (e) { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 Get Directions
               </a>
               <a href="https://www.marriott.com/en-us/hotels/yyzwh-the-westin-harbour-castle-toronto/overview/" target="_blank" rel="noreferrer"
-                style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 26px", borderRadius: 12, background: "linear-gradient(135deg,#7a3fd1,#f5a623)", color: "#ffffff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 26px", borderRadius: 12, background: "#D6308C", color: "#ffffff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" }}
               >Book a Room</a>
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function Venue() {
             <div style={{ textAlign: "center", marginBottom: "3rem" }}>
               <p style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "3px", textTransform: "uppercase", color: accent, marginBottom: 12 }}>The Setting</p>
               <h2 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 900, color: textMain, marginBottom: 16 }}>A Landmark on the Waterfront</h2>
-              <div style={{ width: 50, height: 3, borderRadius: 3, background: "linear-gradient(90deg,#7a3fd1,#f5a623)", margin: "0 auto" }} />
+              <div style={{ width: 50, height: 3, borderRadius: 3, background: "#D6308C", margin: "0 auto" }} />
             </div>
           </FadeIn>
           <FadeIn delay={0.1}>
@@ -239,7 +239,7 @@ export default function Venue() {
       </section>
 
       {/* LOCATION */}
-      <section style={{ background: dark ? "rgba(122,63,209,0.04)" : "rgba(122,63,209,0.03)", borderTop: "1px solid " + cardBdr, padding: "6rem 5%" }}>
+      <section style={{ background: dark ? "rgba(214,48,140,0.04)" : "rgba(214,48,140,0.03)", borderTop: "1px solid " + cardBdr, padding: "6rem 5%" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <FadeIn>
             <div className="location-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
@@ -265,15 +265,15 @@ export default function Venue() {
                   })}
                 </div>
                 <a href="https://maps.google.com/?q=Westin+Harbour+Castle+Toronto" target="_blank" rel="noreferrer"
-                  style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "15px 34px", borderRadius: 12, background: "linear-gradient(135deg,#7a3fd1,#f5a623)", color: "#ffffff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "15px 34px", borderRadius: 12, background: "#D6308C", color: "#ffffff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}
                 >Open in Maps</a>
               </div>
-              <div style={{ borderRadius: 24, overflow: "hidden", border: "1px solid " + cardBdr, boxShadow: dark ? "0 12px 48px rgba(0,0,0,0.5)" : "0 12px 48px rgba(122,63,209,0.10)", position: "relative", aspectRatio: "1/1" }}>
+              <div style={{ borderRadius: 24, overflow: "hidden", border: "1px solid " + cardBdr, boxShadow: dark ? "0 12px 48px rgba(0,0,0,0.5)" : "0 12px 48px rgba(214,48,140,0.10)", position: "relative", aspectRatio: "1/1" }}>
                 <iframe title="Westin Harbour Castle Toronto"
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2886.9!2d-79.3732!3d43.6403!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89d4cb2b9c01d5c1%3A0x8e9c4f3a5e6d7b8c!2sThe%20Westin%20Harbour%20Castle%2C%20Toronto!5e0!3m2!1sen!2sca!4v1700000000000"
                   style={{ width: "100%", height: "100%", border: "none", display: "block", filter: dark ? "invert(90%) hue-rotate(180deg)" : "none" }}
                   allowFullScreen loading="lazy" />
-                <div style={{ position: "absolute", top: 16, left: 16, background: "linear-gradient(135deg,#7a3fd1,#f5a623)", borderRadius: 10, padding: "8px 14px", fontFamily: "'Orbitron',sans-serif", fontSize: "0.65rem", fontWeight: 800, color: "#fff", letterSpacing: "1px", textTransform: "uppercase" }}>TTFC 2026</div>
+                <div style={{ position: "absolute", top: 16, left: 16, background: "#D6308C", borderRadius: 10, padding: "8px 14px", fontFamily: "'Orbitron',sans-serif", fontSize: "0.65rem", fontWeight: 800, color: "#fff", letterSpacing: "1px", textTransform: "uppercase" }}>TTFC 2026</div>
               </div>
             </div>
           </FadeIn>
@@ -287,13 +287,13 @@ export default function Venue() {
             <div style={{ textAlign: "center", marginBottom: "3rem" }}>
               <p style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "3px", textTransform: "uppercase", color: accent, marginBottom: 12 }}>Explore the Venue</p>
               <h2 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 900, color: textMain, marginBottom: 16 }}>Walk the Westin Before You Arrive</h2>
-              <div style={{ width: 50, height: 3, borderRadius: 3, background: "linear-gradient(90deg,#7a3fd1,#f5a623)", margin: "0 auto" }} />
+              <div style={{ width: 50, height: 3, borderRadius: 3, background: "#D6308C", margin: "0 auto" }} />
             </div>
           </FadeIn>
           <FadeIn delay={0.1}>
             <div className="explore-grid" style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 20, alignItems: "stretch" }}>
               <a href={WALKTHROUGH_3D} target="_blank" rel="noopener noreferrer" className="explore-3d"
-                style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 28, padding: "2rem", borderRadius: 24, background: "linear-gradient(135deg,#7a3fd1 0%,#9b4fd6 55%,#f5a623 130%)", color: "#ffffff", textDecoration: "none", boxShadow: dark ? "0 12px 48px rgba(0,0,0,0.5)" : "0 12px 48px rgba(122,63,209,0.18)", transition: "transform 0.3s ease, box-shadow 0.3s ease" }}
+                style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 28, padding: "2rem", borderRadius: 24, background: "linear-gradient(135deg,#D6308C 0%,#9b4fd6 55%,#f5a623 130%)", color: "#ffffff", textDecoration: "none", boxShadow: dark ? "0 12px 48px rgba(0,0,0,0.5)" : "0 12px 48px rgba(214,48,140,0.18)", transition: "transform 0.3s ease, box-shadow 0.3s ease" }}
               >
                 <span style={{ width: 64, height: 64, borderRadius: 18, background: "rgba(255,255,255,0.16)", border: "1px solid rgba(255,255,255,0.25)", display: "grid", placeItems: "center" }}>
                   <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
@@ -308,7 +308,7 @@ export default function Venue() {
                 </span>
               </a>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: 12, borderRadius: 24, background: cardBg, border: "1px solid " + cardBdr, boxShadow: dark ? "0 12px 48px rgba(0,0,0,0.5)" : "0 12px 48px rgba(122,63,209,0.10)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: 12, borderRadius: 24, background: cardBg, border: "1px solid " + cardBdr, boxShadow: dark ? "0 12px 48px rgba(0,0,0,0.5)" : "0 12px 48px rgba(214,48,140,0.10)" }}>
                 <div className="fp-embed" style={{ position: "relative", borderRadius: 16, overflow: "hidden", background: dark ? "#0d0520" : "#f3eefc" }}>
                   {planOn ? (
                     <>
@@ -324,14 +324,14 @@ export default function Venue() {
                         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block", background: "#ffffff" }} />
                     </>
                   ) : (
-                    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: "1.5rem", textAlign: "center", background: dark ? "radial-gradient(circle at 30% 20%, rgba(122,63,209,0.28), transparent 60%), #0d0520" : "radial-gradient(circle at 30% 20%, rgba(122,63,209,0.14), transparent 60%), #f3eefc" }}>
-                      <span style={{ width: 56, height: 56, borderRadius: 16, display: "grid", placeItems: "center", background: dark ? "rgba(185,158,255,0.14)" : "rgba(122,63,209,0.10)", color: accent }}>
+                    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: "1.5rem", textAlign: "center", background: dark ? "radial-gradient(circle at 30% 20%, rgba(214,48,140,0.28), transparent 60%), #0d0520" : "radial-gradient(circle at 30% 20%, rgba(214,48,140,0.14), transparent 60%), #f3eefc" }}>
+                      <span style={{ width: 56, height: 56, borderRadius: 16, display: "grid", placeItems: "center", background: dark ? "rgba(185,158,255,0.14)" : "rgba(214,48,140,0.10)", color: accent }}>
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 8c0 3.613-3.869 7.429-5.393 8.795a1 1 0 0 1-1.214 0C9.87 15.429 6 11.613 6 8a6 6 0 0 1 12 0"/><circle cx="12" cy="8" r="2"/><path d="M8.714 14h-3.71a1 1 0 0 0-.948.683l-2.004 6A1 1 0 0 0 3 22h18a1 1 0 0 0 .948-1.316l-2-6a1 1 0 0 0-.949-.684h-3.712"/></svg>
                       </span>
                       <span style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "1.1rem", fontWeight: 900, color: textMain }}>Interactive floor plans</span>
                       <span style={{ fontSize: "0.95rem", color: textMid, lineHeight: 1.6, maxWidth: 380 }}>Every room on the Convention Level, with photos and setups.</span>
                       <button type="button" className="explore-load" onClick={function () { setPlanOn(true); }}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 26px", borderRadius: 12, border: "none", cursor: "pointer", background: "linear-gradient(135deg,#7a3fd1,#9b4fd6)", color: "#ffffff", fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", transition: "filter 0.2s ease" }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 26px", borderRadius: 12, border: "none", cursor: "pointer", background: "linear-gradient(135deg,#D6308C,#9b4fd6)", color: "#ffffff", fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", transition: "filter 0.2s ease" }}
                       >Load the Floor Plan</button>
                       <span style={{ fontSize: "0.78rem", color: textMid, opacity: 0.85 }}>Loads Cvent's viewer, which sets its own cookies.</span>
                     </div>
@@ -353,9 +353,9 @@ export default function Venue() {
       {/* BOTTOM CTA */}
       <section style={{ background: bg, padding: "0 5% 6rem" }}>
         <FadeIn>
-          <div style={{ maxWidth: 900, margin: "0 auto", background: "linear-gradient(135deg, rgba(122,63,209,0.10), rgba(245,166,35,0.07))", border: "1px solid " + cardBdr, borderRadius: 28, padding: "clamp(2.5rem,5vw,4rem)", textAlign: "center", position: "relative", overflow: "hidden" }}>
+          <div style={{ maxWidth: 900, margin: "0 auto", background: "linear-gradient(135deg, rgba(214,48,140,0.10), rgba(245,166,35,0.07))", border: "1px solid " + cardBdr, borderRadius: 28, padding: "clamp(2.5rem,5vw,4rem)", textAlign: "center", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,166,35,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
-            <div style={{ position: "absolute", bottom: -40, left: -40, width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(circle, rgba(122,63,209,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", bottom: -40, left: -40, width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(circle, rgba(214,48,140,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
             <h2 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(1.5rem,3vw,2.2rem)", fontWeight: 900, color: textMain, marginBottom: 16 }}>Secure Your Stay</h2>
             <p style={{ fontSize: "1rem", color: textMid, lineHeight: 1.8, maxWidth: 480, margin: "0 auto 32px" }}>
               Limited rooms available at the TTFC 2026 event rate. Book early to stay at the venue and be at the heart of it all.
@@ -363,12 +363,12 @@ export default function Venue() {
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
               <a href="https://www.marriott.com/en-us/hotels/yyzwh-the-westin-harbour-castle-toronto/overview/" target="_blank" rel="noreferrer"
                 style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "15px 34px", borderRadius: 12, background: dark ? "#ffffff" : "#0d0520", color: dark ? "#0d0520" : "#ffffff", textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", transition: "all 0.2s ease" }}
-                onMouseEnter={function (e) { e.currentTarget.style.background = "linear-gradient(135deg,#7a3fd1,#f5a623)"; e.currentTarget.style.color = "#fff"; }}
+                onMouseEnter={function (e) { e.currentTarget.style.background = "#D6308C"; e.currentTarget.style.color = "#fff"; }}
                 onMouseLeave={function (e) { e.currentTarget.style.background = dark ? "#ffffff" : "#0d0520"; e.currentTarget.style.color = dark ? "#0d0520" : "#ffffff"; }}
               >Book at Westin</a>
               <a href="/tickets"
                 style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "15px 34px", borderRadius: 12, border: "1.5px solid " + cardBdr, color: textMain, textDecoration: "none", fontFamily: "'Orbitron',sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase", background: "transparent", transition: "all 0.2s ease" }}
-                onMouseEnter={function (e) { e.currentTarget.style.borderColor = "#7a3fd1"; e.currentTarget.style.color = "#7a3fd1"; }}
+                onMouseEnter={function (e) { e.currentTarget.style.borderColor = "#D6308C"; e.currentTarget.style.color = "#D6308C"; }}
                 onMouseLeave={function (e) { e.currentTarget.style.borderColor = cardBdr; e.currentTarget.style.color = textMain; }}
               >Get Your Pass</a>
             </div>

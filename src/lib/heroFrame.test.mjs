@@ -3,8 +3,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { HERO_HEIGHTS, focusOf, heroHeights, heroPosition, previewAspect } from "./heroFrame.js";
 
-test("unset keeps the design: standard heights and the city's own framing", () => {
-  assert.deepEqual(heroHeights(undefined), { full: "540px", soon: "460px", phoneFull: "420px", phoneSoon: "380px" });
+test("unset: full screen, never shorter than standard; the city's own framing", () => {
+  assert.deepEqual(heroHeights(undefined), heroHeights("full"));
+  assert.equal(heroHeights(undefined).full, "max(540px, calc(100vh - 68px))");
+  assert.equal(heroHeights(undefined).phoneFull, "max(420px, calc(100dvh - 145px))");
+  assert.deepEqual(heroHeights("standard"), { full: "540px", soon: "460px", phoneFull: "420px", phoneSoon: "380px" });
   assert.equal(heroPosition(undefined, "center 35%"), "center 35%");
   assert.equal(heroPosition("", "center"), "center");
 });
@@ -19,8 +22,7 @@ test("focus 0–100 moves the crop; out of range is clamped", () => {
 
 test("taller and full screen", () => {
   assert.equal(heroHeights("tall").full, "680px");
-  assert.equal(heroHeights("full").phoneFull, "calc(100svh - 64px)");
-  assert.equal(heroHeights("huge").full, "540px");
+  assert.equal(heroHeights("huge").full, heroHeights("full").full);
   assert.deepEqual(HERO_HEIGHTS.map((h) => h.key), ["standard", "tall", "full"]);
   assert.ok(Math.abs(previewAspect("standard", "desktop") - 1280 / 540) < 1e-9);
   assert.ok(previewAspect("tall", "desktop") < previewAspect("standard", "desktop"));

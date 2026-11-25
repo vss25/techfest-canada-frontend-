@@ -56,8 +56,8 @@ export default function Swag() {
   }, []);
 
   const c = dark
-    ? { bg: "#06020f", text: "#ffffff", mid: "rgba(225,215,255,0.82)", card: "rgba(255,255,255,0.045)", line: "rgba(155,135,245,0.18)", accent: "#c4adff", chip: "rgba(155,135,245,0.16)" }
-    : { bg: "#faf9ff", text: "#0d0520", mid: "rgba(13,5,32,0.7)", card: "#ffffff", line: "rgba(122,63,209,0.14)", accent: "#6a2fc4", chip: "rgba(122,63,209,0.09)" };
+    ? { bg: "#151035", text: "#ffffff", mid: "rgba(225,215,255,0.82)", card: "rgba(255,255,255,0.045)", line: "rgba(240,106,176,0.18)", accent: "#F06AB0", chip: "rgba(240,106,176,0.16)" }
+    : { bg: "#faf9ff", text: "#0d0520", mid: "rgba(13,5,32,0.7)", card: "#ffffff", line: "rgba(214,48,140,0.14)", accent: "#B0246F", chip: "rgba(214,48,140,0.09)" };
   const loaded = !!api || settings.loaded;
   const when = !loaded || !v.on ? null
     : v.announced ? "Our top networkers are in. See them on the leaderboard in the TTFC app. Thank you for every conversation."

@@ -32,7 +32,7 @@ export default function WavyBackground({
     var w, h, nt = 0;
 
     var waveColors = colors || [
-      "#7a3fd1",
+      "#D6308C",
       "#9b57e8",
       "#f5a623",
       "#c084fc",

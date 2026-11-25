@@ -157,12 +157,12 @@ export default function SponsorInquiryModal(props) {
   }
 
   var bgCard = dark ? "#0d0620" : "#ffffff";
-  var borderCol = dark ? "rgba(122,63,209,0.22)" : "rgba(122,63,209,0.12)";
-  var inputBg = dark ? "rgba(155,135,245,0.08)" : "rgba(122,63,209,0.04)";
-  var inputBdr = dark ? "rgba(155,135,245,0.18)" : "rgba(122,63,209,0.12)";
+  var borderCol = dark ? "rgba(214,48,140,0.22)" : "rgba(214,48,140,0.12)";
+  var inputBg = dark ? "rgba(240,106,176,0.08)" : "rgba(214,48,140,0.04)";
+  var inputBdr = dark ? "rgba(240,106,176,0.18)" : "rgba(214,48,140,0.12)";
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMid = dark ? "rgba(255,255,255,0.55)" : "rgba(13,5,32,0.55)";
-  var accent = dark ? "#b99eff" : "#7a3fd1";
+  var accent = dark ? "#F06AB0" : "#D6308C";
 
   var inputStyle = {
     width: "100%",
@@ -258,7 +258,7 @@ export default function SponsorInquiryModal(props) {
               padding: "36px 32px",
               boxShadow: dark
                 ? "0 24px 80px rgba(0,0,0,0.7)"
-                : "0 24px 80px rgba(122,63,209,0.12)",
+                : "0 24px 80px rgba(214,48,140,0.12)",
               pointerEvents: "auto",
             }}
           >
@@ -427,8 +427,8 @@ export default function SponsorInquiryModal(props) {
                     border: "none",
                     cursor: (!firstName.trim() || !lastName.trim()) ? "not-allowed" : "pointer",
                     background: (!firstName.trim() || !lastName.trim())
-                      ? (dark ? "rgba(155,135,245,0.15)" : "rgba(122,63,209,0.10)")
-                      : "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                      ? (dark ? "rgba(240,106,176,0.15)" : "rgba(214,48,140,0.10)")
+                      : "#D6308C",
                     color: (!firstName.trim() || !lastName.trim())
                       ? textMid
                       : "#ffffff",

@@ -2,6 +2,7 @@ import React from "react";
 import { AgendaPage, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
 import { cityPath } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
+import { SPK_MIN } from "./speakerGrid";
 
 /* Fills the boards' new-look slots (tools/newlook_patch2.py) with live data. Shared by the desktop and phone
    layouts: LiveSite.jsx and LivePhone.jsx call it at the end of renderVals().
@@ -43,7 +44,9 @@ export function applyNewLook(v, self, { openTix, phone }) {
 
   // Speakers and partners: the event's own, else the stand-ins (another event's, labelled).
   const si = p.standIns || {};
-  const own = p.evSpeakers && p.evSpeakers.length ? p.evSpeakers : null;
+  // Same rule as the event page's Speakers section (speakerGrid.jsx): an event's own speakers show once at least
+  // three are confirmed; until then the stand-ins (so one early or test record never shows alone).
+  const own = p.evSpeakers && p.evSpeakers.length >= SPK_MIN ? p.evSpeakers : null;
   const spk = own || (si.speakers && si.speakers.length ? si.speakers : null);
   const spkLabel = own ? "Speakers" : si.spkLabel ? `Speakers · ${si.spkLabel}` : "Speakers";
   const ptn = p.evPartners && p.evPartners.length

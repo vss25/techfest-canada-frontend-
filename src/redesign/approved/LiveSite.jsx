@@ -5,7 +5,7 @@ import VideoFacade from "./VideoFacade";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { heroVideoSrc } from "../../lib/siteFiles";
 import { heroShadeBackground } from "../../lib/heroShade";
-import { heroHeights, heroPosition } from "../../lib/heroFrame";
+import { HOME_HEIGHTS, heroHeights, heroPosition } from "../../lib/heroFrame";
 import LivePhone from "./LivePhone";
 import useSeo from "../../hooks/useSeo";
 import { client, urlFor } from "../../utils/sanity";
@@ -253,6 +253,7 @@ class LiveSite extends ApprovedSite {
       v.hideCredit = this.state.heroPlaying === v.c.video;
     }
     if (v.c && v.c.heights) v.heroH = v.c.heights;
+    v.homeH = HOME_HEIGHTS.desktop;   // the home page's hero: full screen (Nov 25 2026)
     const past = this.props.past2026;
     if (past) {
       if (past.speakers.length) v.starSpeakers = past.speakers.slice(0, 4).map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));

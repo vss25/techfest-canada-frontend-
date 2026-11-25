@@ -7,6 +7,7 @@ import { heroVideoSrc } from "../../lib/siteFiles";
 import { heroShadeBackground } from "../../lib/heroShade";
 import { HOME_HEIGHTS, heroHeights, heroPosition } from "../../lib/heroFrame";
 import LivePhone from "./LivePhone";
+import { speakerGrid, speakersSoon } from "./speakerGrid";
 import "./siteDark.css"; // only applies with ?theme=dark (src/lib/siteDarkPreview.js)
 import { applySitePreviewTheme } from "../../lib/siteDarkPreview";
 import useSeo from "../../hooks/useSeo";
@@ -62,6 +63,12 @@ const logoImg = (p, h) => (p.logo && p.logo.asset
       style={{ display: "block", maxHeight: Math.round(h * Math.min(2.5, Math.max(0.3, (Number(p.logoScale) || 100) / 100))), maxWidth: "80%", width: "auto", height: "auto", objectFit: "contain", margin: "0 auto" }} />
   : p.name);
 
+// How many 220px speaker tiles fit across the desktop Speakers section (1280px max, 32px sides, 24px gaps).
+const speakerCols = () => {
+  if (typeof document === "undefined") return 5;
+  const w = Math.min(1280, document.documentElement.clientWidth || 1280) - 64;
+  return Math.max(1, Math.floor((w + 24) / (220 + 24)));
+};
 class LiveSite extends ApprovedSite {
   static getDerivedStateFromProps(props, state) {
     if (props.routeKey === state.routeKey) return null;
@@ -76,6 +83,13 @@ class LiveSite extends ApprovedSite {
     if (this.props.data?.types) this.setState({ q: this.props.data.types.map(() => 0) });
     this.afterRoute();
     this.fixSpeakerDrawer();
+    this.onSpkResize = () => { const c = speakerCols(); if (c !== this.state.spkCols) this.setState({ spkCols: c }); };
+    this.onSpkResize();
+    window.addEventListener("resize", this.onSpkResize);
+  }
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.onSpkResize);
+    if (super.componentWillUnmount) super.componentWillUnmount();
   }
   /* Nov 23 2026 (event data audit): the speaker drawer only opens from Toronto 2026's speakers (the home and
      2026 pages' "star speakers"), but the board's text says "<kind> · Vancouver Briefing 2027" and "Also spoke at
@@ -205,9 +219,11 @@ class LiveSite extends ApprovedSite {
     const spk = this.props.evSpeakers;
     const goSpk = this.go("speakers", { spkF: "All" }, "Loading speakers");
     const f = s.spkF || "All";
-    if (spk) {
-      // Real speakers first, then the board's "to be announced" cards, so the row keeps its shape.
-      v.speakers = [...spk.slice(0, 8), ...Array.from({ length: Math.max(0, 8 - spk.length) }, () => ({}))].map((x, i) => ({ ...x, n: i + 1, open: goSpk }));
+    const grid = speakerGrid(spk, 2 * (s.spkCols || 5), goSpk);
+    if (grid) {
+      // At least SPK_MIN confirmed: only real speakers, two rows at most, then "See all speakers".
+      v.speakers = grid.shown.map((x, i) => ({ ...x, n: i + 1, open: goSpk }));
+      v.spkMore = grid.more;
       // Filters are the kinds these speakers really have (the board's fixed list missed Speaker and Moderator).
       const kinds = ["All", ...new Set(spk.map((x) => x.kind))];
       v.spkFilters = kinds.map((label) => { const on = f === label; return { label, on, bg: on ? "#151035" : "#FFFFFF", color: on ? "#FFFFFF" : "#151035", border: on ? "#151035" : "#D4D4D8", pick: () => this.setState({ spkF: label }) }; });
@@ -222,8 +238,9 @@ class LiveSite extends ApprovedSite {
       const si = this.props.standIns || {};
       const was = si.speakers || [];
       const tag = (r) => (r ? r + " · " + si.spkLabel : si.spkLabel);
-      v.spkSoon = si.spk ? { title: si.spk.heading, text: was.length ? si.spk.text : si.spk.none } : { title: "Speakers to be announced", text: "" };
-      v.speakers = was.slice(0, 4).map((x, i) => ({ ...x, role: tag(x.role), n: i + 1, open: v.goPast }));
+      // Fewer than SPK_MIN confirmed: one "coming soon" note and a link to Toronto 2026's speakers, no tiles.
+      v.spkSoon = speakersSoon(v.goPast);
+      v.speakers = [];
       v.spkList = was.map((x, i) => ({ ...x, role: tag(x.role), n: i + 1, open: v.goPast }));
       v.spkFilters = [];
       v.spkIntro = `This event's speakers are announced soon. Until then, these are speakers from ${si.spkLabel || "an earlier event"}.`;

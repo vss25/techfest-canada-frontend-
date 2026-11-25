@@ -374,6 +374,11 @@ export const HELP = {
     steps: ["Search or filter by person or kind of change."],
     tips: ["Read only. Every save, send, publish and delete is recorded here."],
   },
+  "app/staff-activity": {
+    what: "When each staff member worked in the panel, for how long, and what they did. Only the super admin sees this page.",
+    steps: ["Pick the dates and, if you like, one person.", "Open Details for their sessions, time per day and pages and edits by hour."],
+    tips: ["Time counts only while someone is using the panel; 15 idle minutes end a session.", "Records changed = saves, deletes and other changes made in the panel. Kept for 180 days."],
+  },
   account: {
     what: "Your own staff sign-in.",
     steps: ["Change your password here."],

@@ -4,6 +4,7 @@ import { MapPinned,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
 import { Boxes, LayoutTemplate, PenLine, CalendarRange, Clapperboard, FileSignature, Flame, History, Percent } from "lucide-react";
+import { Timer } from "lucide-react";
 import { CircleHelp, ClipboardList, ListTodo, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
@@ -14,6 +15,7 @@ import { CircleHelp, ClipboardList, ListTodo, Gavel, Gift, GitPullRequestArrow, 
    menu of pages in groups. Every page keeps its address (`to`,
    relative to /admin), so links and bookmarks still work.
      management: true  management only (Revenue, Staff accounts, Jury results)
+     superAdmin: true  the super admin only (GET /console/me isSuperAdmin; Staff activity)
      volunteer: true   also for volunteer accounts (People only, read
                        only; access.js)
      hidden: true      not in the menu, the address still works
@@ -185,6 +187,8 @@ export const WORKSPACES = [
       { to: "app/rights", label: "App rights", icon: ShieldCheck },
       { to: "email-tracking", label: "Where website forms go", icon: MailCheck },
       { to: "app/audit", label: "Audit log", icon: ScrollText },
+      // Staff activity (Nov 24 2026): sessions, time, pages and edits per staff member. The super admin only.
+      { to: "app/staff-activity", label: "Staff activity", icon: Timer, superAdmin: true },
       { to: "account", label: "My account", icon: KeyRound },
     ] },
   ] },

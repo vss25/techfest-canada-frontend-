@@ -62,9 +62,9 @@ function RailButton({ w, current, onNavigate, badge = 0 }) {
 
 /** The navy rail: the logo, the workspaces, Settings at the bottom. */
 export function WorkspaceRail({ onNavigate }) {
-  const { isManagement, isVolunteer } = useAdmin();
+  const { isManagement, isSuperAdmin, isVolunteer } = useAdmin();
   const { pathname } = useLocation();
-  const all = workspacesFor({ isManagement, isVolunteer });
+  const all = workspacesFor({ isManagement, isSuperAdmin, isVolunteer });
   const current = workspaceFor(pathname).id;
   const badges = useBadges();
   const top = all.filter((w) => !w.bottom);
@@ -84,9 +84,9 @@ export function WorkspaceRail({ onNavigate }) {
 
 /** The open workspace's menu: name, what it's for, its pages in groups. */
 export function WorkspaceMenu({ onNavigate }) {
-  const { isManagement, isVolunteer } = useAdmin();
+  const { isManagement, isSuperAdmin, isVolunteer } = useAdmin();
   const { pathname } = useLocation();
-  const all = workspacesFor({ isManagement, isVolunteer });
+  const all = workspacesFor({ isManagement, isSuperAdmin, isVolunteer });
   const id = workspaceFor(pathname).id;
   const ws = all.find((w) => w.id === id) || all[0];
   // A hidden page that is a tab of another (Featured partners) lights up that page.
@@ -164,7 +164,7 @@ function TabButton({ to, label, d, on, onClick }) {
 }
 
 export function PhoneTabs({ onSignOut }) {
-  const { isManagement, isVolunteer } = useAdmin();
+  const { isManagement, isSuperAdmin, isVolunteer } = useAdmin();
   const { current: chosenEvent } = useAdminEvent();
   const { pathname } = useLocation();
   // The sheet is open for the page it was opened on, so following one of its links closes it.
@@ -178,7 +178,7 @@ export function PhoneTabs({ onSignOut }) {
     return () => document.removeEventListener("keydown", esc);
   }, [more]);
   if (isVolunteer) return null;   // one page (People): nothing to switch between
-  const all = workspacesFor({ isManagement, isVolunteer });
+  const all = workspacesFor({ isManagement, isSuperAdmin, isVolunteer });
   const current = workspaceFor(pathname).id;
   const tabs = all.filter((w) => w.id !== "settings").slice(0, TAB_COUNT);
   const rest = all.filter((w) => !tabs.includes(w));

@@ -13,7 +13,7 @@ const COVERAGE_AREAS = [
   "Artificial Intelligence & Machine Learning",
   "Quantum Computing",
   "Cybersecurity & Digital Trust",
-  "Climate Tech / CleanTech",
+  "Clean Tech",
   "Robotics & Automation",
   "Enterprise Technology",
   "FinTech",

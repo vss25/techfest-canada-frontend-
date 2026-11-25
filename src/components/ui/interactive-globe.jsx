@@ -195,7 +195,7 @@ const SECTORS = [
       "Urban IoT",
       "Smart Mobility",
       "Sustainable Infrastructure",
-      "Climate Tech",
+      "Clean Tech",
       "Public Transportation",
       "Green Buildings",
     ],

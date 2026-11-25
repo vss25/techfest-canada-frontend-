@@ -23,7 +23,7 @@ export const PILLARS = [
   { value: "quantum", label: "Quantum" },
   { value: "cybersecurity", label: "Cybersecurity" },
   { value: "robotics", label: "Robotics" },
-  { value: "climate", label: "Climate Tech" },
+  { value: "climate", label: "Clean Tech" },   // stored key stays "climate" (saved sessions keep matching); shown as Clean Tech
 ];
 
 export const SECTORS = [
@@ -35,6 +35,27 @@ export const SECTORS = [
   { value: "startups", label: "Startups & Capital" },
 ];
 
-export const SESSION_TYPE_SUGGESTIONS = [
-  "Keynote", "Fireside Chat", "Panel Session", "Opening Remarks", "Break", "Lunch Break", "Awards", "Gala", "Performance", "Keynote / Presentation",
+/* The agenda's "Session type" dropdown (Nov 25 2026): staff edit the list in Admin › Agenda › Session types
+   (backend /api/console/agenda-types). Each type is a label (what the website shows) and a colour style
+   (a FORMAT_MAP key). This is the standard list, the same as the backend's DEFAULT_TYPES (services/agendaTypes.js),
+   used until the list is first saved or while it can't be loaded. */
+export const DEFAULT_SESSION_TYPES = [
+  { label: "Opening Remarks", format: "opening" },
+  { label: "Keynote", format: "keynote" },
+  { label: "Fireside Chat", format: "fireside" },
+  { label: "Panel Session", format: "panel" },
+  { label: "Boardroom Briefing", format: "briefing" },
+  { label: "Provocation", format: "provocation" },
+  { label: "Leadership Dialogue", format: "dialogue" },
+  { label: "Case Study", format: "briefing" },
+  { label: "Roundtable", format: "dialogue" },
+  { label: "Workshop", format: "briefing" },
+  { label: "Networking", format: "networking" },
+  { label: "Break", format: "break" },
+  { label: "Lunch Break", format: "break" },
+  { label: "Reception", format: "networking" },
+  { label: "Awards", format: "awards" },
+  { label: "Gala", format: "awards" },
+  { label: "Performance", format: "Performance" },
+  { label: "Closing Remarks", format: "closing" },
 ];

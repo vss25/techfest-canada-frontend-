@@ -173,7 +173,7 @@ export default function FirstTimers() {
         <ListBlock textMain={textMain} items={[
           "Artificial Intelligence and Generative AI",
           "Quantum Computing",
-          "Sustainability and Climate Tech",
+          "Sustainability and Clean Tech",
           "Cybersecurity and Digital Trust",
           "Robotics and Intelligent Infrastructure",
         ]} />

@@ -89,6 +89,11 @@ export default defineType({
             type: "url",
             description: "Optional: a short, silent hero loop (YouTube/Vimeo or a hosted file). The hero image is the poster and the mobile fallback.",
         }),
+        defineField({ name: "heroFocus", title: "Hero framing (0 = top, 100 = bottom)", type: "number", validation: (r) => r.min(0).max(100) }),
+        defineField({
+            name: "heroHeight", title: "Hero height", type: "string",
+            options: { list: [{ title: "Standard", value: "standard" }, { title: "Taller", value: "tall" }, { title: "Full screen", value: "full" }] },
+        }),
         defineField({
             name: "heroMedia",
             title: "Show at the top",

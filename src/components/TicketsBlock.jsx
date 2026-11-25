@@ -168,10 +168,18 @@ export default function TicketsBlock({ ev }) {
               <div style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 800 }}>{money(t.priceCents, t.currency)}</div>
             </div>
             {(t.inclusions.length > 0 || t.exclusions.length > 0) && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 22px", marginTop: 10, fontSize: "0.86rem" }}>
-                {t.inclusions.map((x, i) => <span key={`in-${i}`}>✓ {x}</span>)}
-                {t.exclusions.map((x, i) => <span key={`ex-${i}`} style={{ opacity: 0.6 }}>✕ {x}</span>)}
-              </div>
+              <ul aria-label={`What ${t.name} includes`} style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 240px), 1fr))", gap: "7px 22px", fontSize: "0.88rem", lineHeight: 1.4 }}>
+                {t.inclusions.map((x, i) => (
+                  <li key={`in-${i}`} style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
+                    <span aria-hidden="true" style={{ flexShrink: 0, color: "#22C55E", fontWeight: 800 }}>✓</span><span>{x}</span>
+                  </li>
+                ))}
+                {t.exclusions.map((x, i) => (
+                  <li key={`ex-${i}`} style={{ display: "flex", gap: 9, alignItems: "flex-start", opacity: 0.6 }}>
+                    <span aria-hidden="true" style={{ flexShrink: 0, fontWeight: 800 }}>✕</span><span><span className="sr-only">Not included: </span>{x}</span>
+                  </li>
+                ))}
+              </ul>
             )}
             <label style={{ ...labelStyle, marginTop: 14, maxWidth: 180 }}>
               Quantity

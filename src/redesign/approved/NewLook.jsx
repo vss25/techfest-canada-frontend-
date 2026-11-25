@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* The new look's sections and pages (Nov 25 2026, the owner approved the preview and asked for "all of them"):
    the home page's Next up / Who's on stage / Last year in numbers / Partners, the hero buttons, the event page's
@@ -80,12 +80,44 @@ export function OnStage({ label = "Speakers", title = "Who's on stage", lead, sp
 
 const LAST_YEAR = [["1,000+", "Attendees"], ["95", "Speakers"], ["130+", "Partners and exhibitors"], ["50", "Sessions"]];
 
+/** A number that counts up the first time it scrolls into view ("1,000+" → 0 … 1,000+). */
+function CountUp({ value }) {
+  const m = /^([\d,]+)(.*)$/.exec(String(value));
+  const end = m ? Number(m[1].replace(/,/g, "")) : 0;
+  const tail = m ? m[2] : "";
+  const el = useRef(null);
+  const [n, setN] = useState(end);
+  useEffect(() => {
+    const node = el.current;
+    const still = typeof window === "undefined" || !window.IntersectionObserver || !window.requestAnimationFrame
+      || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    if (!node || still || !end) return undefined;
+    let raf = 0;
+    const io = new IntersectionObserver((entries) => {
+      if (!entries.some((x) => x.isIntersecting)) return;
+      io.disconnect();
+      const t0 = performance.now();
+      const step = (t) => {
+        const k = Math.min(1, (t - t0) / 1400);
+        setN(Math.round(end * (1 - Math.pow(1 - k, 3))));
+        if (k < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    }, { threshold: 0.4 });
+    io.observe(node);
+    // If the frames stop coming (a background tab), the real number still shows.
+    const safety = setTimeout(() => setN(end), 6000);
+    return () => { io.disconnect(); cancelAnimationFrame(raf); clearTimeout(safety); };
+  }, [end]);
+  return <b ref={el}>{m ? n.toLocaleString("en-CA") + tail : value}</b>;
+}
+
 /** "Last year in numbers": the Toronto 2026 figures and five photos. photos = [{ src, alt }]. */
 export function LastYear({ photos, onGallery, alt }) {
   return (
     <section className={`nx-s${alt ? " nx-alt" : ""}`}><div className="nx-wrap">
       <Head label="Toronto 2026" title="Last year in numbers" more="See the gallery" onMore={onGallery} />
-      <div className="nx-stats">{LAST_YEAR.map(([n, t]) => <div key={t}><b>{n}</b><span>{t}</span></div>)}</div>
+      <div className="nx-stats">{LAST_YEAR.map(([n, t]) => <div key={t}><CountUp value={n} /><span>{t}</span></div>)}</div>
       {photos && photos.length ? (
         <div className="nx-gal">{photos.slice(0, 5).map((p) => <img key={p.src} src={p.src} alt={p.alt || ""} loading="lazy" />)}</div>
       ) : null}
@@ -150,6 +182,7 @@ export function Passes({ types, onBuy, id = "ev-passes" }) {
             <div className="nx-perf" />
             <ul>{perks(t.note).map((p) => <li key={p}>{p}</li>)}</ul>
             <a href="#" className="nx-btn nx-buy" onClick={act(onBuy)}>Get tickets</a>
+            <div className="nx-code" aria-hidden="true" />
           </div>
         ))}
       </div>
@@ -237,6 +270,29 @@ export function SpeakerPage({ sp, eventLabel, eventTitle, talks, others, onBack,
       ) : null}
     </main>
   );
+}
+
+/** The event hero's countdown, ticking every second: days, hours, min, sec. target = ms since 1970. */
+export function Countdown({ target }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  const left = Math.floor((target - now) / 1000);
+  if (!(left > 0)) return null;
+  const pad = (n) => String(n).padStart(2, "0");
+  const parts = [[String(Math.floor(left / 86400)), "Days"], [pad(Math.floor((left % 86400) / 3600)), "Hours"], [pad(Math.floor((left % 3600) / 60)), "Min"], [pad(left % 60), "Sec"]];
+  return (
+    <div className="nx-cd" role="timer" aria-label={`${parts[0][0]} days ${parts[1][0]} hours to go`}>
+      {parts.map(([n, t]) => <div key={t} className="nl-cd"><strong>{n}</strong><span>{t}</span></div>)}
+    </div>
+  );
+}
+
+/** The date as a ticket stub: FEB over 24. date = "YYYY-MM-DD". */
+export function DateStub({ date }) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date || ""));
+  if (!m) return null;
+  const mon = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][Number(m[2]) - 1];
+  return <span className="nx-stub" aria-hidden="true"><small>{mon}</small><b>{m[3]}</b></span>;
 }
 
 /** A row of key dates (the awards page). items = [{ t, d, now }]. */

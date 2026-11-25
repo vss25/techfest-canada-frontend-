@@ -142,3 +142,104 @@ html[data-site-theme="dark"] .ap-root .nx-logos img { filter: brightness(0) inve
 }
 .ap-root .nx-prof .nx-back { display: block; margin-bottom: 14px; }
 .ap-phone .ap-root .nx-hero-ctas { margin-bottom: 14px; }
+
+/* =========================================================
+ Event-grade pieces (Nov 25 2026, the owner: "the UI elements are bland again"): stage light beams on every
+ banner, a spotlight that follows the pointer across cards, sections that rise in, numbers that count up, a
+ ticking glass countdown, the date as a ticket stub, ticket barcodes, a navy sign-up panel, rings on speakers.
+ Still the colour rules: pink for live / where you are, gold only on ticket buttons.
+========================================================= */
+@keyframes nx-beam-a { 0%, 100% { transform: rotate(20deg); } 50% { transform: rotate(7deg); } }
+@keyframes nx-beam-b { 0%, 100% { transform: rotate(-22deg); } 50% { transform: rotate(-9deg); } }
+.ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::before,
+.ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::after {
+  content: ""; position: absolute; z-index: 1; top: -40%; width: 30%; height: 180%; pointer-events: none; transform-origin: top center;
+  filter: blur(10px); background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 70%);
+}
+.ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::before { left: 26%; animation: nx-beam-a 9s ease-in-out infinite; }
+.ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::after { right: 10%; animation: nx-beam-b 11s ease-in-out infinite; background: linear-gradient(180deg, rgba(214, 48, 140, 0.22), rgba(214, 48, 140, 0) 70%); }
+.ap-root :is(.nl-hero, .nl-evhero) > :is(.p-in, .m-in), .ap-root .nx-hero-in { z-index: 2; }
+
+/* Spotlight: a soft pink light under the pointer (useNewLookEffects.js sets --x / --y). */
+.ap-root .p-card:not([style*="position"]) { position: relative; }
+.ap-root :is(.nx-card, .nx-pass, .p-card:not([style*="position: absolute"])) { overflow: hidden; }
+.ap-root :is(.nx-card, .nx-pass, .p-card:not([style*="position: absolute"]))::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s; border-radius: inherit;
+  background: radial-gradient(280px circle at var(--x, 50%) var(--y, 0%), rgba(214, 48, 140, 0.13), transparent 65%);
+}
+.ap-root :is(.nx-card, .nx-pass, .p-card):hover::before { opacity: 1; }
+html[data-site-theme="dark"] .ap-root :is(.nx-card, .nx-pass, .p-card)::before { background: radial-gradient(280px circle at var(--x, 50%) var(--y, 0%), rgba(214, 48, 140, 0.26), transparent 65%); }
+.ap-root :is(.nx-card, .nx-pass) > * { position: relative; z-index: 1; }
+.ap-root :is(.nx-card, .nx-pass, .p-card):hover { box-shadow: 0 18px 44px rgba(21, 16, 53, 0.12); }
+.ap-root .p-card[style*="border-radius: 12px"], .ap-root .p-card[style*="border-radius: 14px"] { border-radius: 16px !important; }
+
+/* Sections rise in as they scroll into view. */
+html.nx-reveal .ap-root [data-nx-r] { transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+html.nx-reveal .ap-root [data-nx-r]:not(.nx-seen) { opacity: 0; transform: translateY(22px); }
+
+/* Section labels: a short pink rule before the words. */
+.ap-root .nx-label:not(.nx-on-dark)::before,
+.ap-root p[style*="font-weight: 600"][style*="color: rgb(214, 48, 140)"]::before {
+  content: ""; display: inline-block; vertical-align: middle; width: 22px; height: 2px; margin-right: 10px; border-radius: 2px; background: var(--nl-pink);
+}
+.ap-root .nx-label:not(.nx-on-dark)::before { margin-right: 0; }
+
+/* Speakers: the ring is always on, brighter on hover. */
+.ap-root .nx-halo::before { opacity: 0.55; }
+.ap-root .nx-sp:hover .nx-halo > span { transform: scale(1.04); }
+.ap-root .nx-halo > span { transition: transform 0.4s; }
+
+/* Stats: bigger figures on a faint glow. */
+.ap-root .nx-stats > div { position: relative; background-image: radial-gradient(120% 90% at 50% 0%, var(--nl-glow), transparent 70%); }
+.ap-root .nx-stats b { font-size: 38px; font-variant-numeric: tabular-nums; }
+
+/* Partner logos: quiet until hovered. */
+.ap-root .nx-logos > div { transition: background 0.25s; }
+.ap-root .nx-logos img { filter: grayscale(1); opacity: 0.7; transition: filter 0.25s, opacity 0.25s, transform 0.25s; }
+.ap-root .nx-logos > div:hover img { filter: none; opacity: 1; transform: scale(1.06); }
+html[data-site-theme="dark"] .ap-root .nx-logos > div:hover img { filter: brightness(0) invert(1); }
+
+/* Passes: a barcode under the button, a pink edge on hover. */
+.ap-root .nx-code { height: 20px; margin-top: 16px; color: var(--nl-line2); background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 4px, currentColor 4px 5px, transparent 5px 8px); }
+.ap-root .nx-pass { transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s; }
+.ap-root .nx-pass:hover { transform: translateY(-4px); border-color: var(--nl-pink); }
+
+/* The ticking countdown and the date stub. */
+.ap-root .nx-cd { display: flex; gap: 10px; margin-right: 8px; }
+.ap-root .nx-cd .nl-cd { width: 76px; height: 84px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #FFFFFF; }
+.ap-root .nx-cd strong { font-size: 30px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ap-root .nx-cd .nl-cd > span { margin-top: 6px; }
+.ap-phone .ap-root .nx-cd .nl-cd { width: 64px; height: 72px; }
+.ap-phone .ap-root .nx-cd strong { font-size: 24px; }
+.ap-root .nx-stub { flex: 0 0 46px; width: 46px; border-radius: 10px; overflow: hidden; text-align: center; border: 1px solid var(--nl-line2); background: var(--nl-card); }
+.ap-root .nx-stub small { display: block; padding: 3px 0 2px; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; color: #FFFFFF; background: var(--nl-pink); }
+.ap-root .nx-stub b { display: block; padding: 3px 0 4px; font-size: 18px; line-height: 1.1; color: var(--nl-text); }
+
+/* The brochure form: a navy panel under the stage lights. */
+.ap-root section.nl-panel { background: var(--nl-bg) !important; }
+.ap-root section.nl-panel > div { position: relative; overflow: hidden; max-width: 1216px !important; margin: 68px auto !important; padding: 44px !important; border-radius: 24px; background: #151035; color: #FFFFFF; }
+.ap-root section.nl-panel > div > * { position: relative; z-index: 2; }
+.ap-root section.nl-panel :is(h2, p, label) { color: #FFFFFF !important; }
+.ap-root section.nl-panel p { opacity: 0.8; }
+.ap-root section.nl-panel input { background: rgba(255, 255, 255, 0.07) !important; border-color: rgba(255, 255, 255, 0.24) !important; color: #FFFFFF !important; border-radius: 12px !important; height: 50px !important; }
+.ap-root section.nl-panel input::placeholder { color: rgba(255, 255, 255, 0.5); }
+.ap-root section.nl-panel input:focus { outline: none; border-color: #FFFFFF !important; box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1); }
+.ap-root section.nl-panel button { background: #FFFFFF !important; color: #151035 !important; height: 50px !important; border: 0 !important; }
+.ap-phone .ap-root section.nl-panel { position: relative; overflow: hidden; margin: 20px 16px; border-radius: 20px; background: #151035 !important; padding: 28px 20px !important; }
+.ap-phone .ap-root section.nl-panel h2 { position: relative; z-index: 2; }
+.ap-phone .ap-root section.nl-panel button { position: relative; z-index: 2; }
+html[data-site-theme="dark"] .ap-root section.nl-panel > div, html[data-site-theme="dark"] .ap-phone .ap-root section.nl-panel { background: #161131 !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1); }
+
+@media (max-width: 720px) {
+  .ap-root .nx-stats b { font-size: 30px; }
+  .ap-root section.nl-panel > div { margin: 40px 16px !important; padding: 28px 20px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::before, .ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::after { animation: none; }
+  .ap-root .nx-pass:hover { transform: none; }
+}
+
+/* The header stays at the top while scrolling, as in the approved preview. The desktop board hides sideways
+   overflow on its root, which made that box the scroller and stopped the sticky header (and the sticky bars under
+   it) from sticking; "clip" hides the overflow without that side effect. */
+.ap-desk .ap-root > div { overflow-x: clip !important; }

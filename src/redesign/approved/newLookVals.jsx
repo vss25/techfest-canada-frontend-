@@ -1,6 +1,6 @@
 import React from "react";
-import { AgendaPage, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
-import { cityPath } from "./liveShared";
+import { AgendaPage, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
+import { cityPath, countdownTarget } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
 import { SPK_MIN } from "./speakerGrid";
 
@@ -71,6 +71,9 @@ export function applyNewLook(v, self, { openTix, phone }) {
 
   // Event page.
   if (s.screen === "event") {
+    // The countdown ticks every second, and the date reads like a ticket stub (only once the date is fixed).
+    if (c.hasCountdown && c.startDate) v.countdown = <Countdown target={countdownTarget(c.startDate, city)} />;
+    if (c.startDate) v.dateStub = <DateStub date={c.startDate} />;
     if (hasAgenda) v.dayGlance = <DayGlance alt sessions={rows} onFull={goAgenda} id={phone ? "m-agenda" : "ev-agenda"} />;
     if (own) v.evOnStage = <OnStage speakers={withOpen(own.slice(0, 4))} onAll={goAllSpeakers} id={phone ? "m-speakers" : "ev-speakers"} />;
     if (onSale) v.passes = <Passes types={types} onBuy={openTix} />;

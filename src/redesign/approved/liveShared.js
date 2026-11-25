@@ -61,6 +61,13 @@ function tzOffsetMinutes(tz, t) {
     .formatToParts(new Date(t)).forEach((x) => { o[x.type] = x.value; });
   return (Date.UTC(+o.year, +o.month - 1, +o.day, +o.hour, +o.minute) - t) / 60000;
 }
+/** When the countdown ends, in ms since 1970 (9:00 AM in the event city on its first day); 0 without a date. */
+export function countdownTarget(startDate, cityId) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(startDate || ""));
+  if (!m) return 0;
+  const guess = Date.UTC(+m[1], +m[2] - 1, +m[3], 9, 0);
+  return guess - tzOffsetMinutes(CITY_TZ[cityId] || "America/Toronto", guess) * 60000;
+}
 /** { hasCountdown, cdDays, cdHours, cdMins } for a "YYYY-MM-DD" start date; hasCountdown false once it has started. */
 export function countdownTo(startDate, cityId, now = Date.now()) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(startDate || ""));

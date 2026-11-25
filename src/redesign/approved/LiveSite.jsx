@@ -16,6 +16,7 @@ import "./siteDark.css"; // only applies with ?theme=dark (src/lib/siteDarkPrevi
 import SeasonRail from "./SeasonRail";
 import "./newLook.css";
 import { applyNewLook } from "./newLookVals";
+import useNewLookEffects from "./useNewLookEffects";
 import { normalizeSpeakerSlug, speakerSlug } from "../../seo/slug";
 import { seasonStops } from "../../lib/seasonRail";
 import { applySitePreviewTheme } from "../../lib/siteDarkPreview";
@@ -722,6 +723,7 @@ export default function ApprovedRoute({ fallback = null }) {
   }, [content.speakers]);
 
   const past2026 = usePast2026(!!route);
+  useNewLookEffects(!!route);
   const speakerDoc = useSpeakerDoc(route && route.screen === "speaker" ? route.slug : "", events);
   const standIns = useStandIns(ev || van, events);
   const partners2026 = useMemo(() => (partners ? partners.filter((p) => partnerOnEvent(p, PAST_EVENT)) : null), [partners]);
@@ -761,7 +763,7 @@ export default function ApprovedRoute({ fallback = null }) {
         if (ev.venueAddress) c.venueArea = ev.venueAddress;
         if (ev.audience) c.audience = ev.audience;
         // A fixed date shows in full, with a countdown to it; without one, the month (and no countdown).
-        if (ev.startDate) { c.date = fullDate(ev.startDate); c.month = monthShort(ev.startDate); }
+        if (ev.startDate) { c.date = fullDate(ev.startDate); c.month = monthShort(ev.startDate); c.startDate = String(ev.startDate).slice(0, 10); }
         Object.assign(c, countdownTo(ev.startDate, id, now));
         if (ev.theme) c.theme = ev.theme;
         if (ev.formatLine) c.format = ev.formatLine;

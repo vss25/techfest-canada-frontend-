@@ -4,7 +4,7 @@ import { MapPinned,
   MailPlus, MailX, ScrollText, Settings2, Share2, ShieldAlert, ShieldCheck, Smartphone, Store, Ticket, TicketPlus, ToggleRight, UserCog, Users,
 } from "lucide-react";
 import { Boxes, LayoutTemplate, PenLine, CalendarRange, Clapperboard, FileSignature, Flame, History, Percent } from "lucide-react";
-import { Timer } from "lucide-react";
+import { Timer, Type } from "lucide-react";
 import { CircleHelp, ClipboardList, ListTodo, Gavel, Gift, GitPullRequestArrow, LifeBuoy, ListChecks, ListPlus, Medal, MessageSquareText, Network, Trophy } from "lucide-react";
 
 /* =========================================================
@@ -68,6 +68,7 @@ export const WORKSPACES = [
       { to: "content/home-sponsors", label: "Home sponsors", icon: House, hidden: true },
       { to: "content/organisations", label: "Attending organisations", icon: Building2 },
       // Nov 18 2026: YouTube / Vimeo videos on the website (only the link is stored).
+      { to: "content/site-copy", label: "Website text & media", icon: Type },
       { to: "content/videos", label: "Videos", icon: Clapperboard },
     ] },
     { title: "App", items: [

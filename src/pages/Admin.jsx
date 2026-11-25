@@ -58,6 +58,7 @@ import BrochureDownloads from "../admin/leads/BrochureDownloads";
 import Waitlist2027 from "../admin/leads/Waitlist2027";
 import Videos from "../admin/cms/Videos";
 import SiteCopy from "../admin/cms/SiteCopy";
+import HomePage from "../admin/cms/HomePage";
 import Contracts from "../admin/sales/Contracts";
 import ContractEditor from "../admin/sales/ContractEditor";
 import Mous from "../admin/sales/Mous";
@@ -272,6 +273,7 @@ function AdminPanel() {
             <Route path="waitlist-2027" element={<Waitlist2027 />} />
             <Route path="content/videos" element={<Videos />} />
             <Route path="content/site-copy" element={<SiteCopy />} />
+            <Route path="content/home" element={<HomePage />} />
             <Route path="contracts" element={<Contracts />} />
             <Route path="contracts/:id" element={<ContractEditor />} />
             <Route path="offerings" element={<Offerings />} />

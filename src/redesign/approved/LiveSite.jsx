@@ -9,6 +9,7 @@ import { heroVideoSrc } from "../../lib/siteFiles";
 import { heroShadeBackground } from "../../lib/heroShade";
 import { HOME_HEIGHTS, heroHeights, heroPosition } from "../../lib/heroFrame";
 import LivePhone from "./LivePhone";
+import { homeCityFor, homeEyebrow, homeOrder } from "../../lib/homeLayout";
 import { speakerGrid, speakersSoon } from "./speakerGrid";
 import "./siteDark.css"; // only applies with ?theme=dark (src/lib/siteDarkPreview.js)
 import { applySitePreviewTheme } from "../../lib/siteDarkPreview";
@@ -73,10 +74,11 @@ const speakerCols = () => {
 };
 class LiveSite extends ApprovedSite {
   static getDerivedStateFromProps(props, state) {
-    if (props.routeKey === state.routeKey) return null;
+    const homeCity = props.homeCity || "van";
+    if (props.routeKey === state.routeKey) return state.screen === "home" && state.city !== homeCity ? { city: homeCity } : null;
     const r = props.route || { screen: "home" };
     return {
-      routeKey: props.routeKey, screen: r.screen, city: r.city, page: r.page, faq: r.faq ?? state.faq,
+      routeKey: props.routeKey, screen: r.screen, city: r.city || (r.screen === "home" ? homeCity : undefined), page: r.page, faq: r.faq ?? state.faq,
       sec: r.sec ?? "", drawer: !!r.drawer, menu: false, more: false, spk: null, auth: state.auth, dl: null,
     };
   }
@@ -149,7 +151,7 @@ class LiveSite extends ApprovedSite {
         setTimeout(() => document.getElementById("ev-" + id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
         return;
       }
-      this.props.navigate(cityPath("van") + (id === "agenda" ? "/agenda" : ""), { state: { sec: id } });
+      this.props.navigate(cityPath((this.state.screen === "home" && this.state.city) || "van") + (id === "agenda" ? "/agenda" : ""), { state: { sec: id } });
     };
   }
 
@@ -275,6 +277,13 @@ class LiveSite extends ApprovedSite {
     }
     if (v.c && v.c.heights) v.heroH = v.c.heights;
     v.homeH = HOME_HEIGHTS.desktop;   // the home page's hero: full screen (Nov 25 2026)
+    // The home page (Admin › Content › Home page, Nov 25 2026): the event its top promotes (the pinned one, else the
+    // next) and its sections in order. Vancouver keeps the design's own wording (editable in Website text & media).
+    v.homeOrder = this.props.homeOrder;
+    if (s.screen === "home" && s.city && v.c && v.goCity) {
+      v.homeGo = v.goCity[s.city] || v.goEvent;
+      if (s.city !== "van") v.homeHero = { img: v.c.img, alt: v.c.title, eyebrow: homeEyebrow(v.c), title: v.c.title, blurb: v.c.blurb, credit: v.c.credit, posD: v.c.posD || "center", pos: v.c.pos || v.c.posD || "center" };
+    }
     if (v.c && v.c.why) {
       v.whyEyebrow = v.c.why.eyebrow;
       v.whyHeading = v.c.why.heading;
@@ -562,10 +571,22 @@ export default function ApprovedRoute({ fallback = null }) {
     return out;
   }, [events]);
   const van = byCity.van;
+  // The home page's settings (Admin › Content › Home page): the event its top promotes and its sections in order.
+  // Read through the preview-aware client, so staff see staged changes on staging. Nothing saved = the next event.
+  const [homeDoc, setHomeDoc] = useState(null);
+  useEffect(() => {
+    let live = true;
+    client.fetch(`*[_id == "homePage"][0]{ "heroEvent": heroEvent._ref, sections[]{ key, on } }`)
+      .then((d) => { if (live) setHomeDoc(d || {}); })
+      .catch(() => { if (live) setHomeDoc({}); });
+    return () => { live = false; };
+  }, []);
+  const homeCity = useMemo(() => homeCityFor(homeDoc && homeDoc.heroEvent, byCity, new Date(now).toISOString().slice(0, 10)), [homeDoc, byCity, now]);
+  const homeSections = useMemo(() => homeOrder(homeDoc && homeDoc.sections), [homeDoc]);
   // The event this page is about (Vancouver, the next event, on pages that aren't an event's):
   // its tickets, its agenda, its checkout. Each event sells its own tickets (Nov 17 2026: every
   // page used to load Vancouver's).
-  const ev = route && route.city ? byCity[route.city] : null;
+  const ev = route && route.city ? byCity[route.city] : route && route.screen === "home" && homeCity !== "van" ? byCity[homeCity] || null : null;
   const evKey = (ev || van) && (ev || van).eventKey;
 
   useEffect(() => {
@@ -749,6 +770,8 @@ export default function ApprovedRoute({ fallback = null }) {
       past2026={past2026}
       standIns={standIns}
       eventKey={evKey}
+      homeCity={homeCity}
+      homeOrder={homeSections}
       loaderMs={0}
     />
   );

@@ -62,6 +62,8 @@ export const WORKSPACES = [
       { to: "content/tickets", label: "Tickets & prices", icon: Ticket },
     ] },
     { title: "Site-wide", items: [
+      // Nov 25 2026: the home page's event and sections (its wording is in Website text & media).
+      { to: "content/home", label: "Home page", icon: House },
       { to: "content/settings", label: "Website switches", icon: Settings2 },
       { to: "content/alumni-logos", label: "Team alumni logos", icon: GraduationCap },
       { to: "content/sponsor-marquee", label: "Community & speakers' companies", icon: GalleryHorizontal },

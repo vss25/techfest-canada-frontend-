@@ -107,3 +107,23 @@ s = rep(s, '"background": "#151035", "color": "#F5A623", "d', '"background": "#1
 s = rep(s, '<div className="m-bar" style={{"height": "2px", "background": "#F5A623"}} />', '<div className="m-bar" style={{"height": "2px", "background": "#151035"}} />')
 lines[li] = s; open(f, 'w').write('\n'.join(lines))
 print("ok")
+
+# ---- Nov 25 2026, the owner: the header logo was tiny and showed the 2026 dates: the dateless logo, cropped tight ----
+def fix(f, reps):
+    lines=open(f).read().split('\n'); i=max(range(len(lines)),key=lambda k:len(lines[k])); s=lines[i]
+    for old,new,n in reps:
+        assert s.count(old)==n,(f,old[:80],s.count(old)); s=s.replace(old,new)
+    lines[i]=s; open(f,'w').write('\n'.join(lines))
+O='/Tech_Festival_Canada_Logo_Dark_Transparent.webp'; N='/ttfc-logo-header.png'
+fix('src/redesign/approved/ApprovedSite.jsx',[
+ (f'<img src="{O}" alt="The Tech Festival Canada" style={{{{"height": "38px", "width": "auto"}}}} />', f'<img src="{N}" alt="The Tech Festival Canada" style={{{{"height": "44px", "width": "auto"}}}} />',1),
+ (f'<img src="{O}" alt="The Tech Festival Canada" style={{{{"height": "26px", "width": "auto"}}}} />', f'<img src="{N}" alt="The Tech Festival Canada" style={{{{"height": "22px", "width": "auto"}}}} />',1),
+ (f'<img src="{O}" alt="" style={{{{"height": "64px", "width": "auto"}}}} />', f'<img src="{N}" alt="" style={{{{"height": "52px", "width": "auto"}}}} />',1),
+ ('<header data-dark="1" style={{"position": "sticky", "top": "0", "zIndex": "20", "background": "#151035", "color": "#FFFFFF"}}><div style={{"maxWidth": "1280px", "margin": "0 auto", "padding": "14px 32px"',
+  '<header data-dark="1" style={{"position": "sticky", "top": "0", "zIndex": "20", "background": "#151035", "color": "#FFFFFF"}}><div style={{"maxWidth": "1280px", "margin": "0 auto", "padding": "11px 32px"',1),
+])
+fix('src/redesign/approved/ApprovedPhone.jsx',[
+ (f'<img src="{O}" alt="The Tech Festival Canada" style={{{{"height": "30px", "width": "auto"}}}} />', f'<img src="{N}" alt="The Tech Festival Canada" style={{{{"height": "38px", "width": "auto"}}}} />',1),
+ (f'<img src="{O}" alt="" style={{{{"height": "52px", "width": "auto"}}}} />', f'<img src="{N}" alt="" style={{{{"height": "44px", "width": "auto"}}}} />',1),
+])
+print('ok')

@@ -4,6 +4,8 @@ import { cityPath, countdownTarget } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
 import { sessionCardMedia } from "../../lib/sessionMedia";
 import { urlFor } from "../../utils/sanity";
+import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
+import { homeEyebrow } from "../../lib/homeLayout";
 import { SPK_MIN } from "./speakerGrid";
 
 /* Fills the boards' new-look slots (tools/newlook_patch2.py) with live data. Shared by the desktop and phone
@@ -94,7 +96,20 @@ export function applyNewLook(v, self, { openTix, phone }) {
           stub={c.startDate ? <DateStub date={c.startDate} /> : null} />
       </>
     );
-    v.homeSpeakers = spk ? <OnStage alt label={spkLabel} speakers={withOpen(spk.slice(0, 4))} onAll={goAllSpeakers} /> : null;
+    // Who's on stage: up to six. The speakers picked in Admin › Content › Home page, else the event's own (or the
+    // stand-ins). Six show as two rows of three.
+    const picked = p.homeSpeakers && p.homeSpeakers.length ? p.homeSpeakers : null;
+    const stage = (picked || spk || []).slice(0, 6);
+    v.homeSpeakers = stage.length ? <OnStage alt three={stage.length > 4} label={picked ? "Speakers" : spkLabel} speakers={withOpen(stage)} onAll={goAllSpeakers} /> : null;
+    // The home page's own words and media (Admin › Content › Home page): each one set replaces the event's.
+    const own = p.homeOwn || {};
+    if (own.eyebrow || own.title || own.blurb || own.img) {
+      const base = v.homeHero || { img: c.img, alt: c.title, eyebrow: homeEyebrow(c), title: c.title, blurb: c.blurb, credit: c.credit, posD: c.posD || "center", pos: c.pos || c.posD || "center" };
+      v.homeHero = { ...base, ...(own.eyebrow ? { eyebrow: own.eyebrow } : {}), ...(own.title ? { title: own.title, alt: own.title } : {}),
+        ...(own.blurb ? { blurb: own.blurb } : {}), ...(own.img ? { img: own.img, credit: "", posD: "center", pos: "center" } : {}) };
+    }
+    if (own.video) { v.heroVideo = <HeroBackgroundVideo key={own.video} src={own.video} position="center" anyDevice />; v.hideCredit = true; }
+    else if (own.img) v.heroVideo = null;   // its own picture, no video of its own: the picture shows, not the event's video
     v.homeLastYear = <LastYear photos={PHOTOS} onGallery={v.goPast} />;
     // In good company: the event's own partners, else every 2026 partner's logo (it sits right under the timeline).
     const logos2026 = (p.past2026 && p.past2026.logos) || [];

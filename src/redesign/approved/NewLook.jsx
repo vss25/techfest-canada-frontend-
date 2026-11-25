@@ -1,4 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+
+// The production home page's rotating globe with the pillars and sectors: loaded only when Next up is shown.
+const PillarGlobe = lazy(() => import("./PillarGlobe"));
 
 /* The new look's sections and pages (Nov 25 2026, the owner approved the preview and asked for "all of them"):
    the home page's Next up / Who's on stage / Last year in numbers / Partners, the hero buttons, the event page's
@@ -72,7 +75,7 @@ export function PillarMatrix() {
 /** Home: the next event, with its photo (or the 5 × 5 matrix in its place). */
 export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, stub, matrix, ticketsLabel = "Get tickets" }) {
   return (
-    <section className="nx-s nx-stage"><div className="nx-wrap nx-two">
+    <section className="nx-s nx-stage"><div className={`nx-wrap nx-two${matrix ? " nx-two-wide" : ""}`}>
       <div>
         <span className="nx-label">{label}</span>
         <h2 className="nx-h2 nx-big"><Fancy text={title} first /></h2>
@@ -82,7 +85,7 @@ export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, stub,
           <More onClick={onEvent}>See the event</More>
         </div>
       </div>
-      {matrix ? <PillarMatrix /> : (
+      {matrix ? <Suspense fallback={<PillarMatrix />}><PillarGlobe /></Suspense> : (
         <div className="nx-frame">
           <div className="nx-media">{img ? <img src={img} alt={alt || ""} loading="lazy" /> : null}</div>
           {stub ? <div className="nx-float">{stub}</div> : null}
@@ -107,12 +110,12 @@ export function SpeakerCard({ sp, onOpen }) {
 }
 
 /** "Who's on stage": up to four speakers, with See all speakers. */
-export function OnStage({ label = "Speakers", title = "Who's on stage", lead, speakers, onAll, alt, id }) {
+export function OnStage({ label = "Speakers", title = "Who's on stage", lead, speakers, onAll, alt, id, three }) {
   if (!speakers || !speakers.length) return null;
   return (
     <section className={`nx-s${alt ? " nx-alt" : ""}`} id={id}><div className="nx-wrap">
       <Head label={label} title={title} lead={lead} more="See all speakers" onMore={onAll} />
-      <div className="nx-grid4">{speakers.map((sp, i) => <SpeakerCard key={sp.name + i} sp={sp} onOpen={sp.open} />)}</div>
+      <div className={three ? "nx-grid3 nx-grid3-sp" : "nx-grid4"}>{speakers.map((sp, i) => <SpeakerCard key={sp.name + i} sp={sp} onOpen={sp.open} />)}</div>
     </div></section>
   );
 }

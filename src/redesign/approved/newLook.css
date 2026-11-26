@@ -756,18 +756,6 @@ html .ap-root #ev-contact form button.p-dark + span { color: #151035 !important;
 @keyframes nx-wheel-bob { 50% { margin-top: -6px; } }
 @media (prefers-reduced-motion: reduce) { .ap-root .nx-wheel-ring, .ap-root .nx-wheel-core, .ap-root .nx-wheel-tile { animation: none; } }
 
-/* ---------- An event's banner: its words stay readable on any photo (Nov 26 2026, the owner) ----------
-   A bright photo (Vancouver's pink sky) washed out the title, the line under it and the countdown. A soft dark
-   veil now sits behind the words only: it deepens towards the bottom-left, where the text is, and leaves the
-   top and right of the photo as they are. It is on top of the shade chosen in Admin › Event page, not instead. */
-.ap-root .nl-evhero > :is(.p-in, .m-in) { position: relative; }
-.ap-root .nl-evhero > :is(.p-in, .m-in)::before {
-  content: ""; position: absolute; z-index: -1; pointer-events: none; left: -100vw; right: -100vw; top: -120px; bottom: -400px;
-  background:
-    linear-gradient(180deg, rgba(12, 9, 31, 0) 0%, rgba(12, 9, 31, 0.5) 30%, rgba(12, 9, 31, 0.8) 100%),
-    linear-gradient(90deg, rgba(12, 9, 31, 0.55) 35%, rgba(12, 9, 31, 0) 75%);
-}
-.ap-root .nl-evhero :is(h1, p) { text-shadow: 0 2px 18px rgba(12, 9, 31, 0.55); }
 
 /* ================= The phone version of today's changes (Nov 26 2026, the owner: "anything that is customer
    facing … both to the desktop version and mobile version") ================= */
@@ -808,3 +796,35 @@ html[data-site-theme] .ap-phone .ap-root #m-contact .nl-mcontact-b input[type="e
   border: 1.5px solid #8259ED !important; border-radius: 8px !important; opacity: 1 !important;
 }
 html[data-site-theme] .ap-phone .ap-root #m-contact .nl-mcontact-b button.m-press { color: #FFFFFF !important; opacity: 1 !important; -webkit-text-fill-color: #FFFFFF; }
+
+/* ---------- The Contact page (Nov 26 2026): cards you can pick, and a confirmation that stays ---------- */
+.ap-root .nl-topic { cursor: pointer; position: relative; transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; outline: none; }
+.ap-root .nl-topic:hover { transform: translateY(-2px); }
+.ap-root .nl-topic:focus-visible { box-shadow: 0 0 0 3px rgba(130, 89, 237, 0.55); }
+.ap-root .nl-topic[aria-pressed="true"] {
+  border: 1px solid transparent !important;
+  background: linear-gradient(100deg, #200D2B, #181133) padding-box, linear-gradient(90deg, #C5408A, #8259ED) border-box !important;
+  box-shadow: 0 14px 36px rgba(84, 24, 168, 0.32);
+}
+html:not([data-site-theme="dark"]) .ap-root .nl-topic[aria-pressed="true"] { background: linear-gradient(#FFFFFF, #FFFFFF) padding-box, linear-gradient(90deg, #C5408A, #8259ED) border-box !important; }
+/* A tick in the corner of the chosen card. */
+.ap-root .nl-topic[aria-pressed="true"]::after {
+  content: "✓"; position: absolute; right: 14px; top: 14px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #FFFFFF; background: #C5408A;
+}
+.ap-root .nl-topic a { position: relative; z-index: 1; }
+/* The confirmation the form turns into. */
+.ap-root .nx-sent {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 36px 32px; border-radius: 16px; border: 1px solid transparent;
+  background: linear-gradient(100deg, #200D2B, #181133) padding-box, linear-gradient(90deg, #C5408A, #8259ED) border-box; color: #F4F2FA;
+}
+.ap-root .nx-sent-tick { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFFFFF; background: linear-gradient(135deg, #8259ED, #C5408A); box-shadow: 0 0 34px rgba(130, 89, 237, 0.6); }
+.ap-root .nx-sent h2 { margin: 4px 0 0; font-size: 28px; line-height: 34px; font-weight: 700; color: #FFFFFF; }
+.ap-root .nx-sent p { margin: 0; max-width: 640px; font-size: 16px; line-height: 26px; color: #D9D3EE; }
+.ap-root .nx-sent p strong { color: #FFFFFF; }
+.ap-root .nx-sent p a { color: #FFFFFF; text-decoration: underline; text-underline-offset: 3px; }
+.ap-root .nx-sent .nx-btn { margin-top: 8px; }
+.ap-phone .ap-root .nx-sent { padding: 26px 20px; }
+.ap-phone .ap-root .nx-sent h2 { font-size: 24px; line-height: 30px; }
+/* The small "Thanks / Add your email first" note sat under the staging banner; it now sits above it. */
+.ap-root .p-toast { bottom: calc(28px + var(--ttfc-staging-bar, 0px)) !important; z-index: 2147482000 !important; }

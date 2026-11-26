@@ -1,6 +1,6 @@
 import React from "react";
-import { AgendaHighlights, AgendaPage, CardMedia, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage } from "./NewLook";
-import { cityPath, countdownTarget } from "./liveShared";
+import { AgendaHighlights, AgendaPage, CardMedia, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage, ContactDone } from "./NewLook";
+import { EMAIL_RE, cityPath, countdownTarget, fieldsNear, sendForm } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
 import { sessionCardMedia } from "../../lib/sessionMedia";
 import { urlFor } from "../../utils/sanity";
@@ -40,6 +40,14 @@ function weekdayOf(ymd) {
   if (!m) return "";
   return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
 }
+
+/* The Contact page's four inboxes. `form` is the backend form the message is filed under. */
+const CONTACT_TOPICS = {
+  general: { label: "General", inbox: "enquire@thetechfestival.com", form: "inquiry" },
+  sales: { label: "Sponsorship and exhibiting", inbox: "sales@thetechfestival.com", form: "partnership" },
+  media: { label: "Media", inbox: "enquire@thetechfestival.com", form: "inquiry" },
+  tickets: { label: "Tickets", inbox: "enquire@thetechfestival.com", form: "inquiry" },
+};
 
 export function applyNewLook(v, self, { openTix, phone }) {
   const p = self.props;
@@ -165,5 +173,41 @@ export function applyNewLook(v, self, { openTix, phone }) {
 
   // Awards: the key dates under the season timeline.
   if (s.screen === "awards") v.awDates = <KeyDates items={AWARD_DATES} />;
+  // ---- Contact page (Nov 26 2026, the owner: the cards "are not selectable", and after sending "there is no
+  // confirmation on screen"). Picking a card says who the message is for; after sending, the form gives way to
+  // a confirmation that stays put (the small "Thanks" note at the bottom was easy to miss). ----
+  {
+    const st = self.state || {};
+    const topic = CONTACT_TOPICS[st.topic] ? st.topic : "general";
+    const T = CONTACT_TOPICS[topic];
+    const say = (m) => (self.toast || self.toastIt).call(self, m);
+    v.topic = topic;
+    v.pickTopicEv = (e) => {
+      const card = e.target && e.target.closest ? e.target.closest("[data-topic-key]") : null;
+      if (!card || e.target.closest("a")) return;      // the email address itself still opens the mail app
+      self.setState({ topic: card.dataset.topicKey });
+    };
+    v.pickTopicKey = (e) => {
+      if ((e.key !== "Enter" && e.key !== " ") || !e.target.matches || !e.target.matches("[data-topic-key]")) return;
+      e.preventDefault();
+      self.setState({ topic: e.target.dataset.topicKey });
+    };
+    v.topicNote = `About: ${T.label}. Goes to ${T.inbox}.`;
+    if (st.page === "contact") {
+      v.submitForm = (e) => {
+        const f = fieldsNear(e && (e.currentTarget || e.target));
+        if (!String(f.name || "").trim()) { say("Add your name first"); return; }
+        if (!EMAIL_RE.test(String(f.email || "").trim())) { say("Add a valid email address"); return; }
+        if (!String(f.message || "").trim()) { say("Write a short message first"); return; }
+        Promise.resolve(self.run("Sending", () => sendForm(T.form, f, { page: "contact", topic: T.label }), "")).then((ok) => {
+          if (ok !== false) self.setState({ contactSent: { email: String(f.email).trim(), topic: T.label } });
+        });
+      };
+      if (st.contactSent) {
+        v.contactDone = <ContactDone email={st.contactSent.email} topic={st.contactSent.topic} inbox={T.inbox}
+          onAgain={(e) => { if (e && e.preventDefault) e.preventDefault(); self.setState({ contactSent: null }); }} />;
+      }
+    }
+  }
   return v;
 }

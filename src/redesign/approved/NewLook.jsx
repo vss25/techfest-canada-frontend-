@@ -428,3 +428,18 @@ export function KeyDates({ title = "Key dates", items }) {
     </nav>
   );
 }
+
+/* What the Contact form turns into once the message is sent. */
+export function ContactDone({ email, topic, inbox, onAgain }) {
+  return (
+    <div className="nx-sent" role="status" aria-live="polite">
+      <span className="nx-sent-tick" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+      </span>
+      <h2>Message sent</h2>
+      <p>Thanks. Your {String(topic || "").toLowerCase()} message is with the team, and we reply within two working days.</p>
+      <p>A confirmation is on its way to <strong>{email}</strong>. If it doesn&apos;t arrive in a few minutes, check your spam folder, or write to <a href={`mailto:${inbox}`}>{inbox}</a>.</p>
+      <a href="#" className="nx-btn" onClick={onAgain}>Send another message</a>
+    </div>
+  );
+}

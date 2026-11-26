@@ -125,7 +125,10 @@ export function applyNewLook(v, self, { openTix, phone }) {
     }
     if (own.video) { v.heroVideo = <HeroBackgroundVideo key={own.video} src={own.video} position="center" anyDevice />; v.hideCredit = true; }
     else if (own.img) v.heroVideo = null;   // its own picture, no video of its own: the picture shows, not the event's video
-    v.homeLastYear = <LastYear photos={PHOTOS} onGallery={v.goPast} />;
+    // The pictures chosen in Admin › Home page (and how many of them), else the built-in five.
+    const hl = (p.homeOwn && p.homeOwn.photos) || [];
+    const hlCount = p.homeOwn && Number.isFinite(p.homeOwn.photoCount) ? p.homeOwn.photoCount : 5;
+    v.homeLastYear = <LastYear photos={hl.length ? hl.slice(0, hlCount) : PHOTOS} more={hl.length > hlCount ? hl.length - hlCount : 0} onGallery={v.goPast} />;
     // In good company: the event's own partners, else every 2026 partner's logo (it sits right under the timeline).
     const logos2026 = (p.past2026 && p.past2026.logos) || [];
     const ownPtn = p.evPartners && p.evPartners.length;

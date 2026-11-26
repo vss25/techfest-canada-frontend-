@@ -155,14 +155,16 @@ function CountUp({ value }) {
 }
 
 /** "Last year in numbers": the Toronto 2026 figures and five photos. photos = [{ src, alt }]. */
-export function LastYear({ photos, onGallery, alt }) {
+export function LastYear({ photos, onGallery, alt, more = 0 }) {
   return (
     <section className={`nx-s nx-stage${alt ? " nx-alt" : ""}`}><div className="nx-wrap">
       <Head label="Toronto 2026" title="Last year in numbers" more="See the gallery" onMore={onGallery} />
       <div className="nx-stats">{LAST_YEAR.map(([n, t]) => <div key={t}><CountUp value={n} /><span>{t}</span></div>)}</div>
       {photos && photos.length ? (
-        <div className="nx-gal">{photos.slice(0, 5).map((p) => <img key={p.src} src={p.src} alt={p.alt || ""} loading="lazy" />)}</div>
+        // Five is the designed mosaic (one large, four small); any other number flows in an even grid.
+        <div className={`nx-gal${photos.length === 5 ? "" : " nx-gal-auto"}`}>{photos.map((p) => <img key={p.src} src={p.src} alt={p.alt || ""} loading="lazy" />)}</div>
       ) : null}
+      {more > 0 ? <a href="#" className="nx-more nx-gal-more" onClick={act(onGallery)}>See {more} more in the gallery →</a> : null}
     </div></section>
   );
 }

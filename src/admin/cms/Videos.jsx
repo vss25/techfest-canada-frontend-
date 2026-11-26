@@ -12,7 +12,7 @@ import { ChangeBadge } from "./workflow";
 import useCmsStatus from "./useCmsStatus";
 
 /* =========================================================
-   Admin › Content › Videos (Nov 18 2026): "Add ability to add our videos on YouTube or Vimeo so
+   Admin › Website › Videos (Nov 18 2026): "Add ability to add our videos on YouTube or Vimeo so
    that we can show the videos on our website but it doesn't need to increase my operational /
    hosting cost."
    Paste a YouTube or Vimeo link: the title and the picture come from the provider

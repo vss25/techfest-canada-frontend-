@@ -8,7 +8,7 @@ import {
   Badge, Banner, Button, Card, EmptyState, ErrorState, Field, Input, LoadingState, Modal, PageHeader, Select, Tabs, Textarea, focusRing,
 } from "../ui";
 
-/* Home › My work (Nov 20 2026): every promise is a task with an owner and a due date, so people
+/* Today › My work (Nov 20 2026): every promise is a task with an owner and a due date, so people
    can see who is doing what without asking, and raise a flag when something is wrong.
    Kept simple on purpose (the team isn't technical): three fields to add a task (what, who,
    by when), plain words, one list in the order things need attention. API: /console/commitments. */

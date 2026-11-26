@@ -5,7 +5,7 @@ import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, EmptyState, ErrorState, LoadingState, PageHeader, Select, focusRing } from "../ui";
 
-/* Sales › Hot leads (Nov 20 2026): people who replied with real interest to our Explee outreach.
+/* Marketing › Hot leads (Nov 20 2026): people who replied with real interest to our Explee outreach.
    They arrive by themselves every 10 minutes; nobody copies anything. Each card shows what they
    wrote, who is handling it and where it stands. API: /console/explee. */
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Lock, LogOut } from "lucide-react";
-import { navItemFor, workspaceFor } from "./nav";
+import { menuHomeOf, navItemFor, workspaceFor } from "./nav";
 import { workspacesFor } from "./access";
 import { useAdmin } from "./adminContext";
 import { useAdminEvent } from "./eventContext";
@@ -10,8 +10,8 @@ import { ReadinessStrip } from "./cms/ReadinessCard";
 
 /* =========================================================
    The approved admin design's navigation (boards 16–18):
-   a navy rail of workspaces (Home, Content, Marketing, Sales,
-   Operations, People, Event day, Awards; Settings at the bottom)
+   a navy rail of workspaces (Today, Website, Marketing, Sales,
+   People, Awards, Event day; Settings at the bottom)
    and, beside it, the open workspace's menu: its name, what it's
    for, and its pages in groups. The workspace is the one the page
    you're on belongs to; picking another opens its first page.
@@ -34,7 +34,7 @@ function RailIcon({ d }) {
 function useBadges() {
   const { attention } = useAdminEvent();
   return {
-    ws: { home: attention.changes, day: attention.sos },
+    ws: { content: attention.changes, day: attention.sos },
     page: { "content/changes": attention.changes, "app/sos": attention.sos },
   };
 }
@@ -90,8 +90,8 @@ export function WorkspaceMenu({ onNavigate }) {
   const id = workspaceFor(pathname).id;
   const ws = all.find((w) => w.id === id) || all[0];
   // A hidden page that is a tab of another (Featured partners) lights up that page.
-  const hit = navItemFor(pathname)?.item;
-  const active = hit?.parent || hit?.to;
+  // A page that is a tab of another's screen (an event's Agenda, Featured partners) lights up that entry.
+  const active = menuHomeOf(navItemFor(pathname)?.item);
   const badges = useBadges();
   // Pages that belong to one event only (India Pavilion: TTFC 2026) show while that event is chosen.
   const { current: chosenEvent } = useAdminEvent();
@@ -121,7 +121,7 @@ export function WorkspaceMenu({ onNavigate }) {
                 className={cx("flex h-[38px] items-center gap-2 rounded-[9px] px-2.5 text-left text-sm transition-colors",
                   on ? "bg-[#151035] font-semibold text-white" : "font-medium text-[#151035] hover:bg-[#F6F5FA]", RING)}
               >
-                <span className="min-w-0 truncate">{it.label}</span>
+                <span className="min-w-0 truncate">{it.menuLabel || it.label}</span>
                 {it.management && <Lock className={cx("h-3 w-3 shrink-0", on ? "text-[#F5A623]" : "text-[#B45309]")} aria-label="Management only" />}
                 {badges.page[it.to] > 0 && <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#F5A623] px-1.5 text-[11px] font-bold text-[#151035]">{badges.page[it.to]}</span>}
               </NavLink>
@@ -197,7 +197,7 @@ export function PhoneTabs({ onSignOut }) {
               <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8A86A0]">{w.label}</span>
               <div className="flex flex-wrap gap-1.5">
                 {w.groups.flatMap((g) => g.items).filter((it) => !it.onlyEvent || it.onlyEvent === (chosenEvent?.eventKey?.current || chosenEvent?.eventKey || "")).map((it) => (
-                  <Link key={it.to} to={pathOf(it.to)} className={cx("rounded-full bg-[#F6F5FA] px-[11px] py-[7px] text-[13px] font-semibold text-[#151035]", RING)}>{it.label}</Link>
+                  <Link key={it.to} to={pathOf(it.to)} className={cx("rounded-full bg-[#F6F5FA] px-[11px] py-[7px] text-[13px] font-semibold text-[#151035]", RING)}>{it.menuLabel || it.label}</Link>
                 ))}
               </div>
             </div>

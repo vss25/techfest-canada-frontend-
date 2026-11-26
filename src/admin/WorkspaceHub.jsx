@@ -32,7 +32,7 @@ export default function WorkspaceHub() {
             <Link key={it.to} to={pathOf(it.to)}
               className="flex items-center gap-2.5 rounded-xl border border-[#E3E0EE] bg-white p-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-[#D6308C]">
               <span className="flex min-w-0 flex-col gap-0.5">
-                <b className="text-[15px] text-[#151035]">{it.label}</b>
+                <b className="text-[15px] text-[#151035]">{it.menuLabel || it.label}</b>
                 <span className="text-xs text-[#6B6688]">{g.title ? `${ws.label} › ${g.title}` : ws.label}</span>
               </span>
               {it.management && <Lock className="h-3.5 w-3.5 shrink-0 text-[#B45309]" aria-label="Management only" />}

@@ -7,7 +7,7 @@ import { workspacesFor } from "./access";
 import { useAdmin } from "./adminContext";
 import { HelpContent } from "./HelpButton";
 
-/* Home › Help & how-to: Start here for someone new, then every page's guide (help.js) by workspace,
+/* Today › Help & how-to: Start here for someone new, then every page's guide (help.js) by workspace,
    searchable. Each page also shows its own guide from the ⓘ next to its title. */
 
 const pathOf = (to) => (to ? `/admin/${to}` : "/admin");

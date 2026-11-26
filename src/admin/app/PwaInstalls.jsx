@@ -79,7 +79,7 @@ function Funnel({ steps }) {
                 {rate !== null && <p className="text-xs text-ttfc-dim">{rate}% of the step before</p>}
               </div>
               <div className="mt-1 h-2 rounded-full bg-ttfc-contrast/5">
-                <div className="h-2 rounded-full bg-ttfc-purple" style={{ width: `${Math.max(2, (s.value / top) * 100)}%` }} />
+                <div className="h-2 rounded-full bg-ttfc-purple" style={{ width: `${Math.min(100, Math.max(2, (s.value / top) * 100))}%` }} />
               </div>
             </div>
             <span className="w-16 text-right font-semibold tabular-nums text-ttfc-text">{num(s.value)}</span>

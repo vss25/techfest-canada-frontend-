@@ -61,7 +61,8 @@ export function navFor({ isManagement = false, isSuperAdmin = false, isVolunteer
 export function workspacesFor({ isManagement = false, isSuperAdmin = false, isVolunteer = false } = {}) {
   const may = (it) => mayOpenItem(it, { isManagement, isSuperAdmin, isVolunteer });
   return WORKSPACES
-    .map((w) => ({ ...w, groups: w.groups.map((g) => ({ ...g, items: g.items.filter(may) })).filter((g) => g.items.length) }))
+    // Pages that are tabs of another page's screen (`under`: an event's Agenda, Speakers…) aren't menu entries.
+    .map((w) => ({ ...w, groups: w.groups.map((g) => ({ ...g, items: g.items.filter((it) => may(it) && !it.under) })).filter((g) => g.items.length) }))
     .filter((w) => w.groups.length);
 }
 

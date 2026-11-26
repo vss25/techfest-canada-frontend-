@@ -13,13 +13,14 @@ import { HelpLabel } from "../HelpButton";
 import { useAdminEvent } from "../eventContext";
 import useCmsStatus from "./useCmsStatus";
 import { eventPath } from "../../lib/events";
-import { WorkflowBanner } from "./workflow";
+import { PublishFlow, WorkflowBanner } from "./workflow";
 import { changeState, stagingUrl } from "./workflowState";
 import { ReadinessCard } from "./ReadinessCard";
 import { useReadiness } from "./useReadiness";
 import { useAutosave } from "./useAutosave";
 import { AutosaveNote } from "./AutosaveNote";
 import StandIns from "./StandIns";
+import Fold from "./Fold";
 import EventVideoField from "./EventVideoField";
 import WhyComeEditor from "./WhyComeEditor";
 
@@ -239,15 +240,13 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
           <Badge tone={st.tone}>{st.label}</Badge>
           {dirty && <Badge tone="warn">Not saved</Badge>}
         </>}
-        description={`${form.name || ev.name} · ${path}. Save your changes, send them to staging, check them there, then publish to the live website.`}
-        actions={<>
-          <AutosaveNote auto={auto} className="self-center" />
-          <Button variant="secondary" onClick={onSave} disabled={disabled || !dirty}>{busy === "save" ? "Saving…" : "Save"}</Button>
-          <Button variant="secondary" icon={Send} onClick={onStage} disabled={disabled || (!dirty && !ev.hasDraft)}>{busy === "stage" ? "Sending…" : "Send to staging"}</Button>
-          <Button variant="secondary" icon={Eye} onClick={onOpenStaging} disabled={!ev.staged}>Open on staging</Button>
-          <Button variant="primary" icon={publishBlocked ? Lock : Upload} onClick={onPublish} disabled={disabled || !ev.staged || publishBlocked}
-            title={publishWhy || (ev.hasDraft || dirty ? "Publishes the version on staging. Newer changes need to go to staging first." : undefined)}>{busy === "publish" ? "Publishing…" : "Publish to live"}</Button>
-        </>}
+        description={`${form.name || ev.name} · ${path}`}
+        actions={(
+          <PublishFlow dirty={dirty} hasDraft={!!ev.hasDraft} staged={!!ev.staged} busy={busy || ""} disabled={readOnly} onOpenStaging={onOpenStaging}
+            onSave={onSave} onStage={onStage} onPublish={onPublish} publishBlocked={publishBlocked} publishWhy={publishWhy}>
+            <AutosaveNote auto={auto} className="self-center" />
+          </PublishFlow>
+        )}
       />
       <ReadinessCard r={ready} />
 
@@ -303,8 +302,12 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
         </Field>
       </Card>
 
-      <WhyComeEditor form={form} setForm={setForm} cityName={form.city} cityId="" disabled={readOnly} canUploadVideo={isManagement && !readOnly} />
+      {/* The rest opens when it's needed (Nov 26 2026): the two cards above are what most edits touch. */}
+      <Fold title="Why come" summary="The section after the top of the page: a few lines on why to attend, beside a photo, GIF or video.">
+        <WhyComeEditor form={form} setForm={setForm} cityName={form.city} cityId="" disabled={readOnly} canUploadVideo={isManagement && !readOnly} />
+      </Fold>
 
+      <Fold title="Which page shows" summary={`Now: ${(PAGE_MODES.find((m) => m.value === form.pageMode) || PAGE_MODES[0]).label}. The coming-soon page's facts, next steps and notify-me form.`}>
       <Card className="grid gap-5">
         <h3 className="font-semibold">Which page shows</h3>
         <Field label="Page version">
@@ -316,10 +319,14 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
         <Rows kind="steps" label="Coming-soon page: Coming next" hint="Tick Done as each step happens. Leave empty for the standard three steps." rows={form.comingNext} onChange={(v) => setForm((f) => ({ ...f, comingNext: v }))} />
         <Field label="Heading on the notify-me form"><Input value={form.notifyHeading} onChange={set("notifyHeading")} placeholder={`Hear first about ${form.name || "this event"}`} disabled={readOnly} /></Field>
         <Switch label="Show the Toronto 2026 post-show report card" checked={form.showReport} onChange={(v) => setForm((f) => ({ ...f, showReport: v }))} disabled={readOnly} />
-        <p className="text-sm text-ttfc-muted">Sessions and speakers appear on the full page when they're tied to this event in Agenda and Speakers. Tickets come from Prices &amp; stock.</p>
+        <p className="text-sm text-ttfc-muted">Sessions and speakers appear on the full page when they're tied to this event in the Agenda and Speakers tabs. Tickets come from the Tickets tab.</p>
       </Card>
+      </Fold>
 
-      <StandIns form={form} setForm={setForm} events={events} current={ev} disabled={readOnly} />
+      <Fold title="While speakers and partners are being confirmed"
+        summary={`Who the page shows until this event has its own. ${form.standInSpeakers.length ? `${form.standInSpeakers.length} speakers picked` : "Speakers: featured first"} · ${form.standInPartners.length ? `${form.standInPartners.length} partners picked` : "partners: in their order"}.`}>
+        <StandIns form={form} setForm={setForm} events={events} current={ev} disabled={readOnly} />
+      </Fold>
 
       <Card className="flex flex-wrap items-center gap-3">
         {ev.hasDraft && (

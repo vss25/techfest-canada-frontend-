@@ -15,7 +15,7 @@ import { finishList } from "../bulletList";
 import { ReadinessStrip } from "../cms/ReadinessCard";
 
 /* =========================================================
-   Content › Tickets & prices (Nov 17 2026): the chosen event's ticket types.
+   Website › Events › Tickets (Nov 17 2026): the chosen event's ticket types.
    "Tickets for each event should be the same by default unless we edit and change this.
    The exception to this is the Toronto Main Event."
    Nov 22 2026 (the owner): "every event should have a separate ticket counter and pricing"; own copy
@@ -270,7 +270,7 @@ export default function EventTickets() {
         <div className="grid min-w-0 grid-cols-1 gap-3.5 [&>*]:min-w-0">
           {!defaults && !announced && (
             <Banner tone="warn" icon={Info} title="Prices aren't shown on the website yet">
-              {current.name}'s pricing isn't announced, so the website shows "Pricing announced soon" and nothing can be bought. Turn on <b>Pricing announced</b> in <Link className={`font-semibold underline ${focusRing}`} to="/admin/events">Operations › Event settings</Link> when it's time to sell.
+              {current.name}'s pricing isn't announced, so the website shows "Pricing announced soon" and nothing can be bought. Turn on <b>Pricing announced</b> in <Link className={`font-semibold underline ${focusRing}`} to="/admin/events">Website › Events › Settings</Link> when it's time to sell.
             </Banner>
           )}
           {!defaults && totals && (
@@ -348,7 +348,7 @@ export default function EventTickets() {
                 </TableWrap>
               </>) : (
                 <EmptyState icon={Layers} title="No passes cover this event"
-                  body={main ? `A pass for ${current.name} + ${main.name}, or several cities + ${main.name}. It shows on every event it covers.` : "Add the Main Event in Operations › Event settings first."} />
+                  body={main ? `A pass for ${current.name} + ${main.name}, or several cities + ${main.name}. It shows on every event it covers.` : "Add the Main Event in Website › Events › Settings first."} />
               )}
             </Card>
           )}

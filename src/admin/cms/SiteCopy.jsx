@@ -5,7 +5,7 @@ import { api } from "../api";
 import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, ConfirmDialog, ErrorState, Field, Input, LoadingState, PageHeader, Select, Textarea, focusRing } from "../ui";
 import { CmsBanners } from "./CmsParts";
-import { ChangeBadge } from "./workflow";
+import { ChangeBadge, PublishFlow } from "./workflow";
 import { stagingUrl } from "./workflowState";
 import useCmsStatus from "./useCmsStatus";
 import { useAutosave } from "./useAutosave";
@@ -421,23 +421,17 @@ export default function SiteCopy() {
         description="Every piece of text, picture and video on the website. Pick a page, click the piece you want to change (in the list or on the page itself) and type: the page on the right changes as you type. Visitors see nothing until you send it to staging and publish."
         status={doc && <ChangeBadge doc={doc} />}
         actions={(
-          <>
+          <PublishFlow dirty={dirty > 0} hasDraft={!!(doc && doc.hasDraft)} staged={!!(doc && doc.staged)} busy={saving ? "save" : ""} disabled={serverOld} stagingHref={stagingUrl(page)}
+            onSave={() => save().then((ok) => { if (ok) { auto.markSaved(); toast.success("Saved. It isn't on the website yet."); } })}
+            onStage={() => setConfirm("stage")} onPublish={() => setConfirm("publish")}>
             <AutosaveNote auto={auto} />
-            <Button onClick={() => save().then((ok) => { if (ok) { auto.markSaved(); toast.success("Saved. It isn't on the website yet."); } })} loading={saving} disabled={!dirty || serverOld}>Save</Button>
-            <Button icon={Send} onClick={() => setConfirm("stage")} disabled={serverOld || (!dirty && !(doc && doc.hasDraft))}>Send to staging</Button>
-            <Button variant="primary" onClick={() => setConfirm("publish")} disabled={serverOld || dirty > 0 || !(doc && doc.staged) || !!(doc && doc.hasDraft)} title={doc && doc.staged && !dirty && !doc.hasDraft ? "" : "Send your changes to staging first"}>Publish to live</Button>
-          </>
+          </PublishFlow>
         )}
       />
       <CmsBanners configured={configured} />
       {serverOld && (
         <Banner tone="warn" className="mb-4" title="You can try it, but it can't be saved yet">
           The server needs its latest update before changes here can be saved. The preview works: what you type shows on the page on the right, in this browser only.
-        </Banner>
-      )}
-      {doc && doc.staged && !doc.hasDraft && !dirty && (
-        <Banner tone="info" className="mb-4" action={<a href={stagingUrl(page)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-ttfc-pink hover:underline">Open the staging site <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></a>}>
-          Your changes are on staging. Check them there, then press Publish to live.
         </Banner>
       )}
 

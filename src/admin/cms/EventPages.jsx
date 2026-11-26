@@ -227,6 +227,8 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
 
   const st = stateOf(ev);
   const disabled = readOnly || !!busy;
+  // Photo or video at the top (unset: the video when there is one, as the website does).
+  const heroShows = form.heroMedia === "photo" || form.heroMedia === "video" ? form.heroMedia : (form.heroVideoUrl ? "video" : "photo");
   // Publish to live turns on when the page has its required content; until then, staging and review only.
   const ready = useReadiness(ev, form, dirty);
   const publishBlocked = ready.loading || !ready.ready;
@@ -273,17 +275,44 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
         <h3 className="font-semibold">Top of the page</h3>
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="grid content-start gap-5">
-          <ImagePicker
-            label="City photo"
-            aspect="aspect-[16/9]"
-            url={form.citySkylineUrl}
-            disabled={readOnly}
-            onUploaded={({ assetId, url, preview }) => setForm((f) => ({ ...f, citySkyline: assetId, citySkylineUrl: url || preview }))}
-          />
-          <EventVideoField url={form.heroVideoUrl} posterUrl={form.citySkylineUrl} disabled={readOnly} canUpload={isManagement && !readOnly}
+          {/* Nov 26 2026 (the owner: "I should be able to choose whether I want a photo or a video and then upload it
+              from there", and "I cannot remove the photo"). Choose first; the uploader for that choice follows. */}
+          <div className="grid gap-1.5">
+            <span id="hero-media-label" className="text-sm font-semibold">Show at the top of the page</span>
+            <div role="radiogroup" aria-labelledby="hero-media-label" className="inline-grid w-full max-w-xs grid-cols-2 gap-1 rounded-[10px] bg-[#EEECF5] p-1">
+              {[["photo", "Photo"], ["video", "Video"]].map(([key, label]) => (
+                <button key={key} type="button" role="radio" aria-checked={heroShows === key} disabled={readOnly}
+                  onClick={() => setForm((f) => ({ ...f, heroMedia: key }))}
+                  className={`rounded-lg px-3.5 py-2 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-[#D6308C] ${heroShows === key ? "bg-white text-[#151035] shadow-sm" : "text-[#4A4566] hover:bg-white/70"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-ttfc-dim">
+              {heroShows === "video"
+                ? "A silent video plays at the top, on phones and computers. Upload it below. The photo under it shows while the video loads, and for visitors who have data saver or reduced motion on."
+                : "A photo fills the top of the page. Upload it below. A video you uploaded earlier stays saved; pick Video to show it again."}
+            </p>
+          </div>
+          <div className="grid gap-2">
+            <ImagePicker
+              label={heroShows === "video" ? "Photo shown while the video loads" : "Photo"}
+              aspect="aspect-[16/9]"
+              url={form.citySkylineUrl}
+              disabled={readOnly}
+              onUploaded={({ assetId, url, preview }) => setForm((f) => ({ ...f, citySkyline: assetId, citySkylineUrl: url || preview }))}
+            />
+            {form.citySkylineUrl && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="ghost" icon={Trash2} disabled={readOnly} onClick={() => setForm((f) => ({ ...f, citySkyline: "", citySkylineUrl: "" }))}>Remove photo</Button>
+                <span className="text-xs text-ttfc-dim">Without a photo the page uses the design&apos;s own picture for this city, and the event can&apos;t be published until one is added.</span>
+              </div>
+            )}
+          </div>
+          <EventVideoField key={heroShows} videoOff={heroShows !== "video"} url={form.heroVideoUrl} posterUrl={form.citySkylineUrl} disabled={readOnly} canUpload={isManagement && !readOnly}
             onChange={(v) => setForm((f) => ({ ...f, heroVideoUrl: v }))}
             shade={form.heroShade} onShadeChange={(v) => setForm((f) => ({ ...f, heroShade: v }))}
-            media={form.heroMedia} onMediaChange={(v) => setForm((f) => ({ ...f, heroMedia: v }))}
+            media={heroShows}
             focus={form.heroFocus} onFocusChange={(v) => setForm((f) => ({ ...f, heroFocus: v }))}
             height={form.heroHeight} onHeightChange={(v) => setForm((f) => ({ ...f, heroHeight: v }))} />
           </div>

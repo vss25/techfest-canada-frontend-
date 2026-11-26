@@ -5,19 +5,19 @@
  (scripted edits in ApprovedSite.jsx / ApprovedPhone.jsx, the timeline in SeasonRail.jsx).
  The rules:
    - navy and white carry the page, grey is for secondary text;
-   - pink (#D6308C) only for "where you are" and "what's live": the current nav item, the next event on the
+   - pink (#C5408A) only for "where you are" and "what's live": the current nav item, the next event on the
      timeline, "Tickets on sale";
    - gold only on buttons that buy tickets;
    - compact type: one step smaller everywhere, phones included.
  Dark (staff preview, ?theme=dark) is siteDark.css, which also sets the --nl-* colours for dark.
 ========================================================= */
 .ap-root {
-  --nl-pink: #D6308C; --nl-gold: #F5A623; --nl-navy: #151035;
+  --nl-pink: #C5408A; --nl-gold: #F5A623; --nl-navy: #151035;
   --nl-bg: #FFFFFF; --nl-bg2: #F6F5FA; --nl-line: #E9E6F2; --nl-line2: #D9D5E6;
   --nl-text: #151035; --nl-muted: #5B5873; --nl-dim: #8D89A6; --nl-glow: rgba(21, 16, 53, 0.05);
   -webkit-font-smoothing: antialiased;
 }
-@keyframes nl-live { 0% { box-shadow: 0 0 0 0 rgba(214, 48, 140, 0.7); } 70% { box-shadow: 0 0 0 9px rgba(214, 48, 140, 0); } 100% { box-shadow: 0 0 0 0 rgba(214, 48, 140, 0); } }
+@keyframes nl-live { 0% { box-shadow: 0 0 0 0 rgba(197, 64, 138, 0.7); } 70% { box-shadow: 0 0 0 9px rgba(197, 64, 138, 0); } 100% { box-shadow: 0 0 0 0 rgba(197, 64, 138, 0); } }
 @keyframes nl-sweep { 0%, 65% { left: -60%; } 100% { left: 130%; } }
 @property --nl-a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 @keyframes nl-spin { to { --nl-a: 360deg; } }
@@ -87,7 +87,7 @@
   background: rgba(255, 255, 255, 0.1) !important; color: #FFFFFF !important; border: 1px solid rgba(255, 255, 255, 0.22) !important;
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); font-weight: 600 !important; gap: 8px; box-sizing: border-box;
 }
-.ap-root .nl-gp.nl-live { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 999px; font-size: 13px; border-color: rgba(214, 48, 140, 0.75) !important; }
+.ap-root .nl-gp.nl-live { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 999px; font-size: 13px; border-color: rgba(197, 64, 138, 0.75) !important; }
 .ap-phone .ap-root .nl-gp.nl-live { height: 26px; padding: 0 10px; font-size: 12px; }
 .ap-root .nl-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--nl-pink); box-shadow: 0 0 10px var(--nl-pink); animation: nl-live 1.8s infinite; }
 .ap-root .nl-cd { position: relative; background: rgba(255, 255, 255, 0.06) !important; border-color: transparent !important; border-radius: 14px !important; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }

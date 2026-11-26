@@ -8,6 +8,9 @@ import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { HOME_HEIGHTS } from "../../lib/heroFrame";
 import { homeEyebrow } from "../../lib/homeLayout";
 import { multiCheckout } from "../../lib/ticketsApi";
+import WhyComeBox, { WhyComeBody } from "../../components/WhyComeBox";
+import { openCallBooking } from "./bookCall";
+import WhyWheel from "./WhyWheel";
 import { EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, fieldsNear, pick, post, sendForm, splitName } from "./liveShared";
 
 /* The approved phone design (board 13), live: the phone counterpart of LiveSite.jsx.
@@ -202,6 +205,19 @@ export default class LivePhone extends ApprovedPhone {
     v.goSpeakers = (e) => { if (e && e.preventDefault) e.preventDefault(); this.props.navigate("/speakers"); };
     v.soon = (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ menu: false }); this.props.navigate(PAGE_PATH.contact); };
     v.submitForm = (e) => this.run("Sending", () => sendForm(PAGE_FORM[s.page] || "inquiry", fieldsNear(at(e)), { page: s.page }), "Thanks. We will be in touch soon");
+    // Nov 26 2026 (the owner: every public change on the phone version too): the embedded calendar and Why come.
+    v.bookCall = (e) => { if (e && e.preventDefault) e.preventDefault(); openCallBooking(); };
+    if (v.c && v.c.why) {
+      const why = v.c.why;
+      v.whySection = (
+        <section className="nx-mwhy" aria-label="Why come">
+          <span className="nx-label">{why.eyebrow || "Why come"}</span>
+          <h2 className="nx-h2">{why.heading}</h2>
+          <WhyComeBody why={why} />
+          {why.media && why.media.kind === "default" ? <WhyWheel /> : <WhyComeBox key={v.c.id} why={why} style={{ flex: "none", width: "100%" }} />}
+        </section>
+      );
+    }
     v.sendEnquiry = (e) => this.run("Sending your enquiry", () => sendForm("partnership", fieldsNear(at(e)), { event: cityPath(s.city || "van") }), "Thanks. Sales will reply soon");
     v.notifySoon = (e) => {
       const f = fieldsNear(at(e));

@@ -768,3 +768,43 @@ html .ap-root #ev-contact form button.p-dark + span { color: #151035 !important;
     linear-gradient(90deg, rgba(12, 9, 31, 0.55) 35%, rgba(12, 9, 31, 0) 75%);
 }
 .ap-root .nl-evhero :is(h1, p) { text-shadow: 0 2px 18px rgba(12, 9, 31, 0.55); }
+
+/* ================= The phone version of today's changes (Nov 26 2026, the owner: "anything that is customer
+   facing … both to the desktop version and mobile version") ================= */
+/* Why come, which the phone layout didn't have: the words, then the wheel (or the event's own photo / video). */
+.ap-root .nx-mwhy { padding: 36px 16px; display: flex; flex-direction: column; gap: 14px; }
+.ap-root .nx-mwhy .nx-h2 { font-size: 28px !important; line-height: 34px !important; margin: 0; }
+.ap-root .nx-mwhy > p { font-size: 16px !important; line-height: 26px !important; color: var(--nl-muted) !important; }
+.ap-root .nx-mwhy .nx-wheel { flex: none; width: 100%; min-height: 340px; margin-top: 8px; }
+/* The partner card, as designed: the dark gradient panel, then the white form panel under it. */
+.ap-root .nl-mcontact { padding: 0 16px 36px !important; gap: 0 !important; }
+.ap-root .nl-mcontact-a {
+  display: flex; flex-direction: column; gap: 14px; padding: 30px 22px; color: #FFFFFF; border-radius: 18px 18px 0 0;
+  border: 1px solid rgba(130, 89, 237, 0.55); border-bottom: 0;
+  background: radial-gradient(80% 55% at 0% 0%, rgba(84, 24, 168, 0.95), rgba(84, 24, 168, 0) 62%), radial-gradient(85% 55% at 100% 100%, rgba(178, 27, 127, 0.95), rgba(178, 27, 127, 0) 62%), #0A0028;
+}
+.ap-root .nl-mcontact-a > p:first-child { margin: 0; display: flex; align-items: center; gap: 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; color: #FFFFFF !important; }
+.ap-root .nl-mcontact-a > p:first-child::before { content: ""; flex: 0 0 34px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #8259ED, rgba(130, 89, 237, 0)); }
+.ap-root .nl-mcontact-a h2 { color: #FFFFFF !important; font-size: 26px !important; line-height: 32px !important; }
+.ap-root .nl-mcontact .nl-city { color: #E0489C; }
+.ap-root .nl-mcontact-a > p { margin: 0; font-size: 15px; line-height: 24px; color: #EAE5FA !important; }
+.ap-root .nl-mcontact-a > div { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; font-size: 15px; }
+.ap-root .nl-mcontact-a > div :is(span, a) { color: #FFFFFF !important; text-decoration: none; }
+.ap-root .nl-mcontact-a > div > a { font-weight: 600; min-height: 44px; display: inline-flex; align-items: center; align-self: flex-start; }
+.ap-root .nl-mcontact-a > div a:active, .ap-root .nl-mcontact-a > div a:hover { color: #F5A623 !important; }
+html .ap-root .nl-mcontact-b { display: flex; flex-direction: column; gap: 14px; padding: 24px 22px; background: #FFFFFF; border-radius: 0 0 18px 18px; border: 1px solid rgba(130, 89, 237, 0.55); border-top: 0; }
+html .ap-root .nl-mcontact-b label { color: #151035 !important; }
+html[data-site-theme] .ap-root .nl-mcontact-b input { background: #FFFFFF !important; color: #151035 !important; border: 1px solid #8259ED !important; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+html .ap-root .nl-mcontact-b button { background: linear-gradient(90deg, #1B1040, #3A1A66) !important; color: #FFFFFF !important; height: 50px !important; border-radius: 10px !important; }
+html .ap-root .nl-mcontact-b button::after { content: "→"; margin-left: 10px; }
+/* Footer links: gold when pressed, as on computers. */
+html .ap-phone .ap-root footer nav a:active, html .ap-phone .ap-root footer nav a:hover { color: #F5A623 !important; text-decoration: underline !important; text-underline-offset: 4px; }
+/* An event's banner is as tall as the screen that is left: on the staging site the banner at the bottom takes
+   some of it, and the title was pushed under the buy bar. */
+.ap-phone .ap-root .nl-evhero { height: max(420px, calc(100dvh - 145px - var(--ttfc-staging-bar, 0px))) !important; }
+/* The phone partner card's field and button, made to win over the dark theme's field and button rules. */
+html[data-site-theme] .ap-phone .ap-root #m-contact .nl-mcontact-b input[type="email"] {
+  display: block; height: 46px !important; background: #FFFFFF !important; background-image: none !important; color: #151035 !important;
+  border: 1.5px solid #8259ED !important; border-radius: 8px !important; opacity: 1 !important;
+}
+html[data-site-theme] .ap-phone .ap-root #m-contact .nl-mcontact-b button.m-press { color: #FFFFFF !important; opacity: 1 !important; -webkit-text-fill-color: #FFFFFF; }

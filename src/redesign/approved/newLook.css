@@ -895,3 +895,12 @@ html[data-site-theme="dark"] .ap-desk .ap-root section.nl-panel { background-col
 html[data-site-theme="dark"] .ap-root main > section[data-dark]:first-child:not([class])::before, html[data-site-theme="dark"] .ap-root main > section[data-dark]:first-child:not([class])::after { content: none; }
 html[data-site-theme="dark"] .ap-root footer { background: transparent !important; }
 /* The ticket band too (the owner, same day: "the pass section still looks different"): no gradient of its own. */
+
+/* The event banner's title (Nov 26 2026, the owner: "reduce the size a little bit and make [it] easily readable").
+   White on a bright photo washed out, and black would vanish on the night-time photos, so the title sits on the
+   same solid dark backing as the banner's other pieces, a size smaller. Computers and phones. */
+.ap-root .nl-evhero h1 {
+  font-size: 54px !important; line-height: 62px !important; align-self: flex-start; width: fit-content; max-width: min(100%, 820px) !important;
+  box-sizing: border-box; padding: 10px 20px 12px !important; border-radius: 18px; background: rgba(12, 9, 31, 0.9) !important;
+}
+.ap-phone .ap-root .nl-evhero h1 { font-size: 31px !important; line-height: 37px !important; padding: 8px 14px 10px !important; border-radius: 14px; }

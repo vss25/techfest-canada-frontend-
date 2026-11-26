@@ -173,7 +173,8 @@ export function PartnersStrip({ label = "Partners", logos, onAll, alt }) {
   return (
     <section className={`nx-s${alt ? " nx-alt" : ""}`}><div className="nx-wrap">
       <Head label={label} title="In good company" more="All partners" onMore={onAll} />
-      <div className="nx-logo-run"><div className="nx-logo-track">
+      {/* A steady, readable pace however many logos there are: about 6 seconds per logo. */}
+      <div className="nx-logo-run"><div className="nx-logo-track" style={{ animationDuration: `${Math.max(12, logos.length * 2) * 3}s` }}>
         {[...logos, ...logos, ...logos, ...logos].slice(0, Math.max(12, logos.length * 2)).map((p, i) => <div key={i} title={p.title || undefined}>{p.logo}</div>)}
       </div></div>
     </div></section>
@@ -404,7 +405,7 @@ export function LogoStrip({ label, logos }) {
   return (
     <div className="nx-logostrip" aria-label={label}>
       {label ? <span className="nx-logostrip-ttl">{label}</span> : null}
-      <div className="nx-logo-run"><div className="nx-logo-track" style={{ animationDuration: `${Math.max(30, logos.length * 3)}s` }}>
+      <div className="nx-logo-run"><div className="nx-logo-track" style={{ animationDuration: `${Math.max(36, logos.length * 6)}s` }}>
         {run.map((p, i) => <div key={i} title={p.title || undefined} aria-hidden={i >= logos.length ? "true" : undefined}>{p.logo}</div>)}
       </div></div>
     </div>

@@ -74,6 +74,8 @@ export function applyNewLook(v, self, opts) {
     v.goSpeakers = go(cityPath(city) + "/speakers");
     if (v.goSec && typeof v.goSec === "object") v.goSec = { ...v.goSec, agenda: goHomeAgenda };
     if (v.sec && typeof v.sec === "object" && typeof v.sec.agenda === "function") v.sec = { ...v.sec, agenda: goHomeAgenda };
+    // The phone's section links (v.secs) jump to the home event's own page; with no agenda there, Agenda follows the rule above.
+    if (agCity !== city && Array.isArray(v.secs)) v.secs = v.secs.map((x) => (x && x.label === "Agenda" ? { ...x, go: goHomeAgenda } : x));
   }
   // The ticket panel (the owner, Nov 26 2026: "it doesn't have any way to enter my details"). It opened on 0
   // tickets with a greyed button and nothing saying to press + first. An event with one ticket type now opens

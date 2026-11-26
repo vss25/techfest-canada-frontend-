@@ -6,13 +6,12 @@ import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, ConfirmDialog, ErrorState, Field, Input, LoadingState, PageHeader, Select, Textarea, focusRing } from "../ui";
 import { CmsBanners } from "./CmsParts";
 import { ChangeBadge, PublishFlow } from "./workflow";
-import { stagingUrl } from "./workflowState";
+import { onStagingSite as isStagingSite, stagingUrl } from "./workflowState";
 import useCmsStatus from "./useCmsStatus";
 import { useAutosave } from "./useAutosave";
 import { AutosaveNote } from "./AutosaveNote";
 import { uploadImage } from "./imageUpload";
 import { EDIT_FRAME } from "../../lib/siteCopy";
-import { isStagingSite } from "../../lib/preview";
 
 /* The live website's own address (the staging site's is workflowState.js stagingUrl). */
 const LIVE_SITE = "https://www.thetechfestival.com";

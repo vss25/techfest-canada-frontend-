@@ -14,8 +14,12 @@ import { EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, fieldsNear, pick
    ApprovedPhone is generated 1:1 from the board; here it gets real addresses, data,
    checkout, forms and sign-in. The board's 390 × 844 frame fills the phone's screen. */
 
-const FILL = `.ap-phone > .ap-root > div:first-child { width: 100% !important; height: 100dvh !important; }
-.ap-phone { position: fixed; inset: 0; z-index: 50; background: #FFFFFF; }
+/* Nov 26 2026 (the owner: "Tickets are still not scrollable … unable to add attendee details"): on the staging
+   site the banner along the bottom lay over the bottom of this frame, hiding the ticket sheet's total, its
+   Continue button and the lower attendee fields. The frame now ends where the banner starts
+   (--ttfc-staging-bar, set by components/PreviewBar.jsx; 0 on the live site). */
+const FILL = `.ap-phone > .ap-root > div:first-child { width: 100% !important; height: calc(100dvh - var(--ttfc-staging-bar, 0px)) !important; }
+.ap-phone { position: fixed; inset: 0 0 var(--ttfc-staging-bar, 0px) 0; z-index: 50; background: #FFFFFF; }
 .ap-phone .ap-root span[style*="bottom: 8px"][style*="z-index: 2"][style*="0.55)"] { display: none; }`;
 /* That last rule: the board's event hero has a second photo credit with Vancouver's photographer typed
    in, under the real one ("Photo: {credit}" at the top). Every city showed Vancouver's credit too. */

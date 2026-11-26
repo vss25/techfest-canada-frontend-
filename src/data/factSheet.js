@@ -92,7 +92,7 @@ export const FACT_SHEET = {
       id: "agenda",
       title: "Agenda Highlights",
       blocks: [
-        { p: [{ b: "Day 1 (26 October):" }, " Registration and networking breakfast with expo preview, opening ceremony, and keynotes on Canada’s tech decade, AI beyond the pilot phase, quantum as strategic infrastructure, cybersecurity and digital trust in the agentic age, robotics and the physical AI economy, and climate tech as competitiveness strategy. Executive panels across the applied sectors, a CxO Breakfast, a Networking Luncheon, and the Catalyst Awards Gala Night round out the day."] },
+        { p: [{ b: "Day 1 (26 October):" }, " Registration and networking breakfast with expo preview, opening ceremony, and keynotes on Canada’s tech decade, AI beyond the pilot phase, quantum as strategic infrastructure, cybersecurity and digital trust in the agentic age, robotics and the physical AI economy, and clean tech as competitiveness strategy. Executive panels across the applied sectors, a CxO Breakfast, a Networking Luncheon, and the Catalyst Awards Gala Night round out the day."] },
         { p: [{ b: "Day 2 (27 October):" }, " Deeper sector tracks, technical workshops, B2B matchmaking, and international delegation programming."] },
         { note: ["Session times are being finalised. The full agenda is published progressively at ", site, "."] },
       ],

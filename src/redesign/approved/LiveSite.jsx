@@ -324,7 +324,8 @@ class LiveSite extends ApprovedSite {
     if (past) {
       if (past.speakers.length) v.starSpeakers = past.speakers.slice(0, 4).map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));
       if (past.partners.length) v.pastPartners = past.partners;
-      v.photos = PAST_PHOTOS;
+      // The gallery shows every picture chosen in Admin › Home page; the built-in set until some are.
+      v.photos = this.props.homeOwn && this.props.homeOwn.photos && this.props.homeOwn.photos.length ? this.props.homeOwn.photos.map((ph) => [ph.src, ph.alt]) : PAST_PHOTOS;
       if (past.recap) {
         v.recapPlayer = <VideoFacade video={past.recap} radius={16} />;
         v.recapCaption = past.recap.title;
@@ -655,7 +656,7 @@ export default function ApprovedRoute({ fallback = null }) {
   const [homeDoc, setHomeDoc] = useState(null);
   useEffect(() => {
     let live = true;
-    client.fetch(`*[_id == "homePage"][0]{ "heroEvent": heroEvent._ref, sections[]{ key, on }, heroEyebrow, heroHeadline, heroText, heroImage, heroVideoUrl, "speakers": featuredSpeakers[]->{ _id, name, title, company, speakerType, image } }`)
+    client.fetch(`*[_id == "homePage"][0]{ "heroEvent": heroEvent._ref, sections[]{ key, on }, heroEyebrow, heroHeadline, heroText, heroImage, heroVideoUrl, highlightPhotos, highlightCount, "speakers": featuredSpeakers[]->{ _id, name, title, company, speakerType, image } }`)
       .then((d) => { if (live) setHomeDoc(d || {}); })
       .catch(() => { if (live) setHomeDoc({}); });
     return () => { live = false; };
@@ -669,6 +670,10 @@ export default function ApprovedRoute({ fallback = null }) {
       eyebrow: String(d.heroEyebrow || "").trim(), title: String(d.heroHeadline || "").trim(), blurb: String(d.heroText || "").trim(),
       img: d.heroImage && d.heroImage.asset ? urlFor(d.heroImage).width(2000).quality(78).auto("format").url() : "",
       video: heroVideoSrc(d.heroVideoUrl),
+      // Last year's highlight pictures chosen in Admin › Home page, and how many the home page shows (Nov 26 2026).
+      photos: (Array.isArray(d.highlightPhotos) ? d.highlightPhotos : []).filter((ph) => ph && ph.asset)
+        .map((ph) => ({ src: urlFor(ph).width(1400).quality(78).auto("format").url(), alt: String(ph.alt || "") })),
+      photoCount: Number.isFinite(d.highlightCount) ? d.highlightCount : null,
     };
   }, [homeDoc]);
   const homeSpeakers = useMemo(() => ((homeDoc && homeDoc.speakers) || []).filter((x) => x && x.name).map((x) => ({

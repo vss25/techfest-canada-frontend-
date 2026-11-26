@@ -854,3 +854,15 @@ html:not([data-site-theme="dark"]) .ap-root .nl-topic[aria-pressed="true"] { bac
   background: rgba(12, 9, 31, 0.86) !important; color: #FFFFFF !important;
 }
 .ap-root .nl-evhero > :is(.p-in, .m-in) > div > a.p-link { margin-left: 6px !important; border-radius: 999px; }
+
+/* "You're here" on every page's footer link (useNewLookEffects.js markFooter), matching the event pages' own. */
+html .ap-root footer a.nl-here { color: #C5408A !important; font-weight: 700; display: inline-flex !important; align-items: center; gap: 8px; text-decoration: none !important; cursor: default; }
+.ap-root footer a.nl-here::before { content: ""; flex: 0 0 6px; width: 6px; height: 6px; border-radius: 50%; background: #C5408A; }
+.ap-root footer a.nl-here::after { content: "You're here"; margin-left: 4px; height: 20px; padding: 0 8px; border-radius: 999px; display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; color: #FFFFFF; background: #C5408A; white-space: nowrap; }
+.ap-phone .ap-root footer a.nl-here::after { font-size: 10px; padding: 0 6px; }
+
+/* Last year's pictures when the number isn't the designed five (Admin › Home page chooses how many, Nov 26 2026). */
+.ap-root .nx-gal.nx-gal-auto { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); grid-template-rows: none; grid-auto-rows: 190px; }
+.ap-root .nx-gal.nx-gal-auto img:first-child { grid-row: auto; grid-column: auto; }
+.ap-root .nx-gal-more { display: inline-block; margin-top: 16px; font-weight: 600; }
+.ap-phone .ap-root .nx-gal.nx-gal-auto { grid-template-columns: 1fr 1fr; grid-auto-rows: 120px; }

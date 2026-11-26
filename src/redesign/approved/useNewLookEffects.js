@@ -20,6 +20,26 @@ const HERO = ".ap-root .nl-hero > .p-in, .ap-root .nl-hero > .m-in, .ap-root .nl
 const GHOST = ".ap-root .nx-ghost-word";
 const DRIFT = ".ap-root .nx-media img, .ap-root .nx-hero > img, .ap-root .nx-gal img";
 
+/* "You're here" in the footer (Nov 26 2026, the owner: "Home page doesn't have you are here"). The boards mark an
+   event's own page; this marks every other page: the footer link for the page being read gets aria-current, which
+   newLook.css shows in pink with a "You're here" tag. Matched by the link's words, so it follows the boards. */
+const FOOT_HERE = [
+  [/^\/$/, "Home"], [/\/agenda$/, "Agenda"], [/^\/speakers(\/|$)/, "Speakers"], [/\/speakers$/, "Speakers"], [/^\/awards/, "Awards"],
+  [/^\/partners/, "Partners"], [/^\/exhibitors/, "Exhibitors"], [/^\/about/, "About us"], [/^\/news/, "Newsroom"], [/^\/faqs?/, "FAQs"],
+  [/^\/contact/, "Contact"], [/^\/exhibit$/, "Exhibit"], [/^\/(partner|sponsor)$/, "Partner with us"], [/^\/speak$/, "Apply to speak"],
+  [/^\/media/, "Media accreditation"], [/^\/volunteer/, "Volunteer"], [/^\/highlights/, "Past events"],
+];
+function markFooter() {
+  const path = (window.location.pathname || "/").replace(/\/+$/, "") || "/";
+  const hit = FOOT_HERE.find(([re]) => re.test(path));
+  const want = hit ? hit[1] : "";
+  document.querySelectorAll(".ap-root footer a").forEach((a) => {
+    const is = !!want && a.textContent.trim() === want;
+    if (is) { if (a.getAttribute("aria-current") !== "page") { a.setAttribute("aria-current", "page"); a.classList.add("nl-here"); } }
+    else if (a.classList.contains("nl-here")) { a.removeAttribute("aria-current"); a.classList.remove("nl-here"); }
+  });
+}
+
 export default function useNewLookEffects(on) {
   useEffect(() => {
     if (!on || typeof window === "undefined") return undefined;
@@ -34,6 +54,7 @@ export default function useNewLookEffects(on) {
 
     const still = !window.IntersectionObserver || !window.MutationObserver || !window.requestAnimationFrame
       || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    markFooter();
     if (still) return () => document.removeEventListener("pointermove", move);
 
     const root = document.documentElement;
@@ -60,6 +81,7 @@ export default function useNewLookEffects(on) {
       });
     }, { rootMargin: "0px 0px -10% 0px" });
     const scan = () => {
+      markFooter();
       if (dead) return;
       const vh = window.innerHeight;
       let added = false;

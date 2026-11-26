@@ -46,12 +46,21 @@ const refOf = (v) => (v && typeof v === "object" ? v._ref : v) || "";
    event"): the top of the page can have its own small line, headline, line under it, picture and video, and Who's
    on stage can show up to six speakers picked here. Every one is optional: empty = it follows the event. */
 export const HOME_SPEAKERS_MAX = 6;
+export const HOME_PHOTOS_MAX = 24;
+/* A picture's address from its Sanity id ("image-<id>-<w>x<h>-<ext>"), for the thumbnails in this editor. */
+const photoUrl = (asset, w = 480) => {
+  const m = /^image-([A-Za-z0-9]+)-(\d+x\d+)-([a-z0-9]+)$/.exec(String(asset || ""));
+  return m ? `https://cdn.sanity.io/images/021qtoci/production/${m[1]}-${m[2]}.${m[3]}?w=${w}&auto=format` : "";
+};
 const plain = (d) => ({
   heroEvent: refOf(d && d.heroEvent), sections: editorRows(d && d.sections),
   heroEyebrow: (d && d.heroEyebrow) || "", heroHeadline: (d && d.heroHeadline) || "", heroText: (d && d.heroText) || "",
   heroImage: (d && d.heroImage && d.heroImage.asset && d.heroImage.asset._ref) || "", heroImageUrl: (d && d.heroImageUrl) || "",
   heroVideoUrl: (d && d.heroVideoUrl) || "",
   featuredSpeakers: ((d && d.featuredSpeakers) || []).map(refOf).filter(Boolean),
+  // Last year's highlight pictures and how many of them the home page shows ("" = the usual 5).
+  highlightPhotos: ((d && d.highlightPhotos) || []).map((ph) => ({ asset: (ph && ph.asset && ph.asset._ref) || "", alt: (ph && ph.alt) || "" })).filter((ph) => ph.asset),
+  highlightCount: d && Number.isFinite(d.highlightCount) ? String(d.highlightCount) : "",
 });
 // What is sent: empty text and removed media are cleared (null), the picture goes as its asset id.
 const toBody = (f) => ({
@@ -59,6 +68,8 @@ const toBody = (f) => ({
   heroEyebrow: f.heroEyebrow.trim() || null, heroHeadline: f.heroHeadline.trim() || null, heroText: f.heroText.trim() || null,
   heroImage: f.heroImage || null, heroVideoUrl: f.heroVideoUrl || null,
   featuredSpeakers: f.featuredSpeakers,
+  highlightPhotos: f.highlightPhotos.map((ph) => ({ asset: ph.asset, alt: ph.alt.trim() })),
+  highlightCount: f.highlightCount === "" ? null : Number(f.highlightCount),
 });
 
 export default function HomePage() {
@@ -102,6 +113,14 @@ export default function HomePage() {
     if (!has && f.featuredSpeakers.length >= HOME_SPEAKERS_MAX) return f;
     return { ...f, featuredSpeakers: has ? f.featuredSpeakers.filter((x) => x !== id) : [...f.featuredSpeakers, id] };
   });
+  const movePhoto = (i, by) => setForm((f) => {
+    const list = f.highlightPhotos.slice(); const j = i + by;
+    if (j < 0 || j >= list.length) return f;
+    [list[i], list[j]] = [list[j], list[i]];
+    return { ...f, highlightPhotos: list };
+  });
+  // How many of the pictures the home page shows: the chosen number, else 5, never more than there are.
+  const shownOnHome = Math.min(form.highlightPhotos.length, form.highlightCount === "" ? 5 : Number(form.highlightCount) || 0);
   const moveSpeaker = (i, by) => setForm((f) => {
     const list = f.featuredSpeakers.slice(); const j = i + by;
     if (j < 0 || j >= list.length) return f;
@@ -277,6 +296,54 @@ export default function HomePage() {
               {allSpeakers.length === 0 && <li className="px-3 py-2 text-sm text-ttfc-muted">{speakerList.loading ? "Loading speakers…" : "No speakers found."}</li>}
             </ul>
           )}
+        </Card>
+
+        {/* Nov 26 2026 (the owner: "Where do I add images for last year highlights on home page? I want the
+            flexibility in how many images I want to show in home page before I take them to the gallery"). */}
+        <Card>
+          <h2 className="text-base font-semibold">Last year&apos;s highlights: pictures</h2>
+          <p className="mb-4 mt-1 text-sm text-ttfc-muted">
+            The pictures in the home page&apos;s Toronto 2026 highlights section and in the gallery it links to. Upload as many as {HOME_PHOTOS_MAX}, put them in order,
+            and choose how many the home page shows; the gallery shows them all. With none here, the website uses its built-in set.
+          </p>
+          {form.highlightPhotos.length > 0 && (
+            <ol className="mb-4 grid gap-3 sm:grid-cols-2">
+              {form.highlightPhotos.map((ph, i) => {
+                const onHome = i < shownOnHome;
+                return (
+                  <li key={ph.asset} className={`flex gap-3 rounded-xl border p-2.5 ${onHome ? "border-[#D6308C] bg-[#FDF2F8]" : "border-ttfc-line"}`}>
+                    <img src={photoUrl(ph.asset)} alt="" className="h-20 w-28 shrink-0 rounded-lg object-cover" loading="lazy" />
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <span className="text-xs font-semibold text-ttfc-muted">{i + 1} · {onHome ? "On the home page" : "Gallery only"}</span>
+                      <Input aria-label={`Description of picture ${i + 1}`} value={ph.alt} maxLength={200} disabled={readOnly} placeholder="Describe the picture (for screen readers)"
+                        onChange={(e) => setForm((f) => ({ ...f, highlightPhotos: f.highlightPhotos.map((x, j) => (j === i ? { ...x, alt: e.target.value } : x)) }))} />
+                      <div className="flex items-center gap-1">
+                        <Button size="sm" variant="ghost" icon={ArrowUp} disabled={readOnly || i === 0} onClick={() => movePhoto(i, -1)} aria-label={`Move picture ${i + 1} earlier`} />
+                        <Button size="sm" variant="ghost" icon={ArrowDown} disabled={readOnly || i === form.highlightPhotos.length - 1} onClick={() => movePhoto(i, 1)} aria-label={`Move picture ${i + 1} later`} />
+                        <Button size="sm" variant="ghost" icon={Trash2} disabled={readOnly} onClick={() => setForm((f) => ({ ...f, highlightPhotos: f.highlightPhotos.filter((_, j) => j !== i) }))}>Remove</Button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              {form.highlightPhotos.length < HOME_PHOTOS_MAX ? (
+                <ImagePicker key={form.highlightPhotos.length} label="Add a picture" kind="photo" aspect="aspect-[16/9]" url="" disabled={readOnly}
+                  onUploaded={({ assetId }) => { if (assetId) setForm((f) => (f.highlightPhotos.some((x) => x.asset === assetId) ? f : { ...f, highlightPhotos: [...f.highlightPhotos, { asset: assetId, alt: "" }] })); }} />
+              ) : <p className="text-sm text-ttfc-muted">That&apos;s the most pictures ({HOME_PHOTOS_MAX}). Remove one to add another.</p>}
+            </div>
+            <Field label="How many show on the home page" hint={form.highlightPhotos.length ? `The first ${shownOnHome} of ${form.highlightPhotos.length} show on the home page; the rest are in the gallery. Five gives the designed mosaic (one large, four small).` : "Add pictures first."}>
+              {(id) => (
+                <Select id={id} value={String(shownOnHome)} disabled={readOnly || !form.highlightPhotos.length}
+                  onChange={(e) => setForm((f) => ({ ...f, highlightCount: e.target.value }))}>
+                  {Array.from({ length: form.highlightPhotos.length + 1 }, (_, n) => <option key={n} value={n}>{n === 0 ? "None (gallery only)" : n}</option>)}
+                </Select>
+              )}
+            </Field>
+          </div>
         </Card>
 
         <Card className="p-0 sm:p-0">

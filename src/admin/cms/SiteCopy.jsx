@@ -6,12 +6,15 @@ import { useToast } from "../toastContext";
 import { Badge, Banner, Button, Card, ConfirmDialog, ErrorState, Field, Input, LoadingState, PageHeader, Select, Textarea, focusRing } from "../ui";
 import { CmsBanners } from "./CmsParts";
 import { ChangeBadge, PublishFlow } from "./workflow";
-import { stagingUrl } from "./workflowState";
+import { onStagingSite as isStagingSite, stagingUrl } from "./workflowState";
 import useCmsStatus from "./useCmsStatus";
 import { useAutosave } from "./useAutosave";
 import { AutosaveNote } from "./AutosaveNote";
 import { uploadImage } from "./imageUpload";
 import { EDIT_FRAME } from "../../lib/siteCopy";
+
+/* The live website's own address (the staging site's is workflowState.js stagingUrl). */
+const LIVE_SITE = "https://www.thetechfestival.com";
 import { applyDiff, diffRows, hashText, pageKey, plainRows, rowFor, withRow } from "../../lib/siteCopyRules";
 import { SITE_PAGES, pageLabel } from "./siteCopyPages";
 
@@ -429,6 +432,26 @@ export default function SiteCopy() {
         )}
       />
       <CmsBanners configured={configured} />
+      {/* Nov 26 2026 (the owner: "ability to switch between staging admin and live admin under that page"):
+          the website that is live today and the new design are two sites, each edited from its own panel.
+          The other one opens in a new tab; it has its own sign-in (same email and password). */}
+      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className="text-sm font-semibold text-[#151035]">Editing</span>
+        <div role="group" aria-label="Which website to edit" className="inline-grid grid-cols-2 gap-1 rounded-[10px] bg-[#EEECF5] p-1">
+          {[
+            { key: "live", label: "Live website", here: !isStagingSite(), href: `${LIVE_SITE}/admin/content/site-copy` },
+            { key: "staging", label: "New design (staging)", here: isStagingSite(), href: stagingUrl("/admin/content/site-copy") },
+          ].map((o) => (o.here
+            ? <span key={o.key} aria-current="true" className="rounded-lg bg-white px-3.5 py-1.5 text-center text-sm font-semibold text-[#151035] shadow-sm">{o.label}</span>
+            : <a key={o.key} href={o.href} target="_blank" rel="noreferrer" className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold text-[#4A4566] hover:bg-white/70 hover:text-[#151035] ${focusRing}`}>{o.label} <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></a>))}
+        </div>
+        <span className="text-xs text-ttfc-muted">
+          {isStagingSite()
+            ? "You are editing the new design: its event pages, the partner enquiry form and the rest."
+            : "You are editing the website that is live today. The new design's pages (event pages, the partner enquiry form) are under New design."}
+          {" "}The other one opens in a new tab and asks you to sign in there once.
+        </span>
+      </div>
       {serverOld && (
         <Banner tone="warn" className="mb-4" title="You can try it, but it can't be saved yet">
           The server needs its latest update before changes here can be saved. The preview works: what you type shows on the page on the right, in this browser only.

@@ -873,3 +873,29 @@ html .ap-root footer a.nl-here { color: #C5408A !important; font-weight: 700; di
 .ap-root .nl-incl { list-style: none; margin: 6px 0 6px; padding: 0; display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 19px; color: var(--nl-muted); }
 .ap-root .nl-incl li { position: relative; padding-left: 22px; }
 .ap-root .nl-incl li::before { content: "✓"; position: absolute; left: 0; top: 0; width: 15px; height: 15px; margin-top: 2px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #FFFFFF; background: #C5408A; }
+
+/* ---------- One backdrop (Nov 26 2026, the owner: "the page components look pasted abruptly") ----------
+   Every band used to paint its own base colour (#0C091F or #090027) and its own corner glow, cut off at
+   the band's edge or at the content column, so each page read as stacked rectangles. Now the page has one
+   colour and one pair of lights that stays put while the page scrolls; bands are see-through over it. */
+html[data-site-theme="dark"] .ap-root { --nl-bg: #0C091F; --nl-bg2: #0C091F; }
+html[data-site-theme="dark"] .ap-root > div {
+  background-color: #0C091F !important;
+  background-image: radial-gradient(58% 62% at 0% 0%, rgba(84, 24, 168, 0.34), rgba(84, 24, 168, 0) 64%), radial-gradient(52% 60% at 100% 100%, rgba(178, 27, 127, 0.26), rgba(178, 27, 127, 0) 64%) !important;
+  background-attachment: fixed !important; background-repeat: no-repeat !important;
+}
+html[data-site-theme="dark"] .ap-root :is(.nx-stage, .nl-stage):not(.nx-passbg) { --nl-bg: #0C091F; --nl-bg2: #0C091F; background: transparent !important; }
+html[data-site-theme="dark"] .ap-root :is(.nx-stage, .nl-stage):not(.nx-passbg)::before, html[data-site-theme="dark"] .ap-root :is(.nx-stage, .nl-stage):not(.nx-passbg)::after { content: none; }
+html[data-site-theme="dark"] .ap-root .nx-s:not(.nx-stage), html[data-site-theme="dark"] .ap-root .nx-s.nx-alt:not(.nx-stage) { background: transparent; }
+html[data-site-theme="dark"] .ap-root main > section:not([class]):not([data-dark]):nth-of-type(n) { background-image: none; }
+html[data-site-theme="dark"] .ap-root :is(section, footer)[data-dark][style*="background: rgb(21, 16, 53)"]:not(.nl-evhero):not(.nl-hero):not(.nx-hero),
+html[data-site-theme="dark"] .ap-root section[data-dark]:not(.nl-evhero):not(.nl-hero):not(.nx-hero),
+html[data-site-theme="dark"] .ap-root section[style*="background: rgb(245, 243, 250)"],
+html[data-site-theme="dark"] .ap-desk .ap-root section.nl-panel { background-color: transparent !important; background-image: none !important; }
+html[data-site-theme="dark"] .ap-root main > section[data-dark]:first-child:not([class])::before, html[data-site-theme="dark"] .ap-root main > section[data-dark]:first-child:not([class])::after { content: none; }
+html[data-site-theme="dark"] .ap-root footer { background: transparent !important; }
+/* The ticket band keeps its designed gradient; its top and bottom fade into the page instead of ending on a line. */
+html[data-site-theme="dark"] .ap-root .nx-stage.nx-passbg {
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 72px, #000 calc(100% - 72px), transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 72px, #000 calc(100% - 72px), transparent);
+}

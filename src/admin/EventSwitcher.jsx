@@ -23,7 +23,7 @@ export function AdminEventProvider({ children, enabled = true }) {
   // What needs attention (the bell and the gold badges): website changes waiting and open SOS requests.
   const changes = useApi(enabled ? "/cms/changes" : null, { interval: 60000 });
   const sos = useApi(enabled ? "/console/sos?status=open" : null, { interval: 60000 });
-  // Nov 20 2026: flags the team raised and this person's overdue tasks (Home › My work).
+  // Nov 20 2026: flags the team raised and this person's overdue tasks (Today › My work).
   const work = useApi(enabled ? "/console/commitments?scope=mine&status=open" : null, { interval: 60000 });
   const [chosen, setChosen] = useState(read);
   const [open, setOpen] = useState(false);

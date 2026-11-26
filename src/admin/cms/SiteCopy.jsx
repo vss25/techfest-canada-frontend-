@@ -16,7 +16,7 @@ import { applyDiff, diffRows, hashText, pageKey, plainRows, rowFor, withRow } fr
 import { SITE_PAGES, pageLabel } from "./siteCopyPages";
 
 /* =========================================================
-   Admin › Content › Website text & media (Nov 25 2026). The owner: "several copy items on the public
+   Admin › Website › Text & media (Nov 25 2026). The owner: "several copy items on the public
    website can't be edited in the admin panel… every one of those editable… while editing, a preview
    of that particular element, so they can see how the edit changes it and which content they are
    changing, before sending it to staging or publishing live."

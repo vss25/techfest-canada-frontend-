@@ -4,7 +4,7 @@ import { GRACE_DAYS, compareEvents, formatDateRange, lifecycleOf } from "../lib/
 /* =========================================================
    The event the panel is working on (the approved admin design's
    event switcher, board 17). Chosen in the top bar; remembered in
-   this browser. Pages about one event (Content › Event website,
+   this browser. Pages about one event (Website › Events,
    Sales, Operations, Event day) follow it.
 ========================================================= */
 

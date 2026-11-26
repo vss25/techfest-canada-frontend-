@@ -8,7 +8,7 @@ import { Banner, Card, PageHeader, StatTile, focusRing } from "../ui";
 import { num } from "../format";
 import { useAdminEvent, withEvent } from "../eventContext";
 
-/* Sold vs target for the chosen event (Nov 22 2026): targets come from Operations › Event settings. */
+/* Sold vs target for the chosen event (Nov 22 2026): targets come from Website › Events › Settings. */
 function TargetBar({ label, done, target, to, unit }) {
   const pct = target ? Math.min(100, Math.round(((done || 0) / target) * 100)) : 0;
   return (
@@ -70,7 +70,7 @@ export default function Overview() {
   const first = (me?.name || "").split(" ")[0];
   // Needs attention: real counts, each with where to go and what to do.
   const todo = [
-    attention.changes > 0 && { t: `${num(attention.changes)} website change${attention.changes === 1 ? "" : "s"} waiting to publish`, where: "Home  ›  Website changes", cta: "Review", to: "/admin/content/changes", c: "#5B21B6" },
+    attention.changes > 0 && { t: `${num(attention.changes)} website change${attention.changes === 1 ? "" : "s"} waiting to publish`, where: "Website  ›  Publish changes", cta: "Review", to: "/admin/content/changes", c: "#5B21B6" },
     attention.sos > 0 && { t: `${num(attention.sos)} open SOS request${attention.sos === 1 ? "" : "s"}`, where: "Event day  ›  SOS & help", cta: "Reply", to: "/admin/app/sos", c: "#B91C1C" },
     s.openReports > 0 && { t: `${num(s.openReports)} report${s.openReports === 1 ? "" : "s"} to look at`, where: "Event day  ›  App moderation", cta: "Review", to: "/admin/app/moderation", c: "#F5A623" },
   ].filter(Boolean);

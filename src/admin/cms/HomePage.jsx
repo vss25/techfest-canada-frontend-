@@ -19,7 +19,7 @@ import { AutosaveNote } from "./AutosaveNote";
 import { HOME_SECTION_LABELS, editorRows } from "../../lib/homeLayout";
 
 /* =========================================================
-   Admin › Content › Home page (Nov 25 2026). The owner: "there's no way to edit the home page specifically in
+   Admin › Website › Home page (Nov 25 2026). The owner: "there's no way to edit the home page specifically in
    the admin panel… what if I want to edit some elements or sections of the home page?"
 
    By default the home page follows the next event. Here staff pin another event to the top of the page and

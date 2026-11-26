@@ -55,7 +55,7 @@ export default function Events() {
   return (
     <>
       <PageHeader
-        title="Events"
+        title="Event settings"
         description="Each event's settings: who can see its attendees, how long it stays “just ended”, and whether its pricing is announced. Changes apply on the server as soon as you save."
       />
       <Tabs

@@ -382,11 +382,11 @@ export default function TemplatePost({ open, onClose, onCreated, writing }) {
               {t.source !== "event" && !listLoading && !forEvent.length && (
                 <Banner tone="info" title={`No ${{ speaker: "speakers", session: "sessions", partner: "partners" }[t.source]} for ${event?.name || "this event"} yet`}>
                   {t.source === "session"
-                    ? <>Sessions show up once they're on this event's agenda with their speakers: <Link className="font-semibold underline" to="/admin/content/agenda">Content › Agenda</Link>.</>
-                    : <>To make one appear here, open it in <Link className="font-semibold underline" to={t.source === "partner" ? "/admin/content/partners" : "/admin/content/speakers"}>{t.source === "partner" ? "Content › Partners & sponsors" : "Content › Speakers"}</Link>, tick {event?.name || "this event"} under Events (or leave Events empty for every event){t.source === "partner" ? ", make sure it's switched on (Active) and has a logo" : " and make sure it has a photo"}, then send it to staging. Or switch on “Also show other events”.</>}
+                    ? <>Sessions show up once they're on this event's agenda with their speakers: <Link className="font-semibold underline" to="/admin/content/agenda">Website › Events › Agenda</Link>.</>
+                    : <>To make one appear here, open it in <Link className="font-semibold underline" to={t.source === "partner" ? "/admin/content/partners" : "/admin/content/speakers"}>{t.source === "partner" ? "Website › Events › Partners" : "Website › Events › Speakers"}</Link>, tick {event?.name || "this event"} under Events (or leave Events empty for every event){t.source === "partner" ? ", make sure it's switched on (Active) and has a logo" : " and make sure it has a photo"}, then send it to staging. Or switch on “Also show other events”.</>}
                 </Banner>
               )}
-              {switchedOff > 0 && !listLoading && <p className="text-xs text-[#6B6688]">{switchedOff} partners are switched off in Content › Partners & sponsors, so they aren't listed.</p>}
+              {switchedOff > 0 && !listLoading && <p className="text-xs text-[#6B6688]">{switchedOff} partners are switched off in Website › Events › Partners, so they aren't listed.</p>}
             </div>
           )}
 

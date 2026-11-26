@@ -1,5 +1,6 @@
-import { useMemo } from "react";
-import { Card, Field, Input, Select, Textarea } from "../ui";
+import { useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, X } from "lucide-react";
+import { Button, Card, Field, Input, Select, Textarea } from "../ui";
 import { useApi } from "../hooks";
 import { STAND_IN_DEFAULT_FROM, STAND_IN_MAX, standInLabel, standInWords } from "../../lib/standIns";
 
@@ -16,36 +17,72 @@ const refOf = (r) => (typeof r === "string" ? r : r?._ref || "");
 /** On that event: no events listed = every event (the website's rule). */
 const onEvent = (doc, id) => !doc.events?.length || doc.events.some((r) => refOf(r) === id);
 
+/* Nov 26 2026 (step 3 of the admin redesign): this was every speaker or partner of the chosen event as a grid of
+   tick boxes, about 250 on one page. Now: the ones picked, in order, and a search box to add more. */
+function Thumb({ kind, it }) {
+  return kind === "speakers"
+    ? <img src={`${it.imageUrl}?w=80&h=80&fit=crop`} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" loading="lazy" />
+    : <span className="flex h-9 w-14 shrink-0 items-center justify-center rounded bg-white"><img src={`${it.logoUrl}?h=60&fit=max`} alt="" className="max-h-8 max-w-full object-contain" loading="lazy" /></span>;
+}
+const subOf = (kind, it) => (kind === "speakers" ? `${[it.title, it.company].filter(Boolean).join(", ")}${it.featured ? " · Featured" : ""}` : "");
+
 function Picker({ kind, items, picked, onChange, disabled }) {
-  const toggle = (id) => onChange(picked.includes(id) ? picked.filter((x) => x !== id) : picked.length < STAND_IN_MAX ? [...picked, id] : picked);
+  const [q, setQ] = useState("");
   if (!items) return <p className="text-sm text-ttfc-muted">Loading…</p>;
   if (!items.length) return <p className="text-sm text-ttfc-muted">That event has no {kind === "speakers" ? "speakers with a photo" : "partners with a logo"} yet.</p>;
+  const one = kind === "speakers" ? "speaker" : "partner";
+  const full = picked.length >= STAND_IN_MAX;
+  const add = (id) => { if (!full && !picked.includes(id)) onChange([...picked, id]); setQ(""); };
+  const move = (i, by) => { const j = i + by; if (j < 0 || j >= picked.length) return; const list = picked.slice(); [list[i], list[j]] = [list[j], list[i]]; onChange(list); };
+  const needle = q.trim().toLowerCase();
+  const found = needle.length >= 2 ? items.filter((it) => !picked.includes(it._id) && `${it.name} ${it.title || ""} ${it.company || ""}`.toLowerCase().includes(needle)).slice(0, 12) : [];
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-3">
       <p className="text-xs text-ttfc-muted">
         {picked.length
-          ? `${picked.length} picked, shown in the order you picked them (the event page shows the first 4). Untick to remove.`
+          ? `${picked.length} picked, shown in this order (the event page shows the first 4).`
           : `None picked: the page shows this event's featured ${kind} first, then the rest in their order. Pick up to ${STAND_IN_MAX} to choose them yourself.`}
       </p>
-      <div className="grid max-h-80 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((it) => {
-          const n = picked.indexOf(it._id);
-          const on = n >= 0;
-          return (
-            <label key={it._id} className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-2.5 py-2 text-sm ${on ? "border-[#D6308C] bg-[#FDF2F8]" : "border-ttfc-line bg-white"} ${disabled ? "cursor-default opacity-60" : ""}`}>
-              <input type="checkbox" className="sr-only" checked={on} disabled={disabled || (!on && picked.length >= STAND_IN_MAX)} onChange={() => toggle(it._id)} />
-              <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold ${on ? "border-[#D6308C] bg-[#D6308C] text-white" : "border-[#CFCBE0] text-transparent"}`} aria-hidden="true">{on ? n + 1 : "·"}</span>
-              {kind === "speakers"
-                ? <img src={`${it.imageUrl}?w=80&h=80&fit=crop`} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" loading="lazy" />
-                : <span className="flex h-9 w-14 shrink-0 items-center justify-center rounded bg-white"><img src={`${it.logoUrl}?h=60&fit=max`} alt="" className="max-h-8 max-w-full object-contain" loading="lazy" /></span>}
-              <span className="min-w-0">
-                <span className="block truncate font-medium text-ttfc-text">{it.name}</span>
-                {kind === "speakers" && <span className="block truncate text-xs text-ttfc-muted">{[it.title, it.company].filter(Boolean).join(", ")}{it.featured ? " · Featured" : ""}</span>}
-              </span>
-            </label>
-          );
-        })}
-      </div>
+      {picked.length > 0 && (
+        <ol className="divide-y divide-ttfc-line rounded-xl border border-ttfc-line">
+          {picked.map((id, i) => {
+            const it = items.find((x) => x._id === id);
+            const name = it ? it.name : `A ${one} no longer on that event`;
+            return (
+              <li key={id} className="flex items-center gap-2.5 px-3 py-2">
+                <span className="w-5 text-center text-xs font-semibold text-ttfc-muted">{i + 1}</span>
+                {it ? <Thumb kind={kind} it={it} /> : <span className="h-9 w-9 shrink-0 rounded-full bg-ttfc-ink/40" aria-hidden="true" />}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-ttfc-text">{name}</span>
+                  {it && subOf(kind, it) && <span className="block truncate text-xs text-ttfc-muted">{subOf(kind, it)}</span>}
+                </span>
+                <Button size="sm" variant="ghost" icon={ArrowUp} disabled={disabled || i === 0} onClick={() => move(i, -1)} aria-label={`Move ${name} up`} />
+                <Button size="sm" variant="ghost" icon={ArrowDown} disabled={disabled || i === picked.length - 1} onClick={() => move(i, 1)} aria-label={`Move ${name} down`} />
+                <Button size="sm" variant="ghost" icon={X} disabled={disabled} onClick={() => onChange(picked.filter((x) => x !== id))} aria-label={`Remove ${name}`} />
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      <Field label={`Add a ${one}`} hint={full ? `That's the most you can pick (${STAND_IN_MAX}). Remove one to add another.` : `Type a name to search the ${items.length} on that event.`}>
+        {(id) => <Input id={id} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={kind === "speakers" ? "Search by name or organisation" : "Search by name"} disabled={disabled || full} />}
+      </Field>
+      {needle.length >= 2 && (
+        <ul className="max-h-64 divide-y divide-ttfc-line overflow-y-auto rounded-xl border border-ttfc-line">
+          {found.map((it) => (
+            <li key={it._id}>
+              <button type="button" disabled={disabled || full} onClick={() => add(it._id)} className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-ttfc-contrast/5 disabled:cursor-not-allowed disabled:opacity-50">
+                <Thumb kind={kind} it={it} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-ttfc-text">{it.name}</span>
+                  {subOf(kind, it) && <span className="block truncate text-xs text-ttfc-muted">{subOf(kind, it)}</span>}
+                </span>
+              </button>
+            </li>
+          ))}
+          {!found.length && <li className="px-3 py-2 text-sm text-ttfc-muted">No {one} on that event matches “{q.trim()}”.</li>}
+        </ul>
+      )}
     </div>
   );
 }

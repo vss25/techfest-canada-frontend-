@@ -7,12 +7,12 @@
      steps  how to do the main job, in order
      tips   good to know: what goes live at once, who can do what
    The ⓘ next to every page title shows its guide (HelpButton.jsx);
-   Home › Help & how-to lists them all. When a page changes, change
+   Today › Help & how-to lists them all. When a page changes, change
    its guide here too.
 ========================================================= */
 
 /** Where the website's content goes live: said once, used by every content guide. */
-const FLOW = "Saving keeps your change in the panel only. Send it to staging from Home › Website changes, check it on the staging site, then publish it to the live website.";
+const FLOW = "Saving keeps your change in the panel only. Send it to staging from Website › Publish changes, check it on the staging site, then publish it to the live website.";
 const NOW = (what) => `${what} change the live website straight away: they don't go through staging.`;
 
 export const HELP = {
@@ -41,7 +41,7 @@ export const HELP = {
   },
   "content/agenda": {
     what: "Every session on the website's agenda and in the app: titles, times, formats, speakers and moderators.",
-    steps: ["Pick the event at the top (for example Vancouver Briefing 2027).", "Choose Day 1 or Day 2, then click Add session and fill it in. New sessions are tied to the event you picked.", "Use Edit or Duplicate on a session to change or copy it.", "Save, then send it to staging and publish from Home › Website changes."],
+    steps: ["Pick the event at the top (for example Vancouver Briefing 2027).", "Choose Day 1 or Day 2, then click Add session and fill it in. New sessions are tied to the event you picked.", "Use Edit or Duplicate on a session to change or copy it.", "Save, then send it to staging and publish from Website › Publish changes."],
     tips: [FLOW, "The clock button (Running late) moves times on the live agenda straight away: it's for event day.", "Delete takes a session off the live website at once.", "Import Toronto 2026 agenda only appears under All events and is only for the 2026 sessions."],
   },
   "past-participants": {
@@ -61,22 +61,22 @@ export const HELP = {
   },
   "content/speakers": {
     what: "Everyone on the website's Speakers pages and in the app.",
-    steps: ["Click Add speaker. Add a photo (required), name, job title and company.", "A new speaker is added to the event chosen at the top. Use “Also on another event?” if they speak at more than one.", "Click a speaker to edit them. To change the order, drag a speaker up or down in the list, or use the arrows beside them.", "Save, then send to staging and publish from Home › Website changes."],
+    steps: ["Click Add speaker. Add a photo (required), name, job title and company.", "A new speaker is added to the event chosen at the top. Use “Also on another event?” if they speak at more than one.", "Click a speaker to edit them. To change the order, drag a speaker up or down in the list, or use the arrows beside them.", "Save, then send to staging and publish from Website › Publish changes."],
     tips: [FLOW, "Every speaker photo comes out the same: choose a photo and the photo studio removes the background, puts the person on the TTFC light purple and suggests a head-and-shoulders crop. Drag or zoom to adjust it, or keep the photo's own background if the cut-out looks wrong.", "Adjust photo reopens the studio from the original upload.", "Delete takes a speaker off the live website at once."],
   },
   "content/partners": {
     what: "Partner logos on the Partners page and in the apps' Organisations, grouped by category.",
-    steps: ["Click Add partner: name, logo, category and website link.", "Use the switches to choose whether it shows on the website, in the apps, or both. Active off hides it everywhere without deleting it.", "Use − and + under a logo to make it smaller or bigger.", "Save, then send to staging and publish from Home › Website changes."],
+    steps: ["Click Add partner: name, logo, category and website link.", "Use the switches to choose whether it shows on the website, in the apps, or both. Active off hides it everywhere without deleting it.", "Use − and + under a logo to make it smaller or bigger.", "Save, then send to staging and publish from Website › Publish changes."],
     tips: [FLOW, "Paid partners go in the Featured Partners row; they also show on Featured Partners.", "A partner can sit in a different row for each event: choose the event in the top bar, then set Row on the Partners page. Events without their own row use the usual row.", "Tick the events a partner shows on; none ticked = every event. Each event page shows its own partners.", "Dark preview shows how logos look on the dark parts of the site."],
   },
   "content/sponsors": {
     what: "The paid partners: the Featured Partners row on the Partners page and the first section of the apps' Organisations.",
-    steps: ["Add or open a partner and give it a short description (it shows as the logo's tooltip and on the apps' Sponsors cards).", "Choose where it shows with the website and app switches.", "Save, then send to staging and publish from Home › Website changes."],
+    steps: ["Add or open a partner and give it a short description (it shows as the logo's tooltip and on the apps' Sponsors cards).", "Choose where it shows with the website and app switches.", "Save, then send to staging and publish from Website › Publish changes."],
     tips: ["These are the same records as on Partners: editing one here edits it there too.", FLOW],
   },
   "content/tickets": {
     what: "The tickets the chosen event sells on the website: name, price, how many have sold and when they're on sale, plus the multi-event passes that cover it.",
-    steps: ["Choose the event in the top bar.", "Click a ticket to change its price for this event only, or Add ticket. Management only.", "Add pass: one price for this city and the Toronto Main Event; tick more cities for a multi-city pass.", "When it's time to sell, turn on Pricing announced in Operations › Event settings."],
+    steps: ["Choose the event in the top bar.", "Click a ticket to change its price for this event only, or Add ticket. Management only.", "Add pass: one price for this city and the Toronto Main Event; tick more cities for a multi-city pass.", "When it's time to sell, turn on Pricing announced in Website › Events › Settings."],
     tips: [NOW("Ticket changes"), "Every event has its own tickets and prices. A new Briefing starts with a copy of Defaults for new Briefings.", "Sold counts paid orders only, so it stays 0 until the first sale.", "A pass shows on every event it covers and buyers get a pass for each; it counts towards each event's delegates.", "A ticket or pass someone has bought can't be deleted: switch it off instead."],
   },
   inventory: {
@@ -87,21 +87,21 @@ export const HELP = {
   "content/settings": {
     what: "Switch parts of the website on or off and edit site-wide text.",
     steps: ["Find the section or setting.", "Flip the switch or change the text; each one saves on its own."],
-    tips: ["Homepage section switches, the Partners page year and the About page numbers go through staging: send them from Home › Website changes.", "The Partners page opens on the most recently completed year (2026) unless Open on this year's partners is on.", NOW("The other switches and texts on this page"), "Selling switches are for management only."],
+    tips: ["Homepage section switches, the Partners page year and the About page numbers go through staging: send them from Website › Publish changes.", "The Partners page opens on the most recently completed year (2026) unless Open on this year's partners is on.", NOW("The other switches and texts on this page"), "Selling switches are for management only."],
   },
   "content/alumni-logos": {
     what: "The “Our team includes alumni from” logo strip on the Home and Sponsors pages. Not the paid partners.",
-    steps: ["Click Add logo, upload it and give it a name.", "Change the number to set the order; use − and + for size.", "Save, then send to staging and publish from Home › Website changes."],
+    steps: ["Click Add logo, upload it and give it a name.", "Change the number to set the order; use − and + for size.", "Save, then send to staging and publish from Website › Publish changes."],
     tips: [FLOW],
   },
   "content/sponsor-marquee": {
     what: "The scrolling logo strips: “Our Community” on the Home page and “Where our speakers work” on the Speakers page. Not sponsors.",
-    steps: ["Click Add logo, upload it and give it a name.", "Set the order and size.", "Save, then send to staging and publish from Home › Website changes."],
+    steps: ["Click Add logo, upload it and give it a name.", "Set the order and size.", "Save, then send to staging and publish from Website › Publish changes."],
     tips: [FLOW],
   },
   "content/home-sponsors": {
     what: "Logos for the home page's sponsor strip.",
-    steps: ["Add or edit a logo, set its order and size.", "Save, then send to staging and publish from Home › Website changes."],
+    steps: ["Add or edit a logo, set its order and size.", "Save, then send to staging and publish from Website › Publish changes."],
     tips: [FLOW],
   },
   "content/organisations": {
@@ -208,9 +208,9 @@ export const HELP = {
     tips: ["Something inside a menu, a pop-up or the ticket panel? Switch to Browse, open it, then switch back to Click to edit.", "Phone and Computer show the two layouts; some wording is only on one of them.", "“Everywhere it appears” changes the same wording on every page; “Only on this page” leaves the other pages alone.", "Back to built-in undoes a change. All changes lists everything that has been changed, on any page."],
   },
   "content/home": {
-    what: "The home page: the event it opens with and the sections under it. By default it follows the next event.",
-    steps: ["Pick the event at the top of the page, or leave The next event.", "Switch sections off to hide them; use the arrows to change their order.", "Press Save, then Send to staging, check the home page on the staging site, and Publish to live."],
-    tips: ["A pinned event stays until you change it back, even after it's over.", "The event's photo or video comes from Event pages; the home page's words from Website text & media."],
+    what: "The one home page of the website: its headline, picture and video, the speakers to highlight, and its sections.",
+    steps: ["Fill in the top of the page. Any box left empty is filled from the event chosen at the bottom of that card (the next event unless you pin one).", "Pick up to 6 speakers to highlight, and switch sections on or off or reorder them.", "Press Save, then Send to staging, check the home page on the staging site, and Publish to live."],
+    tips: ["A pinned event stays until you change it back, even after it's over.", "Other wording on the page is in Website text & media."],
   },
   "content/videos": {
     what: "TTFC's YouTube and Vimeo videos on the website. Only the link is saved, so they cost nothing to host.",
@@ -404,8 +404,8 @@ export function helpFor(to) {
 
 /* Start here: the few things a new person needs before any page. */
 export const START_HERE = [
-  { h: "Finding your way", p: "The navy rail on the left has the areas of work: Home, Content, Marketing, Sales, Operations, People, Awards, Event day and Settings. Pick one and its pages appear beside it. On a phone, use the tabs at the bottom and More. Press ⌘K (Ctrl K on Windows) to search for anything: a person, a ticket ID or a page." },
-  { h: "Changing the website", p: "Website content (event pages, agenda, speakers, partners, logos) never changes the live site when you save. Send it to staging from Home › Website changes, check it on the staging site, then publish it to the live website." },
+  { h: "Finding your way", p: "The navy rail on the left has the areas of work: Today, Website, Marketing, Sales, People, Awards, Event day and Settings. Pick one and its pages appear beside it. On a phone, use the tabs at the bottom and More. Press ⌘K (Ctrl K on Windows) to search for anything: a person, a ticket ID or a page." },
+  { h: "Changing the website", p: "Website content (event pages, agenda, speakers, partners, logos) never changes the live site when you save. Send it to staging from Website › Publish changes, check it on the staging site, then publish it to the live website." },
   { h: "What changes at once", p: "Some things take effect as soon as you save: ticket prices and stock, event settings, app text and switches, people's records, passes you send, check-ins and app notifications. Deleting a speaker, session or partner also takes it off the website at once. Their guides say so." },
   { h: "Who can do what", p: "Management sees everything. Staff can't see sales, revenue, promo codes or staff settings, and pages marked with a lock are management only. Volunteers see People only, read only." },
   { h: "Getting help", p: "Every page has an ⓘ next to its title with how to use it. If something looks wrong, check Settings › Audit log for who changed what, then ask management." },

@@ -83,7 +83,7 @@ export function Card({ className, children, as = "div", ...rest }) {
   );
 }
 
-/* Page heading in the approved admin design: where the page sits ("Content › Event website", from the
+/* Page heading in the approved admin design: where the page sits ("Website › Events", from the
    menu; the page's own eyebrow when it isn't in the menu), the title, its actions on the right, then
    what the page is for. */
 export function PageHeader({ eyebrow, title, description, actions, status }) {

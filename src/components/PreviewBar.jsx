@@ -62,7 +62,7 @@ export default function PreviewBar() {
       ? "The changes on staging couldn't load, so this shows the live content. Reload to try again."
       : "You're seeing the changes sent to staging. The live website keeps its current content until they're published.";
   } else if (asked) {
-    content = "Sign in with your staff account to see the changes sent to staging. Until then this shows the live content.";
+    content = "You are not signed in on this staging site, so this shows the live content. Sign in here with your staff email and password to see the changes sent to staging (signing in on the live website doesn't count).";
   } else {
     content = "You're seeing the live content here.";
   }
@@ -72,9 +72,11 @@ export default function PreviewBar() {
       <span style={TAG}>{staging ? "Staging environment" : "Preview"}</span>
       <span style={{ flex: "1 1 320px" }}>
         {staging && (
-          <strong style={{ display: "block", color: expired ? "#FFB4B4" : "#F5A623" }}>
+          <strong style={{ display: "block", color: "#F5A623" }}>
             {expired
-              ? `This isn't the live website. The staging link expired on ${formatStagingUntil(until)}: ask for a new one.`
+              // Nov 26 2026: the date belonged to an old share link; this address keeps working, and the red
+              // "expired, ask for a new one" line made staff think staging was broken.
+              ? "This isn't the live website."
               : `This isn't the live website. Staging is available until ${formatStagingUntil(until)}.`}
           </strong>
         )}

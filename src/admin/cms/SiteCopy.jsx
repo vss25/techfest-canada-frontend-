@@ -12,6 +12,7 @@ import { useAutosave } from "./useAutosave";
 import { AutosaveNote } from "./AutosaveNote";
 import { uploadImage } from "./imageUpload";
 import { EDIT_FRAME } from "../../lib/siteCopy";
+import { isStagingSite } from "../../lib/preview";
 import { applyDiff, diffRows, hashText, pageKey, plainRows, rowFor, withRow } from "../../lib/siteCopyRules";
 import { SITE_PAGES, pageLabel } from "./siteCopyPages";
 
@@ -429,6 +430,14 @@ export default function SiteCopy() {
         )}
       />
       <CmsBanners configured={configured} />
+      {/* Nov 26 2026: staff on the live panel looked here for the new design's text (the partner form) and
+          couldn't find it: the new design's pages only exist on the staging site until it launches. */}
+      {!isStagingSite() && (
+        <Banner tone="info" className="mb-4" title="Looking for the new design's text?"
+          action={<a href={stagingUrl("/admin/content/site-copy")} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-ttfc-pink hover:underline">Open the staging panel <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></a>}>
+          This page edits the website that is live today. The new design (its event pages, the partner enquiry form and so on) is edited in the staging panel: sign in there once with the same email and password, then open Text &amp; media.
+        </Banner>
+      )}
       {serverOld && (
         <Banner tone="warn" className="mb-4" title="You can try it, but it can't be saved yet">
           The server needs its latest update before changes here can be saved. The preview works: what you type shows on the page on the right, in this browser only.

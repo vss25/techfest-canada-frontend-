@@ -18,7 +18,9 @@ import { HERO_HEIGHTS, focusOf, heightKey, heroPosition, previewAspect } from ".
    video (heroShade, src/lib/heroShade.js) is picked here too.
 ========================================================= */
 
-export default function EventVideoField({ url, posterUrl, onChange, disabled, canUpload, shade, onShadeChange, media, onMediaChange, focus, onFocusChange, height, onHeightChange }) {
+/* videoOff (Nov 26 2026): the page shows a photo, so the video uploader is put away; the shade, framing and
+   height controls below it still apply to the photo. */
+export default function EventVideoField({ url, posterUrl, onChange, disabled, canUpload, shade, onShadeChange, media, onMediaChange, focus, onFocusChange, height, onHeightChange, videoOff = false }) {
   const id = useId();
   const shadeId = useId();
   const mediaId = useId();
@@ -51,7 +53,8 @@ export default function EventVideoField({ url, posterUrl, onChange, disabled, ca
 
   return (
     <div className="flex flex-col gap-1.5">
-      <HelpLabel label="Background video" htmlFor={id}>Background video <span className="font-normal text-ttfc-dim">(optional)</span></HelpLabel>
+      {!videoOff && (<>
+      <HelpLabel label="Background video" htmlFor={id}>Video</HelpLabel>
       <div
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); pick(e.dataTransfer.files?.[0]); }}
@@ -82,6 +85,7 @@ export default function EventVideoField({ url, posterUrl, onChange, disabled, ca
       </p>
       {!canUpload && !disabled && <p className="flex items-center gap-1.5 text-xs text-ttfc-muted"><Lock className="h-3 w-3" aria-hidden="true" /> Only management can upload videos.</p>}
       {err && <p role="alert" className="text-xs text-red-300">{err}</p>}
+      </>)}
       {onMediaChange && (
         <div className="mt-2 grid gap-1.5">
           <label htmlFor={mediaId} className="text-sm font-semibold">Show at the top of the page</label>

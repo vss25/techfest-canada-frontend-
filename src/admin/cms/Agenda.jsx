@@ -26,6 +26,8 @@ import {
 import { SESSIONS, DAYS, buildSpeakerIndex, matchSpeaker, formatTime12, getDuration } from "../../data/agenda";
 import { approvedAgendaFor } from "../../data/approvedAgendas";
 import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS } from "../../data/sessionFormats";
+import TagPicker from "./TagPicker";
+import { useAgendaTags } from "./useAgendaTags";
 import { AgendaTypesDialog } from "./AgendaTypes";
 import { useAgendaTypes } from "./useAgendaTypes";
 import { useEditFromUrl } from "../search/deepLink";
@@ -54,7 +56,7 @@ function FormatBadge({ format }) {
 
 const blank = (day) => ({
   title: "", day, time: "09:00", endTime: "09:30", type: "", format: "keynote", featured: false, isBreak: false,
-  pillar: "", sector: "", stage: "", description: "", speakers: [], moderator: { name: "", org: "" },
+  pillar: "", sector: "", pillars: [], sectors: [], stage: "", description: "", speakers: [], moderator: { name: "", org: "" },
   polls: "auto", qa: "auto", events: [], image: { assetId: null, url: "" }, mediaUrl: "",
 });
 
@@ -63,7 +65,11 @@ const refIds = (d) => (d?.events || []).map((r) => r?._ref).filter(Boolean);
 const toForm = (d) => ({
   title: d.title || "", day: Number(d.day) || 1, time: d.time || "09:00", endTime: d.endTime || d.time || "09:30",
   type: d.type || "", format: d.format || "", featured: !!d.featured, isBreak: !!d.isBreak,
-  pillar: d.pillar || "", sector: d.sector || "", stage: d.stage || "", description: d.description || "",
+  pillar: d.pillar || "", sector: d.sector || "",
+  // Several of each since Nov 26 2026; a session saved before that has only the single value.
+  pillars: Array.isArray(d.pillars) && d.pillars.length ? d.pillars : (d.pillar ? [d.pillar] : []),
+  sectors: Array.isArray(d.sectors) && d.sectors.length ? d.sectors : (d.sector ? [d.sector] : []),
+  stage: d.stage || "", description: d.description || "",
   speakers: (d.speakers || []).map((p) => ({ name: p.name || "", org: p.org || "", tentative: !!p.tentative })),
   moderator: { name: d.moderator?.name || "", org: d.moderator?.org || "" },
   polls: liveMode(d.polls), qa: liveMode(d.qa), events: refIds(d),
@@ -79,7 +85,9 @@ function toBody(form, original) {
   const body = {
     title: form.title.trim(), day: Number(form.day), time: form.time, endTime: form.endTime,
     type: form.type.trim() || null, format: form.format || null, featured: !!form.featured, isBreak: !!form.isBreak,
-    pillar: form.pillar || null, sector: form.sector || null, stage: form.stage.trim() || null,
+    // The first of each is also saved as the single value older pages and the apps read.
+    pillar: form.pillars[0] || null, sector: form.sectors[0] || null, pillars: form.pillars, sectors: form.sectors,
+    stage: form.stage.trim() || null,
     description: form.description.trim() || null, speakers: people, moderator: mod,
   };
   // The card's media: a newly uploaded picture, or null when it was removed; the GIF / video when it changed.
@@ -179,6 +187,7 @@ function SessionDrawer({ types = [], onEditTypes, doc, creating, defaultDay, def
   const dayEvent = eventList.find((e) => e._id === (defaultEventId || refIds(doc)[0]));
   const listId = useId();
   const [form, setForm] = useState(() => (doc ? toForm(doc) : { ...blank(defaultDay), events: defaultEventId ? [defaultEventId] : [] }));
+  const agendaTags = useAgendaTags();   // the extra pillars and sectors staff added
   const { isManagement } = useAdmin();
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -293,16 +302,10 @@ function SessionDrawer({ types = [], onEditTypes, doc, creating, defaultDay, def
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Tech pillar">{(id) => (
-            <Select id={id} value={form.pillar} onChange={set("pillar")} disabled={readOnly}>
-              <option value="">None</option>{PILLARS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-            </Select>
-          )}</Field>
-          <Field label="Sector">{(id) => (
-            <Select id={id} value={form.sector} onChange={set("sector")} disabled={readOnly}>
-              <option value="">None</option>{SECTORS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-            </Select>
-          )}</Field>
+          <TagPicker label="Tech pillars" noun="pillar" options={PILLARS} extras={agendaTags.tags.pillars} value={form.pillars} disabled={readOnly}
+            onChange={(v) => setForm((f) => ({ ...f, pillars: v }))} onAddExtra={(name) => agendaTags.add("pillars", name)} />
+          <TagPicker label="Sectors" noun="sector" options={SECTORS} extras={agendaTags.tags.sectors} value={form.sectors} disabled={readOnly}
+            onChange={(v) => setForm((f) => ({ ...f, sectors: v }))} onAddExtra={(name) => agendaTags.add("sectors", name)} />
           {eventList.length > 0 && (
             <fieldset className="sm:col-span-2">
               <legend className="mb-1.5 text-[13px] font-semibold text-ttfc-text/90">Events</legend>

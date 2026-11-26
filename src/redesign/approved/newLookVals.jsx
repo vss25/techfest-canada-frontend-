@@ -34,6 +34,13 @@ const AGENDA_NAMES = { van: "Vancouver", mtl: "Montreal", cgy: "Calgary", tob: "
 
 export const speakerPath = (name) => `/speakers/${speakerSlug(name)}`;
 
+/** "Wednesday" for "2027-02-24" (the date as written, no time zone shift); "" when it isn't a full date. */
+function weekdayOf(ymd) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(ymd || ""));
+  if (!m) return "";
+  return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+}
+
 export function applyNewLook(v, self, { openTix, phone }) {
   const p = self.props;
   const s = self.state;
@@ -121,7 +128,9 @@ export function applyNewLook(v, self, { openTix, phone }) {
   if (s.screen === "event") {
     // The countdown ticks every second, and the date reads like a ticket stub (only once the date is fixed).
     if (c.hasCountdown && c.startDate) v.countdown = <Countdown target={countdownTarget(c.startDate, city)} />;
-    if (c.startDate) v.dateStub = <DateStub date={c.startDate} />;
+    // Nov 26 2026 (the owner: "redundancy"): the date is in the banner, the countdown and the timeline already,
+    // so this strip shows it once, as text with the weekday, beside the same kind of icon as the other facts.
+    if (c.startDate) { const wd = weekdayOf(c.startDate); if (wd && c.date && !String(c.date).startsWith(wd)) v.c = { ...v.c, date: `${wd}, ${c.date}` }; }
     if (hasAgenda) v.dayGlance = <DayGlance alt sessions={rows} onFull={goAgenda} id={phone ? "m-agenda" : "ev-agenda"} />;
     if (own) v.evOnStage = <OnStage speakers={withOpen(own.slice(0, 4))} onAll={goAllSpeakers} id={phone ? "m-speakers" : "ev-speakers"} />;
     if (onSale) v.passes = <Passes types={types} onBuy={openTix} />;

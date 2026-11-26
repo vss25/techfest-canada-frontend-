@@ -670,3 +670,54 @@ html .ap-root footer[data-dark] a.p-link:hover {
    tiles, so three of the four tiles looked empty. Lighter lines on a tinted tile. */
 html[data-site-theme="dark"] .ap-root .p-in2 > div > span:first-child { background: rgba(130, 89, 237, 0.16) !important; border: 1px solid rgba(130, 89, 237, 0.3); box-sizing: border-box; }
 html[data-site-theme="dark"] .ap-root .p-in2 > div > span:first-child svg path { stroke: #D9D0FF; }
+
+/* ---------- The partner enquiry form, as designed (Nov 26 2026, the owner's "Sponsorship form") ----------
+   One card in two panels: left, deep indigo with a violet light top-left and a magenta one bottom-right (the
+   heading's city in pink, an icon on each contact line); right, a white form with violet-edged fields, the
+   interests as one segmented row and a dark Send button. Same fields and behaviour as before. */
+.ap-root #ev-contact > div {
+  padding: 0 !important; gap: 0 !important; overflow: hidden; border: 1px solid rgba(130, 89, 237, 0.55) !important;
+  border-radius: 20px !important; background: #FFFFFF !important;
+}
+.ap-root #ev-contact > div > div:first-child {
+  flex: 1 1 340px !important; box-sizing: border-box; padding: 52px 48px !important; gap: 18px !important; color: #FFFFFF !important;
+  background: radial-gradient(70% 60% at 0% 0%, rgba(84, 24, 168, 0.95), rgba(84, 24, 168, 0) 62%), radial-gradient(75% 60% at 100% 100%, rgba(178, 27, 127, 0.95), rgba(178, 27, 127, 0) 62%), #0A0028 !important;
+}
+.ap-root #ev-contact > div > div:first-child > p:first-child {
+  display: flex; align-items: center; gap: 14px; font-size: 12px !important; font-weight: 600 !important; letter-spacing: 0.3em; text-transform: uppercase; color: #FFFFFF !important;
+}
+.ap-root #ev-contact > div > div:first-child > p:first-child::before { content: ""; flex: 0 0 42px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #8259ED, rgba(130, 89, 237, 0)); }
+.ap-root #ev-contact > div > div:first-child h2 { color: #FFFFFF !important; font-size: 36px !important; line-height: 44px !important; }
+.ap-root #ev-contact .nl-city { color: #E0489C; }
+.ap-root #ev-contact > div > div:first-child > p { color: #EAE5FA !important; }
+.ap-root #ev-contact > div > div:first-child > div { gap: 16px !important; margin-top: 14px !important; font-size: 16px !important; color: #FFFFFF !important; }
+.ap-root #ev-contact > div > div:first-child > div > :is(span, a) { display: flex !important; align-items: center; gap: 6px; padding-left: 38px; position: relative; color: #FFFFFF !important; }
+.ap-root #ev-contact > div > div:first-child > div a { color: #FFFFFF !important; }
+.ap-root #ev-contact > div > div:first-child > div a:hover { color: #F5A623 !important; }
+.ap-root #ev-contact > div > div:first-child > div > :is(span, a)::before { content: ""; position: absolute; left: 0; top: 50%; width: 22px; height: 22px; transform: translateY(-50%); background: center / contain no-repeat; }
+.ap-root #ev-contact > div > div:first-child > div > span::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E"); }
+.ap-root #ev-contact > div > div:first-child > div > a:nth-of-type(1)::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z'/%3E%3C/svg%3E"); }
+.ap-root #ev-contact > div > div:first-child > div > a:nth-of-type(2)::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3h7l4 4v14H7z'/%3E%3Cpath d='M14 3v4h4M10 12h5M10 16h5'/%3E%3C/svg%3E"); }
+/* The white form. The dark theme's glass fields don't apply inside it. */
+html .ap-root #ev-contact form { box-sizing: border-box; padding: 44px 48px !important; background: #FFFFFF !important; color: #151035 !important; gap: 20px !important; align-content: start; }
+html .ap-root #ev-contact form :is(label, legend) { color: #151035 !important; font-size: 15px !important; }
+html .ap-root #ev-contact form legend span { color: #6B6688 !important; }
+html[data-site-theme] .ap-root #ev-contact form :is(input, textarea) {
+  background: #FFFFFF !important; color: #151035 !important; border: 1px solid #8259ED !important; border-radius: 8px !important; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+html[data-site-theme] .ap-root #ev-contact form :is(input, textarea):focus { border-color: #C5408A !important; box-shadow: 0 0 0 4px rgba(197, 64, 138, 0.16) !important; outline: none; }
+/* Interests: one row, the chosen ones filled. */
+.ap-root #ev-contact form fieldset > div { gap: 0 !important; flex-wrap: nowrap !important; border: 1px solid #8259ED; border-radius: 8px; overflow: hidden; }
+html .ap-root #ev-contact form fieldset button { flex: 1 1 auto; justify-content: center; height: 46px !important; padding: 0 12px !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; color: #151035 !important; white-space: nowrap; }
+html .ap-root #ev-contact form fieldset button[aria-checked="true"] { background: linear-gradient(90deg, #2A1458, #1B1040) !important; color: #FFFFFF !important; }
+html .ap-root #ev-contact form fieldset button:hover:not([aria-checked="true"]) { background: #F3EEFF !important; }
+/* Send. */
+html .ap-root #ev-contact form button.p-dark { height: 52px !important; padding: 0 30px !important; border-radius: 10px !important; background: linear-gradient(90deg, #1B1040, #3A1A66) !important; color: #FFFFFF !important; font-size: 17px !important; }
+html .ap-root #ev-contact form button.p-dark::after { content: "→"; margin-left: 12px; font-size: 20px; line-height: 1; }
+html .ap-root #ev-contact form button.p-dark + span { color: #151035 !important; font-weight: 600; }
+@media (max-width: 760px) {
+  .ap-root #ev-contact > div > div:first-child { padding: 36px 26px !important; }
+  html .ap-root #ev-contact form { padding: 30px 24px !important; }
+  .ap-root #ev-contact form fieldset > div { flex-wrap: wrap !important; }
+  html .ap-root #ev-contact form fieldset button { flex: 1 1 45%; border-bottom: 1px solid #E5DCFB !important; }
+}

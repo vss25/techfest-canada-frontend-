@@ -60,6 +60,14 @@ export function applyNewLook(v, self, { openTix, phone }) {
   const goAgenda = go(cityPath(city) + "/agenda");
   const types = p.data && p.data.types;
   const onSale = !p.ticketsSoon && !!(types && types.length);
+  // Nov 26 2026 (the owner: the home page showed the National Festival but Agenda opened Vancouver's). On the
+  // home page, Agenda and Speakers open the pages of the event the home page is showing, on both layouts.
+  if (s.screen === "home") {
+    v.goAgenda = goAgenda;
+    v.goSpeakers = go(cityPath(city) + "/speakers");
+    if (v.goSec && typeof v.goSec === "object") v.goSec = { ...v.goSec, agenda: goAgenda };
+    if (v.sec && typeof v.sec === "object" && typeof v.sec.agenda === "function") v.sec = { ...v.sec, agenda: goAgenda };
+  }
   // A session's picture, GIF or video (Admin › Agenda › "On the session's card"): on the home page's Agenda
   // highlights cards (the boards call v.cardMedia) and beside each row of the agenda lists.
   const mediaOf = (r) => sessionCardMedia(r && r.image && r.image.asset ? urlFor(r.image).width(900).height(506).fit("crop").auto("format").url() : "", r && r.mediaUrl);
@@ -211,6 +219,16 @@ export function applyNewLook(v, self, { openTix, phone }) {
           onAgain={(e) => { if (e && e.preventDefault) e.preventDefault(); self.setState({ contactSent: null }); }} />;
       }
     }
+  }
+  // ---- What each ticket includes, in the purchase panel (Nov 26 2026, the owner: "the inclusions are not shown
+  // in the Ticket Purchase Experience. Fix this for mobile and desktop"). The list staff write in Admin › Tickets
+  // sits under the ticket's line, on the computer drawer and the phone sheet alike. ----
+  if (Array.isArray(v.tickets)) {
+    v.tickets = v.tickets.map((tk) => {
+      const list = (Array.isArray(tk.inclusions) ? tk.inclusions : []).map((x) => String(x || "").trim()).filter(Boolean);
+      if (!list.length) return tk;
+      return { ...tk, incl: <ul className="nl-incl" aria-label={`${tk.name} includes`}>{list.map((x) => <li key={x}>{x}</li>)}</ul> };
+    });
   }
   return v;
 }

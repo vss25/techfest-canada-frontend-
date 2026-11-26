@@ -275,7 +275,8 @@ export function Passes({ types, onBuy, id = "ev-passes" }) {
             <h3>{t.name}</h3>
             <div className="nx-price">{money(t.cents)}</div>
             <div className="nx-perf" />
-            <ul>{perks(t.note).map((p) => <li key={p}>{p}</li>)}</ul>
+            {/* What the ticket includes (Admin › Tickets) when it has a list; else the bits of its one-line description. */}
+            <ul>{(t.inclusions && t.inclusions.length ? t.inclusions.slice(0, 8) : perks(t.note)).map((p) => <li key={p}>{p}</li>)}</ul>
             <a href="#" className="nx-btn nx-buy" onClick={act(onBuy)}>Get tickets</a>
             <div className="nx-code" aria-hidden="true" />
           </div>

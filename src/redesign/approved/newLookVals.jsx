@@ -7,6 +7,7 @@ import { urlFor } from "../../utils/sanity";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { homeEyebrow } from "../../lib/homeLayout";
 import { SPK_MIN } from "./speakerGrid";
+import SponsorCompare from "./SponsorCompare";
 
 /* Fills the boards' new-look slots (tools/newlook_patch2.py) with live data. Shared by the desktop and phone
    layouts: LiveSite.jsx and LivePhone.jsx call it at the end of renderVals().
@@ -177,6 +178,14 @@ export function applyNewLook(v, self, opts) {
     if (own) v.evOnStage = <OnStage speakers={withOpen(own.slice(0, 4))} onAll={goAllSpeakers} id={phone ? "m-speakers" : "ev-speakers"} />;
     if (onSale) v.passes = <Passes types={types} onBuy={openTix} />;
   }
+
+  // Partnership packages, side by side (SponsorCompare.jsx; the owner's sheet, Nov 26 2026): on the Sponsor page
+  // (in place of the four old cards), on the Partners page, and on each event's page above its partner form,
+  // where it opens on that event's kind and on the main rows only.
+  const toForm = () => { const el = document.getElementById(phone ? "m-contact" : "ev-contact"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  if (v.pg && v.pg.partner) v.sponsorCompare = <SponsorCompare onEnquire={v.bookCall} enquireLabel="Book a 30-minute call" />;
+  if (s.screen === "partners") v.partnersSponsor = <SponsorCompare onEnquire={v.bookCall} enquireLabel="Book a 30-minute call" />;
+  if (s.screen === "event") v.evSponsor = <SponsorCompare key={city} compact focus={city === "tor" ? "main" : "city"} id={phone ? "m-packages" : "ev-packages"} onEnquire={toForm} onCall={v.bookCall} />;
 
   // The Agenda page.
   v.isAgenda = s.screen === "agenda";

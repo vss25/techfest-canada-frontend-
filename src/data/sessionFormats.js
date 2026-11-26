@@ -21,7 +21,7 @@ export const FORMAT_KEYS = ["opening", "keynote", "fireside", "panel", "briefing
 export const PILLARS = [
   { value: "ai", label: "AI / ML" },
   { value: "quantum", label: "Quantum" },
-  { value: "cybersecurity", label: "Cybersecurity" },
+  { value: "cybersecurity", label: "Cybersecurity & Digital Trust" },
   { value: "robotics", label: "Robotics" },
   { value: "climate", label: "Clean Tech" },   // stored key stays "climate" (saved sessions keep matching); shown as Clean Tech
 ];

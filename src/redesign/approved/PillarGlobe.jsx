@@ -5,7 +5,7 @@ import { InteractiveGlobe } from "../../components/ui/interactive-globe";
    on one side, the five applied sectors on the other, and the rotating interactive globe between them with its
    turning ring. Shown beside "Next up" on the new home page (Nov 25 2026, the owner: "add the 5*5 matrix animation
    that is currently there on production"). Loaded on demand (NewLook.jsx), the static grid shows meanwhile. */
-const PILLARS = ["Artificial Intelligence", "Quantum Computing", "Cybersecurity", "Robotics & Automation", "Sustainability & CleanTech"];
+const PILLARS = ["Artificial Intelligence", "Quantum Computing", "Cybersecurity & Digital Trust", "Robotics & Automation", "Sustainability & CleanTech"];
 const SECTORS = ["Healthcare & Lifesciences", "Banking, Financial Services & Insurance", "Supply Chain, Manufacturing & Infrastructure", "Defence & Public Safety", "Energy & Utilities"];
 
 export default function PillarGlobe() {

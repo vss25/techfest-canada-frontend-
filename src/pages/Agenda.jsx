@@ -37,7 +37,7 @@ function useProtection() {
 const PILLAR_MAP = {
   ai:            { label: "AI / ML",       icon: Sparkles, color: "#F06AB0", light: "#D6308C" },
   quantum:       { label: "Quantum",        icon: Zap,      color: "#56b3f5", light: "#1878c2" },
-  cybersecurity: { label: "Cybersecurity",  icon: Shield,   color: "#f57eb3", light: "#c2287a" },
+  cybersecurity: { label: "Cybersecurity & Digital Trust",  icon: Shield,   color: "#f57eb3", light: "#c2287a" },
   robotics:      { label: "Robotics",       icon: Cpu,      color: "#f5a623", light: "#c4780a" },
   climate:       { label: "Clean Tech",     icon: Leaf,     color: "#3fd19c", light: "#1a9e70" },
 };

@@ -54,7 +54,7 @@ const PILLARS = [
   {
     id: "cyber",
     label: "Cyber",
-    fullLabel: "Cybersecurity",
+    fullLabel: "Cybersecurity & Digital Trust",
     subItems: [
       "Zero Trust Architecture",
       "Threat Intelligence",

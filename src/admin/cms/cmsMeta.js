@@ -10,7 +10,7 @@ export const SPEAKER_TYPES = [
 
 export const TECH_PILLARS = [
   { value: "ai", label: "Artificial Intelligence" },
-  { value: "cybersecurity", label: "Cybersecurity" },
+  { value: "cybersecurity", label: "Cybersecurity & Digital Trust" },
   { value: "cloud-data", label: "Cloud & Data" },
   { value: "emerging-tech", label: "Emerging Tech" },
 ];

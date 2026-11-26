@@ -13,7 +13,7 @@ export var FEATURED_GROUP = { key: "featured", title: "Featured Partners", iconN
 export var PILLAR_GROUPS = [
   { key: "ai", title: "Artificial Intelligence", iconName: "cpu" },
   { key: "quantum", title: "Quantum Computing", iconName: "atom" },
-  { key: "cyber", title: "Cybersecurity", iconName: "lock" },
+  { key: "cyber", title: "Cybersecurity & Digital Trust", iconName: "lock" },
   { key: "robotics", title: "Robotics & Automation", iconName: "settings" },
   { key: "cleantech", title: "Sustainability & CleanTech", iconName: "leaf" },
 ];

@@ -665,3 +665,8 @@ html .ap-root footer[data-dark] nav a.p-link:hover, html .ap-root footer[data-da
 html .ap-root footer[data-dark] a.p-link:hover {
   color: #F5A623 !important; text-decoration: underline !important; text-decoration-thickness: 2px !important; text-underline-offset: 5px;
 }
+
+/* The facts under an event's banner (Nov 26 2026, the owner: "UX issues"): the icons were dark lines on dark
+   tiles, so three of the four tiles looked empty. Lighter lines on a tinted tile. */
+html[data-site-theme="dark"] .ap-root .p-in2 > div > span:first-child { background: rgba(130, 89, 237, 0.16) !important; border: 1px solid rgba(130, 89, 237, 0.3); box-sizing: border-box; }
+html[data-site-theme="dark"] .ap-root .p-in2 > div > span:first-child svg path { stroke: #D9D0FF; }

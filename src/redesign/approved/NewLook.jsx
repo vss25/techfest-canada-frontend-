@@ -51,7 +51,7 @@ export function HeroCtas({ onTickets, onExplore, city, ticketsLabel = "Get ticke
 }
 
 // The festival's 5 × 5: five tech pillars across five applied sectors (the names on the production home page).
-const PILLARS = ["Artificial Intelligence", "Quantum Computing", "Cybersecurity", "Robotics & Automation", "Sustainability & CleanTech"];
+const PILLARS = ["Artificial Intelligence", "Quantum Computing", "Cybersecurity & Digital Trust", "Robotics & Automation", "Sustainability & CleanTech"];
 const SECTORS = [["Healthcare", "Healthcare & Lifesciences"], ["Finance", "Banking, Financial Services & Insurance"], ["Industry", "Supply Chain, Manufacturing & Infrastructure"], ["Defence", "Defence & Public Safety"], ["Energy", "Energy & Utilities"]];
 
 /** The 5 × 5 matrix: pillars down the side, sectors across the top, a lit cell where each pair meets. */

@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { NAV, WORKSPACES, navItemFor, titleFor, workspaceFor } from "./nav.js";
+import { EVENT_TABS, NAV, WORKSPACES, menuHomeOf, navItemFor, titleFor, workspaceFor } from "./nav.js";
 import { FIELD_HELP, HELP, START_HERE, fieldHelpFor } from "./help.js";
 import {
   NOT_FOR_VOLUNTEERS, VOLUNTEER_ACCESS, VOLUNTEER_FORBIDDEN, VOLUNTEER_FORBIDDEN_TEXT, accountKind, isVolunteerAccount, navFor, searchGroupsFor,
@@ -131,8 +131,8 @@ test("the search for volunteers: People results only, masked, no pages, never a 
 
 // The approved admin design (Nov 2026): nine workspaces; every page that had a place in the old sidebar still has one,
 // at the same address.
-test("nine workspaces in the organiser's order, Settings at the bottom of the rail", () => {
-  assert.deepEqual(WORKSPACES.map((w) => w.label), ["Home", "Content", "Marketing", "Sales", "Operations", "People", "Awards", "Event day", "Settings"]);
+test("eight workspaces (Nov 26 2026: Today, Website…), Settings at the bottom of the rail", () => {
+  assert.deepEqual(WORKSPACES.map((w) => w.label), ["Today", "Website", "Marketing", "Sales", "People", "Awards", "Event day", "Settings"]);
   assert.deepEqual(WORKSPACES.filter((w) => w.bottom).map((w) => w.id), ["settings"]);
   for (const w of WORKSPACES) assert.ok(w.rail && w.job && w.groups.length, w.id);
 });
@@ -147,14 +147,28 @@ test("every admin page is in exactly one workspace, and every route in Admin.jsx
 
 test("the workspace of a page: the longest match, Home when nothing matches", () => {
   assert.equal(workspaceFor("/admin").id, "home");
-  assert.equal(workspaceFor("/admin/content/changes").id, "home");
+  assert.equal(workspaceFor("/admin/content/changes").id, "content");
   assert.equal(workspaceFor("/admin/content/agenda").id, "content");
   assert.equal(workspaceFor("/admin/app/people/123").id, "people");
-  assert.equal(workspaceFor("/admin/app/activity").id, "content");
+  assert.equal(workspaceFor("/admin/app/activity").id, "day");
   assert.equal(workspaceFor("/admin/awards/jury").id, "awards");
-  assert.equal(workspaceFor("/admin/inventory").id, "content");
+  assert.equal(workspaceFor("/admin/inventory").id, "sales");
+  assert.equal(workspaceFor("/admin/events").id, "content");
   assert.equal(workspaceFor("/admin/nowhere").id, "home");
-  assert.equal(navItemFor("/admin/content/agenda").group.title, "Content › Event website");
+  assert.equal(navItemFor("/admin/content/agenda").group.title, "Website › Events");
+});
+
+// Nov 26 2026: one screen per event. Its pages are tabs, not menu entries; they still open and are still searchable.
+test("an event's pages are tabs of one menu entry, Events", () => {
+  assert.deepEqual(EVENT_TABS.map((t) => t.label), ["Page", "Agenda", "Speakers", "Partners", "Tickets", "Settings"]);
+  for (const to of ["content/agenda", "content/speakers", "content/partners", "content/sponsors", "content/tickets", "events", "content/events"]) {
+    assert.equal(menuHomeOf(navItemFor(`/admin/${to}`).item), "content/events", to);
+  }
+  assert.equal(menuHomeOf(navItemFor("/admin/content/home").item), "content/home");
+  const menu = workspacesFor({ isManagement: true }).find((w) => w.id === "content").groups.flatMap((g) => g.items.map((it) => it.to));
+  assert.deepEqual(menu.slice(0, 4), ["content/home", "content/events", "content/site-copy", "content/changes"]);
+  assert.ok(!menu.includes("content/agenda"));
+  assert.ok(navFor({ isManagement: true }).flatMap((g) => g.items.map((it) => it.to)).includes("content/agenda"), "still in search");
 });
 
 test("workspaces per account: volunteers People only; staff without management's pages", () => {

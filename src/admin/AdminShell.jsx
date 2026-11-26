@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { navItemFor, titleFor, workspaceFor } from "./nav";
 import { volunteerMayOpen } from "./access";
 import { PhoneTabs, WorkspaceMenu, WorkspaceRail } from "./WorkspaceNav";
+import EventTabs from "./EventTabs";
 import { focusRing } from "./ui";
 import { initials } from "./format";
 import { useAdmin } from "./adminContext";
@@ -124,6 +125,7 @@ export default function AdminShell({ me, onSignOut, children }) {
         </header>
 
         <main id="admin-main" className="mx-auto w-full max-w-[1400px] px-4 pb-[96px] pt-4 sm:px-6 lg:px-7 lg:pb-10 lg:pt-6" tabIndex={-1}>
+          {!isVolunteer && <EventTabs />}
           <Fragment key={searchNonce}>{children}</Fragment>
         </main>
       </div>

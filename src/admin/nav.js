@@ -9,9 +9,9 @@ import { CircleHelp, ClipboardList, ListTodo, Gavel, Gift, GitPullRequestArrow, 
 
 /* =========================================================
    The panel's structure (Nov 2026, the approved admin design,
-   boards 16–18): nine workspaces in a navy rail (in the organiser's
-   order, Nov 17 2026: Home, Content, Marketing, Sales, Operations,
-   People, Awards, Event day, Settings), each with its own
+   boards 16–18): workspaces in a navy rail (Nov 26 2026: Today,
+   Website, Marketing, Sales, People, Awards, Event day, Settings),
+   each with its own
    menu of pages in groups. Every page keeps its address (`to`,
    relative to /admin), so links and bookmarks still work.
      management: true  management only (Revenue, Staff accounts, Jury results)
@@ -19,6 +19,8 @@ import { CircleHelp, ClipboardList, ListTodo, Gavel, Gift, GitPullRequestArrow, 
      volunteer: true   also for volunteer accounts (People only, read
                        only; access.js)
      hidden: true      not in the menu, the address still works
+     under: to         a tab of that page's screen: not in the menu, still in search
+     menuLabel         the menu's shorter name for the page
      onlyEvent: key    in the menu only while that event is the one chosen in the top bar
    Pages the design adds that don't exist yet (Approvals, Site pages,
    Files, contracts, operations…) come with their own steps.
@@ -39,49 +41,49 @@ const RAIL = {
 };
 
 export const WORKSPACES = [
-  { id: "home", label: "Home", rail: RAIL.home, job: "What needs doing today.", groups: [
+  // Nov 26 2026 (the owner: "clunky and bloated and confusing"), step 1 of the redesign: Today, then Website with
+  // one home page and one screen per event; Operations' single page and the app pages moved where they belong.
+  { id: "home", label: "Today", rail: RAIL.home, job: "What needs doing today.", groups: [
     { title: "", items: [
       { to: "", label: "Overview", icon: LayoutDashboard, end: true },
       // Nov 20 2026: tasks with an owner and a due date, and flags when something is wrong.
       { to: "work", label: "My work", icon: ListChecks },
-      // Nov 2026: website content goes save → staging → live from here.
-      { to: "content/changes", label: "Website changes", icon: GitPullRequestArrow },
       // Nov 2026: how the panel works and every page's guide (help.js); each page's ⓘ shows its own.
       { to: "help", label: "Help & how-to", icon: CircleHelp },
     ] },
   ] },
-  { id: "content", label: "Content", rail: RAIL.web, job: "Everything people read and see on the website and in the app. All content is written here.", groups: [
-    // `scoped`: about the event chosen in the top bar (its name goes in the page's crumbs).
-    { title: "Event website", scoped: true, items: [
-      { to: "content/events", label: "Event page", icon: MapPinned },
-      { to: "content/agenda", label: "Agenda", icon: CalendarDays },
-      { to: "content/speakers", label: "Speakers", icon: Mic2 },
-      // The approved design: one page, two tabs (Partners · Featured partners).
-      { to: "content/partners", label: "Partners & sponsors", icon: Handshake },
-      { to: "content/sponsors", label: "Featured partners", icon: Gem, hidden: true, parent: "content/partners" },
-      { to: "content/tickets", label: "Tickets & prices", icon: Ticket },
-    ] },
-    { title: "Site-wide", items: [
-      // Nov 25 2026: the home page's event and sections (its wording is in Website text & media).
+  { id: "content", label: "Website", rail: RAIL.web, job: "Everything visitors read and see: the home page, each event, and publishing.", groups: [
+    { title: "", items: [
+      // Nov 25 2026: the one home page (headline, picture, video, speakers, sections).
       { to: "content/home", label: "Home page", icon: House },
+    ] },
+    // `scoped`: about the event chosen in the top bar (its name goes in the page's crumbs).
+    // One menu entry, "Events": the event's pages are tabs across the top of the screen (EventTabs.jsx).
+    //   under: "content/events"  a tab of the event screen: not in the menu, lights up "Events"
+    { title: "Events", scoped: true, items: [
+      { to: "content/events", label: "Event page", menuLabel: "Events", icon: MapPinned, tab: "Page" },
+      { to: "content/agenda", label: "Agenda", icon: CalendarDays, under: "content/events", tab: "Agenda" },
+      { to: "content/speakers", label: "Speakers", icon: Mic2, under: "content/events", tab: "Speakers" },
+      // The approved design: one page, two tabs (Partners · Featured partners).
+      { to: "content/partners", label: "Partners & sponsors", icon: Handshake, under: "content/events", tab: "Partners" },
+      { to: "content/sponsors", label: "Featured partners", icon: Gem, hidden: true, parent: "content/partners" },
+      { to: "content/tickets", label: "Tickets & prices", icon: Ticket, under: "content/events", tab: "Tickets" },
+      // The event spine (Phase 2): per-event attendee visibility, lifecycle grace days, pricing announced.
+      { to: "events", label: "Event settings", icon: CalendarDays, under: "content/events", tab: "Settings" },
+    ] },
+    { title: "Whole site", items: [
+      { to: "content/site-copy", label: "Website text & media", menuLabel: "Text & media", icon: Type },
+      // Nov 2026: website content goes save → staging → live from here.
+      { to: "content/changes", label: "Website changes", menuLabel: "Publish changes", icon: GitPullRequestArrow },
+    ] },
+    { title: "More", items: [
       { to: "content/settings", label: "Website switches", icon: Settings2 },
+      // Nov 18 2026: YouTube / Vimeo videos on the website (only the link is stored).
+      { to: "content/videos", label: "Videos", icon: Clapperboard },
       { to: "content/alumni-logos", label: "Team alumni logos", icon: GraduationCap },
       { to: "content/sponsor-marquee", label: "Community & speakers' companies", icon: GalleryHorizontal },
       { to: "content/home-sponsors", label: "Home sponsors", icon: House, hidden: true },
       { to: "content/organisations", label: "Attending organisations", icon: Building2 },
-      // Nov 18 2026: YouTube / Vimeo videos on the website (only the link is stored).
-      { to: "content/site-copy", label: "Website text & media", icon: Type },
-      { to: "content/videos", label: "Videos", icon: Clapperboard },
-    ] },
-    { title: "App", items: [
-      { to: "app/text", label: "App text & switches", icon: ToggleRight },
-      // The attendee survey (Oct 26 2026): its questions, settings, answers, and the app notification and email.
-      { to: "app/survey", label: "Attendee survey", icon: MessageSquareText },
-      // The leaderboard's top networkers (appreciation, not a prize, Oct 27 2026; the address is the old one).
-      { to: "app/swag", label: "Top networkers", icon: Gift },
-      { to: "app", label: "App overview", icon: Smartphone, end: true },
-      { to: "app/activity", label: "Live activity", icon: Activity },
-      { to: "app/pwa", label: "Web app installs", icon: Download },
     ] },
   ] },
   { id: "marketing", label: "Marketing", rail: RAIL.mkt, job: "Reaching people: social posts, leads coming in and the emails we send.", groups: [
@@ -138,12 +140,6 @@ export const WORKSPACES = [
       { to: "inventory", label: "2026 pass inventory", icon: Package, onlyEvent: "ttfc-2026-main" },
     ] },
   ] },
-  { id: "ops", scoped: true, label: "Operations", rail: RAIL.ops, job: "Running the event: settings, venue, vendors, food, print and logistics.", groups: [
-    { title: "", items: [
-      // The event spine (Phase 2): per-event attendee visibility, lifecycle grace days, pricing announced.
-      { to: "events", label: "Event settings", icon: CalendarDays },
-    ] },
-  ] },
   { id: "people", label: "People", rail: RAIL.people, job: "Find anyone, give passes, fix records.", groups: [
     { title: "", items: [
       // The one page volunteers have (look-up only: VolunteerPeople.jsx, access.js).
@@ -183,6 +179,17 @@ export const WORKSPACES = [
       { to: "app/moderation", label: "App moderation", icon: ShieldAlert },
       { to: "app/broadcast", label: "Send an app update", icon: Megaphone },
     ] },
+    // The attendee app (moved from Content, Nov 26 2026). Not about one event: scoped: false.
+    { title: "The app", scoped: false, items: [
+      { to: "app", label: "App overview", icon: Smartphone, end: true },
+      { to: "app/text", label: "App text & switches", icon: ToggleRight },
+      // The attendee survey (Oct 26 2026): its questions, settings, answers, and the app notification and email.
+      { to: "app/survey", label: "Attendee survey", icon: MessageSquareText },
+      // The leaderboard's top networkers (appreciation, not a prize, Oct 27 2026; the address is the old one).
+      { to: "app/swag", label: "Top networkers", icon: Gift },
+      { to: "app/activity", label: "Live activity", icon: Activity },
+      { to: "app/pwa", label: "Web app installs", icon: Download },
+    ] },
   ] },
   { id: "settings", label: "Settings", rail: RAIL.settings, bottom: true, job: "Access, form inboxes and the change log.", groups: [
     { title: "", items: [
@@ -201,7 +208,7 @@ export const WORKSPACES = [
    pages' small headings. */
 export const NAV = WORKSPACES.flatMap((w) => w.groups.map((g) => ({
   title: g.title ? `${w.label} › ${g.title}` : w.label, workspace: w.id, workspaceLabel: w.label,
-  scoped: !!(w.scoped || g.scoped), items: g.items,
+  scoped: g.scoped ?? !!w.scoped, items: g.items,
 })));
 
 /** The workspace a path under /admin belongs to (Home when none matches). */
@@ -223,6 +230,17 @@ export function navItemFor(pathname) {
   }
   return best;
 }
+
+/** The menu entry a page lights up: its own, or the one it is a tab of ("Agenda" → "Events"). */
+export function menuHomeOf(item) {
+  if (!item) return "";
+  const own = item.parent || item.to;
+  const owner = NAV.flatMap((g) => g.items).find((it) => it.to === own);
+  return (owner && owner.under) || own;
+}
+
+/** The event screen's tabs, in order: [{ to, label }] (the pages with `tab` in the Events group). */
+export const EVENT_TABS = NAV.flatMap((g) => g.items).filter((it) => it.tab && (it.to === "content/events" || it.under === "content/events")).map((it) => ({ to: it.to, label: it.tab }));
 
 /** Page title for the top bar, from the current path. */
 export function titleFor(pathname) {

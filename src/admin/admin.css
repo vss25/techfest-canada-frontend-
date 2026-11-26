@@ -585,3 +585,8 @@ html[data-admin-theme="dark"] :is(.ttfc-admin, .ttfc-admin-portal) .text-\[\#CFC
 /* The two parts styled here with fixed light colours: the top bar's search box and its ⌘K chip. */
 html[data-admin-theme="dark"] .ttfc-admin .adm-desk-search > button.md\:flex { border-color: #342D60; background: #241D4B; color: #A7A1C3; }
 html[data-admin-theme="dark"] .ttfc-admin .adm-desk-search > button.md\:flex kbd { background: #1A1438; border-color: #342D60; color: #F2F0FA; }
+
+/* Nov 26 2026 (the full page check): a grid cell's smallest width is its longest unbroken line, so a card
+   holding one-line (truncated) text pushed the page wider than a phone on Help, Publish changes, the Social
+   media calendar and Social posts. Cells may now shrink to their column. */
+.ttfc-admin main .grid > * { min-width: 0; }

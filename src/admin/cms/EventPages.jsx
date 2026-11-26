@@ -13,7 +13,7 @@ import { HelpLabel } from "../HelpButton";
 import { useAdminEvent } from "../eventContext";
 import useCmsStatus from "./useCmsStatus";
 import { eventPath } from "../../lib/events";
-import { WorkflowBanner } from "./workflow";
+import { PublishFlow, WorkflowBanner } from "./workflow";
 import { changeState, stagingUrl } from "./workflowState";
 import { ReadinessCard } from "./ReadinessCard";
 import { useReadiness } from "./useReadiness";
@@ -239,15 +239,13 @@ function Editor({ ev, events, readOnly, onSaved, onGone }) {
           <Badge tone={st.tone}>{st.label}</Badge>
           {dirty && <Badge tone="warn">Not saved</Badge>}
         </>}
-        description={`${form.name || ev.name} · ${path}. Save your changes, send them to staging, check them there, then publish to the live website.`}
-        actions={<>
-          <AutosaveNote auto={auto} className="self-center" />
-          <Button variant="secondary" onClick={onSave} disabled={disabled || !dirty}>{busy === "save" ? "Saving…" : "Save"}</Button>
-          <Button variant="secondary" icon={Send} onClick={onStage} disabled={disabled || (!dirty && !ev.hasDraft)}>{busy === "stage" ? "Sending…" : "Send to staging"}</Button>
-          <Button variant="secondary" icon={Eye} onClick={onOpenStaging} disabled={!ev.staged}>Open on staging</Button>
-          <Button variant="primary" icon={publishBlocked ? Lock : Upload} onClick={onPublish} disabled={disabled || !ev.staged || publishBlocked}
-            title={publishWhy || (ev.hasDraft || dirty ? "Publishes the version on staging. Newer changes need to go to staging first." : undefined)}>{busy === "publish" ? "Publishing…" : "Publish to live"}</Button>
-        </>}
+        description={`${form.name || ev.name} · ${path}`}
+        actions={(
+          <PublishFlow dirty={dirty} hasDraft={!!ev.hasDraft} staged={!!ev.staged} busy={busy || ""} disabled={readOnly} onOpenStaging={onOpenStaging}
+            onSave={onSave} onStage={onStage} onPublish={onPublish} publishBlocked={publishBlocked} publishWhy={publishWhy}>
+            <AutosaveNote auto={auto} className="self-center" />
+          </PublishFlow>
+        )}
       />
       <ReadinessCard r={ready} />
 

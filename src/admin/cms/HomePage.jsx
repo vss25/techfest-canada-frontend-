@@ -11,7 +11,7 @@ import { uploadRaw } from "./uploadFile";
 import { heroVideoSrc } from "../../lib/siteFiles";
 import { useAdminEvent } from "../eventContext";
 import { CmsBanners } from "./CmsParts";
-import { ChangeBadge } from "./workflow";
+import { ChangeBadge, PublishFlow } from "./workflow";
 import { stagingUrl } from "./workflowState";
 import useCmsStatus from "./useCmsStatus";
 import { useAutosave } from "./useAutosave";
@@ -172,20 +172,14 @@ export default function HomePage() {
         description="One home page for the whole site: its headline, picture and video, the speakers to highlight, and the sections under it. Nothing reaches visitors until you send it to staging and publish."
         status={doc && <ChangeBadge doc={doc} />}
         actions={(
-          <>
+          <PublishFlow dirty={dirty} hasDraft={!!(doc && doc.hasDraft)} staged={!!(doc && doc.staged)} busy={saving ? "save" : ""} disabled={readOnly} stagingHref={stagingUrl("/")}
+            onSave={() => save().then((ok) => { if (ok) { auto.markSaved(); toast.success("Saved. It isn't on the website yet."); } })}
+            onStage={() => setConfirm("stage")} onPublish={() => setConfirm("publish")}>
             <AutosaveNote auto={auto} />
-            <Button onClick={() => save().then((ok) => { if (ok) { auto.markSaved(); toast.success("Saved. It isn't on the website yet."); } })} loading={saving} disabled={!dirty || readOnly}>Save</Button>
-            <Button icon={Send} onClick={() => setConfirm("stage")} disabled={readOnly || (!dirty && !(doc && doc.hasDraft))}>Send to staging</Button>
-            <Button variant="primary" onClick={() => setConfirm("publish")} disabled={readOnly || dirty || !(doc && doc.staged) || !!(doc && doc.hasDraft)} title={doc && doc.staged && !dirty && !doc.hasDraft ? "" : "Send your changes to staging first"}>Publish to live</Button>
-          </>
+          </PublishFlow>
         )}
       />
       <CmsBanners configured={configured} />
-      {doc && doc.staged && !doc.hasDraft && !dirty && (
-        <Banner tone="info" className="mb-4" action={<a href={stagingUrl("/")} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-ttfc-pink hover:underline">Open the staging site <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></a>}>
-          Your changes are on staging. Check the home page there, then press Publish to live.
-        </Banner>
-      )}
 
       <div className="max-w-2xl space-y-5">
         <Card>

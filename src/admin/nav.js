@@ -86,7 +86,9 @@ export const WORKSPACES = [
       { to: "content/organisations", label: "Attending organisations", icon: Building2 },
     ] },
   ] },
-  { id: "marketing", label: "Marketing", rail: RAIL.mkt, job: "Reaching people: social posts, leads coming in and the emails we send.", groups: [
+  // Nov 26 2026 (step 4 of the redesign): every lead in one group here (Hot leads and the Waitlist were in Sales);
+  // emails and promo codes together.
+  { id: "marketing", label: "Marketing", rail: RAIL.mkt, job: "Reaching people: social posts, the leads coming in, and the emails and offers we send.", groups: [
     // Nov 18 2026: the approved design's Social group. Claude writes the X and Instagram versions.
     { title: "Social", items: [
       { to: "calendar", label: "Social media calendar", icon: CalendarRange },
@@ -96,48 +98,47 @@ export const WORKSPACES = [
       // Nov 22 2026: drafts management post on their own LinkedIn profiles (researched, sourced, fact-checked).
       { to: "linkedin-posts", label: "LinkedIn posts for my profile", icon: PenLine, management: true },
     ] },
-    // Nov 18 2026: staff add codes; big discounts wait for a manager.
-    { title: "Offers", items: [
-      { to: "promo-codes", label: "Promo codes", icon: Percent },
-    ] },
     { title: "Leads", items: [
       { to: "form-submissions", label: "Form submissions", icon: Inbox },
+      // Nov 20 2026: people who replied with interest to our Explee outreach, synced by themselves.
+      { to: "hot-leads", label: "Hot leads", icon: Flame },
+      // "Stay updated" (Oct 23 2026): who joined the TTFC 2027 waitlist, and the page's wording.
+      { to: "waitlist-2027", label: "Waitlist", icon: ListPlus },
       { to: "brochure-downloads", label: "Downloads", icon: FileDown },
     ] },
-    { title: "Emails", items: [
+    { title: "Emails & offers", items: [
       { to: "purchase-email", label: "Purchase email", icon: MailOpen },
       { to: "app/invite", label: "App invite email", icon: MailPlus },
       { to: "app/digest", label: "“What you missed” emails", icon: MailOpen },
       { to: "marketing/attending", label: "I'm attending campaign", icon: Share2 },
+      // Nov 18 2026: staff add codes; big discounts wait for a manager.
+      { to: "promo-codes", label: "Promo codes", icon: Percent },
       { to: "app/unsubscribes", label: "Unsubscribed", icon: MailX },
     ] },
   ] },
-  { id: "sales", scoped: true, label: "Sales", rail: RAIL.sales, job: "Selling sponsorship and exhibiting: contracts, enquiries, exhibitors and revenue.", groups: [
+  { id: "sales", scoped: true, label: "Sales", rail: RAIL.sales, job: "Selling sponsorship and exhibiting: contracts, exhibitors and revenue.", groups: [
     // Nov 18 2026: contracts built from the offerings catalogue (only the super admin edits the catalogue).
-    { title: "Contracts", items: [
+    { title: "Agreements", items: [
       { to: "contracts", label: "Contracts", icon: FileSignature },
-      { to: "offerings", label: "Offerings", icon: Boxes },
       // Nov 23 2026: MOUs with community, media and ecosystem partners, from their own catalogue.
       { to: "mous", label: "MOUs", icon: Handshake },
-      { to: "mou-items", label: "MOU catalogue", icon: ListTodo },
     ] },
-    { title: "Enquiries", items: [
-      // Nov 20 2026: people who replied with interest to our Explee outreach, synced by themselves.
-      { to: "hot-leads", label: "Hot leads", icon: Flame },
+    { title: "Exhibitors & outreach", items: [
+      { to: "exhibitor-passes", label: "Exhibitor passes", icon: Store },
       // Nov 20 2026: who took part in an earlier event and isn't part of the chosen one yet (to invite back).
       { to: "past-participants", label: "Past participants", icon: History },
-      // "Stay updated" (Oct 23 2026): who joined the TTFC 2027 waitlist, and the page's wording.
-      { to: "waitlist-2027", label: "Waitlist", icon: ListPlus },
       // Nov 20 2026: only TTFC 2026 had an India Pavilion (onlyEvent: shown in the menu for that event alone).
       { to: "india-pavilion", label: "India Pavilion", icon: Landmark, onlyEvent: "ttfc-2026-main" },
     ] },
-    { title: "Exhibitors", items: [
-      { to: "exhibitor-passes", label: "Exhibitor passes", icon: Store },
-    ] },
     { title: "Revenue", items: [
       { to: "analytics", label: "Revenue", icon: BarChart3, management: true },
-      // TTFC 2026's passes and booths (sold and left, prices); each 2027 event's tickets are in Content › Tickets & prices.
+      // TTFC 2026's passes and booths (sold and left, prices); each 2027 event's tickets are in the event's Tickets tab.
       { to: "inventory", label: "2026 pass inventory", icon: Package, onlyEvent: "ttfc-2026-main" },
+    ] },
+    // What contracts and MOUs are built from: set up once, rarely changed.
+    { title: "Catalogues", items: [
+      { to: "offerings", label: "Offerings", icon: Boxes },
+      { to: "mou-items", label: "MOU catalogue", icon: ListTodo },
     ] },
   ] },
   { id: "people", label: "People", rail: RAIL.people, job: "Find anyone, give passes, fix records.", groups: [

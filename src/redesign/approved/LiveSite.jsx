@@ -845,7 +845,8 @@ export default function ApprovedRoute({ fallback = null }) {
       });
       return out;
     },
-    types: types ? types.map((t) => ({ id: t.id, name: t.name, note: t.description, cents: t.priceCents })) : undefined,
+    // `c` as well as `cents`: the phone board prices tickets from t.c (it showed "$NaN" until Nov 26 2026).
+    types: types ? types.map((t) => ({ id: t.id, name: t.name, note: t.description, cents: t.priceCents, c: t.priceCents })) : undefined,
     sessionsData,
     PT: partnerRows ? (base) => {
       const out = {};

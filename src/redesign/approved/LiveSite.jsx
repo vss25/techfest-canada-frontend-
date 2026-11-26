@@ -98,9 +98,22 @@ class LiveSite extends ApprovedSite {
     this.onSpkResize = () => { const c = speakerCols(); if (c !== this.state.spkCols) this.setState({ spkCols: c }); };
     this.onSpkResize();
     window.addEventListener("resize", this.onSpkResize);
+    // Nov 26 2026 (the owner: "I am unable to click outside the drop down area and dismiss it"): the events
+    // menu and More close on a click anywhere else, and on Escape. Their own buttons still toggle them.
+    this.onAwayDown = (e) => {
+      if (!this.state.menu && !this.state.more) return;
+      const t = e.target;
+      if (t && t.closest && t.closest(".p-menu, button[aria-expanded]")) return;
+      this.setState({ menu: false, more: false });
+    };
+    this.onMenuKey = (e) => { if (e.key === "Escape" && (this.state.menu || this.state.more)) this.setState({ menu: false, more: false }); };
+    document.addEventListener("pointerdown", this.onAwayDown);
+    document.addEventListener("keydown", this.onMenuKey);
   }
   componentWillUnmount() {
     window.removeEventListener("resize", this.onSpkResize);
+    document.removeEventListener("pointerdown", this.onAwayDown);
+    document.removeEventListener("keydown", this.onMenuKey);
     if (super.componentWillUnmount) super.componentWillUnmount();
   }
   /* Nov 23 2026 (event data audit): the speaker drawer only opens from Toronto 2026's speakers (the home and

@@ -592,3 +592,26 @@ html.nx-reveal .ap-root .nx-logo-run[data-nx-r]:not(.nx-seen) { transform: none;
   .ap-root .nx-grid3.nx-grid3-sp { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .ap-root .nx-globe-ring { animation: none; } }
+
+/* ---------- The events menu: categories read as categories (Nov 26 2026, the owner) ----------
+   "City Briefings", "National Festival" and "Past events" were small grey lines that looked like one more row.
+   Now each is a heading: pink capitals with a rule running to the edge, and the events under it sit indented
+   on a guide line, so it's plain which events belong to which. Home stays flush: it isn't in a category. */
+.ap-root .p-menu[aria-label="Choose an event"] > span {
+  display: flex !important; align-items: center; gap: 10px; margin-top: 12px !important; padding: 6px 12px 8px !important;
+  border-top: 0 !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.14em !important;
+  text-transform: uppercase !important; color: var(--nl-pink) !important; cursor: default; user-select: none;
+}
+.ap-root .p-menu[aria-label="Choose an event"] > span::after { content: ""; flex: 1; height: 1px; background: var(--nl-line2, var(--nl-line)); }
+.ap-root .p-menu[aria-label="Choose an event"] > span ~ a {
+  margin-left: 14px; padding-left: 14px !important; border-left: 2px solid var(--nl-line2, var(--nl-line));
+  border-radius: 0 8px 8px 0 !important;
+}
+.ap-root .p-menu[aria-label="Choose an event"] > span ~ a:hover,
+.ap-root .p-menu[aria-label="Choose an event"] > span ~ a:focus-visible { border-left-color: var(--nl-pink); }
+/* Phones: the same headings in the menu sheet. */
+.ap-phone .ap-root a.m-press ~ span[style*="letter-spacing: 0.1em"] {
+  display: flex !important; align-items: center; gap: 10px; margin-top: 14px !important; padding: 6px 2px !important;
+  letter-spacing: 0.14em !important; color: var(--nl-pink) !important;
+}
+.ap-phone .ap-root a.m-press ~ span[style*="letter-spacing: 0.1em"]::after { content: ""; flex: 1; height: 1px; background: var(--nl-line2, var(--nl-line)); }

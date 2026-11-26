@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { EDIT_FRAME } from "../../lib/siteCopy";
 import { useLocation, useNavigate } from "react-router-dom";
 import ApprovedSite from "./ApprovedSite";
 import VideoFacade from "./VideoFacade";
@@ -82,6 +83,11 @@ const speakerCols = () => {
   const w = Math.min(1280, document.documentElement.clientWidth || 1280) - 64;
   return Math.max(1, Math.floor((w + 24) / (220 + 24)));
 };
+/* "The visitor chose Home" for this visit (this tab), so "/" shows the home page instead of the next event. */
+const HOME_KEY = "ttfc.home.chosen";
+function homeChosen() { try { return sessionStorage.getItem(HOME_KEY) === "1"; } catch { return false; } }
+function chooseHome() { try { sessionStorage.setItem(HOME_KEY, "1"); } catch { /* storage off: Home still opens through location.state */ } }
+
 class LiveSite extends ApprovedSite {
   static getDerivedStateFromProps(props, state) {
     const homeCity = props.homeCity || "van";
@@ -639,7 +645,7 @@ export default function ApprovedRoute({ fallback = null }) {
   const base = routeFor(location.pathname);
   // goSec from another screen lands on the event page with the section to scroll to.
   const route = base && location.state && location.state.sec ? { ...base, sec: location.state.sec } : base;
-  const { events } = useEvents();
+  const { events, loading: eventsLoading } = useEvents();
   const [typesFor, setTypesFor] = useState({ key: "", list: null });
   // The countdown moves on every minute.
   const [now, setNow] = useState(() => Date.now());
@@ -857,7 +863,8 @@ export default function ApprovedRoute({ fallback = null }) {
       return out;
     },
     // `c` as well as `cents`: the phone board prices tickets from t.c (it showed "$NaN" until Nov 26 2026).
-    types: types ? types.map((t) => ({ id: t.id, name: t.name, note: t.description, cents: t.priceCents, c: t.priceCents })) : undefined,
+    // `inclusions`: what the ticket includes (Admin › Tickets), shown in the purchase panel and on the passes.
+    types: types ? types.map((t) => ({ id: t.id, name: t.name, note: t.description, cents: t.priceCents, c: t.priceCents, inclusions: t.inclusions || [] })) : undefined,
     sessionsData,
     PT: partnerRows ? (base) => {
       const out = {};
@@ -883,13 +890,35 @@ export default function ApprovedRoute({ fallback = null }) {
       : route && route.screen === "speaker" && speakerDoc ? speakerDoc.role || undefined : undefined,
   );
 
+  // ---- Where "/" lands (Nov 26 2026, the owner) ----
+  // "Load the website with vancouver pill selected and its header (even when I share thetechfestival.com with
+  // anyone) but allow customers to manually select home": someone arriving at "/" goes to the NEXT event's page
+  // (Vancouver until it is over, then the one after), so the pill, the banner and Agenda all agree. Choosing Home
+  // on the site (the pill, the logo, a Home link) shows the home page, with its own banner, for the rest of that
+  // visit. "/?home=1" also opens the home page (the admin's links use it), and the admin's text editor always does.
+  const nextCity = useMemo(() => homeCityFor(null, byCity, new Date(now).toISOString().slice(0, 10)), [byCity, now]);
+  const wantsHome = (location.state && location.state.home) || homeChosen() || /[?&]home=1\b/.test(location.search || "")
+    || (typeof window !== "undefined" && window.name === EDIT_FRAME);
+  const landing = !!route && route.screen === "home" && !wantsHome;
+  useEffect(() => {
+    if (landing && !eventsLoading) navigate(cityPath(nextCity), { replace: true });
+  }, [landing, eventsLoading, nextCity, navigate]);
+  // Going Home from anywhere on the site is the visitor's own choice: remembered for this visit.
+  const go = useCallback((to, opts) => {
+    if (to !== "/") { navigate(to, opts); return; }
+    chooseHome();
+    navigate(to, { ...(opts || {}), state: { ...((opts && opts.state) || {}), home: true } });
+  }, [navigate]);
+
   if (!route) return fallback;
+  // While "/" is on its way to the next event, an empty dark page (no flash of the home banner).
+  if (landing) return <div aria-busy="true" style={{ minHeight: "100vh", background: "#0C091F" }} />;
   const View = phone && PHONE_SCREENS.includes(route.screen) ? LivePhone : LiveSite;
   return (
     <View
       route={route}
       routeKey={location.pathname + "|" + location.key}
-      navigate={navigate}
+      navigate={go}
       data={data}
       ptCount={partners2026 && partners2026.length ? partners2026.length : 0}
       ptDefaultYear={ptDefaultYear}

@@ -191,7 +191,7 @@ export default function HomePage() {
         description="One home page for the whole site: its headline, picture and video, the speakers to highlight, and the sections under it. Nothing reaches visitors until you send it to staging and publish."
         status={doc && <ChangeBadge doc={doc} />}
         actions={(
-          <PublishFlow dirty={dirty} hasDraft={!!(doc && doc.hasDraft)} staged={!!(doc && doc.staged)} busy={saving ? "save" : ""} disabled={readOnly} stagingHref={stagingUrl("/")}
+          <PublishFlow dirty={dirty} hasDraft={!!(doc && doc.hasDraft)} staged={!!(doc && doc.staged)} busy={saving ? "save" : ""} disabled={readOnly} stagingHref={stagingUrl("/?home=1")}
             onSave={() => save().then((ok) => { if (ok) { auto.markSaved(); toast.success("Saved. It isn't on the website yet."); } })}
             onStage={() => setConfirm("stage")} onPublish={() => setConfirm("publish")}>
             <AutosaveNote auto={auto} />

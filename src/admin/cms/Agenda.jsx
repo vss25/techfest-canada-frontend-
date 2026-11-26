@@ -2,7 +2,7 @@ import { useId, useMemo, useState } from "react";
 import { useAutosave } from "./useAutosave";
 import { AutosaveNote } from "./AutosaveNote";
 import {
-  AlertTriangle, ArrowDown, ArrowUp, CalendarDays, Clock, Coffee, Copy, Download, Mic, Pencil, Plus, Star, Trash2, UserRound, X,
+  AlertTriangle, ArrowDown, ArrowUp, CalendarDays, Clock, Coffee, Copy, Download, ListChecks, Mic, Pencil, Plus, Star, Trash2, UserRound, X,
 } from "lucide-react";
 import { useApi } from "../hooks";
 import { api } from "../api";
@@ -12,6 +12,8 @@ import {
   Switch, TableWrap, Tabs, Textarea, focusRing,
 } from "../ui";
 import { CmsBanners } from "./CmsParts";
+import SessionMedia from "./SessionMedia";
+import { useAdmin } from "../adminContext";
 import { ReadinessStrip } from "./ReadinessCard";
 import { ChangeBadge } from "./workflow";
 import { changeState } from "./workflowState";
@@ -23,7 +25,9 @@ import {
 } from "./sessionLive";
 import { SESSIONS, DAYS, buildSpeakerIndex, matchSpeaker, formatTime12, getDuration } from "../../data/agenda";
 import { approvedAgendaFor } from "../../data/approvedAgendas";
-import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS, SESSION_TYPE_SUGGESTIONS } from "../../data/sessionFormats";
+import { FORMAT_KEYS, FORMAT_MAP, PILLARS, SECTORS } from "../../data/sessionFormats";
+import { AgendaTypesDialog } from "./AgendaTypes";
+import { useAgendaTypes } from "./useAgendaTypes";
 import { useEditFromUrl } from "../search/deepLink";
 import { useAdminEvent } from "../eventContext";
 import { useAdminTheme } from "../theme";
@@ -51,7 +55,7 @@ function FormatBadge({ format }) {
 const blank = (day) => ({
   title: "", day, time: "09:00", endTime: "09:30", type: "", format: "keynote", featured: false, isBreak: false,
   pillar: "", sector: "", stage: "", description: "", speakers: [], moderator: { name: "", org: "" },
-  polls: "auto", qa: "auto", events: [],
+  polls: "auto", qa: "auto", events: [], image: { assetId: null, url: "" }, mediaUrl: "",
 });
 
 const refIds = (d) => (d?.events || []).map((r) => r?._ref).filter(Boolean);
@@ -63,6 +67,8 @@ const toForm = (d) => ({
   speakers: (d.speakers || []).map((p) => ({ name: p.name || "", org: p.org || "", tentative: !!p.tentative })),
   moderator: { name: d.moderator?.name || "", org: d.moderator?.org || "" },
   polls: liveMode(d.polls), qa: liveMode(d.qa), events: refIds(d),
+  // The card's picture and GIF / video (SessionMedia.jsx). imageUrl comes with the list (image.asset->url).
+  image: { assetId: null, url: d.imageUrl || "" }, mediaUrl: d.mediaUrl || "",
 });
 
 /** Form → request body. Speakers/moderator are sent as plain objects (the server adds _key). */
@@ -76,6 +82,11 @@ function toBody(form, original) {
     pillar: form.pillar || null, sector: form.sector || null, stage: form.stage.trim() || null,
     description: form.description.trim() || null, speakers: people, moderator: mod,
   };
+  // The card's media: a newly uploaded picture, or null when it was removed; the GIF / video when it changed.
+  if (form.image.assetId) body.image = form.image.assetId;
+  else if (original && original.imageUrl && !form.image.url) body.image = null;
+  const media = (form.mediaUrl || "").trim();
+  if (original ? media !== (original.mediaUrl || "") : media) body.mediaUrl = media || null;
   if (!original) {
     // Creating: drop empty optional fields instead of "unsetting" them.
     for (const k of Object.keys(body)) if (body[k] === null) delete body[k];
@@ -162,13 +173,13 @@ function dayLabel(d, ev) {
   return `${DAYS[d].label} · ${DAYS[d].date}`;
 }
 
-function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = [], all, speakerIndex, speakerNames, readOnly, globalLive, onClose, onSaved, onAutoSaved, onDuplicate, onDelete, onShift }) {
+function SessionDrawer({ types = [], onEditTypes, doc, creating, defaultDay, defaultEventId, eventList = [], all, speakerIndex, speakerNames, readOnly, globalLive, onClose, onSaved, onAutoSaved, onDuplicate, onDelete, onShift }) {
   const toast = useToast();
   // Whose dates the Day picker shows: the event the agenda is filtered to, else the session's own first event.
   const dayEvent = eventList.find((e) => e._id === (defaultEventId || refIds(doc)[0]));
   const listId = useId();
-  const typeListId = useId();
   const [form, setForm] = useState(() => (doc ? toForm(doc) : { ...blank(defaultDay), events: defaultEventId ? [defaultEventId] : [] }));
+  const { isManagement } = useAdmin();
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v?.target ? (v.target.type === "checkbox" ? v.target.checked : v.target.value) : v }));
@@ -199,7 +210,7 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
     if (isAuto) {
       // Autosave: saved as a draft, quietly, and the editor stays open.
       const saved = creating ? await api.post("/cms/session?draft=1", body) : await api.patch(`/cms/session/${doc._id}?draft=1`, body);
-      onAutoSaved({ ...(doc || {}), ...body, ...(saved || {}), hasDraft: true });
+      onAutoSaved({ ...(doc || {}), ...body, ...(saved || {}), hasDraft: true, imageUrl: form.image.url, mediaUrl: (form.mediaUrl || "").trim() });
       return true;
     }
     setSaving(true);
@@ -207,7 +218,7 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
       const saved = creating ? await api.post("/cms/session?draft=1", body) : await api.patch(`/cms/session/${doc._id}?draft=1`, body);
       auto.markSaved();
       toast.success(creating ? `Session added. ${LIVE_NOTE}` : `Saved. ${LIVE_NOTE}`);
-      onSaved({ ...(doc || {}), ...body, ...(saved || {}) });
+      onSaved({ ...(doc || {}), ...body, ...(saved || {}), imageUrl: form.image.url, mediaUrl: (form.mediaUrl || "").trim() });
     } catch (err) { toast.error(err); } finally { setSaving(false); }
   };
 
@@ -237,7 +248,6 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
       </>}
     >
       <datalist id={listId}>{speakerNames.map((n) => <option key={n} value={n} />)}</datalist>
-      <datalist id={typeListId}>{SESSION_TYPE_SUGGESTIONS.map((n) => <option key={n} value={n} />)}</datalist>
       <form id="session-form" onSubmit={save} className="space-y-5" noValidate>
         <Field label="Title" required error={errors.title}>
           {(id) => <Input id={id} value={form.title} onChange={set("title")} maxLength={200} disabled={readOnly} data-autofocus />}
@@ -255,10 +265,21 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Session type label" hint="Shown on the card, e.g. “Fireside Chat”.">
-            {(id) => <Input id={id} value={form.type} onChange={set("type")} list={typeListId} maxLength={60} disabled={readOnly} placeholder="Keynote" />}
-          </Field>
-          <Field label="Format" hint="Sets the colour and badge on the agenda.">{(id) => (
+          <Field label="Session type" hint={<>Shown on the session, e.g. “Case Study”. {onEditTypes && !readOnly && (
+            <button type="button" onClick={onEditTypes} className={`font-semibold text-ttfc-pink underline-offset-2 hover:underline ${focusRing}`}>Add or edit types</button>
+          )}</>}>{(id) => (
+            <Select id={id} value={form.type} disabled={readOnly}
+              onChange={(e) => {
+                const v = e.target.value;
+                const t = types.find((x) => x.label === v);
+                setForm((f) => ({ ...f, type: v, ...(t ? { format: t.format } : {}) }));
+              }}>
+              <option value="">Not set</option>
+              {types.map((t) => <option key={t.label} value={t.label}>{t.label}</option>)}
+              {form.type && !types.some((t) => t.label === form.type) && <option value={form.type}>{form.type} (not in the list)</option>}
+            </Select>
+          )}</Field>
+          <Field label="Colour" hint="Set by the session type; change it here for just this session.">{(id) => (
             <Select id={id} value={form.format} onChange={set("format")} disabled={readOnly}>
               <option value="">Not set</option>
               {FORMAT_KEYS.map((k) => <option key={k} value={k}>{FORMAT_MAP[k]?.label || k}</option>)}
@@ -354,6 +375,8 @@ function SessionDrawer({ doc, creating, defaultDay, defaultEventId, eventList = 
         <Field label="Description" hint={`${form.description.length}/1500 — optional.`}>
           {(id) => <Textarea id={id} rows={4} value={form.description} onChange={set("description")} maxLength={1500} disabled={readOnly} />}
         </Field>
+
+        <SessionMedia form={form} setForm={setForm} readOnly={readOnly} canUploadFile={isManagement && !readOnly} />
       </form>
     </EditPanel>
   );
@@ -517,6 +540,8 @@ export default function Agenda() {
   const { data, error, loading, reload, setData } = useApi("/cms/session?drafts=1");
   const speakers = useApi("/cms/speaker?drafts=1");
   const eventsApi = useApi("/cms/event?drafts=1");
+  const agendaTypes = useAgendaTypes();
+  const [typesOpen, setTypesOpen] = useState(false);
   const eventList = useMemo(() => (eventsApi.data || []).filter((e) => e?.name), [eventsApi.data]);
   // The event chosen in the top bar (the approved design's switcher), unless this page picks "All events".
   const { current: chosenEvent } = useAdminEvent();
@@ -661,6 +686,8 @@ export default function Agenda() {
                 Import Toronto 2026 agenda ({missing})
               </Button>
             )}
+            <Button icon={ListChecks} disabled={readOnly} onClick={() => setTypesOpen(true)}
+              title="The choices in the Session type dropdown: add case studies, roundtables, receptions and more">Session types</Button>
             {(allSessions.length > 0 || eventId) && <Button variant="primary" icon={Plus} disabled={readOnly} onClick={() => setEditing({ doc: null, creating: true, key: Date.now() })}>Add session</Button>}
           </div>
         )}
@@ -724,6 +751,8 @@ export default function Agenda() {
 
       {editing && (
         <SessionDrawer
+          types={agendaTypes.types}
+          onEditTypes={() => setTypesOpen(true)}
           key={editing.key}
           doc={editing.doc}
           creating={editing.creating}
@@ -769,6 +798,7 @@ export default function Agenda() {
           if (editing?.doc?._id === deleting._id) setEditing(null);
         }}
       />
+      <AgendaTypesDialog open={typesOpen} onClose={() => setTypesOpen(false)} types={agendaTypes.types} onSaved={agendaTypes.set} />
     </>
   );
 }

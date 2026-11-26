@@ -17,18 +17,19 @@ export const THEME_KEY = "ttfc.admin.theme";
 export const THEME_CHOICES = ["system", "light", "dark"];
 const ATTR = "data-admin-theme";
 
+/** The saved choice. Nothing saved = "light" (the approved design's look); dark only when someone picks it (Nov 25 2026). */
 export function readThemeChoice() {
   try {
     const v = window.localStorage.getItem(THEME_KEY);
-    return THEME_CHOICES.includes(v) ? v : "system";
+    return THEME_CHOICES.includes(v) ? v : "light";
   } catch {
-    return "system";
+    return "light";
   }
 }
 
 function saveThemeChoice(choice) {
   try {
-    if (choice === "system") window.localStorage.removeItem(THEME_KEY);
+    if (choice === "light") window.localStorage.removeItem(THEME_KEY);
     else window.localStorage.setItem(THEME_KEY, choice);
   } catch { /* storage off: the choice lasts until the page closes */ }
 }
@@ -63,8 +64,8 @@ export function useAdminThemeRoot() {
     return () => window.removeEventListener("storage", on);
   }, []);
 
-  // The approved admin design (Nov 2026) has one light look: the saved choice is kept but no longer applied.
-  const theme = "light";
+  // Light by default; Dark or "Match my device" from the account menu (Nov 25 2026: "Add dark mode option", admin only).
+  const theme = resolveTheme(choice, sysDark);
   useLayoutEffect(() => { document.documentElement.setAttribute(ATTR, theme); }, [theme]);
   useLayoutEffect(() => () => document.documentElement.removeAttribute(ATTR), []);
 
@@ -78,7 +79,14 @@ export function useAdminThemeRoot() {
   return useMemo(() => ({ choice, theme, systemTheme, setChoice }), [choice, theme, systemTheme, setChoice]);
 }
 
-export const AdminThemeContext = createContext({ choice: "system", theme: "dark", systemTheme: "dark", setChoice: () => {} });
+export const AdminThemeContext = createContext({ choice: "light", theme: "light", systemTheme: "light", setChoice: () => {} });
+
+/** The account menu's choices, in order. */
+export const THEME_OPTIONS = Object.freeze([
+  { key: "light", label: "Light" },
+  { key: "dark", label: "Dark" },
+  { key: "system", label: "Match my device" },
+]);
 /** { choice, theme, systemTheme, setChoice } of the panel's theme (see useAdminThemeRoot). */
 export const useAdminTheme = () => useContext(AdminThemeContext);
 

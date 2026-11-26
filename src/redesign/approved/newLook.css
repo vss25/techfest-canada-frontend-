@@ -149,15 +149,17 @@ html[data-site-theme="dark"] .ap-root .nx-logos img { filter: brightness(0) inve
  ticking glass countdown, the date as a ticket stub, ticket barcodes, a navy sign-up panel, rings on speakers.
  Still the colour rules: pink for live / where you are, gold only on ticket buttons.
 ========================================================= */
+/* Nov 26 2026 (the owner: "remove the spot light from top from the hero images/videos"): the two beams no longer
+   sweep across the banners (home, event and page banners), on computers or phones. The brochure panel keeps them. */
 @keyframes nx-beam-a { 0%, 100% { transform: rotate(20deg); } 50% { transform: rotate(7deg); } }
 @keyframes nx-beam-b { 0%, 100% { transform: rotate(-22deg); } 50% { transform: rotate(-9deg); } }
-.ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::before,
-.ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::after {
+.ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::before,
+.ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::after {
   content: ""; position: absolute; z-index: 1; top: -40%; width: 30%; height: 180%; pointer-events: none; transform-origin: top center;
   filter: blur(10px); background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 70%);
 }
-.ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::before { left: 26%; animation: nx-beam-a 9s ease-in-out infinite; }
-.ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::after { right: 10%; animation: nx-beam-b 11s ease-in-out infinite; background: linear-gradient(180deg, rgba(197, 64, 138, 0.22), rgba(197, 64, 138, 0) 70%); }
+.ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::before { left: 26%; animation: nx-beam-a 9s ease-in-out infinite; }
+.ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::after { right: 10%; animation: nx-beam-b 11s ease-in-out infinite; background: linear-gradient(180deg, rgba(197, 64, 138, 0.22), rgba(197, 64, 138, 0) 70%); }
 .ap-root :is(.nl-hero, .nl-evhero) > :is(.p-in, .m-in), .ap-root .nx-hero-in { z-index: 2; }
 
 /* Spotlight: a soft pink light under the pointer (useNewLookEffects.js sets --x / --y). */
@@ -231,7 +233,7 @@ html[data-site-theme="dark"] .ap-root section.nl-panel > div, html[data-site-the
   .ap-root section.nl-panel > div { margin: 40px 16px !important; padding: 28px 20px !important; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::before, .ap-root :is(.nl-hero, .nl-evhero, .nx-hero, section.nl-panel > div, .ap-phone section.nl-panel)::after { animation: none; }
+  .ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::before, .ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::after { animation: none; }
   .ap-root .nx-pass:hover { transform: none; }
 }
 

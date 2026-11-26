@@ -5,6 +5,8 @@ import VideoFacade from "./VideoFacade";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import WhyComeBox, { WhyComeBody } from "../../components/WhyComeBox";
 import { resolveWhy } from "../../lib/whyCome";
+import { openCallBooking } from "./bookCall";
+import WhyWheel from "./WhyWheel";
 import { heroVideoSrc } from "../../lib/siteFiles";
 import { heroShadeBackground } from "../../lib/heroShade";
 import { HOME_HEIGHTS, heroHeights, heroPosition } from "../../lib/heroFrame";
@@ -314,7 +316,9 @@ class LiveSite extends ApprovedSite {
       v.whyEyebrow = v.c.why.eyebrow;
       v.whyHeading = v.c.why.heading;
       v.whyBody = <WhyComeBody why={v.c.why} />;
-      v.whyBox = <WhyComeBox key={v.c.id} why={v.c.why} />;
+      // Nov 26 2026 (the owner: "use this element on why come section"): the designer's icon wheel stands in
+      // wherever no photo, GIF or video has been chosen for the event in Admin › Event page › Why come.
+      v.whyBox = v.c.why.media && v.c.why.media.kind === "default" ? <WhyWheel height={v.c.why.boxHeight} /> : <WhyComeBox key={v.c.id} why={v.c.why} />;
     }
     const past = this.props.past2026;
     if (past) {
@@ -336,6 +340,8 @@ class LiveSite extends ApprovedSite {
     v.prevSlide = () => this.setState({ slide: Math.max(0, slide - 1) });
     v.nextSlide = () => this.setState({ slide: Math.min(maxSlide, slide + 1) });
     v.fakeLoad = (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ auth: "login", authStep2: false }); };
+    // Nov 26 2026: the partner form's "Book a 30-minute call" opens TTFC's calendar in a panel (bookCall.js).
+    v.bookCall = (e) => { if (e && e.preventDefault) e.preventDefault(); openCallBooking(); };
     v.moreToast = (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ more: false }); this.props.navigate(PAGE_PATH.contact); };
     v.sendFiles = (e) => {
       const f = fieldsNear(at(e));

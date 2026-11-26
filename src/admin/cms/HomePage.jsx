@@ -169,7 +169,7 @@ export default function HomePage() {
     <div>
       <PageHeader
         title="Home page"
-        description="By default the home page follows the next event. Pin another event, give the top its own headline, picture or video, choose the speakers to highlight, and show, hide or reorder the sections. Nothing reaches visitors until you send it to staging and publish."
+        description="One home page for the whole site: its headline, picture and video, the speakers to highlight, and the sections under it. Nothing reaches visitors until you send it to staging and publish."
         status={doc && <ChangeBadge doc={doc} />}
         actions={(
           <>
@@ -190,27 +190,9 @@ export default function HomePage() {
       <div className="max-w-2xl space-y-5">
         <Card>
           <h2 className="text-base font-semibold">Top of the page</h2>
-          <p className="mb-4 mt-1 text-sm text-ttfc-muted">The event the home page opens with: its name, date, photo and a link to its page.</p>
-          <Field label="Event at the top of the page" hint={form.heroEvent ? "Pinned: it stays until you change it back to the next event." : "Moves on by itself once an event is over."}>
-            <Select value={form.heroEvent} onChange={(e) => setForm((f) => ({ ...f, heroEvent: e.target.value }))} disabled={readOnly}>
-              <option value="">{next ? `The next event (now ${next.name})` : "The next event"}</option>
-              {upcoming.map((e) => <option key={e._id} value={e._id}>{e.name}</option>)}
-              {pinned && !upcoming.includes(pinned) && <option value={pinned._id}>{pinned.name} (over)</option>}
-            </Select>
-          </Field>
-          {pinnedGone && <Banner tone="warn" className="mt-3">This event is over. Pick the next event so the home page keeps selling tickets.</Banner>}
-          {form.heroEvent && !pinned && events.length > 0 && <Banner tone="warn" className="mt-3">The pinned event can't be found any more, so the home page shows the next event.</Banner>}
-          <p className="mt-3 text-xs text-ttfc-muted">
-            Its photo or video and framing come from Event pages, unless you set the home page's own below. For other wording on the page, use{" "}
-            <Link to="/admin/content/site-copy" className="inline-flex items-center gap-1 font-semibold text-ttfc-pink hover:underline"><Type className="h-3.5 w-3.5" aria-hidden="true" />Website text & media</Link>.
-          </p>
-        </Card>
-
-        <Card>
-          <h2 className="text-base font-semibold">The home page's own words and media</h2>
-          <p className="mb-4 mt-1 text-sm text-ttfc-muted">Optional. Fill these in to give the top of the home page its own headline, picture or video instead of the event's. Leave a box empty and that part keeps following the event.</p>
+          <p className="mb-4 mt-1 text-sm text-ttfc-muted">The home page's headline, picture and video. There is one home page for the whole site: any box you leave empty is filled from the event chosen at the bottom of this card.</p>
           <div className="space-y-4">
-            <Field label="Small line above the headline" hint={`${form.heroEyebrow.length}/120. Empty = the event's date, city and theme.`}>
+            <Field label="Small line above the headline" hint={`${form.heroEyebrow.length}/120. Empty = that event's date, city and theme.`}>
               {(id) => <Input id={id} value={form.heroEyebrow} maxLength={120} disabled={readOnly} onChange={(e) => setForm((f) => ({ ...f, heroEyebrow: e.target.value }))} placeholder="2027 season · 6 events" />}
             </Field>
             <Field label="Headline" hint={`${form.heroHeadline.length}/160. Empty = the event's name.`}>
@@ -247,10 +229,25 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+          <div className="mt-5 border-t border-ttfc-line pt-4">
+          <Field label="Empty boxes are filled from" hint={form.heroEvent ? "Pinned: it stays on this event until you change it back to the next event." : "Moves on to the following event by itself once one is over."}>
+            <Select value={form.heroEvent} onChange={(e) => setForm((f) => ({ ...f, heroEvent: e.target.value }))} disabled={readOnly}>
+              <option value="">{next ? `The next event (now ${next.name})` : "The next event"}</option>
+              {upcoming.map((e) => <option key={e._id} value={e._id}>{e.name}</option>)}
+              {pinned && !upcoming.includes(pinned) && <option value={pinned._id}>{pinned.name} (over)</option>}
+            </Select>
+          </Field>
+          {pinnedGone && <Banner tone="warn" className="mt-3">This event is over. Pick the next event so the home page keeps selling tickets.</Banner>}
+          {form.heroEvent && !pinned && events.length > 0 && <Banner tone="warn" className="mt-3">The pinned event can't be found any more, so the home page shows the next event.</Banner>}
+            <p className="mt-3 text-xs text-ttfc-muted">
+              For other wording on the page, use{" "}
+              <Link to="/admin/content/site-copy" className="inline-flex items-center gap-1 font-semibold text-ttfc-pink hover:underline"><Type className="h-3.5 w-3.5" aria-hidden="true" />Website text & media</Link>.
+            </p>
+          </div>
         </Card>
 
         <Card>
-          <h2 className="text-base font-semibold">Who's on stage: choose the speakers</h2>
+          <h2 className="text-base font-semibold">Speakers to highlight</h2>
           <p className="mb-4 mt-1 text-sm text-ttfc-muted">Pick up to {HOME_SPEAKERS_MAX} speakers to highlight on the home page, in the order you want. Pick none and it shows the event's own speakers (or last year's until three are confirmed).</p>
           {form.featuredSpeakers.length > 0 && (
             <ol className="mb-4 divide-y divide-ttfc-line rounded-xl border border-ttfc-line">
@@ -290,7 +287,7 @@ export default function HomePage() {
 
         <Card className="p-0 sm:p-0">
           <div className="p-5 pb-3 sm:p-6 sm:pb-3">
-            <h2 className="text-base font-semibold">Sections under it</h2>
+            <h2 className="text-base font-semibold">Sections on the page</h2>
             <p className="mt-1 text-sm text-ttfc-muted">Switch a section off to hide it. Use the arrows to change the order.</p>
           </div>
           <ol className="divide-y divide-ttfc-line border-t border-ttfc-line">
@@ -310,7 +307,7 @@ export default function HomePage() {
           </ol>
         </Card>
         <p className="text-xs text-ttfc-muted">
-          Now: the top of the page shows {pinned && !pinnedGone ? pinned.name : next ? next.name : "the next event"}
+          Now: empty boxes at the top are filled from {pinned && !pinnedGone ? pinned.name : next ? next.name : "the next event"}
           {form.sections.some((r) => !r.on) ? `, and ${form.sections.filter((r) => !r.on).length} section${form.sections.filter((r) => !r.on).length === 1 ? " is" : "s are"} hidden` : ""}.
         </p>
       </div>

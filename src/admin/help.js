@@ -208,9 +208,9 @@ export const HELP = {
     tips: ["Something inside a menu, a pop-up or the ticket panel? Switch to Browse, open it, then switch back to Click to edit.", "Phone and Computer show the two layouts; some wording is only on one of them.", "“Everywhere it appears” changes the same wording on every page; “Only on this page” leaves the other pages alone.", "Back to built-in undoes a change. All changes lists everything that has been changed, on any page."],
   },
   "content/home": {
-    what: "The home page: the event it opens with and the sections under it. By default it follows the next event.",
-    steps: ["Pick the event at the top of the page, or leave The next event.", "Switch sections off to hide them; use the arrows to change their order.", "Press Save, then Send to staging, check the home page on the staging site, and Publish to live."],
-    tips: ["A pinned event stays until you change it back, even after it's over.", "The event's photo or video comes from Event pages; the home page's words from Website text & media."],
+    what: "The one home page of the website: its headline, picture and video, the speakers to highlight, and its sections.",
+    steps: ["Fill in the top of the page. Any box left empty is filled from the event chosen at the bottom of that card (the next event unless you pin one).", "Pick up to 6 speakers to highlight, and switch sections on or off or reorder them.", "Press Save, then Send to staging, check the home page on the staging site, and Publish to live."],
+    tips: ["A pinned event stays until you change it back, even after it's over.", "Other wording on the page is in Website text & media."],
   },
   "content/videos": {
     what: "TTFC's YouTube and Vimeo videos on the website. Only the link is saved, so they cost nothing to host.",

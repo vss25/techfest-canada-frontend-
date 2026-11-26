@@ -25,10 +25,10 @@ function Fancy({ text, first }) {
     : <>{words.slice(0, -1).join(" ")} <em>{words[words.length - 1]}</em></>;
 }
 
-function Head({ label, title, lead, more, onMore, children }) {
+function Head({ label, title, lead, more, onMore, children, ghost = true }) {
   return (
     <div className="nx-head">
-      <span className="nx-ghost-word" aria-hidden="true">{String(title || "").split(/\s+/).pop()}</span>
+      {ghost ? <span className="nx-ghost-word" aria-hidden="true">{String(title || "").split(/\s+/).pop()}</span> : null}
       <div>
         {label ? <span className="nx-label">{label}</span> : null}
         <h2 className="nx-h2"><Fancy text={title} /></h2>
@@ -264,8 +264,9 @@ const perks = (note) => String(note || "").split(/\n|•|;|·/).map((x) => x.rep
 export function Passes({ types, onBuy, id = "ev-passes" }) {
   if (!types || !types.length) return null;
   return (
-    <section className="nx-s nx-stage" id={id}><div className="nx-wrap">
-      <Head label="Tickets" title="Choose your pass" lead="Prices in CAD. Taxes are shown at payment." />
+    // Nov 26 2026 (the design review): the designer's gradient behind the passes, and no giant "pass" word.
+    <section className="nx-s nx-stage nx-passbg" id={id}><div className="nx-wrap">
+      <Head ghost={false} label="Tickets" title="Choose your pass" lead="Prices in CAD. Taxes are shown at payment." />
       <div className={`nx-passes n${Math.min(types.length, 4)}`}>
         {types.map((t) => (
           <div key={t.id || t.name} className="nx-pass">

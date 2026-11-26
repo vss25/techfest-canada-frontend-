@@ -3,19 +3,19 @@
  src/lib/siteDarkPreview.js sets for ?theme=dark. The approved pages set their colours inline, so each light
  colour is matched in the style attribute (as the browser writes it: rgb(…)) and given a dark counterpart.
  Photos and videos stay as they are.
- Nov 25 2026, the new look: the colours are the approved preview's dark theme (page #0C0920, alternate #110D29,
+ Nov 25 2026, the new look: the colours are the approved preview's dark theme (page #0C091F, alternate #090027,
  text #F4F2FA, grey #A9A4C2 / #78729A, hairlines in translucent white), main buttons go white, and the new pieces
  (timeline, buy bar; siteLook.css) read the --nl-* colours set here.
 ========================================================= */
-html[data-site-theme="dark"] body { background: #0C0920; }
+html[data-site-theme="dark"] body { background: #0C091F; }
 html[data-site-theme="dark"] .ap-root {
-  --nl-bg: #0C0920; --nl-bg2: #110D29; --nl-line: rgba(255, 255, 255, 0.09); --nl-line2: rgba(255, 255, 255, 0.16);
+  --nl-bg: #0C091F; --nl-bg2: #090027; --nl-line: rgba(255, 255, 255, 0.09); --nl-line2: rgba(255, 255, 255, 0.16);
   --nl-text: #F4F2FA; --nl-muted: #A9A4C2; --nl-dim: #78729A; --nl-glow: rgba(255, 255, 255, 0.07);
-  --nl-card: #161131; --nl-card2: #1D1740; --nl-solid: #FFFFFF; --nl-onsolid: #151035;
+  --nl-card: #181133; --nl-card2: #211640; --nl-solid: #FFFFFF; --nl-onsolid: #151035;
 }
-html[data-site-theme="dark"] .ap-root [style*="background: rgb(255, 255, 255)"], html[data-site-theme="dark"] .ap-root [style*="background-color: rgb(255, 255, 255)"] { background-color: #0C0920 !important; }
-html[data-site-theme="dark"] .ap-root [style*="background: rgb(245, 243, 250)"], html[data-site-theme="dark"] .ap-root [style*="background-color: rgb(245, 243, 250)"] { background-color: #110D29 !important; }
-html[data-site-theme="dark"] .ap-root [style*="background: rgb(232, 229, 241)"], html[data-site-theme="dark"] .ap-root [style*="background-color: rgb(232, 229, 241)"] { background-color: #1D1740 !important; }
+html[data-site-theme="dark"] .ap-root [style*="background: rgb(255, 255, 255)"], html[data-site-theme="dark"] .ap-root [style*="background-color: rgb(255, 255, 255)"] { background-color: #0C091F !important; }
+html[data-site-theme="dark"] .ap-root [style*="background: rgb(245, 243, 250)"], html[data-site-theme="dark"] .ap-root [style*="background-color: rgb(245, 243, 250)"] { background-color: #090027 !important; }
+html[data-site-theme="dark"] .ap-root [style*="background: rgb(232, 229, 241)"], html[data-site-theme="dark"] .ap-root [style*="background-color: rgb(232, 229, 241)"] { background-color: #211640 !important; }
 html[data-site-theme="dark"] .ap-root [style*="background: rgb(212, 212, 216)"], html[data-site-theme="dark"] .ap-root [style*="background-color: rgb(212, 212, 216)"] { background-color: #2A2450 !important; }
 html[data-site-theme="dark"] .ap-root [style^="color: rgb(21, 16, 53)"], html[data-site-theme="dark"] .ap-root [style*=" color: rgb(21, 16, 53)"] { color: #F4F2FA !important; }
 html[data-site-theme="dark"] .ap-root [style^="color: rgb(31, 41, 55)"], html[data-site-theme="dark"] .ap-root [style*=" color: rgb(31, 41, 55)"] { color: #E6E3F4 !important; }
@@ -37,9 +37,9 @@ html[data-site-theme="dark"] .ap-root :is(button, a)[style*="background: rgb(21,
 /* White buttons on navy sections stay white (e.g. "Talk to our partnerships team"). */
 html[data-site-theme="dark"] .ap-root [data-dark] button[style*="background: rgb(255, 255, 255)"] { background-color: #FFFFFF !important; color: #151035 !important; }
 /* Navy blocks on the dark page: one step lighter so they still read as a block. */
-html[data-site-theme="dark"] .ap-root div[style*="background: rgb(21, 16, 53)"] { background-color: #161131 !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09); }
+html[data-site-theme="dark"] .ap-root div[style*="background: rgb(21, 16, 53)"] { background-color: #181133 !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09); }
 html[data-site-theme="dark"] .ap-root header[data-dark] { background: rgba(12, 9, 32, 0.86) !important; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
-html[data-site-theme="dark"] .ap-root [data-dark][style*="background: rgb(21, 16, 53)"]:not(header) { background-color: #110D29 !important; }
+html[data-site-theme="dark"] .ap-root [data-dark][style*="background: rgb(21, 16, 53)"]:not(header) { background-color: #090027 !important; }
 html[data-site-theme="dark"] .ap-root .nl-buybar { background: rgba(12, 9, 32, 0.94) !important; border-top-color: rgba(255, 255, 255, 0.1) !important; color: #FFFFFF; }
 html[data-site-theme="dark"] .ap-root .p-card:hover { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35); }
 
@@ -55,6 +55,6 @@ html[data-site-theme="dark"] .ap-root .p-card:has(> img), html[data-site-theme="
 }
 html[data-site-theme="dark"] .ap-root .p-card:has(> img) [style*="color"] { color: #5B5873 !important; }
 /* The older sections get depth: a soft glow from alternating corners instead of flat panels. */
-html[data-site-theme="dark"] .ap-root main > section:not([class]):not([data-dark]):nth-of-type(odd) { background-image: radial-gradient(70% 55% at 92% 0%, rgba(127, 90, 240, 0.13), transparent 62%); }
-html[data-site-theme="dark"] .ap-root main > section:not([class]):not([data-dark]):nth-of-type(even) { background-image: radial-gradient(70% 55% at 6% 100%, rgba(214, 48, 140, 0.11), transparent 62%); }
-html[data-site-theme="dark"] .ap-root section[data-dark]:not(.nl-evhero):not(.nl-hero) { background-image: radial-gradient(60% 80% at 100% 0%, rgba(214, 48, 140, 0.16), transparent 60%), radial-gradient(50% 70% at 0% 100%, rgba(127, 90, 240, 0.16), transparent 60%); }
+html[data-site-theme="dark"] .ap-root main > section:not([class]):not([data-dark]):nth-of-type(odd) { background-image: radial-gradient(70% 55% at 92% 0%, rgba(130, 89, 237, 0.13), transparent 62%); }
+html[data-site-theme="dark"] .ap-root main > section:not([class]):not([data-dark]):nth-of-type(even) { background-image: radial-gradient(70% 55% at 6% 100%, rgba(197, 64, 138, 0.11), transparent 62%); }
+html[data-site-theme="dark"] .ap-root section[data-dark]:not(.nl-evhero):not(.nl-hero) { background-image: radial-gradient(60% 80% at 100% 0%, rgba(197, 64, 138, 0.16), transparent 60%), radial-gradient(50% 70% at 0% 100%, rgba(130, 89, 237, 0.16), transparent 60%); }

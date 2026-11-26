@@ -828,3 +828,29 @@ html:not([data-site-theme="dark"]) .ap-root .nl-topic[aria-pressed="true"] { bac
 .ap-phone .ap-root .nx-sent h2 { font-size: 24px; line-height: 30px; }
 /* The small "Thanks / Add your email first" note sat under the staging banner; it now sits above it. */
 .ap-root .p-toast { bottom: calc(28px + var(--ttfc-staging-bar, 0px)) !important; z-index: 2147482000 !important; }
+
+/* ---------- An event's banner: solid pieces instead of a shade (Nov 26 2026, the owner) ----------
+   "Make the elements on this part more opaque instead of putting a gradient": on a bright photo the see-through
+   pills, the countdown tiles and the loose lines of text washed out. Each now sits on its own solid dark
+   backing, and the title is plain white (its fade to lilac made the second line pale). Computers and phones. */
+.ap-root .nl-evhero .nl-gp {
+  background: rgba(12, 9, 31, 0.9) !important; color: #FFFFFF !important; border-color: rgba(255, 255, 255, 0.3) !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+.ap-root .nl-evhero .nl-gp.nl-live { border-color: #C5408A !important; }
+.ap-root .nl-evhero .nl-cd {
+  background: rgba(12, 9, 31, 0.9) !important; border: 1px solid rgba(255, 255, 255, 0.26) !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+.ap-root .nl-evhero .nl-cd > span { color: rgba(255, 255, 255, 0.82) !important; }
+.ap-root .nl-evhero h1, .ap-root .nl-evhero h1 * {
+  background: none !important; -webkit-background-clip: border-box !important; background-clip: border-box !important;
+  -webkit-text-fill-color: #FFFFFF !important; color: #FFFFFF !important;
+}
+/* The loose lines: the way back, the line under the title, and the ticket link. */
+.ap-root .nl-evhero > :is(.p-in, .m-in) > :is(a, p),
+.ap-root .nl-evhero > :is(.p-in, .m-in) > div > a.p-link {
+  align-self: flex-start; width: fit-content; max-width: 100%; box-sizing: border-box; padding: 7px 14px !important; border-radius: 12px;
+  background: rgba(12, 9, 31, 0.86) !important; color: #FFFFFF !important;
+}
+.ap-root .nl-evhero > :is(.p-in, .m-in) > div > a.p-link { margin-left: 6px !important; border-radius: 999px; }

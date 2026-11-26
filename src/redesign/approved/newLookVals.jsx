@@ -49,7 +49,9 @@ const CONTACT_TOPICS = {
   tickets: { label: "Tickets", inbox: "enquire@thetechfestival.com", form: "inquiry" },
 };
 
-export function applyNewLook(v, self, { openTix, phone }) {
+export function applyNewLook(v, self, opts) {
+  const { phone } = opts;
+  let { openTix } = opts;
   const p = self.props;
   const s = self.state;
   const c = v.c || {};
@@ -63,10 +65,29 @@ export function applyNewLook(v, self, { openTix, phone }) {
   // Nov 26 2026 (the owner: the home page showed the National Festival but Agenda opened Vancouver's). On the
   // home page, Agenda and Speakers open the pages of the event the home page is showing, on both layouts.
   if (s.screen === "home") {
-    v.goAgenda = goAgenda;
+    // Same day, later (the owner: Agenda from Home "shows coming soon even though Vancouver has agenda"): when the
+    // home page's event has no agenda yet, Agenda opens the next event in the season that has one.
+    const ags = p.homeAgendas || {};
+    const agCity = (ags[city] || []).length ? city : AGENDA_IDS.find((id) => (ags[id] || []).length) || city;
+    const goHomeAgenda = go(cityPath(agCity) + "/agenda");
+    v.goAgenda = goHomeAgenda;
     v.goSpeakers = go(cityPath(city) + "/speakers");
-    if (v.goSec && typeof v.goSec === "object") v.goSec = { ...v.goSec, agenda: goAgenda };
-    if (v.sec && typeof v.sec === "object" && typeof v.sec.agenda === "function") v.sec = { ...v.sec, agenda: goAgenda };
+    if (v.goSec && typeof v.goSec === "object") v.goSec = { ...v.goSec, agenda: goHomeAgenda };
+    if (v.sec && typeof v.sec === "object" && typeof v.sec.agenda === "function") v.sec = { ...v.sec, agenda: goHomeAgenda };
+  }
+  // The ticket panel (the owner, Nov 26 2026: "it doesn't have any way to enter my details"). It opened on 0
+  // tickets with a greyed button and nothing saying to press + first. An event with one ticket type now opens
+  // with 1 chosen; with several types the button and the hint say what to do. Both layouts.
+  const openKey = phone ? "openSheet" : "openDrawer";
+  if (typeof v[openKey] === "function" && types && types.length === 1) {
+    const open0 = v[openKey];
+    const open1 = (e) => { const q = self.state.q || []; if (!q.some((n) => n > 0)) self.setState({ q: [1, ...q.slice(1)] }); return open0(e); };
+    v[openKey] = open1; openTix = open1;
+  }
+  if (!(s.q || []).some((n) => n > 0)) {
+    v.tixCta = "Add a ticket to continue";
+    if (phone) { if (v.step1) v.primaryLabel = v.tixCta; if (v.hint) v.hint = `Press + to add a ticket. ${v.hint}`; }
+    else if (v.discountHint) v.discountHint = `Press + to add a ticket. ${v.discountHint}`;
   }
   // A session's picture, GIF or video (Admin › Agenda › "On the session's card"): on the home page's Agenda
   // highlights cards (the boards call v.cardMedia) and beside each row of the agenda lists.

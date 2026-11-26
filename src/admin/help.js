@@ -207,6 +207,11 @@ export const HELP = {
     steps: ["Choose the page at the top of the preview.", "Click the piece you want to change, on the page or in the list. It is outlined in pink on the page.", "Type the new wording, or upload a new picture: the page changes as you type.", "Press Save, then Send to staging, check it on the staging site, and Publish to live."],
     tips: ["Something inside a menu, a pop-up or the ticket panel? Switch to Browse, open it, then switch back to Click to edit.", "Phone and Computer show the two layouts; some wording is only on one of them.", "“Everywhere it appears” changes the same wording on every page; “Only on this page” leaves the other pages alone.", "Back to built-in undoes a change. All changes lists everything that has been changed, on any page."],
   },
+  "content/home": {
+    what: "The home page: the event it opens with and the sections under it. By default it follows the next event.",
+    steps: ["Pick the event at the top of the page, or leave The next event.", "Switch sections off to hide them; use the arrows to change their order.", "Press Save, then Send to staging, check the home page on the staging site, and Publish to live."],
+    tips: ["A pinned event stays until you change it back, even after it's over.", "The event's photo or video comes from Event pages; the home page's words from Website text & media."],
+  },
   "content/videos": {
     what: "TTFC's YouTube and Vimeo videos on the website. Only the link is saved, so they cost nothing to host.",
     steps: ["Upload the video to TTFC's YouTube channel or Vimeo.", "Press Add a video and paste its link: the title and picture fill in.", "Pick where it shows: home page, Media page, event pages, speakers.", "Save, then send it to staging and publish from Website changes."],
@@ -458,8 +463,8 @@ export const FIELD_HELP = {
     Day: "Day 1 or Day 2 of the event. One-day events use Day 1.",
     Starts: "Start time, local time at the venue.",
     Ends: "End time. The agenda shows the length from Starts and Ends.",
-    "Session type label": "The small label on the session's card, e.g. “Fireside Chat”. Any wording.",
-    Format: "Decides the colour and badge on the agenda (keynote, panel, break…). Pick the closest one.",
+    "Session type": "The small label on the session's card, e.g. “Case Study” or “Roundtable”. Pick from the list; add or rename types with the Session types button at the top of the Agenda page.",
+    Colour: "The colour and badge on the agenda. Picking a session type sets it; change it here for just this session.",
     "Stage / room": "Where it happens, e.g. “Harbour Ballroom”. Leave empty for the main stage.",
     "Tech pillar": "The theme it belongs to, for the agenda's filters.",
     Sector: "The industry it's about, for the agenda's filters.",

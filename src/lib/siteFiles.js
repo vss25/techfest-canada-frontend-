@@ -37,11 +37,19 @@ export function downloadUrl(url, filename) {
 /** The home hero shows the still frame instead of the video on phones and tablets,
     with data saver on, and for reduced motion. Decided before the first paint, so the
     video isn't requested at all there. */
-export function heroStillOnly() {
+export function heroStillOnly({ anyDevice = false } = {}) {
   if (typeof window === "undefined") return true;
   try {
     if (navigator.connection?.saveData) return true;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return true;
   } catch { /* old browser: go by the device */ }
-  return isMobileDevice();
+  // anyDevice (an event set to show its video, Admin › Event pages, Nov 25 2026): phones and tablets play it too.
+  return anyDevice ? false : isMobileDevice();
+}
+
+/** An event's hero video (Admin › Event pages › Background video): only our own uploads play, an https MP4 on
+    Sanity's file CDN; anything else is "" (the page keeps its photo). */
+export function heroVideoSrc(url) {
+  const u = String(url || "").trim();
+  return /^https:\/\/cdn\.sanity\.io\/files\/[\w-]+\/[\w-]+\/[\w.-]+\.mp4$/i.test(u) ? u : "";
 }

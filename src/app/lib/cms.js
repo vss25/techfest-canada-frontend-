@@ -47,7 +47,7 @@ function typeFor(c) {
   return "ceremony";
 }
 
-const PILLAR_LABEL = { ai: "Artificial Intelligence", quantum: "Quantum", cybersecurity: "Cybersecurity", robotics: "Robotics", climate: "Climate Tech" };
+const PILLAR_LABEL = { ai: "Artificial Intelligence", quantum: "Quantum", cybersecurity: "Cybersecurity", robotics: "Robotics", climate: "Clean Tech" };
 const SECTOR_LABEL = { fintech: "Financial Services", healthcare: "Healthcare", energy: "Energy", manufacturing: "Manufacturing", public: "Public Sector", startups: "Startups" };
 const PILLAR_TOPIC = { ai: "Artificial Intelligence", quantum: "Quantum Computing", cybersecurity: "Cybersecurity", robotics: "Robotics & Automation", climate: "Sustainability & CleanTech" };
 const SECTOR_TOPIC = {

@@ -23,7 +23,7 @@ export const PILLARS = [
   { value: "quantum", label: "Quantum" },
   { value: "cybersecurity", label: "Cybersecurity" },
   { value: "robotics", label: "Robotics" },
-  { value: "climate", label: "Climate Tech" },
+  { value: "climate", label: "Clean Tech" },   // stored key stays "climate" (saved sessions keep matching); shown as Clean Tech
 ];
 
 export const SECTORS = [

@@ -721,3 +721,50 @@ html .ap-root #ev-contact form button.p-dark + span { color: #151035 !important;
   .ap-root #ev-contact form fieldset > div { flex-wrap: wrap !important; }
   html .ap-root #ev-contact form fieldset button { flex: 1 1 45%; border-bottom: 1px solid #E5DCFB !important; }
 }
+
+/* ---------- The "Why come" wheel (WhyWheel.jsx; Nov 26 2026, the designer's "Why come") ---------- */
+.ap-root .nx-wheel {
+  flex: 1 1 420px; position: relative; min-height: 420px; border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(60% 60% at 50% 50%, rgba(130, 89, 237, 0.2), rgba(130, 89, 237, 0) 70%), #070323;
+  border: 1px solid rgba(130, 89, 237, 0.28);
+}
+/* A size container, so the tiles' distance from the centre can be a share of the wheel's own width (cqw). */
+.ap-root .nx-wheel-in { position: relative; width: min(86%, 440px); aspect-ratio: 1; container-type: inline-size; }
+/* The dashed circle the tiles sit on. */
+.ap-root .nx-wheel-ring { position: absolute; inset: 11%; border-radius: 50%; border: 1.5px dashed rgba(255, 255, 255, 0.55); animation: nx-wheel-turn 90s linear infinite; }
+/* The centre: a ring of violet → pink light around the event. */
+.ap-root .nx-wheel-core {
+  position: absolute; left: 50%; top: 50%; width: 34%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  background: conic-gradient(from 200deg, #8259ED, #C5408A, #FF5CB8, #8259ED); padding: 4px; box-sizing: border-box;
+  box-shadow: 0 0 46px rgba(130, 89, 237, 0.75), 0 0 90px rgba(197, 64, 138, 0.45), 0 0 0 14px rgba(130, 89, 237, 0.1), 0 0 0 15px rgba(130, 89, 237, 0.3);
+  animation: nx-wheel-pulse 5s ease-in-out infinite;
+}
+.ap-root .nx-wheel-core-in { width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #2A1458, #0B0529 70%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #FFFFFF; }
+.ap-root .nx-wheel-core-in svg { width: 34%; height: auto; }
+/* The tiles: glass squares on the circle, upright whatever their place. */
+.ap-root .nx-wheel-tile {
+  position: absolute; left: 50%; top: 50%; width: 21%; aspect-ratio: 1; border-radius: 22%; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+  transform: translate(-50%, -50%) rotate(var(--a)) translateY(-39cqw) rotate(calc(-1 * var(--a)));
+  color: #B9A4FF; border: 1.5px solid rgba(130, 89, 237, 0.9); background: linear-gradient(150deg, rgba(130, 89, 237, 0.3), rgba(130, 89, 237, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 10px 26px rgba(9, 0, 39, 0.5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  animation: nx-wheel-bob 6s ease-in-out infinite; animation-delay: calc(var(--i) * -0.85s);
+}
+.ap-root .nx-wheel-tile.p { color: #FF6DBB; border-color: rgba(224, 72, 156, 0.95); background: linear-gradient(150deg, rgba(197, 64, 138, 0.38), rgba(197, 64, 138, 0.1)); }
+.ap-root .nx-wheel-tile svg { width: 50%; height: auto; }
+@keyframes nx-wheel-turn { to { transform: rotate(360deg); } }
+@keyframes nx-wheel-pulse { 50% { box-shadow: 0 0 62px rgba(130, 89, 237, 0.95), 0 0 120px rgba(197, 64, 138, 0.6), 0 0 0 14px rgba(130, 89, 237, 0.14), 0 0 0 15px rgba(130, 89, 237, 0.4); } }
+@keyframes nx-wheel-bob { 50% { margin-top: -6px; } }
+@media (prefers-reduced-motion: reduce) { .ap-root .nx-wheel-ring, .ap-root .nx-wheel-core, .ap-root .nx-wheel-tile { animation: none; } }
+
+/* ---------- An event's banner: its words stay readable on any photo (Nov 26 2026, the owner) ----------
+   A bright photo (Vancouver's pink sky) washed out the title, the line under it and the countdown. A soft dark
+   veil now sits behind the words only: it deepens towards the bottom-left, where the text is, and leaves the
+   top and right of the photo as they are. It is on top of the shade chosen in Admin › Event page, not instead. */
+.ap-root .nl-evhero > :is(.p-in, .m-in) { position: relative; }
+.ap-root .nl-evhero > :is(.p-in, .m-in)::before {
+  content: ""; position: absolute; z-index: -1; pointer-events: none; left: -100vw; right: -100vw; top: -120px; bottom: -400px;
+  background:
+    linear-gradient(180deg, rgba(12, 9, 31, 0) 0%, rgba(12, 9, 31, 0.5) 30%, rgba(12, 9, 31, 0.8) 100%),
+    linear-gradient(90deg, rgba(12, 9, 31, 0.55) 35%, rgba(12, 9, 31, 0) 75%);
+}
+.ap-root .nl-evhero :is(h1, p) { text-shadow: 0 2px 18px rgba(12, 9, 31, 0.55); }

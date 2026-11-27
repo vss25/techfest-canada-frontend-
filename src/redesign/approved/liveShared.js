@@ -139,7 +139,8 @@ export function scrollToSection(name) {
     clearInterval(secTimer);
     if (!el) return;
     el.scrollIntoView({ behavior: "smooth", block: "start" });
-    setTimeout(() => { const again = find(); if (again) again.scrollIntoView({ behavior: "smooth", block: "start" }); }, 900);
+    // Twice more: content above the section (a hundred speaker photos, say) can still be arriving.
+    [900, 2200, 3600].forEach((ms) => setTimeout(() => { const again = find(); if (again) again.scrollIntoView({ behavior: "smooth", block: "start" }); }, ms));
   }, 150);
 }
 

@@ -116,10 +116,10 @@ export default function PavilionForm({ isDark, textMain, textMuted, border, card
     }
   }, []);
 
-  const inputBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(122,63,209,0.03)";
-  const inputBdr = isDark ? "rgba(155,135,245,0.14)" : "rgba(122,63,209,0.16)";
+  const inputBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(214,48,140,0.03)";
+  const inputBdr = isDark ? "rgba(240,106,176,0.14)" : "rgba(214,48,140,0.16)";
   const textSoft = isDark ? "rgba(200,180,255,0.5)" : "rgba(60,30,110,0.5)";
-  const accent = isDark ? "#b99eff" : "#7a3fd1";
+  const accent = isDark ? "#F06AB0" : "#D6308C";
   const errorColor = "#e05555";
 
   const set = (key, val) => {
@@ -331,7 +331,7 @@ export default function PavilionForm({ isDark, textMain, textMuted, border, card
   return (
     <section id="india-pavilion" ref={formRef} style={{
       padding: "clamp(3rem, 6vw, 5rem) 5%",
-      background: isDark ? "rgba(122,63,209,0.03)" : "rgba(122,63,209,0.02)",
+      background: isDark ? "rgba(214,48,140,0.03)" : "rgba(214,48,140,0.02)",
       borderTop: "1px solid " + border, borderBottom: "1px solid " + border,
       scrollMarginTop: 80,
     }}>
@@ -356,7 +356,7 @@ export default function PavilionForm({ isDark, textMain, textMuted, border, card
             cursor: expanded ? "default" : "pointer",
             transition: "border-color 0.3s, box-shadow 0.3s",
             boxShadow: expanded
-              ? (isDark ? "0 8px 40px rgba(122,63,209,0.15)" : "0 8px 32px rgba(122,63,209,0.08)")
+              ? (isDark ? "0 8px 40px rgba(214,48,140,0.15)" : "0 8px 32px rgba(214,48,140,0.08)")
               : "none",
           }}
           onMouseEnter={(e) => { if (!expanded) e.currentTarget.style.borderColor = "rgba(245,166,35,0.4)"; }}
@@ -392,11 +392,11 @@ export default function PavilionForm({ isDark, textMain, textMuted, border, card
               <button onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
                 style={{
                   padding: "14px 28px", borderRadius: 12, border: "none",
-                  background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                  background: "#D6308C",
                   color: "#fff", fontFamily: "'Orbitron', sans-serif",
                   fontWeight: 800, fontSize: "0.72rem", letterSpacing: "1px", textTransform: "uppercase",
                   cursor: "pointer", flexShrink: 0,
-                  boxShadow: "0 4px 20px rgba(122,63,209,0.3)",
+                  boxShadow: "0 4px 20px rgba(214,48,140,0.3)",
                 }}>
                 Start Application →
               </button>
@@ -435,8 +435,8 @@ export default function PavilionForm({ isDark, textMain, textMuted, border, card
                       <div key={s} style={{
                         flex: 1, height: 3, borderRadius: 999,
                         background: s <= step
-                          ? "linear-gradient(90deg, #7a3fd1, #f5a623)"
-                          : (isDark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.10)"),
+                          ? "#D6308C"
+                          : (isDark ? "rgba(255,255,255,0.08)" : "rgba(214,48,140,0.10)"),
                         transition: "background 0.3s",
                       }} />
                     ))}
@@ -896,7 +896,7 @@ export default function PavilionForm({ isDark, textMain, textMuted, border, card
                   <div>
                     <div style={{
                       padding: 24, borderRadius: 14,
-                      background: isDark ? "rgba(122,63,209,0.06)" : "rgba(122,63,209,0.03)",
+                      background: isDark ? "rgba(214,48,140,0.06)" : "rgba(214,48,140,0.03)",
                       border: "1px solid " + border, marginBottom: 24,
                     }}>
                       <div style={{
@@ -982,12 +982,12 @@ export default function PavilionForm({ isDark, textMain, textMuted, border, card
                   <button type="button" onClick={step === TOTAL_STEPS ? submit : next} disabled={submitting}
                     style={{
                       flex: 1, padding: "14px 24px", borderRadius: 12, border: "none",
-                      background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                      background: "#D6308C",
                       color: "#fff", fontFamily: "'Orbitron', sans-serif",
                       fontWeight: 800, fontSize: "0.68rem", letterSpacing: "1px", textTransform: "uppercase",
                       cursor: submitting ? "not-allowed" : "pointer",
                       opacity: submitting ? 0.7 : 1,
-                      boxShadow: "0 4px 20px rgba(122,63,209,0.3)",
+                      boxShadow: "0 4px 20px rgba(214,48,140,0.3)",
                     }}>
                     {submitting ? "Submitting…" : step === TOTAL_STEPS ? "Submit Application →" : "Continue →"}
                   </button>
@@ -1006,10 +1006,10 @@ export default function PavilionForm({ isDark, textMain, textMuted, border, card
               >
                 <div style={{
                   width: 72, height: 72, borderRadius: "50%",
-                  background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                  background: "#D6308C",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   margin: "0 auto 20px",
-                  boxShadow: "0 12px 32px rgba(122,63,209,0.35)",
+                  boxShadow: "0 12px 32px rgba(214,48,140,0.35)",
                 }}>
                   <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 6 9 17l-5-5" />
@@ -1019,7 +1019,7 @@ export default function PavilionForm({ isDark, textMain, textMuted, border, card
                   fontFamily: "'Orbitron', sans-serif", fontSize: "1.6rem", fontWeight: 900,
                   color: textMain, margin: "0 0 12px",
                 }}>
-                  <span style={{ background: "linear-gradient(135deg, #7a3fd1, #f5a623)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                  <span style={{ background: "#D6308C", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
                     Application Received
                   </span>
                 </h3>

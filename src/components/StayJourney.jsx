@@ -213,7 +213,7 @@ export default function JourneyView({ stops: given, compact = false, headingLeve
 
 export const JOURNEY_CSS = `
 .jv { container-type: inline-size; color: var(--jv-text, inherit);
-  --jv-gold: #f5a623; --jv-pink: #e8458b; --jv-purple: #7a3fd1; }
+  --jv-gold: #f5a623; --jv-pink: #e8458b; --jv-purple: #D6308C; }
 .jv-grid { display: grid; gap: 22px; align-items: start; }
 @container (min-width: 880px) {
   .jv-grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 28px; }
@@ -223,28 +223,28 @@ export const JOURNEY_CSS = `
    whatever the host sets. The list keeps the host's theme. */
 .jv-map { min-width: 0; padding: 14px 12px 12px; border-radius: 20px; color-scheme: dark;
   background: radial-gradient(120% 90% at 18% 0%, #1d1040 0%, #0e0722 55%, #07030f 100%);
-  border: 1px solid rgba(155,135,245,0.24); box-shadow: 0 18px 40px rgba(13,5,32,0.18);
-  --jv-text: #ffffff; --jv-mid: rgba(225,215,255,0.8); --jv-line: rgba(155,135,245,0.3); --jv-accent: #c4adff;
-  --jv-land: rgba(155,135,245,0.2); --jv-land-edge: rgba(196,173,255,0.45); --jv-route: #c4adff; --jv-label-bg: #150b2c; }
+  border: 1px solid rgba(240,106,176,0.24); box-shadow: 0 18px 40px rgba(13,5,32,0.18);
+  --jv-text: #ffffff; --jv-mid: rgba(225,215,255,0.8); --jv-line: rgba(240,106,176,0.3); --jv-accent: #F06AB0;
+  --jv-land: rgba(240,106,176,0.2); --jv-land-edge: rgba(196,173,255,0.45); --jv-route: #F06AB0; --jv-label-bg: #150b2c; }
 @container (min-width: 600px) { .jv-map { padding: 22px 20px 16px; border-radius: 24px; } }
 .jv-svg { display: block; width: 100%; height: auto; overflow: visible; font-family: inherit; }
-.jv-land { fill: var(--jv-land, rgba(122,63,209,0.1)); stroke: var(--jv-land-edge, rgba(122,63,209,0.3)); stroke-width: 0.8; stroke-linejoin: round; }
-.jv-route { stroke: var(--jv-route, #7a3fd1); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0.1 6.5; }
-.jv-arrow { stroke: var(--jv-route, #7a3fd1); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.jv-land { fill: var(--jv-land, rgba(214,48,140,0.1)); stroke: var(--jv-land-edge, rgba(214,48,140,0.3)); stroke-width: 0.8; stroke-linejoin: round; }
+.jv-route { stroke: var(--jv-route, #D6308C); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0.1 6.5; }
+.jv-arrow { stroke: var(--jv-route, #D6308C); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 /* The route draws in: each leg's mask path is dashed to its own length (set inline) and its offset runs to 0. */
 .jv-map.is-go .jv-draw { animation: jv-draw 1s cubic-bezier(.45,.05,.35,1) forwards; }
 @keyframes jv-draw { to { stroke-dashoffset: 0; } }
 .jv-leader { stroke: var(--jv-mid, rgba(13,5,32,0.6)); stroke-width: 1; stroke-dasharray: 2 2; opacity: 0.7; }
-.jv-dot circle { fill: var(--jv-route, #7a3fd1); stroke: var(--jv-label-bg, #fff); stroke-width: 1.5; }
+.jv-dot circle { fill: var(--jv-route, #D6308C); stroke: var(--jv-label-bg, #fff); stroke-width: 1.5; }
 .jv-dot .jv-halo { fill: var(--jv-gold); stroke: none; opacity: 0.25; transform-box: fill-box; transform-origin: center; animation: jv-pulse 2.6s ease-in-out infinite; }
 @keyframes jv-pulse { 0%, 100% { transform: scale(0.8); opacity: 0.35; } 50% { transform: scale(1.25); opacity: 0.12; } }
-.jv-lab-bg { fill: var(--jv-label-bg, #fff); stroke: var(--jv-line, rgba(122,63,209,0.2)); stroke-width: 1; }
+.jv-lab-bg { fill: var(--jv-label-bg, #fff); stroke: var(--jv-line, rgba(214,48,140,0.2)); stroke-width: 1; }
 .jv-lab.is-fest .jv-lab-bg { stroke: var(--jv-gold); stroke-width: 1.5; }
-.jv-lab.is-active .jv-lab-bg { stroke: var(--jv-accent, #6a2fc4); stroke-width: 2; }
+.jv-lab.is-active .jv-lab-bg { stroke: var(--jv-accent, #B0246F); stroke-width: 2; }
 .jv-badge circle { fill: var(--jv-purple); }
 .jv-badge text { fill: #fff; font-weight: 800; }
 .jv-badge.is-fest text { fill: #2b1600; }
-.jv-badge.is-on circle { stroke: var(--jv-accent, #6a2fc4); stroke-width: 2.5; paint-order: stroke; }
+.jv-badge.is-on circle { stroke: var(--jv-accent, #B0246F); stroke-width: 2.5; paint-order: stroke; }
 .jv-lab-city { fill: var(--jv-text, #0d0520); font-weight: 700; }
 .jv-lab-month { fill: var(--jv-mid, rgba(13,5,32,0.7)); font-weight: 600; }
 .jv-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0 0; font-size: 13px; color: var(--jv-mid); }
@@ -255,7 +255,7 @@ export const JOURNEY_CSS = `
 @container (min-width: 600px) and (max-width: 879px) { .jv-list { grid-template-columns: 1fr 1fr; } .jv-stop.is-fest { grid-column: 1 / -1; } }
 .jv-stop { position: relative; display: flex; gap: 14px; padding: 16px 16px 15px; border-radius: 18px; background: var(--jv-card, #fff); border: 1px solid var(--jv-line); min-width: 0; transition: border-color .15s, box-shadow .15s; }
 .jv-stop:hover { border-color: var(--jv-accent); }
-.jv-stop.is-fest { border: 1.5px solid transparent; background: linear-gradient(var(--jv-card, #fff), var(--jv-card, #fff)) padding-box, linear-gradient(135deg, #7a3fd1, #e8458b 55%, #f5a623) border-box; box-shadow: 0 14px 34px rgba(122,63,209,0.16); }
+.jv-stop.is-fest { border: 1.5px solid transparent; background: linear-gradient(var(--jv-card, #fff), var(--jv-card, #fff)) padding-box, linear-gradient(135deg, #D6308C, #e8458b 55%, #f5a623) border-box; box-shadow: 0 14px 34px rgba(214,48,140,0.16); }
 .jv-num { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--jv-purple); color: #fff; font-weight: 800; font-size: 14px; }
 .jv-stop.is-fest .jv-num { background: linear-gradient(135deg, #f7b733, #e8458b); color: #2b1600; }
 .jv-body { min-width: 0; flex: 1; }

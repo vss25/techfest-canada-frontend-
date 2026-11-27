@@ -35,8 +35,8 @@ export default function SpeakerMarquee({ dark, title }) {
       });
   }, []);
 
-  const bg = dark ? "#0c0816" : "rgba(122,63,209,0.02)";
-  const border = dark ? "rgba(155,135,245,0.08)" : "rgba(122,63,209,0.08)";
+  const bg = dark ? "#0c0816" : "rgba(214,48,140,0.02)";
+  const border = dark ? "rgba(240,106,176,0.08)" : "rgba(214,48,140,0.08)";
   const fade = dark ? "#0c0816" : "#ffffff";
 
   const items = [...sponsors, ...sponsors];
@@ -115,7 +115,7 @@ export default function SpeakerMarquee({ dark, title }) {
           transition: box-shadow 0.25s ease, transform 0.25s ease;
         }
         .marquee-item:hover {
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(155,135,245,0.3);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(240,106,176,0.3);
           transform: translateY(-2px);
         }
         .marquee-item img {

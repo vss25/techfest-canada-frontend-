@@ -130,7 +130,7 @@ export default function EventHero({ ev, headingAs = "h1" }) {
 
       <div style={{ position: "relative", zIndex: 4, width: "100%", maxWidth: 1200, margin: "0 auto", padding: "150px 20px 72px" }}>
         <p className="ev-rise" style={{ margin: 0, display: "inline-flex", alignItems: "center", gap: 9, padding: "8px 15px", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.20)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "#f5c86e" }}>
-          <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", flexShrink: 0 }} />
+          <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "#D6308C", flexShrink: 0 }} />
           {where}
         </p>
         <Heading style={{ margin: "14px 0 0", fontFamily: "'Orbitron', sans-serif", fontWeight: 900, lineHeight: 1.04, fontSize: "clamp(2.2rem, 6.5vw, 4.4rem)", maxWidth: 900 }}>

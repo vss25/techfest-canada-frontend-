@@ -335,7 +335,7 @@ export default function AwardWinner() {
 }
 
 const CSS = `
-.aw-win-embed { padding: 18px 14px 22px; background: #06020f; }
+.aw-win-embed { padding: 18px 14px 22px; background: #151035; }
 .aw-win-brand { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .aw-win-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.8); font-size: 14px; font-weight: 600; text-decoration: none; }
 .aw-win-back:hover { color: #fff; }

@@ -255,8 +255,8 @@ var SECTIONS_COOKIES = [
 function PolicySection(props) {
   var s = props.section;
   var dark = props.dark;
-  var cardBg = dark ? "rgba(155,135,245,0.07)" : "rgba(122,63,209,0.025)";
-  var cardBdr = dark ? "rgba(155,135,245,0.14)" : "rgba(122,63,209,0.08)";
+  var cardBg = dark ? "rgba(240,106,176,0.07)" : "rgba(214,48,140,0.025)";
+  var cardBdr = dark ? "rgba(240,106,176,0.14)" : "rgba(214,48,140,0.08)";
  
   return (
     <div style={{
@@ -393,7 +393,7 @@ export default function Privacy() {
     return function () { obs.disconnect(); };
   }, []);
  
-  var bg = dark ? "#06020f" : "#ffffff";
+  var bg = dark ? "#151035" : "#ffffff";
  
   return (
     <>
@@ -424,8 +424,8 @@ export default function Privacy() {
         <div style={{
           height: 2,
           background: dark
-            ? "linear-gradient(90deg, transparent, rgba(122,63,209,0.25), rgba(245,166,35,0.15), transparent)"
-            : "linear-gradient(90deg, transparent, rgba(122,63,209,0.15), rgba(245,166,35,0.10), transparent)",
+            ? "linear-gradient(90deg, transparent, rgba(214,48,140,0.25), rgba(245,166,35,0.15), transparent)"
+            : "linear-gradient(90deg, transparent, rgba(214,48,140,0.15), rgba(245,166,35,0.10), transparent)",
           borderRadius: 2,
           marginBottom: "5rem",
         }} />
@@ -444,8 +444,8 @@ export default function Privacy() {
         <div style={{
           height: 2,
           background: dark
-            ? "linear-gradient(90deg, transparent, rgba(122,63,209,0.25), rgba(245,166,35,0.15), transparent)"
-            : "linear-gradient(90deg, transparent, rgba(122,63,209,0.15), rgba(245,166,35,0.10), transparent)",
+            ? "linear-gradient(90deg, transparent, rgba(214,48,140,0.25), rgba(245,166,35,0.15), transparent)"
+            : "linear-gradient(90deg, transparent, rgba(214,48,140,0.15), rgba(245,166,35,0.10), transparent)",
           borderRadius: 2,
           marginBottom: "5rem",
         }} />
@@ -466,8 +466,8 @@ export default function Privacy() {
         <div style={{
           height: 2,
           background: dark
-            ? "linear-gradient(90deg, transparent, rgba(122,63,209,0.25), rgba(245,166,35,0.15), transparent)"
-            : "linear-gradient(90deg, transparent, rgba(122,63,209,0.15), rgba(245,166,35,0.10), transparent)",
+            ? "linear-gradient(90deg, transparent, rgba(214,48,140,0.25), rgba(245,166,35,0.15), transparent)"
+            : "linear-gradient(90deg, transparent, rgba(214,48,140,0.15), rgba(245,166,35,0.10), transparent)",
           borderRadius: 2,
           marginBottom: "5rem",
         }} />

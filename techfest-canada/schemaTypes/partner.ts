@@ -115,5 +115,18 @@ export default defineType({
       description: "Which event(s) this partner belongs to. Empty = every event (today's behaviour); set it to scope the partner to specific events.",
       of: [{ type: "reference", to: [{ type: "event" }] }],
     }),
+    defineField({
+      name: "eventRows",
+      title: "Row on the Partners page, per event",
+      type: "array",
+      description: "A different Partners page row for an event (e.g. Featured in Vancouver). Events not listed use the Partners page row above. Set in the TTFC admin panel.",
+      of: [{
+        type: "object",
+        fields: [
+          defineField({ name: "event", title: "Event", type: "reference", to: [{ type: "event" }] }),
+          defineField({ name: "row", title: "Row", type: "string" }),
+        ],
+      }],
+    }),
   ],
 });

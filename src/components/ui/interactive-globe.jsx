@@ -54,7 +54,7 @@ const PILLARS = [
   {
     id: "cyber",
     label: "Cyber",
-    fullLabel: "Cybersecurity",
+    fullLabel: "Cybersecurity & Digital Trust",
     subItems: [
       "Zero Trust Architecture",
       "Threat Intelligence",
@@ -368,15 +368,15 @@ export function InteractiveGlobe({
 
     // Ambient glow
     const glowGrad = ctx.createRadialGradient(cx, cy, radius * 0.5, cx, cy, radius * 1.6);
-    glowGrad.addColorStop(0, isDarkMode ? "rgba(122,63,209,0.07)" : "rgba(122,63,209,0.04)");
-    glowGrad.addColorStop(1, "rgba(122,63,209,0)");
+    glowGrad.addColorStop(0, isDarkMode ? "rgba(214,48,140,0.07)" : "rgba(214,48,140,0.04)");
+    glowGrad.addColorStop(1, "rgba(214,48,140,0)");
     ctx.fillStyle = glowGrad;
     ctx.fillRect(0, 0, w, h);
 
     // Globe outline
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = isDarkMode ? "rgba(122,63,209,0.12)" : "rgba(122,63,209,0.18)";
+    ctx.strokeStyle = isDarkMode ? "rgba(214,48,140,0.12)" : "rgba(214,48,140,0.18)";
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
@@ -392,7 +392,7 @@ export function InteractiveGlobe({
       ctx.arc(sx, sy, 0.9 + alpha * 0.7, 0, Math.PI * 2);
       ctx.fillStyle = isDarkMode
         ? `rgba(160,120,255,${(alpha * 0.5).toFixed(2)})`
-        : `rgba(122,63,209,${(alpha * 0.32).toFixed(2)})`;
+        : `rgba(214,48,140,${(alpha * 0.32).toFixed(2)})`;
       ctx.fill();
     }
 
@@ -412,7 +412,7 @@ export function InteractiveGlobe({
       ctx.beginPath();
       ctx.moveTo(sx1, sy1);
       ctx.quadraticCurveTo(scx, scy, sx2, sy2);
-      ctx.strokeStyle = isDarkMode ? "rgba(160,100,255,0.30)" : "rgba(122,63,209,0.22)";
+      ctx.strokeStyle = isDarkMode ? "rgba(160,100,255,0.30)" : "rgba(214,48,140,0.22)";
       ctx.lineWidth = 1.1;
       ctx.stroke();
       // Travelling bead
@@ -652,7 +652,7 @@ function NodeDropdown({ node, anchorX, anchorY, containerSize, isDarkMode, onClo
         borderRadius: 10,
         boxShadow: isDarkMode
           ? "0 12px 36px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)"
-          : "0 12px 36px rgba(122,63,209,0.18)",
+          : "0 12px 36px rgba(214,48,140,0.18)",
         overflow: "hidden",
         zIndex: 20,
         animation: "ttfc-globe-pop 0.18s ease-out",

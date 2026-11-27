@@ -29,7 +29,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
   if (!isOpen) return null;
 
   const cardBg = isDark ? "#160c2c" : "#f8f6ff";
-  const border = isDark ? "rgba(122,63,209,0.35)" : "rgba(122,63,209,0.25)";
+  const border = isDark ? "rgba(214,48,140,0.35)" : "rgba(214,48,140,0.25)";
   const text   = isDark ? "#ffffff" : "#0f0520";
   const muted  = isDark ? "rgba(200,180,255,0.65)" : "rgba(60,30,110,0.65)";
   const firstName = (userName || "Delegate").split(" ")[0];
@@ -72,7 +72,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
                 position: "absolute", top: "50%", left: "50%",
                 width: i % 3 === 0 ? 10 : 6, height: i % 3 === 0 ? 10 : 6,
                 borderRadius: i % 4 === 0 ? 2 : "50%",
-                background: i % 3 === 0 ? "#f5a623" : i % 3 === 1 ? "#7a3fd1" : "#22c55e",
+                background: i % 3 === 0 ? "#f5a623" : i % 3 === 1 ? "#D6308C" : "#22c55e",
                 pointerEvents: "none",
               }}
             />
@@ -93,7 +93,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
                   borderRadius: 28, padding: "44px 36px",
                   textAlign: "center",
                   position: "relative", overflow: "hidden",
-                  boxShadow: isDark ? "0 40px 100px rgba(0,0,0,0.8)" : "0 30px 80px rgba(122,63,209,0.2)",
+                  boxShadow: isDark ? "0 40px 100px rgba(0,0,0,0.8)" : "0 30px 80px rgba(214,48,140,0.2)",
                 }}
               >
                 {/* Top glow */}
@@ -107,7 +107,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
                 {/* Top bar */}
                 <div style={{
                   position: "absolute", top: 0, left: 0, right: 0, height: 4, borderRadius: "28px 28px 0 0",
-                  background: "linear-gradient(90deg, #7a3fd1, #f5a623, #22c55e)",
+                  background: "linear-gradient(90deg, #D6308C, #f5a623, #22c55e)",
                 }} />
 
                 {/* Ticket icon */}
@@ -118,7 +118,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
                   style={{
                     width: 88, height: 88, borderRadius: "50%",
                     margin: "0 auto 24px",
-                    background: "linear-gradient(135deg, rgba(122,63,209,0.25), rgba(245,166,35,0.20))",
+                    background: "linear-gradient(135deg, rgba(214,48,140,0.25), rgba(245,166,35,0.20))",
                     border: `2px solid rgba(245,166,35,0.4)`,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: "2.6rem",
@@ -173,7 +173,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
                   transition={{ delay: 0.4 }}
                   style={{ fontSize: "0.82rem", color: muted, lineHeight: 1.7, marginBottom: 32 }}
                 >
-                  Welcome to <strong style={{ background: "linear-gradient(135deg,#7a3fd1,#f5a623)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>The Tech Festival Canada 2026</strong>. We can't wait to see you in Toronto.
+                  Welcome to <strong style={{ background: "#D6308C", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>The Tech Festival Canada 2026</strong>. We can't wait to see you in Toronto.
                 </motion.p>
 
                 {/* Perks */}
@@ -185,7 +185,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.4 + i * 0.08 }}
                       style={{
-                        background: isDark ? "rgba(122,63,209,0.08)" : "rgba(122,63,209,0.06)",
+                        background: isDark ? "rgba(214,48,140,0.08)" : "rgba(214,48,140,0.06)",
                         border: `1px solid ${border}`,
                         borderRadius: 14, padding: "14px 14px",
                         textAlign: "left",
@@ -215,7 +215,7 @@ export default function PostPurchaseModal({ isOpen, onClose, ticketType = "Deleg
                     transition={{ delay: 0.65 }}
                     style={{
                       display: "block", padding: "14px",
-                      background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                      background: "#D6308C",
                       border: "none", borderRadius: 14, color: "white",
                       fontFamily: "'Orbitron', sans-serif", fontWeight: 800,
                       fontSize: "0.82rem", textDecoration: "none",

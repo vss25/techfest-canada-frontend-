@@ -201,13 +201,13 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
   // Theme-aware colors
   const bg        = isDark ? "#0f0720"         : "#ffffff";
   const cardBg    = isDark ? "#160c2c"         : "#f8f6ff";
-  const border    = isDark ? "rgba(122,63,209,0.30)" : "rgba(122,63,209,0.20)";
+  const border    = isDark ? "rgba(214,48,140,0.30)" : "rgba(214,48,140,0.20)";
   const textMain  = isDark ? "#ffffff"         : "#1a0a40";
   const textMuted = isDark ? "rgba(200,180,240,0.7)" : "rgba(80,60,120,0.7)";
   const inputBg   = isDark ? "#1e1040"         : "#ede8ff";
-  const inputBorder = isDark ? "rgba(122,63,209,0.35)" : "rgba(122,63,209,0.25)";
+  const inputBorder = isDark ? "rgba(214,48,140,0.35)" : "rgba(214,48,140,0.25)";
   const socialBg  = isDark ? "#1e1040"         : "#ede8ff";
-  const socialBorder = isDark ? "rgba(122,63,209,0.35)" : "rgba(122,63,209,0.20)";
+  const socialBorder = isDark ? "rgba(214,48,140,0.35)" : "rgba(214,48,140,0.20)";
 
   const inputStyle = {
     display: "block",
@@ -258,15 +258,15 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
         background: cardBg,
         border: `1.5px solid ${border}`,
         boxShadow: isDark
-          ? "0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(122,63,209,0.15)"
-          : "0 20px 60px rgba(122,63,209,0.15), 0 0 0 1px rgba(122,63,209,0.12)",
+          ? "0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(214,48,140,0.15)"
+          : "0 20px 60px rgba(214,48,140,0.15), 0 0 0 1px rgba(214,48,140,0.12)",
         position: "relative",
       }}>
 
         {/* Close */}
         <button onClick={onClose} style={{
           position: "absolute", top: 16, right: 16,
-          background: isDark ? "rgba(122,63,209,0.15)" : "rgba(122,63,209,0.10)",
+          background: isDark ? "rgba(214,48,140,0.15)" : "rgba(214,48,140,0.10)",
           border: `1px solid ${border}`,
           borderRadius: "50%", width: 32, height: 32,
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -277,12 +277,12 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 6,
-            background: isDark ? "rgba(122,63,209,0.15)" : "rgba(122,63,209,0.10)",
+            background: isDark ? "rgba(214,48,140,0.15)" : "rgba(214,48,140,0.10)",
             border: `1px solid ${border}`,
             borderRadius: 999, padding: "4px 14px",
             fontSize: "0.65rem", fontWeight: 700,
             letterSpacing: "1.2px", textTransform: "uppercase",
-            color: isDark ? "#c4a8ff" : "#7a3fd1", marginBottom: 12,
+            color: isDark ? "#c4a8ff" : "#D6308C", marginBottom: 12,
           }}>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#f5a623", boxShadow: "0 0 5px #f5a623", display: "inline-block" }} />
             TFC 2026
@@ -317,7 +317,7 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
             <button style={socialBtnStyle} onClick={() => setView("emailLink")}
               onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#2a1560" : "#e0d8ff"; }}
               onMouseLeave={e => { e.currentTarget.style.background = socialBg; }}>
-              <MailIcon color={isDark ? "#c4a8ff" : "#7a3fd1"} /> Email me a sign-in link
+              <MailIcon color={isDark ? "#c4a8ff" : "#D6308C"} /> Email me a sign-in link
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0" }}>
               <div style={{ flex: 1, height: 1, background: border }} />
@@ -339,7 +339,7 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
             </div>
             <button type="submit" disabled={loading} style={{
               width: "100%", padding: "14px",
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               border: "none", borderRadius: 12,
               color: "white", fontWeight: 800, fontSize: "0.88rem",
               fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.5px",
@@ -363,7 +363,7 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
             <input style={inputStyle} name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
             <button type="submit" disabled={loading} style={{
               width: "100%", padding: "14px",
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               border: "none", borderRadius: 12,
               color: "white", fontWeight: 800, fontSize: "0.88rem",
               fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.5px",
@@ -388,7 +388,7 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
             {linkError && <p role="alert" style={{ color: "#e05555", fontSize: "0.82rem", margin: "-4px 0 12px" }}>{linkError}</p>}
             <button type="submit" disabled={loading} style={{
               width: "100%", padding: "14px",
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               border: "none", borderRadius: 12,
               color: "white", fontWeight: 800, fontSize: "0.88rem",
               fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.5px",
@@ -417,7 +417,7 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
             {linkError && <p role="alert" style={{ color: "#e05555", fontSize: "0.82rem", margin: "-4px 0 12px", textAlign: "center" }}>{linkError}</p>}
             <button type="submit" disabled={loading || code.length !== 6} style={{ ...{
               width: "100%", padding: "14px",
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               border: "none", borderRadius: 12,
               color: "white", fontWeight: 800, fontSize: "0.88rem",
               fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.5px",
@@ -447,7 +447,7 @@ export default function AuthModal({ isOpen, onClose, onSurvey }) {
             <input style={inputStyle} name="email" type="email" placeholder="Enter your email" value={form.email} onChange={handleChange} required />
             <button type="submit" disabled={loading} style={{
               width: "100%", padding: "14px",
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               border: "none", borderRadius: 12,
               color: "white", fontWeight: 800, fontSize: "0.88rem",
               fontFamily: "'Orbitron', sans-serif", letterSpacing: "0.5px",

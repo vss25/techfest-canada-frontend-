@@ -44,8 +44,8 @@ export default function Rate() {
   }, [target]);
 
   const c = dark
-    ? { bg: "#06020f", text: "#ffffff", mid: "rgba(225,215,255,0.82)", card: "rgba(255,255,255,0.045)", line: "rgba(155,135,245,0.18)", accent: "#c4adff" }
-    : { bg: "#faf9ff", text: "#0d0520", mid: "rgba(13,5,32,0.7)", card: "#ffffff", line: "rgba(122,63,209,0.14)", accent: "#6a2fc4" };
+    ? { bg: "#151035", text: "#ffffff", mid: "rgba(225,215,255,0.82)", card: "rgba(255,255,255,0.045)", line: "rgba(240,106,176,0.18)", accent: "#F06AB0" }
+    : { bg: "#faf9ff", text: "#0d0520", mid: "rgba(13,5,32,0.7)", card: "#ffffff", line: "rgba(214,48,140,0.14)", accent: "#B0246F" };
 
   return (
     <>

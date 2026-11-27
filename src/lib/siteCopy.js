@@ -1,4 +1,5 @@
 import { client } from "../utils/sanity";
+import { isPreview } from "./preview";
 import { cssUrls, fitSpaces, indexRules, isCopy, lookup, mediaKey, pageKey, squash } from "./siteCopyRules";
 
 /* =========================================================
@@ -36,9 +37,6 @@ const WATCHED = [...TEXT_ATTRS, "src", "poster", "style"];
 const SKIP = "script,style,noscript,textarea,svg,[contenteditable],[data-nocopy]";
 // Staff tools and private pages: never touched.
 const OFF = /^\/(admin|admin-login|checkin|awards\/jury-admin|fact-sheet|auth-success|reset-password)(\/|$)/i;
-
-// Production has no staged-content preview yet (lib/preview.js is on the redesign branch): published rows only.
-const isPreview = () => false;
 
 let rules = indexRules(null);
 let editing = false;

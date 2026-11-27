@@ -34,10 +34,10 @@ import { INTERESTS, OPTIONAL, checkForm, fillEmpty, firstProblem, joinWaitlist, 
 export const WAITLIST_FORM_CSS = `
   .su-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   .su-lede { max-width: 680px; margin: 12px 0 0; font-size: 17px; line-height: 1.6; color: var(--su-mid); }
-  .su-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 26px; border: 0; border-radius: 999px;
-    background: linear-gradient(135deg, #7a3fd1 0%, #f5a623 100%); color: #fff; font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 800;
-    letter-spacing: 1px; text-transform: uppercase; text-decoration: none; cursor: pointer; box-shadow: 0 6px 20px rgba(122,63,209,0.28); transition: transform .15s, box-shadow .15s, opacity .15s; white-space: nowrap; }
-  .su-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(122,63,209,0.36); }
+  .su-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px; border: 0; border-radius: 8px;
+    background: #151035; color: #fff; font-family: inherit; font-size: 15px; font-weight: 600;
+    text-decoration: none; cursor: pointer; transition: background .15s, opacity .15s; white-space: nowrap; }
+  .su-btn:hover:not(:disabled) { background: #2A2357; }
   .su-btn:disabled { opacity: 0.65; cursor: progress; }
   .su-btn:focus-visible, .su-input:focus-visible, .su-tick:focus-within, .su-ghost:focus-visible, .su-consent a:focus-visible {
     outline: 3px solid var(--su-accent); outline-offset: 2px; }
@@ -57,25 +57,25 @@ export const WAITLIST_FORM_CSS = `
   .su-field { display: grid; gap: 6px; min-width: 0; }
   .su-label { font-size: 14px; font-weight: 700; color: var(--su-text); padding: 0; }
   .su-opt { font-weight: 500; color: var(--su-dim); }
-  .su-input { width: 100%; box-sizing: border-box; min-height: 52px; padding: 0 16px; border-radius: 14px; border: 1.5px solid var(--su-line);
+  .su-input { width: 100%; box-sizing: border-box; min-height: 52px; padding: 0 16px; border-radius: 8px; border: 1px solid #D4D4D8;
     background: var(--su-input); color: var(--su-text); font-size: 16px; font-family: inherit; }
   .su-input::placeholder { color: var(--su-dim); }
   .su-input[aria-invalid="true"] { border-color: var(--su-err); }
   .su-err { margin: 0; font-size: 14px; line-height: 1.4; color: var(--su-err); font-weight: 600; }
   .su-ticks { border: 0; margin: 4px 0 0; padding: 0; min-width: 0; }
   .su-tick-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-  .su-tick { position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 16px 0 12px; border-radius: 999px;
-    border: 1.5px solid var(--su-line); background: var(--su-input); cursor: pointer; font-size: 15px; font-weight: 600; user-select: none; }
+  .su-tick { position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px 0 12px; border-radius: 8px;
+    border: 1px solid #D4D4D8; background: var(--su-input); cursor: pointer; font-size: 15px; font-weight: 600; user-select: none; }
   .su-tick.is-on { border-color: var(--su-accent); background: var(--su-chip); }
-  .su-tick input { width: 20px; height: 20px; margin: 0; accent-color: #7a3fd1; cursor: pointer; }
+  .su-tick input { width: 20px; height: 20px; margin: 0; accent-color: #151035; cursor: pointer; }
   .su-consent { margin: 0; font-size: 14px; line-height: 1.5; color: var(--su-mid); }
   .su-consent a { color: var(--su-accent); font-weight: 700; }
   .su-hp { position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
   .su-thanks { display: grid; justify-items: center; text-align: center; gap: 10px; padding: 12px 0 4px; }
   .su-thanks-ico { width: 52px; height: 52px; color: #2fa36b; }
-  .su-thanks-title { margin: 4px 0 0; font-family: 'Orbitron', sans-serif; font-size: clamp(20px, 3vw, 26px); font-weight: 800; outline: none; }
+  .su-thanks-title { margin: 4px 0 0; font-family: inherit; font-size: clamp(20px, 3vw, 26px); font-weight: 800; outline: none; }
   .su-thanks-text { margin: 0; max-width: 520px; font-size: 17px; line-height: 1.6; color: var(--su-mid); }
-  .su-ghost { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 6px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--su-line);
+  .su-ghost { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 6px; padding: 0 18px; border-radius: 8px; border: 1px solid #D4D4D8;
     color: var(--su-text); font-weight: 600; text-decoration: none; }
   @media (max-width: 760px) {
     .su-bar { grid-template-columns: 1fr; grid-template-areas: "name" "company" "email" "phone" "ticks" "consent" "btn"; }

@@ -52,7 +52,7 @@ const FIXED_SERVICES = [
   { title: "Energy & Utilities", description: "Accelerating Canada's clean energy transition through applied innovation.", iconName: "zap", position: "left" },
   { title: "Artificial Intelligence", description: "Unlocking the Future of Innovation — from models to real-world deployment.", iconName: "cpu", position: "right" },
   { title: "Quantum Computing", description: "Unleashing Infinite Possibilities — Canada's quantum advantage on the world stage.", iconName: "atom", position: "right" },
-  { title: "Cybersecurity", description: "Building resilient digital infrastructure for enterprise and government.", iconName: "lock", position: "right" },
+  { title: "Cybersecurity & Digital Trust", description: "Building resilient digital infrastructure for enterprise and government.", iconName: "lock", position: "right" },
   { title: "Robotics & Automation", description: "From factory floors to smart cities — automation that drives real ROI.", iconName: "settings", position: "right" },
   { title: "Sustainability & CleanTech", description: "Pioneering a Greener, Smarter Future through technology-led climate action.", iconName: "leaf", position: "right" },
 ]
@@ -106,12 +106,12 @@ export default function AboutUs({ onWriteToUs }) {
   var rotate1 = useTransform(scrollData.scrollYProgress, [0, 1], [0, 12])
   var rotate2 = useTransform(scrollData.scrollYProgress, [0, 1], [0, -12])
 
-  var bg        = dark ? "#06020f" : "#ffffff"
+  var bg        = dark ? "#151035" : "#ffffff"
   var textMain  = dark ? "#ffffff" : "#0d0520"
   var textMuted = dark ? "rgba(220,208,255,0.85)" : "rgba(60,30,110,0.72)"
-  var cardBg    = dark ? "rgba(255,255,255,0.04)" : "rgba(122,63,209,0.04)"
-  var cardBdr   = dark ? "rgba(155,135,245,0.14)" : "rgba(122,63,209,0.14)"
-  var accent    = dark ? "#b99eff" : "#7a3fd1"
+  var cardBg    = dark ? "rgba(255,255,255,0.04)" : "rgba(214,48,140,0.04)"
+  var cardBdr   = dark ? "rgba(240,106,176,0.14)" : "rgba(214,48,140,0.14)"
+  var accent    = dark ? "#F06AB0" : "#D6308C"
 
   var containerVariants = {
     hidden: { opacity: 0 },
@@ -187,7 +187,7 @@ export default function AboutUs({ onWriteToUs }) {
           }}>
             {data.headline}
           </motion.h2>
-          <motion.div variants={itemVariants} style={{ width: 96, height: 8, borderRadius: 9999, background: "linear-gradient(90deg, #7a3fd1, #f5a623)" }} />
+          <motion.div variants={itemVariants} style={{ width: 96, height: 8, borderRadius: 9999, background: "#D6308C" }} />
           <motion.p variants={itemVariants} style={{
             textAlign: "justify", hyphens: "auto", maxWidth: 768, marginTop: "2rem",
             color: textMuted, fontSize: "1rem", lineHeight: 1.8,
@@ -214,10 +214,10 @@ export default function AboutUs({ onWriteToUs }) {
           {/* Center — Globe */}
           <motion.div variants={itemVariants} style={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "center", padding: "1.5rem 0" }}>
             <div style={{ position: "relative", width: 320, height: 320 }}>
-              <div style={{ position: "absolute", inset: -2, borderRadius: "50%", background: "conic-gradient(from 0deg, rgba(122,63,209,0.5), rgba(245,166,35,0.4), rgba(122,63,209,0.5), rgba(245,166,35,0.4), rgba(122,63,209,0.5))", animation: "aboutGlobeSpin 12s linear infinite", opacity: 0.4 }} />
+              <div style={{ position: "absolute", inset: -2, borderRadius: "50%", background: "conic-gradient(from 0deg, rgba(214,48,140,0.5), rgba(245,166,35,0.4), rgba(214,48,140,0.5), rgba(245,166,35,0.4), rgba(214,48,140,0.5))", animation: "aboutGlobeSpin 12s linear infinite", opacity: 0.4 }} />
               <InteractiveGlobe size={320} isDarkMode={dark} autoRotateSpeed={0.0012} />
             </div>
-            <motion.div style={{ position: "absolute", inset: -16, border: "2px solid rgba(122,63,209,0.10)", borderRadius: 24, zIndex: -1, rotate: rotate1 }} />
+            <motion.div style={{ position: "absolute", inset: -16, border: "2px solid rgba(214,48,140,0.10)", borderRadius: 24, zIndex: -1, rotate: rotate1 }} />
             <motion.div style={{ position: "absolute", inset: -40, border: "2px solid rgba(245,166,35,0.10)", borderRadius: 40, zIndex: -2, rotate: rotate2 }} />
           </motion.div>
 
@@ -254,10 +254,10 @@ export default function AboutUs({ onWriteToUs }) {
             justifyContent: "space-between", gap: "2.5rem",
           }}
         >
-          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "radial-gradient(ellipse 60% 80% at 0% 50%, rgba(122,63,209,0.10), transparent)" }} />
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "radial-gradient(ellipse 60% 80% at 0% 50%, rgba(214,48,140,0.10), transparent)" }} />
 
           <div style={{ flex: 1, position: "relative", zIndex: 10 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(122,63,209,0.12)", border: "1px solid rgba(122,63,209,0.28)", borderRadius: 999, padding: "4px 14px", marginBottom: 14, fontSize: "0.68rem", fontWeight: 700, letterSpacing: "1.2px", textTransform: "uppercase", color: "#b99eff" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(214,48,140,0.12)", border: "1px solid rgba(214,48,140,0.28)", borderRadius: 999, padding: "4px 14px", marginBottom: 14, fontSize: "0.68rem", fontWeight: 700, letterSpacing: "1.2px", textTransform: "uppercase", color: "#F06AB0" }}>
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#f5a623", boxShadow: "0 0 5px #f5a623", display: "inline-block" }} />
               TTFC 2026
             </div>
@@ -267,7 +267,7 @@ export default function AboutUs({ onWriteToUs }) {
             <div className="about-cta-tags" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {["Volunteer", "Collaborate", "Become a Community Partner"].map(function (tag) {
                 return (
-                  <span key={tag} style={{ background: "rgba(122,63,209,0.10)", border: "1px solid rgba(122,63,209,0.22)", borderRadius: 999, padding: "4px 14px", fontSize: "0.78rem", fontWeight: 600, color: textMuted }}>
+                  <span key={tag} style={{ background: "rgba(214,48,140,0.10)", border: "1px solid rgba(214,48,140,0.22)", borderRadius: 999, padding: "4px 14px", fontSize: "0.78rem", fontWeight: 600, color: textMuted }}>
                     {tag}
                   </span>
                 )
@@ -277,7 +277,7 @@ export default function AboutUs({ onWriteToUs }) {
 
           <button
             onClick={onWriteToUs}
-            style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", gap: 10, background: "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "white", padding: "18px 40px", borderRadius: 18, border: "none", cursor: "pointer", fontSize: "0.92rem", fontFamily: "'Orbitron', sans-serif", fontWeight: 800, letterSpacing: "0.5px", whiteSpace: "nowrap", transition: "transform 0.2s ease, box-shadow 0.2s ease", boxShadow: "0 6px 28px rgba(122,63,209,0.3)", flexShrink: 0 }}
+            style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", gap: 10, background: "#D6308C", color: "white", padding: "18px 40px", borderRadius: 18, border: "none", cursor: "pointer", fontSize: "0.92rem", fontFamily: "'Orbitron', sans-serif", fontWeight: 800, letterSpacing: "0.5px", whiteSpace: "nowrap", transition: "transform 0.2s ease, box-shadow 0.2s ease", boxShadow: "0 6px 28px rgba(214,48,140,0.3)", flexShrink: 0 }}
             onMouseEnter={function (e) { e.currentTarget.style.transform = "scale(1.05)"; }}
             onMouseLeave={function (e) { e.currentTarget.style.transform = "scale(1)"; }}
           >

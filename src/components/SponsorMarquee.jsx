@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import imageUrlBuilder from "@sanity/image-url";
 import { client, logoScaleOf } from "../utils/sanity";
 import { logoHref } from "../data/logoLinks";
+import { matchesEventScope } from "./EventScopeBar";
 
 const builder = imageUrlBuilder(client);
 const urlFor = (source) => builder.image(source);
@@ -18,11 +19,16 @@ const SPONSORS_QUERY = `
     logo,
     logoScale,
     url,
+    "eventIds": events[]._ref
   }
 `;
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function SponsorMarquee({ dark, title }) {
+// Optional event scope (the /sponsors page): `eventId` filters the marquee
+// to sponsors tagged with that event, and `onCount` reports how many matched
+// so the page can show its announced state when there are none. With no
+// eventId the marquee is exactly as before (Home, Awards, …).
+export default function SponsorMarquee({ dark, title, eventId, onCount }) {
   const [sponsors, setSponsors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,12 +47,19 @@ export default function SponsorMarquee({ dark, title }) {
       });
   }, []);
 
-  const bg = dark ? "#0c0816" : "rgba(122,63,209,0.02)";
-  const border = dark ? "rgba(155,135,245,0.08)" : "rgba(122,63,209,0.08)";
+  const visible = eventId ? sponsors.filter((s) => matchesEventScope(s, eventId)) : sponsors;
+
+  useEffect(() => {
+    if (onCount && !loading) onCount(visible.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, visible.length]);
+
+  const bg = dark ? "#0c0816" : "rgba(214,48,140,0.02)";
+  const border = dark ? "rgba(240,106,176,0.08)" : "rgba(214,48,140,0.08)";
   const fade = dark ? "#0c0816" : "#ffffff";
 
   // Double the list so the CSS marquee loops seamlessly.
-  const items = [...sponsors, ...sponsors];
+  const items = [...visible, ...visible];
 
   if (loading) {
     return (
@@ -66,7 +79,7 @@ export default function SponsorMarquee({ dark, title }) {
     );
   }
 
-  if (error || sponsors.length === 0) {
+  if (error || visible.length === 0) {
     return null;
   }
 
@@ -116,7 +129,7 @@ export default function SponsorMarquee({ dark, title }) {
         }
         @media (hover: hover) and (pointer: fine) {
           .marquee-item:hover {
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(155,135,245,0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(240,106,176,0.3);
             transform: translateY(-2px);
           }
         }

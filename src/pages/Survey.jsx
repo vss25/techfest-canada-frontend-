@@ -137,8 +137,8 @@ const PAGE_CSS = `
   .sv-opt { font-weight: 500; color: var(--sv-dim); }
   .sv-submit { display: grid; gap: 10px; margin-top: 22px; }
   .sv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px; padding: 0 26px; border: 0; border-radius: 999px; width: 100%;
-    background: linear-gradient(135deg, #7a3fd1 0%, #f5a623 100%); color: #fff; font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 800;
-    letter-spacing: 1px; text-transform: uppercase; text-decoration: none; cursor: pointer; box-shadow: 0 6px 20px rgba(122,63,209,0.28); }
+    background: #D6308C; color: #fff; font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 800;
+    letter-spacing: 1px; text-transform: uppercase; text-decoration: none; cursor: pointer; box-shadow: 0 6px 20px rgba(214,48,140,0.28); }
   .sv-btn:disabled { opacity: 0.65; cursor: progress; }
   .sv-btn:focus-visible, .sv-ghost:focus-visible { outline: 3px solid var(--sv-accent); outline-offset: 2px; }
   .sv-progress { margin: 0; text-align: center; font-size: 14px; color: var(--sv-dim); }

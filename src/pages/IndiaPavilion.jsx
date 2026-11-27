@@ -113,11 +113,11 @@ export default function IndiaPavilion() {
   const textMain  = isDark ? "#ffffff"                : "#0f0520";
   const textMuted = isDark ? "rgba(200,180,255,0.8)"  : "rgba(60,30,110,0.85)";
   const cardBg    = isDark ? "rgba(255,255,255,0.03)" : "#ffffff";
-  const border    = isDark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.18)";
-  const inputBg   = isDark ? "rgba(255,255,255,0.04)" : "rgba(122,63,209,0.03)";
-  const inputBdr  = isDark ? "rgba(155,135,245,0.14)" : "rgba(122,63,209,0.16)";
+  const border    = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,48,140,0.18)";
+  const inputBg   = isDark ? "rgba(255,255,255,0.04)" : "rgba(214,48,140,0.03)";
+  const inputBdr  = isDark ? "rgba(240,106,176,0.14)" : "rgba(214,48,140,0.16)";
   const textSoft  = isDark ? "rgba(200,180,255,0.5)"  : "rgba(60,30,110,0.5)";
-  const accent    = isDark ? "#b99eff"                : "#7a3fd1";
+  const accent    = isDark ? "#F06AB0"                : "#D6308C";
   const errorColor = "#e05555";
 
   const set = (key, val) => {
@@ -358,7 +358,7 @@ export default function IndiaPavilion() {
         {/* Grid bg */}
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
-          backgroundImage: `linear-gradient(${isDark ? "rgba(122,63,209,0.04)" : "rgba(122,63,209,0.05)"} 1px, transparent 1px), linear-gradient(90deg, ${isDark ? "rgba(122,63,209,0.04)" : "rgba(122,63,209,0.05)"} 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(${isDark ? "rgba(214,48,140,0.04)" : "rgba(214,48,140,0.05)"} 1px, transparent 1px), linear-gradient(90deg, ${isDark ? "rgba(214,48,140,0.04)" : "rgba(214,48,140,0.05)"} 1px, transparent 1px)`,
           backgroundSize: "60px 60px",
           maskImage: "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%)",
           WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%)",
@@ -389,7 +389,7 @@ export default function IndiaPavilion() {
           }}>
             India Startup Pavilion{" "}
             <span style={{
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             }}>Application</span>
           </h1>
@@ -411,7 +411,7 @@ export default function IndiaPavilion() {
               ~15 min to complete
             </div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: textMuted, fontSize: "0.85rem" }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#b99eff" }} />
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#F06AB0" }} />
               Rolling approvals
             </div>
           </div>
@@ -429,7 +429,7 @@ export default function IndiaPavilion() {
               style={{
                 background: cardBg, border: "1px solid " + border, borderRadius: 20,
                 padding: "clamp(28px, 4vw, 44px)",
-                boxShadow: isDark ? "0 8px 40px rgba(122,63,209,0.15)" : "0 8px 32px rgba(122,63,209,0.08)",
+                boxShadow: isDark ? "0 8px 40px rgba(214,48,140,0.15)" : "0 8px 32px rgba(214,48,140,0.08)",
               }}
             >
               {/* Progress */}
@@ -454,8 +454,8 @@ export default function IndiaPavilion() {
                     <div key={s} style={{
                       flex: 1, height: 3, borderRadius: 999,
                       background: s <= step
-                        ? "linear-gradient(90deg, #7a3fd1, #f5a623)"
-                        : (isDark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.10)"),
+                        ? "#D6308C"
+                        : (isDark ? "rgba(255,255,255,0.08)" : "rgba(214,48,140,0.10)"),
                       transition: "background 0.3s",
                     }} />
                   ))}
@@ -909,7 +909,7 @@ export default function IndiaPavilion() {
                 <div>
                   <div style={{
                     padding: 24, borderRadius: 14,
-                    background: isDark ? "rgba(122,63,209,0.06)" : "rgba(122,63,209,0.03)",
+                    background: isDark ? "rgba(214,48,140,0.06)" : "rgba(214,48,140,0.03)",
                     border: "1px solid " + border, marginBottom: 24,
                   }}>
                     <div style={{
@@ -995,12 +995,12 @@ export default function IndiaPavilion() {
                 <button type="button" onClick={step === TOTAL_STEPS ? submit : next} disabled={submitting}
                   style={{
                     flex: 1, padding: "14px 24px", borderRadius: 12, border: "none",
-                    background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                    background: "#D6308C",
                     color: "#fff", fontFamily: "'Orbitron', sans-serif",
                     fontWeight: 800, fontSize: "0.68rem", letterSpacing: "1px", textTransform: "uppercase",
                     cursor: submitting ? "not-allowed" : "pointer",
                     opacity: submitting ? 0.7 : 1,
-                    boxShadow: "0 4px 20px rgba(122,63,209,0.3)",
+                    boxShadow: "0 4px 20px rgba(214,48,140,0.3)",
                   }}>
                   {submitting ? "Submitting…" : step === TOTAL_STEPS ? "Submit Application →" : "Continue →"}
                 </button>
@@ -1018,15 +1018,15 @@ export default function IndiaPavilion() {
                   background: cardBg, border: "1px solid " + border, borderRadius: 20,
                   padding: "clamp(40px, 6vw, 60px)",
                   textAlign: "center",
-                  boxShadow: isDark ? "0 8px 40px rgba(122,63,209,0.15)" : "0 8px 32px rgba(122,63,209,0.08)",
+                  boxShadow: isDark ? "0 8px 40px rgba(214,48,140,0.15)" : "0 8px 32px rgba(214,48,140,0.08)",
                 }}
               >
                 <div style={{
                   width: 88, height: 88, borderRadius: "50%",
-                  background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                  background: "#D6308C",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   margin: "0 auto 24px",
-                  boxShadow: "0 12px 32px rgba(122,63,209,0.35)",
+                  boxShadow: "0 12px 32px rgba(214,48,140,0.35)",
                 }}>
                   <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 6 9 17l-5-5" />
@@ -1036,7 +1036,7 @@ export default function IndiaPavilion() {
                   fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.6rem, 3vw, 2rem)", fontWeight: 900,
                   color: textMain, margin: "0 0 16px",
                 }}>
-                  <span style={{ background: "linear-gradient(135deg, #7a3fd1, #f5a623)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                  <span style={{ background: "#D6308C", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
                     Application Received
                   </span>
                 </h3>
@@ -1066,7 +1066,7 @@ export default function IndiaPavilion() {
                   <a href="/exhibit"
                     style={{
                       padding: "14px 28px", borderRadius: 12, textDecoration: "none",
-                      background: "linear-gradient(135deg, #7a3fd1, #f5a623)", color: "#fff",
+                      background: "#D6308C", color: "#fff",
                       fontFamily: "'Orbitron', sans-serif", fontWeight: 800, fontSize: "0.7rem",
                       letterSpacing: "1px", textTransform: "uppercase",
                       display: "inline-flex", alignItems: "center", gap: 8,

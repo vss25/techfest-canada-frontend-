@@ -178,10 +178,12 @@ export function applyNewLook(v, self, opts) {
   );
   v.head2Cls = `nl-head2${isHome ? " nl-head2-off" : ""}`;
   v.noAwards = ctx !== "tor";
-  v.head2Label = eventScreen && c.title ? <span className="nl-head2-name">{c.title}</span> : null;
+  // The owner, Nov 27 2026: header 2 names a City Briefing the way its banner does, "The City Briefing - Vancouver".
+  const evName = ctx !== "tor" && c.name ? `The City Briefing - ${c.name}` : c.title;
+  v.head2Label = eventScreen && evName ? <span className="nl-head2-name">{evName}</span> : null;
   if (phone) {
     v.eventBar = isHome ? null : (
-      <EventBar label={eventScreen ? c.name : ""} onMore={v.openMenu}
+      <EventBar label={eventScreen ? evName : ""} onMore={v.openMenu}
         links={[
           { label: "Agenda", go: toSec("agenda") },
           { label: "Speakers", go: toSec("speakers") },

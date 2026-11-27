@@ -122,4 +122,25 @@ export function sendForm(name, f, extra) {
   });
 }
 
+/* One page per event (Nov 27 2026, the owner: "agenda, speakers, partners, should be specific to the event and
+   there will be URL appended to that section"). Scrolls to the event page's section named in the address
+   (/vancouver/2027/briefing#agenda). The section can arrive after the page does, so it looks for it for a few
+   seconds, and settles once more after late content above it has loaded. */
+let secTimer = null;
+export function scrollToSection(name) {
+  if (typeof document === "undefined" || !/^[a-z]+$/.test(String(name || ""))) return;
+  clearInterval(secTimer);
+  let tries = 0;
+  const find = () => document.getElementById(`ev-${name}`) || document.getElementById(`m-${name}`);
+  secTimer = setInterval(() => {
+    const el = find();
+    tries += 1;
+    if (!el && tries < 40) return;
+    clearInterval(secTimer);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => { const again = find(); if (again) again.scrollIntoView({ behavior: "smooth", block: "start" }); }, 900);
+  }, 150);
+}
+
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

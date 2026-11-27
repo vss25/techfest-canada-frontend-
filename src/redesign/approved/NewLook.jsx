@@ -120,7 +120,7 @@ export function OnStage({ label = "Speakers", title = "Who's on stage", lead, sp
   );
 }
 
-const LAST_YEAR = [["1,000+", "Attendees"], ["95", "Speakers"], ["130+", "Partners and exhibitors"], ["50", "Sessions"]];
+const LAST_YEAR = [["1,000+", "Attendees across 2 days"], ["95", "Speakers"], ["130+", "Partners and exhibitors"], ["50", "Sessions"]];
 
 /** A number that counts up the first time it scrolls into view ("1,000+" → 0 … 1,000+). */
 function CountUp({ value }) {
@@ -158,7 +158,7 @@ function CountUp({ value }) {
 export function LastYear({ photos, onGallery, alt, more = 0 }) {
   return (
     <section className={`nx-s nx-stage${alt ? " nx-alt" : ""}`}><div className="nx-wrap">
-      <Head label="Toronto 2026" title="Last year in numbers" more="See the gallery" onMore={onGallery} />
+      <Head title="Last year in numbers" more="See the gallery" onMore={onGallery} />
       <div className="nx-stats">{LAST_YEAR.map(([n, t]) => <div key={t}><CountUp value={n} /><span>{t}</span></div>)}</div>
       {photos && photos.length ? (
         // Five is the designed mosaic (one large, four small); any other number flows in an even grid.

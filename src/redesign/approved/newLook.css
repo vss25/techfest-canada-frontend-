@@ -1019,3 +1019,11 @@ html .ap-root footer[data-dark] a.nl-here.p-link:is(:hover, :focus-visible, :act
 html .ap-phone .ap-root footer nav a.nl-here:is(:hover, :active) {
   color: #C5408A !important; text-decoration: none !important; background-image: none !important; background-size: 0 0 !important;
 }
+
+/* Timeline (the owner, Nov 27 2026): the current event keeps its soft highlight but has no border, and the
+   "2027 season" label sits after Toronto 2026, where the season starts (it was at the far left). */
+.ap-root .nl-stop.here { border-color: transparent; }
+.ap-root .nl-stops > li.nl-rail-sep { flex: 0 0 auto; display: flex; align-items: flex-start; padding: calc(14px + var(--pt) + 12px) 22px 0 6px; }
+.ap-root .nl-stops > li.nl-rail-sep span { font-size: 12px; line-height: 23px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--nl-dim, var(--nl-muted)); white-space: nowrap; }
+.ap-root .nl-stops > li.nl-rail-sep::before { left: 0; right: calc(-14px - var(--pt) / 2); background: linear-gradient(90deg, #B04AA8, #C5408A); box-shadow: 0 0 12px rgba(197, 64, 138, 0.55); }
+.ap-root .nl-rail-phone .nl-stops > li.nl-rail-sep { display: none; }

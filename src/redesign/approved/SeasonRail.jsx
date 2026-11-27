@@ -18,18 +18,21 @@ export default function SeasonRail({ stops, go, goPast, here, phone }) {
   return (
     <nav className={`nl-rail${phone ? " nl-rail-phone" : ""}`} aria-label="The 2027 season">
       <div className="nl-rail-in" ref={box}>
-        <span className="nl-rail-ttl">2027 season</span>
         <ol className="nl-stops">
           {stops.map((s) => {
             const onClick = s.id === "past" ? goPast : go && go[s.id];
             return (
-              <li key={s.id}>
+              <React.Fragment key={s.id}>
+              <li>
                 <a href="#" onClick={onClick} className={`nl-stop ${s.state}${here && here === s.id ? " here" : ""}`}
                   aria-current={here && here === s.id ? "page" : undefined}>
                   <i className="nl-pt" aria-hidden="true" />
                   <span><b>{s.name}</b><small>{s.when}</small></span>
                 </a>
               </li>
+              {/* The owner, Nov 27 2026: "2027 season" sits after last year's stop, where the season starts. */}
+              {s.id === "past" ? <li className="nl-rail-sep" aria-hidden="true"><span>2027 season</span></li> : null}
+              </React.Fragment>
             );
           })}
         </ol>

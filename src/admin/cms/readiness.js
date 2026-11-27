@@ -3,7 +3,7 @@
 
    Required, upcoming event (the organiser, Nov 17 2026): the city, the theme, the description
    (the new site's "One line under the name": the home page card and the event page), the city
-   photo (the home page card) and when it is (the date, or the date line while the day isn't fixed).
+   photo or a video for the top of the page, and when it is (the date, or the date line while the day isn't fixed).
    Required, past event: its dates.
    Pure: no fetching, so it's tested on its own. */
 
@@ -32,6 +32,11 @@ export function readinessFor(ev, { sessions = [], speakers = [], partners = [], 
   const withPhoto = speakers.filter((s) => s.imageUrl || s.image?.asset);
   const withLogo = partners.filter((p) => p.logoUrl || p.logo?.asset);
   const photo = filled(ev?.citySkyline) || filled(ev?.citySkylineUrl);
+  // Nov 26 2026 (the owner: "why does this still require photo when we have uploaded video? It needs to be one
+  // of these"): the top of the page needs a photo or a video. A saved video counts unless Photo is the one chosen
+  // to show (Event page > Photo | Video); with neither, the website has nothing of the event's own to show.
+  const video = filled(ev?.heroVideoUrl) && ev?.heroMedia !== "photo";
+  const top = photo || video;
   const items = past ? [
     { key: "dates", label: "Dates", ok: filled(ev?.startDate), to: "", required: true },
     { key: "venue", label: "Venue", ok: filled(ev?.venueName), to: "", required: false },
@@ -44,7 +49,7 @@ export function readinessFor(ev, { sessions = [], speakers = [], partners = [], 
     { key: "city", label: "City", ok: filled(ev?.city), to: "", required: true },
     { key: "theme", label: "Theme", ok: filled(ev?.theme), to: "", required: true },
     { key: "tagline", label: "Description (one line under the name)", ok: filled(ev?.tagline), detail: "On the home page and the event page", to: "", required: true },
-    { key: "photo", label: "City photo", ok: photo, detail: "On the home page", to: "", required: true },
+    { key: "photo", label: "City photo or video", ok: top, detail: top && !photo ? "Video set; a photo is still worth adding (it shows while the video loads)" : "At the top of the event page and on the home page", to: "", required: true },
     { key: "dates", label: "Date or date line", ok: filled(ev?.startDate) || filled(ev?.statusNote),
       detail: filled(ev?.startDate) ? "" : filled(ev?.statusNote) ? "Date line set; add the day when it's fixed" : "", to: "", required: true },
     { key: "credit", label: "Photo credit", ok: !photo || filled(ev?.photoCredit), detail: photo ? "Needed for Creative Commons photos" : "Once there's a photo", to: "", required: false },

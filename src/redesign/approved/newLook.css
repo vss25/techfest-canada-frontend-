@@ -1216,3 +1216,31 @@ html .ap-phone .ap-root footer nav a.nl-here:is(:hover, :active) {
    scrolls between the fixed title and the fixed Continue button. */
 .ap-root aside.p-drawer > .p-in { min-height: 0; }
 .ap-root aside.p-drawer > .p-in > * { flex-shrink: 0; }
+
+/* The ticket panel's attendee step (AttendeeForm.jsx, Nov 27 2026): every ticket's card open with its own fields,
+   "This ticket is for me", and the buyer's own details when it isn't. Both layouts. */
+.ap-root .nx-att { display: flex; flex-direction: column; gap: 12px; }
+.ap-root .nx-att-card { border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.03); overflow: hidden; }
+.ap-root .nx-att-card.open { border-color: rgba(197, 64, 138, 0.45); }
+.ap-root .nx-att-head { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 0; background: transparent; color: #FFFFFF; font: inherit; text-align: left; cursor: pointer; }
+.ap-root div.nx-att-head { cursor: default; }
+.ap-root .nx-att-n { flex: 0 0 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.08); font-size: 14px; font-weight: 700; }
+.ap-root .nx-att-you { font-size: 10px; letter-spacing: 0.04em; }
+.ap-root .nx-att-t { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ap-root .nx-att-t b { font-size: 15px; font-weight: 700; }
+.ap-root .nx-att-t small { color: #A9A3C4; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-root .nx-att-state { flex: 0 0 auto; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #F0A8D2; background: rgba(197, 64, 138, 0.14); }
+.ap-root .nx-att-state.ok { color: #9BE7B5; background: rgba(46, 160, 90, 0.16); }
+.ap-root .nx-att-body { padding: 2px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.ap-root .nx-att-me { display: flex; align-items: center; gap: 10px; font-size: 15px; color: #FFFFFF; cursor: pointer; }
+.ap-root .nx-att-me input { width: 18px; height: 18px; accent-color: #C5408A; }
+.ap-root .nx-att-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ap-root .nx-att-f { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 600; color: #D9D5EC; min-width: 0; }
+.ap-root .nx-att-f.wide { grid-column: 1 / -1; }
+.ap-root .nx-att-f small { font-weight: 400; color: #A9A3C4; }
+.ap-root .nx-att-f input { box-sizing: border-box; width: 100%; height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(12, 9, 31, 0.6); color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 400; }
+.ap-root .nx-att-f input:focus { outline: 2px solid #C5408A; outline-offset: 1px; }
+.ap-root .nx-att-f.is-err input { border-color: #FF8A8A; }
+.ap-root .nx-att-f em { font-style: normal; font-weight: 500; font-size: 12.5px; color: #FFB4B4; }
+.ap-root .nx-att-note { margin: 0; font-size: 13px; color: #A9A3C4; }
+.ap-phone .ap-root .nx-att-grid { grid-template-columns: 1fr; }

@@ -66,7 +66,10 @@ export function applyNewLook(v, self, opts) {
   const city = s.city || "van";
   const go = (path) => (e) => { if (e && e.preventDefault) e.preventDefault(); p.navigate(path); };
   const goEvent = (v.goCity && v.goCity[city]) || v.goEvent;
-  const goAllSpeakers = go("/speakers");
+  // Speakers belong to an event (the owner, Nov 27 2026: "All speakers should be tagged to a specific event").
+  // "See all speakers" and a speaker page's way back go to last year's speakers on the Toronto 2026 page.
+  const PAST = "/highlights/2026";
+  const goAllSpeakers = (e) => { if (e && e.preventDefault) e.preventDefault(); p.navigate(`${PAST}#speakers`); scrollToSection("speakers"); };
   const goAgenda = go(cityPath(city) + "/agenda");
   const types = p.data && p.data.types;
   const onSale = !p.ticketsSoon && !!(types && types.length);
@@ -150,11 +153,22 @@ export function applyNewLook(v, self, opts) {
   // put it in the address (/vancouver/2027/briefing#agenda), from any page.
   const toSec = (name) => (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const path = `${cityPath(ctx)}#${name}`;
-    if (s.screen === "event" && city === ctx && typeof window !== "undefined") window.history.replaceState(window.history.state, "", path);
+    // On the Toronto 2026 page (and from Home, which shows last year's speakers and partners) the links are that
+    // event's: its speakers and partners are on its page, its agenda is still the 2026 agenda page.
+    const past = s.screen === "past" || isHome;
+    if (past && name === "agenda") { p.navigate("/agenda"); return; }
+    const path = `${past ? PAST : cityPath(ctx)}#${name}`;
+    const here = past ? s.screen === "past" : s.screen === "event" && city === ctx;
+    if (here && typeof window !== "undefined") window.history.replaceState(window.history.state, "", path);
     else p.navigate(path);
     scrollToSection(name);
   };
+  // Every Speakers, Partners and Agenda link on the site (footer, menus, "All partners") follows the same rule:
+  // there is no site-wide list any more.
+  v.goSpeakers = toSec("speakers");
+  v.goPartners = toSec("partners");
+  v.goPartnersAll = toSec("partners");
+  if (!isHome) v.goAgenda = toSec("agenda");
   if (!isHome) {
     if (v.sec && typeof v.sec === "object") v.sec = { ...v.sec, agenda: toSec("agenda") };
     v.navSpeakers = toSec("speakers");

@@ -31,7 +31,7 @@ import { findEvent, useEventContent, useEvents } from "../../lib/events";
 import { AGENDA_SOON, toDesignSessions } from "../../data/approvedAgendas";
 import { STAND_IN_DEFAULT_FROM, standInLabel, standInWords } from "../../lib/standIns";
 import {
-  CITY_EVENT, EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, countdownTo, fieldsNear, fullDate, monthShort, pick, post, routeFor, sendForm, splitName,
+  CITY_EVENT, EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, countdownTo, fieldsNear, fullDate, monthShort, pick, post, routeFor, sendForm, splitName, scrollToSection,
 } from "./liveShared";
 import { fetchTicketTypes, multiCheckout } from "../../lib/ticketsApi";
 
@@ -327,7 +327,7 @@ class LiveSite extends ApprovedSite {
     }
     const past = this.props.past2026;
     if (past) {
-      if (past.speakers.length) v.starSpeakers = past.speakers.slice(0, 4).map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));
+      if (past.speakers.length) v.starSpeakers = past.speakers.map((x, i) => ({ ...x, open: () => this.setState({ spk: { n: i + 1, kind: x.kind } }) }));
       if (past.partners.length) v.pastPartners = past.partners;
       // The gallery shows every picture chosen in Admin › Home page; the built-in set until some are.
       v.photos = this.props.homeOwn && this.props.homeOwn.photos && this.props.homeOwn.photos.length ? this.props.homeOwn.photos.map((ph) => [ph.src, ph.alt]) : PAST_PHOTOS;
@@ -505,7 +505,7 @@ function usePast2026(on) {
     const ev = "event-ttfc-2026-main";
     const scoped = `(!defined(events) || count(events) == 0 || $ev in events[]._ref)`;
     Promise.all([
-      client.fetch(`*[_type == "speaker" && !(_id in path("drafts.**")) && defined(image.asset) && ${scoped}] | order(coalesce(featured, false) desc, order asc)[0...12]{ name, title, company, speakerType, image }`, { ev }),
+      client.fetch(`*[_type == "speaker" && !(_id in path("drafts.**")) && defined(image.asset) && ${scoped}] | order(coalesce(featured, false) desc, order asc)[0...200]{ name, title, company, speakerType, image }`, { ev }),
       client.fetch(`*[_type == "partner" && active != false && showOnWebsite != false && defined(logo.asset) && ${scoped}] | order(order asc){ _id, name, logo, matrixGroup, logoScale }`, { ev }),
       // The recap box: a YouTube / Vimeo video from Admin › Content › Videos (2026's first, else one marked for the home page).
       client.fetch(`*[_type == "video" && active != false && defined(videoId) && ($ev in events[]._ref || showOnHome == true)] | order(($ev in events[]._ref) desc, coalesce(order, 9999) asc, recordedOn desc)[0]{ title, provider, videoId, thumbnailUrl, url }`, { ev }).catch(() => null),
@@ -519,7 +519,7 @@ function usePast2026(on) {
         img: urlFor(x.image).width(480).height(600).fit("crop").auto("format").url(),
       }));
       const sorted = [...(ptn || [])].sort((a, b) => (matrixGroupOf(b) === "featured") - (matrixGroupOf(a) === "featured"));
-      const partners = sorted.slice(0, 6).map((p) => ({
+      const partners = sorted.map((p) => ({
         name: <img src={urlFor(p.logo).height(120).fit("max").auto("format").url()} alt={p.name} title={p.name} loading="lazy"
           style={{ display: "block", maxHeight: 48, maxWidth: "75%", objectFit: "contain", margin: "0 auto" }} />,
         tier: matrixGroupOf(p) === "featured" ? "Featured partner" : "Partner", title: p.name,
@@ -897,6 +897,20 @@ export default function ApprovedRoute({ fallback = null }) {
   // visit. "/?home=1" also opens the home page (the admin's links use it), and the admin's text editor always does.
   // Nov 27 2026 (the owner: "Decouple Home page linkage to any event page it should operate independently"): "/"
   // is the home page again. It no longer sends visitors on to the next event's page.
+  // Nov 27 2026 (the owner, of /speakers: "This URL shouldnt be there. All speakers should be tagged to a specific
+  // event. Same applies to partners, agenda, etc."). The site-wide Speakers and Partners pages and each event's
+  // separate Speakers and Agenda pages forward to that section of the event's own page. The site-wide lists were
+  // Toronto 2026's, so they go to the Toronto 2026 page.
+  const at = (location.pathname || "").replace(/\/+$/, "");
+  const moved = !route ? null
+    : route.screen === "speakers" ? (at === "/speakers" ? `${SCREEN_PATH.past}#speakers` : `${cityPath(route.city)}#speakers`)
+    : route.screen === "agenda" ? `${cityPath(route.city)}#agenda`
+    : route.screen === "partners" ? `${SCREEN_PATH.past}#partners` : null;
+  useEffect(() => {
+    if (!moved) return;
+    navigate(moved, { replace: true });
+    scrollToSection(moved.split("#")[1]);
+  }, [moved, navigate]);
   // Going Home from anywhere on the site is the visitor's own choice: remembered for this visit.
   const go = useCallback((to, opts) => {
     if (to !== "/") { navigate(to, opts); return; }
@@ -905,6 +919,7 @@ export default function ApprovedRoute({ fallback = null }) {
   }, [navigate]);
 
   if (!route) return fallback;
+  if (moved) return <div aria-busy="true" style={{ minHeight: "100vh", background: "#0C091F" }} />;
   const View = phone && PHONE_SCREENS.includes(route.screen) ? LivePhone : LiveSite;
   return (
     <View

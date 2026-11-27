@@ -196,7 +196,7 @@ export default class LivePhone extends ApprovedPhone {
     // Toronto 2026: real speakers (with photos) and partner logos (LiveSite.jsx usePast2026).
     const past = this.props.past2026;
     if (past) {
-      if (past.speakers.length) v.starSpeakers = past.speakers.slice(0, 4);
+      if (past.speakers.length) v.starSpeakers = past.speakers;
       if (past.partners.length) v.sixLogos = past.partners.map((p) => ({ n: p.name }));
       if (past.photos) v.galleryFour = past.photos.slice(0, 4);
       if (past.recap) v.recapPlayer = <VideoFacade video={past.recap} radius={12} />;

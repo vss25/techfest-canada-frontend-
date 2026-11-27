@@ -1027,3 +1027,9 @@ html .ap-phone .ap-root footer nav a.nl-here:is(:hover, :active) {
 .ap-root .nl-stops > li.nl-rail-sep span { font-size: 12px; line-height: 23px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--nl-dim, var(--nl-muted)); white-space: nowrap; }
 .ap-root .nl-stops > li.nl-rail-sep::before { left: 0; right: calc(-14px - var(--pt) / 2); background: linear-gradient(90deg, #B04AA8, #C5408A); box-shadow: 0 0 12px rgba(197, 64, 138, 0.55); }
 .ap-root .nl-rail-phone .nl-stops > li.nl-rail-sep { display: none; }
+
+/* The home banner's title is the same size as an event banner's (the owner, Nov 27 2026: "why is the home page
+   text size for hero section different"). The event's was reduced twice on Nov 26; the home page's was left
+   at 68px. Both are now 42px on computers and 26px on phones. */
+.ap-root .nl-hero h1 { font-size: 42px !important; line-height: 50px !important; }
+.ap-phone .ap-root .nl-hero h1 { font-size: 26px !important; line-height: 32px !important; }

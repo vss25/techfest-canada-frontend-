@@ -446,6 +446,7 @@ export const FIELD_HELP = {
     Venue: "The venue's name, e.g. “The Westin Harbour Castle”. Leave it empty until it's confirmed: the page then says the venue will be announced.",
     "Venue address": "The street address, shown with the venue. Leave it empty until it's confirmed.",
     "City photo": "The large photo at the top of the event page in the new website design. Landscape, at least 2000 pixels wide.",
+    "City photo or video": "What fills the top of the event page: a photo (landscape, at least 2000 pixels wide) or a video. One of the two is needed to go live.",
     "Photo credit": "Required for photos you don't own (Creative Commons). Shown on the photo, e.g. “Photo: Kyle Pearce, CC BY-SA 2.0”.",
     Theme: "The event's focus in a few words, e.g. “Energy & Critical Infrastructure”. Shown on the event's card and page.",
     "One line under the name": "One sentence under the event name that says why someone should come.",

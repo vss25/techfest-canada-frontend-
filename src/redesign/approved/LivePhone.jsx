@@ -12,6 +12,8 @@ import WhyComeBox, { WhyComeBody } from "../../components/WhyComeBox";
 import { openCallBooking } from "./bookCall";
 import WhyWheel from "./WhyWheel";
 import { EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, fieldsNear, pick, post, sendForm, splitName } from "./liveShared";
+import AttendeeForm from "./AttendeeForm";
+import { orderFrom } from "./attendeeOrder";
 
 /* The approved phone design (board 13), live: the phone counterpart of LiveSite.jsx.
    ApprovedPhone is generated 1:1 from the board; here it gets real addresses, data,
@@ -74,45 +76,18 @@ export default class LivePhone extends ApprovedPhone {
     };
   }
 
-  // Only the open attendee's fields exist; keep each one's answers while moving between them.
-  attPanel() { return this.rootEl && Array.from(this.rootEl.querySelectorAll("button.m-press + .m-in")).find((p) => p.querySelector('input[aria-label="Full name"]')); }
-  saveOpenAttendee() {
-    const panel = this.attPanel();
-    if (!panel) return;
-    const get = (l) => (panel.querySelector(`input[aria-label="${l}"]`)?.value || "").trim();
-    this.att = this.att || {};
-    this.att[this.state.openAtt] = { name: get("Full name"), email: get("Email"), extra: get("Company and job title") };
-  }
-  restoreOpenAttendee() {
-    const panel = this.attPanel();
-    const a = this.att && this.att[this.state.openAtt];
-    if (!panel || !a) return;
-    const set = (l, v) => { const i = panel.querySelector(`input[aria-label="${l}"]`); if (i) i.value = v || ""; };
-    set("Full name", a.name); set("Email", a.email); set("Company and job title", a.extra);
-  }
-
   checkout() {
     const types = this.props.data?.types;
     const evKey = this.props.eventKey;
     if (!types || !evKey) { this.toastIt("Tickets go on sale soon"); return; }
-    this.saveOpenAttendee();
     const list = [];
     types.forEach((t, i) => { for (let k = 0; k < (this.state.q[i] || 0); k++) list.push(t); });
-    const attendees = list.map((t, idx) => {
-      const a = (this.att || {})[idx] || {};
-      const { firstName, lastName } = splitName(a.name);
-      return { firstName, lastName, email: a.email || "", ticketTypeId: t.id, ...(a.extra ? { company: a.extra } : {}) };
-    });
-    const missing = attendees.findIndex((a) => !a.firstName || !a.lastName || !EMAIL_RE.test(a.email));
-    if (missing >= 0) {
-      this.setState({ openAtt: missing }, () => this.restoreOpenAttendee());
-      this.toastIt(`Ticket ${missing + 1}: add a full name (first and last) and email`);
-      return;
-    }
+    // Every attendee's answers are kept by the form itself (AttendeeForm.jsx, Nov 27 2026).
+    const order = orderFrom(this.attDraft, list);
+    if (order.error) { this.setState({ attTry: (this.state.attTry || 0) + 1 }); this.toastIt(order.error); return; }
     const items = types.map((t, i) => ({ ticketTypeId: t.id, quantity: this.state.q[i] || 0 })).filter((x) => x.quantity > 0);
-    const b = attendees[0];
     this.run("Securing your tickets", async () => {
-      const res = await multiCheckout({ eventKey: evKey, booker: { name: `${b.firstName} ${b.lastName}`, email: b.email }, items, attendees });
+      const res = await multiCheckout({ eventKey: evKey, booker: order.booker, items, attendees: order.attendees });
       if (res && res.url) { window.location.assign(res.url); return; }
       this.setState({ step: 3 });
     });
@@ -252,15 +227,14 @@ export default class LivePhone extends ApprovedPhone {
         }, "Sent. Check your inbox");
       };
     } else if (s.step === 1) {
-      v.primary = () => { if (!this.props.data?.types) { this.toastIt("Tickets go on sale soon"); return; } this.att = {}; primary(); };
+      v.primary = () => { if (!this.props.data?.types) { this.toastIt("Tickets go on sale soon"); return; } this.attDraft = null; this.setState({ attTry: 0 }); primary(); };
     } else if (s.step === 2) {
       v.primary = () => this.checkout();
     }
-    if (Array.isArray(v.attendees)) {
-      v.attendees = v.attendees.map((a, idx) => ({
-        ...a,
-        toggle: () => { this.saveOpenAttendee(); this.setState({ openAtt: s.openAtt === idx ? -1 : idx }, () => this.restoreOpenAttendee()); },
-      }));
+    if (s.step === 2 && this.props.data?.types) {
+      const names = [];
+      this.props.data.types.forEach((t, i) => { for (let k = 0; k < (s.q[i] || 0); k++) names.push(t.name); });
+      v.attendeeForm = <AttendeeForm key={names.join("|")} names={names} draft={this.attDraft} attempt={s.attTry || 0} onChange={(d) => { this.attDraft = d; }} />;
     }
     return applyNewLook(v, this, { openTix: v.openSheet, phone: true });
   }

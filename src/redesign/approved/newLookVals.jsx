@@ -1,5 +1,5 @@
 import React from "react";
-import { AgendaPage, CardMedia, Countdown, DayGlance, KeyDates, LastYear, OnStage, Pillars, PageHero, PartnersStrip, Passes, SpeakerPage, ContactDone } from "./NewLook";
+import { AgendaPage, CardMedia, Countdown, DayGlance, KeyDates, LastYear, OnStage, Pillars, SoonSections, PageHero, PartnersStrip, Passes, SpeakerPage, ContactDone } from "./NewLook";
 import { EMAIL_RE, cityPath, countdownTarget, fieldsNear, scrollToSection, sendForm } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
 import { sessionCardMedia } from "../../lib/sessionMedia";
@@ -235,6 +235,12 @@ export function applyNewLook(v, self, opts) {
     if (hasAgenda) v.dayGlance = <DayGlance alt full sessions={rows} id={phone ? "m-agenda" : "ev-agenda"} />;
     if (own) v.evOnStage = <OnStage three={own.length > 4} speakers={withOpen(own)} id={phone ? "m-speakers" : "ev-speakers"} />;
     if (onSale) v.passes = <Passes types={types} onBuy={openTix} />;
+    // A coming-soon event has no agenda, speakers or partners sections yet, so header 2's links had nowhere to
+    // land (found on Montreal, Nov 27 2026). Each gets a short "coming soon" section with the same address.
+    if (v.isEventSoon) {
+      v.evSoon = <SoonSections city={c.name || "event"} onPartner={v.openPage && v.openPage.partner}
+        ids={phone ? { agenda: "m-agenda", speakers: "m-speakers", partners: "m-partners" } : { agenda: "ev-agenda", speakers: "ev-speakers", partners: "ev-partners" }} />;
+    }
   }
 
   // Nov 27 2026 (the owner: "Remove sponsorship packages completely. We want to capture the lead. So, we will

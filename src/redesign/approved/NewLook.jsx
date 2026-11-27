@@ -72,6 +72,26 @@ export function PillarMatrix() {
   );
 }
 
+/** A coming-soon event's page: somewhere for header 2's Agenda, Speakers and Partners to land (Nov 27 2026, the
+    owner: one page per event). ids = { agenda, speakers, partners }; onPartner opens the partnership page. */
+export function SoonSections({ ids, city, onPartner }) {
+  const rows = [
+    ["agenda", "Agenda", `We're building the ${city} programme now. The agenda will be published here.`],
+    ["speakers", "Speakers", `We're confirming the ${city} line-up and will announce speakers here.`],
+    ["partners", "Partners", `Partners of the ${city} event will be announced here.`],
+  ];
+  return (
+    <>
+      {rows.map(([key, title, text], i) => (
+        <section key={key} id={ids[key]} className={`nx-s nx-soon${i % 2 ? "" : " nx-alt"}`}><div className="nx-wrap">
+          <Head title={title} more={key === "partners" && onPartner ? "Partner with TTFC" : undefined} onMore={onPartner} />
+          <p className="nx-soon-note"><b>Coming soon.</b> {text}</p>
+        </div></section>
+      ))}
+    </>
+  );
+}
+
 /** Home: the 5 × 5 on its own (Nov 27 2026, the owner: "5*5 Matrix. remove the left description text"). */
 export function Pillars() {
   return (

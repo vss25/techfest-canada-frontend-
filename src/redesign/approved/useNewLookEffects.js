@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { scrollToSection } from "./liveShared";
 
 /* The new look's page-wide motion (Nov 25 2026, the owner: "I need scroll animations"):
    - spotlight: a soft pink light follows the pointer across a card (--x / --y on the card under it);
@@ -45,6 +46,15 @@ function markFooter() {
 }
 
 export default function useNewLookEffects(on) {
+  // An address that names a section of an event's page (…/briefing#agenda) opens at that section, on arrival
+  // and when the visitor goes back or forward.
+  useEffect(() => {
+    if (!on || typeof window === "undefined") return undefined;
+    const run = () => { const h = (window.location.hash || "").slice(1); if (h) scrollToSection(h); };
+    run();
+    window.addEventListener("popstate", run);
+    return () => window.removeEventListener("popstate", run);
+  }, [on]);
   useEffect(() => {
     if (!on || typeof window === "undefined") return undefined;
     const move = (e) => {

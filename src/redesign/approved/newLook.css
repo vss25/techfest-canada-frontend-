@@ -1180,3 +1180,14 @@ html .ap-phone .ap-root footer nav a.nl-here:is(:hover, :active) {
 .ap-root .nl-top-phone .nl-top-item { flex: 0 0 auto; height: 34px; padding: 0 10px; font-size: 13.5px; }
 .ap-root .nl-top-phone .nl-top-sep { margin: 0 4px; }
 .ap-root .nl-top-phone .nl-top-in { padding-right: 0; }
+
+/* One page per event (Nov 27 2026, the owner): header 2's links scroll to the event page's own sections, which
+   stop below the two sticky headers. */
+.ap-root [id^="ev-"] { scroll-margin-top: 112px !important; }
+.ap-root [id^="m-"] { scroll-margin-top: 100px !important; }
+/* The TTFC menu in header 1 (About us, Newsroom, Contact, Get the app). */
+.ap-root .nl-top-menu.nl-top-menu-r { left: auto; right: 0; min-width: 200px; }
+.ap-root .nl-top-ttfc { color: #CFC9E6; }
+.ap-root .nl-top-phone .nl-top-drop { flex: 0 0 auto; padding-right: 6px; }
+.ap-root .nl-top-phone .nl-top-ttfc { padding: 0 8px; }
+.ap-root .nl-top-phone .nl-top-menu.nl-top-menu-r { right: 6px; }

@@ -237,6 +237,8 @@ export function applyNewLook(v, self, opts) {
     v.homeForm = <PartnerForm onSend={sendPartner("home")} />;
   }
 
+  // The Toronto 2026 page's year tabs (the owner, Nov 27 2026: "remove 2025"): there was no 2025 edition to show.
+  if (Array.isArray(v.years)) v.years = v.years.filter((y) => y && y.label !== "2025");
   // The Toronto 2026 page: that event's whole agenda, above its speakers.
   if (s.screen === "past" && p.pastSessions && p.pastSessions.length) {
     v.pastAgenda = <div className="nx-inpast"><DayGlance full sessions={p.pastSessions.map((r) => ({ ...r, media: mediaOf(r) }))} id={phone ? "m-agenda" : "ev-agenda"} /></div>;

@@ -248,7 +248,7 @@ function App() {
         <Route path="/:city/:year/national-festival/speakers" element={live(<EventLanding section="speakers" type="main-event" />)} />
         <Route path="/:city/:year/national-festival/speakers/:speakerSlug" element={<EventLanding section="speaker" type="main-event" />} />
         <Route path="/:city/:year/national-festival/tickets" element={live(<EventLanding section="tickets" type="main-event" />)} />
-        {/* The National Festival's page (Nov 25 2026: it was /main-event). The old address still opens: it moves on to
+        {/* The Flagship's page (Nov 25 2026: it was /main-event). The old address still opens: it moves on to
             the new one, with whatever came after it (agenda, speakers, tickets). */}
         <Route path="/:city/:year/main-event/*" element={<OldEventAddress />} />
         {/* Any other address: "Page not found", noindex (src/pages/NotFound.jsx). */}

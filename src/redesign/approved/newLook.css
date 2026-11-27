@@ -596,7 +596,7 @@ html.nx-reveal .ap-root .nx-logo-run[data-nx-r]:not(.nx-seen) { transform: none;
 @media (prefers-reduced-motion: reduce) { .ap-root .nx-globe-ring { animation: none; } }
 
 /* ---------- The events menu: categories read as categories (Nov 26 2026, the owner) ----------
-   "City Briefings", "National Festival" and "Past events" were small grey lines that looked like one more row.
+   "City Briefings", "Flagship" and "Past events" were small grey lines that looked like one more row.
    Now each is a heading: pink capitals with a rule running to the edge, and the events under it sit indented
    on a guide line, so it's plain which events belong to which. Home stays flush: it isn't in a category. */
 .ap-root .p-menu[aria-label="Choose an event"] > span {
@@ -1093,3 +1093,90 @@ html .ap-phone .ap-root footer nav a.nl-here:is(:hover, :active) {
 /* Timeline: no box behind the event whose page you are on (the owner, Nov 27 2026: "it shouldn't be any rectangle
    selected for any page"). The lit line, the glowing dot and the pink name already say where the season is. */
 .ap-root .nl-stop.here, .ap-root .nl-stop.here:hover { background: none; border-color: transparent; }
+
+/* =========================================================
+   Two headers (Nov 27 2026, the owner). Header 1 (.nl-top, SiteBars.jsx) is on every page: logo, City Briefings
+   with the cities under it, Flagship Event. Header 2 is the event's own links: on a computer the board's header
+   row with its logo, event menu, Log in and Tickets hidden (.nl-head2); on a phone .nl-sub. Home has header 1 only.
+========================================================= */
+.ap-root .nl-top { position: sticky; top: 0; z-index: 30; background: rgba(12, 9, 31, 0.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #FFFFFF; font-family: Poppins, system-ui, sans-serif; }
+.ap-root .nl-top-in { max-width: 1280px; margin: 0 auto; box-sizing: border-box; height: 60px; padding: 0 32px; display: flex; align-items: center; gap: 28px; }
+.ap-root .nl-top-logo { display: flex; flex: 0 0 auto; }
+.ap-root .nl-top-logo img { height: 38px; width: auto; display: block; }
+.ap-root .nl-top-nav { display: flex; align-items: center; gap: 6px; }
+.ap-root .nl-top-drop { position: relative; }
+.ap-root .nl-top-item { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: #E8E5F1; font: inherit; font-size: 15px; font-weight: 600; text-decoration: none; cursor: pointer; white-space: nowrap; transition: background 0.2s, color 0.2s; }
+.ap-root .nl-top-item:hover { background: rgba(255, 255, 255, 0.08); color: #FFFFFF; }
+.ap-root .nl-top-item.on { background: linear-gradient(90deg, #8259ED, #C5408A); color: #FFFFFF; }
+.ap-root .nl-top-item svg { transition: transform 0.2s; }
+.ap-root .nl-top-item svg.up { transform: rotate(180deg); }
+.ap-root .nl-top-menu { position: absolute; top: 46px; left: 0; min-width: 260px; padding: 8px; display: flex; flex-direction: column; border-radius: 14px; background: #171233; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5); }
+.ap-root .nl-top-menu a { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 10px 12px; border-radius: 9px; color: #F4F2FA; font-size: 14px; font-weight: 500; text-decoration: none; }
+.ap-root .nl-top-menu a:hover { background: rgba(255, 255, 255, 0.07); }
+.ap-root .nl-top-menu a.on { background: rgba(197, 64, 138, 0.18); font-weight: 700; }
+.ap-root .nl-top-menu small { color: #A9A3C4; font-size: 12.5px; white-space: nowrap; }
+.ap-root .nl-top-side { margin-left: auto; display: flex; align-items: center; gap: 18px; }
+.ap-root .nl-top-login, .ap-root .nl-top-acct { color: #E8E5F1; font-size: 14px; font-weight: 600; text-decoration: none; }
+.ap-root .nl-top-login:hover { color: #FFFFFF; }
+.ap-root .nl-top-buy { height: 38px; padding: 0 20px; font-size: 14px; }
+
+/* Header 2 on a computer: what is left of the board's header row. */
+.ap-root header.nl-head2 { top: 60px !important; z-index: 20 !important; background: rgba(18, 13, 44, 0.9) !important; }
+.ap-root header.nl-head2-off { display: none !important; }
+.ap-root header.nl-head2 > div { padding-top: 0 !important; padding-bottom: 0 !important; min-height: 46px; gap: 6px 26px !important; }
+.ap-root header.nl-head2 > div > a:first-child,
+.ap-root header.nl-head2 > div > div:nth-of-type(1),
+.ap-root header.nl-head2 > div > div:last-child { display: none !important; }
+.ap-root .nl-head2-name { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #F0A8D2; padding-right: 22px; border-right: 1px solid rgba(255, 255, 255, 0.14); }
+.ap-root header.nl-head2 nav { font-size: 14px !important; }
+
+/* Phone. */
+.ap-root header.nl-head-old { display: none !important; }
+.ap-root .nl-top-phone .nl-top-in { height: 52px; padding: 0 12px; gap: 8px; }
+.ap-root .nl-top-phone .nl-top-logo img { height: 30px; }
+.ap-root .nl-top-phone .nl-top-nav { margin-left: auto; gap: 2px; }
+.ap-root .nl-top-phone .nl-top-item { height: 36px; padding: 0 11px; font-size: 13.5px; }
+.ap-root .nl-top-phone .nl-top-menu { left: auto; right: -70px; min-width: 250px; }
+.ap-root .nl-sub { position: sticky; top: 52px; z-index: 25; display: flex; align-items: center; gap: 4px; padding: 0 8px; height: 44px; overflow-x: auto; scrollbar-width: none; background: rgba(18, 13, 44, 0.95); border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-family: Poppins, system-ui, sans-serif; }
+.ap-root .nl-sub::-webkit-scrollbar { display: none; }
+.ap-root .nl-sub a { flex: 0 0 auto; padding: 0 10px; height: 44px; display: flex; align-items: center; color: #D9D5EC; font-size: 14px; font-weight: 600; text-decoration: none; border-bottom: 2px solid transparent; box-sizing: border-box; }
+.ap-root .nl-sub a.on { color: #FFFFFF; border-bottom-color: #C5408A; }
+.ap-root .nl-sub-name { flex: 0 0 auto; padding: 0 10px 0 6px; margin-right: 2px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #F0A8D2; border-right: 1px solid rgba(255, 255, 255, 0.14); }
+
+/* Home (Nov 27 2026, the owner): the banner is the video and Meet | Build | Scale, nothing else; no ticket bar. */
+.ap-root .nl-hero:has(> .nx-tagline) > :is(.p-in, .m-in),
+.ap-root .nl-hero:has(> .nx-tagline) > span { display: none !important; }
+.ap-root h1.nx-tagline { margin: auto; }
+.ap-root:has(.nl-top.is-home) .nl-buybar { display: none !important; }
+
+/* Home: the 5 × 5 on its own, centred. */
+.ap-root .nx-pillars .nx-globe { max-width: 1040px; margin: 0 auto; }
+
+/* Home: the partnership form. */
+.ap-root .nx-pform-box { position: relative; z-index: 1; max-width: 860px; padding: 28px; border-radius: 22px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); }
+.ap-root .nx-pform-pick { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.ap-root .nx-pform-pick button { height: 40px; padding: 0 20px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.22); background: transparent; color: #E8E5F1; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.ap-root .nx-pform-pick button.on { background: linear-gradient(90deg, #8259ED, #C5408A); border-color: transparent; color: #FFFFFF; }
+.ap-root .nx-pform-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ap-root .nx-pform-grid label { display: flex; flex-direction: column; gap: 7px; font-size: 13.5px; font-weight: 600; color: #D9D5EC; }
+.ap-root .nx-pform-grid label.wide { grid-column: 1 / -1; }
+.ap-root .nx-pform-grid input, .ap-root .nx-pform-grid textarea { box-sizing: border-box; width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(12, 9, 31, 0.6); color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 400; resize: vertical; }
+.ap-root .nx-pform-grid input:focus, .ap-root .nx-pform-grid textarea:focus { outline: 2px solid #C5408A; outline-offset: 1px; }
+.ap-root .nx-pform-err { margin: 14px 0 0; color: #FFB4B4; font-size: 14px; }
+.ap-root .nx-pform-foot { margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.ap-root .nx-pform-foot span { color: #A9A3C4; font-size: 13.5px; }
+.ap-phone .ap-root .nx-pform-box { padding: 18px; }
+.ap-phone .ap-root .nx-pform-grid { grid-template-columns: 1fr; }
+
+/* Header 1 names every city (the owner, Nov 27 2026: "instead of a drop down"). */
+.ap-root .nl-top-nav { min-width: 0; gap: 2px; }
+.ap-root .nl-top-group { margin-right: 8px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #A9A3C4; white-space: nowrap; }
+.ap-root .nl-top-sep { flex: 0 0 auto; width: 1px; height: 22px; margin: 0 10px; background: rgba(255, 255, 255, 0.18); }
+.ap-root .nl-top-item { height: 36px; padding: 0 12px; }
+@media (max-width: 1180px) { .ap-root .nl-top-in { gap: 16px; padding: 0 20px; } .ap-root .nl-top-item { padding: 0 9px; font-size: 14px; } .ap-root .nl-top-group { display: none; } }
+.ap-root .nl-top-phone .nl-top-nav { margin-left: 4px; flex: 1 1 auto; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%); padding: 0 10px; }
+.ap-root .nl-top-phone .nl-top-nav::-webkit-scrollbar { display: none; }
+.ap-root .nl-top-phone .nl-top-group { display: none; }
+.ap-root .nl-top-phone .nl-top-item { flex: 0 0 auto; height: 34px; padding: 0 10px; font-size: 13.5px; }
+.ap-root .nl-top-phone .nl-top-sep { margin: 0 4px; }
+.ap-root .nl-top-phone .nl-top-in { padding-right: 0; }

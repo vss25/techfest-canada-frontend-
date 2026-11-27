@@ -5,7 +5,7 @@
 export const SEASON_IDS = ["van", "mtl", "cgy", "tob", "ott", "tor"];
 
 // Three stops are in Toronto (Nov 26 2026, the owner: "redundancy"): each says what it is, not just the city.
-const NAMES = { van: "Vancouver", mtl: "Montreal", cgy: "Calgary", tob: "Toronto Briefing", ott: "Ottawa", tor: "National Festival" };
+const NAMES = { van: "Vancouver", mtl: "Montreal", cgy: "Calgary", tob: "Toronto Briefing", ott: "Ottawa", tor: "Flagship" };
 // The design's months, used until an event record has a start date.
 const FALLBACK = { van: "2027-02", mtl: "2027-04", cgy: "2027-06", tob: "2027-06", ott: "2027-09", tor: "2027-11" };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

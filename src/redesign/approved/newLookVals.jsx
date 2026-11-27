@@ -7,6 +7,7 @@ import { urlFor } from "../../utils/sanity";
 import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { homeEyebrow } from "../../lib/homeLayout";
 import { SPK_MIN } from "./speakerGrid";
+import { heroStillOnly } from "../../lib/siteFiles";
 import SponsorCompare from "./SponsorCompare";
 
 /* Fills the boards' new-look slots (tools/newlook_patch2.py) with live data. Shared by the desktop and phone
@@ -30,6 +31,8 @@ const AWARD_DATES = [
   { t: "Awards Night", d: "Nov 2027 · Toronto" },
 ];
 
+/* A see-through 1×1 picture: the banner's <img> with nothing to show yet. */
+const BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 const AGENDA_IDS = ["van", "mtl", "cgy", "tob", "ott", "tor"];
 const AGENDA_NAMES = { van: "Vancouver", mtl: "Montreal", cgy: "Calgary", tob: "Toronto City Briefing", ott: "Ottawa", tor: "Toronto National Festival" };
 
@@ -55,6 +58,10 @@ export function applyNewLook(v, self, opts) {
   let { openTix } = opts;
   const p = self.props;
   const s = self.state;
+  // Nov 27 2026 (the owner: "there is an image that loads... before the actual image is loaded. I don't want the
+  // backup image to load"). Until the event's own record has arrived, the banner has no picture at all (the
+  // design's stand-in photo used to show for a moment, then swap). heroWait comes from the route (LiveSite.jsx).
+  if (p.heroWait && v.c) v.c = { ...v.c, img: BLANK };
   const c = v.c || {};
   const city = s.city || "van";
   const go = (path) => (e) => { if (e && e.preventDefault) e.preventDefault(); p.navigate(path); };
@@ -132,6 +139,8 @@ export function applyNewLook(v, self, opts) {
   // Home.
   if (s.screen === "home") {
     v.heroCtas = <HeroCtas onTickets={openTix} onExplore={goEvent} city={c.name} />;
+    // TTFC's tagline, on the home banner under the title (the owner, Nov 27 2026: "present prominently").
+    v.heroTag = <div className="nx-tagline" aria-label="Meet, Build, Scale"><span>Meet</span><i aria-hidden="true" /><span>Build</span><i aria-hidden="true" /><span>Scale</span></div>;
     // Agenda highlights: every event that has an agenda can be picked; six sessions show, then its full agenda.
     const agendas = p.homeAgendas || {};
     const withAgenda = AGENDA_IDS.filter((id) => (agendas[id] || []).length)
@@ -264,6 +273,21 @@ export function applyNewLook(v, self, opts) {
       if (!list.length) return tk;
       return { ...tk, incl: <ul className="nl-incl" aria-label={`${tk.name} includes`}>{list.map((x) => <li key={x}>{x}</li>)}</ul> };
     });
+  }
+  // The same on the banner itself once the record is in: an event (or the home page) that shows a video and has
+  // no photo of its own gets no stand-in photo behind the video while it loads. Visitors who never get the video
+  // (data saver, reduced motion) keep the stand-in, so they are not left with an empty banner.
+  if (s.screen === "home" || s.screen === "event") {
+    const ownPic = s.screen === "home" ? !!((p.homeOwn && p.homeOwn.img) || c.ownPhoto) : !!c.ownPhoto;
+    const bare = p.heroWait || (!!v.heroVideo && !ownPic && !heroStillOnly({ anyDevice: true }));
+    if (bare) {
+      if (v.c) v.c = { ...v.c, img: BLANK };
+      if (s.screen === "home") {
+        const base = v.homeHero || { alt: c.title, eyebrow: homeEyebrow(c), title: c.title, blurb: c.blurb, credit: c.credit, posD: c.posD || "center", pos: c.pos || c.posD || "center" };
+        v.homeHero = { ...base, img: BLANK, credit: "" };
+      }
+      v.hideCredit = true;
+    }
   }
   return v;
 }

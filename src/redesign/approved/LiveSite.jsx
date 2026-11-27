@@ -31,7 +31,7 @@ import { findEvent, useEventContent, useEvents } from "../../lib/events";
 import { AGENDA_SOON, toDesignSessions } from "../../data/approvedAgendas";
 import { STAND_IN_DEFAULT_FROM, standInLabel, standInWords } from "../../lib/standIns";
 import {
-  CITY_EVENT, EMAIL_RE, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, countdownTo, fieldsNear, fullDate, monthShort, pick, post, routeFor, sendForm, splitName, scrollToSection,
+  CITY_EVENT, EMAIL_RE, EVENT_PAGES, PAGE_FORM, PAGE_PATH, SCREEN_PATH, cityPath, countdownTo, fieldsNear, fullDate, monthShort, pick, post, routeFor, sendForm, splitName, scrollToSection, eventPagePath,
 } from "./liveShared";
 import { fetchTicketTypes, multiCheckout } from "../../lib/ticketsApi";
 
@@ -911,11 +911,14 @@ export default function ApprovedRoute({ fallback = null }) {
   const moved = !route ? null
     : route.screen === "speakers" ? (at === "/speakers" ? `${SCREEN_PATH.past}#speakers` : `${cityPath(route.city)}#speakers`)
     : route.screen === "agenda" ? `${cityPath(route.city)}#agenda`
-    : route.screen === "partners" ? `${SCREEN_PATH.past}#partners` : null;
+    : route.screen === "partners" ? `${SCREEN_PATH.past}#partners`
+    // An event's page opened at its old site-wide address (/venue, /exhibit, …) goes to the next event's.
+    : route.screen === "page" && !route.city && EVENT_PAGES.includes(route.page) ? eventPagePath(((season || []).find((x) => x.state === "next") || {}).id || "van", route.page)
+    : null;
   useEffect(() => {
     if (!moved) return;
     navigate(moved, { replace: true });
-    scrollToSection(moved.split("#")[1]);
+    if (moved.includes("#")) scrollToSection(moved.split("#")[1]);
   }, [moved, navigate]);
   // Going Home from anywhere on the site is the visitor's own choice: remembered for this visit.
   const go = useCallback((to, opts) => {

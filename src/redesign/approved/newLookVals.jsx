@@ -1,6 +1,6 @@
 import React from "react";
 import { AgendaPage, CardMedia, Countdown, DayGlance, KeyDates, LastYear, OnStage, Pillars, SoonSections, PageHero, PartnersStrip, Passes, SpeakerPage, ContactDone } from "./NewLook";
-import { EMAIL_RE, cityPath, countdownTarget, fieldsNear, scrollToSection, sendForm } from "./liveShared";
+import { EMAIL_RE, EVENT_PAGES, cityPath, countdownTarget, eventPagePath, fieldsNear, scrollToSection, sendForm } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
 import { sessionCardMedia } from "../../lib/sessionMedia";
 import { urlFor } from "../../utils/sanity";
@@ -148,6 +148,19 @@ export function applyNewLook(v, self, opts) {
   const ctx = s.screen === "awards" ? "tor" : city;            // the event header 2 belongs to
   const stops = (p.season || []).filter((x) => x.id !== "past");
   const eventScreen = ["event", "agenda", "speakers", "speaker"].includes(s.screen);
+  // Header 2 belongs to an event (the owner, Nov 27 2026, of About: "why does [it] have these secondary navigation
+  // bar items?"). It shows on an event's page and its own pages (Venue, FAQs, …), Awards and Toronto 2026; the
+  // site's own pages (Home, About, Newsroom, Contact, the app) have header 1 only, and no Tickets button.
+  const eventPage = s.screen === "page" && EVENT_PAGES.includes(s.page);
+  const siteLevel = !(eventScreen || eventPage || s.screen === "awards" || s.screen === "past");
+  // The event the pages under More open for: this page's event, or the next one from a site-level page.
+  const nextId = ((p.season || []).find((x) => x.state === "next") || {}).id || "van";
+  const moreCity = siteLevel || s.screen === "past" ? nextId : ctx;
+  if (v.openPage && typeof v.openPage === "object") {
+    const pages = { ...v.openPage };
+    EVENT_PAGES.forEach((k) => { pages[k] = go(eventPagePath(moreCity, k)); });
+    v.openPage = pages;
+  }
   // One page per event (the owner, Nov 27 2026: "agenda, speakers, partners, should be specific to the event and
   // there will be URL appended to that section"): header 2's links scroll to that section of the event's page and
   // put it in the address (/vancouver/2027/briefing#agenda), from any page.
@@ -181,22 +194,23 @@ export function applyNewLook(v, self, opts) {
   // can work fully based on the approved design"). The header and the phone's menu no longer offer it.
   v.noLogin = true;
   const pages = v.openPage || {};
-  const ttfc = [["About us", pages.about], ["Newsroom", pages.news], ["Contact", pages.contact], ["Get the app", pages.app]].filter((x) => x[1]).map(([label, go]) => ({ label, go }));
+  const ttfc = [["About us", pages.about], ["Newsroom", pages.news], ["Past events", v.goPast], ["Contact", pages.contact], ["Get the app", pages.app]].filter((x) => x[1]).map(([label, go]) => ({ label, go }));
   v.topBar = (
-    <TopBar phone={phone} ttfc={ttfc} isHome={isHome} goHome={v.goHome} here={isHome ? null : (eventScreen || s.screen === "awards" ? ctx : null)}
+    <TopBar phone={phone} ttfc={ttfc} isHome={siteLevel} goHome={v.goHome} here={siteLevel || s.screen === "past" ? null : ctx}
       cities={stops.filter((x) => x.id !== "tor").map((x) => ({ id: x.id, name: x.name, short: String(x.name).replace(/ Briefing$/, ""), when: String(x.when || "").replace(" · Next", ""), go: v.goCity && v.goCity[x.id] }))}
       flagship={{ id: "tor", go: v.goCity && v.goCity.tor }}
       login={null} account={null}
-      onTickets={isHome ? null : v.openDrawer} />
+      onTickets={siteLevel ? null : v.openDrawer} />
   );
-  v.head2Cls = `nl-head2${isHome ? " nl-head2-off" : ""}`;
+  v.head2Cls = `nl-head2${siteLevel ? " nl-head2-off" : ""}`;
   v.noAwards = ctx !== "tor";
   // The owner, Nov 27 2026: header 2 names a City Briefing the way its banner does, "The City Briefing - Vancouver".
   const evName = ctx !== "tor" && c.name ? `The City Briefing - ${c.name}` : c.title;
-  v.head2Label = eventScreen && evName ? <span className="nl-head2-name">{evName}</span> : null;
+  const head2Name = s.screen === "past" ? "Toronto 2026 · Flagship" : s.screen === "awards" ? "Toronto Flagship 2027" : (eventScreen || eventPage) ? evName : "";
+  v.head2Label = head2Name ? <span className="nl-head2-name">{head2Name}</span> : null;
   if (phone) {
-    v.eventBar = isHome ? null : (
-      <EventBar label={eventScreen ? evName : ""} onMore={v.openMenu}
+    v.eventBar = siteLevel ? null : (
+      <EventBar label={head2Name} onMore={v.openMenu}
         links={[
           { label: "Agenda", go: toSec("agenda") },
           { label: "Speakers", go: toSec("speakers") },

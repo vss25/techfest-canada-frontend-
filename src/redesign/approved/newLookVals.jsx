@@ -8,7 +8,6 @@ import HeroBackgroundVideo from "../../components/HeroBackgroundVideo";
 import { homeEyebrow } from "../../lib/homeLayout";
 import { SPK_MIN } from "./speakerGrid";
 import { heroStillOnly } from "../../lib/siteFiles";
-import SponsorCompare from "./SponsorCompare";
 import { EventBar, PartnerForm, TopBar } from "./SiteBars";
 
 /* Fills the boards' new-look slots (tools/newlook_patch2.py) with live data. Shared by the desktop and phone
@@ -141,6 +140,8 @@ export function applyNewLook(v, self, opts) {
   // header 1"). Header 1 is TopBar on every page. Header 2 is the board's own header row on a computer (its logo,
   // event menu, Log in and Tickets are hidden by .nl-head2) and EventBar on a phone; neither shows on Home.
   const isHome = s.screen === "home";
+  const sendPartner = (from) => (f, interests) => self.run("Sending your details",
+    () => sendForm("partnership", f, { interests: interests.join(", "), event: from, wants: "partnership packages" }), "Thanks. We'll send the partnership packages to your inbox");
   const ctx = s.screen === "awards" ? "tor" : city;            // the event header 2 belongs to
   const stops = (p.season || []).filter((x) => x.id !== "past");
   const eventScreen = ["event", "agenda", "speakers", "speaker"].includes(s.screen);
@@ -194,10 +195,7 @@ export function applyNewLook(v, self, opts) {
     // In good company: last year's partners (the owner: "old partners"); the stand-ins until those arrive.
     const logos2026 = (p.past2026 && p.past2026.logos) || [];
     v.homePartners = <PartnersStrip alt label="Partners · Toronto 2026" logos={logos2026.length ? logos2026 : ptn} onAll={v.goPartners || v.goPartnersAll} />;
-    v.homeForm = (
-      <PartnerForm onSend={(f, interests) => self.run("Sending your enquiry",
-        () => sendForm("partnership", f, { interests: interests.join(", "), event: "home" }), "Thanks. The partnerships team will reply soon")} />
-    );
+    v.homeForm = <PartnerForm onSend={sendPartner("home")} />;
   }
 
   // Event page.
@@ -212,16 +210,12 @@ export function applyNewLook(v, self, opts) {
     if (onSale) v.passes = <Passes types={types} onBuy={openTix} />;
   }
 
-  // Partnership packages, side by side (SponsorCompare.jsx; the owner's sheet, Nov 26 2026): on the Sponsor page
-  // (in place of the four old cards), on the Partners page, and on each event's page above its partner form,
-  // where it opens on that event's kind and on the main rows only.
-  const toForm = () => {   // a coming-soon event page has no form: the call booking opens instead
-     const el = document.getElementById(phone ? "m-contact" : "ev-contact"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); else if (v.bookCall) v.bookCall(); };
-  if (v.pg && v.pg.partner) v.sponsorCompare = <SponsorCompare onEnquire={v.bookCall} enquireLabel="Book a 30-minute call" />;
-  if (s.screen === "partners") v.partnersSponsor = <SponsorCompare onEnquire={v.bookCall} enquireLabel="Book a 30-minute call" />;
+  // Nov 27 2026 (the owner: "Remove sponsorship packages completely. We want to capture the lead. So, we will
+  // send it after the person has provided the details"). The packages comparison is gone from the Sponsor page,
+  // the Partners page and every event page; the Sponsor page asks for the visitor's details instead.
+  if (v.pg && v.pg.partner) v.sponsorCompare = <PartnerForm onSend={sendPartner("sponsor page")} />;
   // The banner's title (the owner, Nov 26 2026): a City Briefing reads "The City Briefing - Vancouver".
   if (s.screen === "event" && city !== "tor" && c.name) v.evHeading = `The City Briefing - ${c.name}`;
-  if (s.screen === "event") v.evSponsor = <SponsorCompare compact focus={city === "tor" ? "main" : "city"} id={phone ? "m-packages" : "ev-packages"} onEnquire={toForm} onCall={v.bookCall} />;
 
   // The Agenda page.
   v.isAgenda = s.screen === "agenda";

@@ -124,7 +124,7 @@ export function OnStage({ label = "Speakers", title = "Who's on stage", lead, sp
   if (!speakers || !speakers.length) return null;
   return (
     <section className={`nx-s${alt ? " nx-alt" : ""}`} id={id}><div className="nx-wrap">
-      <Head label={label} title={title} lead={lead} more="See all speakers" onMore={onAll} />
+      <Head label={label} title={title} lead={lead} more={onAll ? "See all speakers" : undefined} onMore={onAll} />
       <div className={three ? "nx-grid3 nx-grid3-sp" : "nx-grid4"}>{speakers.map((sp, i) => <SpeakerCard key={sp.name + i} sp={sp} onOpen={sp.open} />)}</div>
     </div></section>
   );
@@ -256,11 +256,12 @@ export function AgendaHighlights({ events, initial, onAll }) {
 }
 
 /** Event page: the first few sessions, with See the full agenda. */
-export function DayGlance({ sessions, onFull, id = "ev-agenda", alt }) {
-  const rows = (sessions || []).slice(0, 4);
+export function DayGlance({ sessions, onFull, id = "ev-agenda", alt, full }) {
+  // full: the event page is the event's one page, so every session is here and there is no link to another page.
+  const rows = full ? (sessions || []) : (sessions || []).slice(0, 4);
   return (
     <section className={`nx-s${alt ? " nx-alt" : ""}`} id={id}><div className="nx-wrap">
-      <Head title="The day at a glance" more="See the full agenda" onMore={onFull} />
+      <Head title={full ? "Agenda" : "The day at a glance"} more={full ? undefined : "See the full agenda"} onMore={onFull} />
       <div className="nx-ag">{rows.map((s, i) => <SessionRow key={i} s={s} />)}</div>
     </div></section>
   );

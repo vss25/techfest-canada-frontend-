@@ -56,7 +56,8 @@ export function EventBar({ label, links = [], onMore }) {
 
 const INTERESTS = ["Sponsor", "Exhibit", "Speak"];
 
-/** Home: the partnership form. onSend(fields, interests) sends it (the same route as an event page's enquiry). */
+/** The partnership form (Home and the Sponsor page): it captures the lead, and sales sends the packages after.
+    onSend(fields, interests) sends it (the same route as an event page's enquiry). */
 export function PartnerForm({ onSend }) {
   const [f, setF] = useState({ name: "", email: "", company: "", message: "" });
   const [picked, setPicked] = useState(["Sponsor"]);
@@ -75,7 +76,7 @@ export function PartnerForm({ onSend }) {
         <span className="nx-ghost-word" aria-hidden="true">TTFC</span>
         <div>
           <h2 className="nx-h2">Partner with <em>TTFC</em></h2>
-          <p className="nx-lead">Sponsor, exhibit or speak across the 2027 season. Tell us what you have in mind and the partnerships team will reply.</p>
+          <p className="nx-lead">Sponsor, exhibit or speak across the 2027 season. Leave your details and we'll send you the partnership packages.</p>
         </div>
       </div>
       <form className="nx-pform-box" onSubmit={submit} noValidate>
@@ -90,7 +91,7 @@ export function PartnerForm({ onSend }) {
         </div>
         {err ? <p className="nx-pform-err" role="alert">{err}</p> : null}
         <div className="nx-pform-foot">
-          <button type="submit" className="nx-btn nx-buy">Send enquiry</button>
+          <button type="submit" className="nx-btn nx-buy">Send me the packages</button>
           <span>Goes to sales@thetechfestival.com. We reply within two working days.</span>
         </div>
       </form>

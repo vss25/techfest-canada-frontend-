@@ -1209,3 +1209,10 @@ html .ap-phone .ap-root footer nav a.nl-here:is(:hover, :active) {
 /* Phone: the event page's own section bar (Agenda, Speakers, Exhibit, Partner) under the timeline is gone
    (the owner, Nov 27 2026: "why do we have 2nd redundant secondary navigation bar?"). Header 2 does that job. */
 .ap-root nav[aria-label="Event sections"] { display: none !important; }
+
+/* The ticket panel (and the other side panels): the middle scrolls on its own (the owner, Nov 27 2026: "add a
+   local scroll here"). On a short window the attendee card was squeezed and clipped instead: its First name row
+   was cut off with no way to reach Email below it. The panel's contents now keep their height and the middle
+   scrolls between the fixed title and the fixed Continue button. */
+.ap-root aside.p-drawer > .p-in { min-height: 0; }
+.ap-root aside.p-drawer > .p-in > * { flex-shrink: 0; }

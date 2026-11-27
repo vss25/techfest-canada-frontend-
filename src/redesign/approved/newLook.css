@@ -1033,3 +1033,16 @@ html .ap-phone .ap-root footer nav a.nl-here:is(:hover, :active) {
    at 68px. Both are now 42px on computers and 26px on phones. */
 .ap-root .nl-hero h1 { font-size: 42px !important; line-height: 50px !important; }
 .ap-phone .ap-root .nl-hero h1 { font-size: 26px !important; line-height: 32px !important; }
+
+/* The banner's own backdrop is the page colour (it was pale blue on Home and indigo on events): with no stand-in
+   photo while the real one is on its way, nothing lighter shows through first. */
+.ap-root :is(.nl-hero, .nl-evhero) { background-color: #0C091F !important; }
+
+/* TTFC's tagline on the home banner: Meet | Build | Scale, in the brand gradient, right under the title. */
+.ap-root .nx-tagline { display: flex; flex-wrap: wrap; align-items: center; gap: 0 18px; margin: 2px 0 4px; font-size: 34px; line-height: 42px; font-weight: 800; letter-spacing: -0.01em; }
+.ap-root .nx-tagline span { background: linear-gradient(90deg, #FF7AC0, #B79CFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ap-root .nx-tagline span:nth-of-type(2) { background-image: linear-gradient(90deg, #E58BD8, #B79CFF); }
+.ap-root .nx-tagline span:nth-of-type(3) { background-image: linear-gradient(90deg, #B79CFF, #8FA2FF); }
+.ap-root .nx-tagline i { width: 2px; height: 28px; border-radius: 2px; background: rgba(255, 255, 255, 0.45); }
+.ap-phone .ap-root .nx-tagline { gap: 0 12px; font-size: 24px; line-height: 30px; }
+.ap-phone .ap-root .nx-tagline i { height: 20px; }

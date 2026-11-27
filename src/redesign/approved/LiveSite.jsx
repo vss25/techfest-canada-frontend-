@@ -935,6 +935,7 @@ export default function ApprovedRoute({ fallback = null }) {
       speakerDoc={speakerDoc}
       homeAgendas={homeAgendas}
       homeOwn={homeOwn}
+      heroWait={eventsLoading || (route.screen === "home" && homeDoc === null)}
       homeSpeakers={homeSpeakers}
       loaderMs={0}
     />

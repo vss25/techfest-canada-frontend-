@@ -50,7 +50,9 @@ export function routeFor(pathname) {
   if (!city) return null;
   const evPage = ev.sub && EVENT_PAGES.find((k) => PAGE_PATH[k] === `/${ev.sub}`);
   if (evPage) return { screen: "page", page: evPage, city, faq: 0 };
-  if (ev.sub === "speakers") return { screen: "speakers", city };
+  // An event's whole speakers or partners list (the owner, Nov 27 2026: "Keep partners and speakers page at the
+  // event level and only open and show the CTA when there are enough"): the event's page with that list in full.
+  if (ev.sub === "speakers" || ev.sub === "partners") return { screen: "event", city, sec: "", full: ev.sub };
   // …/agenda is the Agenda page (the new look, Nov 25 2026; it used to scroll the event page to its agenda).
   if (ev.sub === "agenda") return { screen: "agenda", city };
   return { screen: "event", city, sec: "", drawer: ev.sub === "tickets" };

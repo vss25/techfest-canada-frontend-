@@ -1011,3 +1011,11 @@ html[data-site-theme="dark"] .ap-root footer { background: transparent !importan
 /* "Take the details with you": no spotlight beams (the owner, Nov 26 2026: "remove the spotlight UX from here"). */
 .ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::before,
 .ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::after { content: none !important; animation: none !important; }
+
+/* The footer's "You're here" link never takes the hover look (the owner, Nov 26 2026: gold and underlined on the
+   page you are already on read as an error). It stays pink, plain and unclickable-looking on both layouts. */
+html .ap-root footer[data-dark] nav a.nl-here:is(:hover, :focus-visible, :active),
+html .ap-root footer[data-dark] a.nl-here.p-link:is(:hover, :focus-visible, :active),
+html .ap-phone .ap-root footer nav a.nl-here:is(:hover, :active) {
+  color: #C5408A !important; text-decoration: none !important; background-image: none !important; background-size: 0 0 !important;
+}

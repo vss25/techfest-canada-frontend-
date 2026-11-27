@@ -19,6 +19,8 @@ import "./siteDark.css"; // only applies with ?theme=dark (src/lib/siteDarkPrevi
 import SeasonRail from "./SeasonRail";
 import "./newLook.css";
 import { applyNewLook } from "./newLookVals";
+import AttendeeForm from "./AttendeeForm";
+import { orderFrom } from "./attendeeOrder";
 import useNewLookEffects from "./useNewLookEffects";
 import { normalizeSpeakerSlug, speakerSlug } from "../../seo/slug";
 import { seasonStops } from "../../lib/seasonRail";
@@ -193,46 +195,16 @@ class LiveSite extends ApprovedSite {
     const types = this.props.data?.types;
     const evKey = this.props.eventKey;
     if (!types || !evKey) { this.toast("Tickets go on sale soon"); return; }
-    if (this.state.later) { this.toast("For now, add each attendee's first name, last name and email"); return; }
-    this.saveOpenAttendee();
-    const att = this.att || {};
     const list = [];
     types.forEach((t, i) => { for (let k = 0; k < (this.state.q[i] || 0); k++) list.push(t); });
-    const attendees = list.map((t, idx) => {
-      const a = att[idx] || {};
-      return { firstName: a.first || "", lastName: a.last || "", email: a.email || "", ticketTypeId: t.id };
-    });
-    const missing = attendees.findIndex((a) => !a.firstName || !a.lastName || !EMAIL_RE.test(a.email));
-    if (missing >= 0) { this.setState({ openAtt: missing }); this.toast(`Ticket ${missing + 1}: add a first name, last name and email`); return; }
+    // Every attendee's answers are kept by the form itself (AttendeeForm.jsx, Nov 27 2026).
+    const order = orderFrom(this.attDraft, list);
+    if (order.error) { this.setState({ attTry: (this.state.attTry || 0) + 1 }); this.toast(order.error); return; }
     const items = types.map((t, i) => ({ ticketTypeId: t.id, quantity: this.state.q[i] || 0 })).filter((x) => x.quantity > 0);
-    const b = attendees[0];
     this.run("Securing your tickets", async () => {
-      const res = await multiCheckout({ eventKey: evKey, booker: { name: `${b.firstName} ${b.lastName}`, email: b.email }, items, attendees });
+      const res = await multiCheckout({ eventKey: evKey, booker: order.booker, items, attendees: order.attendees });
       if (res && res.url) { window.location.assign(res.url); return; }
       this.setState({ done: true });
-    });
-  }
-
-  // Only the open attendee's fields exist on the page; keep each one's answers as the visitor moves between them.
-  attPanel() { return this.rootEl && this.rootEl.querySelector('[aria-expanded="true"].p-press + .p-in'); }
-  saveOpenAttendee() {
-    const panel = this.attPanel();
-    if (!panel || this.state.step !== 2) return;
-    const f = fieldsNear(panel.querySelector("input, textarea") || panel);
-    this.att = this.att || {};
-    this.att[this.state.openAtt] = { first: f["first name"] || "", last: f["last name"] || "", email: f.email || "" };
-  }
-  restoreOpenAttendee() {
-    const panel = this.attPanel();
-    const a = this.att && this.att[this.state.openAtt];
-    if (!panel || !a) return;
-    panel.querySelectorAll("label").forEach((l) => {
-      const input = l.querySelector("input:not([type=checkbox])");
-      if (!input) return;
-      const t = l.textContent.trim().toLowerCase();
-      if (t.startsWith("first name")) input.value = a.first;
-      else if (t.startsWith("last name")) input.value = a.last;
-      else if (t.startsWith("email")) input.value = a.email;
     });
   }
 
@@ -422,15 +394,13 @@ class LiveSite extends ApprovedSite {
       }, "Welcome to TTFC. Check your email to verify");
     };
     v.checkout = () => this.checkout();
-    v.toggleLater = () => this.toast("For now, add each attendee's first name, last name and email");
-    if (Array.isArray(v.attendees)) {
-      v.attendees = v.attendees.map((a, idx) => ({
-        ...a,
-        toggle: () => { this.saveOpenAttendee(); this.setState({ openAtt: s.openAtt === idx ? -1 : idx }, () => this.restoreOpenAttendee()); },
-      }));
+    if (s.step === 2 && this.props.data?.types) {
+      const names = [];
+      this.props.data.types.forEach((t, i) => { for (let k = 0; k < (s.q[i] || 0); k++) names.push(t.name); });
+      v.attendeeForm = <AttendeeForm key={names.join("|")} names={names} draft={this.attDraft} attempt={s.attTry || 0} onChange={(d) => { this.attDraft = d; }} />;
     }
     const toAtt = v.toAttendees;
-    v.toAttendees = () => { if (!this.props.data?.types) { this.toast("Tickets go on sale soon"); return; } this.att = {}; toAtt(); };
+    v.toAttendees = () => { if (!this.props.data?.types) { this.toast("Tickets go on sale soon"); return; } this.attDraft = null; this.setState({ attTry: 0 }); toAtt(); };
     return applyNewLook(v, this, { openTix: v.openDrawer });
   }
 

@@ -220,7 +220,7 @@ export function AgendaHighlights({ events, initial, onAll }) {
   const rows = cur.rows.slice(0, 6);
   return (
     <section className="nx-s nx-stage" id="p-agenda"><div className="nx-wrap">
-      <Head label="Agenda" title="Agenda highlights">
+      <Head title="Agenda highlights">
         <div className="nx-tabs" role="group" aria-label="Choose an event">
           {events.map((e) => <button key={e.id} type="button" aria-pressed={e.id === cur.id} className={e.id === cur.id ? "on" : ""} onClick={() => setPick(e.id)}>{e.label}</button>)}
         </div>
@@ -250,7 +250,7 @@ export function DayGlance({ sessions, onFull, id = "ev-agenda", alt }) {
   const rows = (sessions || []).slice(0, 4);
   return (
     <section className={`nx-s${alt ? " nx-alt" : ""}`} id={id}><div className="nx-wrap">
-      <Head label="Agenda" title="The day at a glance" more="See the full agenda" onMore={onFull} />
+      <Head title="The day at a glance" more="See the full agenda" onMore={onFull} />
       <div className="nx-ag">{rows.map((s, i) => <SessionRow key={i} s={s} />)}</div>
     </div></section>
   );

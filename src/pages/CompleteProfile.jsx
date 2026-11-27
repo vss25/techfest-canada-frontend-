@@ -19,7 +19,7 @@ import {
 
 const SUPPORT_EMAIL = "enquire@thetechfestival.com";
 const ORBITRON = "'Orbitron', sans-serif";
-const GRADIENT = "linear-gradient(135deg, #7a3fd1, #f5a623)";
+const GRADIENT = "#D6308C";
 
 const EMPTY = {
   firstName: "", lastName: "", jobTitle: "", organisation: "", phone: "", linkedin: "", country: "",
@@ -69,14 +69,14 @@ function Chips({ options, value, onChange, dark, label }) {
             onClick={() => toggle(o)}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6, minHeight: 40, padding: "8px 14px", borderRadius: 999,
-              border: "1px solid " + (on ? "#7a3fd1" : dark ? "rgba(255,255,255,0.16)" : "rgba(122,63,209,0.22)"),
-              background: on ? (dark ? "rgba(122,63,209,0.32)" : "rgba(122,63,209,0.12)") : (dark ? "rgba(255,255,255,0.04)" : "#ffffff"),
+              border: "1px solid " + (on ? "#D6308C" : dark ? "rgba(255,255,255,0.16)" : "rgba(214,48,140,0.22)"),
+              background: on ? (dark ? "rgba(214,48,140,0.32)" : "rgba(214,48,140,0.12)") : (dark ? "rgba(255,255,255,0.04)" : "#ffffff"),
               color: on ? (dark ? "#e2d2ff" : "#5a24a8") : (dark ? "rgba(255,255,255,0.82)" : "#2a1d45"),
               fontFamily: "inherit", fontSize: "14px", fontWeight: on ? 700 : 500, lineHeight: 1.3, textAlign: "left", cursor: "pointer",
               transition: "background 0.15s, border-color 0.15s",
             }}
           >
-            {on && <span aria-hidden="true" style={{ width: 16, height: 16, borderRadius: 999, background: "#7a3fd1", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><TickSmall /></span>}
+            {on && <span aria-hidden="true" style={{ width: 16, height: 16, borderRadius: 999, background: "#D6308C", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><TickSmall /></span>}
             {o}
           </button>
         );
@@ -173,13 +173,13 @@ export default function CompleteProfile() {
   const textMain = dark ? "#ffffff" : "#0d0520";
   const textMuted = dark ? "rgba(255,255,255,0.68)" : "rgba(13,5,32,0.68)";
   const textDim = dark ? "rgba(255,255,255,0.45)" : "rgba(13,5,32,0.48)";
-  const bg = dark ? "#06020f" : "#ffffff";
-  const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.04)";
-  const inputBorder = dark ? "rgba(255,255,255,0.14)" : "rgba(122,63,209,0.20)";
+  const bg = dark ? "#151035" : "#ffffff";
+  const inputBg = dark ? "rgba(255,255,255,0.06)" : "rgba(214,48,140,0.04)";
+  const inputBorder = dark ? "rgba(255,255,255,0.14)" : "rgba(214,48,140,0.20)";
   const cardBg = dark ? "rgba(255,255,255,0.03)" : "#ffffff";
-  const cardBorder = dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(122,63,209,0.12)";
-  const accent = dark ? "#c8a8ff" : "#7a3fd1";
-  const divider = dark ? "rgba(255,255,255,0.07)" : "rgba(122,63,209,0.10)";
+  const cardBorder = dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(214,48,140,0.12)";
+  const accent = dark ? "#c8a8ff" : "#D6308C";
+  const divider = dark ? "rgba(255,255,255,0.07)" : "rgba(214,48,140,0.10)";
 
   const inputStyle = (err) => ({ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid " + (err ? "#e05555" : inputBorder), background: inputBg, color: textMain, fontFamily: "inherit", fontSize: "16px", outline: "none", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none", minHeight: 46 });
   const labelStyle = { fontSize: "0.68rem", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: textMuted, display: "block", marginBottom: 7 };
@@ -187,7 +187,7 @@ export default function CompleteProfile() {
   const errStyle = { fontSize: "0.75rem", color: "#e05555", marginTop: 5 };
   const sectionLabel = { fontFamily: ORBITRON, fontWeight: 800, fontSize: "0.62rem", letterSpacing: "1.5px", textTransform: "uppercase", color: accent };
   const card = { background: cardBg, border: cardBorder, borderRadius: 20, padding: "clamp(20px, 5vw, 36px)", backdropFilter: "blur(12px)" };
-  const primaryBtn = (disabled) => ({ width: "100%", minHeight: 52, padding: "15px 18px", borderRadius: 12, border: "none", background: GRADIENT, color: "#fff", fontFamily: ORBITRON, fontWeight: 800, fontSize: "0.72rem", letterSpacing: "1.2px", textTransform: "uppercase", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1, boxShadow: "0 4px 20px rgba(122,63,209,0.35)" });
+  const primaryBtn = (disabled) => ({ width: "100%", minHeight: 52, padding: "15px 18px", borderRadius: 12, border: "none", background: GRADIENT, color: "#fff", fontFamily: ORBITRON, fontWeight: 800, fontSize: "0.72rem", letterSpacing: "1.2px", textTransform: "uppercase", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1, boxShadow: "0 4px 20px rgba(214,48,140,0.35)" });
   const field = (k, label, { required, placeholder, type = "text", autoComplete, inputMode, onBlur, maxLength = 150, hint } = {}) => (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <label htmlFor={`cp-${k}`} style={labelStyle}>{label}{required ? " *" : <> {optional}</>}</label>
@@ -210,7 +210,7 @@ export default function CompleteProfile() {
   if (status === "loading") {
     content = (
       <div style={{ ...card, textAlign: "center", padding: "56px 24px" }} role="status" aria-live="polite">
-        <div style={{ width: 34, height: 34, margin: "0 auto 16px", borderRadius: 999, border: `3px solid ${divider}`, borderTopColor: "#7a3fd1", animation: "cpSpin 0.8s linear infinite" }} />
+        <div style={{ width: 34, height: 34, margin: "0 auto 16px", borderRadius: 999, border: `3px solid ${divider}`, borderTopColor: "#D6308C", animation: "cpSpin 0.8s linear infinite" }} />
         <p style={{ margin: 0, color: textMuted }}>Loading your profile…</p>
       </div>
     );
@@ -236,7 +236,7 @@ export default function CompleteProfile() {
   } else if (status === "done") {
     content = (
       <div style={{ ...card, textAlign: "center", padding: "48px clamp(20px, 5vw, 40px)" }} role="status" aria-live="polite">
-        <div aria-hidden="true" style={{ width: 64, height: 64, margin: "0 auto 18px", borderRadius: 999, background: GRADIENT, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 30px rgba(122,63,209,0.35)" }}>
+        <div aria-hidden="true" style={{ width: 64, height: 64, margin: "0 auto 18px", borderRadius: 999, background: GRADIENT, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 30px rgba(214,48,140,0.35)" }}>
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
         </div>
         <h1 style={{ fontFamily: ORBITRON, fontWeight: 900, fontSize: "clamp(1.25rem, 5.5vw, 1.8rem)", margin: "0 0 12px", color: textMain, lineHeight: 1.3 }}>
@@ -303,10 +303,10 @@ export default function CompleteProfile() {
             <Chips options={OBJECTIVES} value={form.objectives} onChange={(v) => set("objectives", v)} dark={dark} label="Your objectives" />
           </div>
 
-          <label style={{ display: "flex", gap: 12, alignItems: "flex-start", cursor: "pointer", padding: "16px 18px", background: dark ? "rgba(122,63,209,0.08)" : "rgba(122,63,209,0.04)", borderRadius: 14, border: dark ? "1px solid rgba(122,63,209,0.20)" : "1px solid rgba(122,63,209,0.12)" }}>
+          <label style={{ display: "flex", gap: 12, alignItems: "flex-start", cursor: "pointer", padding: "16px 18px", background: dark ? "rgba(214,48,140,0.08)" : "rgba(214,48,140,0.04)", borderRadius: 14, border: dark ? "1px solid rgba(214,48,140,0.20)" : "1px solid rgba(214,48,140,0.12)" }}>
             <span style={{ position: "relative", flexShrink: 0, marginTop: 2 }}>
               <input type="checkbox" checked={form.consentUpdates} onChange={(e) => set("consentUpdates", e.target.checked)} style={{ position: "absolute", opacity: 0, width: 20, height: 20, margin: 0 }} />
-              <span aria-hidden="true" style={{ width: 20, height: 20, borderRadius: 6, border: "2px solid " + (form.consentUpdates ? "#7a3fd1" : inputBorder), background: form.consentUpdates ? "#7a3fd1" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>{form.consentUpdates && <TickSmall />}</span>
+              <span aria-hidden="true" style={{ width: 20, height: 20, borderRadius: 6, border: "2px solid " + (form.consentUpdates ? "#D6308C" : inputBorder), background: form.consentUpdates ? "#D6308C" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>{form.consentUpdates && <TickSmall />}</span>
             </span>
             <span style={{ fontSize: "14px", color: textMuted, lineHeight: 1.6 }}>
               Keep me posted about the agenda, activities and news from The Tech Festival Canada.
@@ -337,8 +337,8 @@ export default function CompleteProfile() {
       <div style={{ minHeight: "100vh", background: bg, color: textMain, position: "relative" }}>
         <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
           background: dark
-            ? "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.10) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(245,166,35,0.06) 0%, transparent 70%)"
-            : "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(122,63,209,0.05) 0%, transparent 70%)" }} />
+            ? "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(214,48,140,0.10) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 70%, rgba(245,166,35,0.06) 0%, transparent 70%)"
+            : "radial-gradient(ellipse 60% 50% at 20% 30%, rgba(214,48,140,0.05) 0%, transparent 70%)" }} />
 
         <main ref={topRef} style={{ position: "relative", zIndex: 1, maxWidth: 680, margin: "0 auto", padding: "clamp(96px, 14vw, 128px) 16px 72px", scrollMarginTop: 80 }}>
           {status === "ready" && (

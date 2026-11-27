@@ -1,6 +1,7 @@
 // src/utils/sanity.js
 
 import { createImageUrlBuilder } from "@sanity/image-url";
+import { PREVIEW_API, initPreviewFromUrl, isPreview, notePreviewFailure, previewToken } from "../lib/preview.js";
 
 /* The website's CMS reads (Oct 31 2026): a plain fetch to Sanity's API CDN (apicdn) instead of @sanity/client.
    The same GROQ and the same answer, but cached near the visitor (the uncached API answers from Europe), and 28 kB
@@ -14,7 +15,25 @@ const API_VERSION = "2024-01-01";
 const QUERY_URL = `https://${PROJECT_ID}.apicdn.sanity.io/v${API_VERSION}/data/query/${DATASET}`;
 const MAX_GET = 11264; // @sanity/client's limit: a longer query goes as a POST
 
+initPreviewFromUrl();
+
+/* Staff preview (src/lib/preview.js): the same query, answered by the backend with drafts
+   layered over published content. Falls back to the published answer if that fails. */
+async function previewQuery(groq, params) {
+  const res = await fetch(`${PREVIEW_API}/cms/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${previewToken()}` },
+    body: JSON.stringify({ query: groq, params }),
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(json?.error || `Preview failed (${res.status})`);
+  return json?.result;
+}
+
 async function query(groq, params = {}) {
+  if (isPreview()) {
+    try { return await previewQuery(groq, params); } catch (err) { notePreviewFailure(err?.message); }
+  }
   const search = new URLSearchParams({ query: groq });
   for (const [key, value] of Object.entries(params)) if (value !== undefined) search.append(`$${key}`, JSON.stringify(value));
   search.append("returnQuery", "false");

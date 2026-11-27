@@ -32,10 +32,10 @@ export default function NotFound() {
   }, []);
   useSeo(`Page not found | ${SITE_NAME}`, undefined, { canonical: null, robots: NOT_FOUND_ROBOTS, jsonLd: null });
 
-  const bg = isDark ? "#06020f" : "#f4f0ff";
+  const bg = isDark ? "#151035" : "#f4f0ff";
   const textMain = isDark ? "#ffffff" : "#0f0520";
   const textMuted = isDark ? "rgba(200,180,255,0.8)" : "rgba(60,30,110,0.85)";
-  const accent = isDark ? "#b99eff" : "#7a3fd1";
+  const accent = isDark ? "#F06AB0" : "#D6308C";
 
   return (
     <div style={{ background: bg, color: textMain, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -44,7 +44,7 @@ export default function NotFound() {
         <p style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "3px", textTransform: "uppercase", color: accent, marginBottom: "1.2rem" }}>
           404
         </p>
-        <h1 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.8rem, 5vw, 3rem)", fontWeight: 900, letterSpacing: "1px", margin: "0 0 1rem", background: "linear-gradient(135deg, #7a3fd1, #f5a623)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+        <h1 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.8rem, 5vw, 3rem)", fontWeight: 900, letterSpacing: "1px", margin: "0 0 1rem", background: "#D6308C", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
           Page not found
         </h1>
         <p style={{ fontSize: "1.1rem", color: textMuted, lineHeight: 1.8, maxWidth: 560, margin: "0 auto 2rem" }}>

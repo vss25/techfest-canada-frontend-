@@ -20,8 +20,8 @@ export default function FirstTimers() {
   }, []);
 
   const bg        = isDark ? "#07030f"                : "#f4f0ff";
-  const cardBg    = isDark ? "rgba(255,255,255,0.03)" : "rgba(122,63,209,0.04)";
-  const border    = isDark ? "rgba(255,255,255,0.08)" : "rgba(122,63,209,0.18)";
+  const cardBg    = isDark ? "rgba(255,255,255,0.03)" : "rgba(214,48,140,0.04)";
+  const border    = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,48,140,0.18)";
   const textMain  = isDark ? "#ffffff"                : "#0f0520";
   const textMuted = isDark ? "rgba(200,180,255,0.8)"  : "rgba(60,30,110,0.85)";
 
@@ -41,9 +41,9 @@ export default function FirstTimers() {
 
         :root {
           --aurora-white: #ffffff;
-          --aurora-black: #06020f;
+          --aurora-black: #151035;
           --aurora-transparent: transparent;
-          --aurora-purple: #7a3fd1;
+          --aurora-purple: #D6308C;
           --aurora-violet: #9b57e8;
           --aurora-lilac: #c4a0f5;
           --aurora-orange: #f5a623;
@@ -104,7 +104,7 @@ export default function FirstTimers() {
       <section ref={heroRef} style={{
         position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
         overflow: "hidden", minHeight: "100vh",
-        background: isDark ? "#06020f" : "#f4f0ff",
+        background: isDark ? "#151035" : "#f4f0ff",
       }}>
         <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
           <div className={isDark ? "ft-aurora-layer ft-aurora-layer--dark" : "ft-aurora-layer ft-aurora-layer--light"} />
@@ -112,7 +112,7 @@ export default function FirstTimers() {
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
           background: isDark
-            ? "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 20%, #06020f 100%)"
+            ? "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 20%, #151035 100%)"
             : "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 20%, #f4f0ff 100%)",
         }} />
         <motion.div style={{
@@ -137,7 +137,7 @@ export default function FirstTimers() {
             }}>
               Welcome to{" "}
               <span style={{
-                background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                background: "#D6308C",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
               }}>The Tech Festival Canada</span>
             </h1>
@@ -271,12 +271,12 @@ export default function FirstTimers() {
               width={1500} height={938} loading="lazy" decoding="async"
               style={{
                 width: "65%", maxWidth: 300, height: "auto", objectFit: "contain",
-                filter: "drop-shadow(0 0 40px rgba(122,63,209,0.25))",
+                filter: "drop-shadow(0 0 40px rgba(214,48,140,0.25))",
               }}
             />
             <div style={{
               position: "absolute", width: "70%", height: "70%", borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(122,63,209,0.15) 0%, transparent 70%)",
+              background: "radial-gradient(circle, rgba(214,48,140,0.15) 0%, transparent 70%)",
               pointerEvents: "none",
             }} />
           </div>
@@ -333,7 +333,7 @@ function paraStyle(textMuted) {
 function GradientSpan({ children }) {
   return (
     <span style={{
-      background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+      background: "#D6308C",
       WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
     }}>{children}</span>
   );
@@ -376,7 +376,7 @@ function ContentRow({ isDark, textMain, textMuted, border, reverse, hasBg, image
   return (
     <section ref={ref} style={{
       padding: "clamp(80px, 10vw, 120px) 5%",
-      background: hasBg ? (isDark ? "rgba(122,63,209,0.04)" : "rgba(122,63,209,0.03)") : "transparent",
+      background: hasBg ? (isDark ? "rgba(214,48,140,0.04)" : "rgba(214,48,140,0.03)") : "transparent",
       borderTop: hasBg ? `1px solid ${border}` : "none",
       borderBottom: hasBg ? `1px solid ${border}` : "none",
     }}>
@@ -412,7 +412,7 @@ function ContentRow({ isDark, textMain, textMuted, border, reverse, hasBg, image
         >
           <div className="ft-img" style={{
             borderRadius: 24, overflow: "hidden",
-            border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(122,63,209,0.12)"}`,
+            border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(214,48,140,0.12)"}`,
             minHeight: 400, position: "relative",
           }}>
             <img src={image} alt={imageAlt} width={imageSize[0]} height={imageSize[1]}

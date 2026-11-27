@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 
 var TIERS = [
-  { name: "Platinum", price: "$24,999", color: "#b99eff" },
+  { name: "Platinum", price: "$24,999", color: "#F06AB0" },
   { name: "Gold",     price: "$19,999", color: "#f5a623" },
   { name: "Silver",   price: "$14,999", color: "#c0c0c0" },
   { name: "Bronze",   price: "$9,999",  color: "#cd7f32" },
@@ -99,13 +99,13 @@ export default function Sponsor() {
     return function () { obs.disconnect(); };
   }, []);
 
-  var bg       = dark ? "#06020f" : "#ffffff";
+  var bg       = dark ? "#151035" : "#ffffff";
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMid  = dark ? "rgba(220,210,255,0.82)" : "rgba(13,5,32,0.62)";
   var textSoft = dark ? "rgba(200,185,255,0.50)" : "rgba(90,40,180,0.40)";
-  var cardBg   = dark ? "rgba(255,255,255,0.05)" : "rgba(122,63,209,0.03)";
-  var cardBdr  = dark ? "rgba(155,135,245,0.18)" : "rgba(122,63,209,0.12)";
-  var accent   = dark ? "#b99eff" : "#7a3fd1";
+  var cardBg   = dark ? "rgba(255,255,255,0.05)" : "rgba(214,48,140,0.03)";
+  var cardBdr  = dark ? "rgba(240,106,176,0.18)" : "rgba(214,48,140,0.12)";
+  var accent   = dark ? "#F06AB0" : "#D6308C";
 
   return (
     <>
@@ -122,8 +122,8 @@ export default function Sponsor() {
         .sponsor-hero-grid {
           position: absolute; inset: 0; z-index: 1; pointer-events: none;
           background-image:
-            linear-gradient(rgba(122,63,209,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(122,63,209,0.04) 1px, transparent 1px);
+            linear-gradient(rgba(214,48,140,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(214,48,140,0.04) 1px, transparent 1px);
           background-size: 68px 68px;
           mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 10%, transparent 100%);
           -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 10%, transparent 100%);
@@ -137,7 +137,7 @@ export default function Sponsor() {
         .additional-grid  { grid-template-columns: repeat(3, 1fr); }
         .tier-tabs {
           display: flex; border-radius: 14px; overflow: hidden;
-          border: 1px solid rgba(122,63,209,0.20); margin-bottom: 24px;
+          border: 1px solid rgba(214,48,140,0.20); margin-bottom: 24px;
           position: sticky; top: 82px; z-index: 50;
           backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
         }
@@ -149,12 +149,12 @@ export default function Sponsor() {
         }
         .benefit-row {
           display: flex; align-items: flex-start; gap: 12px;
-          padding: 12px 0; border-bottom: 1px solid rgba(122,63,209,0.09);
+          padding: 12px 0; border-bottom: 1px solid rgba(214,48,140,0.09);
         }
         .benefit-row:last-child { border-bottom: none; }
         .add-highlight-item {
           display: flex; align-items: flex-start; gap: 10px;
-          padding: 7px 0; border-bottom: 1px solid rgba(122,63,209,0.08);
+          padding: 7px 0; border-bottom: 1px solid rgba(214,48,140,0.08);
         }
         .add-highlight-item:last-child { border-bottom: none; }
         @media (max-width: 768px) {
@@ -173,7 +173,7 @@ export default function Sponsor() {
       {/* HERO */}
       <section className="sponsor-hero" style={{ background: bg }}>
         <div className="sponsor-hero-grid" />
-        <div className="sponsor-hero-glow" style={{ width: 650, height: 650, top: -200, left: -150, filter: "blur(90px)", background: dark ? "radial-gradient(circle, rgba(122,63,209,0.22) 0%, transparent 70%)" : "radial-gradient(circle, rgba(122,63,209,0.10) 0%, transparent 70%)" }} />
+        <div className="sponsor-hero-glow" style={{ width: 650, height: 650, top: -200, left: -150, filter: "blur(90px)", background: dark ? "radial-gradient(circle, rgba(214,48,140,0.22) 0%, transparent 70%)" : "radial-gradient(circle, rgba(214,48,140,0.10) 0%, transparent 70%)" }} />
         <div className="sponsor-hero-glow" style={{ width: 500, height: 500, top: -100, right: -180, filter: "blur(100px)", animationDelay: "3s", background: dark ? "radial-gradient(circle, rgba(245,166,35,0.14) 0%, transparent 70%)" : "radial-gradient(circle, rgba(245,166,35,0.08) 0%, transparent 70%)" }} />
 
         <div style={{ position: "relative", zIndex: 5, maxWidth: 900, margin: "0 auto", padding: "clamp(5rem,10vw,8rem) 6%", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
@@ -183,7 +183,7 @@ export default function Sponsor() {
             style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(2.2rem,5.5vw,4rem)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.5px", marginBottom: 10 }}
           >
             <span style={{ color: textMain }}>Partner With Us </span>
-            <span style={{ background: "linear-gradient(135deg,#7a3fd1,#f5a623)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>To Lead The Future</span>
+            <span style={{ background: "#D6308C", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>To Lead The Future</span>
           </motion.h1>
 
           <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.5 }}
@@ -212,7 +212,7 @@ export default function Sponsor() {
 
       {/* BOTTOM CTA */}
       <section style={{ background: bg, padding: "0 6% 5rem" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", background: "linear-gradient(135deg, rgba(122,63,209,0.12), rgba(245,166,35,0.08))", border: "1px solid " + cardBdr, borderRadius: 28, padding: "clamp(2.5rem,5vw,4rem)", textAlign: "center" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", background: "linear-gradient(135deg, rgba(214,48,140,0.12), rgba(245,166,35,0.08))", border: "1px solid " + cardBdr, borderRadius: 28, padding: "clamp(2.5rem,5vw,4rem)", textAlign: "center" }}>
           <p style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "clamp(1.2rem,3vw,2rem)", fontWeight: 900, color: textMain, marginBottom: 12 }}>Ready to Partner?</p>
           <p style={{ fontSize: "0.95rem", lineHeight: 1.7, color: textMid, maxWidth: 500, margin: "0 auto 28px" }}>Get in touch to discuss a custom package tailored to your goals, or secure one of our standard partnerships today.</p>
           <button onClick={function () { setInquiryOpen(true); }} className="btn-primary"
@@ -262,7 +262,7 @@ function ComparisonTable(props) {
     <>
       <div className="sp-desktop-table" style={{ position: "fixed", top: 80, left: 0, right: 0, zIndex: 900, transform: showBar ? "translateY(0)" : "translateY(-100%)", opacity: showBar ? 1 : 0, transition: "transform 0.3s ease, opacity 0.25s ease", pointerEvents: showBar ? "auto" : "none", padding: "0 6%" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "28% repeat(4,1fr)", background: dark ? "rgba(10,5,24,0.96)" : "rgba(248,246,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + cardBdr, boxShadow: dark ? "0 4px 24px rgba(0,0,0,0.6)" : "0 4px 24px rgba(122,63,209,0.08)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "28% repeat(4,1fr)", background: dark ? "rgba(10,5,24,0.96)" : "rgba(248,246,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + cardBdr, boxShadow: dark ? "0 4px 24px rgba(0,0,0,0.6)" : "0 4px 24px rgba(214,48,140,0.08)" }}>
             <div style={{ padding: "16px 24px", display: "flex", alignItems: "center" }}>
               <span style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: textSoft }}>Benefit</span>
             </div>
@@ -306,7 +306,7 @@ function ComparisonTable(props) {
                   if (row.group) {
                     return (
                       <tr key={ri}>
-                        <td colSpan={5} style={{ padding: "20px 24px 12px", background: dark ? "rgba(122,63,209,0.10)" : "rgba(122,63,209,0.04)", borderTop: ri > 0 ? "2px solid " + cardBdr : "none" }}>
+                        <td colSpan={5} style={{ padding: "20px 24px 12px", background: dark ? "rgba(214,48,140,0.10)" : "rgba(214,48,140,0.04)", borderTop: ri > 0 ? "2px solid " + cardBdr : "none" }}>
                           <span style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "2.5px", textTransform: "uppercase", color: accent }}>{row.group}</span>
                         </td>
                       </tr>
@@ -314,14 +314,14 @@ function ComparisonTable(props) {
                   }
                   return (
                     <tr key={ri}
-                      style={{ background: ri % 2 === 0 ? "transparent" : (dark ? "rgba(155,135,245,0.04)" : "rgba(122,63,209,0.02)") }}
-                      onMouseEnter={function (e) { e.currentTarget.style.background = dark ? "rgba(155,135,245,0.09)" : "rgba(122,63,209,0.05)"; }}
-                      onMouseLeave={function (e) { e.currentTarget.style.background = ri % 2 === 0 ? "transparent" : (dark ? "rgba(155,135,245,0.04)" : "rgba(122,63,209,0.02)"); }}
+                      style={{ background: ri % 2 === 0 ? "transparent" : (dark ? "rgba(240,106,176,0.04)" : "rgba(214,48,140,0.02)") }}
+                      onMouseEnter={function (e) { e.currentTarget.style.background = dark ? "rgba(240,106,176,0.09)" : "rgba(214,48,140,0.05)"; }}
+                      onMouseLeave={function (e) { e.currentTarget.style.background = ri % 2 === 0 ? "transparent" : (dark ? "rgba(240,106,176,0.04)" : "rgba(214,48,140,0.02)"); }}
                     >
-                      <td style={{ padding: "16px 24px", fontSize: "0.95rem", fontWeight: 500, color: dark ? "rgba(220,210,255,0.88)" : "rgba(13,5,32,0.72)", borderTop: "1px solid " + (dark ? "rgba(155,135,245,0.08)" : "rgba(122,63,209,0.06)"), lineHeight: 1.4 }}>{row.label}</td>
+                      <td style={{ padding: "16px 24px", fontSize: "0.95rem", fontWeight: 500, color: dark ? "rgba(220,210,255,0.88)" : "rgba(13,5,32,0.72)", borderTop: "1px solid " + (dark ? "rgba(240,106,176,0.08)" : "rgba(214,48,140,0.06)"), lineHeight: 1.4 }}>{row.label}</td>
                       {row.values.map(function (val, vi) {
                         return (
-                          <td key={vi} style={{ padding: "16px 14px", textAlign: "center", borderTop: "1px solid " + (dark ? "rgba(155,135,245,0.08)" : "rgba(122,63,209,0.06)"), borderLeft: "1px solid " + (dark ? "rgba(155,135,245,0.08)" : "rgba(122,63,209,0.06)"), fontSize: "0.92rem" }}>
+                          <td key={vi} style={{ padding: "16px 14px", textAlign: "center", borderTop: "1px solid " + (dark ? "rgba(240,106,176,0.08)" : "rgba(214,48,140,0.06)"), borderLeft: "1px solid " + (dark ? "rgba(240,106,176,0.08)" : "rgba(214,48,140,0.06)"), fontSize: "0.92rem" }}>
                             {val === true  ? <span style={{ color: "#4ade80", fontSize: "1.3rem", fontWeight: 700 }}>✓</span>
                            : val === false ? <span style={{ color: dark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.18)" }}>—</span>
                            : <span style={{ fontWeight: 700, color: dark ? "rgba(255,255,255,0.92)" : "#0d0520" }}>{val}</span>}
@@ -342,7 +342,7 @@ function ComparisonTable(props) {
                 return (
                   <button key={tier.name} className="tier-tab"
                     onClick={function () { setActiveTier(i); }}
-                    style={{ background: active ? tier.color : "transparent", color: active ? "#fff" : (dark ? "rgba(255,255,255,0.55)" : "rgba(13,5,32,0.45)"), borderRight: i < TIERS.length - 1 ? "1px solid rgba(122,63,209,0.18)" : "none" }}
+                    style={{ background: active ? tier.color : "transparent", color: active ? "#fff" : (dark ? "rgba(255,255,255,0.55)" : "rgba(13,5,32,0.45)"), borderRight: i < TIERS.length - 1 ? "1px solid rgba(214,48,140,0.18)" : "none" }}
                   >{tier.name}</button>
                 );
               })}
@@ -352,7 +352,7 @@ function ComparisonTable(props) {
               if (activeTier !== ti) return null;
               return (
                 <motion.div key={tier.name} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-                  style={{ background: dark ? "rgba(255,255,255,0.05)" : "#ffffff", border: "1px solid " + (dark ? "rgba(155,135,245,0.22)" : "rgba(122,63,209,0.14)"), borderRadius: 20, padding: "24px 20px", boxShadow: dark ? "0 4px 28px rgba(0,0,0,0.4)" : "0 4px 20px rgba(122,63,209,0.08)" }}>
+                  style={{ background: dark ? "rgba(255,255,255,0.05)" : "#ffffff", border: "1px solid " + (dark ? "rgba(240,106,176,0.22)" : "rgba(214,48,140,0.14)"), borderRadius: 20, padding: "24px 20px", boxShadow: dark ? "0 4px 28px rgba(0,0,0,0.4)" : "0 4px 20px rgba(214,48,140,0.08)" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
                     <div>
                       <div style={{ width: 32, height: 4, borderRadius: 4, background: tier.color, boxShadow: "0 0 12px " + tier.color + "70", marginBottom: 8 }} />
@@ -364,7 +364,7 @@ function ComparisonTable(props) {
                   {groupSections.map(function (section) {
                     return (
                       <div key={section.group} style={{ marginBottom: 22 }}>
-                        <div style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.62rem", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase", color: accent, marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid " + (dark ? "rgba(155,135,245,0.22)" : "rgba(122,63,209,0.14)") }}>{section.group}</div>
+                        <div style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.62rem", fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase", color: accent, marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid " + (dark ? "rgba(240,106,176,0.22)" : "rgba(214,48,140,0.14)") }}>{section.group}</div>
                         {section.items.map(function (row) {
                           var val = row.values[ti];
                           return (
@@ -399,7 +399,7 @@ function AdditionalPackages(props) {
   var dark = props.dark; var textMain = props.textMain; var textMid = props.textMid;
   var textSoft = props.textSoft; var accent = props.accent; var cardBdr = props.cardBdr;
   var sectionBg = dark ? "#0b0618" : "#f4f0ff";
-  var sectionBorder = dark ? "rgba(155,135,245,0.14)" : "rgba(122,63,209,0.12)";
+  var sectionBorder = dark ? "rgba(240,106,176,0.14)" : "rgba(214,48,140,0.12)";
 
   return (
     <section style={{ background: sectionBg, borderTop: "1px solid " + sectionBorder, borderBottom: "1px solid " + sectionBorder, padding: "5rem 6%" }}>
@@ -421,7 +421,7 @@ function AdditionalCard(props) {
   var isInView = useInView(ref, { once: true, margin: "-40px" });
 
   var cardBg    = dark ? "rgba(255,255,255,0.06)" : "#ffffff";
-  var cardBdr   = dark ? "rgba(155,135,245,0.22)" : "rgba(122,63,209,0.14)";
+  var cardBdr   = dark ? "rgba(240,106,176,0.22)" : "rgba(214,48,140,0.14)";
   var descColor = dark ? "rgba(210,200,255,0.82)" : "rgba(60,30,110,0.72)";
   var itemColor = dark ? "rgba(230,222,255,0.94)" : "rgba(13,5,32,0.80)";
 
@@ -431,19 +431,19 @@ function AdditionalCard(props) {
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ type: "spring", bounce: 0.2, duration: 1.1, delay: props.delay }}
       whileHover={{ y: -4 }}
-      style={{ borderRadius: 20, padding: "28px 24px", background: cardBg, border: "1px solid " + cardBdr, boxShadow: dark ? "0 4px 28px rgba(0,0,0,0.45)" : "0 4px 20px rgba(122,63,209,0.07)", display: "flex", flexDirection: "column" }}
+      style={{ borderRadius: 20, padding: "28px 24px", background: cardBg, border: "1px solid " + cardBdr, boxShadow: dark ? "0 4px 28px rgba(0,0,0,0.45)" : "0 4px 20px rgba(214,48,140,0.07)", display: "flex", flexDirection: "column" }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <span style={{ fontSize: "1.6rem" }}>{pkg.icon}</span>
-        <span style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "1rem", fontWeight: 900, background: "linear-gradient(135deg,#7a3fd1,#f5a623)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{pkg.price}</span>
+        <span style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "1rem", fontWeight: 900, background: "#D6308C", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{pkg.price}</span>
       </div>
       <div style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "0.78rem", fontWeight: 900, color: textMain, marginBottom: 8, lineHeight: 1.3 }}>{pkg.name}</div>
       <p style={{ fontSize: "0.82rem", color: descColor, lineHeight: 1.7, margin: "0 0 16px" }}>{pkg.description}</p>
-      <div style={{ height: 1, marginBottom: 16, background: dark ? "linear-gradient(90deg,rgba(155,135,245,0.35),transparent)" : "linear-gradient(90deg,rgba(122,63,209,0.20),transparent)" }} />
+      <div style={{ height: 1, marginBottom: 16, background: dark ? "linear-gradient(90deg,rgba(240,106,176,0.35),transparent)" : "linear-gradient(90deg,rgba(214,48,140,0.20),transparent)" }} />
       <div style={{ flex: 1, marginBottom: 20 }}>
         {pkg.highlights.map(function (item) {
           return (
-            <div key={item} className="add-highlight-item" style={{ borderBottomColor: dark ? "rgba(155,135,245,0.10)" : "rgba(122,63,209,0.07)", color: itemColor }}>
+            <div key={item} className="add-highlight-item" style={{ borderBottomColor: dark ? "rgba(240,106,176,0.10)" : "rgba(214,48,140,0.07)", color: itemColor }}>
               <span style={{ color: "#4ade80", fontSize: "0.78rem", flexShrink: 0, marginTop: 2 }}>✓</span>
               <span style={{ fontSize: "0.83rem", lineHeight: 1.4 }}>{item}</span>
             </div>
@@ -625,12 +625,12 @@ function SponsorInquiryForm(props) {
   }
 
   var bgCard = dark ? "#0d0620" : "#ffffff";
-  var borderCol = dark ? "rgba(122,63,209,0.22)" : "rgba(122,63,209,0.12)";
-  var inputBg = dark ? "rgba(155,135,245,0.08)" : "rgba(122,63,209,0.04)";
-  var inputBdr = dark ? "rgba(155,135,245,0.18)" : "rgba(122,63,209,0.12)";
+  var borderCol = dark ? "rgba(214,48,140,0.22)" : "rgba(214,48,140,0.12)";
+  var inputBg = dark ? "rgba(240,106,176,0.08)" : "rgba(214,48,140,0.04)";
+  var inputBdr = dark ? "rgba(240,106,176,0.18)" : "rgba(214,48,140,0.12)";
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMid = dark ? "rgba(255,255,255,0.55)" : "rgba(13,5,32,0.55)";
-  var accent = dark ? "#b99eff" : "#7a3fd1";
+  var accent = dark ? "#F06AB0" : "#D6308C";
 
   var inputStyle = {
     width: "100%",
@@ -727,7 +727,7 @@ function SponsorInquiryForm(props) {
               padding: "36px 32px",
               boxShadow: dark
                 ? "0 24px 80px rgba(0,0,0,0.7)"
-                : "0 24px 80px rgba(122,63,209,0.12)",
+                : "0 24px 80px rgba(214,48,140,0.12)",
               pointerEvents: "auto",
             }}
           >
@@ -896,8 +896,8 @@ function SponsorInquiryForm(props) {
                     border: "none",
                     cursor: (!firstName.trim() || !lastName.trim()) ? "not-allowed" : "pointer",
                     background: (!firstName.trim() || !lastName.trim())
-                      ? (dark ? "rgba(155,135,245,0.15)" : "rgba(122,63,209,0.10)")
-                      : "linear-gradient(135deg, #7a3fd1, #f5a623)",
+                      ? (dark ? "rgba(240,106,176,0.15)" : "rgba(214,48,140,0.10)")
+                      : "#D6308C",
                     color: (!firstName.trim() || !lastName.trim())
                       ? textMid
                       : "#ffffff",

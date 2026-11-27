@@ -26,7 +26,7 @@ const PILLARS = [
   { title: "Quantum", value: "quantum" },
   { title: "Cybersecurity", value: "cybersecurity" },
   { title: "Robotics", value: "robotics" },
-  { title: "Climate Tech", value: "climate" },
+  { title: "Clean Tech", value: "climate" },
 ];
 
 const SECTORS = [

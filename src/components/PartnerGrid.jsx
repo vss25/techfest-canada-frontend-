@@ -33,12 +33,12 @@ function PartnerTile({ partner, i, dark, accentColor }) {
     : null;
 
   const baseShadow = dark
-    ? "0 4px 14px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.6), 0 0 0 1px rgba(155,135,245,0.3)"
-    : "0 4px 14px rgba(122,63,209,0.08), 0 1px 2px rgba(122,63,209,0.04), inset 0 1px 1px rgba(255,255,255,0.9), 0 0 0 1px rgba(122,63,209,0.15)";
+    ? "0 4px 14px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.6), 0 0 0 1px rgba(240,106,176,0.3)"
+    : "0 4px 14px rgba(214,48,140,0.08), 0 1px 2px rgba(214,48,140,0.04), inset 0 1px 1px rgba(255,255,255,0.9), 0 0 0 1px rgba(214,48,140,0.15)";
 
   const hoverShadow = dark
     ? "0 16px 40px rgba(0,0,0,0.55), 0 4px 8px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.7), 0 0 0 1px " + accentColor + "80"
-    : "0 16px 38px rgba(122,63,209,0.22), 0 4px 8px rgba(122,63,209,0.10), inset 0 1px 1px rgba(255,255,255,1), 0 0 0 1px " + accentColor + "55";
+    : "0 16px 38px rgba(214,48,140,0.22), 0 4px 8px rgba(214,48,140,0.10), inset 0 1px 1px rgba(255,255,255,1), 0 0 0 1px " + accentColor + "55";
 
   const onMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -192,7 +192,7 @@ export default function PartnerGrid({ dark, accent }) {
   }, []);
 
   const mutedText = dark ? "rgba(200,185,255,0.55)" : "rgba(13,5,32,0.45)";
-  const accentColor = accent || (dark ? "#b99eff" : "#7a3fd1");
+  const accentColor = accent || (dark ? "#F06AB0" : "#D6308C");
 
   if (loading || partners.length === 0) {
     return (
@@ -221,8 +221,8 @@ export default function PartnerGrid({ dark, accent }) {
   const featured = byGroup[FEATURED_GROUP.key] || [];
   const ecosystem = byGroup[ECOSYSTEM_GROUP.key] || [];
 
-  const line = dark ? "rgba(155,135,245,0.14)" : "rgba(122,63,209,0.12)";
-  const iconBg = dark ? "rgba(255,255,255,0.04)" : "rgba(122,63,209,0.04)";
+  const line = dark ? "rgba(240,106,176,0.14)" : "rgba(214,48,140,0.12)";
+  const iconBg = dark ? "rgba(255,255,255,0.04)" : "rgba(214,48,140,0.04)";
   const titleColor = dark ? "#ffffff" : "#0d0520";
 
   return (
@@ -408,7 +408,7 @@ export default function PartnerGrid({ dark, accent }) {
           position: absolute;
           inset: 0;
           border-radius: inherit;
-          background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(122, 63, 209, 0.08) 0%, transparent 40%);
+          background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(214, 48, 140, 0.08) 0%, transparent 40%);
           opacity: 0;
           transition: opacity 0.4s ease;
           pointer-events: none;

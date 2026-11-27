@@ -89,6 +89,48 @@ export default defineType({
             type: "url",
             description: "Optional: a short, silent hero loop (YouTube/Vimeo or a hosted file). The hero image is the poster and the mobile fallback.",
         }),
+        defineField({ name: "heroFocus", title: "Hero framing (0 = top, 100 = bottom)", type: "number", validation: (r) => r.min(0).max(100) }),
+        // "Why come" (Nov 25 2026): edited in the admin panel's Event pages (src/admin/cms/WhyComeEditor.jsx).
+        defineField({ name: "whyEyebrow", title: "Why come: small line", type: "string", validation: (r) => r.max(40) }),
+        defineField({ name: "whyHeading", title: "Why come: heading", type: "string", validation: (r) => r.max(160) }),
+        defineField({ name: "whyBody", title: "Why come: text", type: "text", rows: 5, validation: (r) => r.max(1500) }),
+        defineField({
+            name: "whyMedia", title: "Why come: in the box", type: "string",
+            options: { list: [{ title: "The design's photo", value: "default" }, { title: "Photo or GIF", value: "image" }, { title: "Video", value: "video" }] },
+        }),
+        defineField({ name: "whyImage", title: "Why come: photo or GIF", type: "image" }),
+        defineField({ name: "whyVideoUrl", title: "Why come: video (silent loop, Sanity file URL)", type: "url" }),
+        defineField({ name: "whyPoster", title: "Why come: video's first frame", type: "image" }),
+        defineField({
+            name: "whyHeight", title: "Why come: box size", type: "string",
+            options: { list: [{ title: "Small", value: "s" }, { title: "Medium", value: "m" }, { title: "Large", value: "l" }] },
+        }),
+        defineField({ name: "whyFit", title: "Why come: fit", type: "string", options: { list: [{ title: "Fill the box", value: "cover" }, { title: "Show it whole", value: "contain" }] } }),
+        defineField({ name: "whyFocusX", title: "Why come: framing across (0–100)", type: "number", validation: (r) => r.min(0).max(100) }),
+        defineField({ name: "whyFocusY", title: "Why come: framing down (0–100)", type: "number", validation: (r) => r.min(0).max(100) }),
+        defineField({ name: "whyLoop", title: "Why come: loop the video", type: "boolean", initialValue: true }),
+        defineField({
+            name: "heroHeight", title: "Hero height", type: "string",
+            options: { list: [{ title: "Standard", value: "standard" }, { title: "Taller", value: "tall" }, { title: "Full screen", value: "full" }] },
+        }),
+        defineField({
+            name: "heroMedia",
+            title: "Show at the top",
+            type: "string",
+            description: "Photo or video at the top of the event page (phones and computers). Empty: the video when there is one.",
+            options: { list: [{ title: "Photo", value: "photo" }, { title: "Video", value: "video" }] },
+        }),
+        defineField({
+            name: "heroShade",
+            title: "Hero shade",
+            type: "string",
+            description: "The shade over the hero photo or video. Set in Admin › Event pages › Top of the page.",
+            options: { list: [
+                { title: "Standard", value: "default" }, { title: "Light", value: "light" }, { title: "Strong", value: "strong" },
+                { title: "TTFC tint", value: "brand" }, { title: "None", value: "none" },
+            ] },
+            initialValue: "default",
+        }),
         defineField({
             name: "citySkyline",
             title: "City Skyline (hero overlay)",
@@ -145,6 +187,44 @@ export default defineType({
                 "While off, the site shows “Pricing to be announced” for this event's tickets, exhibitor and sponsor packages. Turn it on only when staff announce the pricing.",
             initialValue: false,
         }),
+        // Redesign step 1 (Nov 2026): the event page's own text, edited in Admin › Event pages.
+        defineField({ name: "photoCredit", title: "Photo credit", type: "string" }),
+        defineField({ name: "theme", title: "Theme", type: "string" }),
+        defineField({ name: "tagline", title: "One line under the name", type: "string" }),
+        defineField({ name: "formatLine", title: "Format", type: "string", description: "e.g. “One day · 8 sessions”" }),
+        defineField({ name: "audience", title: "Who's in the room", type: "string", description: "e.g. “150 senior delegates”" }),
+        defineField({
+            name: "pageMode",
+            title: "Page version",
+            type: "string",
+            options: { list: [
+                { title: "Automatic (coming soon until it has sessions)", value: "auto" },
+                { title: "Coming soon", value: "coming-soon" },
+                { title: "Full page", value: "full" },
+            ] },
+            initialValue: "auto",
+        }),
+        defineField({
+            name: "knownSoFar",
+            title: "Coming soon: What we know so far",
+            type: "array",
+            of: [{ type: "object", fields: [
+                defineField({ name: "label", type: "string" }),
+                defineField({ name: "value", type: "string" }),
+            ] }],
+        }),
+        defineField({
+            name: "comingNext",
+            title: "Coming soon: Coming next",
+            type: "array",
+            of: [{ type: "object", fields: [
+                defineField({ name: "label", type: "string" }),
+                defineField({ name: "when", type: "string" }),
+                defineField({ name: "done", type: "boolean" }),
+            ] }],
+        }),
+        defineField({ name: "notifyHeading", title: "Notify form heading", type: "string" }),
+        defineField({ name: "showReport", title: "Show the Toronto 2026 report card", type: "boolean", initialValue: true }),
     ],
 
     // Preview in Studio list — name + city

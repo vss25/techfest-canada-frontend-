@@ -27,13 +27,13 @@ export default function Contact() {
     return () => obs.disconnect();
   }, []);
 
-  const bg = isDark ? "#06020f" : "#f4f0ff";
+  const bg = isDark ? "#151035" : "#f4f0ff";
   const textMain = isDark ? "#ffffff" : "#0f0520";
   const textMuted = isDark ? "rgba(200,180,255,0.8)" : "rgba(60,30,110,0.85)";
-  const accent = isDark ? "#b99eff" : "#7a3fd1";
+  const accent = isDark ? "#F06AB0" : "#D6308C";
   const card = {
     background: isDark ? "rgba(255,255,255,0.04)" : "#ffffff",
-    border: `1px solid ${isDark ? "rgba(185,158,255,0.18)" : "rgba(122,63,209,0.14)"}`,
+    border: `1px solid ${isDark ? "rgba(185,158,255,0.18)" : "rgba(214,48,140,0.14)"}`,
     borderRadius: 20,
     padding: "22px 24px",
     textAlign: "left",
@@ -91,7 +91,7 @@ export default function Contact() {
               fontWeight: 900,
               letterSpacing: "1px",
               margin: "0 0 1rem",
-              background: "linear-gradient(135deg, #7a3fd1, #f5a623)",
+              background: "#D6308C",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",

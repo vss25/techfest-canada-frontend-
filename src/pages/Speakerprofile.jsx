@@ -54,7 +54,7 @@ function SessionRow({ session, speakerName, dark, accent, textMain, textMid, tex
           transition: "background 0.2s ease, border-color 0.2s ease",
         }}
         onMouseEnter={function (e) {
-          e.currentTarget.style.background = dark ? "rgba(255,255,255,0.04)" : "rgba(122,63,209,0.04)";
+          e.currentTarget.style.background = dark ? "rgba(255,255,255,0.04)" : "rgba(214,48,140,0.04)";
           e.currentTarget.style.borderColor = cardBdr;
         }}
         onMouseLeave={function (e) {
@@ -199,13 +199,13 @@ export default function SpeakerProfile() {
       : missing ? { canonical: null, robots: NOT_FOUND_ROBOTS, jsonLd: null } : {}
   );
 
-  var bg = dark ? "#06020f" : "#ffffff";
+  var bg = dark ? "#151035" : "#ffffff";
   var textMain = dark ? "#ffffff" : "#0d0520";
   var textMid = dark ? "rgba(220,210,255,0.75)" : "rgba(13,5,32,0.60)";
   var textSoft = dark ? "rgba(200,185,255,0.45)" : "rgba(13,5,32,0.35)";
-  var accent = dark ? "#b99eff" : "#7a3fd1";
-  var cardBg = dark ? "rgba(255,255,255,0.04)" : "rgba(122,63,209,0.03)";
-  var cardBdr = dark ? "rgba(155,135,245,0.18)" : "rgba(122,63,209,0.12)";
+  var accent = dark ? "#F06AB0" : "#D6308C";
+  var cardBg = dark ? "rgba(255,255,255,0.04)" : "rgba(214,48,140,0.03)";
+  var cardBdr = dark ? "rgba(240,106,176,0.18)" : "rgba(214,48,140,0.12)";
 
   if (loading) {
     return (
@@ -264,7 +264,7 @@ export default function SpeakerProfile() {
         }
         .sp-img-glow {
           position: absolute; inset: 0; z-index: 1; pointer-events: none;
-          background: radial-gradient(ellipse at 50% 60%, rgba(122,63,209,0.40) 0%, rgba(185,158,255,0.12) 45%, transparent 70%);
+          background: radial-gradient(ellipse at 50% 60%, rgba(214,48,140,0.40) 0%, rgba(185,158,255,0.12) 45%, transparent 70%);
           opacity: 0; transition: opacity 0.5s ease; mix-blend-mode: screen;
         }
         .sp-img-hover-wrap:hover .sp-img-glow { opacity: 1; }
@@ -272,7 +272,7 @@ export default function SpeakerProfile() {
       <Navbar />
 
       {/* Hero area with gradient */}
-      <div style={{ position: "relative", paddingTop: "clamp(100px, 14vw, 140px)", paddingBottom: "3rem", background: dark ? "radial-gradient(ellipse 70% 50% at 30% 0%, rgba(122,63,209,0.12) 0%, transparent 70%)" : "radial-gradient(ellipse 70% 50% at 30% 0%, rgba(122,63,209,0.06) 0%, transparent 70%)" }}>
+      <div style={{ position: "relative", paddingTop: "clamp(100px, 14vw, 140px)", paddingBottom: "3rem", background: dark ? "radial-gradient(ellipse 70% 50% at 30% 0%, rgba(214,48,140,0.12) 0%, transparent 70%)" : "radial-gradient(ellipse 70% 50% at 30% 0%, rgba(214,48,140,0.06) 0%, transparent 70%)" }}>
 
         {/* Back button, and the trail: Home › Speakers › Name */}
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 5% 2rem" }}>
@@ -293,7 +293,7 @@ export default function SpeakerProfile() {
 
             {/* Image column */}
             <motion.div className="sp-img-col" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-              <div className="sp-img-hover-wrap" style={{ border: "1px solid " + cardBdr, boxShadow: dark ? "0 16px 60px rgba(122,63,209,0.15)" : "0 16px 60px rgba(122,63,209,0.08)" }}>
+              <div className="sp-img-hover-wrap" style={{ border: "1px solid " + cardBdr, boxShadow: dark ? "0 16px 60px rgba(214,48,140,0.15)" : "0 16px 60px rgba(214,48,140,0.08)" }}>
                 {imgUrl ? (
                   <img src={imgUrl} alt={speaker.name} onError={function(e) { e.target.style.display = "none"; }} />
                 ) : (
@@ -329,7 +329,7 @@ export default function SpeakerProfile() {
               <p style={{ fontSize: "clamp(0.9rem, 1.5vw, 1.05rem)", fontWeight: 700, color: accent, marginBottom: 32, lineHeight: 1.3 }}>{speaker.company}</p>
 
               {/* Divider */}
-              <div style={{ width: 60, height: 3, borderRadius: 3, background: "linear-gradient(90deg,#7a3fd1,#f5a623)", marginBottom: 28 }} />
+              <div style={{ width: 60, height: 3, borderRadius: 3, background: "#D6308C", marginBottom: 28 }} />
 
               {/* Bio */}
               <div style={{ marginBottom: 48 }}>
@@ -383,7 +383,7 @@ export default function SpeakerProfile() {
                     </div>
                   )}
 
-                  <div style={{ height: 1, background: dark ? "rgba(155,135,245,0.10)" : "rgba(122,63,209,0.08)" }} />
+                  <div style={{ height: 1, background: dark ? "rgba(240,106,176,0.10)" : "rgba(214,48,140,0.08)" }} />
 
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -408,7 +408,7 @@ export default function SpeakerProfile() {
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
                 <Link to="/tickets" style={{
                   display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 32px", borderRadius: 12,
-                  background: "linear-gradient(135deg,#7a3fd1,#f5a623)", color: "#ffffff", textDecoration: "none",
+                  background: "#D6308C", color: "#ffffff", textDecoration: "none",
                   fontFamily: "'Orbitron',sans-serif", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase",
                 }}>Get Your Pass</Link>
                 <Link

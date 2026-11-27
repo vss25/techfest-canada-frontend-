@@ -904,3 +904,54 @@ html[data-site-theme="dark"] .ap-root footer { background: transparent !importan
   box-sizing: border-box; padding: 10px 20px 12px !important; border-radius: 18px; background: rgba(12, 9, 31, 0.9) !important;
 }
 .ap-phone .ap-root .nl-evhero h1 { font-size: 31px !important; line-height: 37px !important; padding: 8px 14px 10px !important; border-radius: 14px; }
+
+/* ---------- Partnership packages, side by side (SponsorCompare.jsx; Nov 26 2026, the owner's sheet) ---------- */
+.ap-root .nx-sp { background: transparent; }
+.ap-root .nx-sp-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 4px 0 18px; font-size: 14px; color: var(--nl-muted); }
+.ap-root .nx-sp-switch { display: inline-flex; padding: 4px; border-radius: 999px; border: 1px solid var(--nl-line2); background: var(--nl-card); }
+.ap-root .nx-sp-switch button { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 16px; border: 0; border-radius: 999px; background: transparent; color: var(--nl-muted); cursor: pointer; }
+.ap-root .nx-sp-switch button.on { background: linear-gradient(90deg, #C5408A, #8259ED); color: #FFFFFF; }
+.ap-root .nx-sp-scroll { overflow-x: auto; border: 1px solid var(--nl-line2); border-radius: 18px; background: var(--nl-card); -webkit-overflow-scrolling: touch; }
+.ap-root .nx-sp-table { width: 100%; min-width: 760px; border-collapse: separate; border-spacing: 0; font-size: 14px; color: var(--nl-text); }
+.ap-root .nx-sp-table th, .ap-root .nx-sp-table td { padding: 12px 14px; text-align: center; border-bottom: 1px solid var(--nl-line); }
+.ap-root .nx-sp-table tbody:last-child tr:last-child > * { border-bottom: 0; }
+.ap-root .nx-sp-table thead th { vertical-align: bottom; padding: 20px 12px 16px; border-bottom: 1px solid var(--nl-line2); }
+.ap-root .nx-sp-table thead th:nth-child(2) { background: linear-gradient(180deg, rgba(197, 64, 138, 0.2), rgba(197, 64, 138, 0)); }
+.ap-root .nx-sp-table th[scope="row"], .ap-root .nx-sp-table .nx-sp-corner { text-align: left; font-weight: 500; width: 30%; min-width: 190px; }
+.ap-root .nx-sp-table .nx-sp-corner { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nl-muted); }
+.ap-root .nx-sp-table th[scope="row"] small { display: block; margin-top: 2px; font-size: 11px; font-weight: 500; color: var(--nl-dim, var(--nl-muted)); }
+.ap-root .nx-sp-name { display: block; font-size: 16px; font-weight: 700; }
+.ap-root .nx-sp-price { display: block; margin-top: 4px; font-size: 20px; font-weight: 700; color: #F5A623; }
+.ap-root .nx-sp-left { display: block; margin-top: 2px; font-size: 12px; font-weight: 500; color: var(--nl-muted); }
+.ap-root .nx-sp-group th { text-align: left; padding: 16px 14px 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #FF7AC0; border-bottom: 0; }
+.ap-root .nx-sp-table td b { font-size: 16px; font-weight: 700; }
+.ap-root .nx-sp-yes { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #C5408A; color: #FFFFFF; font-size: 12px; font-weight: 700; }
+.ap-root .nx-sp-no { color: var(--nl-dim, var(--nl-muted)); opacity: 0.55; }
+.ap-root .nx-sp-table tbody tr:not(.nx-sp-group):hover > * { background: var(--nl-glow, rgba(255, 255, 255, 0.05)); }
+.ap-root .nx-sp-fine { margin: 12px 0 0; font-size: 13px; color: var(--nl-muted); }
+.ap-root .nx-sp-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 22px; }
+.ap-root .nx-sp-ghost { background: transparent; color: var(--nl-text) !important; border: 1px solid var(--nl-line2); cursor: pointer; }
+.ap-root .nx-sp-mail { font-size: 14px; font-weight: 600; color: var(--nl-text) !important; }
+.ap-root .nx-sp-h3 { margin: 48px 0 16px; font-size: 22px; line-height: 28px; font-weight: 700; color: var(--nl-text); }
+.ap-root .nx-sp-addons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.ap-root .nx-sp-addon { display: flex; flex-direction: column; padding: 20px; border-radius: 16px; border: 1px solid var(--nl-line2); background: var(--nl-card); color: var(--nl-text); }
+.ap-root .nx-sp-addon strong { font-size: 16px; font-weight: 700; }
+.ap-root .nx-sp-addon ul { margin: 12px 0 0; padding: 12px 0 0 18px; border-top: 1px solid var(--nl-line); font-size: 13px; line-height: 20px; color: var(--nl-muted); }
+.ap-root .nx-sp-addon li + li { margin-top: 4px; }
+@media (max-width: 1100px) { .ap-root .nx-sp-addons { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Phones: the table scrolls sideways, the benefit names stay pinned on the left. */
+.ap-phone .ap-root .nx-sp-table { min-width: 640px; font-size: 13px; }
+.ap-phone .ap-root .nx-sp-table th, .ap-phone .ap-root .nx-sp-table td { padding: 10px 8px; }
+.ap-phone .ap-root .nx-sp-table th[scope="row"], .ap-phone .ap-root .nx-sp-table .nx-sp-corner {
+  position: sticky; left: 0; z-index: 1; width: 132px; min-width: 132px; max-width: 132px; background: #181133; box-shadow: 1px 0 0 var(--nl-line2);
+}
+.ap-phone .ap-root .nx-sp-group th { position: sticky; left: 0; }
+.ap-phone .ap-root .nx-sp-name { font-size: 14px; }
+.ap-phone .ap-root .nx-sp-price { font-size: 16px; }
+.ap-phone .ap-root .nx-sp-addons { grid-template-columns: minmax(0, 1fr); }
+.ap-phone .ap-root .nx-sp-switch button { padding: 8px 12px; font-size: 13px; }
+.ap-phone .ap-root .nx-sp-actions .nx-btn { flex: 1 1 100%; }
+/* Inside another section (the Sponsor page): no second gutter, and never squeezed by the column it sits in. */
+.ap-root .nx-sp { flex: 0 0 auto; overflow: visible; }
+.ap-root section section.nx-sp { padding: 0 0 8px; }
+.ap-root section section.nx-sp .nx-wrap { padding: 0; max-width: none; }

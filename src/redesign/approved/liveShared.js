@@ -25,6 +25,11 @@ export const PAGE_PATH = {
   exhibitors: "/exhibitors", venue: "/venue", faqs: "/faqs", exhibit: "/exhibit", partner: "/sponsor", speak: "/speak",
   media: "/media", volunteer: "/volunteer", about: "/about", news: "/news", contact: "/contact", app: "/app",
 };
+/* The pages that belong to an event (the owner, Nov 27 2026, of everything under More: "same applies"): each is
+   at the event's address plus its own word, e.g. /vancouver/2027/briefing/venue. About, News, Contact and the
+   app are the site's own and keep their short addresses. */
+export const EVENT_PAGES = ["exhibitors", "venue", "faqs", "exhibit", "partner", "speak", "media", "volunteer"];
+export const eventPagePath = (city, page) => `${cityPath(city)}${PAGE_PATH[page]}`;
 export const SCREEN_PATH = { home: "/", speakers: "/speakers", partners: "/partners", awards: "/awards", past: "/highlights/2026" };
 // Which backend form each page's form goes to (POST /api/forms/:form).
 export const PAGE_FORM = { exhibit: "exhibit", partner: "sponsor", speak: "speaker", volunteer: "volunteer", media: "inquiry", contact: "inquiry" };
@@ -43,6 +48,8 @@ export function routeFor(pathname) {
   const ev = parseEventPath(path);
   const city = cityOfPath(ev);
   if (!city) return null;
+  const evPage = ev.sub && EVENT_PAGES.find((k) => PAGE_PATH[k] === `/${ev.sub}`);
+  if (evPage) return { screen: "page", page: evPage, city, faq: 0 };
   if (ev.sub === "speakers") return { screen: "speakers", city };
   // …/agenda is the Agenda page (the new look, Nov 25 2026; it used to scroll the event page to its agenda).
   if (ev.sub === "agenda") return { screen: "agenda", city };

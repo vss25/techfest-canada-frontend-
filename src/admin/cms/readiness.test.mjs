@@ -38,3 +38,14 @@ test("only content tagged with the event counts", () => {
   const list = [{ events: [{ _ref: "a" }] }, { events: [] }, {}, { events: [{ _ref: "b" }] }];
   assert.equal(forEvent(list, "a").length, 1);
 });
+
+test("a video at the top counts in place of the photo, unless Photo is the one chosen to show", () => {
+  const noPhoto = { ...READY, citySkyline: "" };
+  assert.equal(readinessFor(noPhoto, {}, NOW).ready, false);
+  const withVideo = readinessFor({ ...noPhoto, heroVideoUrl: "https://cdn.example/v.mp4" }, {}, NOW);
+  assert.equal(withVideo.ready, true);
+  assert.match(withVideo.items.find((i) => i.key === "photo").detail, /Video set/);
+  assert.equal(readinessFor({ ...noPhoto, heroVideoUrl: "https://cdn.example/v.mp4", heroMedia: "video" }, {}, NOW).ready, true);
+  assert.equal(readinessFor({ ...noPhoto, heroVideoUrl: "https://cdn.example/v.mp4", heroMedia: "photo" }, {}, NOW).ready, false);
+  assert.equal(readinessFor(READY, {}, NOW).items.find((i) => i.key === "photo").label, "City photo or video");
+});

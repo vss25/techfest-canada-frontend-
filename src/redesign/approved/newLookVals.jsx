@@ -1,5 +1,5 @@
 import React from "react";
-import { AgendaHighlights, AgendaPage, CardMedia, Countdown, DateStub, DayGlance, HeroCtas, KeyDates, LastYear, NextUp, OnStage, PageHero, PartnersStrip, Passes, SpeakerPage, ContactDone } from "./NewLook";
+import { AgendaPage, CardMedia, Countdown, DayGlance, KeyDates, LastYear, OnStage, Pillars, PageHero, PartnersStrip, Passes, SpeakerPage, ContactDone } from "./NewLook";
 import { EMAIL_RE, cityPath, countdownTarget, fieldsNear, sendForm } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
 import { sessionCardMedia } from "../../lib/sessionMedia";
@@ -9,6 +9,7 @@ import { homeEyebrow } from "../../lib/homeLayout";
 import { SPK_MIN } from "./speakerGrid";
 import { heroStillOnly } from "../../lib/siteFiles";
 import SponsorCompare from "./SponsorCompare";
+import { EventBar, PartnerForm, TopBar } from "./SiteBars";
 
 /* Fills the boards' new-look slots (tools/newlook_patch2.py) with live data. Shared by the desktop and phone
    layouts: LiveSite.jsx and LivePhone.jsx call it at the end of renderVals().
@@ -34,7 +35,7 @@ const AWARD_DATES = [
 /* A see-through 1×1 picture: the banner's <img> with nothing to show yet. */
 const BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 const AGENDA_IDS = ["van", "mtl", "cgy", "tob", "ott", "tor"];
-const AGENDA_NAMES = { van: "Vancouver", mtl: "Montreal", cgy: "Calgary", tob: "Toronto City Briefing", ott: "Ottawa", tor: "Toronto National Festival" };
+const AGENDA_NAMES = { van: "Vancouver", mtl: "Montreal", cgy: "Calgary", tob: "Toronto City Briefing", ott: "Ottawa", tor: "Toronto Flagship" };
 
 export const speakerPath = (name) => `/speakers/${speakerSlug(name)}`;
 
@@ -70,7 +71,7 @@ export function applyNewLook(v, self, opts) {
   const goAgenda = go(cityPath(city) + "/agenda");
   const types = p.data && p.data.types;
   const onSale = !p.ticketsSoon && !!(types && types.length);
-  // Nov 26 2026 (the owner: the home page showed the National Festival but Agenda opened Vancouver's). On the
+  // Nov 26 2026 (the owner: the home page showed the Flagship but Agenda opened Vancouver's). On the
   // home page, Agenda and Speakers open the pages of the event the home page is showing, on both layouts.
   if (s.screen === "home") {
     // Same day, later (the owner: Agenda from Home "shows coming soon even though Vancouver has agenda"): when the
@@ -113,17 +114,16 @@ export function applyNewLook(v, self, opts) {
   // three are confirmed; until then the stand-ins (so one early or test record never shows alone).
   const own = p.evSpeakers && p.evSpeakers.length >= SPK_MIN ? p.evSpeakers : null;
   const spk = own || (si.speakers && si.speakers.length ? si.speakers : null);
-  const spkLabel = own ? "Speakers" : si.spkLabel ? `Speakers · ${si.spkLabel}` : "Speakers";
   const ptn = p.evPartners && p.evPartners.length
     ? p.evPartners.map((x) => ({ title: x.name, logo: x.logo }))
     : (si.partners || []).map((x) => ({ title: x.title || "", logo: x.name }));
 
   // The event menu (the pill in the header): Home, then City Briefings with the five cities under it, then the
-  // National Festival (Nov 25 2026, the owner; first called Flagship Event). The boards list the six events in season order, Toronto's last.
+  // Flagship (Nov 25 2026, the owner; first called Flagship Event). The boards list the six events in season order, Toronto's last.
   const group = (list, labelKey) => {
     if (!Array.isArray(list) || list.length < 6 || list.some((x) => x.head)) return list;
     const plain = list.map((x) => ({ ...x, [labelKey]: String(x[labelKey]).split(" · ")[0], ...(s.screen === "home" ? { bg: "transparent", weight: 400, ...(x.tag ? { tag: String(x.tag).split(" · ")[0] } : {}) } : {}) }));
-    return [{ head: true, [labelKey]: "City Briefings" }, ...plain.slice(0, 5), { head: true, [labelKey]: "National Festival" }, ...plain.slice(5)];
+    return [{ head: true, [labelKey]: "City Briefings" }, ...plain.slice(0, 5), { head: true, [labelKey]: "Flagship" }, ...plain.slice(5)];
   };
   if (v.menuItems) v.menuItems = group(v.menuItems, "label");
   if (v.cities) v.cities = group(v.cities, "label");
@@ -136,33 +136,54 @@ export function applyNewLook(v, self, opts) {
     awards: s.screen === "awards" ? "on" : "", partners: s.screen === "partners" ? "on" : (v.nav && v.nav.partners) || "" };
   v.navSpeakers = goAllSpeakers;
 
-  // Home.
-  if (s.screen === "home") {
-    v.heroCtas = <HeroCtas onTickets={openTix} onExplore={goEvent} city={c.name} />;
-    // TTFC's tagline, on the home banner under the title (the owner, Nov 27 2026: "present prominently").
-    v.heroTag = <div className="nx-tagline" aria-label="Meet, Build, Scale"><span>Meet</span><i aria-hidden="true" /><span>Build</span><i aria-hidden="true" /><span>Scale</span></div>;
-    // Agenda highlights: every event that has an agenda can be picked; six sessions show, then its full agenda.
-    const agendas = p.homeAgendas || {};
-    const withAgenda = AGENDA_IDS.filter((id) => (agendas[id] || []).length)
-      .map((id) => ({ id, label: AGENDA_NAMES[id], rows: agendas[id].map((r) => ({ ...r, media: mediaOf(r) })) }));
-    if (withAgenda.length) v.homeAgenda = <AgendaHighlights events={withAgenda} initial={city} onAll={(id) => p.navigate(cityPath(id) + "/agenda")} />;
-    v.homeNext = (
-      <>
-        <NextUp matrix label={`Next up · ${c.date || ""}`} title={c.title} lead={c.blurb} img={c.img} alt={c.title} onTickets={openTix} onEvent={goEvent}
-          stub={c.startDate ? <DateStub date={c.startDate} /> : null} />
-      </>
+  // The two headers (Nov 27 2026, the owner: "Header 1 - City Briefings (along with Cities) and Flagship Event.
+  // Header 2 - Agenda, Speakers, Partners, More for each city... awards for flagship. Home Page should only have
+  // header 1"). Header 1 is TopBar on every page. Header 2 is the board's own header row on a computer (its logo,
+  // event menu, Log in and Tickets are hidden by .nl-head2) and EventBar on a phone; neither shows on Home.
+  const isHome = s.screen === "home";
+  const ctx = s.screen === "awards" ? "tor" : city;            // the event header 2 belongs to
+  const stops = (p.season || []).filter((x) => x.id !== "past");
+  const eventScreen = ["event", "agenda", "speakers", "speaker"].includes(s.screen);
+  v.topBar = (
+    <TopBar phone={phone} isHome={isHome} goHome={v.goHome} here={isHome ? null : (eventScreen || s.screen === "awards" ? ctx : null)}
+      cities={stops.filter((x) => x.id !== "tor").map((x) => ({ id: x.id, name: x.name, short: String(x.name).replace(/ Briefing$/, ""), when: String(x.when || "").replace(" · Next", ""), go: v.goCity && v.goCity[x.id] }))}
+      flagship={{ id: "tor", go: v.goCity && v.goCity.tor }}
+      login={v.notSignedIn ? v.openLogin : null} account={v.signedIn ? <span className="nl-top-acct">My TTFC</span> : null}
+      onTickets={isHome ? null : v.openDrawer} />
+  );
+  v.head2Cls = `nl-head2${isHome ? " nl-head2-off" : ""}`;
+  v.noAwards = ctx !== "tor";
+  v.head2Label = eventScreen && c.title ? <span className="nl-head2-name">{c.title}</span> : null;
+  if (phone) {
+    v.eventBar = isHome ? null : (
+      <EventBar label={eventScreen ? c.name : ""} onMore={v.openMenu}
+        links={[
+          { label: "Agenda", go: go(cityPath(ctx) + "/agenda"), on: s.screen === "agenda" },
+          { label: "Speakers", go: go(cityPath(ctx) + "/speakers"), on: s.screen === "speakers" || s.screen === "speaker" },
+          ...(ctx === "tor" ? [{ label: "Awards", go: go("/awards"), on: s.screen === "awards" }] : []),
+          { label: "Partners", go: go("/partners"), on: s.screen === "partners" },
+        ]} />
     );
-    // Who's on stage: up to six. The speakers picked in Admin › Content › Home page, else the event's own (or the
-    // stand-ins). Six show as two rows of three.
-    const picked = p.homeSpeakers && p.homeSpeakers.length ? p.homeSpeakers : null;
-    const stage = (picked || spk || []).slice(0, 6);
-    v.homeSpeakers = stage.length ? <OnStage alt three={stage.length > 4} label={picked ? "Speakers" : spkLabel} speakers={withOpen(stage)} onAll={goAllSpeakers} /> : null;
-    // The home page's own words and media (Admin › Content › Home page): each one set replaces the event's.
+  }
+
+  // Home (Nov 27 2026, the owner's list): the banner's video with Meet | Build | Scale and nothing else, the
+  // timeline, In good company (last year's partners), the 5 × 5, past speakers, the partnership form, Last year
+  // in numbers. "Decouple Home page linkage to any event page": no event's title, tickets or agenda on it.
+  if (isHome) {
+    v.homeOrder = ["season", "partners", "next", "speakers", "form", "highlights"];
+    v.heroCtas = <></>;
+    // The tagline is the page's heading now that the banner has no other text.
+    v.heroTag = <h1 className="nx-tagline" aria-label="Meet, Build, Scale"><span>Meet</span><i aria-hidden="true" /><span>Build</span><i aria-hidden="true" /><span>Scale</span></h1>;
+    v.homeNext = <Pillars />;
+    // Past speakers: last year's (Toronto 2026), up to six, two rows of three.
+    const pastSpk = ((p.past2026 && p.past2026.speakers) || []).slice(0, 6);
+    const stage = pastSpk.length ? pastSpk : (spk || []).slice(0, 6);
+    v.homeSpeakers = stage.length ? <OnStage alt three={stage.length > 4} label="Toronto 2026" title="Past speakers" speakers={withOpen(stage)} onAll={goAllSpeakers} /> : null;
+    // The home page's own picture or video (Admin › Content › Home page).
     const own = p.homeOwn || {};
-    if (own.eyebrow || own.title || own.blurb || own.img) {
-      const base = v.homeHero || { img: c.img, alt: c.title, eyebrow: homeEyebrow(c), title: c.title, blurb: c.blurb, credit: c.credit, posD: c.posD || "center", pos: c.pos || c.posD || "center" };
-      v.homeHero = { ...base, ...(own.eyebrow ? { eyebrow: own.eyebrow } : {}), ...(own.title ? { title: own.title, alt: own.title } : {}),
-        ...(own.blurb ? { blurb: own.blurb } : {}), ...(own.img ? { img: own.img, credit: "", posD: "center", pos: "center" } : {}) };
+    if (own.img) {
+      const base = v.homeHero || { img: c.img, alt: "The Tech Festival Canada", eyebrow: "", title: "", blurb: "", credit: c.credit, posD: c.posD || "center", pos: c.pos || c.posD || "center" };
+      v.homeHero = { ...base, img: own.img, credit: "", posD: "center", pos: "center" };
     }
     if (own.video) { v.heroVideo = <HeroBackgroundVideo key={own.video} src={own.video} position="center" anyDevice />; v.hideCredit = true; }
     else if (own.img) v.heroVideo = null;   // its own picture, no video of its own: the picture shows, not the event's video
@@ -170,10 +191,13 @@ export function applyNewLook(v, self, opts) {
     const hl = (p.homeOwn && p.homeOwn.photos) || [];
     const hlCount = p.homeOwn && Number.isFinite(p.homeOwn.photoCount) ? p.homeOwn.photoCount : 5;
     v.homeLastYear = <LastYear photos={hl.length ? hl.slice(0, hlCount) : PHOTOS} more={hl.length > hlCount ? hl.length - hlCount : 0} onGallery={v.goPast} />;
-    // In good company: the event's own partners, else every 2026 partner's logo (it sits right under the timeline).
+    // In good company: last year's partners (the owner: "old partners"); the stand-ins until those arrive.
     const logos2026 = (p.past2026 && p.past2026.logos) || [];
-    const ownPtn = p.evPartners && p.evPartners.length;
-    v.homePartners = <PartnersStrip alt label={ownPtn ? "Partners" : "Partners · Toronto 2026"} logos={ownPtn || !logos2026.length ? ptn : logos2026} onAll={v.goPartners || v.goPartnersAll} />;
+    v.homePartners = <PartnersStrip alt label="Partners · Toronto 2026" logos={logos2026.length ? logos2026 : ptn} onAll={v.goPartners || v.goPartnersAll} />;
+    v.homeForm = (
+      <PartnerForm onSend={(f, interests) => self.run("Sending your enquiry",
+        () => sendForm("partnership", f, { interests: interests.join(", "), event: "home" }), "Thanks. The partnerships team will reply soon")} />
+    );
   }
 
   // Event page.

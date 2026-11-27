@@ -72,6 +72,16 @@ export function PillarMatrix() {
   );
 }
 
+/** Home: the 5 × 5 on its own (Nov 27 2026, the owner: "5*5 Matrix. remove the left description text"). */
+export function Pillars() {
+  return (
+    <section className="nx-s nx-stage nx-pillars"><div className="nx-wrap">
+      <Head title="Five pillars, five sectors" />
+      <Suspense fallback={<PillarMatrix />}><PillarGlobe /></Suspense>
+    </div></section>
+  );
+}
+
 /** Home: the next event, with its photo (or the 5 × 5 matrix in its place). */
 export function NextUp({ label, title, lead, img, alt, onTickets, onEvent, stub, matrix, ticketsLabel = "Get tickets" }) {
   return (

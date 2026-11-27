@@ -1058,3 +1058,22 @@ html .ap-phone .ap-root footer nav a.nl-here:is(:hover, :active) {
 @media (max-width: 1100px) { .ap-root .nl-hero > .nx-tagline { font-size: 60px; line-height: 70px; gap: 0 20px; } .ap-root .nl-hero > .nx-tagline i { height: 46px; } }
 .ap-phone .ap-root .nl-hero > .nx-tagline { top: 30%; gap: 0 12px; font-size: 34px; line-height: 42px; max-width: calc(100% - 24px); }
 .ap-phone .ap-root .nl-hero > .nx-tagline i { width: 2px; height: 26px; }
+
+/* The tagline, animated (the owner, Nov 27 2026). Each word rises in, one after the other, with its divider
+   growing between; then the gradient drifts slowly across the words. Still for reduced motion. */
+@keyframes nx-tag-in { from { opacity: 0; transform: translateY(36px) scale(0.94); filter: blur(10px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes nx-tag-bar { from { opacity: 0; transform: scaleY(0); } to { opacity: 1; transform: scaleY(1); } }
+@keyframes nx-tag-drift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.ap-root .nl-hero > .nx-tagline span {
+  display: inline-block; background-image: linear-gradient(90deg, #FF7AC0, #B79CFF, #8FA2FF, #FF7AC0); background-size: 300% 100%;
+  animation: nx-tag-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both, nx-tag-drift 9s ease-in-out 1.6s infinite;
+}
+.ap-root .nl-hero > .nx-tagline span:nth-of-type(1) { animation-delay: 0.25s, 1.6s; }
+.ap-root .nl-hero > .nx-tagline span:nth-of-type(2) { animation-delay: 0.6s, 2.2s; background-position: 35% 50%; }
+.ap-root .nl-hero > .nx-tagline span:nth-of-type(3) { animation-delay: 0.95s, 2.8s; background-position: 70% 50%; }
+.ap-root .nl-hero > .nx-tagline i { transform-origin: center; animation: nx-tag-bar 0.5s ease-out both; }
+.ap-root .nl-hero > .nx-tagline i:nth-of-type(1) { animation-delay: 0.5s; }
+.ap-root .nl-hero > .nx-tagline i:nth-of-type(2) { animation-delay: 0.85s; }
+@media (prefers-reduced-motion: reduce) {
+  .ap-root .nl-hero > .nx-tagline span, .ap-root .nl-hero > .nx-tagline i { animation: none; }
+}

@@ -955,3 +955,18 @@ html[data-site-theme="dark"] .ap-root footer { background: transparent !importan
 .ap-root .nx-sp { flex: 0 0 auto; overflow: visible; }
 .ap-root section section.nx-sp { padding: 0 0 8px; }
 .ap-root section section.nx-sp .nx-wrap { padding: 0; max-width: none; }
+
+/* The event banner, trimmed (the owner, Nov 26 2026, later): no "← The 2027 season" link, no row of pills, no
+   line under the title, and smaller text. The date and venue are in the facts strip right under the banner. */
+.ap-root .nl-evhero > :is(.p-in, .m-in) > a:first-child,
+.ap-root .nl-evhero .nl-pills,
+.ap-root .nl-evhero .nl-evline { display: none !important; }
+.ap-root .nl-evhero h1 { font-size: 42px !important; line-height: 50px !important; padding: 8px 18px 10px !important; border-radius: 16px; }
+.ap-phone .ap-root .nl-evhero h1 { font-size: 26px !important; line-height: 32px !important; padding: 7px 12px 8px !important; border-radius: 12px; }
+.ap-root .nl-evhero .nx-cd { gap: 8px; }
+.ap-root .nl-evhero .nx-cd .nl-cd { width: 62px; height: 68px; border-radius: 12px !important; }
+.ap-root .nl-evhero .nx-cd strong { font-size: 24px; }
+.ap-root .nl-evhero .nx-cd .nl-cd > span { margin-top: 4px; font-size: 9px !important; }
+.ap-phone .ap-root .nl-evhero .nx-cd .nl-cd { width: 56px; height: 62px; }
+.ap-phone .ap-root .nl-evhero .nx-cd strong { font-size: 21px; }
+.ap-root .nl-evhero > :is(.p-in, .m-in) > div > a.p-link { font-size: 13px !important; padding: 6px 12px !important; }

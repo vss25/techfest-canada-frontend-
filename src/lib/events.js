@@ -11,7 +11,7 @@ export { GRACE_DAYS, citySlugOf, compareEvents, compareEventsDesc, eventSortKey,
    URLs (city before year, no country segment):
      /:city                                  city hub
      /:city/:year/briefing                   a one-day Briefing
-     /:city/:year/national-festival          the Toronto National Festival (/main-event redirects to it)
+     /:city/:year/national-festival          the Toronto Flagship (/main-event redirects to it)
      …/agenda · …/speakers · …/tickets       under the event, always
 
    Lifecycle (from the event's own dates + a 7-day grace):
@@ -34,7 +34,7 @@ export const CITIES = [
 export const cityBySlug = (slug) => CITIES.find((c) => c.slug === String(slug || "").toLowerCase()) || null;
 
 /* The address word for each kind of event. The record's type stays "main-event"; its page is /national-festival
-   (Nov 25 2026, the owner renamed the Main Event to National Festival). /main-event still opens: it redirects. */
+   (Nov 25 2026, the owner renamed the Main Event to Flagship). /main-event still opens: it redirects. */
 export const NATIONAL_SEGMENT = "national-festival";
 export const OLD_NATIONAL_SEGMENT = "main-event";
 

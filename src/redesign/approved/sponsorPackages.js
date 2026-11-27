@@ -1,5 +1,5 @@
 /* The 2027 partnership packages (Nov 26 2026, from the owner's "Sponsorships and Entitlements TTFC" sheet).
-   One package covers the whole season: the National Festival in Toronto and the five City Briefings. The sheet's
+   One package covers the whole season: the Flagship in Toronto and the five City Briefings. The sheet's
    "Value per offering" and "Perceived value" columns are internal and are not here.
 
    TIERS are compared side by side; each row holds the five tiers' numbers in the same order. A row with `main`
@@ -18,7 +18,7 @@ export const GROUPS = [
   { name: "Booth and presence", rows: [
     { label: "Exhibition booths", key: true, main: [2, 1, 1, 1, 1], city: [5, 5, 3, 1, 1] },
     { label: "Digital screen on the booth wall", yes: true, main: [1, 1, 1, 1, 1], city: [1, 1, 1, 1, 1] },
-    { label: "Branded signage", yes: true, note: "National Festival", all: [1, 1, 1, 1, 1] },
+    { label: "Branded signage", yes: true, note: "Flagship", all: [1, 1, 1, 1, 1] },
     { label: "Product demo", yes: true, all: [1, 1, 0, 0, 0] },
   ] },
   { name: "Speaking and content", rows: [
@@ -29,7 +29,7 @@ export const GROUPS = [
   ] },
   { name: "Passes and meetings", rows: [
     { label: "Delegate passes", key: true, main: [10, 6, 4, 3, 2], city: [25, 15, 10, 5, 5] },
-    { label: "VIP lounge access", note: "National Festival", all: [10, 6, 4, 2, 2] },
+    { label: "VIP lounge access", note: "Flagship", all: [10, 6, 4, 2, 2] },
     { label: "1:1 meetings arranged for you", key: true, main: [6, 4, 2, 2, 1], city: [10, 5, 2, 0, 0] },
   ] },
   { name: "Marketing and media", rows: [
@@ -37,7 +37,7 @@ export const GROUPS = [
     { label: "Press releases", main: [2, 1, 1, 0, 0], city: [5, 2, 1, 0, 0] },
     { label: "Delegate bag inserts", main: [1, 1, 1, 1, 0], city: [5, 5, 0, 0, 0] },
     { label: "Post-event video on social media", yes: true, main: [1, 1, 1, 1, 0], city: [1, 1, 1, 1, 0] },
-    { label: "e-Show Directory placement", yes: true, note: "National Festival", all: [1, 1, 1, 1, 1] },
+    { label: "e-Show Directory placement", yes: true, note: "Flagship", all: [1, 1, 1, 1, 1] },
     { label: "Website showcase (50-word profile)", yes: true, all: [1, 1, 1, 1, 1] },
   ] },
 ];
@@ -64,7 +64,7 @@ export const ADDONS = [
 
 export const cad = (n) => "$" + Number(n).toLocaleString("en-CA");
 
-/** One row's five numbers for where it's being read: "main" (the National Festival) or "city" (City Briefings). */
+/** One row's five numbers for where it's being read: "main" (the Flagship) or "city" (City Briefings). */
 export function rowValues(row, scope) {
   return row.all || (scope === "city" ? row.city : row.main) || [];
 }

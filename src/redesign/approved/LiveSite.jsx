@@ -85,7 +85,6 @@ const speakerCols = () => {
 };
 /* "The visitor chose Home" for this visit (this tab), so "/" shows the home page instead of the next event. */
 const HOME_KEY = "ttfc.home.chosen";
-function homeChosen() { try { return sessionStorage.getItem(HOME_KEY) === "1"; } catch { return false; } }
 function chooseHome() { try { sessionStorage.setItem(HOME_KEY, "1"); } catch { /* storage off: Home still opens through location.state */ } }
 
 class LiveSite extends ApprovedSite {
@@ -896,13 +895,8 @@ export default function ApprovedRoute({ fallback = null }) {
   // (Vancouver until it is over, then the one after), so the pill, the banner and Agenda all agree. Choosing Home
   // on the site (the pill, the logo, a Home link) shows the home page, with its own banner, for the rest of that
   // visit. "/?home=1" also opens the home page (the admin's links use it), and the admin's text editor always does.
-  const nextCity = useMemo(() => homeCityFor(null, byCity, new Date(now).toISOString().slice(0, 10)), [byCity, now]);
-  const wantsHome = (location.state && location.state.home) || homeChosen() || /[?&]home=1\b/.test(location.search || "")
-    || (typeof window !== "undefined" && window.name === EDIT_FRAME);
-  const landing = !!route && route.screen === "home" && !wantsHome;
-  useEffect(() => {
-    if (landing && !eventsLoading) navigate(cityPath(nextCity), { replace: true });
-  }, [landing, eventsLoading, nextCity, navigate]);
+  // Nov 27 2026 (the owner: "Decouple Home page linkage to any event page it should operate independently"): "/"
+  // is the home page again. It no longer sends visitors on to the next event's page.
   // Going Home from anywhere on the site is the visitor's own choice: remembered for this visit.
   const go = useCallback((to, opts) => {
     if (to !== "/") { navigate(to, opts); return; }
@@ -911,8 +905,6 @@ export default function ApprovedRoute({ fallback = null }) {
   }, [navigate]);
 
   if (!route) return fallback;
-  // While "/" is on its way to the next event, an empty dark page (no flash of the home banner).
-  if (landing) return <div aria-busy="true" style={{ minHeight: "100vh", background: "#0C091F" }} />;
   const View = phone && PHONE_SCREENS.includes(route.screen) ? LivePhone : LiveSite;
   return (
     <View

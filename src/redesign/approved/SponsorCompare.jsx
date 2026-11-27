@@ -10,7 +10,7 @@ import { ADDONS, GROUPS, ROW_COUNT, TIERS, cad, rowValues } from "./sponsorPacka
    scrolls sideways with the benefit names pinned. Styles: newLook.css (.nx-pkg*). */
 
 const act = (fn) => (e) => { if (e && e.preventDefault) e.preventDefault(); if (fn) fn(e); };
-const SCOPES = [["main", "National Festival"], ["city", "City Briefings"]];
+const SCOPES = [["main", "Flagship"], ["city", "City Briefings"]];
 
 function Cell({ row, n }) {
   if (!n) return <span className="nx-pkg-no" aria-label="Not included">–</span>;
@@ -28,7 +28,7 @@ export default function SponsorCompare({ focus = "main", id = "packages", compac
       <div className="nx-head"><div>
         {compact ? null : <span className="nx-label">Partnership packages · 2027</span>}
         <h2 className="nx-h2">Compare <em>packages</em></h2>
-        <p className="nx-lead">One package covers the whole 2027 season: the National Festival in Toronto and the five City Briefings.</p>
+        <p className="nx-lead">One package covers the whole 2027 season: the Flagship in Toronto and the five City Briefings.</p>
       </div></div>
 
       <div className="nx-pkg-bar">
@@ -43,7 +43,7 @@ export default function SponsorCompare({ focus = "main", id = "packages", compac
       <div className="nx-pkg-scroll" tabIndex={0} role="region" aria-label="Package comparison table">
         <table className="nx-pkg-table">
           <thead><tr>
-            <th scope="col" className="nx-pkg-corner">{scope === "city" ? "Across the five City Briefings" : "At the National Festival"}</th>
+            <th scope="col" className="nx-pkg-corner">{scope === "city" ? "Across the five City Briefings" : "At the Flagship"}</th>
             {TIERS.map((t) => (
               <th key={t.id} scope="col">
                 <span className="nx-pkg-name">{t.name}</span>

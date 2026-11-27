@@ -1,4 +1,4 @@
-// The National Festival's address. Run: node --test src/lib/eventAddress.test.mjs
+// The Flagship's address. Run: node --test src/lib/eventAddress.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
 

@@ -37,7 +37,6 @@ import AboutUs from "./components/AboutUs";
 const AuthSuccess = lazy(() => import("./pages/AuthSuccess"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 import TicketBar from "./components/TicketBar";
-const Agenda = lazy(() => import("./pages/Agenda"));
 import AdminRoute from "./components/AdminRoute";
 const Sponsor = lazy(() => import("./pages/Sponsor"));
 const Exhibit = lazy(() => import("./pages/Exhibit"));
@@ -170,7 +169,8 @@ function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/contact" element={live(null)} />
         <Route path="/about" element={live(null)} />
-        <Route path="/agenda" element={<AgendaGate><Agenda /></AgendaGate>} />
+        {/* Nov 27 2026 (the owner: agenda belongs to an event): the 2026 agenda is on the Toronto 2026 page. */}
+        <Route path="/agenda" element={<Navigate to="/highlights/2026#agenda" replace />} />
         <Route
           path="/admin-login"
           element={

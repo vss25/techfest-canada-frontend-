@@ -154,9 +154,8 @@ export function applyNewLook(v, self, opts) {
   const toSec = (name) => (e) => {
     if (e && e.preventDefault) e.preventDefault();
     // On the Toronto 2026 page (and from Home, which shows last year's speakers and partners) the links are that
-    // event's: its speakers and partners are on its page, its agenda is still the 2026 agenda page.
+    // event's: its agenda, speakers and partners are all on its page.
     const past = s.screen === "past" || isHome;
-    if (past && name === "agenda") { p.navigate("/agenda"); return; }
     const path = `${past ? PAST : cityPath(ctx)}#${name}`;
     const here = past ? s.screen === "past" : s.screen === "event" && city === ctx;
     if (here && typeof window !== "undefined") window.history.replaceState(window.history.state, "", path);
@@ -236,6 +235,20 @@ export function applyNewLook(v, self, opts) {
     const logos2026 = (p.past2026 && p.past2026.logos) || [];
     v.homePartners = <PartnersStrip alt label="Partners · Toronto 2026" logos={logos2026.length ? logos2026 : ptn} onAll={v.goPartners || v.goPartnersAll} />;
     v.homeForm = <PartnerForm onSend={sendPartner("home")} />;
+  }
+
+  // The Toronto 2026 page: that event's whole agenda, above its speakers.
+  if (s.screen === "past" && p.pastSessions && p.pastSessions.length) {
+    v.pastAgenda = <div className="nx-inpast"><DayGlance full sessions={p.pastSessions.map((r) => ({ ...r, media: mediaOf(r) }))} id={phone ? "m-agenda" : "ev-agenda"} /></div>;
+  }
+
+  // An event's page is the full page once it has an agenda or confirmed speakers of its own; until then it is the
+  // coming-soon page (the boards fixed this by city: only Vancouver was ever the full page).
+  if (s.screen === "event" && city !== "van") {
+    const ownAgenda = !!(p.data && Array.isArray(p.data.sessionsData) && p.data.sessionsData.some((r) => r && r.time));
+    const ready = ownAgenda || !!own;
+    v.isEventFull = ready;
+    v.isEventSoon = !ready;
   }
 
   // Event page.

@@ -28,6 +28,10 @@ const FOOT_HERE = [
   [/^\/partners/, "Partners"], [/^\/exhibitors/, "Exhibitors"], [/^\/about/, "About us"], [/^\/news/, "Newsroom"], [/^\/faqs?/, "FAQs"],
   [/^\/contact/, "Contact"], [/^\/exhibit$/, "Exhibit"], [/^\/(partner|sponsor)$/, "Partner with us"], [/^\/speak$/, "Apply to speak"],
   [/^\/media/, "Media accreditation"], [/^\/volunteer/, "Volunteer"], [/^\/highlights/, "Past events"],
+  // An event's own page (Nov 27 2026, the owner: the Montreal page marked Vancouver; the board had Vancouver written in).
+  [/^\/vancouver\/\d+\/briefing$/, "Vancouver City Briefing"], [/^\/montreal\/\d+\/briefing$/, "Montreal City Briefing"],
+  [/^\/calgary\/\d+\/briefing$/, "Calgary City Briefing"], [/^\/toronto\/\d+\/briefing$/, "Toronto City Briefing"],
+  [/^\/ottawa\/\d+\/briefing$/, "Ottawa City Briefing"], [/^\/toronto\/\d+\/national-festival$/, "Toronto National Festival"],
 ];
 function markFooter() {
   const path = (window.location.pathname || "/").replace(/\/+$/, "") || "/";

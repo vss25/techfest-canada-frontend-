@@ -84,6 +84,7 @@ const speakerCols = () => {
   return Math.max(1, Math.floor((w + 24) / (220 + 24)));
 };
 /* "The visitor chose Home" for this visit (this tab), so "/" shows the home page instead of the next event. */
+const PAST_EVENT_DOC = { _id: PAST_EVENT };
 const HOME_KEY = "ttfc.home.chosen";
 function chooseHome() { try { sessionStorage.setItem(HOME_KEY, "1"); } catch { /* storage off: Home still opens through location.state */ } }
 
@@ -711,6 +712,11 @@ export default function ApprovedRoute({ fallback = null }) {
     return rows.length ? rows : AGENDA_SOON;
   }, [content]);
 
+  // The Toronto 2026 page holds that event's agenda too (the owner, Nov 27 2026: agenda, speakers and partners
+  // belong to an event; /agenda, the old 2026 agenda page, forwards here).
+  const past26 = useEventContent(route && route.screen === "past" ? PAST_EVENT_DOC : null);
+  const pastSessions = useMemo(() => toDesignSessions(past26.sessions), [past26]);
+
   // Home › Agenda highlights (Nov 25 2026): every 2027 event's sessions, so visitors can pick an event that has an
   // agenda. One query, read through the preview-aware client (staging shows staged agendas).
   const [allSessions, setAllSessions] = useState(null);
@@ -941,6 +947,7 @@ export default function ApprovedRoute({ fallback = null }) {
       season={season}
       speakerDoc={speakerDoc}
       homeAgendas={homeAgendas}
+      pastSessions={pastSessions}
       homeOwn={homeOwn}
       heroWait={eventsLoading || (route.screen === "home" && homeDoc === null)}
       homeSpeakers={homeSpeakers}

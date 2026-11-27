@@ -9,10 +9,34 @@ import React, { useEffect, useRef, useState } from "react";
 
 const act = (fn) => (e) => { if (e && e.preventDefault) e.preventDefault(); if (fn) fn(e); };
 
-export function TopBar({ phone, cities = [], flagship, goHome, isHome, here, login, account, onTickets }) {
+export function TopBar({ phone, cities = [], flagship, goHome, isHome, here, login, account, onTickets, ttfc = [] }) {
   // The owner, later the same day: "name all the cities on the header both mobile and desktop instead of a drop
   // down". On a phone the row of names scrolls sideways beside the logo, and the current event is scrolled into view.
   const row = useRef(null);
+  // The TTFC menu (About us, Newsroom, Contact, Get the app): the site's own links, so they live in header 1.
+  const [open, setOpen] = useState(false);
+  const box = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const away = (e) => { if (box.current && !box.current.contains(e.target)) setOpen(false); };
+    const esc = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  const menu = ttfc.length ? (
+    <div className="nl-top-drop" ref={box}>
+      <button type="button" className="nl-top-item nl-top-ttfc" aria-expanded={open} aria-label="TTFC: about, news, contact, app" onClick={() => setOpen(!open)}>
+        TTFC
+        <svg className={open ? "up" : ""} width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      {open ? (
+        <div className="nl-top-menu nl-top-menu-r" role="menu" aria-label="TTFC">
+          {ttfc.map((l) => <a key={l.label} href="#" role="menuitem" onClick={act((e) => { setOpen(false); l.go(e); })}>{l.label}</a>)}
+        </div>
+      ) : null}
+    </div>
+  ) : null;
   useEffect(() => {
     const el = row.current;
     const on = el && el.querySelector(".on");
@@ -29,11 +53,12 @@ export function TopBar({ phone, cities = [], flagship, goHome, isHome, here, log
           ))}
           <i className="nl-top-sep" aria-hidden="true" />
           {flagship ? (
-            <a href="#" className={`nl-top-item nl-top-flag${here === flagship.id ? " on" : ""}`} aria-current={here === flagship.id ? "page" : undefined} onClick={act(flagship.go)}>Flagship Event</a>
+            <a href="#" className={`nl-top-item nl-top-flag${here === flagship.id ? " on" : ""}`} aria-current={here === flagship.id ? "page" : undefined} onClick={act(flagship.go)}>Flagship Event - Toronto</a>
           ) : null}
         </nav>
-        {phone ? null : (
+        {phone ? menu : (
           <div className="nl-top-side">
+            {menu}
             {account || (login ? <a href="#" className="nl-top-login" onClick={act(login)}>Log in</a> : null)}
             {onTickets ? <button type="button" className="nx-btn nx-buy nl-top-buy" onClick={onTickets}>Tickets</button> : null}
           </div>

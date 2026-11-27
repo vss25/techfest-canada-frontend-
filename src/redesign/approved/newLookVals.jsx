@@ -1,6 +1,6 @@
 import React from "react";
 import { AgendaPage, CardMedia, Countdown, DayGlance, KeyDates, LastYear, OnStage, Pillars, PageHero, PartnersStrip, Passes, SpeakerPage, ContactDone } from "./NewLook";
-import { EMAIL_RE, cityPath, countdownTarget, fieldsNear, sendForm } from "./liveShared";
+import { EMAIL_RE, cityPath, countdownTarget, fieldsNear, scrollToSection, sendForm } from "./liveShared";
 import { speakerSlug } from "../../seo/slug";
 import { sessionCardMedia } from "../../lib/sessionMedia";
 import { urlFor } from "../../utils/sanity";
@@ -145,24 +145,50 @@ export function applyNewLook(v, self, opts) {
   const ctx = s.screen === "awards" ? "tor" : city;            // the event header 2 belongs to
   const stops = (p.season || []).filter((x) => x.id !== "past");
   const eventScreen = ["event", "agenda", "speakers", "speaker"].includes(s.screen);
+  // One page per event (the owner, Nov 27 2026: "agenda, speakers, partners, should be specific to the event and
+  // there will be URL appended to that section"): header 2's links scroll to that section of the event's page and
+  // put it in the address (/vancouver/2027/briefing#agenda), from any page.
+  const toSec = (name) => (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const path = `${cityPath(ctx)}#${name}`;
+    if (s.screen === "event" && city === ctx && typeof window !== "undefined") window.history.replaceState(window.history.state, "", path);
+    else p.navigate(path);
+    scrollToSection(name);
+  };
+  if (!isHome) {
+    if (v.sec && typeof v.sec === "object") v.sec = { ...v.sec, agenda: toSec("agenda") };
+    v.navSpeakers = toSec("speakers");
+    v.navPartners = toSec("partners");
+    v.nav = { ...v.nav, agenda: "", speakers: "", partners: "" };
+  }
+  // The TTFC links (About us, Newsroom, Contact, Get the app) belong to the whole site, so they sit in header 1
+  // and leave the event's More menu.
+  v.ttfcTop = true;
+  // Log in is hidden (the owner, Nov 27 2026: "Hide the login option, till the entire login flow is complete and
+  // can work fully based on the approved design"). The header and the phone's menu no longer offer it.
+  v.noLogin = true;
+  const pages = v.openPage || {};
+  const ttfc = [["About us", pages.about], ["Newsroom", pages.news], ["Contact", pages.contact], ["Get the app", pages.app]].filter((x) => x[1]).map(([label, go]) => ({ label, go }));
   v.topBar = (
-    <TopBar phone={phone} isHome={isHome} goHome={v.goHome} here={isHome ? null : (eventScreen || s.screen === "awards" ? ctx : null)}
+    <TopBar phone={phone} ttfc={ttfc} isHome={isHome} goHome={v.goHome} here={isHome ? null : (eventScreen || s.screen === "awards" ? ctx : null)}
       cities={stops.filter((x) => x.id !== "tor").map((x) => ({ id: x.id, name: x.name, short: String(x.name).replace(/ Briefing$/, ""), when: String(x.when || "").replace(" · Next", ""), go: v.goCity && v.goCity[x.id] }))}
       flagship={{ id: "tor", go: v.goCity && v.goCity.tor }}
-      login={v.notSignedIn ? v.openLogin : null} account={v.signedIn ? <span className="nl-top-acct">My TTFC</span> : null}
+      login={null} account={null}
       onTickets={isHome ? null : v.openDrawer} />
   );
   v.head2Cls = `nl-head2${isHome ? " nl-head2-off" : ""}`;
   v.noAwards = ctx !== "tor";
-  v.head2Label = eventScreen && c.title ? <span className="nl-head2-name">{c.title}</span> : null;
+  // The owner, Nov 27 2026: header 2 names a City Briefing the way its banner does, "The City Briefing - Vancouver".
+  const evName = ctx !== "tor" && c.name ? `The City Briefing - ${c.name}` : c.title;
+  v.head2Label = eventScreen && evName ? <span className="nl-head2-name">{evName}</span> : null;
   if (phone) {
     v.eventBar = isHome ? null : (
-      <EventBar label={eventScreen ? c.name : ""} onMore={v.openMenu}
+      <EventBar label={eventScreen ? evName : ""} onMore={v.openMenu}
         links={[
-          { label: "Agenda", go: go(cityPath(ctx) + "/agenda"), on: s.screen === "agenda" },
-          { label: "Speakers", go: go(cityPath(ctx) + "/speakers"), on: s.screen === "speakers" || s.screen === "speaker" },
+          { label: "Agenda", go: toSec("agenda") },
+          { label: "Speakers", go: toSec("speakers") },
           ...(ctx === "tor" ? [{ label: "Awards", go: go("/awards"), on: s.screen === "awards" }] : []),
-          { label: "Partners", go: go("/partners"), on: s.screen === "partners" },
+          { label: "Partners", go: toSec("partners") },
         ]} />
     );
   }
@@ -205,8 +231,9 @@ export function applyNewLook(v, self, opts) {
     // Nov 26 2026 (the owner: "redundancy"): the date is in the banner, the countdown and the timeline already,
     // so this strip shows it once, as text with the weekday, beside the same kind of icon as the other facts.
     if (c.startDate) { const wd = weekdayOf(c.startDate); if (wd && c.date && !String(c.date).startsWith(wd)) v.c = { ...v.c, date: `${wd}, ${c.date}` }; }
-    if (hasAgenda) v.dayGlance = <DayGlance alt sessions={rows} onFull={goAgenda} id={phone ? "m-agenda" : "ev-agenda"} />;
-    if (own) v.evOnStage = <OnStage speakers={withOpen(own.slice(0, 4))} onAll={goAllSpeakers} id={phone ? "m-speakers" : "ev-speakers"} />;
+    // One page per event (the owner, Nov 27 2026): the whole agenda and every speaker of this event are here.
+    if (hasAgenda) v.dayGlance = <DayGlance alt full sessions={rows} id={phone ? "m-agenda" : "ev-agenda"} />;
+    if (own) v.evOnStage = <OnStage three={own.length > 4} speakers={withOpen(own)} id={phone ? "m-speakers" : "ev-speakers"} />;
     if (onSale) v.passes = <Passes types={types} onBuy={openTix} />;
   }
 

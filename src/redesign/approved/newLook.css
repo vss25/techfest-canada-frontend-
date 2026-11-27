@@ -1077,3 +1077,15 @@ html .ap-phone .ap-root footer nav a.nl-here:is(:hover, :active) {
 @media (prefers-reduced-motion: reduce) {
   .ap-root .nl-hero > .nx-tagline span, .ap-root .nl-hero > .nx-tagline i { animation: none; }
 }
+
+/* The tagline no longer floats over the banner (the owner, Nov 27 2026: "this is poor UX" — on a shorter window
+   it sat on top of the date line and title). It now takes its own space above the banner's text: centred in
+   whatever room is left over, never overlapping, and sized to the window's width and height. */
+.ap-root .nl-hero > .nx-tagline {
+  position: relative; left: auto; top: auto; transform: none; align-self: center; margin: auto; padding: 28px 24px; box-sizing: border-box;
+  width: auto; max-width: 100%; font-size: clamp(34px, min(6.2vw, 10.5vh), 84px); line-height: 1.15; gap: 0 0.33em;
+}
+.ap-root .nl-hero > .nx-tagline i { width: max(2px, 0.035em); height: 0.76em; }
+.ap-phone .ap-root .nl-hero > .nx-tagline { top: auto; padding: 20px 12px; max-width: 100%; gap: 0 0.35em; font-size: clamp(26px, min(9vw, 6vh), 36px); line-height: 1.15; }
+.ap-phone .ap-root .nl-hero > .nx-tagline i { width: 2px; height: 0.76em; }
+@media (max-width: 1100px) { .ap-root .nl-hero > .nx-tagline { gap: 0 0.33em; line-height: 1.15; } .ap-root .nl-hero > .nx-tagline i { height: 0.76em; } }

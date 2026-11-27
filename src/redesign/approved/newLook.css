@@ -1191,3 +1191,10 @@ html .ap-phone .ap-root footer nav a.nl-here:is(:hover, :active) {
 .ap-root .nl-top-phone .nl-top-drop { flex: 0 0 auto; padding-right: 6px; }
 .ap-root .nl-top-phone .nl-top-ttfc { padding: 0 8px; }
 .ap-root .nl-top-phone .nl-top-menu.nl-top-menu-r { right: 6px; }
+
+/* A coming-soon event's Agenda, Speakers and Partners sections: short, so the page stays light. */
+.ap-root .nx-s.nx-soon { padding: 64px 0; }
+.ap-root .nx-soon .nx-head { margin-bottom: 20px; }
+.ap-root .nx-soon-note { position: relative; z-index: 1; margin: 0; max-width: 720px; padding: 18px 22px; border-radius: 14px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); color: #D9D5EC; font-size: 16px; line-height: 1.55; }
+.ap-root .nx-soon-note b { color: #FFFFFF; }
+.ap-phone .ap-root .nx-s.nx-soon { padding: 44px 0; }

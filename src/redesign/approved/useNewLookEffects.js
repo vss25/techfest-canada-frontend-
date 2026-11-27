@@ -31,7 +31,7 @@ const FOOT_HERE = [
   // An event's own page (Nov 27 2026, the owner: the Montreal page marked Vancouver; the board had Vancouver written in).
   [/^\/vancouver\/\d+\/briefing$/, "Vancouver City Briefing"], [/^\/montreal\/\d+\/briefing$/, "Montreal City Briefing"],
   [/^\/calgary\/\d+\/briefing$/, "Calgary City Briefing"], [/^\/toronto\/\d+\/briefing$/, "Toronto City Briefing"],
-  [/^\/ottawa\/\d+\/briefing$/, "Ottawa City Briefing"], [/^\/toronto\/\d+\/national-festival$/, "Toronto National Festival"],
+  [/^\/ottawa\/\d+\/briefing$/, "Ottawa City Briefing"], [/^\/toronto\/\d+\/national-festival$/, "Toronto Flagship"],
 ];
 function markFooter() {
   const path = (window.location.pathname || "/").replace(/\/+$/, "") || "/";

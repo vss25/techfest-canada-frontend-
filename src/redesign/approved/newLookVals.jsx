@@ -188,7 +188,7 @@ export function applyNewLook(v, self, opts) {
   if (s.screen === "partners") v.partnersSponsor = <SponsorCompare onEnquire={v.bookCall} enquireLabel="Book a 30-minute call" />;
   // The banner's title (the owner, Nov 26 2026): a City Briefing reads "The City Briefing - Vancouver".
   if (s.screen === "event" && city !== "tor" && c.name) v.evHeading = `The City Briefing - ${c.name}`;
-  if (s.screen === "event") v.evSponsor = <SponsorCompare key={city} compact focus={city === "tor" ? "main" : "city"} id={phone ? "m-packages" : "ev-packages"} onEnquire={toForm} onCall={v.bookCall} />;
+  if (s.screen === "event") v.evSponsor = <SponsorCompare compact focus={city === "tor" ? "main" : "city"} id={phone ? "m-packages" : "ev-packages"} onEnquire={toForm} onCall={v.bookCall} />;
 
   // The Agenda page.
   v.isAgenda = s.screen === "agenda";

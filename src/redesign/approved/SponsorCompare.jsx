@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ADDONS, GROUPS, ROW_COUNT, TIERS, cad, rowValues } from "./sponsorPackages";
 
 /* Partnership packages, side by side (Nov 26 2026, the owner: "simplify how we display this... easily comparable
@@ -21,11 +21,12 @@ function Cell({ row, n }) {
 export default function SponsorCompare({ focus = "main", id = "packages", compact = false, onEnquire, enquireLabel = "Enquire about a package", onCall }) {
   const [scope, setScope] = useState(focus === "city" ? "city" : "main");
   const [open, setOpen] = useState(!compact);
+  useEffect(() => { setScope(focus === "city" ? "city" : "main"); }, [focus]);   // another event's page: its own kind first
   const shown = GROUPS.map((g) => ({ ...g, rows: open ? g.rows : g.rows.filter((r) => r.key) })).filter((g) => g.rows.length);
   return (
     <section className="nx-s nx-sp" id={id} aria-label="Partnership packages"><div className="nx-wrap">
       <div className="nx-head"><div>
-        <span className="nx-label">Partnership packages · 2027</span>
+        {compact ? null : <span className="nx-label">Partnership packages · 2027</span>}
         <h2 className="nx-h2">Compare <em>packages</em></h2>
         <p className="nx-lead">One package covers the whole 2027 season: the National Festival in Toronto and the five City Briefings.</p>
       </div></div>

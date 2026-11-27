@@ -211,7 +211,6 @@ export default class LivePhone extends ApprovedPhone {
       const why = v.c.why;
       v.whySection = (
         <section className="nx-mwhy" aria-label="Why come">
-          <span className="nx-label">{why.eyebrow || "Why come"}</span>
           <h2 className="nx-h2">{why.heading}</h2>
           <WhyComeBody why={why} />
           {why.media && why.media.kind === "default" ? <WhyWheel /> : <WhyComeBox key={v.c.id} why={why} style={{ flex: "none", width: "100%" }} />}

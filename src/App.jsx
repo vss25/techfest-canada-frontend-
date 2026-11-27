@@ -243,11 +243,14 @@ function App() {
         <Route path="/:city/:year/briefing/speakers" element={live(<EventLanding section="speakers" type="briefing" />)} />
         <Route path="/:city/:year/briefing/speakers/:speakerSlug" element={<EventLanding section="speaker" type="briefing" />} />
         <Route path="/:city/:year/briefing/tickets" element={live(<EventLanding section="tickets" type="briefing" />)} />
+        {/* An event's own pages (Exhibitors, Venue, FAQs, Exhibit, Sponsor, Speak, Media, Volunteer): Nov 27 2026. */}
+        <Route path="/:city/:year/briefing/:page" element={live(<NotFound />)} />
         <Route path="/:city/:year/national-festival" element={live(<EventLanding section="overview" type="main-event" />)} />
         <Route path="/:city/:year/national-festival/agenda" element={live(<EventLanding section="agenda" type="main-event" />)} />
         <Route path="/:city/:year/national-festival/speakers" element={live(<EventLanding section="speakers" type="main-event" />)} />
         <Route path="/:city/:year/national-festival/speakers/:speakerSlug" element={<EventLanding section="speaker" type="main-event" />} />
         <Route path="/:city/:year/national-festival/tickets" element={live(<EventLanding section="tickets" type="main-event" />)} />
+        <Route path="/:city/:year/national-festival/:page" element={live(<NotFound />)} />
         {/* The Flagship's page (Nov 25 2026: it was /main-event). The old address still opens: it moves on to
             the new one, with whatever came after it (agenda, speakers, tickets). */}
         <Route path="/:city/:year/main-event/*" element={<OldEventAddress />} />

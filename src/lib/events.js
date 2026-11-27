@@ -53,7 +53,7 @@ export const eventSpeakersPath = (ev) => `${eventPath(ev)}/speakers`;
 
 /** Parse /:city/:year/:type (+ optional subpage) out of a pathname. */
 export function parseEventPath(pathname) {
-  const m = String(pathname || "").match(/^\/([a-z-]+)\/(\d{4})\/(briefing|main-event|national-festival)(?:\/(agenda|speakers|tickets))?\/?$/i);
+  const m = String(pathname || "").match(/^\/([a-z-]+)\/(\d{4})\/(briefing|main-event|national-festival)(?:\/(agenda|speakers|tickets|exhibitors|venue|faqs|exhibit|sponsor|speak|media|volunteer))?\/?$/i);
   if (!m) return null;
   // The record's type is "main-event" under either address word.
   const type = m[3].toLowerCase() === NATIONAL_SEGMENT ? "main-event" : m[3].toLowerCase();

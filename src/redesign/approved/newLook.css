@@ -955,3 +955,59 @@ html[data-site-theme="dark"] .ap-root footer { background: transparent !importan
 .ap-root .nx-sp { flex: 0 0 auto; overflow: visible; }
 .ap-root section section.nx-sp { padding: 0 0 8px; }
 .ap-root section section.nx-sp .nx-wrap { padding: 0; max-width: none; }
+
+/* The event banner, trimmed (the owner, Nov 26 2026, later): no "← The 2027 season" link, no row of pills, no
+   line under the title, and smaller text. The date and venue are in the facts strip right under the banner. */
+.ap-root .nl-evhero > :is(.p-in, .m-in) > a:first-child,
+.ap-root .nl-evhero .nl-pills,
+.ap-root .nl-evhero .nl-evline { display: none !important; }
+.ap-root .nl-evhero h1 { font-size: 42px !important; line-height: 50px !important; padding: 8px 18px 10px !important; border-radius: 16px; }
+.ap-phone .ap-root .nl-evhero h1 { font-size: 26px !important; line-height: 32px !important; padding: 7px 12px 8px !important; border-radius: 12px; }
+.ap-root .nl-evhero .nx-cd { gap: 8px; }
+.ap-root .nl-evhero .nx-cd .nl-cd { width: 62px; height: 68px; border-radius: 12px !important; }
+.ap-root .nl-evhero .nx-cd strong { font-size: 24px; }
+.ap-root .nl-evhero .nx-cd .nl-cd > span { margin-top: 4px; font-size: 9px !important; }
+.ap-phone .ap-root .nl-evhero .nx-cd .nl-cd { width: 56px; height: 62px; }
+.ap-phone .ap-root .nl-evhero .nx-cd strong { font-size: 21px; }
+.ap-root .nl-evhero > :is(.p-in, .m-in) > div > a.p-link { font-size: 13px !important; padding: 6px 12px !important; }
+
+/* ---------- The timeline and the facts under it (the owner, Nov 26 2026: "a bit cluttered... make the timeline
+   a little bit fancier", and no Format in the facts) ----------
+   Timeline: a stepper. The dots sit on one line above the names; the line is lit (violet to pink) up to the next
+   event, whose dot glows; the page you are on is outlined. Facts: three items in one rounded bar on computers,
+   one card of rows on phones. */
+.ap-root .nl-rail { background: transparent; border-bottom: 0; }
+.ap-root .nl-rail-in { height: 128px; }
+.ap-root .nl-stops { --pt: 18px; align-items: stretch; }
+.ap-root .nl-stops::before { content: none; }
+.ap-root .nl-stops > li::before { content: ""; position: absolute; top: calc(14px + var(--pt) / 2 - 1px); left: calc(14px + var(--pt) / 2); right: calc(-14px - var(--pt) / 2); height: 2px; background: var(--nl-line2); border-radius: 2px; }
+.ap-root .nl-stops > li:last-child::before { content: none; }
+.ap-root .nl-stops > li:has(.nl-stop.done)::before { background: linear-gradient(90deg, #8259ED, #C5408A); box-shadow: 0 0 12px rgba(197, 64, 138, 0.55); }
+.ap-root .nl-stop { position: relative; flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px; height: 100%; box-sizing: border-box; border: 1px solid transparent; transition: background 0.2s, border-color 0.2s, transform 0.2s; }
+.ap-root .nl-stop:hover { transform: translateY(-2px); }
+.ap-root .nl-stop.here { background: linear-gradient(180deg, rgba(197, 64, 138, 0.16), rgba(130, 89, 237, 0.08)); border-color: rgba(197, 64, 138, 0.45); }
+.ap-root .nl-pt { position: relative; z-index: 1; width: var(--pt); height: var(--pt); background: #0C091F; }
+.ap-root .nl-stop.done .nl-pt { background: #8259ED; border-color: #8259ED; }
+.ap-root .nl-stop.next .nl-pt { box-shadow: 0 0 0 5px rgba(197, 64, 138, 0.22), 0 0 18px rgba(197, 64, 138, 0.9); }
+.ap-root .nl-stop.next b { background: linear-gradient(90deg, #FF7AC0, #B79CFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ap-root .nl-rail-phone .nl-rail-in { height: 112px; }
+.ap-root .nl-rail-phone .nl-stops { --pt: 16px; }
+@media (prefers-reduced-motion: reduce) { .ap-root .nl-stop:hover { transform: none; } }
+
+.ap-root .nl-facts { border-bottom: 0 !important; padding: 4px 32px 12px; }
+.ap-root .nl-facts .nl-fact-format { display: none !important; }
+.ap-root .nl-facts > .p-in2 {
+  display: flex !important; flex-wrap: wrap; justify-content: center; gap: 0 !important; width: fit-content; max-width: 100% !important; box-sizing: border-box;
+  margin: 0 auto !important; padding: 8px !important; border: 1px solid var(--nl-line2); border-radius: 20px; background: var(--nl-card);
+}
+.ap-root .nl-facts > .p-in2 > div { align-items: center !important; padding: 12px 32px; }
+.ap-root .nl-facts > .p-in2 > div + div { border-left: 1px solid var(--nl-line); }
+.ap-phone .ap-root .nl-facts { display: flex !important; flex-direction: column; gap: 0 !important; margin: 4px 16px 16px; padding: 2px 16px !important; border: 1px solid var(--nl-line2) !important; border-radius: 16px; background: var(--nl-card); }
+.ap-phone .ap-root .nl-facts > div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 12px 0; }
+.ap-phone .ap-root .nl-facts > div + div { border-top: 1px solid var(--nl-line); }
+.ap-phone .ap-root .nl-facts > div br { display: none; }
+.ap-phone .ap-root .nl-facts > div strong { text-align: right; }
+
+/* "Take the details with you": no spotlight beams (the owner, Nov 26 2026: "remove the spotlight UX from here"). */
+.ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::before,
+.ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::after { content: none !important; animation: none !important; }

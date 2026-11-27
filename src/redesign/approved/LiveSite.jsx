@@ -85,6 +85,9 @@ const speakerCols = () => {
 };
 /* "The visitor chose Home" for this visit (this tab), so "/" shows the home page instead of the next event. */
 const PAST_EVENT_DOC = { _id: PAST_EVENT };
+// How many of an event's own partners and speakers its page shows; more than that opens its whole list.
+const PTN_SHOWN = 12;
+const SPK_SHOWN = 8;
 const HOME_KEY = "ttfc.home.chosen";
 function chooseHome() { try { sessionStorage.setItem(HOME_KEY, "1"); } catch { /* storage off: Home still opens through location.state */ } }
 
@@ -789,11 +792,12 @@ export default function ApprovedRoute({ fallback = null }) {
     const list = (content.partners || []).filter((p) => p && p.name)
       .sort((a, b) => (eventRowOf(b, evId) === "featured") - (eventRowOf(a, evId) === "featured"));
     if (!list.length) return null;
-    return list.slice(0, 12).map((p) => {
+    return list.slice(0, route && route.full === "partners" ? list.length : PTN_SHOWN).map((p) => {
       const row = eventRowOf(p, evId);
       return { name: p.name, logo: logoImg(p, 44), tier: row === "featured" ? "Featured partner" : ROW_TITLES[row] || "Partner" };
     });
-  }, [content.partners, evId]);
+  }, [content.partners, evId, route]);
+  const evPartnerCount = (content.partners || []).filter((p) => p && p.name).length;
   const evSpeakers = useMemo(() => {
     const list = (content.speakers || []).filter((x) => x && x.name);
     if (!list.length) return null;
@@ -907,14 +911,18 @@ export default function ApprovedRoute({ fallback = null }) {
   // event. Same applies to partners, agenda, etc."). The site-wide Speakers and Partners pages and each event's
   // separate Speakers and Agenda pages forward to that section of the event's own page. The site-wide lists were
   // Toronto 2026's, so they go to the Toronto 2026 page.
-  const at = (location.pathname || "").replace(/\/+$/, "");
   const moved = !route ? null
-    : route.screen === "speakers" ? (at === "/speakers" ? `${SCREEN_PATH.past}#speakers` : `${cityPath(route.city)}#speakers`)
+    : route.screen === "speakers" ? `${SCREEN_PATH.past}#speakers`
+    // An event's whole list opens only when it has more than its page shows; otherwise its page's section.
+    : route.full && !content.loading && (route.full === "partners" ? evPartnerCount <= PTN_SHOWN : (evSpeakers || []).length <= SPK_SHOWN) ? `${cityPath(route.city)}#${route.full}`
     : route.screen === "agenda" ? `${cityPath(route.city)}#agenda`
     : route.screen === "partners" ? `${SCREEN_PATH.past}#partners`
     // An event's page opened at its old site-wide address (/venue, /exhibit, …) goes to the next event's.
     : route.screen === "page" && !route.city && EVENT_PAGES.includes(route.page) ? eventPagePath(((season || []).find((x) => x.state === "next") || {}).id || "van", route.page)
     : null;
+  // Arriving on an event's whole list: straight to that section.
+  const fullList = route && !moved ? route.full : null;
+  useEffect(() => { if (fullList) scrollToSection(fullList); }, [fullList, location.pathname]);
   useEffect(() => {
     if (!moved) return;
     navigate(moved, { replace: true });
@@ -941,6 +949,7 @@ export default function ApprovedRoute({ fallback = null }) {
       ticketsSoon={!types && typesFor.key === (evKey || "")}
       pt2027Groups={pt2027Groups}
       evPartners={evPartners}
+      evPartnerCount={evPartnerCount}
       evSpeakers={evSpeakers}
       past2026={past2026}
       standIns={standIns}

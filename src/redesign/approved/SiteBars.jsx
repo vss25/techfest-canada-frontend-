@@ -83,9 +83,9 @@ const INTERESTS = ["Sponsor", "Exhibit", "Speak"];
 
 /** The partnership form (Home and the Sponsor page): it captures the lead, and sales sends the packages after.
     onSend(fields, interests) sends it (the same route as an event page's enquiry). */
-export function PartnerForm({ onSend }) {
+export function PartnerForm({ onSend, id = "partner-form", title, lead, button = "Send me the packages", note, initial = ["Sponsor"], ghost = "TTFC" }) {
   const [f, setF] = useState({ name: "", email: "", company: "", message: "" });
-  const [picked, setPicked] = useState(["Sponsor"]);
+  const [picked, setPicked] = useState(initial);
   const [err, setErr] = useState("");
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const toggle = (k) => setPicked(picked.includes(k) ? picked.filter((x) => x !== k) : [...picked, k]);
@@ -93,15 +93,15 @@ export function PartnerForm({ onSend }) {
     e.preventDefault();
     if (!f.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) { setErr("Add your name and a work email so we can reply."); return; }
     setErr("");
-    onSend({ ...f, name: f.name.trim(), email: f.email.trim() }, picked.length ? picked : ["Sponsor"]);
+    onSend({ ...f, name: f.name.trim(), email: f.email.trim() }, picked.length ? picked : initial);
   };
   return (
-    <section className="nx-s nx-pform" id="partner-form" aria-label="Partner with TTFC"><div className="nx-wrap">
+    <section className="nx-s nx-pform" id={id} aria-label={typeof title === "string" ? title : "Partner with TTFC"}><div className="nx-wrap">
       <div className="nx-head">
-        <span className="nx-ghost-word" aria-hidden="true">TTFC</span>
+        <span className="nx-ghost-word" aria-hidden="true">{ghost}</span>
         <div>
-          <h2 className="nx-h2">Partner with <em>TTFC</em></h2>
-          <p className="nx-lead">Sponsor, exhibit or speak across the 2027 season. Leave your details and we'll send you the partnership packages.</p>
+          <h2 className="nx-h2">{title || <>Partner with <em>TTFC</em></>}</h2>
+          <p className="nx-lead">{lead || "Sponsor, exhibit or speak across the 2027 season. Leave your details and we'll send you the partnership packages."}</p>
         </div>
       </div>
       <form className="nx-pform-box" onSubmit={submit} noValidate>
@@ -116,8 +116,8 @@ export function PartnerForm({ onSend }) {
         </div>
         {err ? <p className="nx-pform-err" role="alert">{err}</p> : null}
         <div className="nx-pform-foot">
-          <button type="submit" className="nx-btn nx-buy">Send me the packages</button>
-          <span>Goes to sales@thetechfestival.com. We reply within two working days.</span>
+          <button type="submit" className="nx-btn nx-buy">{button}</button>
+          <span>{note || "Goes to sales@thetechfestival.com. We reply within two working days."}</span>
         </div>
       </form>
     </div></section>

@@ -276,7 +276,14 @@ export function applyNewLook(v, self, opts) {
     if (c.startDate) { const wd = weekdayOf(c.startDate); if (wd && c.date && !String(c.date).startsWith(wd)) v.c = { ...v.c, date: `${wd}, ${c.date}` }; }
     // One page per event (the owner, Nov 27 2026): the whole agenda and every speaker of this event are here.
     if (hasAgenda) v.dayGlance = <DayGlance alt full sessions={rows} id={phone ? "m-agenda" : "ev-agenda"} />;
-    if (own) v.evOnStage = <OnStage three={own.length > 4} speakers={withOpen(own)} id={phone ? "m-speakers" : "ev-speakers"} />;
+    // Up to eight of the event's own speakers on its page; with more, "See all speakers" opens its whole list
+    // (…/speakers). Partners likewise past twelve (…/partners). The owner, Nov 27 2026: "only open and show the CTA
+    // when there are enough partners/speakers".
+    const fullList = p.route && p.route.full;
+    const spkShown = fullList === "speakers" || !own ? own : own.slice(0, 8);
+    if (own) v.evOnStage = <OnStage three={spkShown.length > 4} speakers={withOpen(spkShown)} id={phone ? "m-speakers" : "ev-speakers"}
+      onAll={!fullList && own.length > 8 ? go(`${cityPath(city)}/speakers`) : undefined} />;
+    v.ptAll = !fullList && (p.evPartnerCount || 0) > 12 ? go(`${cityPath(city)}/partners`) : null;
     if (onSale) v.passes = <Passes types={types} onBuy={openTix} />;
     // A coming-soon event has no agenda, speakers or partners sections yet, so header 2's links had nowhere to
     // land (found on Montreal, Nov 27 2026). Each gets a short "coming soon" section with the same address.
@@ -290,6 +297,17 @@ export function applyNewLook(v, self, opts) {
   // send it after the person has provided the details"). The packages comparison is gone from the Sponsor page,
   // the Partners page and every event page; the Sponsor page asks for the visitor's details instead.
   if (v.pg && v.pg.partner) v.sponsorCompare = <PartnerForm onSend={sendPartner("sponsor page")} />;
+  // An event's Exhibitors page asks would-be exhibitors to get in touch (the owner, Nov 27 2026: "provide contact
+  // us form for exhibitor page. The exhibitor page should be linked to an event"). The enquiry names the event.
+  if (v.pg && v.pg.exhibitors && s.city) {
+    const evName = s.city === "tor" ? "Toronto Flagship" : `${c.name || "the"} City Briefing`;
+    v.exForm = (
+      <PartnerForm id={phone ? "m-exform" : "ev-exform"} ghost="Exhibit" initial={["Exhibit"]} button="Send enquiry"
+        title={<>Exhibit at the <em>{evName}</em></>}
+        lead={`Want a booth or demo pod at the ${evName}? Tell us about your company and the team will send you the options.`}
+        onSend={(f, interests) => self.run("Sending your enquiry", () => sendForm("exhibit", f, { interests: interests.join(", "), event: cityPath(s.city) }), "Thanks. The team will reply soon")} />
+    );
+  }
   // The banner's title (the owner, Nov 26 2026): a City Briefing reads "The City Briefing - Vancouver".
   if (s.screen === "event" && city !== "tor" && c.name) v.evHeading = `The City Briefing - ${c.name}`;
 

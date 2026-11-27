@@ -1007,3 +1007,7 @@ html[data-site-theme="dark"] .ap-root footer { background: transparent !importan
 .ap-phone .ap-root .nl-facts > div + div { border-top: 1px solid var(--nl-line); }
 .ap-phone .ap-root .nl-facts > div br { display: none; }
 .ap-phone .ap-root .nl-facts > div strong { text-align: right; }
+
+/* "Take the details with you": no spotlight beams (the owner, Nov 26 2026: "remove the spotlight UX from here"). */
+.ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::before,
+.ap-root :is(section.nl-panel > div, .ap-phone section.nl-panel)::after { content: none !important; animation: none !important; }
